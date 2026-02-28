@@ -1,6 +1,7 @@
 "use server";
 import prisma from "@lib/prisma";
 import { Prisma, $Enums } from "@prisma/client";
+import { clerkClient, currentUser } from '@clerk/nextjs/server'
 // import { managementClient } from "@services/auth0/management-client"; // Commented out for Clerk migration
 import { cache } from 'react';
 import dayjs from 'dayjs';
@@ -13,6 +14,9 @@ import { withErrorHandling } from '@/lib/with-error-handling';
 // import { updateAuth0UserAction } from './user-management.action'; // Commented out for Clerk migration
 import { getPermissionsAction } from '../permission.action';
 import { sessionCheck } from '@/lib/auth';
+import { isOwnResource, requireUserPermission } from '@/lib/permission-checker';
+import { PermissionError } from '@/lib/permission-errors';
+import { PERMISSIONS } from '@/lib/permissions';
 
 export type PrismaTransactionalClient = Parameters<Parameters<typeof prisma['$transaction']>[0]>[0];
 
@@ -321,7 +325,26 @@ export const createUserAction = withErrorHandling(async (payload: CreateUserPayl
 
 export const updateUserAction = withErrorHandling(async (userId: string, data: Prisma.UserUpdateArgs["data"]) => {
 
-  await sessionCheck();
+  const session = await sessionCheck();
+  const authUser = await currentUser();
+
+  // Check permission: user can update their own profile or has permission to update any profile
+  const isOwn = await isOwnResource(userId);
+
+  if (!isOwn) {
+    // For updating other users, need explicit USER-level permission
+    await requireUserPermission(
+      session.user.sub,
+      PERMISSIONS.USER["UPDATE:USER:PROFILE:ANY"].name,
+      "update other users' profiles"
+    );
+  }
+
+  // Get current user data to compare changes
+  const currentUserData = await prisma.user.findUnique({
+    where: { userId },
+    select: { firstName: true, lastName: true, picture: true }
+  });
 
   const updatedUser = await prisma.user.update({
     where: { userId },
@@ -329,6 +352,52 @@ export const updateUserAction = withErrorHandling(async (userId: string, data: P
   });
 
   const { firstName, lastName, middleName, suffix, picture, nickname } = updatedUser
+
+  // Sync changes to Clerk
+  try {
+    const clerkUpdateData: Partial<{ firstName: string; lastName: string }> = {}
+
+    // Sync firstName if changed
+    if (data.firstName !== undefined && data.firstName !== currentUserData?.firstName) {
+      clerkUpdateData.firstName = String(data.firstName || '')
+    }
+
+    // Sync lastName if changed
+    if (data.lastName !== undefined && data.lastName !== currentUserData?.lastName) {
+      clerkUpdateData.lastName = String(data.lastName || '')
+    }
+
+    // Only update Clerk if there are name changes
+    if (Object.keys(clerkUpdateData).length > 0 && authUser?.id) {
+      const client = await clerkClient()
+      await client.users.updateUser(authUser.id, clerkUpdateData)
+      console.log(`[CLERK_SYNC] Updated Clerk user ${authUser.id} with profile changes from updateUserAction`)
+    }
+
+    // Sync picture if changed
+    if (data.picture !== undefined && data.picture !== currentUserData?.picture) {
+      try {
+        if (typeof data.picture === 'string' && data.picture) {
+          // Fetch and upload picture to Clerk
+          const imageResponse = await fetch(data.picture)
+          if (imageResponse.ok) {
+            const imageBlob = await imageResponse.blob()
+            const client = await clerkClient()
+            await client.users.updateUserProfileImage(authUser!.id, {
+              file: imageBlob,
+            })
+            console.log(`[CLERK_SYNC] Updated Clerk profile image for user ${authUser!.id}`)
+          }
+        }
+      } catch (picError) {
+        console.error('[CLERK_SYNC_ERROR] Failed to sync profile image:', picError)
+        // Don't fail the entire update if picture sync fails
+      }
+    }
+  } catch (clerkError) {
+    console.error('[CLERK_SYNC_ERROR] Failed to sync user data to Clerk:', clerkError)
+    // Don't fail the entire update if Clerk sync fails - database update succeeded
+  }
 
   // await updateAuth0UserAction(updatedUser.userId, {
   //   name: `${firstName ?? ""} ${middleName ?? ""} ${lastName ?? ""} ${suffix ?? ""}`.trim(),
@@ -378,6 +447,14 @@ const sendCreateUserNotification = async ({ email, password, senderName }: SendC
   }
 }
 
+/**
+ * @deprecated Use getCurrentUserAction() instead.
+ * 
+ * This function creates users on-demand during authentication, which is not the recommended approach.
+ * Users should be created via Clerk webhook (user.created event) at /api/webhooks/clerk.
+ * 
+ * This function is kept for backward compatibility during migration period only.
+ */
 export const findOrCreateUserAction = withErrorHandling(cache(async () => {
 
   const session = await sessionCheck();
@@ -470,6 +547,45 @@ export const findOrCreateUserAction = withErrorHandling(cache(async () => {
     if (error.code === "P2025")
       return "User already exists in the system and associated with another account";
   };
+});
+
+/**
+ * Get the currently authenticated user from the database
+ * 
+ * This action finds the user in the database based on their Clerk session.
+ * Users should already exist in the database via the Clerk webhook (user.created event).
+ * 
+ * @returns The user data if found, or null if not found
+ */
+export const getCurrentUserAction = withErrorHandling(cache(async () => {
+  const session = await sessionCheck();
+
+  // Find user in database by Clerk userId
+  const user = await prisma.user.findUnique({
+    where: {
+      userId: session.user.sub
+    }
+  });
+
+  if (!user) {
+    // User doesn't exist in database - this shouldn't happen if webhook is properly configured
+    console.error(`User ${session.user.sub} not found in database. Webhook may not be configured.`);
+    return {
+      success: false,
+      message: "User not found in database",
+      data: null
+    };
+  }
+
+  return {
+    success: true,
+    message: "User found",
+    data: user
+  };
+
+}), async (error) => {
+  console.error("Error in getCurrentUserAction:", error);
+  return "Failed to get current user. User may not exist in database - verify Clerk webhook is configured correctly.";
 });
 
 const assignUserPermission = async (prisma: PrismaTransactionalClient, userId: number) => {

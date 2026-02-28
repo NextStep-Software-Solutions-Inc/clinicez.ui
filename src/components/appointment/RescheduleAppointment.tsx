@@ -92,6 +92,11 @@ export default function RescheduleAppointment({disabled = true, onRescheduled, a
         return
       }
 
+      if (data.endDateTime <= data.startDateTime) {
+        toast.error("End time must be later than start time.");
+        return;
+      }
+
       toast.promise(promiseWrapper(rescheduleAppointmentAction)({
         appointmentId: appointment.id, 
         assign: existingRoute ? false : data.assign ?? false,

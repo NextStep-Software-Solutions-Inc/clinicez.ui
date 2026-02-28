@@ -14,6 +14,7 @@ import { OrganizationMemberStatus } from "@/types";
 import { withErrorHandling } from "@/lib/with-error-handling";
 import { isSuperAdminAction } from "@actions/super-admin/admin-check.action";
 import { hasOrgPermissionAction } from "@actions/permission.action";
+import { createNotification } from "@/actions/notifications/notification.action";
 
 export const isOrgHealthcareProviderAction = async (userId: string, orgUid: string) => {
   const orgMember = await prisma.organizationMember.findFirst({
@@ -40,6 +41,8 @@ export type GetOrgMembersFilters = {
   distinct?: boolean;
   clinicUid?: string;
   searchKey?: string;
+  /** Cursor-based pagination: last seen record id */
+  cursor?: number;
 };
 
 export type GetOrgMembers = Awaited<ReturnType<typeof getOrgMembersAction>>;
@@ -56,6 +59,8 @@ export const getOrgMembersAction = withErrorHandling(
 
     const pageSize = filter?.pageSize ? castToNumber(filter.pageSize) : undefined;
     const pageNumber = filter?.pageNumber ? castToNumber(filter.pageNumber) : undefined;
+    const cursor = filter?.cursor ? castToNumber(filter.cursor) : undefined;
+    const take = pageSize ?? 20;
     const normalizeToArray = <T>(val: T | T[] | undefined): T[] => {
       if (val === undefined) return [];
       return Array.isArray(val) ? val : [val];
@@ -67,10 +72,13 @@ export const getOrgMembersAction = withErrorHandling(
     );
     const paginatedData = await prisma.$transaction(
       async (prisma) => {
+        // Fetch one extra record to determine if there are more pages
         const userOrganizations = await prisma.organizationMember.findMany({
-          ...(pageSize ? { take: pageSize } : {}),
+          take: take + 1,
           ...(distinct ? { distinct: ["organizationId"] } : {}),
-          skip: pageNumber ? (pageNumber - 1) * (pageSize || 10) : 0,
+          ...(cursor
+            ? { skip: 1, cursor: { id: cursor } }
+            : { skip: pageNumber ? (pageNumber - 1) * take : 0 }),
           orderBy: {
             createdAt: "desc"
           },
@@ -308,10 +316,19 @@ export const getOrgMembersAction = withErrorHandling(
       }
     );
 
+    const hasMore = paginatedData.data.length > take;
+    const data = hasMore ? paginatedData.data.slice(0, take) : paginatedData.data;
+    const nextCursor = hasMore ? (data[data.length - 1]?.id ?? null) : null;
+
     return {
       message: "User organizations fetched successfully",
       status: true,
-      data: paginatedData
+      data: {
+        data,
+        total: paginatedData.total,
+        nextCursor,
+        hasMore,
+      }
     };
   })
 );
@@ -375,6 +392,7 @@ export const setMembershipRequestStatusAction = withErrorHandling(
           },
           User: {
             select: {
+              id: true,
               firstName: true,
               lastName: true,
               email: true
@@ -416,6 +434,38 @@ export const setMembershipRequestStatusAction = withErrorHandling(
         status: userOrganization.status as OrganizationMemberStatus,
         orgMail: userOrganization.Organization.email ?? ""
       });
+
+      // In-app notification for the affected user
+      const notificationType = (() => {
+        switch (status) {
+          case "ACTIVE": return "ORG_MEMBERSHIP_APPROVED" as const;
+          case "SUSPENDED": return "ORG_MEMBERSHIP_SUSPENDED" as const;
+          case "INACTIVE": return "ORG_MEMBERSHIP_DEACTIVATED" as const;
+          default: return "ORG_MEMBERSHIP_REJECTED" as const;
+        }
+      })();
+      const notificationTitle = (() => {
+        switch (status) {
+          case "ACTIVE": return "Membership Approved";
+          case "SUSPENDED": return "Membership Suspended";
+          case "INACTIVE": return "Membership Deactivated";
+          default: return "Membership Update";
+        }
+      })();
+      const notificationMessage = (() => {
+        switch (status) {
+          case "ACTIVE": return `Your membership in ${userOrganization.Organization.name} has been approved.`;
+          case "SUSPENDED": return `Your membership in ${userOrganization.Organization.name} has been suspended.`;
+          case "INACTIVE": return `Your membership in ${userOrganization.Organization.name} has been deactivated.`;
+          default: return `Your membership status in ${userOrganization.Organization.name} has been updated to ${status}.`;
+        }
+      })();
+      await createNotification({
+        userId: userOrganization.User.id,
+        type: notificationType,
+        title: notificationTitle,
+        message: notificationMessage,
+      });
     });
     return {
       status: true,
@@ -426,6 +476,47 @@ export const setMembershipRequestStatusAction = withErrorHandling(
   async (error) => {
     if (error instanceof Error) return error.message;
     return "Error updating membership request status";
+  }
+);
+
+export const updateOrgMemberRoleAction = withErrorHandling(
+  async (id: number, orgRoleId: number) => {
+    const session = await getCachedSession();
+    if (!session) throw new Error("User not authenticated.");
+
+    const userId = session.user.sub as string;
+
+    const membership = await prisma.organizationMember.findUnique({
+      where: { id },
+      select: { Organization: { select: { orgUid: true } } }
+    });
+
+    if (!membership) throw new Error("Membership not found");
+
+    const [isSuperAdmin, hasPermission] = await Promise.all([
+      isSuperAdminAction(),
+      hasOrgPermissionAction({
+        userId,
+        orgUid: membership.Organization.orgUid,
+        permissionName: PERMISSIONS.ORGANIZATION["UPDATE:ORG:MEMBERS"].name
+      })
+    ]);
+
+    if (!isSuperAdmin && !hasPermission)
+      throw new Error("You do not have permission to update member roles");
+
+    await prisma.organizationMember.update({
+      where: { id },
+      data: { OrganizationRole: { connect: { id: orgRoleId } } }
+    });
+
+    return { status: true, message: "Member role updated successfully", data: null };
+  },
+  async (error) => {
+    if (error instanceof Error && "code" in error && (error as { code: string }).code === "P2002")
+      return "Member already has a membership with the selected role in this organization";
+    if (error instanceof Error) return error.message;
+    return "Error updating member role";
   }
 );
 
@@ -567,6 +658,47 @@ export const requestMembershipAdditionalInfo = withErrorHandling(
       orgMail: userOrganization.Organization.email ?? ""
     });
     return { message: "Additional information request sent", data: null };
+  }
+);
+
+export type SearchUsersForOrg = Awaited<ReturnType<typeof searchUsersForOrgAction>>;
+export const searchUsersForOrgAction = withErrorHandling(
+  async (orgUid: string, query: string) => {
+    const session = await getCachedSession();
+    if (!session) throw new Error("User not authenticated.");
+
+    if (!query || query.trim().length < 2) {
+      return { message: "Query too short", data: [] };
+    }
+
+    const users = await prisma.user.findMany({
+      take: 10,
+      orderBy: { lastName: "asc" },
+      where: {
+        isActive: true,
+        OR: [
+          { firstName: { contains: query, mode: "insensitive" } },
+          { lastName: { contains: query, mode: "insensitive" } },
+          { email: { contains: query, mode: "insensitive" } },
+        ],
+        NOT: {
+          OrganizationMembers: {
+            some: {
+              Organization: { orgUid },
+            },
+          },
+        },
+      },
+      select: {
+        userId: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        picture: true,
+      },
+    });
+
+    return { message: "Users found", data: users };
   }
 );
 

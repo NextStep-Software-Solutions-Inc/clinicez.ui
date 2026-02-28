@@ -1,7 +1,7 @@
 "use server";
 
 import prisma from "@lib/prisma";
-import { AddressItemProps } from "@/app/(main)/user/[user]/phr/address/AddressItem";
+import { AddressItemProps } from "@app/(v1)/(main)/user/[user]/phr/address/AddressItem";
 
 type AddressUpsertData = {
   isPrimary: boolean;
@@ -11,6 +11,7 @@ type AddressUpsertData = {
   addressLine: string | null;
   street: string | null;
   subdivision: string | null;
+  region: string | null;
   barangay: string | null;
   city: string;
   state: string;
@@ -26,6 +27,7 @@ const mapAddressInput = (data: Omit<AddressItemProps["address"], "id">): Address
   addressLine: data.addressLine || null,
   street: data.street || null,
   subdivision: data.subdivision || null,
+  region: (data as any).region || null,
   barangay: data.barangay || null,
   city: data.city,
   state: data.state,

@@ -17,7 +17,7 @@ export const createPrismaClient = (): PrismaClient => {
   const adapter = new PrismaPg(pool);
 
   return new PrismaClient({
-    // ...process.env.NODE_ENV !== 'production' ? {log: ['query', 'info', 'warn'],}:{},
+    // ...process.env.NODE_ENV !== 'production' ? { log: ['query', 'info', 'warn'], } : {},
     adapter,
   })
 };

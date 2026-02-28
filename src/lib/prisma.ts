@@ -1,4 +1,4 @@
-import { createPrismaClient } from '@lib/factory/prisma';
+import { createPrismaClient } from '@/lib/factory/prisma';
 
 let prismaClient: ReturnType<typeof createPrismaClient>;
 

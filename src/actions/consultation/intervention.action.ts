@@ -3,6 +3,8 @@
 import "server-only";
 import prisma from "@lib/prisma";
 import { getCachedSession } from "@actions/session.action";
+import { getPermissionsAction } from "@actions/permission.action";
+import { PERMISSIONS } from "@lib/permissions";
 import { hasCodeProperty } from "@lib/utils";
 
 export const createInterventionAction = async (data: FormData) => {
@@ -12,6 +14,11 @@ export const createInterventionAction = async (data: FormData) => {
     if(!session) throw new Error("User not authenticated.");
 
     const { consultationTicketId, actionId, details, clinicUid, hpId } = Object.fromEntries(data); 
+
+    const myPermissions = await getPermissionsAction({ userId: session.user.sub, type: "CLINIC" });
+    const myPermissionArray = myPermissions.map(p => p.name);
+    const canWriteIntervention = [PERMISSIONS.CLINIC["WRITE:CLINIC:INTERVENTION"].name].some(p => myPermissionArray.includes(p));
+    if (!canWriteIntervention) throw new Error("You do not have permission to create interventions.");
 
     const intervention  = await prisma.intervention.create({
       data: {

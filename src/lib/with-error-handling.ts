@@ -35,6 +35,10 @@ export function withErrorHandling<TData, A extends unknown[]>(
       return { ...result, status: true };
     } catch (error) {
       console.error(`Error in function: ${fn.name}: ${error}`);
+      // Log full error details for Prisma errors
+      if (error && typeof error === 'object' && 'meta' in error) {
+        console.error('Prisma error details:', JSON.stringify(error, null, 2));
+      }
       if (error instanceof Error) message = error.message;
       if (customErrorHandler) {
         const maybe = customErrorHandler(error, { functionName: fn.name, args });

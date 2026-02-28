@@ -8,6 +8,7 @@ import { getCachedSession } from "@/actions/session.action";
 import { Prisma } from "@prisma/client";
 import { generateSerialNumber } from "@/lib/utils";
 import { validateHealthcareProviderAuth, USER_WITH_HEALTHCARE_PROVIDERS_SELECT } from "@/lib/healthcare-provider-auth";
+import { createNotification } from "@/actions/notifications/notification.action";
 
 export type GetMedicalCertificateFilters = {
   clinicUid: string;
@@ -193,6 +194,25 @@ export const createMedicalCertificateAction = withErrorHandling(async (input: Cr
     });
     return certificate;
   });
+
+  // Notify the patient a medical certificate was issued
+  try {
+    const clinicPatient = await prismaClient.clinicPatient.findUnique({
+      where: { id: patientId },
+      select: { patientId: true, Clinic: { select: { name: true } } },
+    });
+    if (clinicPatient) {
+      await createNotification({
+        userId: clinicPatient.patientId,
+        type: "MEDICAL_CERTIFICATE_ISSUED",
+        title: "Medical Certificate Issued",
+        message: `A medical certificate has been issued for you at ${clinicPatient.Clinic.name}.`,
+      });
+    }
+  } catch {
+    // non-critical
+  }
+
   return { message: "Medical Certificate created successfully", data: result };
 });
 

@@ -1,0 +1,358 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/**
+ * Patient Dashboard Design System
+ * 
+ * Comprehensive design system with shadcn principles:
+ * - Semantic color tokens for different card types
+ * - Animated pattern backgrounds with phase motion
+ * - Consistent spacing and typography scale
+ * - Component-level design tokens
+ * 
+ * Structure:
+ * 1. Design Tokens - Semantic colors, spacing, typography
+ * 2. Pattern Backgrounds - SVG patterns with animation
+ * 3. Base Styles - Foundation and global styles
+ * 4. Component Tokens - Card and element specific tokens
+ * 5. Animations - Keyframe animations including phase motion
+ * 6. Accessibility & Print Styles
+ */
+
+/* ============================================================================
+   1. DESIGN TOKENS - Semantic Color System & Typography Scale
+   ============================================================================ */
+
+/* Patient Dashboard - Uses globals.css variables exclusively */
+:root {
+  /* Background patterns for patient dashboard */
+  --pattern-primary: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="120"><defs><pattern id="liveecg" width="400" height="120" patternUnits="userSpaceOnUse"><line x1="0" y1="60" x2="400" y2="60" stroke="rgba(196, 181, 253, 0.08)" stroke-width="0.8"/><path d="M 0 60 L 15 60 L 20 35 L 25 60 L 30 60 L 35 48 L 40 75 L 45 60 L 60 60 L 65 50 L 70 60 L 85 60 L 90 52 L 95 60 L 110 60 L 115 35 L 120 60 L 125 60 L 130 48 L 135 75 L 140 60 L 155 60 L 160 50 L 165 60 L 180 60 L 185 52 L 190 60 L 200 60 L 215 60 L 220 35 L 225 60 L 230 60 L 235 48 L 240 75 L 245 60 L 260 60 L 265 50 L 270 60 L 285 60 L 290 52 L 295 60 L 310 60 L 315 35 L 320 60 L 325 60 L 330 48 L 335 75 L 340 60 L 355 60 L 360 50 L 365 60 L 380 60 L 385 52 L 390 60 L 400 60" fill="none" stroke="rgba(236, 72, 153, 0.20)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M 0 85 L 25 85 L 30 65 L 35 85 L 50 85 L 55 72 L 60 85 L 75 85 L 80 78 L 85 85 L 100 85 L 125 85 L 130 65 L 135 85 L 150 85 L 155 72 L 160 85 L 175 85 L 180 78 L 185 85 L 200 85 L 225 85 L 230 65 L 235 85 L 250 85 L 255 72 L 260 85 L 275 85 L 280 78 L 285 85 L 300 85 L 325 85 L 330 65 L 335 85 L 350 85 L 355 72 L 360 85 L 375 85 L 380 78 L 385 85 L 400 85" fill="none" stroke="rgba(16, 185, 129, 0.12)" stroke-width="1" stroke-linecap="round"/></pattern></defs><rect width="100%" height="100%" fill="url(%23liveecg)"/></svg>');
+  --pattern-secondary: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="150" height="100"><defs><pattern id="vitals" width="150" height="100" patternUnits="userSpaceOnUse"><circle cx="20" cy="25" r="2" fill="rgba(0,0,0,0.08)"/><circle cx="70" cy="25" r="2" fill="rgba(0,0,0,0.08)"/><circle cx="120" cy="25" r="2" fill="rgba(0,0,0,0.08)"/><circle cx="35" cy="60" r="2" fill="rgba(0,0,0,0.08)"/><circle cx="105" cy="60" r="2" fill="rgba(0,0,0,0.08)"/><line x1="20" y1="25" x2="70" y2="25" stroke="rgba(0,0,0,0.05)" stroke-width="0.8"/><line x1="70" y1="25" x2="120" y2="25" stroke="rgba(0,0,0,0.05)" stroke-width="0.8"/><path d="M 10 50 L 140 50" stroke="rgba(0,0,0,0.04)" stroke-width="1" stroke-dasharray="4,3"/></pattern></defs><rect width="100%" height="100%" fill="url(%23vitals)"/></svg>');
+
+  /* Gradient orb colors for animated background */
+  --color-appointment-light: rgb(236, 72, 153);  /* Pink/Appointment */
+  --color-health-light: rgb(16, 185, 129);       /* Teal/Health */
+  --color-medication-light: rgb(168, 85, 247);   /* Purple/Medication */
+}
+
+/* Dark mode overrides - Pattern backgrounds */
+.dark,
+[data-theme="dark"] {
+  --pattern-primary: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="120"><defs><pattern id="liveecg" width="400" height="120" patternUnits="userSpaceOnUse"><line x1="0" y1="60" x2="400" y2="60" stroke="rgba(255,255,255,0.015)" stroke-width="0.8"/><path d="M 0 60 L 15 60 L 20 35 L 25 60 L 30 60 L 35 48 L 40 75 L 45 60 L 60 60 L 65 50 L 70 60 L 85 60 L 90 52 L 95 60 L 110 60 L 115 35 L 120 60 L 125 60 L 130 48 L 135 75 L 140 60 L 155 60 L 160 50 L 165 60 L 180 60 L 185 52 L 190 60 L 200 60 L 215 60 L 220 35 L 225 60 L 230 60 L 235 48 L 240 75 L 245 60 L 260 60 L 265 50 L 270 60 L 285 60 L 290 52 L 295 60 L 310 60 L 315 35 L 320 60 L 325 60 L 330 48 L 335 75 L 340 60 L 355 60 L 360 50 L 365 60 L 380 60 L 385 52 L 390 60 L 400 60" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M 0 85 L 25 85 L 30 65 L 35 85 L 50 85 L 55 72 L 60 85 L 75 85 L 80 78 L 85 85 L 100 85 L 125 85 L 130 65 L 135 85 L 150 85 L 155 72 L 160 85 L 175 85 L 180 78 L 185 85 L 200 85 L 225 85 L 230 65 L 235 85 L 250 85 L 255 72 L 260 85 L 275 85 L 280 78 L 285 85 L 300 85 L 325 85 L 330 65 L 335 85 L 350 85 L 355 72 L 360 85 L 375 85 L 380 78 L 385 85 L 400 85" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1" stroke-linecap="round"/></pattern></defs><rect width="100%" height="100%" fill="url(%23liveecg)"/></svg>');
+  --pattern-secondary: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="150" height="100"><defs><pattern id="vitals" width="150" height="100" patternUnits="userSpaceOnUse"><circle cx="20" cy="25" r="2" fill="rgba(100,200,255,0.3)"/><circle cx="70" cy="25" r="2" fill="rgba(0,200,200,0.3)"/><circle cx="120" cy="25" r="2" fill="rgba(147,112,219,0.3)"/><circle cx="35" cy="60" r="2" fill="rgba(100,200,255,0.3)"/><circle cx="105" cy="60" r="2" fill="rgba(255,100,130,0.3)"/><line x1="20" y1="25" x2="70" y2="25" stroke="rgba(100,200,255,0.25)" stroke-width="0.8"/><line x1="70" y1="25" x2="120" y2="25" stroke="rgba(100,200,255,0.25)" stroke-width="0.8"/><path d="M 10 50 L 140 50" stroke="rgba(147,112,219,0.2)" stroke-width="1" stroke-dasharray="4,3"/></pattern></defs><rect width="100%" height="100%" fill="url(%23vitals)"/></svg>');
+
+  /* Gradient orb colors for dark mode - slightly brighter */
+  --color-appointment-light: rgb(244, 114, 182);  /* Lighter pink */
+  --color-health-light: rgb(32, 211, 184);        /* Lighter teal */
+  --color-medication-light: rgb(196, 124, 255);   /* Lighter purple */
+}
+
+/* ============================================================================
+   2. PATTERN BACKGROUNDS - SVG Patterns with Animation
+   ============================================================================ */
+
+/* ============================================================================
+   3. BASE STYLES - Foundation & Global Styles
+   ============================================================================ */
+
+html,
+body {
+  height: 100%;
+  background-color: var(--color-bg-primary);
+  background-image: var(--pattern-primary);
+  background-attachment: fixed;
+  background-size: 400px 120px;
+  animation: ecgScroll 40s linear infinite;
+  color: var(--color-text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease, background-image 0.3s ease;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 0.5rem;
+  height: 0.5rem;
+}
+
+::-webkit-scrollbar-track {
+  background-color: var(--color-bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--color-border);
+  border-radius: 0.25rem;
+  transition: background-color 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-border-light);
+}
+
+/* ============================================================================
+   3. ANIMATIONS - Keyframe Animations with Phase Motion
+   ============================================================================ */
+
+/* Fade In Animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Slide Up Animation */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Subtle Pulse Animation */
+@keyframes pulseSubtle {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* ECG/Heartbeat Scroll Animation - Live Graph Effect */
+@keyframes ecgScroll {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 400px 0;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────── */
+/* Phase Motion Animations - Slow Harmonic Motion */
+/* ─────────────────────────────────────────────────────────────────────── */
+
+/* Gentle floating effect - Phase 1 (Slow, 8s cycle) */
+@keyframes floatPhase1 {
+  0%, 100% {
+    transform: translateY(0px);
+    opacity: 0.8;
+  }
+  25% {
+    transform: translateY(-8px);
+    opacity: 0.95;
+  }
+  50% {
+    transform: translateY(0px);
+    opacity: 0.85;
+  }
+  75% {
+    transform: translateY(6px);
+    opacity: 0.75;
+  }
+}
+
+/* Gentle floating effect - Phase 2 (Offset, creates wave effect) */
+@keyframes floatPhase2 {
+  0%, 100% {
+    transform: translateY(0px);
+    opacity: 0.75;
+  }
+  25% {
+    transform: translateY(6px);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translateY(0px);
+    opacity: 0.9;
+  }
+  75% {
+    transform: translateY(-8px);
+    opacity: 0.85;
+  }
+}
+
+/* Gentle floating effect - Phase 3 */
+@keyframes floatPhase3 {
+  0%, 100% {
+    transform: translateY(0px);
+    opacity: 0.82;
+  }
+  25% {
+    transform: translateY(-4px);
+    opacity: 0.88;
+  }
+  50% {
+    transform: translateY(0px);
+    opacity: 0.8;
+  }
+  75% {
+    transform: translateY(4px);
+    opacity: 0.8;
+  }
+}
+
+/* Float animation for error page */
+@keyframes float {
+  0%, 100% { 
+    transform: translateY(0px); 
+  }
+  50% { 
+    transform: translateY(-20px); 
+  }
+}
+
+/* Slow background shimmer */
+@keyframes shimmerSlow {
+  0%, 100% {
+    background-position: 0% center;
+  }
+  50% {
+    background-position: 100% center;
+  }
+}
+
+/* Gradient shift animation */
+@keyframes gradientShift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+/* Soft glow pulse */
+@keyframes softGlow {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────── */
+/* Animation Utility Classes */
+/* ─────────────────────────────────────────────────────────────────────── */
+
+.animate-float-phase-1 {
+  animation: floatPhase1 8s ease-in-out infinite;
+}
+
+.animate-float-phase-2 {
+  animation: floatPhase2 8s ease-in-out infinite 1.3s backwards;
+}
+
+.animate-float-phase-3 {
+  animation: floatPhase3 8s ease-in-out infinite 2.6s backwards;
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-shimmer-slow {
+  animation: shimmerSlow 6s ease-in-out infinite;
+}
+
+.animate-gradient-shift {
+  animation: gradientShift 12s ease-in-out infinite;
+}
+
+.animate-soft-glow {
+  animation: softGlow 4s ease-in-out infinite;
+}
+
+/* ============================================================================
+   4. COMPONENT DESIGN TOKENS - Semantic Styling for Cards
+   ============================================================================ */
+
+/* ─────────────────────────────────────────────────────────────────────── */
+/* Base Card Styling */
+/* Uses standard Tailwind classes in components */
+/* ─────────────────────────────────────────────────────────────────────── */
+.dashboard-card {
+  @apply bg-card border border-border rounded-lg p-6 transition-all shadow-sm;
+}
+
+.dashboard-card:hover {
+  @apply shadow-md -translate-y-0.5;
+}
+
+/* Dark mode shadows handled by Tailwind */
+/* ============================================================================
+   4. ACCESSIBILITY - A11y Enhancements
+   ============================================================================ */
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: more) {
+  .dashboard-card {
+    border-width: 2px;
+  }
+
+  .status-badge {
+    font-weight: bold;
+  }
+}
+
+/* Screen reader only */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* ============================================================================
+   5. PRINT STYLES
+   ============================================================================ */
+
+@media print {
+  @page {
+    margin: 2cm;
+  }
+
+  body {
+    background-color: white;
+    background-image: none;
+    color: black;
+  }
+
+  .dashboard-card {
+    border-color: #d1d5db;
+    page-break-inside: avoid;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+  
+  /* Disable animations in print */
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+  }
+}

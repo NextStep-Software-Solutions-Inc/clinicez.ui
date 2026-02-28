@@ -2,14 +2,14 @@
 
 import prisma from "@lib/prisma"
 import { getCachedSession } from "@actions/session.action";
-import { getHPsAction } from "@actions/hp.actions";
 import { capitalize, hasCodeProperty } from "@lib/utils";
 
 type UpsertConsultationNotePayload = {
   consultationTicketId: number;
   section: string;
   content: string;
-  hpId: number
+  hpId: number;
+  showOnPatient?: boolean;
 }
 export const upsertConsultationNotesAction = async (data: UpsertConsultationNotePayload) => {
   let message = "Consultation notes updated successfully"
@@ -17,28 +17,48 @@ export const upsertConsultationNotesAction = async (data: UpsertConsultationNote
     const session = await getCachedSession()
     if (!session) throw new Error("User not authenticated.")
 
-    const { consultationTicketId, section, content, hpId } = data
+    const { consultationTicketId, section, content, hpId, showOnPatient } = data
+
+    // Authorize: verify the current user's HP is assigned to this consultation ticket
+    // Also check that the consultation is not resolved
+    const ticket = await prisma.consultationTicket.findFirst({
+      where: {
+        id: consultationTicketId,
+        ConsultationTicketHPs: {
+          some: {
+            HealthCareProvider: {
+              User: { userId: session.user.sub }
+            }
+          }
+        },
+        NOT: {
+          ConsultationTicketAttribute: {
+            status: "RESOLVED"
+          }
+        }
+      }
+    })
+    if (!ticket) throw new Error("Consultation record not found, already resolved, or you do not have permission to update it")
+
     const updatedNotes = await prisma.consultationNote.upsert({
       where: {
         unique_consultation_section: {
           consultationTicketId,
           section,
           hpId
-        },
-        ConsultationTicket: {
-          ConsultationTicketHPs: {
-            some: {
-              HealthCareProvider: {
-                User: {
-                  userId: session.user.sub
-                }
-              }
-            }
-          }
         }
       },
-      create: { consultationTicketId, section, content, hpId },
-      update: { content }
+      create: {
+        consultationTicketId,
+        section,
+        content,
+        hpId,
+        ...(showOnPatient !== undefined ? { showOnPatient } : {}),
+      },
+      update: {
+        content,
+        ...(showOnPatient !== undefined ? { showOnPatient } : {}),
+      },
     })
     return { status: true, message: `${capitalize(section)} content updated successfully`, data: updatedNotes }
   } catch (error) {
@@ -52,6 +72,9 @@ export const upsertConsultationNotesAction = async (data: UpsertConsultationNote
 
 export type GetConsultationNotes = Awaited<ReturnType<typeof getConsultationNotesAction>>
 export const getConsultationNotesAction = async (consultationTicketId: number) => {
+  const session = await getCachedSession()
+  if (!session) throw new Error("User not authenticated.")
+
   return await prisma.consultationNote.findMany({
     where: { consultationTicketId }
   })
@@ -67,24 +90,29 @@ export const upsertConsultationNotesSettingsAction = async (data: FormData) => {
     const hpId = Number(data.get('hpId'))
     data.delete('consultationTicketId')
     data.delete('hpId')
+
+    // Authorize: verify the current user's HP is assigned to this consultation ticket
+    const ticket = await prisma.consultationTicket.findFirst({
+      where: {
+        id: consultationTicketId,
+        ConsultationTicketHPs: {
+          some: {
+            HealthCareProvider: {
+              User: { userId: session.user.sub }
+            }
+          }
+        }
+      }
+    })
+    if (!ticket) throw new Error("Consultation record not found or you do not have permission to update it")
+
     await prisma.$transaction(async (prisma) => {
       const notes = Object.fromEntries(data)
       for (const [section, showOnPatient] of Object.entries(notes)) {
         const show = showOnPatient === "true"
         await prisma.consultationNote.upsert({
           where: {
-            unique_consultation_section: { consultationTicketId, section, hpId },
-            ConsultationTicket: {
-              ConsultationTicketHPs: {
-                some: {
-                  HealthCareProvider: {
-                    User: {
-                      userId: session.user.sub
-                    }
-                  }
-                }
-              }
-            }
+            unique_consultation_section: { consultationTicketId, section, hpId }
           },
           create: {
             consultationTicketId,

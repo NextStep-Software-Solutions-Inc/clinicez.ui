@@ -1,83 +1,66 @@
-import {
-  ClerkProvider
-} from "@clerk/nextjs";
+import { ClerkProvider } from "@clerk/nextjs";
 import { SpeedInsights } from "@vercel/speed-insights/next";
-import { Plus_Jakarta_Sans } from "next/font/google";
 import { Toaster as SonnerToaster } from "sonner";
 import { Toaster } from "@components/ui/toaster";
-
-import { SWRProvider } from "../provider/swr-provider";
-import JotaiProvider from "../provider/JotaiProvider";
-import SyncTokenClient from "@components/SyncTokenClient";
-import { getCachedSession } from "@actions/session.action";
-import BypassAutoplay from "@components/BypassAutoplay";
 import dynamic from "next/dynamic";
 import { Analytics } from "@vercel/analytics/react";
-
+import type { Metadata } from "next";
 import "@styles/globals.css";
-import { findOrCreateUserAction } from "@actions/users/user.action";
-import { redirect } from "next/navigation";
+
+import { SWRProvider } from "@provider/swr-provider";
+import JotaiProvider from "@provider/JotaiProvider";
+import { ThemeProvider } from "@provider/theme-provider";
+import SyncTokenClient from "@components/SyncTokenClient";
+import BypassAutoplay from "@components/BypassAutoplay";
+
 const HotJar = dynamic(() => import("@components/HotJar"), { ssr: true });
 
-const plusJakartaSans = Plus_Jakarta_Sans({ subsets: ["latin"] });
-
-export const maxDuration = 40;
-export const metadata = {
+export const metadata: Metadata = {
   title: "Clinic EZ",
   description: "Optimized Healthcare Management System"
 };
+
 interface Props {
   children: React.ReactNode;
 }
 
-export default async function RootLayout({ children }: Props) {
+/**
+ * Root Layout
+ * 
+ * Global layout wrapping all routes (v1 and v2).
+ * Contains:
+ * - Clerk authentication
+ * - Global CSS
+ * - Global providers: Jotai, SWR, Sonner
+ * - Analytics: HotJar, Speed Insights, Vercel Analytics
+ * - UI: Toasters for notifications
+ * 
+ * Route-specific layouts (v1, v2) inherit these providers.
+ */
+export default function RootLayout({ children }: Props) {
   const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
-  const session = await getCachedSession();
-  if (session) {
-    const dbUser = await findOrCreateUserAction();
-    if (!dbUser.data) redirect(`/sign-in?error=user-sync-error`);
-  }
-
   return (
-    <ClerkProvider publishableKey={publishableKey} >
-      <html lang="en">
-        <HotJar />
-        <body className={`${plusJakartaSans.className}`}>
-          <BypassAutoplay />
-          <JotaiProvider>
-            <SyncTokenClient />
-            {/* {!!session && <SyncSessionClinic/>} */}
-            <SWRProvider>
-              {children}
-              <SpeedInsights />
-              <Analytics />
-              <SonnerToaster richColors />
-              <Toaster />
-            </SWRProvider>
-          </JotaiProvider>
+    <ClerkProvider publishableKey={publishableKey} signInForceRedirectUrl="/?signin=1">
+      <html lang="en" suppressHydrationWarning>
+        <head />
+        <body>
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+            <BypassAutoplay />
+            <HotJar />
+            <JotaiProvider>
+              <SyncTokenClient />
+              <SWRProvider>
+                {children}
+                <SpeedInsights />
+                <Analytics />
+                <SonnerToaster richColors />
+                <Toaster />
+              </SWRProvider>
+            </JotaiProvider>
+          </ThemeProvider>
         </body>
       </html>
     </ClerkProvider>
   );
-
-  // return (
-  //   <html lang="en">
-  //     <HotJar />
-  //     <body className={`${plusJakartaSans.className}`}>
-  //       <BypassAutoplay />
-  //       <JotaiProvider>
-  //         <SyncTokenClient />
-  //         {/* {!!session && <SyncSessionClinic/>} */}
-  //         <SWRProvider>
-  //           {children}
-  //           <SpeedInsights />
-  //           <Analytics />
-  //           <SonnerToaster richColors />
-  //           <Toaster />
-  //         </SWRProvider>
-  //       </JotaiProvider>
-  //     </body>
-  //   </html>
-  // );
 }

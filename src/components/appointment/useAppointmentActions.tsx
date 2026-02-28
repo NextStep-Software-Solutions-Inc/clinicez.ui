@@ -8,7 +8,7 @@ import DeclineAppointmentAssignment from "@components/appointment/DeclineAppoint
 import CreateConsultationTicketModal from './CreateConsultationTicketModal';
 import { useHPs } from '@hooks/useHP';
 import { useUser } from '@clerk/nextjs';
-import AddVitalSignsModal from '../../app/(main)/user/[user]/phr/vitals/AddVitalSignsModal';
+import { AddVitalSignsModal } from "@app/(v1)/(main)/user/[user]/phr/vitals";
 import { Button } from '@components/ui/button';
 import { Activity } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@components/ui/tooltip';

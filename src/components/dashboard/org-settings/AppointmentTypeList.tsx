@@ -4,7 +4,7 @@ import { deleteAppointmentTypeAction, GetAppointmentTypes } from "@actions/appoi
 import { Button } from "@components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@components/ui/card";
 import Each from "@components/utils/Each";
-import { useOrgAppointmentTypes } from "@/hooks/useClinicAppointmentCategory";
+import { useClinicAppointmentTypes } from "@/hooks/useClinicAppointmentCategory";
 import { Trash } from "lucide-react";
 import { useParams } from "next/navigation";
 import React from "react";
@@ -14,7 +14,7 @@ import UpdateAppointmentTypeModal from "./modal/UpdateAppointmentTypeModal";
 
 export default function AppointmentTypeList() {
   const params = useParams<{clinicUid: string}>()
-  const {data: appointmentTypes, isLoading, mutate} = useOrgAppointmentTypes(params.clinicUid)
+  const {data: appointmentTypes, isLoading, mutate} = useClinicAppointmentTypes(params.clinicUid)
 
   const deleteAppointmentType = (id: number) => {
     toast.promise(deleteAppointmentTypeAction(id), {

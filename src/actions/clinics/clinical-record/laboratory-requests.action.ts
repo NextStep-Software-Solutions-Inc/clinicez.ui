@@ -10,6 +10,7 @@ import { validateHealthcareProviderAuth, USER_WITH_HEALTHCARE_PROVIDERS_SELECT }
 import { getPermissionsAction } from "@/actions/permission.action";
 import { PERMISSIONS } from "@/lib/permissions";
 import { getHPsAction, GetHPsType } from "@/actions/hp.actions";
+import { createNotification } from "@/actions/notifications/notification.action";
 
 export type GetLaboratoryRequestsFilters = {
   clinicUid?: string;
@@ -332,6 +333,24 @@ export const createLaboratoryRequestAction = withErrorHandling(async (input: Cre
 
     return request;
   });
+
+  // Notify the patient a lab request was issued
+  try {
+    const clinicPatient = await prisma.clinicPatient.findUnique({
+      where: { id: patientId },
+      select: { patientId: true, Clinic: { select: { name: true } } },
+    });
+    if (clinicPatient) {
+      await createNotification({
+        userId: clinicPatient.patientId,
+        type: "DIAGNOSTIC_ISSUED",
+        title: "Laboratory Request Issued",
+        message: `A laboratory request has been issued for you at ${clinicPatient.Clinic.name}.`,
+      });
+    }
+  } catch {
+    // non-critical
+  }
 
   return { message: "Successfully created laboratory request", data: result };
 });

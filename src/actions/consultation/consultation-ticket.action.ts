@@ -12,12 +12,13 @@ import { getHPsAction, GetHPsType } from '@actions/hp.actions';
 type CreateConsultationTicketPayload = {
   systemId: number;
   appointmentId?: number;
+  clinicPatientId?: number;
   subject?: string;
   clinicUid: string;
   hpIds: number[]
 }
 
-export const createConsultationTicketAction = withErrorHandling(async ({ systemId, appointmentId, clinicUid, subject, hpIds }: CreateConsultationTicketPayload) => {
+export const createConsultationTicketAction = withErrorHandling(async ({ systemId, appointmentId, clinicPatientId, clinicUid, subject, hpIds }: CreateConsultationTicketPayload) => {
 
   const session = await getCachedSession()
   if (!session) throw new Error("Unauthorized")
@@ -46,9 +47,16 @@ export const createConsultationTicketAction = withErrorHandling(async ({ systemI
         System: {
           connect: { id: systemId }
         },
-        Appointment: {
-          connect: { id: appointmentId }
-        },
+        ...(appointmentId ? {
+          Appointment: {
+            connect: { id: appointmentId }
+          }
+        } : {}),
+        ...(clinicPatientId ? {
+          ClinicPatient: {
+            connect: { id: clinicPatientId }
+          }
+        } : {}),
         Clinic: {
           connect: { clinicUid }
         },
@@ -815,6 +823,12 @@ export const updateConsultationTicketAction = withErrorHandling(async ({ consult
             }
           }
         }
+      },
+      // Block updates on resolved consultations
+      NOT: {
+        ConsultationTicketAttribute: {
+          status: "RESOLVED"
+        }
       }
     },
     data: { subject }
@@ -822,7 +836,7 @@ export const updateConsultationTicketAction = withErrorHandling(async ({ consult
   return { message: "Consultation Ticket updated successfully", data: undefined }
 
 }, async error => {
-  if (hasCodeProperty(error) && error.code === 'P2025') return "Consultation record not found or you do not have permission to update it";
+  if (hasCodeProperty(error) && error.code === 'P2025') return "Consultation record not found, already resolved, or you do not have permission to update it";
 })
 
 export const deleteConsultationTicketAction = withErrorHandling(async (consultationId: number) => {

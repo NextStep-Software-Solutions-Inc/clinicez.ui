@@ -38,8 +38,8 @@ export const InsertAttachment = ({isFirstStep, isLastStep, nextStep, prevStep}: 
 
   return (
     <form action={action}>
-      <div className="prose max-w-full shadow-lg w-full p-8 bg-white rounded-md">
-        <h2>Insert Attachment</h2>
+      <div className="prose max-w-full shadow-lg w-full p-8 bg-white/20 dark:bg-gray-800/20 rounded-md">
+        <h2 className="dark:text-white/50">Insert Attachment</h2>
       
         <FileUploader
           value={bookAppointment.attachments ?? []}

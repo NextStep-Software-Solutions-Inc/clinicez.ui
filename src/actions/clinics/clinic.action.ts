@@ -5,6 +5,7 @@ import prisma from "@lib/prisma";
 import { cache } from "react";
 import { withErrorHandling } from "@/lib/with-error-handling";
 import { sessionCheck } from "@/lib/auth";
+import { getCachedSession } from "@actions/session.action";
 
 type CreateClinicPayload = {
   clinicUid: string;
@@ -270,3 +271,218 @@ export const createLaboratoryRequestAction = withErrorHandling(async (data: Crea
 
   return { message: "Laboratory request created successfully", data: newLaboratoryRequest };
 });
+
+/**
+ * Get the user's default clinic, or first active clinic if no default is set
+ */
+export const getMyDefaultClinicAction = cache(
+  withErrorHandling(async () => {
+    const session = await getCachedSession();
+    if (!session) throw new Error("User not authenticated.");
+
+    // First, check if user has a default clinic through UserDefaultClinicRole
+    const defaultClinicRole = await prisma.userDefaultClinicRole.findFirst({
+      where: {
+        User: {
+          userId: session.user.sub
+        },
+        isActive: true
+      },
+      select: {
+        Clinic: {
+          select: {
+            id: true,
+            name: true,
+            clinicUid: true
+          }
+        }
+      }
+    });
+
+    if (defaultClinicRole) {
+      return {
+        message: "Default clinic retrieved",
+        data: {
+          Clinic: defaultClinicRole.Clinic
+        }
+      };
+    }
+
+    // Fallback: if no default clinic, get first active clinic membership
+    const firstClinic = await prisma.clinicMember.findFirst({
+      where: {
+        User: {
+          userId: session.user.sub
+        },
+        Clinic: {
+          isActive: true
+        },
+        isActive: true,
+        status: "ACTIVE",
+        deletedAt: null
+      },
+      select: {
+        Clinic: {
+          select: {
+            id: true,
+            name: true,
+            clinicUid: true
+          }
+        }
+      },
+      orderBy: {
+        createdAt: "asc"
+      }
+    });
+
+    if (!firstClinic) {
+      return {
+        message: "No active clinic memberships found",
+        data: null
+      };
+    }
+
+    return {
+      message: "First clinic retrieved",
+      data: {
+        Clinic: firstClinic.Clinic
+      }
+    };
+  })
+);
+
+export type GetClinicWithUserRole = Awaited<ReturnType<typeof getClinicWithUserRoleAction>>;
+export const getClinicWithUserRoleAction = withErrorHandling(cache(async (clinicUid: string) => {
+  const session = await getCachedSession();
+  if (!session) throw new Error("User not authenticated");
+
+  // Fetch the clinic along with the tenant owner info
+  const clinic = await prisma.clinic.findFirst({
+    where: {
+      isActive: true,
+      clinicUid
+    },
+    select: {
+      id: true,
+      clinicUid: true,
+      name: true,
+      description: true,
+      customUrl: true,
+      logo: true,
+      email: true,
+      Tenant: {
+        select: {
+          Owner: {
+            select: {
+              userId: true
+            }
+          }
+        }
+      }
+    }
+  });
+
+  if (!clinic) {
+    throw new Error(`Clinic with UID ${clinicUid} not found`);
+  }
+
+  // Fetch user's role in this clinic (if they're a member)
+  const clinicMember = await prisma.clinicMember.findFirst({
+    where: {
+      Clinic: {
+        clinicUid
+      },
+      User: {
+        userId: session.user.sub
+      },
+      isActive: true,
+      status: "ACTIVE",
+      deletedAt: null
+    },
+    select: {
+      Role: {
+        select: {
+          id: true,
+          name: true,
+          canAccessDashboard: true
+        }
+      }
+    }
+  });
+
+  const isTenantOwner = clinic.Tenant?.Owner?.userId === session.user.sub;
+
+  return {
+    message: "Clinic with user role retrieved successfully",
+    data: {
+      clinic: {
+        id: clinic.id,
+        clinicUid: clinic.clinicUid,
+        name: clinic.name,
+        description: clinic.description,
+        customUrl: clinic.customUrl,
+        logo: clinic.logo,
+        email: clinic.email,
+      },
+      userRole: clinicMember?.Role || null,
+      isTenantOwner
+    }
+  };
+}));
+
+export type GetUserClinicsWithRoles = Awaited<ReturnType<typeof getUserClinicsWithRolesAction>>;
+export const getUserClinicsWithRolesAction = withErrorHandling(cache(async () => {
+  const session = await getCachedSession();
+  if (!session) throw new Error("User not authenticated");
+
+  // Fetch all clinics where user is an active member with their roles
+  const clinicMemberships = await prisma.clinicMember.findMany({
+    where: {
+      User: {
+        userId: session.user.sub
+      },
+      isActive: true,
+      status: "ACTIVE",
+      deletedAt: null,
+      Clinic: {
+        isActive: true
+      }
+    },
+    select: {
+      Clinic: {
+        select: {
+          id: true,
+          clinicUid: true,
+          name: true,
+          logo: true
+        }
+      },
+      Role: {
+        select: {
+          id: true,
+          name: true,
+          canAccessDashboard: true
+        }
+      }
+    },
+    orderBy: {
+      Clinic: {
+        name: "asc"
+      }
+    }
+  });
+
+  const clinics = clinicMemberships.map(membership => ({
+    id: membership.Clinic.id,
+    clinicUid: membership.Clinic.clinicUid,
+    name: membership.Clinic.name,
+    logo: membership.Clinic.logo,
+    role: membership.Role.name,
+    canAccessDashboard: membership.Role.canAccessDashboard
+  }));
+
+  return {
+    message: "User clinics with roles retrieved successfully",
+    data: clinics
+  };
+}));

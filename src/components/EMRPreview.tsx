@@ -1,12 +1,11 @@
 "use client";
 
 import { memo } from "react";
-import { Picture } from "../app/(main)/user/[user]/phr/Picture";
+import { Picture } from "@components/phr/Picture";
 import { Separator } from "./ui/separator";
-import AllergiesForm from "../app/(main)/user/[user]/phr/allergies/AllergiesForm";
-import { VaccinationForm } from "../app/(main)/user/[user]/phr/vaccination-immunization/VaccinationForm";
-import DisabilitiesForm from "../app/(main)/user/[user]/phr/disabilities/DisabilitiesForm";
-import IllnessesForm from "../app/(main)/user/[user]/phr/disabilities/IllnessesForm";
+import { AllergiesForm } from "@app/(v1)/(main)/user/[user]/phr/allergies";
+import { VaccinationForm } from "@app/(v1)/(main)/user/[user]/phr/vaccination-immunization";
+import { DisabilitiesForm, IllnessesForm } from "@app/(v1)/(main)/user/[user]/phr/disabilities";
 import PageLoading from "./PageLoading";
 import { LabelValue } from "./LabelValue";
 import { useUser } from "@hooks/useUser";
@@ -14,7 +13,7 @@ import { useAllergies } from "@hooks/useAllergy";
 import { useDisabilities } from "@hooks/useDisability";
 import { useIllnesses } from "@hooks/useIllness";
 import { useVaccinations } from "@hooks/useVaccination";
-import RecentVitalSigns from "../app/(main)/user/[user]/phr/vitals/RecentVitalSigns";
+import { RecentVitalSigns } from "@app/(v1)/(main)/user/[user]/phr/vitals";
 import { useUserVitalSigns } from "@hooks/useUserVitalSign";
 import { useParams } from "next/navigation";
 import EMRFilesWrapper from "./EMRFilesWrapper";

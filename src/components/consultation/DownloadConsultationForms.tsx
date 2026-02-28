@@ -35,13 +35,13 @@ const DownloadConsultationForms: React.FC<DownloadConsultationFormsProps> = ({
   }
 
   const handleSAPDownload = async () => {
-    toast.promise(promiseWrapper(downloadSAPAction)(userId), {
+    toast.promise(promiseWrapper(downloadSAPAction)(userId, consultationTicketId), {
       loading: `Generating SAP form for ${patientName || 'patient'}...`,
       success: async (res) => {
         const data = res.data
         if (!data) throw new Error("No PDF data received from server")
         toBlobDownload(data.pdfData, data.filename)
-        return "SAP Form downloaded successfully (empty)"
+        return "SAP Form downloaded successfully"
       },
       error: "Unable to generate SAP form. Please try again.",
     })

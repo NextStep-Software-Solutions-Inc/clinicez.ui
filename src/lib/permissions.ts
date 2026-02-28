@@ -11,7 +11,31 @@ export const PERMISSIONS = {
     "SUPER_ADMIN": {
       name: "super_admin",
       description: "User has super admin privileges.",
-    }
+    },
+    "UPDATE:USER:PROFILE:OWN": {
+      name: "update:user:profile:own",
+      description: "User can update their own profile information.",
+    },
+    "UPDATE:USER:PROFILE:ANY": {
+      name: "update:user:profile:any",
+      description: "User can update any user's profile information (admin/superadmin).",
+    },
+    "UPDATE:USER:ONBOARDING_STATUS": {
+      name: "update:user:onboarding_status",
+      description: "User can update onboarding status for users.",
+    },
+    "COMPLETE:USER:ONBOARDING_STEP": {
+      name: "complete:user:onboarding_step",
+      description: "User can complete onboarding steps.",
+    },
+    "CLAIM:USER:SHELL_ACCOUNT": {
+      name: "claim:user:shell_account",
+      description: "User can claim a shell account and convert it to a full account.",
+    },
+    "VIEW:USER:ONBOARDING_STATUS": {
+      name: "view:user:onboarding_status",
+      description: "User can view onboarding status and steps.",
+    },
   },
   CLINIC: {
     "CONFIRM:CLINIC:APPOINTMENT": {
@@ -182,6 +206,143 @@ export const PERMISSIONS = {
       name: "update:clinic:permissions",
       description: "User can update permissions within the clinic.",
     },
+    "CREATE:CLINIC:PATIENT": {
+      name: "create:clinic:patient",
+      description: "User can create and add new patients to the clinic.",
+    },
+    "READ:CLINIC:PATIENT:ALL": {
+      name: "read:clinic:patient:all",
+      description: "User can read all patient records within the clinic.",
+    },
+    "READ:CLINIC:PATIENT:OWN": {
+      name: "read:clinic:patient:own",
+      description: "User can read their own patient record within the clinic.",
+    },
+    "UPDATE:CLINIC:PATIENT:ALL": {
+      name: "update:clinic:patient:all",
+      description: "User can update any patient record within the clinic.",
+    },
+    "UPDATE:CLINIC:PATIENT:OWN": {
+      name: "update:clinic:patient:own",
+      description: "User can update their own patient record within the clinic.",
+    },
+    "UPDATE:CLINIC:PATIENT:ONBOARDING_STATUS": {
+      name: "update:clinic:patient:onboarding_status",
+      description: "User can update patient onboarding status within the clinic.",
+    },
+    "COMPLETE:CLINIC:PATIENT:ONBOARDING": {
+      name: "complete:clinic:patient:onboarding",
+      description: "User can complete patient onboarding process within the clinic.",
+    },
+    "VIEW:CLINIC:AUDIT_LOG": {
+      name: "view:clinic:audit_log",
+      description: "User can view audit logs within the clinic.",
+    },
+    // --- Appointment Cancel (distinct from Reject) ---
+    "CANCEL:CLINIC:APPOINTMENT": {
+      name: "cancel:clinic:appointment",
+      description: "User can cancel an appointment within the clinic.",
+    },
+    // --- Clinic Settings & Configuration ---
+    "READ:CLINIC:SETTINGS": {
+      name: "read:clinic:settings",
+      description: "User can read clinic settings, appointment config, consultation config, modes, and types.",
+    },
+    "UPDATE:CLINIC:SETTINGS": {
+      name: "update:clinic:settings",
+      description: "User can update clinic settings, appointment config, consultation config, modes, and types.",
+    },
+    // --- Schedule Management ---
+    "READ:CLINIC:SCHEDULE:OWN": {
+      name: "read:clinic:schedule:own",
+      description: "User can read their own schedule within the clinic.",
+    },
+    "READ:CLINIC:SCHEDULE:ALL": {
+      name: "read:clinic:schedule:all",
+      description: "User can read all schedules within the clinic.",
+    },
+    "WRITE:CLINIC:SCHEDULE:OWN": {
+      name: "write:clinic:schedule:own",
+      description: "User can create or update their own schedule within the clinic.",
+    },
+    "WRITE:CLINIC:SCHEDULE:ALL": {
+      name: "write:clinic:schedule:all",
+      description: "User can create or update any schedule within the clinic.",
+    },
+    // --- Vital Signs (Read/Delete supplement the existing WRITE) ---
+    "READ:CLINIC:VITAL_SIGNS": {
+      name: "read:clinic:vital_signs",
+      description: "User can read vital signs within the clinic.",
+    },
+    "DELETE:CLINIC:VITAL_SIGNS": {
+      name: "delete:clinic:vital_signs",
+      description: "User can delete vital signs within the clinic.",
+    },
+    // --- Consultation Notes ---
+    "WRITE:CLINIC:CONSULTATION_NOTE": {
+      name: "write:clinic:consultation_note",
+      description: "User can write or update consultation notes within the clinic.",
+    },
+    "READ:CLINIC:CONSULTATION_NOTE": {
+      name: "read:clinic:consultation_note",
+      description: "User can read consultation notes within the clinic.",
+    },
+    // --- Interventions ---
+    "WRITE:CLINIC:INTERVENTION": {
+      name: "write:clinic:intervention",
+      description: "User can create interventions within the clinic.",
+    },
+    "READ:CLINIC:INTERVENTION": {
+      name: "read:clinic:intervention",
+      description: "User can read interventions within the clinic.",
+    },
+    // --- Dashboard, Analytics & Reports ---
+    "VIEW:CLINIC:DASHBOARD": {
+      name: "view:clinic:dashboard",
+      description: "User can view the clinic dashboard.",
+    },
+    "VIEW:CLINIC:ANALYTICS": {
+      name: "view:clinic:analytics",
+      description: "User can view clinic analytics data.",
+    },
+    "VIEW:CLINIC:REPORTS": {
+      name: "view:clinic:reports",
+      description: "User can view and generate clinic reports.",
+    },
+    // --- Clinic Member Management ---
+    "READ:CLINIC:MEMBER:ALL": {
+      name: "read:clinic:member:all",
+      description: "User can read all clinic member records.",
+    },
+    "CREATE:CLINIC:MEMBER": {
+      name: "create:clinic:member",
+      description: "User can add new members to the clinic.",
+    },
+    "UPDATE:CLINIC:MEMBER": {
+      name: "update:clinic:member",
+      description: "User can update clinic member status or role.",
+    },
+    "REMOVE:CLINIC:MEMBER": {
+      name: "remove:clinic:member",
+      description: "User can remove members from the clinic.",
+    },
+    // --- Clinical Records ---
+    "CREATE:CLINIC:MEDICAL_CERTIFICATE": {
+      name: "create:clinic:medical_certificate",
+      description: "User can create medical certificates within the clinic.",
+    },
+    "CREATE:CLINIC:REFERRAL_SLIP": {
+      name: "create:clinic:referral_slip",
+      description: "User can create referral slips within the clinic.",
+    },
+    "CREATE:CLINIC:LAB_REQUEST": {
+      name: "create:clinic:lab_request",
+      description: "User can create laboratory requests within the clinic.",
+    },
+    "CREATE:CLINIC:IMAGING_REQUEST": {
+      name: "create:clinic:imaging_request",
+      description: "User can create imaging study requests within the clinic.",
+    },
   },
   ORGANIZATION: {
     "UPDATE:ORG:INFO": {
@@ -210,3 +371,169 @@ export const PERMISSIONS = {
     },
   },
 }
+
+/**
+ * ============================================================================
+ * HEALTH RECORDS EDITING - ROLE-BASED PERMISSION UTILITIES
+ * ============================================================================
+ * User-centric: Safe, easy-to-use helpers for permission checks throughout the app
+ */
+
+import type {
+  EditPermissionLevel,
+  FieldEditPermission,
+} from '@/types/edit-permissions'
+import {
+  UserRole,
+  canEditField,
+  canEditSection,
+  getEditableSections,
+  determineEditPermission,
+  isEditingSelfRecord,
+  demographicsFieldPermissions,
+} from '@/types/edit-permissions'
+
+/**
+ * Check if current user can edit a specific field
+ * User-centric: Safe function with fallback to read-only
+ */
+export function userCanEditField(
+  currentUserId: string | null,
+  targetUserId: string | null,
+  userRole: UserRole,
+  fieldName: string,
+  fieldPermissions: FieldEditPermission[] = demographicsFieldPermissions
+): boolean {
+  const permission = determineEditPermission(currentUserId, targetUserId, userRole)
+  return canEditField(permission, fieldName, fieldPermissions)
+}
+
+/**
+ * Check if current user can edit an entire section
+ * User-centric: Used to show/hide edit buttons and sections
+ */
+export function userCanEditSection(
+  currentUserId: string | null,
+  targetUserId: string | null,
+  userRole: UserRole,
+  sectionName: string
+): boolean {
+  const permission = determineEditPermission(currentUserId, targetUserId, userRole)
+  return canEditSection(permission, sectionName)
+}
+
+/**
+ * Get list of sections user can edit
+ * User-centric: Used to render edit UI conditionally
+ */
+export function getUserEditableSections(
+  currentUserId: string | null,
+  targetUserId: string | null,
+  userRole: UserRole
+): string[] {
+  const permission = determineEditPermission(currentUserId, targetUserId, userRole)
+  return getEditableSections(permission)
+}
+
+/**
+ * Check if user is editing their own profile
+ * User-centric: Determine which messaging to show
+ */
+export function isUserEditingOwnProfile(
+  currentUserId: string | null,
+  targetUserId: string | null
+): boolean {
+  return isEditingSelfRecord(currentUserId, targetUserId)
+}
+
+/**
+ * Get permission level for current user
+ * User-centric: Used for logging, debugging, permission checks
+ */
+export function getUserPermissionLevel(
+  currentUserId: string | null,
+  targetUserId: string | null,
+  userRole: UserRole
+): EditPermissionLevel {
+  return determineEditPermission(currentUserId, targetUserId, userRole)
+}
+
+/**
+ * Verify user has permission before showing edit UI
+ * User-centric: Security check - called before rendering edit components
+ */
+export function verifyEditPermission(
+  currentUserId: string | null,
+  targetUserId: string | null,
+  userRole: UserRole,
+  requiredPermission: EditPermissionLevel
+): boolean {
+  const actualPermission = determineEditPermission(currentUserId, targetUserId, userRole)
+
+  // Permission hierarchy: more permissive = higher in list
+  const permissionHierarchy = [
+    'SELF_EDIT',
+    'PROFESSIONAL_EDIT',
+    'CLINIC_ADMIN_EDIT',
+    'READONLY',
+    'DENIED',
+  ] as const
+
+  const actualLevel = permissionHierarchy.indexOf(actualPermission as any)
+  const requiredLevel = permissionHierarchy.indexOf(requiredPermission as any)
+
+  // User has permission if their level is more or equally permissive
+  return actualLevel <= requiredLevel
+}
+
+/**
+ * Get help text for field based on permission level
+ * User-centric: Explains why field is read-only or what user can do
+ */
+export function getFieldHelpText(
+  fieldName: string,
+  permission: EditPermissionLevel,
+  fieldPermissions: FieldEditPermission[] = demographicsFieldPermissions
+): string {
+  const field = fieldPermissions.find((f) => f.fieldName === fieldName)
+  if (!field) return ""
+
+  if (canEditField(permission, fieldName, fieldPermissions)) {
+    return field.helpText || ""
+  }
+
+  // Explain why field is read-only
+  if (field.readOnlyFor.includes(permission)) {
+    if (permission === 'READONLY' as any) {
+      return "You have read-only access to this record"
+    }
+    if (permission === 'PROFESSIONAL_EDIT' as any) {
+      return "This field can only be updated by the patient"
+    }
+  }
+
+  return ""
+}
+
+/**
+ * Log permission check for audit trail
+ * User-centric: Security logging
+ */
+export function logPermissionCheck(
+  action: string,
+  currentUserId: string | null,
+  targetUserId: string | null,
+  userRole: UserRole,
+  allowed: boolean
+): void {
+  const permission = determineEditPermission(currentUserId, targetUserId, userRole)
+  const timestamp = new Date().toISOString()
+
+  console.log(
+    `[PERMISSION CHECK] ${timestamp} - Action: ${action}, Permission: ${permission}, Allowed: ${allowed}`
+  )
+
+  // In production, this would send to logging service
+  // await logToAuditTrail({ action, currentUserId, targetUserId, userRole, permission, allowed, timestamp })
+}
+

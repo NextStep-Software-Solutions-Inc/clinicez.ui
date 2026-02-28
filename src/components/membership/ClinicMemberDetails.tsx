@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Picture } from "../../app/(main)/user/[user]/phr/Picture";
+import { Picture } from "@components/phr/Picture";
 import { useUser as useDBUser } from "@hooks/useUser";
 import { notFound } from "next/navigation";
 import { LabelValue } from "@components/LabelValue";

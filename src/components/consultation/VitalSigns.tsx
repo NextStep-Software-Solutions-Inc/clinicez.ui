@@ -1,5 +1,5 @@
 import { GetConsultationTicket } from "@actions/consultation/consultation-ticket.action";
-import RecentVitalSigns from "../../app/(main)/user/[user]/phr/vitals/RecentVitalSigns";
+import { RecentVitalSigns } from "@app/(v1)/(main)/user/[user]/phr/vitals";
 import { getUserVitalSignsAction } from "@actions/vitals.action";
 
 interface VitalSignsProps {

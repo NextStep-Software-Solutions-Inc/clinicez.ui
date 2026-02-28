@@ -133,7 +133,7 @@ export default function OrganizationRolesTable({ initialData, orgId }: Organizat
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2 flex-1">
           <Input
             placeholder="Search roles..."
@@ -146,13 +146,13 @@ export default function OrganizationRolesTable({ initialData, orgId }: Organizat
             <Search className="h-4 w-4" />
           </Button>
         </div>
-        <Button onClick={() => handleOpenDialog()}>
+        <Button onClick={() => handleOpenDialog()} className="w-full sm:w-auto">
           <Plus className="h-4 w-4 mr-2" />
           Add Role
         </Button>
       </div>
 
-      <div className="border rounded-md">
+      <div className="border rounded-md overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -219,7 +219,7 @@ export default function OrganizationRolesTable({ initialData, orgId }: Organizat
       </div>
 
       {data.totalPages > 1 && (
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-muted-foreground">
             Showing {(data.pageNumber - 1) * data.pageSize + 1} to{" "}
             {Math.min(data.pageNumber * data.pageSize, data.total)} of {data.total} roles

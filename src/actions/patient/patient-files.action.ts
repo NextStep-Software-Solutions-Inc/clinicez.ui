@@ -301,13 +301,19 @@ export const deletePatientFolderAction = withErrorHandling(
   async ({ folderId }: { folderId: number }) => {
     const user = await getAuthenticatedUser();
 
+    // Allow deletion only if:
+    // - The caller is the creator (provider who created the folder), OR
+    // - The caller is the patient owner AND the folder was not created by a provider
     const folder = await prismaClient.folder.findFirst({
       where: {
         id: folderId,
         isActive: true,
         OR: [
-          { userId: user.id },
+          // Creator (e.g. a provider) can always delete what they created
           { createdByUserId: user.id },
+          // Patient owner can delete only if no provider created it
+          { userId: user.id, createdByUserId: null },
+          { userId: user.id, createdByUserId: user.id },
         ],
       },
       select: { id: true },
@@ -461,13 +467,19 @@ export const deletePatientFileAction = withErrorHandling(
   async ({ fileId }: { fileId: number }) => {
     const user = await getAuthenticatedUser();
 
+    // Allow deletion only if:
+    // - The caller is the creator (provider who uploaded the file), OR
+    // - The caller is the patient owner (folder owner) AND the file was not uploaded by a provider
     const file = await prismaClient.file.findFirst({
       where: {
         id: fileId,
         isActive: true,
         OR: [
-          { Folder: { userId: user.id, isActive: true } },
+          // Creator (e.g. a provider) can always delete what they uploaded
           { createdByUserId: user.id },
+          // Patient owner can delete only if no provider uploaded it
+          { Folder: { userId: user.id, isActive: true }, createdByUserId: null },
+          { Folder: { userId: user.id, isActive: true }, createdByUserId: user.id },
         ],
       },
       select: { id: true },

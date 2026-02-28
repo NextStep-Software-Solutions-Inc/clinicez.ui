@@ -699,9 +699,11 @@ model File {
 model FileSetting {
   id               Int               @id @default(autoincrement())
   fileId           Int               @unique
+  scopeClinicId    Int?
   isPublic         Boolean           @default(false)
   privacy          FilePrivacy       @default(PRIVATE)
   File             File              @relation(fields: [fileId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Clinic           Clinic?           @relation("FileSettingClinic", fields: [scopeClinicId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   FileClinicShares FileClinicShare[]
 }
 
@@ -1247,6 +1249,7 @@ model Clinic {
   FolderSettings                  FolderSetting[]
   FolderClinicShares              FolderClinicShare[]
   FileClinicShares                FileClinicShare[]
+  FileSettings                    FileSetting[]                   @relation("FileSettingClinic")
   Interventions                   Intervention[]
   Medications                     Medication[]
   PreAssessmentNotes              PreAssessmentNote[]

@@ -96,6 +96,7 @@ export const getPatientFoldersAction = withErrorHandling(async () => {
           id: true,
           privacy: true,
           isPublic: true,
+          scopeClinicId: true,
           FolderClinicShares: {
             select: {
               id: true,
@@ -131,6 +132,7 @@ export const getPatientFoldersAction = withErrorHandling(async () => {
               id: true,
               privacy: true,
               isPublic: true,
+              scopeClinicId: true,
               FileClinicShares: {
                 select: {
                   id: true,
@@ -191,6 +193,7 @@ export const createPatientFolderAction = withErrorHandling(
               id: true,
               privacy: true,
               isPublic: true,
+              scopeClinicId: true,
               FolderClinicShares: {
                 select: {
                   id: true,
@@ -224,6 +227,7 @@ export const createPatientFolderAction = withErrorHandling(
                   id: true,
                   privacy: true,
                   isPublic: true,
+                  scopeClinicId: true,
                   FileClinicShares: {
                     select: {
                       id: true,
@@ -251,9 +255,23 @@ export const updatePatientFolderPrivacyAction = withErrorHandling(
 
     const folder = await prismaClient.folder.findFirst({
       where: { id: folderId, userId: user.id, isActive: true },
-      select: { id: true, FolderSetting: { select: { id: true } } },
+      select: {
+        id: true,
+        userId: true,
+        createdByUserId: true,
+        FolderSetting: { select: { id: true } },
+      },
     });
     if (!folder) throw new Error("Folder not found");
+
+    // Patient cannot set provider-created folders to PRIVATE
+    const isProviderCreated =
+      folder.createdByUserId !== null && folder.createdByUserId !== folder.userId;
+    if (isProviderCreated && privacy === "PRIVATE") {
+      throw new Error(
+        "Cannot set a provider-created folder to private"
+      );
+    }
 
     if (folder.FolderSetting) {
       await prismaClient.folderSetting.update({
@@ -281,10 +299,29 @@ export const renamePatientFolderAction = withErrorHandling(
     if (!name?.trim()) throw new Error("Folder name is required");
 
     const folder = await prismaClient.folder.findFirst({
-      where: { id: folderId, userId: user.id, isActive: true },
-      select: { id: true },
+      where: { id: folderId, isActive: true },
+      select: {
+        id: true,
+        userId: true,
+        FolderSetting: { select: { id: true, scopeClinicId: true } },
+      },
     });
     if (!folder) throw new Error("Folder not found");
+
+    // Patient who owns the folder OR a member of the creator's clinic can rename
+    let hasAccess = folder.userId === user.id;
+    if (!hasAccess && folder.FolderSetting?.scopeClinicId) {
+      const membership = await prismaClient.clinicMember.findFirst({
+        where: {
+          userId: user.id,
+          clinicId: folder.FolderSetting.scopeClinicId,
+          isActive: true,
+        },
+        select: { id: true },
+      });
+      hasAccess = membership !== null;
+    }
+    if (!hasAccess) throw new Error("Folder not found");
 
     const updated = await prismaClient.folder.update({
       where: { id: folderId },
@@ -310,7 +347,7 @@ export const deletePatientFolderAction = withErrorHandling(
         createdByUserId: true,
         FolderSetting: {
           select: {
-            FolderClinicShares: { select: { clinicId: true } },
+            scopeClinicId: true,
           },
         },
       },
@@ -328,17 +365,17 @@ export const deletePatientFolderAction = withErrorHandling(
       hasAccess = true;
     }
 
-    if (!hasAccess && isProviderCreated) {
-      // Any active member of a clinic that has this folder shared can manage it
-      const clinicIds =
-        folder.FolderSetting?.FolderClinicShares.map((s) => s.clinicId) ?? [];
-      if (clinicIds.length > 0) {
-        const membership = await prismaClient.clinicMember.findFirst({
-          where: { userId: user.id, clinicId: { in: clinicIds }, isActive: true },
-          select: { id: true },
-        });
-        hasAccess = membership !== null;
-      }
+    if (!hasAccess && isProviderCreated && folder.FolderSetting?.scopeClinicId) {
+      // Only members of the creator's clinic have full control
+      const membership = await prismaClient.clinicMember.findFirst({
+        where: {
+          userId: user.id,
+          clinicId: folder.FolderSetting.scopeClinicId,
+          isActive: true,
+        },
+        select: { id: true },
+      });
+      hasAccess = membership !== null;
     }
 
     if (!hasAccess) throw new Error("Folder not found");
@@ -451,7 +488,7 @@ export const uploadPatientFileAction = withErrorHandling(
   }
 );
 
-// Update file privacy
+// Update file privacy (patient only; cannot set PRIVATE on provider-created files)
 export const updatePatientFilePrivacyAction = withErrorHandling(
   async ({ fileId, privacy }: { fileId: number; privacy: FilePrivacy }) => {
     const user = await getAuthenticatedUser();
@@ -462,9 +499,22 @@ export const updatePatientFilePrivacyAction = withErrorHandling(
         isActive: true,
         Folder: { userId: user.id, isActive: true },
       },
-      select: { id: true, FileSetting: { select: { id: true } } },
+      select: {
+        id: true,
+        createdByUserId: true,
+        Folder: { select: { userId: true } },
+        FileSetting: { select: { id: true } },
+      },
     });
     if (!file) throw new Error("File not found");
+
+    // Patient cannot set provider-created files to PRIVATE
+    const patientUserId = file.Folder?.userId;
+    const isProviderCreated =
+      file.createdByUserId !== null && file.createdByUserId !== patientUserId;
+    if (isProviderCreated && privacy === "PRIVATE") {
+      throw new Error("Cannot set a provider-uploaded file to private");
+    }
 
     if (file.FileSetting) {
       await prismaClient.fileSetting.update({
@@ -499,7 +549,7 @@ export const deletePatientFileAction = withErrorHandling(
         Folder: { select: { userId: true } },
         FileSetting: {
           select: {
-            FileClinicShares: { select: { clinicId: true } },
+            scopeClinicId: true,
           },
         },
       },
@@ -518,17 +568,17 @@ export const deletePatientFileAction = withErrorHandling(
       hasAccess = true;
     }
 
-    if (!hasAccess && isProviderCreated) {
-      // Any active member of a clinic that has this file shared can manage it
-      const clinicIds =
-        file.FileSetting?.FileClinicShares.map((s) => s.clinicId) ?? [];
-      if (clinicIds.length > 0) {
-        const membership = await prismaClient.clinicMember.findFirst({
-          where: { userId: user.id, clinicId: { in: clinicIds }, isActive: true },
-          select: { id: true },
-        });
-        hasAccess = membership !== null;
-      }
+    if (!hasAccess && isProviderCreated && file.FileSetting?.scopeClinicId) {
+      // Only members of the creator's clinic have full control
+      const membership = await prismaClient.clinicMember.findFirst({
+        where: {
+          userId: user.id,
+          clinicId: file.FileSetting.scopeClinicId,
+          isActive: true,
+        },
+        select: { id: true },
+      });
+      hasAccess = membership !== null;
     }
 
     if (!hasAccess) throw new Error("File not found");
@@ -539,6 +589,48 @@ export const deletePatientFileAction = withErrorHandling(
     });
 
     return { message: "File deleted successfully", data: { fileId } };
+  }
+);
+
+// Rename file (patient owner OR member of the creator's clinic)
+export const renamePatientFileAction = withErrorHandling(
+  async ({ fileId, name }: { fileId: number; name: string }) => {
+    const user = await getAuthenticatedUser();
+    if (!name?.trim()) throw new Error("File name is required");
+
+    const file = await prismaClient.file.findFirst({
+      where: { id: fileId, isActive: true },
+      select: {
+        id: true,
+        Folder: { select: { userId: true } },
+        FileSetting: { select: { id: true, scopeClinicId: true } },
+      },
+    });
+    if (!file) throw new Error("File not found");
+
+    const patientUserId = file.Folder?.userId;
+    let hasAccess = patientUserId === user.id;
+
+    if (!hasAccess && file.FileSetting?.scopeClinicId) {
+      const membership = await prismaClient.clinicMember.findFirst({
+        where: {
+          userId: user.id,
+          clinicId: file.FileSetting.scopeClinicId,
+          isActive: true,
+        },
+        select: { id: true },
+      });
+      hasAccess = membership !== null;
+    }
+    if (!hasAccess) throw new Error("File not found");
+
+    const updated = await prismaClient.file.update({
+      where: { id: fileId },
+      data: { name: name.trim() },
+      select: { id: true, name: true, updatedAt: true },
+    });
+
+    return { message: "File renamed successfully", data: updated };
   }
 );
 
@@ -601,12 +693,18 @@ export const unsharePatientFolderFromClinicAction = withErrorHandling(
         FolderSetting: {
           select: {
             id: true,
+            scopeClinicId: true,
             FolderClinicShares: { where: { clinicId }, select: { id: true } },
           },
         },
       },
     });
     if (!folder || !folder.FolderSetting) throw new Error("Folder not found");
+
+    // Cannot unshare the creator's clinic
+    if (folder.FolderSetting.scopeClinicId === clinicId) {
+      throw new Error("Cannot unshare the clinic that created this folder");
+    }
 
     const shareId = folder.FolderSetting.FolderClinicShares[0]?.id;
     if (!shareId) throw new Error("Share not found");
@@ -690,12 +788,18 @@ export const unsharePatientFileFromClinicAction = withErrorHandling(
         FileSetting: {
           select: {
             id: true,
+            scopeClinicId: true,
             FileClinicShares: { where: { clinicId }, select: { id: true } },
           },
         },
       },
     });
     if (!file || !file.FileSetting) throw new Error("File not found");
+
+    // Cannot unshare the creator's clinic
+    if (file.FileSetting.scopeClinicId === clinicId) {
+      throw new Error("Cannot unshare the clinic that uploaded this file");
+    }
 
     const shareId = file.FileSetting.FileClinicShares[0]?.id;
     if (!shareId) throw new Error("Share not found");
@@ -751,6 +855,7 @@ const FOLDER_SELECT = {
       id: true,
       privacy: true,
       isPublic: true,
+      scopeClinicId: true,
       FolderClinicShares: {
         select: {
           id: true,
@@ -786,6 +891,7 @@ const FOLDER_SELECT = {
           id: true,
           privacy: true,
           isPublic: true,
+          scopeClinicId: true,
           FileClinicShares: {
             select: {
               id: true,
@@ -940,6 +1046,7 @@ export const createFolderForPatientAction = withErrorHandling(
             create: {
               privacy: "CLINIC",
               isPublic: false,
+              scopeClinicId: clinicId,
               FolderClinicShares: { create: { clinicId } },
             },
           },
@@ -1020,6 +1127,7 @@ export const uploadFileForPatientAction = withErrorHandling(
             create: {
               privacy: "CLINIC",
               isPublic: false,
+              scopeClinicId: clinicId,
               FileClinicShares: { create: { clinicId } },
             },
           },
@@ -1046,6 +1154,7 @@ export const uploadFileForPatientAction = withErrorHandling(
               id: true,
               privacy: true,
               isPublic: true,
+              scopeClinicId: true,
               FileClinicShares: {
                 select: {
                   id: true,

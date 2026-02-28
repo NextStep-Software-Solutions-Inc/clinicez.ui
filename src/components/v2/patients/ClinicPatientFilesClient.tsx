@@ -13,6 +13,7 @@ import {
   Building2,
   MoreVertical,
   Trash2,
+  Edit,
   X,
   ChevronRight,
   ArrowLeft,
@@ -51,12 +52,15 @@ import {
   uploadFileForPatientAction,
   deletePatientFolderAction,
   deletePatientFileAction,
+  renamePatientFolderAction,
+  renamePatientFileAction,
 } from "@/actions/patient/patient-files.action";
 
 type FileType = { id: number; name: string };
 
 interface ClinicPatientFilesClientProps {
   clinicUid: string;
+  clinicId: number;
   patientId: number;
   patientName: string;
   patientPicture?: string | null;
@@ -103,6 +107,7 @@ function formatGender(g: string): string {
 
 export function ClinicPatientFilesClient({
   clinicUid,
+  clinicId,
   patientId,
   patientName,
   patientPicture,
@@ -122,6 +127,16 @@ export function ClinicPatientFilesClient({
   // Create folder dialog
   const [showCreateFolder, setShowCreateFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
+
+  // Rename folder dialog
+  const [showRenameFolder, setShowRenameFolder] = useState(false);
+  const [renameFolderTarget, setRenameFolderTarget] = useState<PatientFolder | null>(null);
+  const [renameFolderName, setRenameFolderName] = useState("");
+
+  // Rename file dialog
+  const [showRenameFile, setShowRenameFile] = useState(false);
+  const [renameFileTarget, setRenameFileTarget] = useState<PatientFolder["Files"][number] | null>(null);
+  const [renameFileName, setRenameFileName] = useState("");
 
   // Upload dialog
   const [showUpload, setShowUpload] = useState(false);
@@ -156,6 +171,40 @@ export function ClinicPatientFilesClient({
         toast.success("Folder created");
       } else {
         toast.error(result.message || "Failed to create folder");
+      }
+    });
+  };
+
+  const handleRenameFolder = () => {
+    if (!renameFolderTarget || !renameFolderName.trim()) return;
+    startTransition(async () => {
+      const result = await renamePatientFolderAction({
+        folderId: renameFolderTarget.id,
+        name: renameFolderName,
+      });
+      if (result.status) {
+        refreshFolders();
+        setShowRenameFolder(false);
+        toast.success("Folder renamed");
+      } else {
+        toast.error(result.message || "Failed to rename folder");
+      }
+    });
+  };
+
+  const handleRenameFile = () => {
+    if (!renameFileTarget || !renameFileName.trim()) return;
+    startTransition(async () => {
+      const result = await renamePatientFileAction({
+        fileId: renameFileTarget.id,
+        name: renameFileName,
+      });
+      if (result.status) {
+        refreshFolders();
+        setShowRenameFile(false);
+        toast.success("File renamed");
+      } else {
+        toast.error(result.message || "Failed to rename file");
       }
     });
   };
@@ -345,11 +394,16 @@ export function ClinicPatientFilesClient({
                   const privacy =
                     (folder.FolderSetting?.privacy as FilePrivacy | undefined) ?? "PRIVATE";
                   const fileCount = folder.Files.length;
-                  const creatorName = folder.CreatedByUser
+                  // Only show creator info if the folder was made by a provider (not the patient owner)
+                  const isProviderCreated = folder.createdByUserId !== null && folder.createdByUserId !== folder.userId;
+                  const creatorName = isProviderCreated && folder.CreatedByUser
                     ? [folder.CreatedByUser.firstName, folder.CreatedByUser.lastName].filter(Boolean).join(" ")
                     : null;
-                  const creatorClinic = folder.FolderSetting?.FolderClinicShares
-                    ?.map((s) => s.Clinic.name).join(", ") ?? null;
+                  const creatorClinic = isProviderCreated
+                    ? folder.FolderSetting?.FolderClinicShares?.map((s) => s.Clinic.name).join(", ") ?? null
+                    : null;
+                  // Only allow manage actions if this clinic created the folder
+                  const isCreatedByThisClinic = folder.FolderSetting?.scopeClinicId === clinicId;
                   return (
                     <div
                       key={folder.id}
@@ -382,21 +436,33 @@ export function ClinicPatientFilesClient({
                             {PRIVACY_ICONS[privacy]}
                             <span className="hidden sm:inline">{PRIVACY_LABELS[privacy]}</span>
                           </Badge>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <button className="p-1 rounded-md hover:bg-white/50 dark:hover:bg-slate-700/50 transition-colors opacity-0 group-hover:opacity-100">
-                                <MoreVertical className="w-4 h-4 text-slate-500" />
-                              </button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-44">
-                              <DropdownMenuItem
-                                className="text-red-600 dark:text-red-400"
-                                onClick={() => handleDeleteFolder(folder)}
-                              >
-                                <Trash2 className="w-4 h-4 mr-2" /> Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                          {isCreatedByThisClinic && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <button className="p-1 rounded-md hover:bg-white/50 dark:hover:bg-slate-700/50 transition-colors opacity-0 group-hover:opacity-100">
+                                  <MoreVertical className="w-4 h-4 text-slate-500" />
+                                </button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-44">
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setRenameFolderTarget(folder);
+                                    setRenameFolderName(folder.name);
+                                    setShowRenameFolder(true);
+                                  }}
+                                >
+                                  <Edit className="w-4 h-4 mr-2" /> Rename
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  className="text-red-600 dark:text-red-400"
+                                  onClick={() => handleDeleteFolder(folder)}
+                                >
+                                  <Trash2 className="w-4 h-4 mr-2" /> Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
                         </div>
                       </div>
                       <p className="font-medium text-slate-900 dark:text-white truncate mb-1">
@@ -434,11 +500,16 @@ export function ClinicPatientFilesClient({
                 {currentFolderFiles.map((file) => {
                   const privacy =
                     (file.FileSetting?.privacy as FilePrivacy | undefined) ?? "PRIVATE";
-                  const fileCreatorName = file.CreatedByUser
+                  // Only show creator info if the file was uploaded by a provider (not the patient owner)
+                  const isProviderUploaded = file.createdByUserId !== null && file.createdByUserId !== selectedFolder.userId;
+                  const fileCreatorName = isProviderUploaded && file.CreatedByUser
                     ? [file.CreatedByUser.firstName, file.CreatedByUser.lastName].filter(Boolean).join(" ")
                     : null;
-                  const fileCreatorClinic = file.FileSetting?.FileClinicShares
-                    ?.map((s) => s.Clinic.name).join(", ") ?? null;
+                  const fileCreatorClinic = isProviderUploaded
+                    ? file.FileSetting?.FileClinicShares?.map((s) => s.Clinic.name).join(", ") ?? null
+                    : null;
+                  // Only allow manage actions if this clinic uploaded the file
+                  const isUploadedByThisClinic = file.FileSetting?.scopeClinicId === clinicId;
                   return (
                     <div
                       key={file.id}
@@ -474,13 +545,27 @@ export function ClinicPatientFilesClient({
                                 View File
                               </a>
                             </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              className="text-red-600 dark:text-red-400"
-                              onClick={() => handleDeleteFile(file)}
-                            >
-                              <Trash2 className="w-4 h-4 mr-2" /> Delete
-                            </DropdownMenuItem>
+                            {isUploadedByThisClinic && (
+                              <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setRenameFileTarget(file);
+                                    setRenameFileName(file.name);
+                                    setShowRenameFile(true);
+                                  }}
+                                >
+                                  <Edit className="w-4 h-4 mr-2" /> Rename
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  className="text-red-600 dark:text-red-400"
+                                  onClick={() => handleDeleteFile(file)}
+                                >
+                                  <Trash2 className="w-4 h-4 mr-2" /> Delete
+                                </DropdownMenuItem>
+                              </>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
@@ -640,6 +725,62 @@ export function ClinicPatientFilesClient({
               disabled={!uploadFile || !uploadFileTypeId || isPending}
             >
               {isPending ? "Uploading..." : "Upload"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Rename Folder Dialog */}
+      <Dialog open={showRenameFolder} onOpenChange={setShowRenameFolder}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Rename Folder</DialogTitle>
+          </DialogHeader>
+          <div className="py-2">
+            <Input
+              value={renameFolderName}
+              onChange={(e) => setRenameFolderName(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") handleRenameFolder(); }}
+              autoFocus
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowRenameFolder(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleRenameFolder}
+              disabled={!renameFolderName.trim() || isPending}
+            >
+              {isPending ? "Renaming..." : "Rename"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Rename File Dialog */}
+      <Dialog open={showRenameFile} onOpenChange={setShowRenameFile}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Rename File</DialogTitle>
+          </DialogHeader>
+          <div className="py-2">
+            <Input
+              value={renameFileName}
+              onChange={(e) => setRenameFileName(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") handleRenameFile(); }}
+              autoFocus
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowRenameFile(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleRenameFile}
+              disabled={!renameFileName.trim() || isPending}
+            >
+              {isPending ? "Renaming..." : "Rename"}
             </Button>
           </DialogFooter>
         </DialogContent>

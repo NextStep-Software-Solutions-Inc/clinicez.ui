@@ -238,6 +238,111 @@ export const PERMISSIONS = {
       name: "view:clinic:audit_log",
       description: "User can view audit logs within the clinic.",
     },
+    // --- Appointment Cancel (distinct from Reject) ---
+    "CANCEL:CLINIC:APPOINTMENT": {
+      name: "cancel:clinic:appointment",
+      description: "User can cancel an appointment within the clinic.",
+    },
+    // --- Clinic Settings & Configuration ---
+    "READ:CLINIC:SETTINGS": {
+      name: "read:clinic:settings",
+      description: "User can read clinic settings, appointment config, consultation config, modes, and types.",
+    },
+    "UPDATE:CLINIC:SETTINGS": {
+      name: "update:clinic:settings",
+      description: "User can update clinic settings, appointment config, consultation config, modes, and types.",
+    },
+    // --- Schedule Management ---
+    "READ:CLINIC:SCHEDULE:OWN": {
+      name: "read:clinic:schedule:own",
+      description: "User can read their own schedule within the clinic.",
+    },
+    "READ:CLINIC:SCHEDULE:ALL": {
+      name: "read:clinic:schedule:all",
+      description: "User can read all schedules within the clinic.",
+    },
+    "WRITE:CLINIC:SCHEDULE:OWN": {
+      name: "write:clinic:schedule:own",
+      description: "User can create or update their own schedule within the clinic.",
+    },
+    "WRITE:CLINIC:SCHEDULE:ALL": {
+      name: "write:clinic:schedule:all",
+      description: "User can create or update any schedule within the clinic.",
+    },
+    // --- Vital Signs (Read/Delete supplement the existing WRITE) ---
+    "READ:CLINIC:VITAL_SIGNS": {
+      name: "read:clinic:vital_signs",
+      description: "User can read vital signs within the clinic.",
+    },
+    "DELETE:CLINIC:VITAL_SIGNS": {
+      name: "delete:clinic:vital_signs",
+      description: "User can delete vital signs within the clinic.",
+    },
+    // --- Consultation Notes ---
+    "WRITE:CLINIC:CONSULTATION_NOTE": {
+      name: "write:clinic:consultation_note",
+      description: "User can write or update consultation notes within the clinic.",
+    },
+    "READ:CLINIC:CONSULTATION_NOTE": {
+      name: "read:clinic:consultation_note",
+      description: "User can read consultation notes within the clinic.",
+    },
+    // --- Interventions ---
+    "WRITE:CLINIC:INTERVENTION": {
+      name: "write:clinic:intervention",
+      description: "User can create interventions within the clinic.",
+    },
+    "READ:CLINIC:INTERVENTION": {
+      name: "read:clinic:intervention",
+      description: "User can read interventions within the clinic.",
+    },
+    // --- Dashboard, Analytics & Reports ---
+    "VIEW:CLINIC:DASHBOARD": {
+      name: "view:clinic:dashboard",
+      description: "User can view the clinic dashboard.",
+    },
+    "VIEW:CLINIC:ANALYTICS": {
+      name: "view:clinic:analytics",
+      description: "User can view clinic analytics data.",
+    },
+    "VIEW:CLINIC:REPORTS": {
+      name: "view:clinic:reports",
+      description: "User can view and generate clinic reports.",
+    },
+    // --- Clinic Member Management ---
+    "READ:CLINIC:MEMBER:ALL": {
+      name: "read:clinic:member:all",
+      description: "User can read all clinic member records.",
+    },
+    "CREATE:CLINIC:MEMBER": {
+      name: "create:clinic:member",
+      description: "User can add new members to the clinic.",
+    },
+    "UPDATE:CLINIC:MEMBER": {
+      name: "update:clinic:member",
+      description: "User can update clinic member status or role.",
+    },
+    "REMOVE:CLINIC:MEMBER": {
+      name: "remove:clinic:member",
+      description: "User can remove members from the clinic.",
+    },
+    // --- Clinical Records ---
+    "CREATE:CLINIC:MEDICAL_CERTIFICATE": {
+      name: "create:clinic:medical_certificate",
+      description: "User can create medical certificates within the clinic.",
+    },
+    "CREATE:CLINIC:REFERRAL_SLIP": {
+      name: "create:clinic:referral_slip",
+      description: "User can create referral slips within the clinic.",
+    },
+    "CREATE:CLINIC:LAB_REQUEST": {
+      name: "create:clinic:lab_request",
+      description: "User can create laboratory requests within the clinic.",
+    },
+    "CREATE:CLINIC:IMAGING_REQUEST": {
+      name: "create:clinic:imaging_request",
+      description: "User can create imaging study requests within the clinic.",
+    },
   },
   ORGANIZATION: {
     "UPDATE:ORG:INFO": {

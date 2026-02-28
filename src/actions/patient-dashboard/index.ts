@@ -30,6 +30,7 @@ export async function getPatientDashboardData(): Promise<PatientDashboardData | 
         userId: true,
         firstName: true,
         lastName: true,
+        nickname: true,
         picture: true,
         email: true,
         dob: true,
@@ -45,8 +46,6 @@ export async function getPatientDashboardData(): Promise<PatientDashboardData | 
       where: { patientId: patient.id },
       select: { id: true },
     })
-
-    if (clinicPatients.length === 0) return null
 
     const clinicPatientIds = clinicPatients.map(cp => cp.id)
 
@@ -77,6 +76,7 @@ export async function getPatientDashboardData(): Promise<PatientDashboardData | 
       patient: {
         id: patient.id,
         userId: patient.userId,
+        nickname: patient.nickname,
         firstName: patient.firstName,
         lastName: patient.lastName,
         picture: patient.picture,

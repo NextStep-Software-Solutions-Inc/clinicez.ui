@@ -2,9 +2,15 @@
 
 import prisma from "@lib/prisma";
 import { cache } from "react";
+import { getCachedSession } from "@actions/session.action";
+import { getPermissionsAction } from "@actions/permission.action";
+import { PERMISSIONS } from "@lib/permissions";
 
 export type GetAppointmentModes = Awaited<ReturnType<typeof getAppointmentModesAction>>;
 export const getAppointmentModesAction = cache(async (clinicUid: string) => {
+  const session = await getCachedSession();
+  if (!session) throw new Error("User not authenticated.");
+
   return await prisma.appointmentMode.findMany({
     orderBy: {
       name: 'asc'
@@ -26,6 +32,14 @@ type CreateAppointmentModePayload = {
 export const createAppointmentModeAction = async (payload: CreateAppointmentModePayload) => {
   const { name, description, clinicUid } = payload;
   try {
+    const session = await getCachedSession();
+    if (!session) throw new Error("User not authenticated.");
+
+    const myPermissions = await getPermissionsAction({ userId: session.user.sub, type: "CLINIC" });
+    const myPermissionArray = myPermissions.map(p => p.name);
+    const canUpdateSettings = [PERMISSIONS.CLINIC["UPDATE:CLINIC:SETTINGS"].name].some(p => myPermissionArray.includes(p));
+    if (!canUpdateSettings) throw new Error("You do not have permission to create appointment modes.");
+
     const appointmentMode = await prisma.appointmentMode.create({
       data: {
         name,
@@ -54,6 +68,14 @@ type UpdateAppointmentModePayload = {
 export const updateAppointmentModeAction = async (payload: UpdateAppointmentModePayload) => {
   const { id, name, description } = payload;
   try {
+    const session = await getCachedSession();
+    if (!session) throw new Error("User not authenticated.");
+
+    const myPermissions = await getPermissionsAction({ userId: session.user.sub, type: "CLINIC" });
+    const myPermissionArray = myPermissions.map(p => p.name);
+    const canUpdateSettings = [PERMISSIONS.CLINIC["UPDATE:CLINIC:SETTINGS"].name].some(p => myPermissionArray.includes(p));
+    if (!canUpdateSettings) throw new Error("You do not have permission to update appointment modes.");
+
     const appointmentMode = await prisma.appointmentMode.update({
       where: { id, isActive: true },
       data: {
@@ -72,6 +94,14 @@ export const updateAppointmentModeAction = async (payload: UpdateAppointmentMode
 
 export const deleteAppointmentModeAction = async (id: number) => {
   try {
+    const session = await getCachedSession();
+    if (!session) throw new Error("User not authenticated.");
+
+    const myPermissions = await getPermissionsAction({ userId: session.user.sub, type: "CLINIC" });
+    const myPermissionArray = myPermissions.map(p => p.name);
+    const canUpdateSettings = [PERMISSIONS.CLINIC["UPDATE:CLINIC:SETTINGS"].name].some(p => myPermissionArray.includes(p));
+    if (!canUpdateSettings) throw new Error("You do not have permission to delete appointment modes.");
+
     await prisma.appointmentMode.update({
       where: { id, isActive: true },
       data: { isActive: false }

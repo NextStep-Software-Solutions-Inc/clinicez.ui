@@ -324,9 +324,12 @@ export const cancelAppointmentAction = withErrorHandling(async (formData: FormDa
   if (!session) throw new Error("User not authenticated.");
 
   const myPermissions = await getPermissionsAction({ userId: session.user.sub });
-  const rejectAppointmentPermissions = [PERMISSIONS.CLINIC["REJECT:CLINIC:APPOINTMENT"].name];
+  const cancelPermissions = [
+    PERMISSIONS.CLINIC["CANCEL:CLINIC:APPOINTMENT"].name,
+    PERMISSIONS.CLINIC["REJECT:CLINIC:APPOINTMENT"].name,
+  ];
   const myPermissionArray = myPermissions.map(permission => permission.name);
-  const canCancel = rejectAppointmentPermissions.some(permission => myPermissionArray.includes(permission));
+  const canCancel = cancelPermissions.some(permission => myPermissionArray.includes(permission));
 
   if (!canCancel) throw new Error("You do not have permission to cancel this appointment.");
 
@@ -376,7 +379,10 @@ export const rescheduleAppointmentAction = withErrorHandling(async (payload: Res
   if (!session) throw new Error("User not authenticated.");
 
   const myPermissions = await getPermissionsAction({ userId: session.user.sub });
-  const requiredPermissions = [PERMISSIONS.CLINIC["RECEIVE:CLINIC:APPOINTMENT"].name];
+  const requiredPermissions = [
+    PERMISSIONS.CLINIC["RESCHEDULE:CLINIC:APPOINTMENT"].name,
+    PERMISSIONS.CLINIC["RECEIVE:CLINIC:APPOINTMENT"].name,
+  ];
   const myPermissionArray = myPermissions.map(permission => permission.name);
   const canReschedule = requiredPermissions.some(permission => myPermissionArray.includes(permission));
 

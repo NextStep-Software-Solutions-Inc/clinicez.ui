@@ -350,7 +350,8 @@ export function ClinicPatientFilesClient({
                   const creatorName = folder.CreatedByUser
                     ? [folder.CreatedByUser.firstName, folder.CreatedByUser.lastName].filter(Boolean).join(" ")
                     : null;
-                  const creatorClinic = folder.FolderSetting?.FolderClinicShares?.[0]?.Clinic?.name ?? null;
+                  const creatorClinic = folder.FolderSetting?.FolderClinicShares
+                    ?.map((s) => s.Clinic.name).join(", ") ?? null;
                   return (
                     <div
                       key={folder.id}
@@ -391,7 +392,6 @@ export function ClinicPatientFilesClient({
                                 </button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="w-44">
-                                <DropdownMenuSeparator />
                                 <DropdownMenuItem
                                   className="text-red-600 dark:text-red-400"
                                   onClick={() => handleDeleteFolder(folder)}
@@ -442,7 +442,8 @@ export function ClinicPatientFilesClient({
                   const fileCreatorName = file.CreatedByUser
                     ? [file.CreatedByUser.firstName, file.CreatedByUser.lastName].filter(Boolean).join(" ")
                     : null;
-                  const fileCreatorClinic = file.FileSetting?.FileClinicShares?.[0]?.Clinic?.name ?? null;
+                  const fileCreatorClinic = file.FileSetting?.FileClinicShares
+                    ?.map((s) => s.Clinic.name).join(", ") ?? null;
                   return (
                     <div
                       key={file.id}

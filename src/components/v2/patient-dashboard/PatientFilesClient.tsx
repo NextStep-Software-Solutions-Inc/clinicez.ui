@@ -498,7 +498,7 @@ export function PatientFilesClient({
                   ? [folder.CreatedByUser.firstName, folder.CreatedByUser.lastName].filter(Boolean).join(" ")
                   : null;
                 const creatorClinic = isProviderCreated
-                  ? folder.FolderSetting?.FolderClinicShares?.[0]?.Clinic?.name ?? null
+                  ? folder.FolderSetting?.FolderClinicShares?.map((s) => s.Clinic.name).join(", ") ?? null
                   : null;
                 return (
                   <div
@@ -655,7 +655,7 @@ export function PatientFilesClient({
                   ? [file.CreatedByUser.firstName, file.CreatedByUser.lastName].filter(Boolean).join(" ")
                   : null;
                 const fileCreatorClinic = isProviderUploaded
-                  ? file.FileSetting?.FileClinicShares?.[0]?.Clinic?.name ?? null
+                  ? file.FileSetting?.FileClinicShares?.map((s) => s.Clinic.name).join(", ") ?? null
                   : null;
                 return (
                   <div

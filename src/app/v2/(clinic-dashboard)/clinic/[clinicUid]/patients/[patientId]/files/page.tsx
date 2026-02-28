@@ -41,6 +41,7 @@ export default async function ClinicPatientFilesPage({ params }: Props) {
   ]);
 
   if (!patient) notFound();
+  if (!currentUser) return <UnauthorizedWarning />;
 
   return (
     <ClinicPatientFilesClient
@@ -54,7 +55,7 @@ export default async function ClinicPatientFilesPage({ params }: Props) {
       patientCaseNumber={patient.caseNumber ?? null}
       initialFolders={foldersResult.data ?? []}
       fileTypes={fileTypesResult ?? []}
-      currentUserId={currentUser?.id ?? 0}
+      currentUserId={currentUser.id}
     />
   );
 }

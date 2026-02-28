@@ -112,7 +112,7 @@ export function ClinicPatientFilesClient({
   patientCaseNumber,
   initialFolders,
   fileTypes,
-  currentUserId,
+  currentUserId: _currentUserId,
 }: ClinicPatientFilesClientProps) {
   const router = useRouter();
   const [folders, setFolders] = useState(initialFolders);
@@ -346,7 +346,8 @@ export function ClinicPatientFilesClient({
                   const privacy =
                     (folder.FolderSetting?.privacy as FilePrivacy | undefined) ?? "PRIVATE";
                   const fileCount = folder.Files.length;
-                  const isCreatedByMe = folder.createdByUserId === currentUserId;
+                  const isProviderCreated =
+                    folder.createdByUserId !== null && folder.createdByUserId !== folder.userId;
                   const creatorName = folder.CreatedByUser
                     ? [folder.CreatedByUser.firstName, folder.CreatedByUser.lastName].filter(Boolean).join(" ")
                     : null;
@@ -368,7 +369,7 @@ export function ClinicPatientFilesClient({
                           </div>
                           {creatorName && (
                             <div
-                              title={`Created by: ${creatorName}${creatorClinic ? ` · ${creatorClinic}` : ""}`}
+                              title={`${creatorClinic ? `Created by ${creatorClinic}` : "Provider created"} · ${creatorName}`}
                               className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center cursor-help"
                               onClick={(e) => e.stopPropagation()}
                             >
@@ -384,7 +385,7 @@ export function ClinicPatientFilesClient({
                             {PRIVACY_ICONS[privacy]}
                             <span className="hidden sm:inline">{PRIVACY_LABELS[privacy]}</span>
                           </Badge>
-                          {isCreatedByMe && (
+                          {isProviderCreated && (
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <button className="p-1 rounded-md hover:bg-white/50 dark:hover:bg-slate-700/50 transition-colors opacity-0 group-hover:opacity-100">
@@ -438,7 +439,9 @@ export function ClinicPatientFilesClient({
                 {currentFolderFiles.map((file) => {
                   const privacy =
                     (file.FileSetting?.privacy as FilePrivacy | undefined) ?? "PRIVATE";
-                  const isCreatedByMe = file.createdByUserId === currentUserId;
+                  // Provider-uploaded: createdByUserId set and different from the patient (folder owner)
+                  const isProviderUploaded =
+                    file.createdByUserId !== null && file.createdByUserId !== selectedFolder?.userId;
                   const fileCreatorName = file.CreatedByUser
                     ? [file.CreatedByUser.firstName, file.CreatedByUser.lastName].filter(Boolean).join(" ")
                     : null;
@@ -456,7 +459,7 @@ export function ClinicPatientFilesClient({
                           </div>
                           {fileCreatorName && (
                             <div
-                              title={`Uploaded by: ${fileCreatorName}${fileCreatorClinic ? ` · ${fileCreatorClinic}` : ""}`}
+                              title={`${fileCreatorClinic ? `Uploaded by ${fileCreatorClinic}` : "Provider uploaded"} · ${fileCreatorName}`}
                               className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center cursor-help"
                             >
                               <UserCircle className="w-3 h-3 text-white" />
@@ -479,7 +482,7 @@ export function ClinicPatientFilesClient({
                                 View File
                               </a>
                             </DropdownMenuItem>
-                            {isCreatedByMe && (
+                            {isProviderUploaded && (
                               <>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem

@@ -514,7 +514,7 @@ export function PatientFilesClient({
                         <FolderOpen className="w-8 h-8 text-yellow-500 flex-shrink-0" />
                         {creatorName && (
                           <div
-                            title={`Created by: ${creatorName}${creatorClinic ? ` · ${creatorClinic}` : ""}`}
+                            title={`${creatorClinic ? `Created by ${creatorClinic}` : "Provider created"} · ${creatorName}`}
                             className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center cursor-help"
                             onClick={(e) => e.stopPropagation()}
                           >
@@ -669,7 +669,7 @@ export function PatientFilesClient({
                         <File className="w-8 h-8 text-blue-500 flex-shrink-0" />
                         {fileCreatorName && (
                           <div
-                            title={`Uploaded by: ${fileCreatorName}${fileCreatorClinic ? ` · ${fileCreatorClinic}` : ""}`}
+                            title={`${fileCreatorClinic ? `Uploaded by ${fileCreatorClinic}` : "Provider uploaded"} · ${fileCreatorName}`}
                             className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center cursor-help"
                           >
                             <UserCircle className="w-3 h-3 text-white" />

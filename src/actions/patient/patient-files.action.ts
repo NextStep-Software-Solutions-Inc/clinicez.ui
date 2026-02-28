@@ -301,24 +301,47 @@ export const deletePatientFolderAction = withErrorHandling(
   async ({ folderId }: { folderId: number }) => {
     const user = await getAuthenticatedUser();
 
-    // Allow deletion only if:
-    // - The caller is the creator (provider who created the folder), OR
-    // - The caller is the patient owner AND the folder was not created by a provider
+    // Fetch folder with fields needed for permission check
     const folder = await prismaClient.folder.findFirst({
-      where: {
-        id: folderId,
-        isActive: true,
-        OR: [
-          // Creator (e.g. a provider) can always delete what they created
-          { createdByUserId: user.id },
-          // Patient owner can delete only if no provider created it
-          { userId: user.id, createdByUserId: null },
-          { userId: user.id, createdByUserId: user.id },
-        ],
+      where: { id: folderId, isActive: true },
+      select: {
+        id: true,
+        userId: true,
+        createdByUserId: true,
+        FolderSetting: {
+          select: {
+            FolderClinicShares: { select: { clinicId: true } },
+          },
+        },
       },
-      select: { id: true },
     });
     if (!folder) throw new Error("Folder not found");
+
+    // Provider-created: createdByUserId is set and differs from the patient owner
+    const isProviderCreated =
+      folder.createdByUserId !== null && folder.createdByUserId !== folder.userId;
+
+    let hasAccess = folder.createdByUserId === user.id; // creator always has access
+
+    if (!hasAccess && !isProviderCreated && folder.userId === user.id) {
+      // Patient owns and created it (no provider involved)
+      hasAccess = true;
+    }
+
+    if (!hasAccess && isProviderCreated) {
+      // Any active member of a clinic that has this folder shared can manage it
+      const clinicIds =
+        folder.FolderSetting?.FolderClinicShares.map((s) => s.clinicId) ?? [];
+      if (clinicIds.length > 0) {
+        const membership = await prismaClient.clinicMember.findFirst({
+          where: { userId: user.id, clinicId: { in: clinicIds }, isActive: true },
+          select: { id: true },
+        });
+        hasAccess = membership !== null;
+      }
+    }
+
+    if (!hasAccess) throw new Error("Folder not found");
 
     await prismaClient.$transaction([
       // Soft-delete all active files inside the folder
@@ -467,24 +490,48 @@ export const deletePatientFileAction = withErrorHandling(
   async ({ fileId }: { fileId: number }) => {
     const user = await getAuthenticatedUser();
 
-    // Allow deletion only if:
-    // - The caller is the creator (provider who uploaded the file), OR
-    // - The caller is the patient owner (folder owner) AND the file was not uploaded by a provider
+    // Fetch file with fields needed for permission check
     const file = await prismaClient.file.findFirst({
-      where: {
-        id: fileId,
-        isActive: true,
-        OR: [
-          // Creator (e.g. a provider) can always delete what they uploaded
-          { createdByUserId: user.id },
-          // Patient owner can delete only if no provider uploaded it
-          { Folder: { userId: user.id, isActive: true }, createdByUserId: null },
-          { Folder: { userId: user.id, isActive: true }, createdByUserId: user.id },
-        ],
+      where: { id: fileId, isActive: true },
+      select: {
+        id: true,
+        createdByUserId: true,
+        Folder: { select: { userId: true } },
+        FileSetting: {
+          select: {
+            FileClinicShares: { select: { clinicId: true } },
+          },
+        },
       },
-      select: { id: true },
     });
     if (!file) throw new Error("File not found");
+
+    const patientUserId = file.Folder?.userId;
+    // Provider-created: createdByUserId is set and differs from the patient folder owner
+    const isProviderCreated =
+      file.createdByUserId !== null && file.createdByUserId !== patientUserId;
+
+    let hasAccess = file.createdByUserId === user.id; // creator always has access
+
+    if (!hasAccess && !isProviderCreated && patientUserId === user.id) {
+      // Patient owns the folder and created the file themselves
+      hasAccess = true;
+    }
+
+    if (!hasAccess && isProviderCreated) {
+      // Any active member of a clinic that has this file shared can manage it
+      const clinicIds =
+        file.FileSetting?.FileClinicShares.map((s) => s.clinicId) ?? [];
+      if (clinicIds.length > 0) {
+        const membership = await prismaClient.clinicMember.findFirst({
+          where: { userId: user.id, clinicId: { in: clinicIds }, isActive: true },
+          select: { id: true },
+        });
+        hasAccess = membership !== null;
+      }
+    }
+
+    if (!hasAccess) throw new Error("File not found");
 
     await prismaClient.file.update({
       where: { id: fileId },

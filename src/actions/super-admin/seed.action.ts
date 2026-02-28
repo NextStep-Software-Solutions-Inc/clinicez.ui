@@ -184,6 +184,13 @@ export async function seedProceduresAction(): Promise<SeedResult> {
     let created = 0;
     let skipped = 0;
 
+    // Count existing before seeding to track actual creations
+    const [imgBefore, labBefore, hsBefore] = await Promise.all([
+      prisma.imagingProcedure.count(),
+      prisma.laboratoryProcedure.count(),
+      prisma.heartStationProcedure.count(),
+    ]);
+
     for (const procedure of imagingProcedures) {
       await prisma.imagingProcedure.upsert({
         where: { unique_imaging_procedure: { name: procedure.name, category: procedure.category } },
@@ -208,8 +215,15 @@ export async function seedProceduresAction(): Promise<SeedResult> {
       });
     }
 
+    const [imgAfter, labAfter, hsAfter] = await Promise.all([
+      prisma.imagingProcedure.count(),
+      prisma.laboratoryProcedure.count(),
+      prisma.heartStationProcedure.count(),
+    ]);
+
+    created = (imgAfter - imgBefore) + (labAfter - labBefore) + (hsAfter - hsBefore);
     const total = imagingProcedures.length + laboratoryProcedures.length + heartStationProcedures.length;
-    created = total; // upsert always succeeds
+    skipped = total - created;
 
     return {
       status: true,

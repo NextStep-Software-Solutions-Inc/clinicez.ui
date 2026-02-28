@@ -72,7 +72,8 @@ export default function SeedConsole() {
         } else {
           toast.error(result.message);
         }
-      } catch {
+      } catch (error) {
+        console.error(`Seed ${key} failed:`, error);
         toast.error(`Failed to run seed: ${key}`);
       } finally {
         setRunningSeeds((prev) => {
@@ -97,7 +98,8 @@ export default function SeedConsole() {
         } else {
           toast.error(result.message);
         }
-      } catch {
+      } catch (error) {
+        console.error("Seed all failed:", error);
         toast.error("Failed to run all seeds");
       } finally {
         setRunningSeeds((prev) => {

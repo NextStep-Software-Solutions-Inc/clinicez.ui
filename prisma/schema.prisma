@@ -101,6 +101,8 @@ model User {
   ReferralSlipsUpdated             ClinicReferralSlip[]             @relation("ReferralSlipUpdatedBy")
   FamilyMedicalHistories           FamilyMedicalHistory[]
   Folders                          Folder[]
+  FoldersCreated                   Folder[]               @relation("FolderCreatedBy")
+  FilesCreated                     File[]                 @relation("FileCreatedBy")
   HealthcareProvider               HealthcareProvider?
   MedicalHistories                 MedicalHistory[]
   Medications                      Medication[]
@@ -645,16 +647,18 @@ model ActivationCode {
 }
 
 model Folder {
-  id            Int            @id @default(autoincrement())
-  userId        Int
-  name          String
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  deletedAt     DateTime?
-  isActive      Boolean        @default(true)
-  Files         File[]
-  User          User           @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  FolderSetting FolderSetting?
+  id              Int            @id @default(autoincrement())
+  userId          Int
+  name            String
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  deletedAt       DateTime?
+  isActive        Boolean        @default(true)
+  createdByUserId Int?
+  Files           File[]
+  User            User           @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  CreatedByUser   User?          @relation("FolderCreatedBy", fields: [createdByUserId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  FolderSetting   FolderSetting?
 
   @@unique([userId, name], name: "unique_user_folder")
 }
@@ -671,21 +675,23 @@ model FolderSetting {
 }
 
 model File {
-  id          Int          @id @default(autoincrement())
-  folderId    Int
-  fileTypeId  Int
-  name        String
-  size        Int
-  url         String
-  mimeType    String?
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  deletedAt   DateTime?
-  isActive    Boolean      @default(true)
-  dateTaken   DateTime?
-  FileType    FileType     @relation(fields: [fileTypeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  Folder      Folder       @relation(fields: [folderId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  FileSetting FileSetting?
+  id              Int          @id @default(autoincrement())
+  folderId        Int
+  fileTypeId      Int
+  name            String
+  size            Int
+  url             String
+  mimeType        String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  deletedAt       DateTime?
+  isActive        Boolean      @default(true)
+  dateTaken       DateTime?
+  createdByUserId Int?
+  FileType        FileType     @relation(fields: [fileTypeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Folder          Folder       @relation(fields: [folderId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  CreatedByUser   User?        @relation("FileCreatedBy", fields: [createdByUserId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  FileSetting     FileSetting?
 
   @@unique([folderId, name], name: "unique_folder_file")
 }

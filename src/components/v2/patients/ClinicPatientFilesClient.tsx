@@ -12,9 +12,11 @@ import {
   Globe,
   Building2,
   MoreVertical,
+  Trash2,
   X,
   ChevronRight,
   ArrowLeft,
+  UserCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,6 +32,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -46,6 +49,8 @@ import type { GetPatientFolders, PatientFolder } from "@/actions/patient/patient
 import {
   createFolderForPatientAction,
   uploadFileForPatientAction,
+  deletePatientFolderAction,
+  deletePatientFileAction,
 } from "@/actions/patient/patient-files.action";
 
 type FileType = { id: number; name: string };
@@ -61,6 +66,7 @@ interface ClinicPatientFilesClientProps {
   patientCaseNumber?: string | null;
   initialFolders: NonNullable<GetPatientFolders["data"]>;
   fileTypes: FileType[];
+  currentUserId: number;
 }
 
 const PRIVACY_ICONS: Record<FilePrivacy, React.ReactNode> = {
@@ -106,6 +112,7 @@ export function ClinicPatientFilesClient({
   patientCaseNumber,
   initialFolders,
   fileTypes,
+  currentUserId: _currentUserId,
 }: ClinicPatientFilesClientProps) {
   const router = useRouter();
   const [folders, setFolders] = useState(initialFolders);
@@ -149,6 +156,31 @@ export function ClinicPatientFilesClient({
         toast.success("Folder created");
       } else {
         toast.error(result.message || "Failed to create folder");
+      }
+    });
+  };
+
+  const handleDeleteFolder = (folder: PatientFolder) => {
+    startTransition(async () => {
+      const result = await deletePatientFolderAction({ folderId: folder.id });
+      if (result.status) {
+        setFolders((prev) => prev.filter((f) => f.id !== folder.id));
+        if (selectedFolder?.id === folder.id) setSelectedFolder(null);
+        toast.success("Folder deleted");
+      } else {
+        toast.error(result.message || "Failed to delete folder");
+      }
+    });
+  };
+
+  const handleDeleteFile = (file: PatientFolder["Files"][number]) => {
+    startTransition(async () => {
+      const result = await deletePatientFileAction({ fileId: file.id });
+      if (result.status) {
+        refreshFolders();
+        toast.success("File deleted");
+      } else {
+        toast.error(result.message || "Failed to delete file");
       }
     });
   };
@@ -246,7 +278,6 @@ export function ClinicPatientFilesClient({
                 <span className="hidden sm:inline">Upload</span>
               </Button>
             )}
-            <ThemeToggle />
           </div>
         </div>
       </div>
@@ -314,6 +345,11 @@ export function ClinicPatientFilesClient({
                   const privacy =
                     (folder.FolderSetting?.privacy as FilePrivacy | undefined) ?? "PRIVATE";
                   const fileCount = folder.Files.length;
+                  const creatorName = folder.CreatedByUser
+                    ? [folder.CreatedByUser.firstName, folder.CreatedByUser.lastName].filter(Boolean).join(" ")
+                    : null;
+                  const creatorClinic = folder.FolderSetting?.FolderClinicShares
+                    ?.map((s) => s.Clinic.name).join(", ") ?? null;
                   return (
                     <div
                       key={folder.id}
@@ -324,16 +360,44 @@ export function ClinicPatientFilesClient({
                       onKeyDown={(e) => e.key === "Enter" && setSelectedFolder(folder)}
                     >
                       <div className="flex items-start justify-between mb-3">
-                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow">
-                          <Folder className="w-5 h-5 text-white" />
+                        <div className="relative">
+                          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow">
+                            <Folder className="w-5 h-5 text-white" />
+                          </div>
+                          {creatorName && (
+                            <div
+                              title={`${creatorClinic ? `Created by ${creatorClinic}` : "Provider created"} · ${creatorName}`}
+                              className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center cursor-help"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <UserCircle className="w-3 h-3 text-white" />
+                            </div>
+                          )}
                         </div>
-                        <Badge
-                          variant="secondary"
-                          className={`text-xs flex items-center gap-1 ${PRIVACY_COLORS[privacy]}`}
-                        >
-                          {PRIVACY_ICONS[privacy]}
-                          <span className="hidden sm:inline">{PRIVACY_LABELS[privacy]}</span>
-                        </Badge>
+                        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                          <Badge
+                            variant="secondary"
+                            className={`text-xs flex items-center gap-1 ${PRIVACY_COLORS[privacy]}`}
+                          >
+                            {PRIVACY_ICONS[privacy]}
+                            <span className="hidden sm:inline">{PRIVACY_LABELS[privacy]}</span>
+                          </Badge>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button className="p-1 rounded-md hover:bg-white/50 dark:hover:bg-slate-700/50 transition-colors opacity-0 group-hover:opacity-100">
+                                <MoreVertical className="w-4 h-4 text-slate-500" />
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-44">
+                              <DropdownMenuItem
+                                className="text-red-600 dark:text-red-400"
+                                onClick={() => handleDeleteFolder(folder)}
+                              >
+                                <Trash2 className="w-4 h-4 mr-2" /> Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
                       </div>
                       <p className="font-medium text-slate-900 dark:text-white truncate mb-1">
                         {folder.name}
@@ -370,14 +434,29 @@ export function ClinicPatientFilesClient({
                 {currentFolderFiles.map((file) => {
                   const privacy =
                     (file.FileSetting?.privacy as FilePrivacy | undefined) ?? "PRIVATE";
+                  const fileCreatorName = file.CreatedByUser
+                    ? [file.CreatedByUser.firstName, file.CreatedByUser.lastName].filter(Boolean).join(" ")
+                    : null;
+                  const fileCreatorClinic = file.FileSetting?.FileClinicShares
+                    ?.map((s) => s.Clinic.name).join(", ") ?? null;
                   return (
                     <div
                       key={file.id}
                       className="glassmorphic-card p-4 hover:scale-[1.02] transition-all duration-200 group"
                     >
                       <div className="flex items-start justify-between mb-3">
-                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow">
-                          <File className="w-5 h-5 text-white" />
+                        <div className="relative">
+                          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow">
+                            <File className="w-5 h-5 text-white" />
+                          </div>
+                          {fileCreatorName && (
+                            <div
+                              title={`${fileCreatorClinic ? `Uploaded by ${fileCreatorClinic}` : "Provider uploaded"} · ${fileCreatorName}`}
+                              className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center cursor-help"
+                            >
+                              <UserCircle className="w-3 h-3 text-white" />
+                            </div>
+                          )}
                         </div>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -394,6 +473,13 @@ export function ClinicPatientFilesClient({
                               >
                                 View File
                               </a>
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="text-red-600 dark:text-red-400"
+                              onClick={() => handleDeleteFile(file)}
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" /> Delete
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>

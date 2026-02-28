@@ -83,6 +83,14 @@ export const getPatientFoldersAction = withErrorHandling(async () => {
       name: true,
       createdAt: true,
       updatedAt: true,
+      userId: true,
+      createdByUserId: true,
+      CreatedByUser: {
+        select: {
+          firstName: true,
+          lastName: true,
+        },
+      },
       FolderSetting: {
         select: {
           id: true,
@@ -110,6 +118,13 @@ export const getPatientFoldersAction = withErrorHandling(async () => {
           dateTaken: true,
           createdAt: true,
           updatedAt: true,
+          createdByUserId: true,
+          CreatedByUser: {
+            select: {
+              firstName: true,
+              lastName: true,
+            },
+          },
           FileType: { select: { id: true, name: true } },
           FileSetting: {
             select: {
@@ -150,6 +165,7 @@ export const createPatientFolderAction = withErrorHandling(
         data: {
           name: name.trim(),
           userId: user.id,
+          createdByUserId: user.id,
           FolderSetting: {
             create: {
               privacy,
@@ -162,6 +178,14 @@ export const createPatientFolderAction = withErrorHandling(
           name: true,
           createdAt: true,
           updatedAt: true,
+          userId: true,
+          createdByUserId: true,
+          CreatedByUser: {
+            select: {
+              firstName: true,
+              lastName: true,
+            },
+          },
           FolderSetting: {
             select: {
               id: true,
@@ -187,6 +211,13 @@ export const createPatientFolderAction = withErrorHandling(
               dateTaken: true,
               createdAt: true,
               updatedAt: true,
+              createdByUserId: true,
+              CreatedByUser: {
+                select: {
+                  firstName: true,
+                  lastName: true,
+                },
+              },
               FileType: { select: { id: true, name: true } },
               FileSetting: {
                 select: {
@@ -270,11 +301,47 @@ export const deletePatientFolderAction = withErrorHandling(
   async ({ folderId }: { folderId: number }) => {
     const user = await getAuthenticatedUser();
 
+    // Fetch folder with fields needed for permission check
     const folder = await prismaClient.folder.findFirst({
-      where: { id: folderId, userId: user.id, isActive: true },
-      select: { id: true },
+      where: { id: folderId, isActive: true },
+      select: {
+        id: true,
+        userId: true,
+        createdByUserId: true,
+        FolderSetting: {
+          select: {
+            FolderClinicShares: { select: { clinicId: true } },
+          },
+        },
+      },
     });
     if (!folder) throw new Error("Folder not found");
+
+    // Provider-created: createdByUserId is set and differs from the patient owner
+    const isProviderCreated =
+      folder.createdByUserId !== null && folder.createdByUserId !== folder.userId;
+
+    let hasAccess = folder.createdByUserId === user.id; // creator always has access
+
+    if (!hasAccess && !isProviderCreated && folder.userId === user.id) {
+      // Patient owns and created it (no provider involved)
+      hasAccess = true;
+    }
+
+    if (!hasAccess && isProviderCreated) {
+      // Any active member of a clinic that has this folder shared can manage it
+      const clinicIds =
+        folder.FolderSetting?.FolderClinicShares.map((s) => s.clinicId) ?? [];
+      if (clinicIds.length > 0) {
+        const membership = await prismaClient.clinicMember.findFirst({
+          where: { userId: user.id, clinicId: { in: clinicIds }, isActive: true },
+          select: { id: true },
+        });
+        hasAccess = membership !== null;
+      }
+    }
+
+    if (!hasAccess) throw new Error("Folder not found");
 
     await prismaClient.$transaction([
       // Soft-delete all active files inside the folder
@@ -336,6 +403,7 @@ export const uploadPatientFileAction = withErrorHandling(
           url,
           mimeType: file.type || null,
           dateTaken: dateTakenRaw ? new Date(dateTakenRaw) : null,
+          createdByUserId: user.id,
           FileSetting: {
             create: {
               privacy: "PRIVATE",
@@ -352,6 +420,13 @@ export const uploadPatientFileAction = withErrorHandling(
           dateTaken: true,
           createdAt: true,
           updatedAt: true,
+          createdByUserId: true,
+          CreatedByUser: {
+            select: {
+              firstName: true,
+              lastName: true,
+            },
+          },
           FileType: { select: { id: true, name: true } },
           FileSetting: {
             select: {
@@ -415,15 +490,48 @@ export const deletePatientFileAction = withErrorHandling(
   async ({ fileId }: { fileId: number }) => {
     const user = await getAuthenticatedUser();
 
+    // Fetch file with fields needed for permission check
     const file = await prismaClient.file.findFirst({
-      where: {
-        id: fileId,
-        isActive: true,
-        Folder: { userId: user.id, isActive: true },
+      where: { id: fileId, isActive: true },
+      select: {
+        id: true,
+        createdByUserId: true,
+        Folder: { select: { userId: true } },
+        FileSetting: {
+          select: {
+            FileClinicShares: { select: { clinicId: true } },
+          },
+        },
       },
-      select: { id: true },
     });
     if (!file) throw new Error("File not found");
+
+    const patientUserId = file.Folder?.userId;
+    // Provider-created: createdByUserId is set and differs from the patient folder owner
+    const isProviderCreated =
+      file.createdByUserId !== null && file.createdByUserId !== patientUserId;
+
+    let hasAccess = file.createdByUserId === user.id; // creator always has access
+
+    if (!hasAccess && !isProviderCreated && patientUserId === user.id) {
+      // Patient owns the folder and created the file themselves
+      hasAccess = true;
+    }
+
+    if (!hasAccess && isProviderCreated) {
+      // Any active member of a clinic that has this file shared can manage it
+      const clinicIds =
+        file.FileSetting?.FileClinicShares.map((s) => s.clinicId) ?? [];
+      if (clinicIds.length > 0) {
+        const membership = await prismaClient.clinicMember.findFirst({
+          where: { userId: user.id, clinicId: { in: clinicIds }, isActive: true },
+          select: { id: true },
+        });
+        hasAccess = membership !== null;
+      }
+    }
+
+    if (!hasAccess) throw new Error("File not found");
 
     await prismaClient.file.update({
       where: { id: fileId },
@@ -630,6 +738,14 @@ const FOLDER_SELECT = {
   name: true,
   createdAt: true,
   updatedAt: true,
+  userId: true,
+  createdByUserId: true,
+  CreatedByUser: {
+    select: {
+      firstName: true,
+      lastName: true,
+    },
+  },
   FolderSetting: {
     select: {
       id: true,
@@ -657,6 +773,13 @@ const FOLDER_SELECT = {
       dateTaken: true,
       createdAt: true,
       updatedAt: true,
+      createdByUserId: true,
+      CreatedByUser: {
+        select: {
+          firstName: true,
+          lastName: true,
+        },
+      },
       FileType: { select: { id: true, name: true } },
       FileSetting: {
         select: {
@@ -800,11 +923,19 @@ export const createFolderForPatientAction = withErrorHandling(
       patientId
     );
 
+    // Get the calling user's DB ID to track who created this folder
+    const callerUser = await prismaClient.user.findUnique({
+      where: { userId: session.user.sub, isActive: true },
+      select: { id: true },
+    });
+    if (!callerUser) throw new Error("Unauthorized");
+
     const folder = await prismaClient.$transaction(async (tx) => {
       const newFolder = await tx.folder.create({
         data: {
           name: name.trim(),
           userId: patientId,
+          createdByUserId: callerUser.id,
           FolderSetting: {
             create: {
               privacy: "CLINIC",
@@ -814,52 +945,7 @@ export const createFolderForPatientAction = withErrorHandling(
           },
         },
         select: {
-          id: true,
-          name: true,
-          createdAt: true,
-          updatedAt: true,
-          FolderSetting: {
-            select: {
-              id: true,
-              privacy: true,
-              isPublic: true,
-              FolderClinicShares: {
-                select: {
-                  id: true,
-                  clinicId: true,
-                  Clinic: { select: { id: true, clinicUid: true, name: true } },
-                },
-              },
-            },
-          },
-          Files: {
-            where: { isActive: true },
-            select: {
-              id: true,
-              name: true,
-              size: true,
-              url: true,
-              mimeType: true,
-              dateTaken: true,
-              createdAt: true,
-              updatedAt: true,
-              FileType: { select: { id: true, name: true } },
-              FileSetting: {
-                select: {
-                  id: true,
-                  privacy: true,
-                  isPublic: true,
-                  FileClinicShares: {
-                    select: {
-                      id: true,
-                      clinicId: true,
-                      Clinic: { select: { id: true, clinicUid: true, name: true } },
-                    },
-                  },
-                },
-              },
-            },
-          },
+          ...FOLDER_SELECT,
         },
       });
       return newFolder;
@@ -899,6 +985,13 @@ export const uploadFileForPatientAction = withErrorHandling(
       patientId
     );
 
+    // Get the calling user's DB ID to track who uploaded this file
+    const callerUser = await prismaClient.user.findUnique({
+      where: { userId: session.user.sub, isActive: true },
+      select: { id: true },
+    });
+    if (!callerUser) throw new Error("Unauthorized");
+
     // Verify folder belongs to the patient
     const folder = await prismaClient.folder.findFirst({
       where: { id: folderId, userId: patientId, isActive: true },
@@ -922,6 +1015,7 @@ export const uploadFileForPatientAction = withErrorHandling(
           url,
           mimeType: file.type || null,
           dateTaken: dateTakenRaw ? new Date(dateTakenRaw) : null,
+          createdByUserId: callerUser.id,
           FileSetting: {
             create: {
               privacy: "CLINIC",
@@ -939,6 +1033,13 @@ export const uploadFileForPatientAction = withErrorHandling(
           dateTaken: true,
           createdAt: true,
           updatedAt: true,
+          createdByUserId: true,
+          CreatedByUser: {
+            select: {
+              firstName: true,
+              lastName: true,
+            },
+          },
           FileType: { select: { id: true, name: true } },
           FileSetting: {
             select: {

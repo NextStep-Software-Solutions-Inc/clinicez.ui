@@ -18,6 +18,7 @@ import {
   X,
   ChevronRight,
   ArrowLeft,
+  UserCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -491,6 +492,14 @@ export function PatientFilesClient({
               {folders.map((folder) => {
                 const privacy = folder.FolderSetting?.privacy ?? "PRIVATE";
                 const fileCount = folder.Files.length;
+                // A folder was created by a provider if createdByUserId differs from userId (the patient owner)
+                const isProviderCreated = folder.createdByUserId !== null && folder.createdByUserId !== folder.userId;
+                const creatorName = isProviderCreated && folder.CreatedByUser
+                  ? [folder.CreatedByUser.firstName, folder.CreatedByUser.lastName].filter(Boolean).join(" ")
+                  : null;
+                const creatorClinic = isProviderCreated
+                  ? folder.FolderSetting?.FolderClinicShares?.map((s) => s.Clinic.name).join(", ") ?? null
+                  : null;
                 return (
                   <div
                     key={folder.id}
@@ -501,7 +510,18 @@ export function PatientFilesClient({
                     onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelectedFolder(folder); } }}
                   >
                     <div className="flex items-start justify-between mb-3">
-                      <FolderOpen className="w-8 h-8 text-yellow-500 flex-shrink-0" />
+                      <div className="relative">
+                        <FolderOpen className="w-8 h-8 text-yellow-500 flex-shrink-0" />
+                        {creatorName && (
+                          <div
+                            title={`${creatorClinic ? `Created by ${creatorClinic}` : "Provider created"} · ${creatorName}`}
+                            className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center cursor-help"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <UserCircle className="w-3 h-3 text-white" />
+                          </div>
+                        )}
+                      </div>
                       <div
                         className="flex items-center gap-1"
                         onClick={(e) => e.stopPropagation()}
@@ -566,12 +586,14 @@ export function PatientFilesClient({
                               </DropdownMenuItem>
                             )}
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              className="text-red-600 dark:text-red-400"
-                              onClick={() => handleDeleteFolder(folder)}
-                            >
-                              <Trash2 className="w-4 h-4 mr-2" /> Delete
-                            </DropdownMenuItem>
+                            {!isProviderCreated && (
+                              <DropdownMenuItem
+                                className="text-red-600 dark:text-red-400"
+                                onClick={() => handleDeleteFolder(folder)}
+                              >
+                                <Trash2 className="w-4 h-4 mr-2" /> Delete
+                              </DropdownMenuItem>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
@@ -629,13 +651,31 @@ export function PatientFilesClient({
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {currentFolder.Files.map((file) => {
                 const privacy = file.FileSetting?.privacy ?? "PRIVATE";
+                // Show creator info if file was uploaded by a provider (not the patient)
+                const isProviderUploaded = file.createdByUserId !== null && file.createdByUserId !== currentFolder.userId;
+                const fileCreatorName = isProviderUploaded && file.CreatedByUser
+                  ? [file.CreatedByUser.firstName, file.CreatedByUser.lastName].filter(Boolean).join(" ")
+                  : null;
+                const fileCreatorClinic = isProviderUploaded
+                  ? file.FileSetting?.FileClinicShares?.map((s) => s.Clinic.name).join(", ") ?? null
+                  : null;
                 return (
                   <div
                     key={file.id}
                     className="glassmorphic-card group hover:scale-[1.02] transition-all duration-200"
                   >
                     <div className="flex items-start justify-between mb-3">
-                      <File className="w-8 h-8 text-blue-500 flex-shrink-0" />
+                      <div className="relative">
+                        <File className="w-8 h-8 text-blue-500 flex-shrink-0" />
+                        {fileCreatorName && (
+                          <div
+                            title={`${fileCreatorClinic ? `Uploaded by ${fileCreatorClinic}` : "Provider uploaded"} · ${fileCreatorName}`}
+                            className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center cursor-help"
+                          >
+                            <UserCircle className="w-3 h-3 text-white" />
+                          </div>
+                        )}
+                      </div>
                       <div className="flex items-center gap-1">
                         <span
                           className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${PRIVACY_COLORS[privacy]}`}
@@ -697,12 +737,14 @@ export function PatientFilesClient({
                               </DropdownMenuItem>
                             )}
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              className="text-red-600 dark:text-red-400"
-                              onClick={() => handleDeleteFile(file)}
-                            >
-                              <Trash2 className="w-4 h-4 mr-2" /> Delete
-                            </DropdownMenuItem>
+                            {!isProviderUploaded && (
+                              <DropdownMenuItem
+                                className="text-red-600 dark:text-red-400"
+                                onClick={() => handleDeleteFile(file)}
+                              >
+                                <Trash2 className="w-4 h-4 mr-2" /> Delete
+                              </DropdownMenuItem>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>

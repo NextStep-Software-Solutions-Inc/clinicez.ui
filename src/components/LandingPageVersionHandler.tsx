@@ -9,14 +9,15 @@ import HeroBackground from "@components/HeroBackground"
 interface LandingPageContentProps {
   authenticated: boolean
   onboardingStatus?: string | null
+  isPostSignIn?: boolean
 }
 
-export default function LandingPageContent({ authenticated, onboardingStatus }: LandingPageContentProps) {
+export default function LandingPageContent({ authenticated, onboardingStatus, isPostSignIn }: LandingPageContentProps) {
   const version = useLandingPageVersion()
   const router = useRouter()
 
   useEffect(() => {
-    if (!authenticated || version !== "v2") return
+    if (!authenticated || !isPostSignIn || version !== "v2") return
 
     const isIncomplete =
       onboardingStatus === "NOT_STARTED" || onboardingStatus === "IN_PROGRESS"
@@ -25,10 +26,10 @@ export default function LandingPageContent({ authenticated, onboardingStatus }: 
     } else {
       router.replace("/v2/select-dashboard")
     }
-  }, [authenticated, version, onboardingStatus, router])
+  }, [authenticated, isPostSignIn, version, onboardingStatus, router])
 
-  // While redirecting authenticated v2 users, render nothing to avoid a flash
-  if (authenticated && version === "v2") return null
+  // While redirecting authenticated v2 users after sign-in, render nothing to avoid a flash
+  if (authenticated && isPostSignIn && version === "v2") return null
 
   if (version === "v2") {
     return (

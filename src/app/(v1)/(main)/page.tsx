@@ -8,11 +8,17 @@ export const metadata: Metadata = {
   description: "Optimized Healthcare Management System",
 };
 
-export default async function HomePage() {
+interface HomePageProps {
+  searchParams: Promise<{ signin?: string }>;
+}
+
+export default async function HomePage({ searchParams }: HomePageProps) {
   const session = await getCachedSession();
+  const params = await searchParams;
+  const isPostSignIn = params.signin === "1";
 
   let onboardingStatus: string | null = null;
-  if (session) {
+  if (session && isPostSignIn) {
     const userResult = await getCurrentUserAction();
     if (userResult.status && userResult.data) {
       onboardingStatus = userResult.data.onboardingStatus ?? null;
@@ -23,6 +29,7 @@ export default async function HomePage() {
     <LandingPageContent
       authenticated={!!session}
       onboardingStatus={onboardingStatus}
+      isPostSignIn={isPostSignIn}
     />
   );
 }

@@ -30,7 +30,7 @@ export default async function ClinicPatientFilesPage({ params }: Props) {
   const numericPatientId = parseInt(patientId, 10);
   if (isNaN(numericPatientId)) notFound();
 
-  const [patient, foldersResult, fileTypesResult, currentUser] = await Promise.all([
+  const [patient, foldersResult, fileTypesResult, currentUser, clinic] = await Promise.all([
     getClinicPatientProfileAction({ clinicUid, patientId: numericPatientId }),
     getPatientFilesForClinicAction({ patientId: numericPatientId, clinicUid }),
     getFileTypesAction(),
@@ -38,14 +38,20 @@ export default async function ClinicPatientFilesPage({ params }: Props) {
       where: { userId: session.user.sub, isActive: true },
       select: { id: true },
     }),
+    prisma.clinic.findUnique({
+      where: { clinicUid },
+      select: { id: true },
+    }),
   ]);
 
   if (!patient) notFound();
   if (!currentUser) return <UnauthorizedWarning />;
+  if (!clinic) notFound();
 
   return (
     <ClinicPatientFilesClient
       clinicUid={clinicUid}
+      clinicId={clinic.id}
       patientId={numericPatientId}
       patientName={patient.fullName}
       patientPicture={patient.picture ?? null}

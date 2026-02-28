@@ -565,6 +565,17 @@ export function PatientFilesClient({
                                 <Lock className="w-4 h-4 mr-2" /> Set Private
                               </DropdownMenuItem>
                             )}
+                            {/* For provider-created folders, patient can revert from PUBLIC back to CLINIC */}
+                            {isProviderCreated && (
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  handleFolderPrivacy(folder, "CLINIC")
+                                }
+                                disabled={privacy === "CLINIC"}
+                              >
+                                <Building2 className="w-4 h-4 mr-2" /> Set Clinic Shared
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuItem
                               onClick={() =>
                                 handleFolderPrivacy(folder, "PUBLIC")
@@ -722,6 +733,17 @@ export function PatientFilesClient({
                                 disabled={privacy === "PRIVATE"}
                               >
                                 <Lock className="w-4 h-4 mr-2" /> Set Private
+                              </DropdownMenuItem>
+                            )}
+                            {/* For provider-uploaded files, patient can revert from PUBLIC back to CLINIC */}
+                            {isProviderUploaded && (
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  handleFilePrivacy(file, "CLINIC")
+                                }
+                                disabled={privacy === "CLINIC"}
+                              >
+                                <Building2 className="w-4 h-4 mr-2" /> Set Clinic Shared
                               </DropdownMenuItem>
                             )}
                             <DropdownMenuItem

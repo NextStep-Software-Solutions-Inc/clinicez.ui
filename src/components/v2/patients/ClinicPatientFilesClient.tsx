@@ -60,6 +60,7 @@ type FileType = { id: number; name: string };
 
 interface ClinicPatientFilesClientProps {
   clinicUid: string;
+  clinicId: number;
   patientId: number;
   patientName: string;
   patientPicture?: string | null;
@@ -106,6 +107,7 @@ function formatGender(g: string): string {
 
 export function ClinicPatientFilesClient({
   clinicUid,
+  clinicId,
   patientId,
   patientName,
   patientPicture,
@@ -397,6 +399,8 @@ export function ClinicPatientFilesClient({
                     : null;
                   const creatorClinic = folder.FolderSetting?.FolderClinicShares
                     ?.map((s) => s.Clinic.name).join(", ") ?? null;
+                  // Only allow manage actions if this clinic created the folder
+                  const isCreatedByThisClinic = folder.FolderSetting?.scopeClinicId === clinicId;
                   return (
                     <div
                       key={folder.id}
@@ -429,31 +433,33 @@ export function ClinicPatientFilesClient({
                             {PRIVACY_ICONS[privacy]}
                             <span className="hidden sm:inline">{PRIVACY_LABELS[privacy]}</span>
                           </Badge>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <button className="p-1 rounded-md hover:bg-white/50 dark:hover:bg-slate-700/50 transition-colors opacity-0 group-hover:opacity-100">
-                                <MoreVertical className="w-4 h-4 text-slate-500" />
-                              </button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-44">
-                              <DropdownMenuItem
-                                onClick={() => {
-                                  setRenameFolderTarget(folder);
-                                  setRenameFolderName(folder.name);
-                                  setShowRenameFolder(true);
-                                }}
-                              >
-                                <Edit className="w-4 h-4 mr-2" /> Rename
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                className="text-red-600 dark:text-red-400"
-                                onClick={() => handleDeleteFolder(folder)}
-                              >
-                                <Trash2 className="w-4 h-4 mr-2" /> Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                          {isCreatedByThisClinic && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <button className="p-1 rounded-md hover:bg-white/50 dark:hover:bg-slate-700/50 transition-colors opacity-0 group-hover:opacity-100">
+                                  <MoreVertical className="w-4 h-4 text-slate-500" />
+                                </button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-44">
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setRenameFolderTarget(folder);
+                                    setRenameFolderName(folder.name);
+                                    setShowRenameFolder(true);
+                                  }}
+                                >
+                                  <Edit className="w-4 h-4 mr-2" /> Rename
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  className="text-red-600 dark:text-red-400"
+                                  onClick={() => handleDeleteFolder(folder)}
+                                >
+                                  <Trash2 className="w-4 h-4 mr-2" /> Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
                         </div>
                       </div>
                       <p className="font-medium text-slate-900 dark:text-white truncate mb-1">
@@ -496,6 +502,8 @@ export function ClinicPatientFilesClient({
                     : null;
                   const fileCreatorClinic = file.FileSetting?.FileClinicShares
                     ?.map((s) => s.Clinic.name).join(", ") ?? null;
+                  // Only allow manage actions if this clinic uploaded the file
+                  const isUploadedByThisClinic = file.FileSetting?.scopeClinicId === clinicId;
                   return (
                     <div
                       key={file.id}
@@ -531,23 +539,27 @@ export function ClinicPatientFilesClient({
                                 View File
                               </a>
                             </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setRenameFileTarget(file);
-                                setRenameFileName(file.name);
-                                setShowRenameFile(true);
-                              }}
-                            >
-                              <Edit className="w-4 h-4 mr-2" /> Rename
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              className="text-red-600 dark:text-red-400"
-                              onClick={() => handleDeleteFile(file)}
-                            >
-                              <Trash2 className="w-4 h-4 mr-2" /> Delete
-                            </DropdownMenuItem>
+                            {isUploadedByThisClinic && (
+                              <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setRenameFileTarget(file);
+                                    setRenameFileName(file.name);
+                                    setShowRenameFile(true);
+                                  }}
+                                >
+                                  <Edit className="w-4 h-4 mr-2" /> Rename
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  className="text-red-600 dark:text-red-400"
+                                  onClick={() => handleDeleteFile(file)}
+                                >
+                                  <Trash2 className="w-4 h-4 mr-2" /> Delete
+                                </DropdownMenuItem>
+                              </>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>

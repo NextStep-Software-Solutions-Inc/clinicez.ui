@@ -13,7 +13,7 @@ export default function PatientDashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-700  [background-image:var(--pattern-primary)] [background-size:400px_120px] [background-attachment:fixed] [animation:ecgScroll_40s_linear_infinite]">
+    <div className="min-h-screen[background-image:var(--pattern-primary)] [background-size:400px_120px] [background-attachment:fixed] [animation:ecgScroll_40s_linear_infinite]">
       {/* Animated background gradient orbs with phase motion */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
         {/* Appointment Card Color - Phase 1 */}
@@ -27,7 +27,7 @@ export default function PatientDashboardLayout({
       </div>
 
       {/* Main content */}
-      <main className="relative w-full z-10">
+      <main className="relative w-full z-10 bg-white/70 dark:bg-slate-700/70">
         <div className="container mx-auto px-4 sm:px-6 md:px-8 py-6 md:py-8 lg:py-10">
           {children}
         </div>

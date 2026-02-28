@@ -346,6 +346,7 @@ export interface PatientDashboardData {
   patient: {
     id: number
     userId: string
+    nickname: string | null
     firstName: string | null
     lastName: string | null
     picture: string | null

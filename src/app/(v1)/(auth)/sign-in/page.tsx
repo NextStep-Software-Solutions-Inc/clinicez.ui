@@ -13,7 +13,7 @@ export default function SignInPage() {
       </div>
       <SignIn
         signUpUrl="/sign-up"
-        fallbackRedirectUrl="/v2/select-dashboard"
+        forceRedirectUrl="/?signin=1"
       />
     </div>
   );

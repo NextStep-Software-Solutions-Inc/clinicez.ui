@@ -52,6 +52,34 @@ export const getPatientConfirmedAppointmentsAction = withErrorHandling(
             AppointmentType: { select: { name: true } },
           },
         },
+        AppointmentRouting: {
+          select: {
+            status: true,
+            RoutedTo: {
+              select: {
+                id: true,
+                HPProfile: {
+                  select: {
+                    title: true,
+                    name: true,
+                    suffix: true,
+                  },
+                },
+                HPType: {
+                  select: {
+                    name: true,
+                  },
+                },
+                User: {
+                  select: {
+                    firstName: true,
+                    lastName: true,
+                  },
+                },
+              },
+            },
+          },
+        },
       },
     });
 

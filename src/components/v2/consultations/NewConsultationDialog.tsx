@@ -5,6 +5,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+import { formatHealthcareProviderName } from "@/lib/utils/format-healthcare-provider-name";
 import {
   Dialog,
   DialogContent,
@@ -32,6 +34,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import { Calendar } from "lucide-react";
 import { createConsultationTicketAction } from "@/actions/consultation/consultation-ticket.action";
 import { getPatientConfirmedAppointmentsAction } from "@/actions/appointments/get-patient-confirmed-appointments.action";
@@ -76,6 +80,7 @@ export default function NewConsultationDialog({
   const [linkToAppointment, setLinkToAppointment] = useState(false);
   const [confirmedAppointments, setConfirmedAppointments] = useState<ConfirmedAppointment[]>([]);
   const [loadingAppointments, setLoadingAppointments] = useState(false);
+  const [selectedCoCreatorHpIds, setSelectedCoCreatorHpIds] = useState<number[]>([]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -107,6 +112,7 @@ export default function NewConsultationDialog({
     }
     if (!checked) {
       form.setValue("appointmentId", undefined);
+      setSelectedCoCreatorHpIds([]);
     }
   };
 
@@ -116,15 +122,19 @@ export default function NewConsultationDialog({
       form.reset();
       setLinkToAppointment(false);
       setConfirmedAppointments([]);
+      setSelectedCoCreatorHpIds([]);
     }
   };
 
   const onSubmit = (values: FormValues) => {
     startTransition(async () => {
+      // Combine the primary HP with any selected co-creators (deduplicated)
+      const allHpIds = Array.from(new Set([values.hpId, ...selectedCoCreatorHpIds]));
+
       const result = await createConsultationTicketAction({
         clinicUid,
         systemId: values.systemId,
-        hpIds: [values.hpId],
+        hpIds: allHpIds,
         subject: values.subject || undefined,
         appointmentId: linkToAppointment ? values.appointmentId : undefined,
         clinicPatientId: patient.clinicPatientId,
@@ -282,6 +292,11 @@ export default function NewConsultationDialog({
                             "subject",
                             selected.complaint ?? selected.subject ?? ""
                           );
+                          // Pre-select co-creators: check HPs with ACCEPTED status by default
+                          const acceptedHpIds = (selected.AppointmentRouting ?? [])
+                            .filter((r) => r.status === "ACCEPTED")
+                            .map((r) => r.RoutedTo.id);
+                          setSelectedCoCreatorHpIds(acceptedHpIds);
                         }
                       }}
                       value={field.value?.toString()}
@@ -327,6 +342,70 @@ export default function NewConsultationDialog({
                 )}
               />
             )}
+
+            {/* Co-creators: assigned HPs from the selected appointment's routing */}
+            {linkToAppointment && (() => {
+              const selectedApptId = form.watch("appointmentId");
+              const selectedAppt = confirmedAppointments.find(
+                (a) => a.id === Number(selectedApptId)
+              );
+              const routings = selectedAppt?.AppointmentRouting ?? [];
+              if (routings.length === 0) return null;
+              return (
+                <div className="rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5 space-y-2">
+                  <p className="text-sm font-medium">Assigned Healthcare Providers</p>
+                  <p className="text-xs text-muted-foreground">
+                    Select which assigned providers to add as co-creators of this consultation.
+                  </p>
+                  <div className="space-y-2 pt-1">
+                    {routings.map((routing) => {
+                      const hp = routing.RoutedTo;
+                      const isAccepted = routing.status === "ACCEPTED";
+                      const isDeclined = routing.status === "DECLINED";
+                      const displayName = formatHealthcareProviderName({
+                        hpProfile: hp.HPProfile ?? undefined,
+                        user: hp.User,
+                      });
+                      const isChecked = selectedCoCreatorHpIds.includes(hp.id);
+                      return (
+                        <div key={hp.id} className="flex items-center gap-2.5">
+                          <Checkbox
+                            id={`cocreator-${hp.id}`}
+                            checked={isChecked}
+                            disabled={isDeclined}
+                            onCheckedChange={(checked) => {
+                              setSelectedCoCreatorHpIds((prev) =>
+                                checked
+                                  ? [...prev, hp.id]
+                                  : prev.filter((id) => id !== hp.id)
+                              );
+                            }}
+                          />
+                          <label
+                            htmlFor={`cocreator-${hp.id}`}
+                            className={cn(
+                              "flex items-center gap-2 text-sm",
+                              isDeclined ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                            )}
+                          >
+                            <span>{displayName}</span>
+                            {hp.HPType?.name && (
+                              <span className="text-xs text-muted-foreground">({hp.HPType.name})</span>
+                            )}
+                          </label>
+                          <Badge
+                            variant={isAccepted ? "default" : isDeclined ? "destructive" : "secondary"}
+                            className="ml-auto text-xs"
+                          >
+                            {routing.status}
+                          </Badge>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
 
             <FormField
               control={form.control}

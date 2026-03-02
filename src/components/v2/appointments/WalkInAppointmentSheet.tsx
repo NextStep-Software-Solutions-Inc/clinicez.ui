@@ -17,7 +17,9 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -26,7 +28,7 @@ import { createWalkInAppointmentAction } from "@/actions/appointments/appointmen
 import { getClinicPatientsAction, type GetClinicPatientsResult } from "@/actions/clinics/clinic-patient.action";
 import type { GetAppointmentModes } from "@/actions/appointments/appointment-mode.action";
 import type { GetAppointmentTypes } from "@/actions/appointments/appointment-type.action";
-import type { GetClinicServices } from "@/actions/clinics/clinic-service.action";
+import type { GetClinicServiceCategories } from "@/actions/clinics/clinic-service-category.action";
 import type { GetHPsType } from "@/actions/hp.actions";
 
 /** Delay before closing the dropdown (allows click events to fire before blur) */
@@ -39,7 +41,7 @@ interface WalkInAppointmentSheetProps {
   clinicUid: string;
   modes: GetAppointmentModes;
   types: GetAppointmentTypes;
-  services: GetClinicServices;
+  serviceCategories: GetClinicServiceCategories;
   hps: GetHPsType;
   onClose: () => void;
   onSuccess: () => void;
@@ -50,7 +52,7 @@ export function WalkInAppointmentSheet({
   clinicUid,
   modes,
   types,
-  services,
+  serviceCategories,
   hps,
   onClose,
   onSuccess,
@@ -390,8 +392,13 @@ export function WalkInAppointmentSheet({
             <Select value={serviceId} onValueChange={setServiceId}>
               <SelectTrigger><SelectValue placeholder="Select service" /></SelectTrigger>
               <SelectContent>
-                {services.map((service) => (
-                  <SelectItem key={service.id} value={String(service.id)}>{service.name}</SelectItem>
+                {serviceCategories.map((category) => (
+                  <SelectGroup key={category.id}>
+                    <SelectLabel>{category.name}</SelectLabel>
+                    {category.Services.map((service) => (
+                      <SelectItem key={service.id} value={String(service.id)}>{service.name}</SelectItem>
+                    ))}
+                  </SelectGroup>
                 ))}
               </SelectContent>
             </Select>

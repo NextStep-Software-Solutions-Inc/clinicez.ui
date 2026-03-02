@@ -100,6 +100,7 @@ export function PreAssessmentNoteDialog({
       assessment,
       homeInstructions: homeInstructions.trim() ? homeInstructions : undefined,
       remarks,
+      contentType: 'markdown',
     });
     setIsPending(false);
 

@@ -31,9 +31,10 @@ type UpsertPreAssessmentNotePayload = {
   homeInstructions?: string;
   remarks: string;
   clinicUid: string;
+  contentType?: 'plain_text' | 'markdown';
 }
 
-export const upsertPreAssessmentNoteAction = withErrorHandling(async ({ appointmentId, clinicUid, assessment, homeInstructions, remarks }: UpsertPreAssessmentNotePayload) => {
+export const upsertPreAssessmentNoteAction = withErrorHandling(async ({ appointmentId, clinicUid, assessment, homeInstructions, remarks, contentType }: UpsertPreAssessmentNotePayload) => {
 
   const session = await getCachedSession()
   if (!session) throw new Error("User not authenticated.")
@@ -70,6 +71,7 @@ export const upsertPreAssessmentNoteAction = withErrorHandling(async ({ appointm
         assessment,
         homeInstructions,
         remarks,
+        contentType,
         CreatedBy: {
           connect: {
             userId: session.user.sub
@@ -83,6 +85,7 @@ export const upsertPreAssessmentNoteAction = withErrorHandling(async ({ appointm
         assessment,
         homeInstructions,
         remarks,
+        contentType,
       }
     })
   }, {

@@ -650,19 +650,19 @@ export function AppointmentDetailSheet({
                               {note.assessment && (
                                 <tr className="border-b border-border/20">
                                   <td className="px-3 py-2 align-top font-medium text-muted-foreground w-32 whitespace-nowrap bg-muted/10">Assessment</td>
-                                  <td className="px-3 py-2"><MarkdownRenderer content={note.assessment} className="text-xs" /></td>
+                                  <td className="px-3 py-2"><MarkdownRenderer content={note.assessment} className="text-xs" type={note.contentType ?? 'plain_text'} /></td>
                                 </tr>
                               )}
                               {note.homeInstructions && (
                                 <tr className="border-b border-border/20">
                                   <td className="px-3 py-2 align-top font-medium text-muted-foreground w-32 whitespace-nowrap bg-muted/10">Home Instructions</td>
-                                  <td className="px-3 py-2"><MarkdownRenderer content={note.homeInstructions} className="text-xs" /></td>
+                                  <td className="px-3 py-2"><MarkdownRenderer content={note.homeInstructions} className="text-xs" type={note.contentType ?? 'plain_text'} /></td>
                                 </tr>
                               )}
                               {note.remarks && (
                                 <tr>
                                   <td className="px-3 py-2 align-top font-medium text-muted-foreground w-32 whitespace-nowrap bg-muted/10">Remarks</td>
-                                  <td className="px-3 py-2"><MarkdownRenderer content={note.remarks} className="text-xs" /></td>
+                                  <td className="px-3 py-2"><MarkdownRenderer content={note.remarks} className="text-xs" type={note.contentType ?? 'plain_text'} /></td>
                                 </tr>
                               )}
                             </tbody>

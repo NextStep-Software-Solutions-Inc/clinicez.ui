@@ -1126,6 +1126,7 @@ export const getAppointmentAction = withErrorHandling(cache(async (id: number, c
           assessment: true,
           remarks: true,
           homeInstructions: true,
+          contentType: true,
           CreatedBy: {
             select: {
               userId: true,

@@ -4,12 +4,21 @@ import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
 import rehypeSanitize from 'rehype-sanitize';
 
+export type NoteContentType = 'plain_text' | 'markdown';
+
 interface MarkdownRendererProps {
   content: string;
   className?: string;
+  type?: NoteContentType | string | null;
 }
 
-export function MarkdownRenderer({ content, className = '' }: MarkdownRendererProps) {
+export function MarkdownRenderer({ content, className = '', type = 'markdown' }: MarkdownRendererProps) {
+  if (type === 'plain_text') {
+    return (
+      <div className={`whitespace-pre-wrap break-words ${className}`}>{content}</div>
+    );
+  }
+
   return (
     <div className={`prose prose-sm max-w-none dark:prose-invert ${className}`}>
       <ReactMarkdown

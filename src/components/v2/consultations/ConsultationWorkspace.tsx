@@ -135,8 +135,7 @@ export default function ConsultationWorkspace({
 
       {/* ── Appointment / Consultation Summary Bar ── */}
       <div className="shrink-0 px-4 sm:px-6 py-3 sm:py-4 border-b border-border/50 bg-background/80 backdrop-blur">
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0 flex-1">
+        <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <h2 className="text-base font-semibold text-foreground truncate">
                 {consultation.subject || apt?.subject || `Consultation #${consultation.id}`}
@@ -153,6 +152,19 @@ export default function ConsultationWorkspace({
                 <span className="text-xs text-muted-foreground font-mono">
                   #{consultation.caseNumber}
                 </span>
+              )}
+              {/* ── Resolve button inline with subject so it doesn't create a second column ── */}
+              {canBeResolved && myHPs.length > 0 && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-1.5 h-8 text-xs border-emerald-300 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 dark:border-emerald-700 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
+                  disabled={resolving}
+                  onClick={handleResolve}
+                >
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  {resolving ? "Resolving…" : "Resolve"}
+                </Button>
               )}
             </div>
             <div className="flex items-center gap-4 mt-1.5 flex-wrap">
@@ -227,23 +239,6 @@ export default function ConsultationWorkspace({
                 />
               </div>
             )}
-          </div>
-
-          {/* ── Resolve button (only for the consulting HP, status not yet resolved) ── */}
-          {canBeResolved && myHPs.length > 0 && (
-            <div className="shrink-0 pl-4">
-              <Button
-                size="sm"
-                variant="outline"
-                className="gap-1.5 h-8 text-xs border-emerald-300 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 dark:border-emerald-700 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
-                disabled={resolving}
-                onClick={handleResolve}
-              >
-                <CheckCircle2 className="h-3.5 w-3.5" />
-                {resolving ? "Resolving…" : "Resolve"}
-              </Button>
-            </div>
-          )}
         </div>
       </div>
 

@@ -555,7 +555,7 @@ export function AppointmentsClient({
         />
       )}
 
-      {/* Assign Doctor — replaces detail sheet */}
+      {/* Assign Healthcare Provider — replaces detail sheet */}
       {selectedAppointment && (
         <AssignDoctorDialog
           open={activePanel === "assign"}

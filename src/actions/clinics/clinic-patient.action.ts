@@ -422,12 +422,7 @@ export const searchNonClinicPatientsAction = withErrorHandling(async ({
     take: 10,
     where: {
       isActive: true,
-      OR: [
-        { firstName: { contains: search, mode: "insensitive" } },
-        { lastName: { contains: search, mode: "insensitive" } },
-        { middleName: { contains: search, mode: "insensitive" } },
-        { email: { contains: search, mode: "insensitive" } },
-      ],
+      ...buildPatientSearchFilter(search.trim()),
       ClinicPatients: {
         none: {
           Clinic: { clinicUid },

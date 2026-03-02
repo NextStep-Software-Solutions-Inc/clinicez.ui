@@ -74,8 +74,8 @@ export default function ConsultationNotes({ consultation, patientUserId }: Consu
             </CardDescription>
           </div>
           <div className="ml-auto">
-            {/* AI Medical Note Summarizer */}
-            {isConsultationAuthor && allNotesText && (
+            {/* AI Medical Note Summarizer — hidden once resolved */}
+            {isConsultationAuthor && allNotesText && consultation.ConsultationTicketAttribute?.status !== 'RESOLVED' && (
               <MedicalNoteSummarizer
                 consultationNotes={allNotesText}
                 clinicId={consultation.clinicId}

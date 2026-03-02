@@ -172,7 +172,8 @@ export default function ConsultationNotesEditor({
 
   return (
     <div className="p-4 sm:p-6 space-y-3">
-      {/* AI Summarize button */}
+      {/* AI Summarize button — hidden once consultation is resolved */}
+      {!isResolved && (
       <div className="flex items-center justify-end">
         <MedicalNoteSummarizer
           consultationNotes={sections
@@ -181,6 +182,7 @@ export default function ConsultationNotesEditor({
           noteSections={sections.map((s) => s.label || s.name)}
         />
       </div>
+      )}
       {sections.map((section) => (
         <div
           key={section.name}

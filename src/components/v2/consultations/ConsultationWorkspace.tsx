@@ -216,20 +216,22 @@ export default function ConsultationWorkspace({
                 {preAssessment.assessment}
               </p>
             )}
-          </div>
-
-          {/* ── Resolve button (only for the consulting HP, status not yet resolved) ── */}
-          {canBeResolved && myHPs.length > 0 && (
-            <div className="shrink-0 pl-4 flex flex-col gap-2">
-              {/* AI Patient Insight – only for HPs with a linked patient */}
-              {patient && myHPs.length > 0 && (
+            {/* AI Patient Insight – placed below consultation details so it doesn't crowd the header */}
+            {patient && myHPs.length > 0 && (
+              <div className="mt-2">
                 <PatientAIInsightButton
                   patientId={patient.id}
                   clinicId={clinicId}
                   patientName={patient.fullName}
                   size="sm"
                 />
-              )}
+              </div>
+            )}
+          </div>
+
+          {/* ── Resolve button (only for the consulting HP, status not yet resolved) ── */}
+          {canBeResolved && myHPs.length > 0 && (
+            <div className="shrink-0 pl-4">
               <Button
                 size="sm"
                 variant="outline"
@@ -240,17 +242,6 @@ export default function ConsultationWorkspace({
                 <CheckCircle2 className="h-3.5 w-3.5" />
                 {resolving ? "Resolving…" : "Resolve"}
               </Button>
-            </div>
-          )}
-          {/* AI insight for resolved consultations (no Resolve button shown) */}
-          {isResolved && patient && myHPs.length > 0 && (
-            <div className="shrink-0 pl-4">
-              <PatientAIInsightButton
-                patientId={patient.id}
-                clinicId={clinicId}
-                patientName={patient.fullName}
-                size="sm"
-              />
             </div>
           )}
         </div>

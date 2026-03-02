@@ -578,6 +578,8 @@ export function AppointmentsClient({
           initialAssessment={preAssessmentEditData?.assessment}
           initialHomeInstructions={preAssessmentEditData?.homeInstructions}
           initialRemarks={preAssessmentEditData?.remarks}
+          complaint={selectedAppointment.complaint ?? undefined}
+          clinicId={selectedAppointment.clinicId}
           onClose={() => { setPreAssessmentEditData(null); backToDetail(); }}
           onSuccess={() => {
             setPreAssessmentEditData(null);

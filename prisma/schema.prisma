@@ -1222,6 +1222,7 @@ model Clinic {
   AIUsageLimit                    AIUsageLimit?
   AIUsageLogs                     AIUsageLog[]
   AIUsageSummaries                AIUsageSummary[]
+  AIGeneratedInsights             AIGeneratedInsight[]
   Appointments                    Appointment[]
   AppointmentConfig               AppointmentConfig?
   AppointmentModes                AppointmentMode[]
@@ -2658,4 +2659,31 @@ model Notification {
 
   @@index([userId, isRead])
   @@index([userId, createdAt])
+}
+
+/// Generic AI-generated content cache with validity window.
+/// entityType + entityId identify the subject (e.g. PATIENT / 42).
+/// validUntil drives regeneration: if Now > validUntil the record is stale.
+model AIGeneratedInsight {
+  id                Int      @id @default(autoincrement())
+  /// Discriminator for the kind of insight (e.g. "PATIENT_INSIGHT")
+  type              String
+  /// Type of the entity this insight is about (e.g. "PATIENT")
+  entityType        String
+  /// Primary key of the entity (e.g. Patient.id)
+  entityId          Int
+  /// Optional clinic scope – insights can be clinic-specific
+  clinicId          Int?
+  /// The AI-generated markdown / plain-text content
+  content           String   @db.Text
+  /// Clerk userId of the staff member who triggered generation
+  generatedByUserId String
+  /// When this cached insight expires and should be regenerated
+  validUntil        DateTime
+  createdAt         DateTime @default(now())
+
+  Clinic Clinic? @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+
+  @@index([type, entityType, entityId, clinicId])
+  @@index([validUntil])
 }

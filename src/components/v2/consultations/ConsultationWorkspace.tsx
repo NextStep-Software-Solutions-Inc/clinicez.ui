@@ -29,6 +29,7 @@ import ConsultationPrescriptions from "./ConsultationPrescriptions";
 import ConsultationMedCerts from "./ConsultationMedCerts";
 import ConsultationDiagnostics from "./ConsultationDiagnostics";
 import ConsultationReferrals from "./ConsultationReferrals";
+import { PatientAIInsightButton } from "@/components/v2/patients/PatientAIInsightButton";
 
 type Detail = NonNullable<GetPatientConsultationDetail["data"]>;
 
@@ -43,6 +44,8 @@ interface PatientInfo {
 
 interface ConsultationWorkspaceProps {
   clinicUid: string;
+  /** Optional numeric clinic ID – used for the AI Patient Insight feature */
+  clinicId?: number;
   patient: PatientInfo | null;
   consultation: Detail;
   myHPs: NonNullable<GetHPsType>;
@@ -55,6 +58,7 @@ interface ConsultationWorkspaceProps {
 
 export default function ConsultationWorkspace({
   clinicUid,
+  clinicId,
   patient,
   consultation,
   myHPs,
@@ -216,7 +220,16 @@ export default function ConsultationWorkspace({
 
           {/* ── Resolve button (only for the consulting HP, status not yet resolved) ── */}
           {canBeResolved && myHPs.length > 0 && (
-            <div className="shrink-0 pl-4">
+            <div className="shrink-0 pl-4 flex flex-col gap-2">
+              {/* AI Patient Insight – only for HPs with a linked patient */}
+              {patient && myHPs.length > 0 && (
+                <PatientAIInsightButton
+                  patientId={patient.id}
+                  clinicId={clinicId}
+                  patientName={patient.fullName}
+                  size="sm"
+                />
+              )}
               <Button
                 size="sm"
                 variant="outline"
@@ -227,6 +240,17 @@ export default function ConsultationWorkspace({
                 <CheckCircle2 className="h-3.5 w-3.5" />
                 {resolving ? "Resolving…" : "Resolve"}
               </Button>
+            </div>
+          )}
+          {/* AI insight for resolved consultations (no Resolve button shown) */}
+          {isResolved && patient && myHPs.length > 0 && (
+            <div className="shrink-0 pl-4">
+              <PatientAIInsightButton
+                patientId={patient.id}
+                clinicId={clinicId}
+                patientName={patient.fullName}
+                size="sm"
+              />
             </div>
           )}
         </div>

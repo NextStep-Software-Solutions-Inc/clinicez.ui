@@ -18,6 +18,7 @@ import { formatBloodType } from '@/lib/utils'
 import { calculateAgeInMonths, formatAge, getLengthPercentile, getWeightPercentile, getGrowthStatusColor } from '@/lib/pediatric-growth-utils'
 import type { SerializedPatientHealthRecordsResponse } from '@/types/patient-profile'
 import { DownloadPHRButton } from '@/components/v2/phr/DownloadPHRButton'
+import { PatientAIInsightButton } from '@/components/v2/patients/PatientAIInsightButton'
 
 interface ProfileClientProps {
   patient: SerializedPatientHealthRecordsResponse
@@ -33,6 +34,8 @@ interface ProfileClientProps {
   appointmentsHref?: string | null
   /** URL for the PHR print page. Defaults to '/v2/patient/phr/print' */
   downloadPHRHref?: string
+  /** When provided, renders the AI Patient Insight button (healthcare providers only) */
+  aiInsightConfig?: { patientId: number; clinicId?: number }
 }
 
 const PROFILE_TABS = [
@@ -51,7 +54,7 @@ const PROFILE_TABS = [
   { id: 'insurance', label: 'Insurance & Docs', icon: '📄' },
 ]
 
-export default function ProfileClient({ patient, headerSlot, editProfileHref, filesHref, filesButtonLabel = 'My Files', appointmentsHref, downloadPHRHref = '/api/phr/patient' }: ProfileClientProps) {
+export default function ProfileClient({ patient, headerSlot, editProfileHref, filesHref, filesButtonLabel = 'My Files', appointmentsHref, downloadPHRHref = '/api/phr/patient', aiInsightConfig }: ProfileClientProps) {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState('overview')
   const [vitalsViewMode, setVitalsViewMode] = useState<'list' | 'chart'>('list')
@@ -1829,6 +1832,15 @@ export default function ProfileClient({ patient, headerSlot, editProfileHref, fi
             printHref={downloadPHRHref}
             patientName={patient.fullName}
           />
+          {aiInsightConfig && (
+            <PatientAIInsightButton
+              patientId={aiInsightConfig.patientId}
+              clinicId={aiInsightConfig.clinicId}
+              patientName={patient.fullName}
+              size="default"
+              className="shadow-lg"
+            />
+          )}
           <button
             onClick={() => router.push(editProfileHref ?? '/v2/profile/edit')}
             className="flex items-center gap-1.5 md:gap-2 px-4 md:px-6 py-2.5 md:py-3 rounded-lg bg-gradient-to-br from-blue-600 to-blue-500 text-white text-sm font-semibold hover:shadow-lg transition-all duration-300 hover:scale-105 shadow-lg"

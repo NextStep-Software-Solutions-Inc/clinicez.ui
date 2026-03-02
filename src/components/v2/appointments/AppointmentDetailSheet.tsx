@@ -697,7 +697,7 @@ export function AppointmentDetailSheet({
                 </>
               )}
 
-              {/* RECEIVED: Assign Doctor (first), Confirm Booking, Tag HPs, Complete, Cancel */}
+              {/* RECEIVED: Assign Healthcare Provider (first), Confirm Booking, Tag HPs, Complete, Cancel */}
               {status === "RECEIVED" && (
                 <>
                   <Button
@@ -708,7 +708,7 @@ export function AppointmentDetailSheet({
                     onClick={() => onOpenSubPanel("assign")}
                   >
                     <Stethoscope className="h-4 w-4" />
-                    Assign Doctor
+                    Assign Healthcare Provider
                   </Button>
                   <Button
                     size="sm"
@@ -818,7 +818,7 @@ export function AppointmentDetailSheet({
                     onClick={() => onOpenSubPanel("assign")}
                   >
                     <Stethoscope className="h-4 w-4" />
-                    Reassign Doctor
+                    Reassign Healthcare Provider
                   </Button>
                   <Button
                     size="sm"

@@ -416,10 +416,10 @@ export function WalkInAppointmentSheet({
             </Select>
           </div>
 
-          {/* ── Assign Doctor (optional) ───────────────────────────────────── */}
+          {/* ── Assign Healthcare Provider (optional) ───────────────────────────────────── */}
           <div className="space-y-1.5">
             <Label className="text-xs font-medium">
-              Assign Doctor <span className="text-muted-foreground font-normal">(optional)</span>
+              Assign Healthcare Provider <span className="text-muted-foreground font-normal">(optional)</span>
             </Label>
             <Select value={hpId} onValueChange={setHpId}>
               <SelectTrigger><SelectValue placeholder="Select doctor (optional)" /></SelectTrigger>

@@ -154,6 +154,7 @@ model User {
   UserVaccinations                 UserVaccination[]
   VitalSigns                       VitalSign[]
   Notifications                    Notification[]
+  PatientInsights                  PatientInsight[]
 
   @@index([caseNumber])
 }
@@ -1222,7 +1223,7 @@ model Clinic {
   AIUsageLimit                    AIUsageLimit?
   AIUsageLogs                     AIUsageLog[]
   AIUsageSummaries                AIUsageSummary[]
-  AIGeneratedInsights             AIGeneratedInsight[]
+  PatientInsights                 PatientInsight[]
   Appointments                    Appointment[]
   AppointmentConfig               AppointmentConfig?
   AppointmentModes                AppointmentMode[]
@@ -2661,20 +2662,15 @@ model Notification {
   @@index([userId, createdAt])
 }
 
-/// Generic AI-generated content cache with validity window.
-/// entityType + entityId identify the subject (e.g. PATIENT / 42).
+/// AI-generated clinical insight summary for a patient, cached with a validity window.
 /// validUntil drives regeneration: if Now > validUntil the record is stale.
-model AIGeneratedInsight {
+model PatientInsight {
   id                Int      @id @default(autoincrement())
-  /// Discriminator for the kind of insight (e.g. "PATIENT_INSIGHT")
-  type              String
-  /// Type of the entity this insight is about (e.g. "PATIENT")
-  entityType        String
-  /// Primary key of the entity (e.g. Patient.id)
-  entityId          Int
+  /// The patient this insight is about
+  patientId         Int
   /// Optional clinic scope – insights can be clinic-specific
   clinicId          Int?
-  /// The AI-generated markdown / plain-text content
+  /// The AI-generated markdown content
   content           String   @db.Text
   /// Clerk userId of the staff member who triggered generation
   generatedByUserId String
@@ -2682,8 +2678,9 @@ model AIGeneratedInsight {
   validUntil        DateTime
   createdAt         DateTime @default(now())
 
-  Clinic Clinic? @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  Patient User   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  Clinic  Clinic? @relation(fields: [clinicId], references: [id], onDelete: Cascade)
 
-  @@index([type, entityType, entityId, clinicId])
+  @@index([patientId, clinicId])
   @@index([validUntil])
 }

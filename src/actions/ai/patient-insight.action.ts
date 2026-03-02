@@ -37,11 +37,9 @@ export async function getOrGeneratePatientInsightAction(
 
   // ── 1. Check cache ──────────────────────────────────────────────────────
   if (!forceRegen) {
-    const cached = await prisma.aIGeneratedInsight.findFirst({
+    const cached = await prisma.patientInsight.findFirst({
       where: {
-        type: "PATIENT_INSIGHT",
-        entityType: "PATIENT",
-        entityId: patientId,
+        patientId,
         clinicId: clinicId ?? null,
         validUntil: { gt: now },
       },
@@ -234,11 +232,9 @@ Keep each section concise. This is for healthcare provider use only.`;
     now.getTime() + INSIGHT_VALIDITY_HOURS * 60 * 60 * 1000,
   );
 
-  const saved = await prisma.aIGeneratedInsight.create({
+  const saved = await prisma.patientInsight.create({
     data: {
-      type: "PATIENT_INSIGHT",
-      entityType: "PATIENT",
-      entityId: patientId,
+      patientId,
       clinicId: clinicId ?? null,
       content,
       generatedByUserId: clerkUserId,

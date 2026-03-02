@@ -676,29 +676,27 @@ export function AppointmentDetailSheet({
                               )}
                             </div>
                           </div>
-                          {/* Descriptive generic table */}
-                          <table className="w-full text-xs border-collapse">
-                            <tbody>
-                              {note.assessment && (
-                                <tr className="border-b border-border/20">
-                                  <td className="px-3 py-2 align-top font-medium text-muted-foreground w-32 whitespace-nowrap bg-muted/10">Assessment</td>
-                                  <td className="px-3 py-2"><MarkdownRenderer content={note.assessment} className="text-xs" /></td>
-                                </tr>
-                              )}
-                              {note.homeInstructions && (
-                                <tr className="border-b border-border/20">
-                                  <td className="px-3 py-2 align-top font-medium text-muted-foreground w-32 whitespace-nowrap bg-muted/10">Home Instructions</td>
-                                  <td className="px-3 py-2"><MarkdownRenderer content={note.homeInstructions} className="text-xs" /></td>
-                                </tr>
-                              )}
-                              {note.remarks && (
-                                <tr>
-                                  <td className="px-3 py-2 align-top font-medium text-muted-foreground w-32 whitespace-nowrap bg-muted/10">Remarks</td>
-                                  <td className="px-3 py-2"><MarkdownRenderer content={note.remarks} className="text-xs" /></td>
-                                </tr>
-                              )}
-                            </tbody>
-                          </table>
+                          {/* Note fields: label on top, content below */}
+                          <div className="px-3 py-2 space-y-3">
+                            {note.assessment && (
+                              <div>
+                                <p className="text-xs font-medium text-muted-foreground mb-1">Assessment</p>
+                                <MarkdownRenderer content={note.assessment} className="text-xs" />
+                              </div>
+                            )}
+                            {note.homeInstructions && (
+                              <div>
+                                <p className="text-xs font-medium text-muted-foreground mb-1">Home Instructions</p>
+                                <MarkdownRenderer content={note.homeInstructions} className="text-xs" />
+                              </div>
+                            )}
+                            {note.remarks && (
+                              <div>
+                                <p className="text-xs font-medium text-muted-foreground mb-1">Remarks</p>
+                                <MarkdownRenderer content={note.remarks} className="text-xs" />
+                              </div>
+                            )}
+                          </div>
                         </div>
                       );
                     })}</>

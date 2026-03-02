@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import remarkBreaks from 'remark-breaks';
 import rehypeSanitize from 'rehype-sanitize';
 
 interface MarkdownRendererProps {
@@ -12,7 +13,7 @@ export function MarkdownRenderer({ content, className = '' }: MarkdownRendererPr
   return (
     <div className={`prose prose-sm max-w-none dark:prose-invert ${className}`}>
       <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
+        remarkPlugins={[remarkGfm, remarkBreaks]}
         rehypePlugins={[rehypeSanitize]}
         components={{
           h1: ({ node, ...props }) => <h1 className="text-2xl font-bold mt-4 mb-2" {...props} />,

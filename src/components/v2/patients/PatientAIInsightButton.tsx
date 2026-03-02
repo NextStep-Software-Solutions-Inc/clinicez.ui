@@ -27,6 +27,8 @@ interface PatientAIInsightButtonProps {
   size?: "sm" | "default";
   /** Extra class names for the button */
   className?: string;
+  /** When true, renders the button with the icon only (no label text) */
+  iconOnly?: boolean;
 }
 
 /**
@@ -40,6 +42,7 @@ export function PatientAIInsightButton({
   patientName,
   size = "sm",
   className,
+  iconOnly = false,
 }: PatientAIInsightButtonProps) {
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -88,8 +91,9 @@ export function PatientAIInsightButton({
         isLoading={isPending}
         size={size === "default" ? "md" : "sm"}
         className={className}
+        aria-label={iconOnly ? "AI Patient Insight" : undefined}
       >
-        AI Insight
+        {iconOnly ? null : "AI Insight"}
       </AIButton>
 
       <Dialog open={open} onOpenChange={setOpen}>

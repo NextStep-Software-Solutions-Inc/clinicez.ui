@@ -1837,7 +1837,8 @@ export default function ProfileClient({ patient, headerSlot, editProfileHref, fi
               patientId={aiInsightConfig.patientId}
               clinicId={aiInsightConfig.clinicId}
               patientName={patient.fullName}
-              size="default"
+              size="sm"
+              iconOnly
               className="shadow-lg"
             />
           )}

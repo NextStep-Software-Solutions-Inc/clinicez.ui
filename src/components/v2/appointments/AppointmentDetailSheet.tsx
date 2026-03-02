@@ -47,6 +47,7 @@ import {
   rejectAppointmentAction,
   cancelAppointmentAction,
   returnAppointmentAction,
+  saveAppointmentAISymptomAnalysisAction,
 } from "@/actions/appointments/appointment-attribute.action";
 import {
   acceptAppointmentAction,
@@ -55,10 +56,9 @@ import {
 } from "@/actions/appointments/appointment-routing.action";
 import {
   getPreAssessmentNotesAction,
-  saveAISymptomAnalysisAction,
   type GetPreAssessmentNotes,
 } from "@/actions/appointments/pre-assessment-note.action";
-import { analyzeAppointmentSymptoms } from "@/actions/ai/pre-assessment-ai-actions";
+import { useSymptomAnalysis } from "@/hooks/ai/use-ai";
 import { STATUS_CONFIG } from "./AppointmentCard";
 import { isWalkInAppointment, getAppointmentPatientName, getAppointmentInitials } from "./appointment-utils";
 import { MarkdownRenderer } from "@/components/markdown/MarkdownRenderer";
@@ -76,7 +76,7 @@ interface AppointmentDetailSheetProps {
   onClose: () => void;
   onRefresh: () => void;
   onOpenSubPanel: (panel: SubPanel) => void;
-  onEditPreAssessmentNote?: (note: { assessment: string; homeInstructions?: string | null; remarks: string; aiSymptomAnalysis?: string | null }) => void;
+  onEditPreAssessmentNote?: (note: { assessment: string; homeInstructions?: string | null; remarks: string }) => void;
 }
 
 export function AppointmentDetailSheet({
@@ -112,11 +112,10 @@ export function AppointmentDetailSheet({
   const [preAssessmentNotes, setPreAssessmentNotes] = useState<PreAssessmentNote[]>([]);
   const [notesExpanded, setNotesExpanded] = useState(false);
 
-  // AI Symptoms Analyzer state
-  const [aiAnalyzing, setAiAnalyzing] = useState(false);
-  const [aiAnalysisResult, setAiAnalysisResult] = useState<string | null>(null);
-  const [aiAnalysisError, setAiAnalysisError] = useState<string | null>(null);
+  // AI Symptoms Analyzer — reuse v1 hook
+  const { analyze, isLoading: aiAnalyzing, error: aiAnalysisError, analysis: aiAnalysis } = useSymptomAnalysis();
   const [aiSaving, setAiSaving] = useState(false);
+  const [aiPendingResult, setAiPendingResult] = useState<typeof aiAnalysis>(null);
 
   const refreshNotes = useCallback((appointmentId: number) => {
     getPreAssessmentNotesAction(appointmentId).then((result) => {
@@ -137,6 +136,11 @@ export function AppointmentDetailSheet({
     refreshNotes(appointment.id);
   }, [appointment, refreshNotes]);
 
+  // Keep pending result in sync with hook result
+  useEffect(() => {
+    if (aiAnalysis) setAiPendingResult(aiAnalysis);
+  }, [aiAnalysis]);
+
   // Reset inline forms when appointment changes
   useEffect(() => {
     setShowRejectForm(false);
@@ -148,11 +152,18 @@ export function AppointmentDetailSheet({
     setCancelRoutingReason("");
     setShowReturnForm(false);
     setReturnReason("");
-    setAiAnalysisResult(null);
-    setAiAnalysisError(null);
+    setAiPendingResult(null);
   }, [appointment]);
 
   if (!appointment) return null;
+
+  const getUrgencyBadgeVariant = (level: string): "destructive" | "default" | "secondary" => {
+    switch (level) {
+      case "emergency": return "destructive";
+      case "urgent": return "default";
+      default: return "secondary";
+    }
+  };
 
   const status = appointment.AppointmentAttribute?.status ?? "PENDING";
   const statusConfig = STATUS_CONFIG[status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.PENDING;
@@ -194,40 +205,31 @@ export function AppointmentDetailSheet({
 
   const handleAnalyzeSymptoms = async () => {
     if (!appointment.complaint) return;
-    setAiAnalyzing(true);
-    setAiAnalysisError(null);
-    setAiAnalysisResult(null);
-    try {
-      const result = await analyzeAppointmentSymptoms(
-        appointment.complaint,
-        undefined,
-        appointment.clinicId,
-        undefined
-      );
-      if (result.success && result.data) {
-        setAiAnalysisResult(result.data);
-      } else {
-        setAiAnalysisError(result.error ?? "Analysis failed.");
-      }
-    } catch {
-      setAiAnalysisError("Unexpected error during analysis.");
-    } finally {
-      setAiAnalyzing(false);
-    }
+    setAiPendingResult(null);
+    await analyze(appointment.complaint);
   };
 
-  const handleSaveAIAnalysis = async (analysisText: string) => {
+  const handleSaveAIAnalysis = async (pendingAnalysis: NonNullable<typeof aiPendingResult>) => {
+    // Compose a Markdown summary to persist
+    const markdown = [
+      `**Urgency:** ${pendingAnalysis.urgencyLevel.toUpperCase()}`,
+      '',
+      pendingAnalysis.analysis,
+      ...(pendingAnalysis.recommendations.length > 0
+        ? ['', '**Recommendations:**', ...pendingAnalysis.recommendations.map(r => `- ${r}`)]
+        : []),
+    ].join('\n');
+
     setAiSaving(true);
-    const result = await saveAISymptomAnalysisAction({
+    const result = await saveAppointmentAISymptomAnalysisAction({
       appointmentId: appointment.id,
-      clinicUid,
-      aiSymptomAnalysis: analysisText,
+      aiSymptomAnalysis: markdown,
     });
     setAiSaving(false);
     if (result.status) {
       toast.success("AI symptom analysis saved.");
-      setAiAnalysisResult(null);
-      refreshNotes(appointment.id);
+      setAiPendingResult(null);
+      onRefresh();
     } else {
       toast.error(result.message);
     }
@@ -518,7 +520,7 @@ export function AppointmentDetailSheet({
 
               {notesExpanded && (
                 <div className="space-y-3 pt-1">
-                  {/* ── AI Symptoms Analyzer ── */}
+                  {/* ── AI Symptoms Analyzer (v1 hook, Markdown output) ── */}
                   {appointment.complaint && status !== "COMPLETED" && status !== "REJECTED" && (
                     <div className="rounded-lg border border-violet-200 bg-violet-50/50 dark:bg-violet-950/20 dark:border-violet-800/40 p-3 space-y-2">
                       <div className="flex items-center justify-between">
@@ -526,7 +528,7 @@ export function AppointmentDetailSheet({
                           <Sparkles className="h-3.5 w-3.5" />
                           AI Symptoms Analyzer
                         </span>
-                        {!aiAnalysisResult && (
+                        {!aiPendingResult && (
                           <Button
                             type="button"
                             size="sm"
@@ -548,33 +550,37 @@ export function AppointmentDetailSheet({
                       {aiAnalysisError && (
                         <p className="text-xs text-destructive">{aiAnalysisError}</p>
                       )}
-                      {aiAnalysisResult && (
+                      {aiPendingResult && (
                         <div className="space-y-2">
-                          <div className="overflow-x-auto">
-                            <table className="w-full text-xs border-collapse">
-                              <tbody>
-                                {aiAnalysisResult.split('\n').filter(l => l.trim() && l.includes(':')).map((line) => {
-                                  const colonIdx = line.indexOf(':');
-                                  const field = line.slice(0, colonIdx).trim();
-                                  const value = line.slice(colonIdx + 1).trim();
-                                  if (!field) return null;
-                                  return (
-                                    <tr key={field} className="border-b border-violet-100 dark:border-violet-900/30 last:border-0">
-                                      <td className="py-1 pr-3 align-top font-medium text-violet-700 dark:text-violet-400 whitespace-nowrap w-36">{field}</td>
-                                      <td className="py-1 text-foreground/80 whitespace-pre-wrap">{value}</td>
-                                    </tr>
-                                  );
-                                }).filter(Boolean)}
-                              </tbody>
-                            </table>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-medium text-violet-700 dark:text-violet-400">Urgency:</span>
+                            <Badge
+                              variant={getUrgencyBadgeVariant(aiPendingResult.urgencyLevel)}
+                              className="text-xs"
+                            >
+                              {aiPendingResult.urgencyLevel.toUpperCase()}
+                            </Badge>
                           </div>
+                          <div className="rounded-md bg-muted/40 p-2 text-xs">
+                            <MarkdownRenderer content={aiPendingResult.analysis} className="text-xs" />
+                          </div>
+                          {aiPendingResult.recommendations.length > 0 && (
+                            <div className="rounded-md bg-muted/40 p-2">
+                              <p className="text-xs font-medium text-muted-foreground mb-1">Recommendations</p>
+                              <ul className="list-disc list-inside space-y-0.5 text-xs text-foreground/80">
+                                {aiPendingResult.recommendations.map((rec, idx) => (
+                                  <li key={idx}>{rec}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
                           <div className="flex gap-2 pt-1">
                             <Button
                               type="button"
                               size="sm"
                               className="h-6 px-2 text-xs bg-violet-600 hover:bg-violet-700 text-white gap-1"
                               disabled={aiSaving}
-                              onClick={() => handleSaveAIAnalysis(aiAnalysisResult)}
+                              onClick={() => handleSaveAIAnalysis(aiPendingResult)}
                             >
                               {aiSaving ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
                               Save Analysis
@@ -584,7 +590,7 @@ export function AppointmentDetailSheet({
                               size="sm"
                               variant="outline"
                               className="h-6 px-2 text-xs border-violet-200 text-violet-600 hover:bg-violet-50"
-                              onClick={() => setAiAnalysisResult(null)}
+                              onClick={() => setAiPendingResult(null)}
                             >
                               Discard
                             </Button>
@@ -606,7 +612,7 @@ export function AppointmentDetailSheet({
                     </div>
                   )}
 
-                  {/* ── Pre-assessment notes as descriptive generic table ── */}
+                  {/* ── Pre-assessment notes: descriptive generic table (no AI column) ── */}
                   {preAssessmentNotes.length === 0 ? (
                     <p className="text-xs text-muted-foreground italic">No pre-assessment notes yet.</p>
                   ) : (
@@ -629,7 +635,6 @@ export function AppointmentDetailSheet({
                                     assessment: note.assessment,
                                     homeInstructions: note.homeInstructions,
                                     remarks: note.remarks ?? "",
-                                    aiSymptomAnalysis: note.aiSymptomAnalysis,
                                   })}
                                   className="text-muted-foreground hover:text-primary transition-colors"
                                   title="Edit your note"
@@ -642,14 +647,6 @@ export function AppointmentDetailSheet({
                           {/* Descriptive generic table */}
                           <table className="w-full text-xs border-collapse">
                             <tbody>
-                              {note.aiSymptomAnalysis && (
-                                <tr className="border-b border-border/20">
-                                  <td className="px-3 py-2 align-top font-medium text-violet-700 dark:text-violet-400 w-32 whitespace-nowrap bg-violet-50/40 dark:bg-violet-950/10">
-                                    <span className="flex items-center gap-1"><Sparkles className="h-3 w-3" />AI Analysis</span>
-                                  </td>
-                                  <td className="px-3 py-2 text-foreground/80 whitespace-pre-wrap">{note.aiSymptomAnalysis}</td>
-                                </tr>
-                              )}
                               {note.assessment && (
                                 <tr className="border-b border-border/20">
                                   <td className="px-3 py-2 align-top font-medium text-muted-foreground w-32 whitespace-nowrap bg-muted/10">Assessment</td>
@@ -705,6 +702,19 @@ export function AppointmentDetailSheet({
                     : "Add Pre-Assessment Note"}
                 </Button>
               )}
+            </div>
+          )}
+
+          {/* Saved AI Symptom Analysis (from AppointmentAttribute) */}
+          {appointment.AppointmentAttribute?.aiSymptomAnalysis && (
+            <div className="rounded-xl border border-violet-200 bg-violet-50/30 dark:bg-violet-950/10 dark:border-violet-800/30 p-4 space-y-2">
+              <h3 className="text-xs font-semibold text-violet-700 dark:text-violet-400 uppercase tracking-wide flex items-center gap-1.5">
+                <Sparkles className="h-3.5 w-3.5" />
+                AI Symptom Analysis
+              </h3>
+              <div className="rounded-md bg-background/60 p-3">
+                <MarkdownRenderer content={appointment.AppointmentAttribute.aiSymptomAnalysis} className="text-xs" />
+              </div>
             </div>
           )}
 

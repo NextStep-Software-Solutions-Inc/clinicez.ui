@@ -28,8 +28,6 @@ interface PreAssessmentNoteDialogProps {
   complaint?: string;
   /** Clinic numeric ID for AI usage tracking */
   clinicId?: number;
-  /** Persisted AI symptom analysis (from AppointmentDetailSheet) */
-  initialAiSymptomAnalysis?: string;
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -43,7 +41,6 @@ export function PreAssessmentNoteDialog({
   initialRemarks = "",
   complaint,
   clinicId,
-  initialAiSymptomAnalysis,
   onClose,
   onSuccess,
 }: PreAssessmentNoteDialogProps) {
@@ -103,8 +100,6 @@ export function PreAssessmentNoteDialog({
       assessment,
       homeInstructions: homeInstructions.trim() ? homeInstructions : undefined,
       remarks,
-      // Preserve the AI symptom analysis already saved from the detail view
-      aiSymptomAnalysis: initialAiSymptomAnalysis,
     });
     setIsPending(false);
 

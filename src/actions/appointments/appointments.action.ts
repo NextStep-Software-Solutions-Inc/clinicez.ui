@@ -593,6 +593,7 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
           receivedBy: true,
           rejectedAt: true,
           rescheduledAt: true,
+          aiSymptomAnalysis: true,
           AppointmentType: {
             select: {
               name: true

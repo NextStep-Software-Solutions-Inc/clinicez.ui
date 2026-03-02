@@ -1469,6 +1469,7 @@ model AppointmentAttribute {
   preferredAppointee Int?
   eventId            String?             @default("")
   meetingUrl         String?             @default("")
+  aiSymptomAnalysis  String?
   Appointment        Appointment         @relation(fields: [appointmentId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   CompletedBy        User?               @relation("CompletedBy", fields: [completedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
   AppointmentMode    AppointmentMode     @relation(fields: [modeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -1669,7 +1670,6 @@ model PreAssessmentNote {
   id                         Int                         @id @default(autoincrement())
   appointmentId              Int
   clinicId                   Int
-  aiSymptomAnalysis          String?
   assessment                 String
   homeInstructions           String?
   remarks                    String

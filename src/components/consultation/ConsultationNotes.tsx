@@ -79,9 +79,10 @@ export default function ConsultationNotes({ consultation, patientUserId }: Consu
               <MedicalNoteSummarizer
                 consultationNotes={allNotesText}
                 clinicId={consultation.clinicId}
-                onApplyToForm={(summary) => {
+                noteSections={noteTemplate?.NoteSections?.map((s: { label?: string; name: string }) => s.label || s.name)}
+                onApplyToForm={(sectionData) => {
                   // Handle applying summary to form if needed
-                  console.log('Summary generated:', summary);
+                  console.log('Summary generated:', sectionData);
                 }}
               />
             )}

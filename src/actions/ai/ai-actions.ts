@@ -105,6 +105,7 @@ export async function summarizeMedicalNotes(
   options?: {
     clinicId?: number;
     patientId?: string;
+    sectionNames?: string[];
   }
 ): Promise<AIOperationResult<string>> {
   try {
@@ -130,7 +131,11 @@ export async function summarizeMedicalNotes(
       };
     }
 
-    const prompt = renderTemplate(template, { consultationNotes });
+    const defaultSections = ['Subjective', 'Objective', 'Assessment', 'Plan'];
+    const sections = options?.sectionNames?.length ? options.sectionNames : defaultSections;
+    const sectionNames = sections.map((s) => `- ${s}`).join('\n');
+
+    const prompt = renderTemplate(template, { consultationNotes, sectionNames });
 
     return await generateAICompletion('medical-note-summarization', prompt, {
       systemPrompt: template.systemPrompt,

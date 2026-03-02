@@ -178,6 +178,7 @@ export default function ConsultationNotesEditor({
           consultationNotes={sections
             .map((section) => `${section.label || section.name}: ${noteValues[section.name] ?? ""}`)
             .join("\n\n")}
+          noteSections={sections.map((s) => s.label || s.name)}
         />
       </div>
       {sections.map((section) => (

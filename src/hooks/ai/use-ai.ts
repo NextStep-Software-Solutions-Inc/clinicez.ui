@@ -147,6 +147,7 @@ export function useMedicalNoteSummarization() {
     options?: {
       clinicId?: number;
       patientId?: number;
+      sectionNames?: string[];
     }
   ) => {
     setIsLoading(true);
@@ -158,6 +159,7 @@ export function useMedicalNoteSummarization() {
       const result = await summarizeMedicalNotes(consultationNotes, {
         clinicId: options?.clinicId,
         patientId: options?.patientId?.toString(),
+        sectionNames: options?.sectionNames,
       });
 
       if (result.success && result.data) {

@@ -64,6 +64,11 @@ import { STATUS_CONFIG } from "./AppointmentCard";
 import { isWalkInAppointment, getAppointmentPatientName, getAppointmentInitials } from "./appointment-utils";
 import { MarkdownRenderer } from "@/components/markdown/MarkdownRenderer";
 import { AddVitalsDialog } from "./AddVitalsDialog";
+import { useAllergies } from "@/hooks/useAllergy";
+import { useIllnesses } from "@/hooks/useIllness";
+import { useDisabilities } from "@/hooks/useDisability";
+import { useHealthHistory } from "@/hooks/useHealthHistory";
+import { calculateAge } from "@/lib/utils";
 
 type Appointment = NonNullable<GetAppointments["data"]>[number];
 type SubPanel = "confirm" | "assign" | "preAssessment" | "tag" | "reschedule";
@@ -120,6 +125,13 @@ export function AppointmentDetailSheet({
   const { analyze, isLoading: aiAnalyzing, error: aiAnalysisError, analysis: aiAnalysis } = useSymptomAnalysis();
   const [aiSaving, setAiSaving] = useState(false);
   const [aiPendingResult, setAiPendingResult] = useState<typeof aiAnalysis>(null);
+
+  // Patient PHR/EMR context for AI symptom analysis (must be called before any early return)
+  const patientUserId = appointment?.Requesters?.[0]?.User?.userId ?? "";
+  const { data: patientAllergies } = useAllergies(patientUserId);
+  const { data: patientIllnesses } = useIllnesses(patientUserId);
+  const { data: patientDisabilities } = useDisabilities(patientUserId);
+  const { data: patientHealthHistory } = useHealthHistory(patientUserId);
 
   const refreshNotes = useCallback((appointmentId: number) => {
     getPreAssessmentNotesAction(appointmentId).then((result) => {
@@ -218,7 +230,18 @@ export function AppointmentDetailSheet({
   const handleAnalyzeSymptoms = async () => {
     if (!appointment.complaint) return;
     setAiPendingResult(null);
-    await analyze(appointment.complaint);
+    const patientContext = {
+      age: requester?.dob ? calculateAge(requester.dob) || undefined : undefined,
+      gender: requester?.gender || undefined,
+      conditions: patientIllnesses?.map((i) => (i as { HealthCondition?: { name?: string } }).HealthCondition?.name).filter((n): n is string => !!n) ?? [],
+      allergies: patientAllergies?.map((a) => (a as { Allergen?: { name?: string } }).Allergen?.name).filter((n): n is string => !!n) ?? [],
+      disabilities: patientDisabilities?.map((d) => (d as { Disability?: { name?: string } }).Disability?.name).filter((n): n is string => !!n) ?? [],
+      familyHistory: patientHealthHistory?.FamilyMedicalHistories?.map((f) => f.Condition?.name).filter((n): n is string => !!n) ?? [],
+      surgicalHistory: patientHealthHistory?.SurgicalHistories?.map((s) => s.operationName).filter((n): n is string => !!n) ?? [],
+      personalHistory: patientHealthHistory?.PersonalHistory?.smokingStatus || undefined,
+      obGyneHistory: patientHealthHistory?.ObGyneHistory?.menarche ? `Menarche: ${patientHealthHistory.ObGyneHistory.menarche}` : undefined,
+    };
+    await analyze(appointment.complaint, patientContext);
   };
 
   const handleSaveAIAnalysis = async (pendingAnalysis: NonNullable<typeof aiPendingResult>) => {

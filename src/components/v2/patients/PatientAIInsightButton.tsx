@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { Sparkles, Loader2, RefreshCw, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { AIButton } from "@/components/ai/AIButton";
 import {
   Dialog,
   DialogContent,
@@ -82,16 +83,14 @@ export function PatientAIInsightButton({
 
   return (
     <>
-      <Button
-        variant="outline"
-        size={size}
-        className={className}
+      <AIButton
         onClick={handleOpen}
-        title="AI Patient Insight"
+        isLoading={isPending}
+        size={size === "default" ? "md" : "sm"}
+        className={className}
       >
-        <Sparkles className="h-3.5 w-3.5 mr-1.5" />
         AI Insight
-      </Button>
+      </AIButton>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col p-0">

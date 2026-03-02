@@ -239,9 +239,6 @@ export const PatientCard = memo(function PatientCard({
             colorClass="text-blue-500"
           />
         </div>
-
-        {/* Chevron */}
-        <ChevronRight className="h-4 w-4 text-muted-foreground/50 group-hover:text-primary flex-shrink-0 transition-colors" />
       </Link>
 
       {/* AI Insight button – only for healthcare providers */}
@@ -254,6 +251,9 @@ export const PatientCard = memo(function PatientCard({
           className="shrink-0"
         />
       )}
+
+      {/* Chevron */}
+      <ChevronRight className="h-4 w-4 text-muted-foreground/50 group-hover:text-primary flex-shrink-0 transition-colors" />
     </div>
   );
 });

@@ -105,6 +105,8 @@ export async function summarizeMedicalNotes(
   options?: {
     clinicId?: number;
     patientId?: string;
+    sectionNames?: string[];
+    outputFormat?: 'markdown' | 'plain_text';
   }
 ): Promise<AIOperationResult<string>> {
   try {
@@ -130,7 +132,17 @@ export async function summarizeMedicalNotes(
       };
     }
 
-    const prompt = renderTemplate(template, { consultationNotes });
+    const defaultSections = ['Subjective', 'Objective', 'Assessment', 'Plan'];
+    const sections = options?.sectionNames?.length ? options.sectionNames : defaultSections;
+    const sectionNames = sections.map((s) => `- ${s}`).join('\n');
+
+    const outputFormat = options?.outputFormat ?? 'markdown';
+    const outputFormatInstruction =
+      outputFormat === 'markdown'
+        ? 'use ## markdown heading for each section'
+        : 'use the section name followed by a colon as a plain-text heading (e.g., "Subjective:"), no markdown symbols';
+
+    const prompt = renderTemplate(template, { consultationNotes, sectionNames, outputFormatInstruction });
 
     return await generateAICompletion('medical-note-summarization', prompt, {
       systemPrompt: template.systemPrompt,

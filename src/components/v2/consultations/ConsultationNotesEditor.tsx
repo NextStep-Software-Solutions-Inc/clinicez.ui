@@ -11,6 +11,7 @@ import {
 import type { GetPatientConsultationDetail } from "@/actions/consultation/patient-consultations.action";
 import type { GetHPsType } from "@/actions/hp.actions";
 import MarkdownEditor from "./MarkdownEditor";
+import { MedicalNoteSummarizer } from "@/components/ai";
 
 type Detail = NonNullable<GetPatientConsultationDetail["data"]>;
 
@@ -40,14 +41,19 @@ export default function ConsultationNotesEditor({
 
   // Build initial note map: section name → content and showOnPatient
   // Prioritize the current HP's notes; fall back to any note for that section
+  // when the current HP is not one of the consultation's assigned HPs.
+  const myHpIsOnTicket = myActiveHp !== null && ticketHpIds.includes(myActiveHp.id);
   const initialNoteMap: Record<string, string> = {};
   const initialShowMap: Record<string, boolean> = {};
   for (const note of consultation.ConsultationNotes) {
-    // Use the current HP's note, or any note as fallback when no HP identified
-    if (
-      (myActiveHp && note.hpId === myActiveHp.id) ||
-      (!myActiveHp && !(note.section in initialNoteMap))
-    ) {
+    if (myHpIsOnTicket) {
+      // Only pre-fill with the current HP's own notes
+      if (note.hpId === myActiveHp!.id) {
+        initialNoteMap[note.section] = note.content;
+        initialShowMap[note.section] = note.showOnPatient;
+      }
+    } else if (!(note.section in initialNoteMap)) {
+      // Current HP is not on this ticket — show the first available note per section
       initialNoteMap[note.section] = note.content;
       initialShowMap[note.section] = note.showOnPatient;
     }
@@ -166,6 +172,18 @@ export default function ConsultationNotesEditor({
 
   return (
     <div className="p-4 sm:p-6 space-y-3">
+      {/* AI Summarize button — hidden once consultation is resolved */}
+      {!isResolved && (
+      <div className="flex items-center justify-end">
+        <MedicalNoteSummarizer
+          consultationNotes={sections
+            .map((section) => `${section.label || section.name}: ${noteValues[section.name] ?? ""}`)
+            .join("\n\n")}
+          noteSections={sections.map((s) => s.label || s.name)}
+          outputFormat="markdown"
+        />
+      </div>
+      )}
       {sections.map((section) => (
         <div
           key={section.name}

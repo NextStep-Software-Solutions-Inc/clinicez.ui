@@ -115,6 +115,29 @@ export interface GetClinicPatientsResult {
 }
 
 export type GetClinicPatients = GetClinicPatientsResult;
+
+/** Build a Prisma OR filter array for patient name/email search, supporting multi-word full-name queries. */
+function buildPatientSearchFilter(search: string) {
+  return {
+    OR: [
+      { firstName: { contains: search, mode: "insensitive" as const } },
+      { middleName: { contains: search, mode: "insensitive" as const } },
+      { lastName: { contains: search, mode: "insensitive" as const } },
+      { email: { contains: search, mode: "insensitive" as const } },
+      // Multi-word full-name search: each word must match at least one name field
+      ...(search.includes(' ') ? [{
+        AND: search.split(/\s+/).filter(Boolean).map(part => ({
+          OR: [
+            { firstName: { contains: part, mode: "insensitive" as const } },
+            { middleName: { contains: part, mode: "insensitive" as const } },
+            { lastName: { contains: part, mode: "insensitive" as const } },
+          ]
+        }))
+      }] : []),
+    ]
+  };
+}
+
 export const getClinicPatientsAction = async (filters: GetClinicPatientFilters): Promise<GetClinicPatientsResult> => {
 
   const session = await getCachedSession()
@@ -165,14 +188,7 @@ export const getClinicPatientsAction = async (filters: GetClinicPatientFilters):
             ]
           }] : [],
           // Search filter
-          ...(search ? [{
-            OR: [
-              { firstName: { contains: search, mode: "insensitive" as const } },
-              { middleName: { contains: search, mode: "insensitive" as const } },
-              { lastName: { contains: search, mode: "insensitive" as const } },
-              { email: { contains: search, mode: "insensitive" as const } },
-            ]
-          }] : []),
+          ...(search ? [buildPatientSearchFilter(search)] : []),
         ],
       }
     },
@@ -297,14 +313,7 @@ export const getClinicPatientsAction = async (filters: GetClinicPatientFilters):
             ]
           }] : [],
           // Search filter
-          ...(search ? [{
-            OR: [
-              { firstName: { contains: search, mode: "insensitive" as const } },
-              { middleName: { contains: search, mode: "insensitive" as const } },
-              { lastName: { contains: search, mode: "insensitive" as const } },
-              { email: { contains: search, mode: "insensitive" as const } },
-            ]
-          }] : []),
+          ...(search ? [buildPatientSearchFilter(search)] : []),
         ],
       }
     }

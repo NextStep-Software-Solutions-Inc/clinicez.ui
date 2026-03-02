@@ -70,6 +70,7 @@ export function WalkInAppointmentSheet({
   const [unregisteredName, setUnregisteredName] = useState("");
   const [noPatientFound, setNoPatientFound] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Form fields
   const [subject, setSubject] = useState("");
@@ -118,7 +119,7 @@ export function WalkInAppointmentSheet({
       debounceRef.current = setTimeout(async () => {
         setIsSearching(true);
         try {
-          const result = await getClinicPatientsAction({ clinicUid, search: query, pageSize: 8 });
+          const result = await getClinicPatientsAction({ clinicUid, search: query.trim(), pageSize: 8 });
           setPatientResults(result.data ?? []);
           setNoPatientFound((result.data ?? []).length === 0);
           setShowDropdown(true);
@@ -231,7 +232,10 @@ export function WalkInAppointmentSheet({
                   value={patientQuery}
                   onChange={handlePatientQueryChange}
                   onFocus={() => patientResults.length > 0 && setShowDropdown(true)}
-                  onBlur={() => setTimeout(() => setShowDropdown(false), DROPDOWN_CLOSE_DELAY)}
+                  onBlur={(e) => {
+                    if (dropdownRef.current?.contains(e.relatedTarget as Node)) return;
+                    setTimeout(() => setShowDropdown(false), DROPDOWN_CLOSE_DELAY);
+                  }}
                   placeholder="Search by name, email..."
                   className="pl-8 pr-8"
                   autoFocus
@@ -250,7 +254,15 @@ export function WalkInAppointmentSheet({
 
               {/* Search dropdown */}
               {showDropdown && !selectedPatient && (
-                <div className="absolute z-50 w-full mt-1 rounded-lg border bg-popover shadow-lg overflow-hidden">
+                <div
+                  ref={dropdownRef}
+                  className="absolute z-50 w-full mt-1 rounded-lg border bg-popover shadow-lg overflow-hidden"
+                  onBlur={(e) => {
+                    if (!dropdownRef.current?.contains(e.relatedTarget as Node)) {
+                      setShowDropdown(false);
+                    }
+                  }}
+                >
                   {isSearching ? (
                     <div className="px-3 py-4 text-sm text-muted-foreground text-center">
                       Searching...
@@ -289,7 +301,7 @@ export function WalkInAppointmentSheet({
                         <p className="text-xs text-muted-foreground mb-1">Or enter name for unregistered walk-in:</p>
                         <Input
                           value={unregisteredName}
-                          onChange={(e) => { setUnregisteredName(e.target.value); setNoPatientFound(false); }}
+                          onChange={(e) => setUnregisteredName(e.target.value)}
                           placeholder="Full name of walk-in patient"
                           className="h-8 text-sm"
                         />

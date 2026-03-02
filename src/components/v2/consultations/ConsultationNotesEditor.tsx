@@ -11,6 +11,7 @@ import {
 import type { GetPatientConsultationDetail } from "@/actions/consultation/patient-consultations.action";
 import type { GetHPsType } from "@/actions/hp.actions";
 import MarkdownEditor from "./MarkdownEditor";
+import { MedicalNoteSummarizer } from "@/components/ai";
 
 type Detail = NonNullable<GetPatientConsultationDetail["data"]>;
 
@@ -166,6 +167,14 @@ export default function ConsultationNotesEditor({
 
   return (
     <div className="p-4 sm:p-6 space-y-3">
+      {/* AI Summarize button */}
+      <div className="flex items-center justify-end">
+        <MedicalNoteSummarizer
+          consultationNotes={sections
+            .map((section) => `${section.label || section.name}: ${noteValues[section.name] ?? ""}`)
+            .join("\n\n")}
+        />
+      </div>
       {sections.map((section) => (
         <div
           key={section.name}

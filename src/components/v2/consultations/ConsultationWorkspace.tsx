@@ -14,6 +14,7 @@ import {
   Info,
   ExternalLink,
   GitFork,
+  UserPlus,
 } from "lucide-react";
 import Link from "next/link";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -29,6 +30,7 @@ import ConsultationPrescriptions from "./ConsultationPrescriptions";
 import ConsultationMedCerts from "./ConsultationMedCerts";
 import ConsultationDiagnostics from "./ConsultationDiagnostics";
 import ConsultationReferrals from "./ConsultationReferrals";
+import AddCoCreatorDialog from "./AddCoCreatorDialog";
 
 type Detail = NonNullable<GetPatientConsultationDetail["data"]>;
 
@@ -64,6 +66,7 @@ export default function ConsultationWorkspace({
 }: ConsultationWorkspaceProps) {
   const [activeTab, setActiveTab] = useState("notes");
   const [resolving, startResolveTransition] = useTransition();
+  const [addCoCreatorOpen, setAddCoCreatorOpen] = useState(false);
 
   const status = consultation.ConsultationTicketAttribute?.status;
   const apt = consultation.Appointment;
@@ -214,9 +217,18 @@ export default function ConsultationWorkspace({
             )}
           </div>
 
-          {/* ── Resolve button (only for the consulting HP, status not yet resolved) ── */}
+          {/* ── Action buttons (only when not resolved) ── */}
           {canBeResolved && myHPs.length > 0 && (
-            <div className="shrink-0 pl-4">
+            <div className="shrink-0 pl-4 flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5 h-8 text-xs"
+                onClick={() => setAddCoCreatorOpen(true)}
+              >
+                <UserPlus className="h-3.5 w-3.5" />
+                Add Co-creator
+              </Button>
               <Button
                 size="sm"
                 variant="outline"
@@ -231,6 +243,17 @@ export default function ConsultationWorkspace({
           )}
         </div>
       </div>
+
+      {/* ── Add Co-creator Dialog ── */}
+      {canBeResolved && (
+        <AddCoCreatorDialog
+          open={addCoCreatorOpen}
+          onOpenChange={setAddCoCreatorOpen}
+          consultation={consultation}
+          clinicUid={clinicUid}
+          onCoCreatorsAdded={() => onReloadDetail?.()}
+        />
+      )}
 
       {/* ── Tabbed Workspace ── */}
       <div className="flex-1 overflow-hidden">

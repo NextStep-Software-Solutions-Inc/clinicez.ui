@@ -78,6 +78,7 @@ export default function ConsultationNotes({ consultation, patientUserId }: Consu
             {isConsultationAuthor && allNotesText && consultation.ConsultationTicketAttribute?.status !== 'RESOLVED' && (
               <MedicalNoteSummarizer
                 consultationNotes={allNotesText}
+                outputFormat="plain_text"
                 clinicId={consultation.clinicId}
                 noteSections={noteTemplate?.NoteSections?.map((s: { label?: string; name: string }) => s.label || s.name)}
                 onApplyToForm={(sectionData) => {

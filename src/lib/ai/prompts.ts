@@ -22,11 +22,11 @@ Include a disclaimer that this is an AI-generated summary and should be reviewed
 
 {{consultationNotes}}
 
-Create a structured summary using exactly the following section headings (use ## markdown heading for each section):
+Create a structured summary using exactly the following section headings ({{outputFormatInstruction}}):
 {{sectionNames}}
 
 Keep the summary concise but complete.`,
-  variables: ['consultationNotes', 'sectionNames'],
+  variables: ['consultationNotes', 'sectionNames', 'outputFormatInstruction'],
   examples: [
     {
       input: {

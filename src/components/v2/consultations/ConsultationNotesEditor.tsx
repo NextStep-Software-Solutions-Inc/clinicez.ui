@@ -180,6 +180,7 @@ export default function ConsultationNotesEditor({
             .map((section) => `${section.label || section.name}: ${noteValues[section.name] ?? ""}`)
             .join("\n\n")}
           noteSections={sections.map((s) => s.label || s.name)}
+          outputFormat="markdown"
         />
       </div>
       )}

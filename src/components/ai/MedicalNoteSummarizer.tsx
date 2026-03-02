@@ -18,6 +18,7 @@ import { AIButton } from './AIButton';
 interface MedicalNoteSummarizerProps {
   consultationNotes: string;
   noteSections?: string[];
+  outputFormat?: 'markdown' | 'plain_text';
   clinicId?: number;
   patientId?: number;
   onSummaryGenerated?: (summary: string) => void;
@@ -36,11 +37,12 @@ const SECTION_COLORS = [
 
 /**
  * Parse section content from AI response using the actual section names.
- * Splits on ## headings and matches by name (case-insensitive).
+ * Supports both markdown (## Heading) and plain-text (Heading:) formats.
  */
 function parseSections(
   text: string,
   sectionNames: string[],
+  outputFormat: 'markdown' | 'plain_text' = 'markdown',
 ): { sections: Record<string, string>; rawText: string } {
   const sections: Record<string, string> = {};
   const lines = text.split('\n');
@@ -55,14 +57,36 @@ function parseSections(
   };
 
   for (const line of lines) {
-    const headingMatch = line.match(/^##?\s+(.+)/);
-    if (headingMatch) {
-      const heading = headingMatch[1].replace(/:?\s*$/, '').trim();
-      const matched = sectionNames.find(
-        (s) => s.toLowerCase() === heading.toLowerCase(),
-      );
+    let matched: string | undefined;
+    let inlineContent: string | undefined;
+
+    if (outputFormat === 'markdown') {
+      const headingMatch = line.match(/^##?\s+(.+)/);
+      if (headingMatch) {
+        const heading = headingMatch[1].replace(/:?\s*$/, '').trim();
+        matched = sectionNames.find(
+          (s) => s.toLowerCase() === heading.toLowerCase(),
+        );
+      }
+    } else {
+      // plain_text: match "SectionName: ..." or "SectionName:" at start of line
+      const plainMatch = line.match(/^([^:]+):\s*(.*)$/);
+      if (plainMatch) {
+        const heading = plainMatch[1].trim();
+        const candidate = sectionNames.find(
+          (s) => s.toLowerCase() === heading.toLowerCase(),
+        );
+        if (candidate) {
+          matched = candidate;
+          inlineContent = plainMatch[2] || undefined;
+        }
+      }
+    }
+
+    if (matched !== undefined) {
       flush();
-      currentSection = matched ?? null;
+      currentSection = matched;
+      if (inlineContent) buffer.push(inlineContent);
     } else if (currentSection !== null) {
       buffer.push(line);
     }
@@ -75,6 +99,7 @@ function parseSections(
 export function MedicalNoteSummarizer({
   consultationNotes,
   noteSections,
+  outputFormat = 'markdown',
   clinicId,
   patientId,
   onSummaryGenerated,
@@ -90,11 +115,11 @@ export function MedicalNoteSummarizer({
   useEffect(() => {
     if (summary) {
       const sections = noteSections?.length ? noteSections : DEFAULT_SECTIONS;
-      const parsed = parseSections(summary, sections);
+      const parsed = parseSections(summary, sections, outputFormat);
       setParsedData(parsed);
       onSummaryGenerated?.(parsed.rawText);
     }
-  }, [summary, onSummaryGenerated, noteSections]);
+  }, [summary, onSummaryGenerated, noteSections, outputFormat]);
 
   const handleSummarize = async () => {
     setIsDialogOpen(true);
@@ -102,6 +127,7 @@ export function MedicalNoteSummarizer({
       clinicId,
       patientId,
       sectionNames: activeSections,
+      outputFormat,
     });
   };
 
@@ -126,6 +152,7 @@ export function MedicalNoteSummarizer({
       clinicId,
       patientId,
       sectionNames: activeSections,
+      outputFormat,
     });
   };
 
@@ -192,7 +219,11 @@ export function MedicalNoteSummarizer({
                     </Button>
                   </div>
                   <div className="rounded-md bg-muted p-4 max-h-[400px] overflow-y-auto">
-                    <MarkdownRenderer content={parsedData.rawText} />
+                    {outputFormat === 'plain_text' ? (
+                      <div className="whitespace-pre-wrap text-sm">{parsedData.rawText}</div>
+                    ) : (
+                      <MarkdownRenderer content={parsedData.rawText} />
+                    )}
                   </div>
                 </div>
 

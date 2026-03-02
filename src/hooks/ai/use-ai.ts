@@ -148,6 +148,7 @@ export function useMedicalNoteSummarization() {
       clinicId?: number;
       patientId?: number;
       sectionNames?: string[];
+      outputFormat?: 'markdown' | 'plain_text';
     }
   ) => {
     setIsLoading(true);
@@ -160,6 +161,7 @@ export function useMedicalNoteSummarization() {
         clinicId: options?.clinicId,
         patientId: options?.patientId?.toString(),
         sectionNames: options?.sectionNames,
+        outputFormat: options?.outputFormat,
       });
 
       if (result.success && result.data) {

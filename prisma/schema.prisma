@@ -1669,6 +1669,7 @@ model PreAssessmentNote {
   id                         Int                         @id @default(autoincrement())
   appointmentId              Int
   clinicId                   Int
+  aiSymptomAnalysis          String?
   assessment                 String
   homeInstructions           String?
   remarks                    String

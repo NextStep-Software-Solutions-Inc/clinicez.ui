@@ -580,3 +580,120 @@ Provide clear, numbered home care instructions that are:
     };
   }
 }
+
+/**
+ * Analyze patient symptoms for clinical insights in the appointment detail view.
+ * Returns structured plain-text analysis for display and persistence.
+ */
+export async function analyzeAppointmentSymptoms(
+  symptoms: string,
+  patientContext?: {
+    age?: number;
+    gender?: string;
+    comorbidities?: string[];
+    allergies?: Array<{ allergen: string; reaction: string }>;
+  },
+  clinicId?: number,
+  tenantId?: number
+): Promise<AIOperationResult<string>> {
+  try {
+    const { userId } = await auth();
+    if (!userId) {
+      return {
+        success: false,
+        error: 'Authentication required',
+        provider: 'openai',
+        model: '',
+        timestamp: new Date(),
+      };
+    }
+
+    const limitCheck = await checkAIUsageLimit({
+      userId,
+      clinicId,
+      tenantId,
+      featureType: 'symptom-analysis',
+    });
+
+    if (!limitCheck.allowed) {
+      return {
+        success: false,
+        error: limitCheck.reason || 'AI usage limit exceeded',
+        provider: 'openai',
+        model: '',
+        timestamp: new Date(),
+      };
+    }
+
+    const contextParts: string[] = [];
+    if (patientContext?.age) contextParts.push(`Age: ${patientContext.age}`);
+    if (patientContext?.gender) contextParts.push(`Gender: ${patientContext.gender}`);
+    if (patientContext?.comorbidities?.length) {
+      contextParts.push(`Comorbidities: ${patientContext.comorbidities.join(', ')}`);
+    }
+    if (patientContext?.allergies?.length) {
+      const allergyStr = patientContext.allergies.map(a => `${a.allergen} (${a.reaction})`).join(', ');
+      contextParts.push(`Allergies: ${allergyStr}`);
+    }
+    const contextStr = contextParts.length ? `\nPatient Context: ${contextParts.join(' | ')}` : '';
+
+    const systemPrompt = `You are an experienced clinical triage specialist providing a structured symptom analysis to assist healthcare providers.
+Respond in plain text with clearly labeled sections. Use medical abbreviations and symbols (BP, HR, RR, SpO2, %, °, mmHg).`;
+
+    const prompt = `Analyze the following patient presentation and provide a structured clinical assessment:
+
+Chief Complaint / Symptoms: ${sanitizeInput(symptoms)}${contextStr}
+
+Provide analysis in this EXACT format (plain text, no markdown, no bullet points):
+
+Possible Conditions: [most likely differential diagnoses separated by semicolons]
+
+Severity: [Low / Moderate / High / Critical]
+
+Urgency: [Routine / Urgent / Emergent]
+
+Clinical Observations: [key clinical findings based on the symptoms, one observation per line]
+
+Recommended Actions: [recommended triage steps, one action per line]
+
+Safety Flags: [any red-flag symptoms or contraindications to watch for; "None identified" if none]`;
+
+    const orchestrator = getOrchestrator();
+    const response = await orchestrator.complete({
+      messages: [createMessage('user', prompt)],
+      systemPrompt,
+      temperature: getFeatureTemperature('symptom-analysis'),
+      maxTokens: 800,
+    });
+
+    await logAIUsage(
+      { userId, clinicId, tenantId, featureType: 'symptom-analysis' },
+      {
+        provider: response.provider,
+        model: response.model,
+        promptTokens: response.usage.promptTokens,
+        completionTokens: response.usage.completionTokens,
+        totalTokens: response.usage.totalTokens,
+        success: true,
+      }
+    );
+
+    return {
+      success: true,
+      data: response.content,
+      usage: response.usage,
+      provider: response.provider,
+      model: response.model,
+      timestamp: new Date(),
+    };
+  } catch (error) {
+    console.error('Symptom analysis error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      provider: 'openai',
+      model: '',
+      timestamp: new Date(),
+    };
+  }
+}

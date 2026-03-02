@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { format } from "date-fns";
 import {
   User,
@@ -23,6 +23,8 @@ import {
   Pencil,
   CalendarClock,
   Undo2,
+  Sparkles,
+  Loader2,
 } from "lucide-react";
 import {
   Sheet,
@@ -53,8 +55,10 @@ import {
 } from "@/actions/appointments/appointment-routing.action";
 import {
   getPreAssessmentNotesAction,
+  saveAISymptomAnalysisAction,
   type GetPreAssessmentNotes,
 } from "@/actions/appointments/pre-assessment-note.action";
+import { analyzeAppointmentSymptoms } from "@/actions/ai/pre-assessment-ai-actions";
 import { STATUS_CONFIG } from "./AppointmentCard";
 import { isWalkInAppointment, getAppointmentPatientName, getAppointmentInitials } from "./appointment-utils";
 import { MarkdownRenderer } from "@/components/markdown/MarkdownRenderer";
@@ -72,7 +76,7 @@ interface AppointmentDetailSheetProps {
   onClose: () => void;
   onRefresh: () => void;
   onOpenSubPanel: (panel: SubPanel) => void;
-  onEditPreAssessmentNote?: (note: { assessment: string; homeInstructions?: string | null; remarks: string }) => void;
+  onEditPreAssessmentNote?: (note: { assessment: string; homeInstructions?: string | null; remarks: string; aiSymptomAnalysis?: string | null }) => void;
 }
 
 export function AppointmentDetailSheet({
@@ -108,20 +112,30 @@ export function AppointmentDetailSheet({
   const [preAssessmentNotes, setPreAssessmentNotes] = useState<PreAssessmentNote[]>([]);
   const [notesExpanded, setNotesExpanded] = useState(false);
 
-  // Fetch pre-assessment notes when appointment changes
-  useEffect(() => {
-    if (!appointment) {
-      setPreAssessmentNotes([]);
-      return;
-    }
-    getPreAssessmentNotesAction(appointment.id).then((result) => {
+  // AI Symptoms Analyzer state
+  const [aiAnalyzing, setAiAnalyzing] = useState(false);
+  const [aiAnalysisResult, setAiAnalysisResult] = useState<string | null>(null);
+  const [aiAnalysisError, setAiAnalysisError] = useState<string | null>(null);
+  const [aiSaving, setAiSaving] = useState(false);
+
+  const refreshNotes = useCallback((appointmentId: number) => {
+    getPreAssessmentNotesAction(appointmentId).then((result) => {
       if (result.status && result.data) {
         setPreAssessmentNotes(result.data as PreAssessmentNote[]);
       } else {
         setPreAssessmentNotes([]);
       }
     });
-  }, [appointment]);
+  }, []);
+
+  // Fetch pre-assessment notes when appointment changes
+  useEffect(() => {
+    if (!appointment) {
+      setPreAssessmentNotes([]);
+      return;
+    }
+    refreshNotes(appointment.id);
+  }, [appointment, refreshNotes]);
 
   // Reset inline forms when appointment changes
   useEffect(() => {
@@ -134,6 +148,8 @@ export function AppointmentDetailSheet({
     setCancelRoutingReason("");
     setShowReturnForm(false);
     setReturnReason("");
+    setAiAnalysisResult(null);
+    setAiAnalysisError(null);
   }, [appointment]);
 
   if (!appointment) return null;
@@ -175,6 +191,47 @@ export function AppointmentDetailSheet({
   const canCompleteRouted = isAcceptedCateringHP || isReceiver || isAssigner;
 
   // ── Action handlers ────────────────────────────────────────────────────────
+
+  const handleAnalyzeSymptoms = async () => {
+    if (!appointment.complaint) return;
+    setAiAnalyzing(true);
+    setAiAnalysisError(null);
+    setAiAnalysisResult(null);
+    try {
+      const result = await analyzeAppointmentSymptoms(
+        appointment.complaint,
+        undefined,
+        appointment.clinicId,
+        undefined
+      );
+      if (result.success && result.data) {
+        setAiAnalysisResult(result.data);
+      } else {
+        setAiAnalysisError(result.error ?? "Analysis failed.");
+      }
+    } catch {
+      setAiAnalysisError("Unexpected error during analysis.");
+    } finally {
+      setAiAnalyzing(false);
+    }
+  };
+
+  const handleSaveAIAnalysis = async (analysisText: string) => {
+    setAiSaving(true);
+    const result = await saveAISymptomAnalysisAction({
+      appointmentId: appointment.id,
+      clinicUid,
+      aiSymptomAnalysis: analysisText,
+    });
+    setAiSaving(false);
+    if (result.status) {
+      toast.success("AI symptom analysis saved.");
+      setAiAnalysisResult(null);
+      refreshNotes(appointment.id);
+    } else {
+      toast.error(result.message);
+    }
+  };
 
   const handleReceive = async () => {
     setIsPending(true);
@@ -461,6 +518,95 @@ export function AppointmentDetailSheet({
 
               {notesExpanded && (
                 <div className="space-y-3 pt-1">
+                  {/* ── AI Symptoms Analyzer ── */}
+                  {appointment.complaint && status !== "COMPLETED" && status !== "REJECTED" && (
+                    <div className="rounded-lg border border-violet-200 bg-violet-50/50 dark:bg-violet-950/20 dark:border-violet-800/40 p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-semibold text-violet-700 dark:text-violet-400 flex items-center gap-1.5">
+                          <Sparkles className="h-3.5 w-3.5" />
+                          AI Symptoms Analyzer
+                        </span>
+                        {!aiAnalysisResult && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            className="h-6 px-2 text-xs bg-violet-600 hover:bg-violet-700 text-white gap-1"
+                            disabled={aiAnalyzing}
+                            onClick={handleAnalyzeSymptoms}
+                          >
+                            {aiAnalyzing ? (
+                              <><Loader2 className="h-3 w-3 animate-spin" />Analyzing…</>
+                            ) : (
+                              <><Sparkles className="h-3 w-3" />Analyze</>
+                            )}
+                          </Button>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Complaint: <span className="text-foreground/80 italic">{appointment.complaint}</span>
+                      </p>
+                      {aiAnalysisError && (
+                        <p className="text-xs text-destructive">{aiAnalysisError}</p>
+                      )}
+                      {aiAnalysisResult && (
+                        <div className="space-y-2">
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-xs border-collapse">
+                              <tbody>
+                                {aiAnalysisResult.split('\n').filter(l => l.trim() && l.includes(':')).map((line) => {
+                                  const colonIdx = line.indexOf(':');
+                                  const field = line.slice(0, colonIdx).trim();
+                                  const value = line.slice(colonIdx + 1).trim();
+                                  if (!field) return null;
+                                  return (
+                                    <tr key={field} className="border-b border-violet-100 dark:border-violet-900/30 last:border-0">
+                                      <td className="py-1 pr-3 align-top font-medium text-violet-700 dark:text-violet-400 whitespace-nowrap w-36">{field}</td>
+                                      <td className="py-1 text-foreground/80 whitespace-pre-wrap">{value}</td>
+                                    </tr>
+                                  );
+                                }).filter(Boolean)}
+                              </tbody>
+                            </table>
+                          </div>
+                          <div className="flex gap-2 pt-1">
+                            <Button
+                              type="button"
+                              size="sm"
+                              className="h-6 px-2 text-xs bg-violet-600 hover:bg-violet-700 text-white gap-1"
+                              disabled={aiSaving}
+                              onClick={() => handleSaveAIAnalysis(aiAnalysisResult)}
+                            >
+                              {aiSaving ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
+                              Save Analysis
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              className="h-6 px-2 text-xs border-violet-200 text-violet-600 hover:bg-violet-50"
+                              onClick={() => setAiAnalysisResult(null)}
+                            >
+                              Discard
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              className="h-6 px-2 text-xs gap-1"
+                              onClick={handleAnalyzeSymptoms}
+                              disabled={aiAnalyzing}
+                            >
+                              <Sparkles className="h-3 w-3 text-violet-500" />
+                              Re-analyze
+                            </Button>
+                          </div>
+                          <p className="text-xs text-muted-foreground/60 italic">⚠️ AI-generated. Review before saving.</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* ── Pre-assessment notes as descriptive generic table ── */}
                   {preAssessmentNotes.length === 0 ? (
                     <p className="text-xs text-muted-foreground italic">No pre-assessment notes yet.</p>
                   ) : (
@@ -468,8 +614,9 @@ export function AppointmentDetailSheet({
                       const author = `${note.CreatedBy?.firstName ?? ""} ${note.CreatedBy?.lastName ?? ""}`.trim() || "Staff";
                       const isMyNote = currentUserSub && note.CreatedBy?.userId === currentUserSub;
                       return (
-                        <div key={note.id} className="rounded-lg bg-background/60 p-3 space-y-1.5 border border-border/30">
-                          <div className="flex items-center justify-between">
+                        <div key={note.id} className="rounded-lg bg-background/60 border border-border/30 overflow-hidden">
+                          {/* Header row */}
+                          <div className="flex items-center justify-between px-3 py-2 border-b border-border/30 bg-muted/20">
                             <span className="text-xs font-medium text-primary">{author}</span>
                             <div className="flex items-center gap-2">
                               <span className="text-xs text-muted-foreground">
@@ -482,6 +629,7 @@ export function AppointmentDetailSheet({
                                     assessment: note.assessment,
                                     homeInstructions: note.homeInstructions,
                                     remarks: note.remarks ?? "",
+                                    aiSymptomAnalysis: note.aiSymptomAnalysis,
                                   })}
                                   className="text-muted-foreground hover:text-primary transition-colors"
                                   title="Edit your note"
@@ -491,22 +639,37 @@ export function AppointmentDetailSheet({
                               )}
                             </div>
                           </div>
-                          <div>
-                            <p className="text-xs text-muted-foreground">Assessment</p>
-                            <MarkdownRenderer content={note.assessment} className="text-sm" />
-                          </div>
-                          {note.homeInstructions && (
-                            <div>
-                              <p className="text-xs text-muted-foreground">Home Instructions</p>
-                              <MarkdownRenderer content={note.homeInstructions} className="text-sm" />
-                            </div>
-                          )}
-                          {note.remarks && (
-                            <div>
-                              <p className="text-xs text-muted-foreground">Remarks</p>
-                              <MarkdownRenderer content={note.remarks} className="text-sm" />
-                            </div>
-                          )}
+                          {/* Descriptive generic table */}
+                          <table className="w-full text-xs border-collapse">
+                            <tbody>
+                              {note.aiSymptomAnalysis && (
+                                <tr className="border-b border-border/20">
+                                  <td className="px-3 py-2 align-top font-medium text-violet-700 dark:text-violet-400 w-32 whitespace-nowrap bg-violet-50/40 dark:bg-violet-950/10">
+                                    <span className="flex items-center gap-1"><Sparkles className="h-3 w-3" />AI Analysis</span>
+                                  </td>
+                                  <td className="px-3 py-2 text-foreground/80 whitespace-pre-wrap">{note.aiSymptomAnalysis}</td>
+                                </tr>
+                              )}
+                              {note.assessment && (
+                                <tr className="border-b border-border/20">
+                                  <td className="px-3 py-2 align-top font-medium text-muted-foreground w-32 whitespace-nowrap bg-muted/10">Assessment</td>
+                                  <td className="px-3 py-2"><MarkdownRenderer content={note.assessment} className="text-xs" /></td>
+                                </tr>
+                              )}
+                              {note.homeInstructions && (
+                                <tr className="border-b border-border/20">
+                                  <td className="px-3 py-2 align-top font-medium text-muted-foreground w-32 whitespace-nowrap bg-muted/10">Home Instructions</td>
+                                  <td className="px-3 py-2"><MarkdownRenderer content={note.homeInstructions} className="text-xs" /></td>
+                                </tr>
+                              )}
+                              {note.remarks && (
+                                <tr>
+                                  <td className="px-3 py-2 align-top font-medium text-muted-foreground w-32 whitespace-nowrap bg-muted/10">Remarks</td>
+                                  <td className="px-3 py-2"><MarkdownRenderer content={note.remarks} className="text-xs" /></td>
+                                </tr>
+                              )}
+                            </tbody>
+                          </table>
                         </div>
                       );
                     })}</>

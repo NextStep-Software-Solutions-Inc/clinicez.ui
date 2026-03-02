@@ -144,14 +144,16 @@ export function AppointmentsClient({
     assessment: string;
     homeInstructions: string;
     remarks: string;
+    aiSymptomAnalysis?: string;
   } | null>(null);
 
   const handleOpenPreAssessmentEdit = useCallback(
-    (note: { assessment: string; homeInstructions?: string | null; remarks: string }) => {
+    (note: { assessment: string; homeInstructions?: string | null; remarks: string; aiSymptomAnalysis?: string | null }) => {
       setPreAssessmentEditData({
         assessment: note.assessment,
         homeInstructions: note.homeInstructions ?? "",
         remarks: note.remarks,
+        aiSymptomAnalysis: note.aiSymptomAnalysis ?? undefined,
       });
       setActivePanel("preAssessment");
     },
@@ -578,6 +580,7 @@ export function AppointmentsClient({
           initialAssessment={preAssessmentEditData?.assessment}
           initialHomeInstructions={preAssessmentEditData?.homeInstructions}
           initialRemarks={preAssessmentEditData?.remarks}
+          initialAiSymptomAnalysis={preAssessmentEditData?.aiSymptomAnalysis}
           complaint={selectedAppointment.complaint ?? undefined}
           clinicId={selectedAppointment.clinicId}
           onClose={() => { setPreAssessmentEditData(null); backToDetail(); }}

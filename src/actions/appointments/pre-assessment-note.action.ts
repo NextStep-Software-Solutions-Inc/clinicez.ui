@@ -30,10 +30,11 @@ type UpsertPreAssessmentNotePayload = {
   assessment: string;
   homeInstructions?: string;
   remarks: string;
+  aiSymptomAnalysis?: string;
   clinicUid: string;
 }
 
-export const upsertPreAssessmentNoteAction = withErrorHandling(async ({ appointmentId, clinicUid, assessment, homeInstructions, remarks }: UpsertPreAssessmentNotePayload) => {
+export const upsertPreAssessmentNoteAction = withErrorHandling(async ({ appointmentId, clinicUid, assessment, homeInstructions, remarks, aiSymptomAnalysis }: UpsertPreAssessmentNotePayload) => {
 
   const session = await getCachedSession()
   if (!session) throw new Error("User not authenticated.")
@@ -70,6 +71,7 @@ export const upsertPreAssessmentNoteAction = withErrorHandling(async ({ appointm
         assessment,
         homeInstructions,
         remarks,
+        aiSymptomAnalysis,
         CreatedBy: {
           connect: {
             userId: session.user.sub
@@ -83,6 +85,8 @@ export const upsertPreAssessmentNoteAction = withErrorHandling(async ({ appointm
         assessment,
         homeInstructions,
         remarks,
+        // Only update aiSymptomAnalysis when explicitly provided; omitting it preserves the existing value.
+        ...(aiSymptomAnalysis !== undefined ? { aiSymptomAnalysis } : {}),
       }
     })
   }, {
@@ -127,4 +131,67 @@ export const getPreAssessmentNotesAction = withErrorHandling(async (appointmentI
     }
   })
   return { message: "Pre-consultation note fetched successfully", data: preAssessmentNote }
+})
+
+type SaveAISymptomAnalysisPayload = {
+  appointmentId: number;
+  clinicUid: string;
+  aiSymptomAnalysis: string;
+}
+
+/**
+ * Save an AI symptom analysis to the pre-assessment note record.
+ * Creates a minimal note record if none exists for the current user;
+ * otherwise only updates the aiSymptomAnalysis field, preserving existing note content.
+ */
+export const saveAISymptomAnalysisAction = withErrorHandling(async ({ appointmentId, clinicUid, aiSymptomAnalysis }: SaveAISymptomAnalysisPayload) => {
+
+  const session = await getCachedSession()
+  if (!session) throw new Error("User not authenticated.")
+
+  const myPermissions = await getPermissionsAction({ userId: session.user.sub, type: "CLINIC" })
+  const writePermissions = [PERMISSIONS.CLINIC["WRITE:CLINIC:PRE_ASSESSMENT_NOTE"].name]
+  const myPermissionArray = myPermissions.map(permission => permission.name)
+  const canWrite = writePermissions.every(permission => myPermissionArray.includes(permission))
+
+  if (!canWrite) throw new Error("You do not have permission to write pre-assessment note.")
+
+  await prisma.$transaction(async (prisma) => {
+    const user = await prisma.user.findUniqueOrThrow({
+      where: { userId: session.user.sub }, select: { id: true }
+    })
+
+    const existing = await prisma.preAssessmentNote.findUnique({
+      where: {
+        unique_appointment_created_by: { appointmentId, createdBy: user.id }
+      },
+      select: { id: true }
+    })
+
+    if (existing) {
+      // Only update the AI analysis field — preserve existing note content
+      await prisma.preAssessmentNote.update({
+        where: { id: existing.id },
+        data: { aiSymptomAnalysis }
+      })
+    } else {
+      // Create a minimal note record carrying just the AI analysis
+      await prisma.preAssessmentNote.create({
+        data: {
+          Appointment: { connect: { id: appointmentId } },
+          Clinic: { connect: { clinicUid } },
+          aiSymptomAnalysis,
+          assessment: '',
+          remarks: '',
+          CreatedBy: { connect: { userId: session.user.sub } },
+          PreAssessmentNoteAttribute: { create: {} }
+        }
+      })
+    }
+  }, {
+    maxWait: 10000,
+    timeout: 5000,
+    isolationLevel: Prisma.TransactionIsolationLevel.Serializable
+  })
+  return { message: "AI symptom analysis saved successfully", data: undefined }
 })

@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { getAppointmentsAction, type GetAppointments } from "@/actions/appointments/appointments.action";
 import type { GetAppointmentModes } from "@/actions/appointments/appointment-mode.action";
 import type { GetAppointmentTypes } from "@/actions/appointments/appointment-type.action";
-import type { GetClinicServices } from "@/actions/clinics/clinic-service.action";
+import type { GetClinicServiceCategories } from "@/actions/clinics/clinic-service-category.action";
 import type { GetHPsType } from "@/actions/hp.actions";
 import { AppointmentCard } from "./AppointmentCard";
 import { AppointmentDetailSheet } from "./AppointmentDetailSheet";
@@ -65,7 +65,7 @@ interface AppointmentsClientProps {
   counts: Record<string, number>;
   modes: GetAppointmentModes;
   types: GetAppointmentTypes;
-  services: GetClinicServices;
+  serviceCategories: GetClinicServiceCategories;
   hps: GetHPsType;
   currentUserHpIds: number[];
   currentUserSub: string;
@@ -79,7 +79,7 @@ export function AppointmentsClient({
   counts,
   modes,
   types,
-  services,
+  serviceCategories,
   hps,
   currentUserHpIds,
   currentUserSub,
@@ -529,7 +529,7 @@ export function AppointmentsClient({
         clinicUid={clinicUid}
         modes={modes}
         types={types}
-        services={services}
+        serviceCategories={serviceCategories}
         hps={hps}
         onClose={() => setActivePanel(null)}
         onSuccess={() => {
@@ -545,7 +545,7 @@ export function AppointmentsClient({
           appointment={selectedAppointment}
           modes={modes}
           types={types}
-          services={services}
+          serviceCategories={serviceCategories}
           hps={hps}
           onClose={backToDetail}
           onSuccess={() => {

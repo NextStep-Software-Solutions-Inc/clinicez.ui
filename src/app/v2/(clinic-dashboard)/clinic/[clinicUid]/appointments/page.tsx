@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { getAppointmentsAction, getAppointmentCountsAction } from "@/actions/appointments/appointments.action";
 import { getAppointmentModesAction } from "@/actions/appointments/appointment-mode.action";
 import { getAppointmentTypesAction } from "@/actions/appointments/appointment-type.action";
-import { getClinicServicesAction } from "@/actions/clinics/clinic-service.action";
+import { getClinicServiceCategoriesAction } from "@/actions/clinics/clinic-service-category.action";
 import { getHPsAction } from "@/actions/hp.actions";
 import { AppointmentsClient } from "@/components/v2/appointments/AppointmentsClient";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -26,13 +26,13 @@ export default async function AppointmentsPage({ params }: AppointmentsPageProps
 
   const session = await getCachedSession();
 
-  const [appointmentsResult, countsResult, modes, types, hps, services, myHps, visibleTabNames] = await Promise.all([
+  const [appointmentsResult, countsResult, modes, types, hps, serviceCategories, myHps, visibleTabNames] = await Promise.all([
     getAppointmentsAction({ clinicUid }),
     getAppointmentCountsAction(clinicUid),
     getAppointmentModesAction(clinicUid),
     getAppointmentTypesAction(clinicUid),
     getHPsAction({ clinicUid }),
-    getClinicServicesAction({ clinicUid }),
+    getClinicServiceCategoriesAction(clinicUid),
     // Fetch current user's HPs for accept/decline guard
     session ? getHPsAction({ userId: session.user.sub }) : Promise.resolve([]),
     // Fetch visible appointment tab names for the current user's role
@@ -58,7 +58,7 @@ export default async function AppointmentsPage({ params }: AppointmentsPageProps
           counts={countsResult.data ?? {}}
           modes={modes}
           types={types}
-          services={services}
+          serviceCategories={serviceCategories}
           hps={hps}
           currentUserHpIds={currentUserHpIds}
           currentUserSub={currentUserSub}

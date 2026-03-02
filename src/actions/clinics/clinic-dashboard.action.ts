@@ -156,17 +156,15 @@ export const getClinicDashboardDataAction = withErrorHandling(
                 take: 5,
             }),
 
-            // KPI: Pending appointments (not completed status)
-            prisma.appointmentRouting.count({
+            // KPI: Pending appointments (AppointmentAttribute status = PENDING)
+            prisma.appointmentAttribute.count({
                 where: {
                     Appointment: {
                         Clinic: { clinicUid },
                         isActive: true,
                         deletedAt: null,
                     },
-                    status: {
-                        not: "COMPLETED",
-                    },
+                    status: "PENDING",
                 },
             }),
 

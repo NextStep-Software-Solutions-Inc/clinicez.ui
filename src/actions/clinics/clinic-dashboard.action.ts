@@ -51,6 +51,7 @@ export const getClinicDashboardDataAction = withErrorHandling(
             recentAppointments,
             recentClients,
             pendingAppointments,
+            pendingRoutings,
             // Additional diagnostic requests
             referralSlipsCount,
             labRequestsCount,
@@ -156,7 +157,19 @@ export const getClinicDashboardDataAction = withErrorHandling(
                 take: 5,
             }),
 
-            // KPI: Pending appointments (not completed status)
+            // KPI: Pending appointments (AppointmentAttribute status = PENDING)
+            prisma.appointmentAttribute.count({
+                where: {
+                    Appointment: {
+                        Clinic: { clinicUid },
+                        isActive: true,
+                        deletedAt: null,
+                    },
+                    status: "PENDING",
+                },
+            }),
+
+            // KPI: Pending routing assignments (AppointmentRouting status = PENDING)
             prisma.appointmentRouting.count({
                 where: {
                     Appointment: {
@@ -164,9 +177,7 @@ export const getClinicDashboardDataAction = withErrorHandling(
                         isActive: true,
                         deletedAt: null,
                     },
-                    status: {
-                        not: "COMPLETED",
-                    },
+                    status: "PENDING",
                 },
             }),
 
@@ -309,6 +320,7 @@ export const getClinicDashboardDataAction = withErrorHandling(
                 metrics: {
                     patientsToday: patientCount.length,
                     pendingAppointments,
+                    pendingRoutings,
                     totalAppointmentsToday: appointmentCount,
                     totalConsultations: consultationCount.length,
                     completedAppointmentsToday,

@@ -12,6 +12,7 @@ interface KPICardProps {
   };
   progress: number; // percentage 0-100
   color: "primary" | "secondary" | "accent";
+  note?: string;
 }
 
 const colorMap = {
@@ -27,6 +28,7 @@ export function KPICard({
   trend,
   progress,
   color,
+  note,
 }: KPICardProps) {
   const cssVariable = colorMap[color];
   const trendIcon = trend.direction === "up" ? "↑" : "↓";
@@ -79,6 +81,11 @@ export function KPICard({
               }}
             />
           </div>
+
+          {/* Optional breakdown note */}
+          {note && (
+            <p className="text-xs text-muted-foreground leading-tight">{note}</p>
+          )}
         </div>
       </CardContent>
     </Card>

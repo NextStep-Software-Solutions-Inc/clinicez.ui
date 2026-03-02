@@ -69,7 +69,7 @@ export function PreAssessmentNoteDialog({
       toast.error("Please enter symptoms or chief complaint to generate notes.");
       return;
     }
-    await generate(aiSymptoms, undefined, undefined, clinicId);
+    await generate(aiSymptoms, undefined, undefined, clinicId, undefined, 'markdown');
   };
 
   const handleApplyAI = () => {

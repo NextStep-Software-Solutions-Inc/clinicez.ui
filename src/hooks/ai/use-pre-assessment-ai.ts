@@ -56,7 +56,8 @@ export function usePreAssessmentAI() {
       type?: string;
     }>,
     clinicId?: number,
-    tenantId?: number
+    tenantId?: number,
+    outputFormat: 'plain_text' | 'markdown' = 'markdown'
   ) => {
     setIsLoading(true);
     setError(null);
@@ -64,7 +65,7 @@ export function usePreAssessmentAI() {
 
     try {
       const { generatePreAssessmentNotes } = await import('@/actions/ai/pre-assessment-ai-actions');
-      const result = await generatePreAssessmentNotes(symptoms, patientContext, attachments, clinicId, tenantId);
+      const result = await generatePreAssessmentNotes(symptoms, patientContext, attachments, clinicId, tenantId, outputFormat);
 
       if (result.success && result.data) {
         setGeneratedNotes(result.data);

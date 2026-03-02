@@ -75,10 +75,10 @@ export function PatientAIInsightButton({
     fetchInsight(true);
   };
 
-  const validUntilDate = insight ? new Date(insight.validUntil) : null;
-  const createdAtDate = insight ? new Date(insight.createdAt) : null;
+  const validUntilDate = insight?.validUntil ?? null;
+  const createdAtDate = insight?.createdAt ?? null;
   const isExpiredSoon =
-    validUntilDate && validUntilDate.getTime() - Date.now() < 2 * 60 * 60 * 1000;
+    validUntilDate && new Date(validUntilDate).getTime() - Date.now() < 2 * 60 * 60 * 1000;
 
   return (
     <>

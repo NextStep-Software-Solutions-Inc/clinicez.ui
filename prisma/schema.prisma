@@ -1673,7 +1673,6 @@ model PreAssessmentNote {
   assessment                 String
   homeInstructions           String?
   remarks                    String
-  contentType                String?
   createdBy                  Int
   createdAt                  DateTime                    @default(now())
   updatedAt                  DateTime                    @updatedAt

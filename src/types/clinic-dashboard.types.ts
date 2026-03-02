@@ -1,6 +1,7 @@
 export interface ClinicDashboardMetrics {
     patientsToday: number;
     pendingAppointments: number;
+    pendingRoutings: number;
     totalAppointmentsToday: number;
     totalConsultations: number;
     completedAppointmentsToday: number;

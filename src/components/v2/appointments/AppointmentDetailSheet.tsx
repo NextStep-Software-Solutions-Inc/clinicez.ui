@@ -510,6 +510,95 @@ export function AppointmentDetailSheet({
             </div>
           </div>
 
+          {/* AI Symptoms Analyzer — shown in Appointment Details when complaint is present */}
+          {appointment.complaint && status !== "COMPLETED" && status !== "REJECTED" && (
+            <div className="rounded-xl border border-violet-200 bg-violet-50/50 dark:bg-violet-950/20 dark:border-violet-800/40 p-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-semibold text-violet-700 dark:text-violet-400 uppercase tracking-wide flex items-center gap-1.5">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  AI Symptoms Analyzer
+                </h3>
+                {!aiPendingResult && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="h-6 px-2 text-xs bg-violet-600 hover:bg-violet-700 text-white gap-1"
+                    disabled={aiAnalyzing}
+                    onClick={handleAnalyzeSymptoms}
+                  >
+                    {aiAnalyzing ? (
+                      <><Loader2 className="h-3 w-3 animate-spin" />Analyzing…</>
+                    ) : (
+                      <><Sparkles className="h-3 w-3" />Analyze</>
+                    )}
+                  </Button>
+                )}
+              </div>
+              {aiAnalysisError && (
+                <p className="text-xs text-destructive">{aiAnalysisError}</p>
+              )}
+              {aiPendingResult && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium text-violet-700 dark:text-violet-400">Urgency:</span>
+                    <Badge
+                      variant={getUrgencyBadgeVariant(aiPendingResult.urgencyLevel)}
+                      className="text-xs"
+                    >
+                      {aiPendingResult.urgencyLevel.toUpperCase()}
+                    </Badge>
+                  </div>
+                  <div className="rounded-md bg-muted/40 p-2 text-xs">
+                    <MarkdownRenderer content={aiPendingResult.analysis} className="text-xs" />
+                  </div>
+                  {aiPendingResult.recommendations.length > 0 && (
+                    <div className="rounded-md bg-muted/40 p-2">
+                      <p className="text-xs font-medium text-muted-foreground mb-1">Recommendations</p>
+                      <ul className="list-disc list-inside space-y-0.5 text-xs text-foreground/80">
+                        {aiPendingResult.recommendations.map((rec, idx) => (
+                          <li key={idx}>{rec}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  <div className="flex gap-2 pt-1">
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="h-6 px-2 text-xs bg-violet-600 hover:bg-violet-700 text-white gap-1"
+                      disabled={aiSaving}
+                      onClick={() => handleSaveAIAnalysis(aiPendingResult)}
+                    >
+                      {aiSaving ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
+                      Save Analysis
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="h-6 px-2 text-xs border-violet-200 text-violet-600 hover:bg-violet-50"
+                      onClick={() => setAiPendingResult(null)}
+                    >
+                      Discard
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="h-6 px-2 text-xs gap-1"
+                      onClick={handleAnalyzeSymptoms}
+                      disabled={aiAnalyzing}
+                    >
+                      <Sparkles className="h-3 w-3 text-violet-500" />
+                      Re-analyze
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground/60 italic">⚠️ AI-generated. Review before saving.</p>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Pre-Assessment Notes — visible if notes exist or user can add */}
           {canAccessPreAssessment && (
             <div className="rounded-xl border bg-muted/30 p-4 space-y-2">
@@ -532,98 +621,6 @@ export function AppointmentDetailSheet({
 
               {notesExpanded && (
                 <div className="space-y-3 pt-1">
-                  {/* ── AI Symptoms Analyzer (v1 hook, Markdown output) ── */}
-                  {appointment.complaint && status !== "COMPLETED" && status !== "REJECTED" && (
-                    <div className="rounded-lg border border-violet-200 bg-violet-50/50 dark:bg-violet-950/20 dark:border-violet-800/40 p-3 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-semibold text-violet-700 dark:text-violet-400 flex items-center gap-1.5">
-                          <Sparkles className="h-3.5 w-3.5" />
-                          AI Symptoms Analyzer
-                        </span>
-                        {!aiPendingResult && (
-                          <Button
-                            type="button"
-                            size="sm"
-                            className="h-6 px-2 text-xs bg-violet-600 hover:bg-violet-700 text-white gap-1"
-                            disabled={aiAnalyzing}
-                            onClick={handleAnalyzeSymptoms}
-                          >
-                            {aiAnalyzing ? (
-                              <><Loader2 className="h-3 w-3 animate-spin" />Analyzing…</>
-                            ) : (
-                              <><Sparkles className="h-3 w-3" />Analyze</>
-                            )}
-                          </Button>
-                        )}
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        Complaint: <span className="text-foreground/80 italic">{appointment.complaint}</span>
-                      </p>
-                      {aiAnalysisError && (
-                        <p className="text-xs text-destructive">{aiAnalysisError}</p>
-                      )}
-                      {aiPendingResult && (
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-medium text-violet-700 dark:text-violet-400">Urgency:</span>
-                            <Badge
-                              variant={getUrgencyBadgeVariant(aiPendingResult.urgencyLevel)}
-                              className="text-xs"
-                            >
-                              {aiPendingResult.urgencyLevel.toUpperCase()}
-                            </Badge>
-                          </div>
-                          <div className="rounded-md bg-muted/40 p-2 text-xs">
-                            <MarkdownRenderer content={aiPendingResult.analysis} className="text-xs" />
-                          </div>
-                          {aiPendingResult.recommendations.length > 0 && (
-                            <div className="rounded-md bg-muted/40 p-2">
-                              <p className="text-xs font-medium text-muted-foreground mb-1">Recommendations</p>
-                              <ul className="list-disc list-inside space-y-0.5 text-xs text-foreground/80">
-                                {aiPendingResult.recommendations.map((rec, idx) => (
-                                  <li key={idx}>{rec}</li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
-                          <div className="flex gap-2 pt-1">
-                            <Button
-                              type="button"
-                              size="sm"
-                              className="h-6 px-2 text-xs bg-violet-600 hover:bg-violet-700 text-white gap-1"
-                              disabled={aiSaving}
-                              onClick={() => handleSaveAIAnalysis(aiPendingResult)}
-                            >
-                              {aiSaving ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
-                              Save Analysis
-                            </Button>
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              className="h-6 px-2 text-xs border-violet-200 text-violet-600 hover:bg-violet-50"
-                              onClick={() => setAiPendingResult(null)}
-                            >
-                              Discard
-                            </Button>
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              className="h-6 px-2 text-xs gap-1"
-                              onClick={handleAnalyzeSymptoms}
-                              disabled={aiAnalyzing}
-                            >
-                              <Sparkles className="h-3 w-3 text-violet-500" />
-                              Re-analyze
-                            </Button>
-                          </div>
-                          <p className="text-xs text-muted-foreground/60 italic">⚠️ AI-generated. Review before saving.</p>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
                   {/* ── Pre-assessment notes: descriptive generic table (no AI column) ── */}
                   {preAssessmentNotes.length === 0 ? (
                     <p className="text-xs text-muted-foreground italic">No pre-assessment notes yet.</p>

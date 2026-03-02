@@ -194,10 +194,21 @@ export default function ConsultationWorkspace({
                   {apt.AppointmentAttribute.Service.name}
                 </Badge>
               )}
-              {hpNames && (
+              {(hpNames || (canBeResolved && myHPs.length > 0)) && (
                 <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                  <User className="h-3.5 w-3.5" />
+                  <User className="h-3.5 w-3.5 shrink-0" />
                   {hpNames}
+                  {canBeResolved && myHPs.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setAddCoCreatorOpen(true)}
+                      className="ml-0.5 inline-flex items-center gap-1 rounded px-1 py-0.5 text-xs text-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary transition-colors"
+                      title="Add co-creator"
+                    >
+                      <UserPlus className="h-3 w-3" />
+                      Add
+                    </button>
+                  )}
                 </span>
               )}
             </div>
@@ -217,18 +228,9 @@ export default function ConsultationWorkspace({
             )}
           </div>
 
-          {/* ── Action buttons (only when not resolved) ── */}
+          {/* ── Resolve button (only for the consulting HP, status not yet resolved) ── */}
           {canBeResolved && myHPs.length > 0 && (
-            <div className="shrink-0 pl-4 flex items-center gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                className="gap-1.5 h-8 text-xs"
-                onClick={() => setAddCoCreatorOpen(true)}
-              >
-                <UserPlus className="h-3.5 w-3.5" />
-                Add Co-creator
-              </Button>
+            <div className="shrink-0 pl-4">
               <Button
                 size="sm"
                 variant="outline"

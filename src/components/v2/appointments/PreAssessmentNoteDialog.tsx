@@ -15,6 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { upsertPreAssessmentNoteAction } from "@/actions/appointments/pre-assessment-note.action";
 import { MarkdownEditor } from "./MarkdownEditor";
+import { MarkdownRenderer } from "@/components/markdown/MarkdownRenderer";
 import { usePreAssessmentAI } from "@/hooks/ai/use-pre-assessment-ai";
 
 interface PreAssessmentNoteDialogProps {
@@ -188,9 +189,14 @@ export function PreAssessmentNoteDialog({
                   <p className="text-xs font-semibold text-violet-700 dark:text-violet-400">
                     ✨ AI-generated preview
                   </p>
-                  <div className="text-xs text-muted-foreground max-h-36 overflow-y-auto space-y-1">
-                    <p className="font-medium text-foreground/80">Assessment:</p>
-                    <p className="whitespace-pre-wrap">{generatedNotes.assessment}</p>
+                  <div className="text-xs text-muted-foreground max-h-48 overflow-y-auto space-y-2">
+                    <MarkdownRenderer content={generatedNotes.assessment} className="text-xs" />
+                    {generatedNotes.homeInstructions && (
+                      <MarkdownRenderer content={generatedNotes.homeInstructions} className="text-xs" />
+                    )}
+                    {generatedNotes.remarks && (
+                      <MarkdownRenderer content={generatedNotes.remarks} className="text-xs" />
+                    )}
                   </div>
                   <div className="flex gap-2 pt-1">
                     <Button

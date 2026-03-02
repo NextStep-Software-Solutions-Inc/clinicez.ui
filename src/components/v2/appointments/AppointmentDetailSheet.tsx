@@ -48,6 +48,7 @@ import {
   cancelAppointmentAction,
   returnAppointmentAction,
   saveAppointmentAISymptomAnalysisAction,
+  getAppointmentAIAnalysisAction,
 } from "@/actions/appointments/appointment-attribute.action";
 import {
   acceptAppointmentAction,
@@ -112,6 +113,9 @@ export function AppointmentDetailSheet({
   const [preAssessmentNotes, setPreAssessmentNotes] = useState<PreAssessmentNote[]>([]);
   const [notesExpanded, setNotesExpanded] = useState(false);
 
+  // Saved AI symptom analysis (fetched separately to avoid breaking the list query)
+  const [savedAiAnalysis, setSavedAiAnalysis] = useState<string | null>(null);
+
   // AI Symptoms Analyzer — reuse v1 hook
   const { analyze, isLoading: aiAnalyzing, error: aiAnalysisError, analysis: aiAnalysis } = useSymptomAnalysis();
   const [aiSaving, setAiSaving] = useState(false);
@@ -127,14 +131,22 @@ export function AppointmentDetailSheet({
     });
   }, []);
 
+  const refreshAiAnalysis = useCallback((appointmentId: number) => {
+    getAppointmentAIAnalysisAction(appointmentId).then((result) => {
+      setSavedAiAnalysis(result.status ? (result.data ?? null) : null);
+    });
+  }, []);
+
   // Fetch pre-assessment notes when appointment changes
   useEffect(() => {
     if (!appointment) {
       setPreAssessmentNotes([]);
+      setSavedAiAnalysis(null);
       return;
     }
     refreshNotes(appointment.id);
-  }, [appointment, refreshNotes]);
+    refreshAiAnalysis(appointment.id);
+  }, [appointment, refreshNotes, refreshAiAnalysis]);
 
   // Keep pending result in sync with hook result
   useEffect(() => {
@@ -229,7 +241,7 @@ export function AppointmentDetailSheet({
     if (result.status) {
       toast.success("AI symptom analysis saved.");
       setAiPendingResult(null);
-      onRefresh();
+      setSavedAiAnalysis(markdown);
     } else {
       toast.error(result.message);
     }
@@ -705,15 +717,15 @@ export function AppointmentDetailSheet({
             </div>
           )}
 
-          {/* Saved AI Symptom Analysis (from AppointmentAttribute) */}
-          {appointment.AppointmentAttribute?.aiSymptomAnalysis && (
+          {/* Saved AI Symptom Analysis (fetched separately from AppointmentAttribute) */}
+          {savedAiAnalysis && (
             <div className="rounded-xl border border-violet-200 bg-violet-50/30 dark:bg-violet-950/10 dark:border-violet-800/30 p-4 space-y-2">
               <h3 className="text-xs font-semibold text-violet-700 dark:text-violet-400 uppercase tracking-wide flex items-center gap-1.5">
                 <Sparkles className="h-3.5 w-3.5" />
                 AI Symptom Analysis
               </h3>
               <div className="rounded-md bg-background/60 p-3">
-                <MarkdownRenderer content={appointment.AppointmentAttribute.aiSymptomAnalysis} className="text-xs" />
+                <MarkdownRenderer content={savedAiAnalysis} className="text-xs" />
               </div>
             </div>
           )}

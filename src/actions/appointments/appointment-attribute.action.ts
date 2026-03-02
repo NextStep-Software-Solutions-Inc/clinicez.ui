@@ -516,3 +516,18 @@ export const saveAppointmentAISymptomAnalysisAction = withErrorHandling(async ({
 
   return { message: "AI symptom analysis saved successfully", data: undefined };
 });
+
+/**
+ * Fetch the saved AI symptom analysis for an appointment.
+ */
+export const getAppointmentAIAnalysisAction = withErrorHandling(async (appointmentId: number) => {
+  const session = await getCachedSession();
+  if (!session) throw new Error("User not authenticated.");
+
+  const attr = await prismaClient.appointmentAttribute.findUnique({
+    where: { appointmentId },
+    select: { aiSymptomAnalysis: true },
+  });
+
+  return { message: "AI symptom analysis fetched", data: attr?.aiSymptomAnalysis ?? null };
+});

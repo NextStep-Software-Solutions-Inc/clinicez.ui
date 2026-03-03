@@ -207,7 +207,7 @@ export default function AddCoCreatorDialog({
                           return (
                           <CommandItem
                             key={hp.id}
-                            value={`${hp.HPProfile?.title ?? ""} ${hp.HPProfile?.name ?? ""} ${hp.HPProfile?.suffix ?? ""} ${hp.HPType?.name ?? ""}`}
+                            value={`${hp.id} ${hpDisplayName} ${hp.HPProfile?.title ?? ""} ${hp.HPProfile?.name ?? ""} ${hp.HPProfile?.suffix ?? ""} ${hp.HPType?.name ?? ""}`}
                             onSelect={() =>
                               setSelectedSearchHpId((prev) =>
                                 prev === hp.id ? null : hp.id

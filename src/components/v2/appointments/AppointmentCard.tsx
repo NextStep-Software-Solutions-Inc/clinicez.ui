@@ -205,10 +205,6 @@ export function AppointmentCard({
                   {timeStart}
                 </span>
               )}
-              <span className="flex items-center gap-1 text-xs text-muted-foreground/60">
-                <CalendarClock className="h-3 w-3" />
-                {format(new Date(appointment.createdAt), "MMM d, yyyy h:mm a")}
-              </span>
               {doctorName && (
                 <span className="flex items-center gap-1 text-xs text-muted-foreground">
                   <Stethoscope className="h-3 w-3" />
@@ -240,7 +236,8 @@ export function AppointmentCard({
         </button>
 
         {/* ── Actions area (NOT inside the clickable zone) ───────────────── */}
-        <div className="flex items-center gap-1.5 flex-shrink-0 flex-wrap justify-end px-3 py-3 self-center">
+        <div className="flex flex-col items-end gap-1.5 flex-shrink-0 px-3 py-3 self-center">
+          <div className="flex flex-wrap gap-1.5 justify-end">
           {status === "PENDING" && (
             <>
               <Button
@@ -325,6 +322,11 @@ export function AppointmentCard({
               View Details
             </Button>
           )}
+          </div>
+          <span className="flex items-center gap-1 text-xs text-muted-foreground/60">
+            <CalendarClock className="h-3 w-3" />
+            {format(new Date(appointment.createdAt), "MMM d, yyyy h:mm a")}
+          </span>
         </div>
       </div>
 

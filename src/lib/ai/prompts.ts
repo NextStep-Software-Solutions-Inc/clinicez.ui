@@ -22,14 +22,11 @@ Include a disclaimer that this is an AI-generated summary and should be reviewed
 
 {{consultationNotes}}
 
-Create a structured summary with the following sections:
-- Chief Complaint
-- History of Present Illness
-- Assessment
-- Plan
+Create a structured summary using exactly the following section headings ({{outputFormatInstruction}}):
+{{sectionNames}}
 
 Keep the summary concise but complete.`,
-  variables: ['consultationNotes'],
+  variables: ['consultationNotes', 'sectionNames', 'outputFormatInstruction'],
   examples: [
     {
       input: {

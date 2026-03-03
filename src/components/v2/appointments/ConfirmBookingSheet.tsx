@@ -14,7 +14,9 @@ import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -24,7 +26,7 @@ import { confirmAppointmentBookingAction } from "@/actions/appointments/appointm
 import type { GetAppointments } from "@/actions/appointments/appointments.action";
 import type { GetAppointmentModes } from "@/actions/appointments/appointment-mode.action";
 import type { GetAppointmentTypes } from "@/actions/appointments/appointment-type.action";
-import type { GetClinicServices } from "@/actions/clinics/clinic-service.action";
+import type { GetClinicServiceCategories } from "@/actions/clinics/clinic-service-category.action";
 import type { GetHPsType } from "@/actions/hp.actions";
 
 type Appointment = NonNullable<GetAppointments["data"]>[number];
@@ -34,7 +36,7 @@ interface ConfirmBookingSheetProps {
   appointment: Appointment;
   modes: GetAppointmentModes;
   types: GetAppointmentTypes;
-  services: GetClinicServices;
+  serviceCategories: GetClinicServiceCategories;
   hps: GetHPsType;
   onClose: () => void;
   onSuccess: () => void;
@@ -45,7 +47,7 @@ export function ConfirmBookingSheet({
   appointment,
   modes,
   types,
-  services,
+  serviceCategories,
   hps,
   onClose,
   onSuccess,
@@ -165,19 +167,24 @@ export function ConfirmBookingSheet({
                 <SelectValue placeholder="Select service" />
               </SelectTrigger>
               <SelectContent>
-                {services.map((service) => (
-                  <SelectItem key={service.id} value={String(service.id)}>
-                    {service.name}
-                  </SelectItem>
+                {serviceCategories.map((category) => (
+                  <SelectGroup key={category.id}>
+                    <SelectLabel>{category.name}</SelectLabel>
+                    {category.Services.map((service) => (
+                      <SelectItem key={service.id} value={String(service.id)}>
+                        {service.name}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
-          {/* Assign Doctor (optional) */}
+          {/* Assign Healthcare Provider (optional) */}
           <div className="space-y-1.5">
             <Label htmlFor="hp" className="text-xs font-medium">
-              Assign Doctor <span className="text-muted-foreground font-normal">(optional — routes immediately)</span>
+              Assign Healthcare Provider <span className="text-muted-foreground font-normal">(optional — routes immediately)</span>
             </Label>
             <Select value={hpId} onValueChange={setHpId}>
               <SelectTrigger id="hp">

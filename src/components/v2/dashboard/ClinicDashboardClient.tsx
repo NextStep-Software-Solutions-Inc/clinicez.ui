@@ -168,11 +168,12 @@ export function ClinicDashboardClient({
           />
           <KPICard
             label="Pending"
-            value={metrics.pendingAppointments}
+            value={metrics.pendingAppointments + metrics.pendingRoutings}
             icon={CalendarClock}
             trend={{ direction: "down", text: "awaiting action" }}
-            progress={Math.min(metrics.pendingAppointments * 10, 100)}
+            progress={Math.min((metrics.pendingAppointments + metrics.pendingRoutings) * 10, 100)}
             color="secondary"
+            note={`${metrics.pendingAppointments} new request${metrics.pendingAppointments !== 1 ? "s" : ""} · ${metrics.pendingRoutings} pending routing${metrics.pendingRoutings !== 1 ? "s" : ""}`}
           />
           <KPICard
             label="Active Consults"

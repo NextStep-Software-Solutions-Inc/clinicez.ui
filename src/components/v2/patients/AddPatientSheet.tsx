@@ -90,7 +90,7 @@ export function AddPatientSheet({
       debounceRef.current = setTimeout(async () => {
         setIsSearching(true);
         try {
-          const result = await searchNonClinicPatientsAction({ clinicUid, search: query });
+          const result = await searchNonClinicPatientsAction({ clinicUid, search: query.trim() });
           setSearchResults(result.data ?? []);
           setShowDropdown(true);
         } catch {

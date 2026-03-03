@@ -533,15 +533,15 @@ export function AppointmentDetailSheet({
             </div>
           </div>
 
-          {/* AI Symptoms Analyzer — shown in Appointment Details when complaint is present */}
-          {appointment.complaint && status !== "COMPLETED" && status !== "REJECTED" && (
+          {/* AI Symptoms Analyzer — combined: shows saved analysis + analyze/re-analyze */}
+          {(appointment.complaint || savedAiAnalysis) && (
             <div className="rounded-xl border border-violet-200 bg-violet-50/50 dark:bg-violet-950/20 dark:border-violet-800/40 p-4 space-y-2">
               <div className="flex items-center justify-between">
                 <h3 className="text-xs font-semibold text-violet-700 dark:text-violet-400 uppercase tracking-wide flex items-center gap-1.5">
                   <Sparkles className="h-3.5 w-3.5" />
                   AI Symptoms Analyzer
                 </h3>
-                {!aiPendingResult && (
+                {!aiPendingResult && appointment.complaint && status !== "COMPLETED" && status !== "REJECTED" && (
                   <Button
                     type="button"
                     size="sm"
@@ -551,6 +551,8 @@ export function AppointmentDetailSheet({
                   >
                     {aiAnalyzing ? (
                       <><Loader2 className="h-3 w-3 animate-spin" />Analyzing…</>
+                    ) : savedAiAnalysis ? (
+                      <><Sparkles className="h-3 w-3" />Re-analyze</>
                     ) : (
                       <><Sparkles className="h-3 w-3" />Analyze</>
                     )}
@@ -559,6 +561,12 @@ export function AppointmentDetailSheet({
               </div>
               {aiAnalysisError && (
                 <p className="text-xs text-destructive">{aiAnalysisError}</p>
+              )}
+              {/* Show saved analysis when no pending fresh result */}
+              {savedAiAnalysis && !aiPendingResult && (
+                <div className="rounded-md bg-background/60 p-3">
+                  <MarkdownRenderer content={savedAiAnalysis} className="text-xs" />
+                </div>
               )}
               {aiPendingResult && (
                 <div className="space-y-2">
@@ -732,19 +740,6 @@ export function AppointmentDetailSheet({
                     : "Add Pre-Assessment Note"}
                 </Button>
               )}
-            </div>
-          )}
-
-          {/* Saved AI Symptom Analysis (fetched separately from AppointmentAttribute) */}
-          {savedAiAnalysis && (
-            <div className="rounded-xl border border-violet-200 bg-violet-50/30 dark:bg-violet-950/10 dark:border-violet-800/30 p-4 space-y-2">
-              <h3 className="text-xs font-semibold text-violet-700 dark:text-violet-400 uppercase tracking-wide flex items-center gap-1.5">
-                <Sparkles className="h-3.5 w-3.5" />
-                AI Symptom Analysis
-              </h3>
-              <div className="rounded-md bg-background/60 p-3">
-                <MarkdownRenderer content={savedAiAnalysis} className="text-xs" />
-              </div>
             </div>
           )}
 

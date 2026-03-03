@@ -57,7 +57,8 @@ export async function generatePreAssessmentNotes(
     type?: string;
   }>,
   clinicId?: number,
-  tenantId?: number
+  tenantId?: number,
+  outputFormat: 'plain_text' | 'markdown' = 'markdown'
 ): Promise<AIOperationResult<{
   assessment: string;
   homeInstructions: string;
@@ -182,19 +183,137 @@ export async function generatePreAssessmentNotes(
       imageContext = `\n\nATTACHED MEDICAL IMAGES: ${imageAttachments.length} image(s) provided below for your analysis.\nImage files: ${imageAttachments.map(a => a.name).join(', ')}\nPlease analyze these images and incorporate relevant findings into your assessment.`;
     }
 
-    const systemPrompt = `You are an experienced healthcare provider with expertise in patient assessment and clinical documentation.
-    
+    const isMarkdown = outputFormat === 'markdown';
+
+    const systemPrompt = isMarkdown
+      ? `You are an experienced healthcare provider with expertise in patient assessment and clinical documentation.
+
+Your role is to generate structured, professional pre-assessment notes based on comprehensive patient information and symptoms.
+
+FORMATTING REQUIREMENTS:
+1. Use **Markdown** formatting throughout — headings, **bold** for key terms, bullet lists, and line breaks
+2. Use medical symbols and abbreviations: % (percent), ° (degree), mmHg, mg, L, mL, kg, bpm
+3. Standard abbreviations: HR, BP, RR, SpO2, Temp, NKDA, HTN, DM, etc.
+4. Use ABSOLUTE DATES — NEVER use relative terms like "yesterday", "today", "recently", "a few days ago"
+   - ALWAYS use specific dates, e.g. "Jan 15, 2026" or "3 days prior on Jan 12, 2026"
+
+CONTENT REQUIREMENTS:
+1. Assessment: Clinical observations based on ALL available patient data (vitals, allergies, comorbidities, medical history, attached images)
+2. Home Instructions: SPECIFIC to the chief complaint and assessment findings
+3. Remarks: REFERENCE the assessment findings and provide clinical guidance for the consulting physician
+4. Consider all patient safety factors including allergies and comorbidities
+5. If medical images are attached, analyze and describe relevant findings in the assessment
+
+Generate notes in this exact format (use Markdown inside each section):
+
+## Assessment
+[Markdown clinical observations — bold key values, bullet list findings, use medical abbreviations and ABSOLUTE DATES]
+
+## Home Instructions
+[Markdown bullet list of specific instructions directly related to the chief complaint]
+
+## Remarks
+[Markdown notes referencing assessment findings with ABSOLUTE DATES and patient history]
+
+Always include an appropriate disclaimer that this is a preliminary assessment requiring physician review.`
+      : `You are an experienced healthcare provider with expertise in patient assessment and clinical documentation.
+
+Your role is to generate structured, professional pre-assessment notes based on comprehensive patient information and symptoms.
+
+FORMATTING REQUIREMENTS:
+1. Use PLAIN TEXT only — NO markdown syntax, NO asterisks, NO pound signs, NO bullet dashes, NO bold/italic markup
+2. Use medical symbols and abbreviations: % (percent), ° (degree), mmHg, mg, L, mL, kg, bpm
+3. Standard abbreviations: HR, BP, RR, SpO2, Temp, NKDA, HTN, DM, etc.
+4. Use ABSOLUTE DATES — NEVER use relative terms like "yesterday", "today", "recently", "a few days ago"
+   - ALWAYS use specific dates, e.g. "Jan 15, 2026" or "3 days prior on Jan 12, 2026"
+5. Separate list items with newlines (no dashes or bullets)
+
+CONTENT REQUIREMENTS:
+1. Assessment: Clinical observations based on ALL available patient data (vitals, allergies, comorbidities, medical history, attached images)
+2. Home Instructions: SPECIFIC to the chief complaint and assessment findings
+3. Remarks: REFERENCE the assessment findings and provide clinical guidance for the consulting physician
+4. Consider all patient safety factors including allergies and comorbidities
+5. If medical images are attached, analyze and describe relevant findings in the assessment
+
+Generate notes in this exact format (use plain text inside each section):
+
+Assessment:
+[Plain text clinical observations — no markdown, ABSOLUTE DATES, newline-separated findings]
+
+Home Instructions:
+[Plain text list of specific instructions — one instruction per line, no bullet characters]
+
+Remarks:
+[Plain text notes referencing assessment findings with ABSOLUTE DATES and patient history]
+
+Always include an appropriate disclaimer that this is a preliminary assessment requiring physician review.`;
+
+    const sanitizedSymptoms = sanitizeInput(symptoms);
+
+    // Get current date for reference
+    const currentDate = new Date().toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+
+    const promptText = isMarkdown
+      ? `Generate pre-assessment notes for a patient presenting with the following:
+
+CHIEF COMPLAINT: ${sanitizedSymptoms}${contextStr}${imageContext}
+
+TODAY'S DATE: ${currentDate} (Use this as reference for all date mentions)
+
+REQUIREMENTS:
+1. **Assessment** (Markdown): Analyze the patient's condition based on the chief complaint and ALL available medical data. Use **bold** for key values, bullet lists for findings. ALWAYS use ABSOLUTE DATES — never say "yesterday" or "recently".
+2. **Home Instructions** (Markdown): Bullet list of care instructions that DIRECTLY ADDRESS the chief complaint (${sanitizedSymptoms}). Relevant to the actual condition.
+3. **Remarks** (Markdown): Reference findings from your assessment with ABSOLUTE DATES and patient's medical history. Include relevant clinical considerations for the physician.
+4. If medical images are attached, describe relevant findings and integrate them into your assessment.
+
+Output the three sections as Markdown with ## headings:
+
+## Assessment
+[markdown here]
+
+## Home Instructions
+[markdown here]
+
+## Remarks
+[markdown here]`
+      : `Generate pre-assessment notes for a patient presenting with the following:
+
+CHIEF COMPLAINT: ${sanitizedSymptoms}${contextStr}${imageContext}
+
+TODAY'S DATE: ${currentDate} (Use this as reference for all date mentions)
+
+REQUIREMENTS:
+1. Assessment (plain text): Analyze the patient's condition based on the chief complaint and ALL available medical data. No markdown. ALWAYS use ABSOLUTE DATES — never say "yesterday" or "recently".
+2. Home Instructions (plain text): List care instructions that DIRECTLY ADDRESS the chief complaint (${sanitizedSymptoms}). One instruction per line, no bullet characters or dashes.
+3. Remarks (plain text): Reference findings from your assessment with ABSOLUTE DATES and patient's medical history. Include relevant clinical considerations for the physician.
+4. If medical images are attached, describe relevant findings and integrate them into your assessment.
+
+Output the three sections as plain text with label headers:
+
+Assessment:
+[plain text here]
+
+Home Instructions:
+[plain text here, one item per line]
+
+Remarks:
+[plain text here]`;
+
     // Build multimodal message content with text and images
     const messageContent: Array<{ type: 'text'; text: string } | { type: 'image'; image: string }> = [
-      { type: 'text', text: prompt }
+      { type: 'text', text: promptText },
     ];
-    
+
     // Add image attachments to message for actual AI analysis
     if (imageAttachments.length > 0) {
       imageAttachments.forEach(att => {
         messageContent.push({
           type: 'image',
-          image: att.url, // Pass image URL to AI for analysis
+          image: att.url,
         });
       });
     }
@@ -202,80 +321,6 @@ export async function generatePreAssessmentNotes(
     const orchestrator = getOrchestrator();
     const response = await orchestrator.complete({
       messages: [{ role: 'user', content: messageContent }],
-      systemPrompt,
-      temperature: getFeatureTemperature('medical-note-summarization'),
-      maxTokens: 1500,
-    }); 
-Your role is to generate structured, professional pre-assessment notes based on comprehensive patient information and symptoms.
-
-CRITICAL FORMATTING REQUIREMENTS:
-1. Write each sentence on a NEW LINE for better readability
-2. Use medical symbols and abbreviations to keep text concise: % (percent), ° (degree), mmHg, mg, L, mL, kg, bpm, etc.
-3. Use standard medical abbreviations: HR (heart rate), BP (blood pressure), RR (respiratory rate), SpO2 (oxygen saturation), Temp (temperature), NKDA (no known drug allergies), HTN (hypertension), DM (diabetes), etc.
-4. Provide response in PLAIN TEXT format only - NO markdown, bullet points, asterisks, or special formatting
-5. Write in clear, professional medical language as an experienced clinician would
-6. Use ABSOLUTE DATES AND DEFINITE TERMS - NEVER use relative terms like "yesterday", "today", "recently", "lately", "a few days ago", "last week"
-   - ALWAYS use specific dates: "Jan 15, 2026" or "January 15, 2026"
-   - For time references, include the actual date: "3 days prior (Jan 12, 2026)" not "3 days ago"
-   - Use "On [specific date]" not "recently" or "last week"
-   - Example: "Fever started on Jan 12, 2026" NOT "Fever started 3 days ago"
-   - Example: "BP measured on Jan 10, 2026 was 120/80" NOT "Recent BP was 120/80"
-
-CONTENT REQUIREMENTS:
-1. Assessment: Clinical observations based on ALL available patient data including vitals, allergies, comorbidities, medical history, and attached images
-2. Home Instructions: Must be SPECIFIC to the chief complaint and assessment findings - address the actual condition presented
-3. Remarks: Must REFERENCE the assessment findings and provide relevant clinical guidance for the consulting physician
-4. Consider all patient safety factors including allergies and comorbidities in your recommendations
-5. If medical images are attached, analyze and describe relevant findings in the assessment
-
-Generate notes in this exact format:
-Assessment: [Each clinical observation on a new line using medical symbols, abbreviations, and ABSOLUTE DATES]
-
-Home Instructions: [Each instruction on a new line, specific to the chief complaint and assessment]
-
-Remarks: [Each note on a new line, referencing assessment findings with ABSOLUTE DATES and patient history]
-
-Always include appropriate disclaimers that this is a preliminary assessment requiring physician review.`;
-
-    const sanitizedSymptoms = sanitizeInput(symptoms);
-    
-    // Get current date for reference
-    const currentDate = new Date().toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'short', 
-      day: 'numeric' 
-    });
-    
-    const prompt = `Generate pre-assessment notes for a patient presenting with the following:
-
-CHIEF COMPLAINT: ${sanitizedSymptoms}${contextStr}${imageContext}
-
-TODAY'S DATE: ${currentDate} (Use this as reference for all date mentions)
-
-REQUIREMENTS:
-1. Assessment: Analyze the patient's condition based on the chief complaint and ALL available medical data (vitals, allergies, history, attached images). Write each observation on a new line using medical symbols (%, °, mmHg, etc.) and abbreviations (HR, BP, RR, SpO2). ALWAYS use ABSOLUTE DATES - never say "yesterday", "recently", or "a few days ago". Use specific dates like "Jan 15, 2026" or "3 days prior on Jan 12, 2026".
-
-2. Home Instructions: Provide specific care instructions that DIRECTLY ADDRESS the chief complaint (${sanitizedSymptoms}). Each instruction on a new line. Use symbols and abbreviations. Instructions must be relevant to the actual condition presented.
-
-3. Remarks: Reference findings from your assessment with ABSOLUTE DATES and patient's medical history. Each remark on a new line. Use medical abbreviations. Include relevant clinical considerations for the physician. Always use specific dates, not relative terms.
-
-4. If medical images are attached, describe relevant findings and integrate them into your assessment.
-
-CRITICAL: 
-- Each sentence must be on a NEW LINE
-- Use medical symbols: %, °, mmHg, mg, L, kg, bpm
-- Use abbreviations: HR, BP, RR, SpO2, Temp, NKDA, HTN, DM
-- ALWAYS use ABSOLUTE DATES: "Jan 15, 2026" NOT "yesterday" or "recently"
-- Example: "Fever started on Jan 12, 2026" NOT "Fever started 3 days ago"
-- Example: "BP on Jan 10, 2026 was 120/80" NOT "Recent BP was 120/80"
-- Home instructions must relate to the chief complaint: ${sanitizedSymptoms}
-- Remarks must reference the assessment findings with specific dates
-- NO markdown formatting, NO bullet points, NO asterisks
-- Plain text only with newlines between sentences`;
-
-    const orchestrator = getOrchestrator();
-    const response = await orchestrator.complete({
-      messages: [createMessage('user', prompt)],
       systemPrompt,
       temperature: getFeatureTemperature('medical-note-summarization'),
       maxTokens: 1500,
@@ -299,13 +344,13 @@ CRITICAL:
       }
     );
 
-    // Parse the response into sections
+    // Parse the response into sections — supports both ## Heading and Heading: formats
     const content = response.content;
-    
-    // Extract sections using regex patterns
-    const assessmentMatch = content.match(/(?:Assessment|1\.\s*Assessment)[:\s]*\n([\s\S]*?)(?=(?:Home Instructions|2\.|Remarks|$))/i);
-    const homeInstructionsMatch = content.match(/(?:Home Instructions|2\.\s*Home Instructions)[:\s]*\n([\s\S]*?)(?=(?:Remarks|3\.|$))/i);
-    const remarksMatch = content.match(/(?:Remarks|3\.\s*Remarks)[:\s]*\n([\s\S]*?)$/i);
+
+    // Extract sections using regex patterns (handles ## Heading or plain Heading:)
+    const assessmentMatch = content.match(/(?:##\s*Assessment|Assessment)[:\s]*\n([\s\S]*?)(?=(?:##\s*Home Instructions|Home Instructions|##\s*Remarks|Remarks|$))/i);
+    const homeInstructionsMatch = content.match(/(?:##\s*Home Instructions|Home Instructions)[:\s]*\n([\s\S]*?)(?=(?:##\s*Remarks|Remarks|$))/i);
+    const remarksMatch = content.match(/(?:##\s*Remarks|Remarks)[:\s]*\n([\s\S]*?)$/i);
 
     const assessment = assessmentMatch ? assessmentMatch[1].trim() : content.split('\n\n')[0];
     const homeInstructions = homeInstructionsMatch ? homeInstructionsMatch[1].trim() : '';

@@ -827,14 +827,14 @@ export default function PatientHistoryClient({
     setMobileView('detail')
   }, [])
 
-  const tabs: { id: TabFilter; label: string; count: number }[] = [
-    { id: 'all', label: 'All', count: allItems.length },
-    { id: 'appointments', label: 'Appointments', count: appointments.filter(a => a.ConsultationTickets.length === 0).length },
-    { id: 'consultations', label: 'Consultations', count: consultationTickets.length },
+  const tabs: { id: TabFilter; label: string; shortLabel: string; count: number }[] = [
+    { id: 'all', label: 'All', shortLabel: 'All', count: allItems.length },
+    { id: 'appointments', label: 'Appointments', shortLabel: 'Appts', count: appointments.filter(a => a.ConsultationTickets.length === 0).length },
+    { id: 'consultations', label: 'Consultations', shortLabel: 'Consults', count: consultationTickets.length },
   ]
 
   return (
-    <div className="w-full">
+    <div className="w-full overflow-x-hidden">
       {/* Page Header */}
       <div className="mb-5 flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
@@ -857,7 +857,7 @@ export default function PatientHistoryClient({
       </div>
 
       {/* Split panel */}
-      <div className="flex h-[calc(100dvh-13rem)] overflow-hidden dark:bg-slate-900/50 bg-white/60 backdrop-blur-xl rounded-2xl dark:border-white/8 border-slate-200/70 border shadow-xl dark:shadow-slate-950/40">
+      <div className="flex h-[calc(100dvh-12rem)] sm:h-[calc(100dvh-13rem)] min-h-0 overflow-hidden dark:bg-slate-900/50 bg-white/60 backdrop-blur-xl rounded-2xl dark:border-white/8 border-slate-200/70 border shadow-xl dark:shadow-slate-950/40">
         {/* Left: List */}
         <aside
           className={`shrink-0 flex-col dark:border-r dark:border-white/8 border-r border-slate-200/70 overflow-hidden w-full md:w-[320px] ${
@@ -878,7 +878,8 @@ export default function PatientHistoryClient({
                       : 'dark:text-slate-400 text-slate-500 dark:hover:text-slate-200 hover:text-slate-700'
                   }`}
                 >
-                  {t.label}
+                  <span className="hidden sm:inline">{t.label}</span>
+                  <span className="inline sm:hidden">{t.shortLabel}</span>
                   <span className={`text-xs rounded-full px-1.5 py-0.5 min-w-[20px] text-center ${
                     tab === t.id
                       ? 'dark:bg-white/10 bg-slate-100 dark:text-white text-slate-700'

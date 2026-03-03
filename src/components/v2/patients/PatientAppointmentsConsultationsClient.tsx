@@ -143,11 +143,11 @@ function ConsultationTimelineEntry({
       </div>
 
       {/* Card */}
-      <div className="flex-1 min-w-0 pb-6">
-        <div className="rounded-lg border border-border/60 bg-card shadow-sm p-4">
+      <div className="flex-1 min-w-0 min-w-0 pb-6">
+        <div className="rounded-lg border border-border/60 bg-card shadow-sm overflow-hidden p-3 sm:p-4">
           {/* Header row */}
           <div className="flex items-start justify-between gap-3 mb-3">
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5 mb-1">
                 <Stethoscope className="h-3.5 w-3.5 text-primary shrink-0" />
                 <span className="text-xs font-semibold text-primary uppercase tracking-wide">
@@ -212,13 +212,13 @@ function ConsultationTimelineEntry({
 
           {/* Linked appointment chip */}
           {appointment && (
-            <div className="flex items-center gap-1.5 mb-3 text-xs text-muted-foreground bg-muted/50 rounded-md px-2.5 py-1.5 w-fit">
+            <div className="flex items-center gap-1.5 mb-3 text-xs text-muted-foreground bg-muted/50 rounded-md px-2.5 py-1.5 max-w-full overflow-hidden">
               <Calendar className="h-3.5 w-3.5 shrink-0" />
-              <span>
+              <span className="truncate">
                 Linked: {appointment.subject ?? appointment.complaint ?? "Appointment"}
               </span>
               {appointment.AppointmentAttribute?.date && (
-                <span className="text-muted-foreground/70">
+                <span className="text-muted-foreground/70 shrink-0">
                   · {dayjs(appointment.AppointmentAttribute.date).format("MMM D, YYYY")}
                 </span>
               )}
@@ -312,11 +312,11 @@ function AppointmentTimelineEntry({
       </div>
 
       {/* Card */}
-      <div className="flex-1 min-w-0 pb-6">
-        <div className="rounded-lg border border-border/60 bg-card shadow-sm p-4">
+      <div className="flex-1 min-w-0 min-w-0 pb-6">
+        <div className="rounded-lg border border-border/60 bg-card shadow-sm overflow-hidden p-3 sm:p-4">
           {/* Header row */}
           <div className="flex items-start justify-between gap-3 mb-3">
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5 mb-1">
                 <Calendar className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                 <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
@@ -432,7 +432,7 @@ export default function PatientAppointmentsConsultationsClient({
   ].sort((a, b) => b.date.getTime() - a.date.getTime());
 
   return (
-    <div className="max-w-3xl mx-auto px-0 sm:px-2 py-4 overflow-hidden">
+    <div className="max-w-3xl mx-auto px-3 sm:px-4 py-4 overflow-hidden">
       {/* Sub-header: summary + navigation button */}
       <div className="flex items-center justify-between mb-6 gap-3">
         <p className="text-xs text-muted-foreground">

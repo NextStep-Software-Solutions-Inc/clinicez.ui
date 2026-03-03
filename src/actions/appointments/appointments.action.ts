@@ -488,6 +488,8 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
               mobile: true,
               email: true,
               picture: true,
+              gender: true,
+              dob: true,
               StudentRecords: {
                 select: {
                   organizationId: true,

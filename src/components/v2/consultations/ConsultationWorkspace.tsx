@@ -30,6 +30,7 @@ import ConsultationPrescriptions from "./ConsultationPrescriptions";
 import ConsultationMedCerts from "./ConsultationMedCerts";
 import ConsultationDiagnostics from "./ConsultationDiagnostics";
 import ConsultationReferrals from "./ConsultationReferrals";
+import { PatientAIInsightButton } from "@/components/v2/patients/PatientAIInsightButton";
 import AddCoCreatorDialog from "./AddCoCreatorDialog";
 
 type Detail = NonNullable<GetPatientConsultationDetail["data"]>;
@@ -45,6 +46,8 @@ interface PatientInfo {
 
 interface ConsultationWorkspaceProps {
   clinicUid: string;
+  /** Optional numeric clinic ID – used for the AI Patient Insight feature */
+  clinicId?: number;
   patient: PatientInfo | null;
   consultation: Detail;
   myHPs: NonNullable<GetHPsType>;
@@ -57,6 +60,7 @@ interface ConsultationWorkspaceProps {
 
 export default function ConsultationWorkspace({
   clinicUid,
+  clinicId,
   patient,
   consultation,
   myHPs,
@@ -133,71 +137,87 @@ export default function ConsultationWorkspace({
       )}
 
       {/* ── Appointment / Consultation Summary Bar ── */}
-      <div className="shrink-0 px-4 sm:px-6 py-3 sm:py-4 border-b border-border/50 bg-background/80 backdrop-blur">
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="text-base font-semibold text-foreground truncate">
-                {consultation.subject || apt?.subject || `Consultation #${consultation.id}`}
-              </h2>
-              <div className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${
-                status === "RESOLVED"
-                  ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
-                  : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
-              }`}>
-                {status === "RESOLVED" ? <CheckCircle2 className="h-3 w-3" /> : <AlertCircle className="h-3 w-3" />}
-                {status === "RESOLVED" ? "Resolved" : "In Progress"}
-              </div>
-              {consultation.caseNumber && (
-                <span className="text-xs text-muted-foreground font-mono">
-                  #{consultation.caseNumber}
-                </span>
-              )}
+      {/* max-h + overflow-y-auto: prevents long content from pushing the tab bar off screen */}
+      <div className="shrink-0 px-4 sm:px-6 py-3 sm:py-4 border-b border-border/50 bg-background/80 backdrop-blur overflow-y-auto max-h-[45vh]">
+        {/* ── Subject row: subject title + status badge + case# + Resolve button ── */}
+        {/* Resolve lives here — outside the detail block — so it never competes for column space */}
+        <div className="flex items-start gap-3 mb-1.5">
+          <div className="flex items-center gap-2 flex-wrap flex-1 min-w-0">
+            <h2 className="text-base font-semibold text-foreground truncate">
+              {consultation.subject || apt?.subject || `Consultation #${consultation.id}`}
+            </h2>
+            <div className={`shrink-0 flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${
+              status === "RESOLVED"
+                ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+            }`}>
+              {status === "RESOLVED" ? <CheckCircle2 className="h-3 w-3" /> : <AlertCircle className="h-3 w-3" />}
+              {status === "RESOLVED" ? "Resolved" : "In Progress"}
             </div>
-            <div className="flex items-center gap-4 mt-1.5 flex-wrap">
-              {/* Patient name + profile link */}
-              {patient?.fullName && (
-                <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                  <User className="h-3.5 w-3.5" />
-                  {patient.fullName}
-                  <Link
-                    href={`/v2/clinic/${clinicUid}/patients/${patient.id}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="ml-0.5 inline-flex items-center gap-0.5 text-primary hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary rounded"
-                    title="View patient profile"
-                  >
-                    <ExternalLink className="h-3 w-3" />
-                    <span className="sr-only">View patient profile</span>
-                  </Link>
+            {consultation.caseNumber && (
+              <span className="shrink-0 text-xs text-muted-foreground font-mono">
+                #{consultation.caseNumber}
+              </span>
+            )}
+          </div>
+          {canBeResolved && myHPs.length > 0 && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="shrink-0 gap-1.5 h-8 text-xs border-emerald-300 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 dark:border-emerald-700 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
+              disabled={resolving}
+              onClick={handleResolve}
+            >
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              {resolving ? "Resolving…" : "Resolve"}
+            </Button>
+          )}
+        </div>
+
+        {/* ── Details: patient info, date, type, service, healthcare providers ── */}
+        <div className="flex items-center gap-4 flex-wrap">
+          {patient?.fullName && (
+            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+              <User className="h-3.5 w-3.5" />
+              {patient.fullName}
+              <Link
+                href={`/v2/clinic/${clinicUid}/patients/${patient.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="ml-0.5 inline-flex items-center gap-0.5 text-primary hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary rounded"
+                title="View patient profile"
+              >
+                <ExternalLink className="h-3 w-3" />
+                <span className="sr-only">View patient profile</span>
+              </Link>
+            </span>
+          )}
+          {apt?.AppointmentAttribute?.date && (
+            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+              <CalendarDays className="h-3.5 w-3.5" />
+              {dayjs(apt.AppointmentAttribute.date).format("MMM D, YYYY")}
+              {apt.AppointmentAttribute.timeStart && (
+                <span className="ml-1 flex items-center gap-1">
+                  <Clock className="h-3.5 w-3.5" />
+                  {apt.AppointmentAttribute.timeStart}
                 </span>
               )}
-              {apt?.AppointmentAttribute?.date && (
-                <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                  <CalendarDays className="h-3.5 w-3.5" />
-                  {dayjs(apt.AppointmentAttribute.date).format("MMM D, YYYY")}
-                  {apt.AppointmentAttribute.timeStart && (
-                    <span className="ml-1 flex items-center gap-1">
-                      <Clock className="h-3.5 w-3.5" />
-                      {apt.AppointmentAttribute.timeStart}
-                    </span>
-                  )}
-                </span>
-              )}
-              {apt?.AppointmentAttribute?.AppointmentType?.name && (
-                <Badge variant="outline" className="text-xs h-5">
-                  {apt.AppointmentAttribute.AppointmentType.name}
-                </Badge>
-              )}
-              {apt?.AppointmentAttribute?.Service?.name && (
-                <Badge variant="outline" className="text-xs h-5">
-                  {apt.AppointmentAttribute.Service.name}
-                </Badge>
-              )}
-              {(hpNames || (canBeResolved && myHPs.length > 0)) && (
-                <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                  <User className="h-3.5 w-3.5 shrink-0" />
-                  {hpNames}
+            </span>
+          )}
+          {apt?.AppointmentAttribute?.AppointmentType?.name && (
+            <Badge variant="outline" className="text-xs h-5">
+              {apt.AppointmentAttribute.AppointmentType.name}
+            </Badge>
+          )}
+          {apt?.AppointmentAttribute?.Service?.name && (
+            <Badge variant="outline" className="text-xs h-5">
+              {apt.AppointmentAttribute.Service.name}
+            </Badge>
+          )}
+          {(hpNames || (canBeResolved && myHPs.length > 0)) && (
+            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+              <User className="h-3.5 w-3.5 shrink-0" />
+              {hpNames}
                   {canBeResolved && myHPs.length > 0 && (
                     <button
                       type="button"
@@ -209,41 +229,35 @@ export default function ConsultationWorkspace({
                       Add
                     </button>
                   )}
-                </span>
-              )}
-            </div>
-            {/* Chief Complaint */}
-            {apt?.complaint && (
-              <p className="mt-1.5 text-xs text-muted-foreground">
-                <span className="font-medium text-foreground/70">Chief complaint: </span>
-                {apt.complaint}
-              </p>
-            )}
-            {/* Pre-assessment */}
-            {preAssessment?.assessment && (
-              <p className="mt-1 text-xs text-muted-foreground">
-                <span className="font-medium text-foreground/70">Pre-assessment: </span>
-                {preAssessment.assessment}
-              </p>
-            )}
-          </div>
-
-          {/* ── Resolve button (only for the consulting HP, status not yet resolved) ── */}
-          {canBeResolved && myHPs.length > 0 && (
-            <div className="shrink-0 pl-4">
-              <Button
-                size="sm"
-                variant="outline"
-                className="gap-1.5 h-8 text-xs border-emerald-300 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 dark:border-emerald-700 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
-                disabled={resolving}
-                onClick={handleResolve}
-              >
-                <CheckCircle2 className="h-3.5 w-3.5" />
-                {resolving ? "Resolving…" : "Resolve"}
-              </Button>
-            </div>
+            </span>
           )}
         </div>
+
+        {/* Chief Complaint */}
+        {apt?.complaint && (
+          <p className="mt-1.5 text-xs text-muted-foreground">
+            <span className="font-medium text-foreground/70">Chief complaint: </span>
+            {apt.complaint}
+          </p>
+        )}
+        {/* Pre-assessment */}
+        {preAssessment?.assessment && (
+          <p className="mt-1 text-xs text-muted-foreground">
+            <span className="font-medium text-foreground/70">Pre-assessment: </span>
+            {preAssessment.assessment}
+          </p>
+        )}
+        {/* AI Patient Insight */}
+        {patient && myHPs.length > 0 && (
+          <div className="mt-2">
+            <PatientAIInsightButton
+              patientId={patient.id}
+              clinicId={clinicId}
+              patientName={patient.fullName}
+              size="sm"
+            />
+          </div>
+        )}
       </div>
 
       {/* ── Add Co-creator Dialog ── */}

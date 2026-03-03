@@ -488,3 +488,46 @@ export const returnAppointmentAction = withErrorHandling(async (formData: FormDa
   }
   return "An error occurred while returning the appointment.";
 });
+/**
+ * Save AI symptom analysis to the AppointmentAttribute record.
+ * Requires WRITE:CLINIC:PRE_ASSESSMENT_NOTE permission (same as pre-assessment).
+ */
+export const saveAppointmentAISymptomAnalysisAction = withErrorHandling(async ({
+  appointmentId,
+  aiSymptomAnalysis,
+}: {
+  appointmentId: number;
+  aiSymptomAnalysis: string;
+}) => {
+  const session = await getCachedSession();
+  if (!session) throw new Error("User not authenticated.");
+
+  const myPermissions = await getPermissionsAction({ userId: session.user.sub, type: "CLINIC" });
+  const writePermissions = [PERMISSIONS.CLINIC["WRITE:CLINIC:PRE_ASSESSMENT_NOTE"].name];
+  const myPermissionArray = myPermissions.map(permission => permission.name);
+  const canWrite = writePermissions.every(permission => myPermissionArray.includes(permission));
+
+  if (!canWrite) throw new Error("You do not have permission to save symptom analysis.");
+
+  await prismaClient.appointmentAttribute.update({
+    where: { appointmentId },
+    data: { aiSymptomAnalysis },
+  });
+
+  return { message: "AI symptom analysis saved successfully", data: undefined };
+});
+
+/**
+ * Fetch the saved AI symptom analysis for an appointment.
+ */
+export const getAppointmentAIAnalysisAction = withErrorHandling(async (appointmentId: number) => {
+  const session = await getCachedSession();
+  if (!session) throw new Error("User not authenticated.");
+
+  const attr = await prismaClient.appointmentAttribute.findUnique({
+    where: { appointmentId },
+    select: { aiSymptomAnalysis: true },
+  });
+
+  return { message: "AI symptom analysis fetched", data: attr?.aiSymptomAnalysis ?? null };
+});

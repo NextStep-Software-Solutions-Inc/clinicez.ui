@@ -56,6 +56,7 @@ import {
   getDateRangeForPeriod,
 } from "@/lib/report-period-utils";
 import { handlePrintHtmlToPDF } from "@/lib/print-pdf";
+import { ClinicDownloadsTab } from "@/components/v2/clinic/reports/ClinicDownloadsTab";
 
 type ReportData = NonNullable<GetClinicReports["data"]>;
 
@@ -668,6 +669,7 @@ export function ClinicReportsClient({
           <TabsTrigger value="diagnostics">Diagnostics</TabsTrigger>
           <TabsTrigger value="staff">Staff Activity</TabsTrigger>
           <TabsTrigger value="services">Service Utilization</TabsTrigger>
+          <TabsTrigger value="downloads">Downloads</TabsTrigger>
         </TabsList>
 
         {/* ── Overview Tab ── */}
@@ -1528,6 +1530,11 @@ export function ClinicReportsClient({
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        {/* ── Downloads Tab ── */}
+        <TabsContent value="downloads">
+          <ClinicDownloadsTab clinicUid={clinicUid} />
         </TabsContent>
       </Tabs>
 

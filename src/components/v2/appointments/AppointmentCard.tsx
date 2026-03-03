@@ -192,12 +192,10 @@ export function AppointmentCard({
 
             {/* Meta row */}
             <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-              {scheduledDate && (
-                <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                  <CalendarDays className="h-3 w-3" />
-                  {format(new Date(scheduledDate), "MMM d, yyyy")}
-                </span>
-              )}
+              <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                <CalendarDays className="h-3 w-3" />
+                {format(new Date(scheduledDate ?? appointment.createdAt), "MMM d, yyyy")}
+              </span>
               {timeStart && (
                 <span className="flex items-center gap-1 text-xs text-muted-foreground">
                   <Clock className="h-3 w-3" />

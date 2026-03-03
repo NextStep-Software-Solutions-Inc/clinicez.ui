@@ -64,6 +64,7 @@ import { STATUS_CONFIG } from "./AppointmentCard";
 import { isWalkInAppointment, getAppointmentPatientName, getAppointmentInitials } from "./appointment-utils";
 import { MarkdownRenderer } from "@/components/markdown/MarkdownRenderer";
 import { AddVitalsDialog } from "./AddVitalsDialog";
+import { PatientAIInsightButton } from "@/components/v2/patients/PatientAIInsightButton";
 import { useAllergies } from "@/hooks/useAllergy";
 import { useIllnesses } from "@/hooks/useIllness";
 import { useDisabilities } from "@/hooks/useDisability";
@@ -465,7 +466,7 @@ export function AppointmentDetailSheet({
               </div>
             </div>
             {!isWalkIn && requester?.id && (
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 flex-wrap">
                 <a
                   href={`/v2/clinic/${clinicUid}/patients/${requester.id}`}
                   target="_blank"
@@ -477,6 +478,14 @@ export function AppointmentDetailSheet({
                 </a>
                 {requester.userId && (
                   <AddVitalsDialog patientUserId={requester.userId} />
+                )}
+                {currentUserHpIds.length > 0 && (
+                  <PatientAIInsightButton
+                    patientId={requester.id}
+                    clinicId={appointment.clinicId}
+                    patientName={fullName}
+                    size="sm"
+                  />
                 )}
               </div>
             )}

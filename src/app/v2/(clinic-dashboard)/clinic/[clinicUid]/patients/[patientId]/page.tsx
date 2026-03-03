@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getClinicPatientProfileAction } from "@/actions/clinics/get-clinic-patient-profile.action";
 import { getCachedSession } from "@/actions/session.action";
+import { getHPsAction } from "@/actions/hp.actions";
+import { getClinicAction } from "@/actions/clinics/clinic.action";
 import ProfileClient from "@/app/v2/(patient-dashboard)/profile/profile-client";
 import { ClinicPatientPageHeader } from "@/components/v2/patients/ClinicPatientPageHeader";
 import type { SerializedPatientHealthRecordsResponse } from "@/types/patient-profile";
@@ -34,14 +36,21 @@ export default async function ClinicPatientProfilePage({
     notFound();
   }
 
-  const patient = await getClinicPatientProfileAction({
-    clinicUid,
-    patientId: numericPatientId,
-  });
+  const [patient, myHPs, clinicRecord] = await Promise.all([
+    getClinicPatientProfileAction({
+      clinicUid,
+      patientId: numericPatientId,
+    }),
+    getHPsAction({ userId: session.user.sub }),
+    getClinicAction(clinicUid),
+  ]);
 
   if (!patient) {
     notFound();
   }
+
+  const isProvider = Array.isArray(myHPs) && myHPs.length > 0;
+  const clinicId = clinicRecord?.data?.id;
 
   return (
     <ProfileClient
@@ -59,6 +68,7 @@ export default async function ClinicPatientProfilePage({
       filesButtonLabel="Patient Files"
       appointmentsHref={`/v2/clinic/${clinicUid}/patients/${patientId}/appointments-consultations`}
       downloadPHRHref={`/api/phr/clinic/${clinicUid}/patients/${patientId}`}
+      aiInsightConfig={isProvider && clinicId ? { patientId: numericPatientId, clinicId } : undefined}
     />
   );
 }

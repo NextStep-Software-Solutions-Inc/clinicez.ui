@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getHPsAction } from "@/actions/hp.actions";
 import { getCachedSession } from "@/actions/session.action";
+import { getClinicAction } from "@/actions/clinics/clinic.action";
 import {
   getClinicConsultationQueueAction,
   getPatientConsultationDetailAction,
@@ -28,10 +29,11 @@ export default async function ConsultationDetailPage({ params }: ConsultationDet
   const session = await getCachedSession();
   if (!session?.user?.sub) throw new Error("User not authenticated");
 
-  const [queueResult, myHPs, detailResult] = await Promise.all([
+  const [queueResult, myHPs, detailResult, clinicRecord] = await Promise.all([
     getClinicConsultationQueueAction({ clinicUid }),
     getHPsAction({ userId: session.user.sub }),
     getPatientConsultationDetailAction({ clinicUid, ticketId: numericId }),
+    getClinicAction(clinicUid),
   ]);
 
   if (!detailResult.status || !detailResult.data) notFound();
@@ -39,6 +41,7 @@ export default async function ConsultationDetailPage({ params }: ConsultationDet
   return (
     <ClinicConsultationsClient
       clinicUid={clinicUid}
+      clinicId={clinicRecord?.data?.id}
       initialItems={queueResult.data?.items ?? []}
       initialTotal={queueResult.data?.total ?? 0}
       initialNextCursor={queueResult.data?.nextCursor ?? null}

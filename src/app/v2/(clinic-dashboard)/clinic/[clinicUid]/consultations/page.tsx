@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getHPsAction } from "@/actions/hp.actions";
 import { getCachedSession } from "@/actions/session.action";
+import { getClinicAction } from "@/actions/clinics/clinic.action";
 import { getClinicConsultationQueueAction } from "@/actions/consultation/patient-consultations.action";
 import ClinicConsultationsClient from "@/components/v2/consultations/ClinicConsultationsClient";
 
@@ -21,14 +22,16 @@ export default async function ClinicConsultationsPage({ params }: ConsultationsP
   const session = await getCachedSession();
   if (!session?.user?.sub) throw new Error("User not authenticated");
 
-  const [queueResult, myHPs] = await Promise.all([
+  const [queueResult, myHPs, clinicRecord] = await Promise.all([
     getClinicConsultationQueueAction({ clinicUid }),
     getHPsAction({ userId: session.user.sub }),
+    getClinicAction(clinicUid),
   ]);
 
   return (
     <ClinicConsultationsClient
       clinicUid={clinicUid}
+      clinicId={clinicRecord?.data?.id}
       initialItems={queueResult.data?.items ?? []}
       initialTotal={queueResult.data?.total ?? 0}
       initialNextCursor={queueResult.data?.nextCursor ?? null}

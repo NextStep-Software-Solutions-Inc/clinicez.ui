@@ -13,6 +13,7 @@ interface AIButtonProps {
   size?: 'sm' | 'md';
   type?: 'button' | 'submit';
   className?: string;
+  'aria-label'?: string;
 }
 
 export function AIButton({
@@ -25,6 +26,7 @@ export function AIButton({
   size = 'sm',
   type = 'button',
   className = '',
+  'aria-label': ariaLabel,
 }: AIButtonProps) {
   const sizeStyles = {
     sm: '!text-xs !py-2 !px-3',
@@ -36,6 +38,7 @@ export function AIButton({
       type={type}
       onClick={onClick}
       disabled={disabled || isLoading}
+      aria-label={ariaLabel}
       className={`shiny-cta ${sizeStyles[size]} ${className} disabled:opacity-50 disabled:cursor-not-allowed`}
     >
       <span className="flex items-center justify-center gap-2">

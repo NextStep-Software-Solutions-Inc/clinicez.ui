@@ -70,6 +70,8 @@ type StatusFilter = "all" | "PROCESSING" | "RESOLVED";
 
 interface ClinicConsultationsClientProps {
   clinicUid: string;
+  /** Numeric clinic ID – used for the AI Patient Insight feature */
+  clinicId?: number;
   initialItems: QueueItem[];
   initialTotal: number;
   initialNextCursor: number | null;
@@ -82,6 +84,7 @@ interface ClinicConsultationsClientProps {
 
 export default function ClinicConsultationsClient({
   clinicUid,
+  clinicId,
   initialItems,
   initialTotal,
   initialNextCursor,
@@ -433,6 +436,7 @@ export default function ClinicConsultationsClient({
             <ConsultationWorkspace
               key={activeDetail.id}
               clinicUid={clinicUid}
+              clinicId={clinicId}
               patient={activePatient}
               consultation={activeDetail}
               myHPs={myHPs}

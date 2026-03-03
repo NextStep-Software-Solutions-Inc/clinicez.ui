@@ -37,12 +37,15 @@ interface ClinicPatientsClientProps {
   clinicUid: string;
   pageSize?: number;
   initialData: ClinicPatientsInitialData;
+  /** When true, the AI Patient Insight button is shown on each patient card */
+  isProvider?: boolean;
 }
 
 export function ClinicPatientsClient({
   clinicUid,
   pageSize = 50,
   initialData,
+  isProvider = false,
 }: ClinicPatientsClientProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -155,6 +158,7 @@ export function ClinicPatientsClient({
                   patient={patient}
                   clinicUid={clinicUid}
                   viewMode={filters.viewMode}
+                  isProvider={isProvider}
                 />
               ))}
             </div>

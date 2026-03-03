@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { getClinicPatientsAction } from "@/actions/clinics/clinic-patient.action";
 import { getCachedSession } from "@/actions/session.action";
+import { getHPsAction } from "@/actions/hp.actions";
 import { ClinicPatientsClient } from "@/components/v2/patients/ClinicPatientsClient";
 import { PatientListSkeleton } from "@/components/v2/patients/PatientListSkeleton";
 import type { ClinicPatientsInitialData } from "@/types/clinic-patients-v2.types";
@@ -30,10 +31,16 @@ export default async function ClinicPatientsPage({ params }: ClinicPatientsPageP
   }
 
   // SSR first page — hands off to client for pagination / filtering
-  const result = await getClinicPatientsAction({
-    clinicUid,
-    pageSize: PAGE_SIZE,
-  });
+  // Also check if the current user is a healthcare provider (HP records)
+  const [result, myHPs] = await Promise.all([
+    getClinicPatientsAction({
+      clinicUid,
+      pageSize: PAGE_SIZE,
+    }),
+    getHPsAction({ userId: session.user.sub }),
+  ]);
+
+  const isProvider = Array.isArray(myHPs) && myHPs.length > 0;
 
   const initialData: ClinicPatientsInitialData = {
     patients: result.data ?? [],
@@ -49,6 +56,7 @@ export default async function ClinicPatientsPage({ params }: ClinicPatientsPageP
           clinicUid={clinicUid}
           pageSize={PAGE_SIZE}
           initialData={initialData}
+          isProvider={isProvider}
         />
       </Suspense>
     </div>

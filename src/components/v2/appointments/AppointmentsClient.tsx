@@ -555,7 +555,7 @@ export function AppointmentsClient({
         />
       )}
 
-      {/* Assign Doctor — replaces detail sheet */}
+      {/* Assign Healthcare Provider — replaces detail sheet */}
       {selectedAppointment && (
         <AssignDoctorDialog
           open={activePanel === "assign"}
@@ -578,6 +578,8 @@ export function AppointmentsClient({
           initialAssessment={preAssessmentEditData?.assessment}
           initialHomeInstructions={preAssessmentEditData?.homeInstructions}
           initialRemarks={preAssessmentEditData?.remarks}
+          complaint={selectedAppointment.complaint ?? undefined}
+          clinicId={selectedAppointment.clinicId}
           onClose={() => { setPreAssessmentEditData(null); backToDetail(); }}
           onSuccess={() => {
             setPreAssessmentEditData(null);

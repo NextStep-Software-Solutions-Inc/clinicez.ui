@@ -109,7 +109,7 @@ export function AssignDoctorDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Stethoscope className="h-5 w-5 text-primary" />
-            {isReassigning ? "Reassign Doctor" : "Assign Doctor"}
+            {isReassigning ? "Reassign Healthcare Provider" : "Assign Healthcare Provider"}
           </DialogTitle>
           <DialogDescription>
             {isReassigning
@@ -217,7 +217,7 @@ export function AssignDoctorDialog({
             disabled={isPending || !selectedHpId || (isReassigning && !cancelReason.trim())}
             onClick={handleAssign}
           >
-            {isPending ? "Assigning..." : isReassigning ? "Reassign Doctor" : "Assign Doctor"}
+            {isPending ? "Assigning..." : isReassigning ? "Reassign Healthcare Provider" : "Assign Healthcare Provider"}
           </Button>
         </div>
       </DialogContent>

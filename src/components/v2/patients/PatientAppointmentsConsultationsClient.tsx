@@ -143,7 +143,7 @@ function ConsultationTimelineEntry({
       </div>
 
       {/* Card */}
-      <div className="flex-1 min-w-0 pb-6">
+      <div className="flex-1 min-w-0 min-w-0 pb-6">
         <div className="rounded-lg border border-border/60 bg-card shadow-sm overflow-hidden p-3 sm:p-4">
           {/* Header row */}
           <div className="flex items-start justify-between gap-3 mb-3">
@@ -312,7 +312,7 @@ function AppointmentTimelineEntry({
       </div>
 
       {/* Card */}
-      <div className="flex-1 min-w-0 pb-6">
+      <div className="flex-1 min-w-0 min-w-0 pb-6">
         <div className="rounded-lg border border-border/60 bg-card shadow-sm overflow-hidden p-3 sm:p-4">
           {/* Header row */}
           <div className="flex items-start justify-between gap-3 mb-3">
@@ -432,7 +432,7 @@ export default function PatientAppointmentsConsultationsClient({
   ].sort((a, b) => b.date.getTime() - a.date.getTime());
 
   return (
-    <div className="max-w-3xl mx-auto px-3 sm:px-4 py-4">
+    <div className="max-w-3xl mx-auto px-3 sm:px-4 py-4 overflow-hidden">
       {/* Sub-header: summary + navigation button */}
       <div className="flex items-center justify-between mb-6 gap-3">
         <p className="text-xs text-muted-foreground">

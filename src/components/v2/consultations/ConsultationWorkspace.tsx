@@ -14,6 +14,7 @@ import {
   Info,
   ExternalLink,
   GitFork,
+  UserPlus,
 } from "lucide-react";
 import Link from "next/link";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -30,6 +31,7 @@ import ConsultationMedCerts from "./ConsultationMedCerts";
 import ConsultationDiagnostics from "./ConsultationDiagnostics";
 import ConsultationReferrals from "./ConsultationReferrals";
 import { PatientAIInsightButton } from "@/components/v2/patients/PatientAIInsightButton";
+import AddCoCreatorDialog from "./AddCoCreatorDialog";
 
 type Detail = NonNullable<GetPatientConsultationDetail["data"]>;
 
@@ -68,6 +70,7 @@ export default function ConsultationWorkspace({
 }: ConsultationWorkspaceProps) {
   const [activeTab, setActiveTab] = useState("notes");
   const [resolving, startResolveTransition] = useTransition();
+  const [addCoCreatorOpen, setAddCoCreatorOpen] = useState(false);
 
   const status = consultation.ConsultationTicketAttribute?.status;
   const apt = consultation.Appointment;
@@ -211,10 +214,21 @@ export default function ConsultationWorkspace({
               {apt.AppointmentAttribute.Service.name}
             </Badge>
           )}
-          {hpNames && (
+          {(hpNames || (canBeResolved && myHPs.length > 0)) && (
             <span className="flex items-center gap-1 text-xs text-muted-foreground">
-              <User className="h-3.5 w-3.5" />
+              <User className="h-3.5 w-3.5 shrink-0" />
               {hpNames}
+                  {canBeResolved && myHPs.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setAddCoCreatorOpen(true)}
+                      className="ml-0.5 inline-flex items-center gap-1 rounded px-1 py-0.5 text-xs text-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary transition-colors"
+                      title="Add co-creator"
+                    >
+                      <UserPlus className="h-3 w-3" />
+                      Add
+                    </button>
+                  )}
             </span>
           )}
         </div>
@@ -245,6 +259,17 @@ export default function ConsultationWorkspace({
           </div>
         )}
       </div>
+
+      {/* ── Add Co-creator Dialog ── */}
+      {canBeResolved && (
+        <AddCoCreatorDialog
+          open={addCoCreatorOpen}
+          onOpenChange={setAddCoCreatorOpen}
+          consultation={consultation}
+          clinicUid={clinicUid}
+          onCoCreatorsAdded={() => onReloadDetail?.()}
+        />
+      )}
 
       {/* ── Tabbed Workspace ── */}
       <div className="flex-1 overflow-hidden">

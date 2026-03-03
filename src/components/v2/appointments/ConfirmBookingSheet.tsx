@@ -181,10 +181,10 @@ export function ConfirmBookingSheet({
             </Select>
           </div>
 
-          {/* Assign Doctor (optional) */}
+          {/* Assign Healthcare Provider (optional) */}
           <div className="space-y-1.5">
             <Label htmlFor="hp" className="text-xs font-medium">
-              Assign Doctor <span className="text-muted-foreground font-normal">(optional — routes immediately)</span>
+              Assign Healthcare Provider <span className="text-muted-foreground font-normal">(optional — routes immediately)</span>
             </Label>
             <Select value={hpId} onValueChange={setHpId}>
               <SelectTrigger id="hp">

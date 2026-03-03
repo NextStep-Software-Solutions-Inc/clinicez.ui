@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { format } from "date-fns";
 import {
   User,
@@ -23,6 +23,8 @@ import {
   Pencil,
   CalendarClock,
   Undo2,
+  Sparkles,
+  Loader2,
 } from "lucide-react";
 import {
   Sheet,
@@ -45,6 +47,8 @@ import {
   rejectAppointmentAction,
   cancelAppointmentAction,
   returnAppointmentAction,
+  saveAppointmentAISymptomAnalysisAction,
+  getAppointmentAIAnalysisAction,
 } from "@/actions/appointments/appointment-attribute.action";
 import {
   acceptAppointmentAction,
@@ -55,11 +59,17 @@ import {
   getPreAssessmentNotesAction,
   type GetPreAssessmentNotes,
 } from "@/actions/appointments/pre-assessment-note.action";
+import { useSymptomAnalysis } from "@/hooks/ai/use-ai";
 import { STATUS_CONFIG } from "./AppointmentCard";
 import { isWalkInAppointment, getAppointmentPatientName, getAppointmentInitials } from "./appointment-utils";
 import { MarkdownRenderer } from "@/components/markdown/MarkdownRenderer";
 import { AddVitalsDialog } from "./AddVitalsDialog";
 import { PatientAIInsightButton } from "@/components/v2/patients/PatientAIInsightButton";
+import { useAllergies } from "@/hooks/useAllergy";
+import { useIllnesses } from "@/hooks/useIllness";
+import { useDisabilities } from "@/hooks/useDisability";
+import { useHealthHistory } from "@/hooks/useHealthHistory";
+import { calculateAge } from "@/lib/utils";
 
 type Appointment = NonNullable<GetAppointments["data"]>[number];
 type SubPanel = "confirm" | "assign" | "preAssessment" | "tag" | "reschedule";
@@ -109,20 +119,52 @@ export function AppointmentDetailSheet({
   const [preAssessmentNotes, setPreAssessmentNotes] = useState<PreAssessmentNote[]>([]);
   const [notesExpanded, setNotesExpanded] = useState(false);
 
-  // Fetch pre-assessment notes when appointment changes
-  useEffect(() => {
-    if (!appointment) {
-      setPreAssessmentNotes([]);
-      return;
-    }
-    getPreAssessmentNotesAction(appointment.id).then((result) => {
+  // Saved AI symptom analysis (fetched separately to avoid breaking the list query)
+  const [savedAiAnalysis, setSavedAiAnalysis] = useState<string | null>(null);
+
+  // AI Symptoms Analyzer — reuse v1 hook
+  const { analyze, isLoading: aiAnalyzing, error: aiAnalysisError, analysis: aiAnalysis } = useSymptomAnalysis();
+  const [aiSaving, setAiSaving] = useState(false);
+  const [aiPendingResult, setAiPendingResult] = useState<typeof aiAnalysis>(null);
+
+  // Patient PHR/EMR context for AI symptom analysis (must be called before any early return)
+  const patientUserId = appointment?.Requesters?.[0]?.User?.userId ?? "";
+  const { data: patientAllergies } = useAllergies(patientUserId);
+  const { data: patientIllnesses } = useIllnesses(patientUserId);
+  const { data: patientDisabilities } = useDisabilities(patientUserId);
+  const { data: patientHealthHistory } = useHealthHistory(patientUserId);
+
+  const refreshNotes = useCallback((appointmentId: number) => {
+    getPreAssessmentNotesAction(appointmentId).then((result) => {
       if (result.status && result.data) {
         setPreAssessmentNotes(result.data as PreAssessmentNote[]);
       } else {
         setPreAssessmentNotes([]);
       }
     });
-  }, [appointment]);
+  }, []);
+
+  const refreshAiAnalysis = useCallback((appointmentId: number) => {
+    getAppointmentAIAnalysisAction(appointmentId).then((result) => {
+      setSavedAiAnalysis(result.status ? (result.data ?? null) : null);
+    });
+  }, []);
+
+  // Fetch pre-assessment notes when appointment changes
+  useEffect(() => {
+    if (!appointment) {
+      setPreAssessmentNotes([]);
+      setSavedAiAnalysis(null);
+      return;
+    }
+    refreshNotes(appointment.id);
+    refreshAiAnalysis(appointment.id);
+  }, [appointment, refreshNotes, refreshAiAnalysis]);
+
+  // Keep pending result in sync with hook result
+  useEffect(() => {
+    if (aiAnalysis) setAiPendingResult(aiAnalysis);
+  }, [aiAnalysis]);
 
   // Reset inline forms when appointment changes
   useEffect(() => {
@@ -135,9 +177,18 @@ export function AppointmentDetailSheet({
     setCancelRoutingReason("");
     setShowReturnForm(false);
     setReturnReason("");
+    setAiPendingResult(null);
   }, [appointment]);
 
   if (!appointment) return null;
+
+  const getUrgencyBadgeVariant = (level: string): "destructive" | "default" | "secondary" => {
+    switch (level) {
+      case "emergency": return "destructive";
+      case "urgent": return "default";
+      default: return "secondary";
+    }
+  };
 
   const status = appointment.AppointmentAttribute?.status ?? "PENDING";
   const statusConfig = STATUS_CONFIG[status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.PENDING;
@@ -176,6 +227,49 @@ export function AppointmentDetailSheet({
   const canCompleteRouted = isAcceptedCateringHP || isReceiver || isAssigner;
 
   // ── Action handlers ────────────────────────────────────────────────────────
+
+  const handleAnalyzeSymptoms = async () => {
+    if (!appointment.complaint) return;
+    setAiPendingResult(null);
+    const patientContext = {
+      age: requester?.dob ? calculateAge(requester.dob) || undefined : undefined,
+      gender: requester?.gender || undefined,
+      conditions: patientIllnesses?.map((i) => (i as { HealthCondition?: { name?: string } }).HealthCondition?.name).filter((n): n is string => !!n) ?? [],
+      allergies: patientAllergies?.map((a) => (a as { Allergen?: { name?: string } }).Allergen?.name).filter((n): n is string => !!n) ?? [],
+      disabilities: patientDisabilities?.map((d) => (d as { Disability?: { name?: string } }).Disability?.name).filter((n): n is string => !!n) ?? [],
+      familyHistory: patientHealthHistory?.FamilyMedicalHistories?.map((f) => f.Condition?.name).filter((n): n is string => !!n) ?? [],
+      surgicalHistory: patientHealthHistory?.SurgicalHistories?.map((s) => s.operationName).filter((n): n is string => !!n) ?? [],
+      personalHistory: patientHealthHistory?.PersonalHistory?.smokingStatus || undefined,
+      obGyneHistory: patientHealthHistory?.ObGyneHistory?.menarche ? `Menarche: ${patientHealthHistory.ObGyneHistory.menarche}` : undefined,
+    };
+    await analyze(appointment.complaint, patientContext);
+  };
+
+  const handleSaveAIAnalysis = async (pendingAnalysis: NonNullable<typeof aiPendingResult>) => {
+    // Compose a Markdown summary to persist
+    const markdown = [
+      `**Urgency:** ${pendingAnalysis.urgencyLevel.toUpperCase()}`,
+      '',
+      pendingAnalysis.analysis,
+      ...(pendingAnalysis.recommendations.length > 0
+        ? ['', '**Recommendations:**', ...pendingAnalysis.recommendations.map(r => `- ${r}`)]
+        : []),
+    ].join('\n');
+
+    setAiSaving(true);
+    const result = await saveAppointmentAISymptomAnalysisAction({
+      appointmentId: appointment.id,
+      aiSymptomAnalysis: markdown,
+    });
+    setAiSaving(false);
+    if (result.status) {
+      toast.success("AI symptom analysis saved.");
+      setAiPendingResult(null);
+      setSavedAiAnalysis(markdown);
+    } else {
+      toast.error(result.message);
+    }
+  };
 
   const handleReceive = async () => {
     setIsPending(true);
@@ -448,6 +542,103 @@ export function AppointmentDetailSheet({
             </div>
           </div>
 
+          {/* AI Symptoms Analyzer — combined: shows saved analysis + analyze/re-analyze */}
+          {(appointment.complaint || savedAiAnalysis) && (
+            <div className="rounded-xl border border-violet-200 bg-violet-50/50 dark:bg-violet-950/20 dark:border-violet-800/40 p-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-semibold text-violet-700 dark:text-violet-400 uppercase tracking-wide flex items-center gap-1.5">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  AI Symptoms Analyzer
+                </h3>
+                {!aiPendingResult && appointment.complaint && status !== "COMPLETED" && status !== "REJECTED" && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="h-6 px-2 text-xs bg-violet-600 hover:bg-violet-700 text-white gap-1"
+                    disabled={aiAnalyzing}
+                    onClick={handleAnalyzeSymptoms}
+                  >
+                    {aiAnalyzing ? (
+                      <><Loader2 className="h-3 w-3 animate-spin" />Analyzing…</>
+                    ) : savedAiAnalysis ? (
+                      <><Sparkles className="h-3 w-3" />Re-analyze</>
+                    ) : (
+                      <><Sparkles className="h-3 w-3" />Analyze</>
+                    )}
+                  </Button>
+                )}
+              </div>
+              {aiAnalysisError && (
+                <p className="text-xs text-destructive">{aiAnalysisError}</p>
+              )}
+              {/* Show saved analysis when no pending fresh result */}
+              {savedAiAnalysis && !aiPendingResult && (
+                <div className="rounded-md bg-background/60 p-3">
+                  <MarkdownRenderer content={savedAiAnalysis} className="text-xs" />
+                </div>
+              )}
+              {aiPendingResult && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium text-violet-700 dark:text-violet-400">Urgency:</span>
+                    <Badge
+                      variant={getUrgencyBadgeVariant(aiPendingResult.urgencyLevel)}
+                      className="text-xs"
+                    >
+                      {aiPendingResult.urgencyLevel.toUpperCase()}
+                    </Badge>
+                  </div>
+                  <div className="rounded-md bg-muted/40 p-2 text-xs">
+                    <MarkdownRenderer content={aiPendingResult.analysis} className="text-xs" />
+                  </div>
+                  {aiPendingResult.recommendations.length > 0 && (
+                    <div className="rounded-md bg-muted/40 p-2">
+                      <p className="text-xs font-medium text-muted-foreground mb-1">Recommendations</p>
+                      <ul className="list-disc list-inside space-y-0.5 text-xs text-foreground/80">
+                        {aiPendingResult.recommendations.map((rec, idx) => (
+                          <li key={idx}>{rec}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  <div className="flex gap-2 pt-1">
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="h-6 px-2 text-xs bg-violet-600 hover:bg-violet-700 text-white gap-1"
+                      disabled={aiSaving}
+                      onClick={() => handleSaveAIAnalysis(aiPendingResult)}
+                    >
+                      {aiSaving ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
+                      Save Analysis
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="h-6 px-2 text-xs border-violet-200 text-violet-600 hover:bg-violet-50"
+                      onClick={() => setAiPendingResult(null)}
+                    >
+                      Discard
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="h-6 px-2 text-xs gap-1"
+                      onClick={handleAnalyzeSymptoms}
+                      disabled={aiAnalyzing}
+                    >
+                      <Sparkles className="h-3 w-3 text-violet-500" />
+                      Re-analyze
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground/60 italic">⚠️ AI-generated. Review before saving.</p>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Pre-Assessment Notes — visible if notes exist or user can add */}
           {canAccessPreAssessment && (
             <div className="rounded-xl border bg-muted/30 p-4 space-y-2">
@@ -470,6 +661,7 @@ export function AppointmentDetailSheet({
 
               {notesExpanded && (
                 <div className="space-y-3 pt-1">
+                  {/* ── Pre-assessment notes: descriptive generic table (no AI column) ── */}
                   {preAssessmentNotes.length === 0 ? (
                     <p className="text-xs text-muted-foreground italic">No pre-assessment notes yet.</p>
                   ) : (
@@ -477,8 +669,9 @@ export function AppointmentDetailSheet({
                       const author = `${note.CreatedBy?.firstName ?? ""} ${note.CreatedBy?.lastName ?? ""}`.trim() || "Staff";
                       const isMyNote = currentUserSub && note.CreatedBy?.userId === currentUserSub;
                       return (
-                        <div key={note.id} className="rounded-lg bg-background/60 p-3 space-y-1.5 border border-border/30">
-                          <div className="flex items-center justify-between">
+                        <div key={note.id} className="rounded-lg bg-background/60 border border-border/30 overflow-hidden">
+                          {/* Header row */}
+                          <div className="flex items-center justify-between px-3 py-2 border-b border-border/30 bg-muted/20">
                             <span className="text-xs font-medium text-primary">{author}</span>
                             <div className="flex items-center gap-2">
                               <span className="text-xs text-muted-foreground">
@@ -500,22 +693,27 @@ export function AppointmentDetailSheet({
                               )}
                             </div>
                           </div>
-                          <div>
-                            <p className="text-xs text-muted-foreground">Assessment</p>
-                            <MarkdownRenderer content={note.assessment} className="text-sm" />
+                          {/* Note fields: label on top, content below */}
+                          <div className="px-3 py-2 space-y-3">
+                            {note.assessment && (
+                              <div>
+                                <p className="text-xs font-medium text-muted-foreground mb-1">Assessment</p>
+                                <MarkdownRenderer content={note.assessment} className="text-xs" />
+                              </div>
+                            )}
+                            {note.homeInstructions && (
+                              <div>
+                                <p className="text-xs font-medium text-muted-foreground mb-1">Home Instructions</p>
+                                <MarkdownRenderer content={note.homeInstructions} className="text-xs" />
+                              </div>
+                            )}
+                            {note.remarks && (
+                              <div>
+                                <p className="text-xs font-medium text-muted-foreground mb-1">Remarks</p>
+                                <MarkdownRenderer content={note.remarks} className="text-xs" />
+                              </div>
+                            )}
                           </div>
-                          {note.homeInstructions && (
-                            <div>
-                              <p className="text-xs text-muted-foreground">Home Instructions</p>
-                              <MarkdownRenderer content={note.homeInstructions} className="text-sm" />
-                            </div>
-                          )}
-                          {note.remarks && (
-                            <div>
-                              <p className="text-xs text-muted-foreground">Remarks</p>
-                              <MarkdownRenderer content={note.remarks} className="text-sm" />
-                            </div>
-                          )}
                         </div>
                       );
                     })}</>
@@ -706,7 +904,7 @@ export function AppointmentDetailSheet({
                 </>
               )}
 
-              {/* RECEIVED: Assign Doctor (first), Confirm Booking, Tag HPs, Complete, Cancel */}
+              {/* RECEIVED: Assign Healthcare Provider (first), Confirm Booking, Tag HPs, Complete, Cancel */}
               {status === "RECEIVED" && (
                 <>
                   <Button
@@ -717,7 +915,7 @@ export function AppointmentDetailSheet({
                     onClick={() => onOpenSubPanel("assign")}
                   >
                     <Stethoscope className="h-4 w-4" />
-                    Assign Doctor
+                    Assign Healthcare Provider
                   </Button>
                   <Button
                     size="sm"
@@ -827,7 +1025,7 @@ export function AppointmentDetailSheet({
                     onClick={() => onOpenSubPanel("assign")}
                   >
                     <Stethoscope className="h-4 w-4" />
-                    Reassign Doctor
+                    Reassign Healthcare Provider
                   </Button>
                   <Button
                     size="sm"

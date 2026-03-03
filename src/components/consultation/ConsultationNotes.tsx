@@ -74,14 +74,16 @@ export default function ConsultationNotes({ consultation, patientUserId }: Consu
             </CardDescription>
           </div>
           <div className="ml-auto">
-            {/* AI Medical Note Summarizer */}
-            {isConsultationAuthor && allNotesText && (
+            {/* AI Medical Note Summarizer — hidden once resolved */}
+            {isConsultationAuthor && allNotesText && consultation.ConsultationTicketAttribute?.status !== 'RESOLVED' && (
               <MedicalNoteSummarizer
                 consultationNotes={allNotesText}
+                outputFormat="plain_text"
                 clinicId={consultation.clinicId}
-                onApplyToForm={(summary) => {
+                noteSections={noteTemplate?.NoteSections?.map((s: { label?: string; name: string }) => s.label || s.name)}
+                onApplyToForm={(sectionData) => {
                   // Handle applying summary to form if needed
-                  console.log('Summary generated:', summary);
+                  console.log('Summary generated:', sectionData);
                 }}
               />
             )}

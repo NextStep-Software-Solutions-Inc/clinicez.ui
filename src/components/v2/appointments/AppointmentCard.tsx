@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { format } from "date-fns";
+import { format, parse } from "date-fns";
 import {
   CalendarDays,
   CalendarClock,
@@ -202,7 +202,7 @@ export function AppointmentCard({
               {timeStart && (
                 <span className="flex items-center gap-1 text-xs text-muted-foreground">
                   <Clock className="h-3 w-3" />
-                  {timeStart}
+                  {format(parse(timeStart, "HH:mm", new Date()), "h:mm a")}
                 </span>
               )}
               {doctorName && (

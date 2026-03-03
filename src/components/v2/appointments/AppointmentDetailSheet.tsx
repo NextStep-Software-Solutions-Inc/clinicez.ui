@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { format } from "date-fns";
+import { format, parse } from "date-fns";
 import {
   User,
   CalendarDays,
@@ -536,7 +536,7 @@ export function AppointmentDetailSheet({
                     {timeStart && (
                       <>
                         <Clock className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">{timeStart}</span>
+                        <span className="font-medium">{format(parse(timeStart, "HH:mm", new Date()), "h:mm a")}</span>
                       </>
                     )}
                   </div>

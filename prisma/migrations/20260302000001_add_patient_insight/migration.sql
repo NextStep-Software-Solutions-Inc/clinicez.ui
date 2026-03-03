@@ -18,7 +18,7 @@ CREATE INDEX IF NOT EXISTS "PatientInsight_patientId_clinicId_idx" ON "PatientIn
 CREATE INDEX IF NOT EXISTS "PatientInsight_validUntil_idx" ON "PatientInsight"("validUntil");
 
 -- AddForeignKey
-ALTER TABLE "PatientInsight" ADD CONSTRAINT IF NOT EXISTS "PatientInsight_patientId_fkey" FOREIGN KEY ("patientId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "PatientInsight" ADD CONSTRAINT "PatientInsight_patientId_fkey" FOREIGN KEY ("patientId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "PatientInsight" ADD CONSTRAINT IF NOT EXISTS "PatientInsight_clinicId_fkey" FOREIGN KEY ("clinicId") REFERENCES "Clinic"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "PatientInsight" ADD CONSTRAINT "PatientInsight_clinicId_fkey" FOREIGN KEY ("clinicId") REFERENCES "Clinic"("id") ON DELETE CASCADE ON UPDATE CASCADE;

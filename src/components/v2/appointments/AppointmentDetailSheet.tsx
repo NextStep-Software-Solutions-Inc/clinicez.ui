@@ -527,17 +527,26 @@ export function AppointmentDetailSheet({
                   <p className="font-medium">{appointment.AppointmentAttribute.Service.name}</p>
                 </div>
               )}
+              {scheduledDate && (
+                <div>
+                  <span className="text-muted-foreground text-xs">Scheduled</span>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <CalendarDays className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium">{format(new Date(scheduledDate), "MMMM d, yyyy")}</span>
+                    {timeStart && (
+                      <>
+                        <Clock className="h-4 w-4 text-muted-foreground" />
+                        <span className="font-medium">{timeStart}</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
               <div>
-                <span className="text-muted-foreground text-xs">{scheduledDate ? "Scheduled" : "Submitted"}</span>
+                <span className="text-muted-foreground text-xs">Submitted</span>
                 <div className="flex items-center gap-2 mt-0.5">
-                  <CalendarDays className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-medium">{format(new Date(scheduledDate ?? appointment.createdAt), "MMMM d, yyyy")}</span>
-                  {timeStart && (
-                    <>
-                      <Clock className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium">{timeStart}</span>
-                    </>
-                  )}
+                  <CalendarClock className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-medium">{format(new Date(appointment.createdAt), "MMMM d, yyyy h:mm a")}</span>
                 </div>
               </div>
             </div>

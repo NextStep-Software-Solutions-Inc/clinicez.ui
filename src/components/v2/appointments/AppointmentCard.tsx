@@ -4,6 +4,7 @@ import { useState } from "react";
 import { format } from "date-fns";
 import {
   CalendarDays,
+  CalendarClock,
   Clock,
   User,
   Stethoscope,
@@ -192,16 +193,22 @@ export function AppointmentCard({
 
             {/* Meta row */}
             <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-              <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                <CalendarDays className="h-3 w-3" />
-                {format(new Date(scheduledDate ?? appointment.createdAt), "MMM d, yyyy")}
-              </span>
+              {scheduledDate && (
+                <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <CalendarDays className="h-3 w-3" />
+                  {format(new Date(scheduledDate), "MMM d, yyyy")}
+                </span>
+              )}
               {timeStart && (
                 <span className="flex items-center gap-1 text-xs text-muted-foreground">
                   <Clock className="h-3 w-3" />
                   {timeStart}
                 </span>
               )}
+              <span className="flex items-center gap-1 text-xs text-muted-foreground/60">
+                <CalendarClock className="h-3 w-3" />
+                {format(new Date(appointment.createdAt), "MMM d, yyyy h:mm a")}
+              </span>
               {doctorName && (
                 <span className="flex items-center gap-1 text-xs text-muted-foreground">
                   <Stethoscope className="h-3 w-3" />

@@ -16,6 +16,8 @@ export interface VitalSignEditFormProps {
   recentVitals?: VitalSign[]
   onSuccess?: () => void
   inline?: boolean
+  saveRef?: React.MutableRefObject<{ submit: () => Promise<void>; hasChanges: boolean } | null>
+  onDirtyChange?: (isDirty: boolean) => void
 }
 
 /**
@@ -29,6 +31,8 @@ export function VitalSignEditForm({
   recentVitals = [],
   onSuccess,
   inline = false,
+  saveRef,
+  onDirtyChange,
 }: VitalSignEditFormProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -88,7 +92,7 @@ export function VitalSignEditForm({
     }
 
     setIsLoading(true)
-    const wasCreatingNew = !isEditingExisting
+    let saveErrorMessage: string | null = null
 
     try {
       let result
@@ -119,13 +123,17 @@ export function VitalSignEditForm({
         onSuccess?.()
       } else {
         toast.error(result.error || 'An unexpected error occurred')
+        saveErrorMessage = result.error || 'An unexpected error occurred'
       }
     } catch (err) {
       console.error('Save error:', err)
       toast.error('An unexpected error occurred. Please try again.')
+      throw err
     } finally {
       setIsLoading(false)
     }
+
+    if (saveErrorMessage) throw new Error(saveErrorMessage)
   }
 
   const handleFieldChange = (field: keyof VitalSignFormInput, value: any) => {
@@ -134,6 +142,13 @@ export function VitalSignEditForm({
       [field]: value === '' ? undefined : value,
     }))
   }
+
+  // Expose submit handler to parent via saveRef (no deps — always keeps ref current with latest closure)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (saveRef) saveRef.current = { submit: handleSubmit, hasChanges }
+    onDirtyChange?.(hasChanges)
+  })
 
   const formContent = (
     <>
@@ -312,14 +327,6 @@ export function VitalSignEditForm({
         </div>
 
         {formContent}
-
-        <button
-          onClick={handleSubmit}
-          disabled={isLoading || !hasChanges}
-          className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
-        >
-          {isLoading ? 'Saving...' : 'Save Measurements'}
-        </button>
       </div>
     )
   }

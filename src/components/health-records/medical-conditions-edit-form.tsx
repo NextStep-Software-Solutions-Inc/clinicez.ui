@@ -12,6 +12,8 @@ export interface MedicalConditionsEditFormProps {
   currentConditions?: MedicalHistoryFormInput[]
   onSuccess?: () => void
   inline?: boolean
+  saveRef?: React.MutableRefObject<{ submit: () => Promise<void>; hasChanges: boolean } | null>
+  onDirtyChange?: (isDirty: boolean) => void
 }
 
 /**
@@ -23,6 +25,8 @@ export function MedicalConditionsEditForm({
   currentConditions,
   onSuccess,
   inline = false,
+  saveRef,
+  onDirtyChange,
 }: MedicalConditionsEditFormProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -52,6 +56,7 @@ export function MedicalConditionsEditForm({
     }
 
     setIsLoading(true)
+    let saveErrorMessage: string | null = null
 
     try {
       const result = await updateMedicalConditions(userId, {
@@ -64,13 +69,24 @@ export function MedicalConditionsEditForm({
         if (!inline) setIsOpen(false)
       } else {
         toast.error(result.error || 'An unexpected error occurred')
+        saveErrorMessage = result.error || 'An unexpected error occurred'
       }
     } catch (err) {
       toast.error('An unexpected error occurred. Please try again.')
+      throw err
     } finally {
       setIsLoading(false)
     }
+
+    if (saveErrorMessage) throw new Error(saveErrorMessage)
   }
+
+  // Expose submit handler to parent via saveRef (no deps — always keeps ref current with latest closure)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (saveRef) saveRef.current = { submit: handleSubmit, hasChanges }
+    onDirtyChange?.(hasChanges)
+  })
 
   const formContent = (
     <div className="space-y-6">
@@ -90,14 +106,6 @@ export function MedicalConditionsEditForm({
     return (
       <div className="space-y-6">
         {formContent}
-
-        <button
-          onClick={handleSubmit}
-          disabled={isLoading || !hasChanges}
-          className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
-        >
-          {isLoading ? 'Saving...' : 'Save Conditions'}
-        </button>
       </div>
     )
   }

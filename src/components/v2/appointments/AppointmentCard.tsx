@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { format } from "date-fns";
+import { formatDistanceToNow } from "date-fns";
 import {
   CalendarClock,
   User,
@@ -179,6 +179,10 @@ export function AppointmentCard({
                   {appointment.AppointmentAttribute.AppointmentType.name}
                 </span>
               )}
+              <span className="flex items-center gap-1 text-xs text-muted-foreground/60">
+                <CalendarClock className="h-3 w-3" />
+                {formatDistanceToNow(new Date(appointment.createdAt), { addSuffix: true })}
+              </span>
             </div>
             <span className="flex items-center gap-1 text-xs text-muted-foreground/60 flex-shrink-0">
               <CalendarClock className="h-3 w-3" />

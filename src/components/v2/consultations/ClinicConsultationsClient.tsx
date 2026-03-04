@@ -293,7 +293,7 @@ export default function ClinicConsultationsClient({
   const shownCount = filteredItems.length;
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-11rem)] overflow-hidden">
+    <div className="flex flex-col h-[calc(100dvh-7.5rem)] sm:h-[calc(100dvh-8rem)] overflow-hidden">
       {/* ── Mobile back button (workspace → list) ── */}
       {mobileView === "workspace" && (
         <div className="md:hidden shrink-0 flex items-center gap-2 px-4 py-2.5 border-b border-border/50 bg-background/80 backdrop-blur">

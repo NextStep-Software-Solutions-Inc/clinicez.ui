@@ -44,12 +44,21 @@ import {
 import type { PatientHealthRecordsResponse } from '@/types/patient-profile'
 import './edit-profile.css'
 
-interface Section {
+/**
+ * Open/Closed: add new sections only to the `sections` array.
+ * `handleSaveAll` derives its behaviour automatically from `saveType`.
+ *  - 'auto'  → persists immediately on each add/remove; no manual save needed
+ *  - 'batch' → requires an explicit Save All trigger; must provide a saveRef
+ */
+type Section = {
   id: string
   label: string
   icon: string
   ref: React.RefObject<HTMLDivElement | null>
-}
+} & (
+  | { saveType: 'auto' }
+  | { saveType: 'batch'; saveRef: React.MutableRefObject<SaveRefHandle | null> }
+)
 
 interface LoadedSections {
   [key: string]: boolean
@@ -151,21 +160,21 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
 
   const sections: Section[] = useMemo(
     () => [
-      { id: 'demographics', label: 'Demographics', icon: '👤', ref: demographicsRef },
-      { id: 'addresses', label: 'Addresses', icon: '📍', ref: addressesRef },
-      { id: 'emergency-contacts', label: 'Contacts', icon: '🆘', ref: emergencyContactsRef },
-      { id: 'allergies', label: 'Allergies', icon: '⚠️', ref: allergiesRef },
-      { id: 'vaccinations', label: 'Vaccinations', icon: '💉', ref: vaccinationsRef },
-      { id: 'disabilities', label: 'Disabilities', icon: '♿', ref: disabilitiesRef },
-      { id: 'vital-signs', label: 'Vitals', icon: '❤️', ref: vitalSignsRef },
-      { id: 'personal-history', label: 'History', icon: '📋', ref: personalHistoryRef },
-      { id: 'ob-gyne', label: 'OB/GYN', icon: '👶', ref: obGyneRef },
-      { id: 'pediatric', label: 'Pediatric', icon: '📏', ref: pediatricRef },
-      { id: 'medical', label: 'Conditions', icon: '🏥', ref: medicalRef },
-      { id: 'surgical', label: 'Surgical', icon: '⚕️', ref: surgicalRef },
-      { id: 'family', label: 'Family', icon: '👨‍👩‍👧‍👦', ref: familyRef },
-      { id: 'examination', label: 'Exam', icon: '🔍', ref: examinationRef },
-      { id: 'philhealth', label: 'PhilHealth', icon: '🏛️', ref: philhealthRef },
+      { id: 'demographics', label: 'Demographics', icon: '👤', ref: demographicsRef, saveType: 'batch', saveRef: demographicsSaveRef },
+      { id: 'addresses', label: 'Addresses', icon: '📍', ref: addressesRef, saveType: 'auto' },
+      { id: 'emergency-contacts', label: 'Contacts', icon: '🆘', ref: emergencyContactsRef, saveType: 'auto' },
+      { id: 'allergies', label: 'Allergies', icon: '⚠️', ref: allergiesRef, saveType: 'auto' },
+      { id: 'vaccinations', label: 'Vaccinations', icon: '💉', ref: vaccinationsRef, saveType: 'auto' },
+      { id: 'disabilities', label: 'Disabilities', icon: '♿', ref: disabilitiesRef, saveType: 'auto' },
+      { id: 'vital-signs', label: 'Vitals', icon: '❤️', ref: vitalSignsRef, saveType: 'batch', saveRef: vitalSignsSaveRef },
+      { id: 'personal-history', label: 'History', icon: '📋', ref: personalHistoryRef, saveType: 'batch', saveRef: personalHistorySaveRef },
+      { id: 'ob-gyne', label: 'OB/GYN', icon: '👶', ref: obGyneRef, saveType: 'batch', saveRef: obGyneSaveRef },
+      { id: 'pediatric', label: 'Pediatric', icon: '📏', ref: pediatricRef, saveType: 'batch', saveRef: pediatricSaveRef },
+      { id: 'medical', label: 'Conditions', icon: '🏥', ref: medicalRef, saveType: 'batch', saveRef: medicalSaveRef },
+      { id: 'surgical', label: 'Surgical', icon: '⚕️', ref: surgicalRef, saveType: 'auto' },
+      { id: 'family', label: 'Family', icon: '👨‍👩‍👧‍👦', ref: familyRef, saveType: 'batch', saveRef: familySaveRef },
+      { id: 'examination', label: 'Exam', icon: '🔍', ref: examinationRef, saveType: 'batch', saveRef: examinationSaveRef },
+      { id: 'philhealth', label: 'PhilHealth', icon: '🏛️', ref: philhealthRef, saveType: 'batch', saveRef: philhealthSaveRef },
     ],
     [],
   )
@@ -347,68 +356,51 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
     }
   }, [refreshFn, onDataRefresh])
 
-  // Consolidated "Save All" — saves every batch-save section that has pending changes
+  // Consolidated "Save All" — derives items directly from the sections array (OCP: add new
+  // sections only to the sections array above; this function requires no changes).
   const handleSaveAll = useCallback(async () => {
-    const batchItems: Array<{ id: string; label: string; icon: string; ref: React.MutableRefObject<SaveRefHandle | null> }> = [
-      { id: 'demographics', label: 'Demographics', icon: '👤', ref: demographicsSaveRef },
-      { id: 'vital-signs', label: 'Vital Signs', icon: '❤️', ref: vitalSignsSaveRef },
-      { id: 'personal-history', label: 'Personal History', icon: '📋', ref: personalHistorySaveRef },
-      { id: 'ob-gyne', label: 'OB/GYN History', icon: '👶', ref: obGyneSaveRef },
-      { id: 'pediatric', label: 'Pediatric', icon: '📏', ref: pediatricSaveRef },
-      { id: 'medical', label: 'Medical Conditions', icon: '🏥', ref: medicalSaveRef },
-      { id: 'family', label: 'Family History', icon: '👨‍👩‍👧‍👦', ref: familySaveRef },
-      { id: 'examination', label: 'Physical Exam', icon: '🔍', ref: examinationSaveRef },
-      { id: 'philhealth', label: 'PhilHealth', icon: '🏛️', ref: philhealthSaveRef },
-    ]
-    const autoItems: SaveAllItem[] = [
-      { id: 'addresses', label: 'Addresses', icon: '📍', type: 'auto', status: 'auto' },
-      { id: 'emergency-contacts', label: 'Emergency Contacts', icon: '🆘', type: 'auto', status: 'auto' },
-      { id: 'allergies', label: 'Allergies', icon: '⚠️', type: 'auto', status: 'auto' },
-      { id: 'vaccinations', label: 'Vaccinations', icon: '💉', type: 'auto', status: 'auto' },
-      { id: 'disabilities', label: 'Disabilities', icon: '♿', type: 'auto', status: 'auto' },
-      { id: 'surgical', label: 'Surgical History', icon: '⚕️', type: 'auto', status: 'auto' },
-    ]
-
-    // Build initial items list: batch items first, then auto items
-    const initialItems: SaveAllItem[] = [
-      ...batchItems.map((item) => ({
-        id: item.id,
-        label: item.label,
-        icon: item.icon,
-        type: 'batch' as const,
-        status: (item.ref.current?.hasChanges ? 'pending' : 'no-changes') as SaveAllStatus,
-      })),
-      ...autoItems,
-    ]
+    // Build initial status from sections — single source of truth
+    const initialItems: SaveAllItem[] = sections.map((section) => ({
+      id: section.id,
+      label: section.label,
+      icon: section.icon,
+      type: section.saveType,
+      status: (
+        section.saveType === 'auto'
+          ? 'auto'
+          : section.saveRef.current?.hasChanges ? 'pending' : 'no-changes'
+      ) as SaveAllStatus,
+    }))
 
     setSaveAllItems(initialItems)
     setSaveAllOpen(true)
     setIsSavingAll(true)
 
-    // Process each batch item sequentially
-    for (const item of batchItems) {
-      const handle = item.ref.current
+    // Process each batch section sequentially
+    for (const section of sections) {
+      if (section.saveType !== 'batch') continue
+      const handle = section.saveRef.current
       if (!handle?.hasChanges) continue
 
       setSaveAllItems((prev) =>
-        prev.map((i) => (i.id === item.id ? { ...i, status: 'saving' } : i))
+        prev.map((i) => (i.id === section.id ? { ...i, status: 'saving' } : i))
       )
 
       try {
         await handle.submit()
         setSaveAllItems((prev) =>
-          prev.map((i) => (i.id === item.id ? { ...i, status: 'saved' } : i))
+          prev.map((i) => (i.id === section.id ? { ...i, status: 'saved' } : i))
         )
       } catch (err) {
-        console.error(`[SaveAll] Failed to save section "${item.id}":`, err)
+        console.error(`[SaveAll] Failed to save section "${section.id}":`, err)
         setSaveAllItems((prev) =>
-          prev.map((i) => (i.id === item.id ? { ...i, status: 'error', error: err instanceof Error ? err.message : 'Unknown error' } : i))
+          prev.map((i) => (i.id === section.id ? { ...i, status: 'error', error: err instanceof Error ? err.message : 'Unknown error' } : i))
         )
       }
     }
 
     setIsSavingAll(false)
-  }, [])
+  }, [sections])
 
   // Section nav strip — defined before early return so it's always in scope.
   // topClass controls sticky offset:
@@ -895,8 +887,8 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
       </div>
 
       {/* Sticky Save All Changes bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 backdrop-blur-md bg-white/80 dark:bg-slate-900/80 border-t border-slate-200/60 dark:border-slate-700/60 px-4 py-3 shadow-lg">
-        <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
+      <div className="fixed bottom-0 left-0 right-0 z-50 backdrop-blur-md bg-white/80 dark:bg-slate-900/80 border-t border-slate-200/60 dark:border-slate-700/60 px-4 py-3 shadow-lg flex items-center">
+        <div className="max-w-6xl mx-auto w-full flex items-center justify-between gap-4">
           <p className="text-sm text-slate-600 dark:text-slate-400 hidden sm:block">
             Fill in multiple sections then save them all at once
           </p>

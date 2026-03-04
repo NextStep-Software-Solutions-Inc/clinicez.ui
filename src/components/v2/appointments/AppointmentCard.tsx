@@ -231,12 +231,16 @@ export function AppointmentCard({
                   {appointment.AppointmentAttribute.AppointmentType.name}
                 </span>
               )}
+              <span className="flex items-center gap-1 text-xs text-muted-foreground/60">
+                <CalendarClock className="h-3 w-3" />
+                {format(new Date(appointment.createdAt), "MMM d, yyyy h:mm a")}
+              </span>
             </div>
           </div>
         </button>
 
         {/* ── Actions area (NOT inside the clickable zone) ───────────────── */}
-        <div className="flex flex-col items-end gap-1.5 flex-shrink-0 px-3 py-3 self-center">
+        <div className="hidden md:flex flex-col items-end gap-1.5 flex-shrink-0 px-3 py-3 self-center">
           <div className="flex flex-wrap gap-1.5 justify-end">
           {status === "PENDING" && (
             <>
@@ -323,10 +327,6 @@ export function AppointmentCard({
             </Button>
           )}
           </div>
-          <span className="flex items-center gap-1 text-xs text-muted-foreground/60">
-            <CalendarClock className="h-3 w-3" />
-            {format(new Date(appointment.createdAt), "MMM d, yyyy h:mm a")}
-          </span>
         </div>
       </div>
 

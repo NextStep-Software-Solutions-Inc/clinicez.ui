@@ -430,26 +430,20 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
             </div>
           </div>
 
-          {/* Allergies Section */}
-          <div ref={sections[3].ref} id="allergies" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-200">
+          {/* Addresses Section */}
+          <div ref={sections[1].ref} id="addresses" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-100">
             <div className="backdrop-blur-xl bg-white/30 dark:bg-slate-800/30 border border-white/40 dark:border-slate-700/40 rounded-2xl shadow-2xl p-6 md:p-8 hover:bg-white/40 dark:hover:bg-slate-800/40 transition-all duration-300">
               <div className="mb-6 flex items-center gap-3">
-                <div className="w-1.5 h-8 bg-gradient-to-b from-red-500 to-orange-500 rounded-full"></div>
+                <div className="w-1.5 h-8 bg-gradient-to-b from-green-500 to-emerald-500 rounded-full"></div>
                 <div>
-                  <h2 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">Allergies</h2>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">Manage your known allergies</p>
+                  <h2 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">Addresses</h2>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">Manage your residential addresses</p>
                 </div>
               </div>
-              {loadedSections['allergies'] && (
+              {loadedSections['addresses'] && (
                 <Suspense fallback={<FormLoadingFallback />}>
-                  <AllergyEditForm
+                  <AddressEditForm
                     userId={patientData.userId}
-                    currentAllergies={patientData.userAllergies?.map(allergy => ({
-                      id: allergy.id,
-                      allergen: allergy.allergen,
-                      reaction: allergy.reaction,
-                      notes: allergy.notes,
-                    })) || []}
                     inline={true}
                     onSuccess={handleSuccess}
                   />
@@ -481,20 +475,26 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
             </div>
           </div>
 
-          {/* Addresses Section */}
-          <div ref={sections[1].ref} id="addresses" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-100">
+          {/* Allergies Section */}
+          <div ref={sections[3].ref} id="allergies" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-200">
             <div className="backdrop-blur-xl bg-white/30 dark:bg-slate-800/30 border border-white/40 dark:border-slate-700/40 rounded-2xl shadow-2xl p-6 md:p-8 hover:bg-white/40 dark:hover:bg-slate-800/40 transition-all duration-300">
               <div className="mb-6 flex items-center gap-3">
-                <div className="w-1.5 h-8 bg-gradient-to-b from-green-500 to-emerald-500 rounded-full"></div>
+                <div className="w-1.5 h-8 bg-gradient-to-b from-red-500 to-orange-500 rounded-full"></div>
                 <div>
-                  <h2 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">Addresses</h2>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">Manage your residential addresses</p>
+                  <h2 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">Allergies</h2>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">Manage your known allergies</p>
                 </div>
               </div>
-              {loadedSections['addresses'] && (
+              {loadedSections['allergies'] && (
                 <Suspense fallback={<FormLoadingFallback />}>
-                  <AddressEditForm
+                  <AllergyEditForm
                     userId={patientData.userId}
+                    currentAllergies={patientData.userAllergies?.map(allergy => ({
+                      id: allergy.id,
+                      allergen: allergy.allergen,
+                      reaction: allergy.reaction,
+                      notes: allergy.notes,
+                    })) || []}
                     inline={true}
                     onSuccess={handleSuccess}
                   />

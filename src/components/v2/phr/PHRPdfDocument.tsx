@@ -251,10 +251,10 @@ function fmtBloodType(bt: string | null | undefined): string {
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
-function SecHeader({ icon, title, tc }: { icon: string; title: string; tc: ThemePalette }) {
+function SecHeader({ title, tc }: { title: string; tc: ThemePalette }) {
   return (
     <View style={[s.sectionHeader, { backgroundColor: tc.sectionHeaderBg }]}>
-      <Text style={[s.sectionTitle, { color: tc.sectionHeaderText }]}>{icon} {title.toUpperCase()}</Text>
+      <Text style={[s.sectionTitle, { color: tc.sectionHeaderText }]}>{title.toUpperCase()}</Text>
     </View>
   )
 }
@@ -380,8 +380,8 @@ export function PHRPdfDocument({ patient, sections, generatedAt, theme = 'colorf
 
         {/* ─────────── DEMOGRAPHICS ─────────── */}
         {has('demographics') && (
-          <View style={s.section}>
-            <SecHeader icon="📋" title="Demographics" tc={tc} />
+          <View style={s.section} wrap={false}>
+            <SecHeader title="Demographics" tc={tc} />
             <View style={[s.sectionBody, { borderColor: tc.sectionBodyBorder }]}>
               <View style={s.fieldGrid3}>
                 <Field label="Full Name" value={`${patient.fullName}${patient.suffix ? ` ${patient.suffix}` : ''}`} />
@@ -406,8 +406,8 @@ export function PHRPdfDocument({ patient, sections, generatedAt, theme = 'colorf
 
         {/* ─────────── VITAL SIGNS ─────────── */}
         {has('vitals') && (
-          <View style={s.section}>
-            <SecHeader icon="❤️" title="Vital Signs" tc={tc} />
+          <View style={s.section} wrap={false}>
+            <SecHeader title="Vital Signs" tc={tc} />
             <View style={[s.sectionBody, { borderColor: tc.sectionBodyBorder }]}>
               {lv ? (
                 <>
@@ -460,8 +460,8 @@ export function PHRPdfDocument({ patient, sections, generatedAt, theme = 'colorf
 
         {/* ─────────── MEDICAL HISTORY ─────────── */}
         {has('medical') && (
-          <View style={s.section}>
-            <SecHeader icon="🏥" title="Medical History" tc={tc} />
+          <View style={s.section} wrap={false}>
+            <SecHeader title="Medical History" tc={tc} />
             <View style={[s.sectionBody, { borderColor: tc.sectionBodyBorder }]}>
               <Text style={s.subLabel}>Personal Medical Conditions</Text>
               {patient.medicalHistories.length === 0 ? <Empty msg="No personal medical conditions recorded." /> : (
@@ -506,8 +506,8 @@ export function PHRPdfDocument({ patient, sections, generatedAt, theme = 'colorf
 
         {/* ─────────── ALLERGIES ─────────── */}
         {has('allergies') && (
-          <View style={s.section}>
-            <SecHeader icon="⚠️" title="Allergies" tc={tc} />
+          <View style={s.section} wrap={false}>
+            <SecHeader title="Allergies" tc={tc} />
             <View style={[s.sectionBody, { borderColor: tc.sectionBodyBorder }]}>
               {patient.userAllergies.length === 0 ? <Empty msg="No known allergies recorded." /> : (
                 <View style={s.table}>
@@ -527,8 +527,8 @@ export function PHRPdfDocument({ patient, sections, generatedAt, theme = 'colorf
 
         {/* ─────────── VACCINATIONS ─────────── */}
         {has('vaccinations') && (
-          <View style={s.section}>
-            <SecHeader icon="💉" title="Vaccinations" tc={tc} />
+          <View style={s.section} wrap={false}>
+            <SecHeader title="Vaccinations" tc={tc} />
             <View style={[s.sectionBody, { borderColor: tc.sectionBodyBorder }]}>
               {patient.userVaccinations.length === 0 ? <Empty msg="No vaccinations recorded." /> : (
                 <View style={s.table}>
@@ -551,8 +551,8 @@ export function PHRPdfDocument({ patient, sections, generatedAt, theme = 'colorf
 
         {/* ─────────── DISABILITIES ─────────── */}
         {has('disabilities') && (
-          <View style={s.section}>
-            <SecHeader icon="♿" title="Disabilities & Chronic Conditions" tc={tc} />
+          <View style={s.section} wrap={false}>
+            <SecHeader title="Disabilities & Chronic Conditions" tc={tc} />
             <View style={[s.sectionBody, { borderColor: tc.sectionBodyBorder }]}>
               {patient.userDisabilities.length === 0 ? <Empty msg="No disabilities or chronic conditions recorded." /> : (
                 <View style={s.table}>
@@ -575,8 +575,8 @@ export function PHRPdfDocument({ patient, sections, generatedAt, theme = 'colorf
 
         {/* ─────────── EMERGENCY CONTACTS ─────────── */}
         {has('contacts') && (
-          <View style={s.section}>
-            <SecHeader icon="🆘" title="Emergency Contacts" tc={tc} />
+          <View style={s.section} wrap={false}>
+            <SecHeader title="Emergency Contacts" tc={tc} />
             <View style={[s.sectionBody, { borderColor: tc.sectionBodyBorder }]}>
               {patient.userEmergencyContacts.length === 0 ? <Empty msg="No emergency contacts recorded." /> : (
                 <View style={s.table}>
@@ -598,8 +598,8 @@ export function PHRPdfDocument({ patient, sections, generatedAt, theme = 'colorf
 
         {/* ─────────── ADDRESSES ─────────── */}
         {has('addresses') && (
-          <View style={s.section}>
-            <SecHeader icon="📍" title="Addresses" tc={tc} />
+          <View style={s.section} wrap={false}>
+            <SecHeader title="Addresses" tc={tc} />
             <View style={[s.sectionBody, { borderColor: tc.sectionBodyBorder }]}>
               {patient.userAddresses.length === 0 ? <Empty msg="No addresses recorded." /> : (
                 <View style={s.table}>
@@ -623,8 +623,8 @@ export function PHRPdfDocument({ patient, sections, generatedAt, theme = 'colorf
 
         {/* ─────────── LIFESTYLE ─────────── */}
         {has('lifestyle') && (
-          <View style={s.section}>
-            <SecHeader icon="👤" title="Lifestyle & Social History" tc={tc} />
+          <View style={s.section} wrap={false}>
+            <SecHeader title="Lifestyle & Social History" tc={tc} />
             <View style={[s.sectionBody, { borderColor: tc.sectionBodyBorder }]}>
               {!patient.personalHistory ? <Empty msg="No lifestyle / social history recorded." /> : (
                 <View style={s.fieldGrid3}>
@@ -642,8 +642,8 @@ export function PHRPdfDocument({ patient, sections, generatedAt, theme = 'colorf
 
         {/* ─────────── OB/GYN ─────────── */}
         {has('obgyn') && (
-          <View style={s.section}>
-            <SecHeader icon="👶" title="OB/GYN History" tc={tc} />
+          <View style={s.section} wrap={false}>
+            <SecHeader title="OB/GYN History" tc={tc} />
             <View style={[s.sectionBody, { borderColor: tc.sectionBodyBorder }]}>
               {!patient.obGyneHistory ? <Empty msg="No OB/GYN history recorded." /> : (
                 <View style={s.fieldGrid3}>
@@ -670,8 +670,8 @@ export function PHRPdfDocument({ patient, sections, generatedAt, theme = 'colorf
 
         {/* ─────────── PEDIATRIC ─────────── */}
         {has('pediatric') && (
-          <View style={s.section}>
-            <SecHeader icon="📏" title="Pediatric Measurements" tc={tc} />
+          <View style={s.section} wrap={false}>
+            <SecHeader title="Pediatric Measurements" tc={tc} />
             <View style={[s.sectionBody, { borderColor: tc.sectionBodyBorder }]}>
               {patient.pediatricMeasurements.length === 0 ? <Empty msg="No pediatric measurements recorded." /> : (
                 <View style={s.table}>
@@ -695,8 +695,8 @@ export function PHRPdfDocument({ patient, sections, generatedAt, theme = 'colorf
 
         {/* ─────────── PHYSICAL EXAMS ─────────── */}
         {has('exams') && (
-          <View style={s.section}>
-            <SecHeader icon="🔍" title="Physical Examinations" tc={tc} />
+          <View style={s.section} wrap={false}>
+            <SecHeader title="Physical Examinations" tc={tc} />
             <View style={[s.sectionBody, { borderColor: tc.sectionBodyBorder }]}>
               {patient.physicalExaminations.length === 0 ? <Empty msg="No physical examinations recorded." /> : (
                 <View style={s.table}>
@@ -717,8 +717,8 @@ export function PHRPdfDocument({ patient, sections, generatedAt, theme = 'colorf
 
         {/* ─────────── INSURANCE ─────────── */}
         {has('insurance') && (
-          <View style={s.section}>
-            <SecHeader icon="📄" title="Insurance & Documents" tc={tc} />
+          <View style={s.section} wrap={false}>
+            <SecHeader title="Insurance & Documents" tc={tc} />
             <View style={[s.sectionBody, { borderColor: tc.sectionBodyBorder }]}>
               <Text style={s.subLabel}>PhilHealth Records</Text>
               {patient.philHealthRecords.length === 0 ? <Empty msg="No PhilHealth records." /> : (

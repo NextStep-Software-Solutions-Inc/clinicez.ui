@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { renderToBuffer } from '@react-pdf/renderer'
 import React from 'react'
 import { getPatientHealthRecords } from '@/actions/patient-profile/get-patient-health-records'
-import { PHRPrintContent, PHR_SECTIONS, type PHRSectionId, type PHRTheme } from '@/components/v2/phr/PHRPrintContent'
+import { PHRPdfDocument, PHR_SECTIONS, type PHRSectionId, type PHRTheme } from '@/components/v2/phr/PHRPdfDocument'
 import type { SerializedPatientHealthRecordsResponse } from '@/types/patient-profile'
-import { buildFooterTemplate, htmlToPdf } from '@/lib/pdf-generator'
 
 export const dynamic = 'force-dynamic'
+export const maxDuration = 30
 
 export async function GET(request: NextRequest) {
     try {
@@ -31,43 +32,28 @@ export async function GET(request: NextRequest) {
             hour: '2-digit', minute: '2-digit',
         })
 
-        // Import renderToString only when needed
-        const { renderToString } = await import('react-dom/server')
+        let pdfBuffer: Buffer
+        try {
+            pdfBuffer = await renderToBuffer(
+                React.createElement(PHRPdfDocument, {
+                    patient: patient as SerializedPatientHealthRecordsResponse,
+                    sections,
+                    generatedAt,
+                    theme,
+                }) as unknown as Parameters<typeof renderToBuffer>[0]
+            )
+        } catch (err) {
+            console.error('[PHR_API] renderToBuffer failed:', err)
+            return NextResponse.json({ error: 'PDF generation failed' }, { status: 500 })
+        }
 
-        const htmlContent = renderToString(
-            React.createElement(PHRPrintContent, {
-                patient: patient as SerializedPatientHealthRecordsResponse,
-                sections,
-                generatedAt,
-                theme,
-            })
-        )
-
-        const fullHtml = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Personal Health Record — ClinicEZ</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { width: 100%; height: 100%; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.5; }
-  </style>
-</head>
-<body>
-  <div id="root">${htmlContent}</div>
-</body>
-</html>`
-
-        // Generate PDF server-side for consistent output
-        const footerTemplate = buildFooterTemplate({ theme, generatedAt })
-        const pdfBuffer = await htmlToPdf(fullHtml, { footerTemplate })
+        const filename = `PHR_${patient.fullName.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.pdf`
 
         return new NextResponse(pdfBuffer, {
             headers: {
                 'Content-Type': 'application/pdf',
-                'Content-Disposition': 'attachment; filename="PHR.pdf"',
+                'Content-Disposition': `attachment; filename="${filename}"`,
+                'Content-Length': String(pdfBuffer.byteLength),
                 'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
             },
         })

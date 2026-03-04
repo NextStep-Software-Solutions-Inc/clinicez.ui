@@ -3,8 +3,7 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import {
-  CalendarDays,
-  Clock,
+  CalendarClock,
   User,
   Stethoscope,
   CheckCircle,
@@ -82,8 +81,6 @@ export function AppointmentCard({
   const initials = getAppointmentInitials(appointment);
   const patientPicture = appointment.Requesters?.[0]?.User?.picture ?? null;
 
-  const scheduledDate = appointment.AppointmentAttribute?.date;
-  const timeStart = appointment.AppointmentAttribute?.timeStart;
   const activeRouting = appointment.AppointmentRouting?.find(
     (r) => r.status === "ACCEPTED" || r.status === "PENDING"
   );
@@ -192,18 +189,6 @@ export function AppointmentCard({
 
             {/* Meta row */}
             <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-              {scheduledDate && (
-                <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                  <CalendarDays className="h-3 w-3" />
-                  {format(new Date(scheduledDate), "MMM d, yyyy")}
-                </span>
-              )}
-              {timeStart && (
-                <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                  <Clock className="h-3 w-3" />
-                  {timeStart}
-                </span>
-              )}
               {doctorName && (
                 <span className="flex items-center gap-1 text-xs text-muted-foreground">
                   <Stethoscope className="h-3 w-3" />
@@ -230,12 +215,17 @@ export function AppointmentCard({
                   {appointment.AppointmentAttribute.AppointmentType.name}
                 </span>
               )}
+              <span className="flex items-center gap-1 text-xs text-muted-foreground/60">
+                <CalendarClock className="h-3 w-3" />
+                {format(new Date(appointment.createdAt), "MMM d, yyyy h:mm a")}
+              </span>
             </div>
           </div>
         </button>
 
         {/* ── Actions area (NOT inside the clickable zone) ───────────────── */}
-        <div className="flex items-center gap-1.5 flex-shrink-0 flex-wrap justify-end px-3 py-3 self-center">
+        <div className="hidden md:flex flex-col items-end gap-1.5 flex-shrink-0 px-3 py-3 self-center">
+          <div className="flex flex-wrap gap-1.5 justify-end">
           {status === "PENDING" && (
             <>
               <Button
@@ -320,6 +310,7 @@ export function AppointmentCard({
               View Details
             </Button>
           )}
+          </div>
         </div>
       </div>
 

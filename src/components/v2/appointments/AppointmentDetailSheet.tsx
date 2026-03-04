@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { format } from "date-fns";
+import { format, parse } from "date-fns";
 import {
   User,
   CalendarDays,
@@ -528,17 +528,27 @@ export function AppointmentDetailSheet({
                 </div>
               )}
               {scheduledDate && (
-                <div className="flex items-center gap-2">
-                  <CalendarDays className="h-4 w-4 text-muted-foreground" />
-                  <span>{format(new Date(scheduledDate), "MMMM d, yyyy")}</span>
-                  {timeStart && (
-                    <>
-                      <Clock className="h-4 w-4 text-muted-foreground" />
-                      <span>{timeStart}</span>
-                    </>
-                  )}
+                <div>
+                  <span className="text-muted-foreground text-xs">Scheduled</span>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <CalendarDays className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium">{format(new Date(scheduledDate), "MMMM d, yyyy")}</span>
+                    {timeStart && (
+                      <>
+                        <Clock className="h-4 w-4 text-muted-foreground" />
+                        <span className="font-medium">{format(parse(timeStart, "HH:mm", new Date()), "h:mm a")}</span>
+                      </>
+                    )}
+                  </div>
                 </div>
               )}
+              <div>
+                <span className="text-muted-foreground text-xs">Submitted</span>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <CalendarClock className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-medium">{format(new Date(appointment.createdAt), "MMMM d, yyyy h:mm a")}</span>
+                </div>
+              </div>
             </div>
           </div>
 

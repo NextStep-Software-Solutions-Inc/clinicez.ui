@@ -98,7 +98,7 @@ export default function WelcomeHeader({
 
           {/* Clinic badge */}
           {subtitle && (
-            <div className="inline-flex items-center gap-1.5 mb-3 px-3 py-1 rounded-full bg-white/15 border border-white/20 backdrop-blur-sm">
+            <div className="inline-flex items-center gap-1.5 mb-3 px-3 py-1 rounded-full bg-white/15 border border-white/20 backdrop-blur-sm max-w-xs">
               <Building2 className="h-3 w-3 text-white/80 flex-shrink-0" />
               <span className="text-xs font-semibold text-white/90 truncate">{subtitle}</span>
             </div>

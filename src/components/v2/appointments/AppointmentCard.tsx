@@ -184,10 +184,6 @@ export function AppointmentCard({
                 {formatDistanceToNow(new Date(appointment.createdAt), { addSuffix: true })}
               </span>
             </div>
-            <span className="flex items-center gap-1 text-xs text-muted-foreground/60 flex-shrink-0">
-              <CalendarClock className="h-3 w-3" />
-              {format(new Date(appointment.createdAt), "MMM d, yyyy h:mm a")}
-            </span>
           </div>
 
           {/* ── Subject: primary/prominent ───────────────────────────────────── */}

@@ -38,18 +38,20 @@ export async function updateVitalSign(
     }
 
     // Check if user has explicit permission to edit vital signs
-    const hasPermission = await prisma.userPermission.findFirst({
+    // Supports both the legacy UserPermissions and the newer ClinicMemberPermissions system
+    const hasPermission = await prisma.permission.findFirst({
       where: {
-        userId: authDbUserId,
-        Permission: {
-          isActive: true,
-          deletedAt: null,
-          name: {
-            in: isOwn
-              ? ['update:user:profile:own', 'update:patient:health-record:own', 'super_admin']
-              : ['update:clinic:patient:all', 'update:patient:health-record:any', 'super_admin']
-          }
-        }
+        isActive: true,
+        deletedAt: null,
+        name: {
+          in: isOwn
+            ? ['update:user:profile:own', 'update:patient:health-record:own', 'write:clinic:vital_signs', 'super_admin']
+            : ['update:clinic:patient:all', 'update:patient:health-record:any', 'write:clinic:vital_signs', 'super_admin'],
+        },
+        OR: [
+          { UserPermissions: { some: { userId: authDbUserId } } },
+          { ClinicMemberPermissions: { some: { ClinicMember: { userId: authDbUserId, status: 'ACTIVE' } } } },
+        ],
       },
     })
 

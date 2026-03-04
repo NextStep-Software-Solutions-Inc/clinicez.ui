@@ -34,6 +34,11 @@ const preprocessOptionalNumber = z.preprocess(
   z.number().optional()
 );
 
+const MEASUREMENT_FIELDS = [
+  "height", "weight", "temp", "pulseRate", "respRate",
+  "spo2", "bpSystolic", "bpDiastolic",
+] as const;
+
 const vitalSignsSchema = z.object({
   height: preprocessOptionalNumber,
   weight: preprocessOptionalNumber,
@@ -46,6 +51,15 @@ const vitalSignsSchema = z.object({
   bmi: preprocessOptionalNumber,
   notes: z.string().optional(),
   dateTaken: z.coerce.date({ required_error: "Date taken is required" }),
+}).superRefine((data, ctx) => {
+  const hasAny = MEASUREMENT_FIELDS.some((f) => data[f] !== undefined);
+  if (!hasAny) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Please enter at least one measurement before saving.",
+      path: [],
+    });
+  }
 });
 
 type VitalSignsFormData = z.infer<typeof vitalSignsSchema>;
@@ -80,7 +94,8 @@ export function AddVitalsDialog({ patientUserId, onSaved }: AddVitalsDialogProps
   const handleSubmit = useCallback(async () => {
     const valid = await form.trigger();
     if (!valid) {
-      toast.error("Please check the form and fix any errors before saving.");
+      const rootMsg = form.formState.errors.root?.message;
+      toast.error(rootMsg ?? "Please check the form and fix any errors before saving.");
       return;
     }
 

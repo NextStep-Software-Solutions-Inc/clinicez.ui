@@ -24,16 +24,26 @@ import { createUserVitalSignAction } from "@/actions/vitals.action";
 
 // ── Schema (inline, matches the v1 VitalSignFields schema) ───────────────────
 
+// Treat NaN (produced by valueAsNumber on empty inputs) and empty string as undefined
+const preprocessOptionalNumber = z.preprocess(
+  (val) => {
+    if (val === "" || val === null || val === undefined) return undefined;
+    if (typeof val === "number" && isNaN(val)) return undefined;
+    return val;
+  },
+  z.number().optional()
+);
+
 const vitalSignsSchema = z.object({
-  height: z.coerce.number().optional(),
-  weight: z.coerce.number().optional(),
-  temp: z.coerce.number().optional(),
-  pulseRate: z.coerce.number().optional(),
-  respRate: z.coerce.number().optional(),
-  spo2: z.coerce.number().optional(),
-  bpSystolic: z.coerce.number().optional(),
-  bpDiastolic: z.coerce.number().optional(),
-  bmi: z.coerce.number().optional(),
+  height: preprocessOptionalNumber,
+  weight: preprocessOptionalNumber,
+  temp: preprocessOptionalNumber,
+  pulseRate: preprocessOptionalNumber,
+  respRate: preprocessOptionalNumber,
+  spo2: preprocessOptionalNumber,
+  bpSystolic: preprocessOptionalNumber,
+  bpDiastolic: preprocessOptionalNumber,
+  bmi: preprocessOptionalNumber,
   notes: z.string().optional(),
   dateTaken: z.coerce.date({ required_error: "Date taken is required" }),
 });
@@ -69,7 +79,10 @@ export function AddVitalsDialog({ patientUserId, onSaved }: AddVitalsDialogProps
 
   const handleSubmit = useCallback(async () => {
     const valid = await form.trigger();
-    if (!valid) return;
+    if (!valid) {
+      toast.error("Please check the form and fix any errors before saving.");
+      return;
+    }
 
     const data = form.getValues();
     setSaving(true);
@@ -86,8 +99,8 @@ export function AddVitalsDialog({ patientUserId, onSaved }: AddVitalsDialogProps
       } else {
         toast.error(result.message ?? "Failed to save vital signs");
       }
-    } catch {
-      toast.error("Failed to save vital signs");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "An unexpected error occurred while saving vital signs");
     } finally {
       setSaving(false);
     }
@@ -126,6 +139,9 @@ export function AddVitalsDialog({ patientUserId, onSaved }: AddVitalsDialogProps
                 {...form.register("height", { valueAsNumber: true })}
                 onFocus={selectOnFocus}
               />
+              {form.formState.errors.height && (
+                <p className="text-xs text-destructive">{form.formState.errors.height.message}</p>
+              )}
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Weight (kg)</Label>
@@ -136,6 +152,9 @@ export function AddVitalsDialog({ patientUserId, onSaved }: AddVitalsDialogProps
                 {...form.register("weight", { valueAsNumber: true })}
                 onFocus={selectOnFocus}
               />
+              {form.formState.errors.weight && (
+                <p className="text-xs text-destructive">{form.formState.errors.weight.message}</p>
+              )}
             </div>
           </div>
 
@@ -150,6 +169,9 @@ export function AddVitalsDialog({ patientUserId, onSaved }: AddVitalsDialogProps
                 {...form.register("temp", { valueAsNumber: true })}
                 onFocus={selectOnFocus}
               />
+              {form.formState.errors.temp && (
+                <p className="text-xs text-destructive">{form.formState.errors.temp.message}</p>
+              )}
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">SpO₂ (%)</Label>
@@ -160,6 +182,9 @@ export function AddVitalsDialog({ patientUserId, onSaved }: AddVitalsDialogProps
                 {...form.register("spo2", { valueAsNumber: true })}
                 onFocus={selectOnFocus}
               />
+              {form.formState.errors.spo2 && (
+                <p className="text-xs text-destructive">{form.formState.errors.spo2.message}</p>
+              )}
             </div>
           </div>
 
@@ -174,6 +199,9 @@ export function AddVitalsDialog({ patientUserId, onSaved }: AddVitalsDialogProps
                 {...form.register("pulseRate", { valueAsNumber: true })}
                 onFocus={selectOnFocus}
               />
+              {form.formState.errors.pulseRate && (
+                <p className="text-xs text-destructive">{form.formState.errors.pulseRate.message}</p>
+              )}
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Respiratory Rate</Label>
@@ -184,6 +212,9 @@ export function AddVitalsDialog({ patientUserId, onSaved }: AddVitalsDialogProps
                 {...form.register("respRate", { valueAsNumber: true })}
                 onFocus={selectOnFocus}
               />
+              {form.formState.errors.respRate && (
+                <p className="text-xs text-destructive">{form.formState.errors.respRate.message}</p>
+              )}
             </div>
           </div>
 
@@ -198,6 +229,9 @@ export function AddVitalsDialog({ patientUserId, onSaved }: AddVitalsDialogProps
                 {...form.register("bpSystolic", { valueAsNumber: true })}
                 onFocus={selectOnFocus}
               />
+              {form.formState.errors.bpSystolic && (
+                <p className="text-xs text-destructive">{form.formState.errors.bpSystolic.message}</p>
+              )}
             </div>
             <Separator orientation="vertical" className="h-8 rotate-12 mx-1" />
             <div className="flex-1 space-y-1.5">
@@ -209,6 +243,9 @@ export function AddVitalsDialog({ patientUserId, onSaved }: AddVitalsDialogProps
                 {...form.register("bpDiastolic", { valueAsNumber: true })}
                 onFocus={selectOnFocus}
               />
+              {form.formState.errors.bpDiastolic && (
+                <p className="text-xs text-destructive">{form.formState.errors.bpDiastolic.message}</p>
+              )}
             </div>
           </div>
 

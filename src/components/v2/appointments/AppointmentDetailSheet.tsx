@@ -419,7 +419,7 @@ export function AppointmentDetailSheet({
 
   return (
     <Sheet open={!!appointment} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent className="w-full sm:max-w-lg overflow-y-auto" side="right">
+      <SheetContent className="w-full sm:w-1/2 sm:max-w-none overflow-y-auto" side="right">
         <SheetHeader className="pb-4">
           <SheetTitle className="flex items-center gap-2">
             <CalendarDays className="h-5 w-5 text-primary" />

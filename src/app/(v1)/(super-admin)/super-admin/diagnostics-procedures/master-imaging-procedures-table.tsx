@@ -129,6 +129,7 @@ export function MasterImagingProceduresTable() {
             <TableRow>
               <TableHead>Name</TableHead>
               <TableHead>Category</TableHead>
+              <TableHead>RVS Code</TableHead>
               <TableHead>Description</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -140,6 +141,9 @@ export function MasterImagingProceduresTable() {
                 <TableRow key={procedure.id}>
                   <TableCell className="font-medium">{procedure.name}</TableCell>
                   <TableCell>{procedure.category}</TableCell>
+                  <TableCell className="font-mono text-sm">
+                    {procedure.rvsCode || "-"}
+                  </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     {procedure.description || "-"}
                   </TableCell>
@@ -185,7 +189,7 @@ export function MasterImagingProceduresTable() {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                   No procedures found
                 </TableCell>
               </TableRow>

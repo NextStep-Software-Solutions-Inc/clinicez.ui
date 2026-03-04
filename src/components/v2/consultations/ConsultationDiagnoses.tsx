@@ -1,0 +1,421 @@
+"use client";
+
+import { useState, useTransition } from "react";
+import { Plus, Trash2, Edit2, Check, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { toast } from "sonner";
+import {
+  addConsultationDiagnosisAction,
+  updateConsultationDiagnosisAction,
+  deleteConsultationDiagnosisAction,
+} from "@/actions/clinics/clinical-record/consultation-diagnoses.action";
+import type { GetPatientConsultationDetail } from "@/actions/consultation/patient-consultations.action";
+import type { GetHPsType } from "@/actions/hp.actions";
+
+type Detail = NonNullable<GetPatientConsultationDetail["data"]>;
+type Diagnosis = NonNullable<Detail["ConsultationDiagnoses"]>[number];
+
+const DIAGNOSIS_TYPES = [
+  { value: "PRIMARY", label: "Primary" },
+  { value: "SECONDARY", label: "Secondary" },
+  { value: "COMORBIDITY", label: "Comorbidity" },
+  { value: "COMPLICATION", label: "Complication" },
+];
+
+const TYPE_COLORS: Record<string, string> = {
+  PRIMARY:
+    "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+  SECONDARY:
+    "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400",
+  COMORBIDITY:
+    "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+  COMPLICATION:
+    "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400",
+};
+
+interface ConsultationDiagnosesProps {
+  consultation: Detail;
+  myHPs: NonNullable<GetHPsType>;
+  onPatchDetail: (patch: Partial<Detail>) => void;
+  isResolved?: boolean;
+}
+
+interface DiagnosisFormState {
+  icd10Code: string;
+  description: string;
+  type: string;
+}
+
+const EMPTY_FORM: DiagnosisFormState = {
+  icd10Code: "",
+  description: "",
+  type: "PRIMARY",
+};
+
+export default function ConsultationDiagnoses({
+  consultation,
+  myHPs,
+  onPatchDetail,
+  isResolved = false,
+}: ConsultationDiagnosesProps) {
+  const ticketHpIds = consultation.ConsultationTicketHPs.map(
+    (h) => h.HealthCareProvider.id
+  );
+  const myActiveHp =
+    myHPs.find((hp) => ticketHpIds.includes(hp.id)) ?? myHPs[0] ?? null;
+
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState<DiagnosisFormState>(EMPTY_FORM);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editForm, setEditForm] = useState<DiagnosisFormState>(EMPTY_FORM);
+  const [isPending, startTransition] = useTransition();
+
+  const diagnoses = consultation.ConsultationDiagnoses ?? [];
+
+  const refreshDiagnoses = (updated: Diagnosis[]) => {
+    onPatchDetail({ ConsultationDiagnoses: updated });
+  };
+
+  const handleAdd = () => {
+    if (!form.icd10Code.trim()) {
+      toast.error("ICD-10 code is required");
+      return;
+    }
+    if (!form.description.trim()) {
+      toast.error("Description is required");
+      return;
+    }
+    if (!myActiveHp) {
+      toast.error("No healthcare provider assigned to this consultation");
+      return;
+    }
+
+    startTransition(async () => {
+      const result = await addConsultationDiagnosisAction({
+        consultationTicketId: consultation.id,
+        icd10Code: form.icd10Code.trim(),
+        description: form.description.trim(),
+        type: form.type,
+        hpId: myActiveHp.id,
+      });
+
+      if (result.status && result.data) {
+        refreshDiagnoses([...diagnoses, result.data]);
+        setForm(EMPTY_FORM);
+        setShowForm(false);
+        toast.success("Diagnosis added");
+      } else {
+        toast.error(result.message ?? "Failed to add diagnosis");
+      }
+    });
+  };
+
+  const handleStartEdit = (diagnosis: Diagnosis) => {
+    setEditingId(diagnosis.id);
+    setEditForm({
+      icd10Code: diagnosis.icd10Code,
+      description: diagnosis.description,
+      type: diagnosis.type,
+    });
+  };
+
+  const handleSaveEdit = (id: number) => {
+    if (!editForm.icd10Code.trim()) {
+      toast.error("ICD-10 code is required");
+      return;
+    }
+    if (!editForm.description.trim()) {
+      toast.error("Description is required");
+      return;
+    }
+
+    startTransition(async () => {
+      const result = await updateConsultationDiagnosisAction({
+        id,
+        icd10Code: editForm.icd10Code.trim(),
+        description: editForm.description.trim(),
+        type: editForm.type,
+      });
+
+      if (result.status && result.data) {
+        refreshDiagnoses(
+          diagnoses.map((d) => (d.id === id ? result.data! : d))
+        );
+        setEditingId(null);
+        toast.success("Diagnosis updated");
+      } else {
+        toast.error(result.message ?? "Failed to update diagnosis");
+      }
+    });
+  };
+
+  const handleDelete = (id: number) => {
+    startTransition(async () => {
+      const result = await deleteConsultationDiagnosisAction({ id });
+
+      if (result.status) {
+        refreshDiagnoses(diagnoses.filter((d) => d.id !== id));
+        toast.success("Diagnosis removed");
+      } else {
+        toast.error(result.message ?? "Failed to remove diagnosis");
+      }
+    });
+  };
+
+  return (
+    <div className="p-4 sm:p-6 space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-sm font-semibold">ICD-10 Diagnoses</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Assign ICD-10 codes to document this consultation's diagnoses
+          </p>
+        </div>
+        {!isResolved && myActiveHp && !showForm && (
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-1.5 h-7 text-xs"
+            onClick={() => setShowForm(true)}
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Add Diagnosis
+          </Button>
+        )}
+      </div>
+
+      {showForm && !isResolved && (
+        <div className="rounded-lg border border-border/60 bg-muted/30 p-4 space-y-3">
+          <p className="text-xs font-medium text-muted-foreground">
+            New Diagnosis
+          </p>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div>
+              <Label className="text-xs">ICD-10 Code *</Label>
+              <Input
+                className="h-8 text-xs mt-1"
+                placeholder="e.g. J06.9"
+                value={form.icd10Code}
+                onChange={(e) =>
+                  setForm({ ...form, icd10Code: e.target.value })
+                }
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <Label className="text-xs">Description *</Label>
+              <Input
+                className="h-8 text-xs mt-1"
+                placeholder="e.g. Acute upper respiratory infection"
+                value={form.description}
+                onChange={(e) =>
+                  setForm({ ...form, description: e.target.value })
+                }
+              />
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="w-48">
+              <Label className="text-xs">Type</Label>
+              <Select
+                value={form.type}
+                onValueChange={(v) => setForm({ ...form, type: v })}
+              >
+                <SelectTrigger className="h-8 text-xs mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {DIAGNOSIS_TYPES.map((t) => (
+                    <SelectItem key={t.value} value={t.value} className="text-xs">
+                      {t.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex gap-2 mt-5">
+              <Button
+                size="sm"
+                className="h-8 text-xs gap-1"
+                onClick={handleAdd}
+                disabled={isPending}
+              >
+                <Check className="h-3.5 w-3.5" />
+                Save
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-8 text-xs gap-1"
+                onClick={() => {
+                  setShowForm(false);
+                  setForm(EMPTY_FORM);
+                }}
+                disabled={isPending}
+              >
+                <X className="h-3.5 w-3.5" />
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {diagnoses.length === 0 ? (
+        <div className="rounded-lg border border-dashed border-border/60 py-10 text-center">
+          <p className="text-sm text-muted-foreground">No diagnoses recorded</p>
+          {!isResolved && myActiveHp && (
+            <p className="text-xs text-muted-foreground mt-1">
+              Use "Add Diagnosis" to attach ICD-10 codes
+            </p>
+          )}
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {diagnoses.map((diagnosis) =>
+            editingId === diagnosis.id ? (
+              <div
+                key={diagnosis.id}
+                className="rounded-lg border border-primary/40 bg-muted/30 p-3 space-y-2"
+              >
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                  <div>
+                    <Label className="text-xs">ICD-10 Code *</Label>
+                    <Input
+                      className="h-7 text-xs mt-1"
+                      value={editForm.icd10Code}
+                      onChange={(e) =>
+                        setEditForm({ ...editForm, icd10Code: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <Label className="text-xs">Description *</Label>
+                    <Input
+                      className="h-7 text-xs mt-1"
+                      value={editForm.description}
+                      onChange={(e) =>
+                        setEditForm({
+                          ...editForm,
+                          description: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Select
+                    value={editForm.type}
+                    onValueChange={(v) =>
+                      setEditForm({ ...editForm, type: v })
+                    }
+                  >
+                    <SelectTrigger className="h-7 text-xs w-40">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {DIAGNOSIS_TYPES.map((t) => (
+                        <SelectItem
+                          key={t.value}
+                          value={t.value}
+                          className="text-xs"
+                        >
+                          {t.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    size="sm"
+                    className="h-7 text-xs gap-1"
+                    onClick={() => handleSaveEdit(diagnosis.id)}
+                    disabled={isPending}
+                  >
+                    <Check className="h-3 w-3" />
+                    Save
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 text-xs gap-1"
+                    onClick={() => setEditingId(null)}
+                    disabled={isPending}
+                  >
+                    <X className="h-3 w-3" />
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div
+                key={diagnosis.id}
+                className="rounded-lg border border-border/50 bg-background px-4 py-3 flex items-start gap-3"
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-mono text-sm font-semibold text-primary">
+                      {diagnosis.icd10Code}
+                    </span>
+                    <Badge
+                      className={`text-[10px] px-1.5 py-0 h-4 border-0 font-medium ${
+                        TYPE_COLORS[diagnosis.type] ?? ""
+                      }`}
+                      variant="outline"
+                    >
+                      {
+                        DIAGNOSIS_TYPES.find(
+                          (t) => t.value === diagnosis.type
+                        )?.label ?? diagnosis.type
+                      }
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-foreground/80 mt-0.5">
+                    {diagnosis.description}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground mt-1">
+                    By{" "}
+                    {diagnosis.HealthCareProvider.HPProfile?.name ??
+                      `${diagnosis.HealthCareProvider.User?.firstName ?? ""} ${
+                        diagnosis.HealthCareProvider.User?.lastName ?? ""
+                      }`.trim()}
+                  </p>
+                </div>
+                {!isResolved && myActiveHp && (
+                  <div className="flex gap-1 shrink-0">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 w-7 p-0"
+                      onClick={() => handleStartEdit(diagnosis)}
+                      disabled={isPending}
+                    >
+                      <Edit2 className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                      onClick={() => handleDelete(diagnosis.id)}
+                      disabled={isPending}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )
+          )}
+        </div>
+      )}
+    </div>
+  );
+}

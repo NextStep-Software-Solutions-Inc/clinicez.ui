@@ -156,6 +156,23 @@ export const getPatientConsultationDetailAction = withErrorHandling(
         ConsultationNotes: {
           select: { id: true, section: true, content: true, hpId: true, showOnPatient: true },
         },
+        ConsultationDiagnoses: {
+          orderBy: [{ type: "asc" }, { createdAt: "asc" }],
+          select: {
+            id: true,
+            icd10Code: true,
+            description: true,
+            type: true,
+            hpId: true,
+            createdAt: true,
+            HealthCareProvider: {
+              select: {
+                HPProfile: { select: { title: true, name: true } },
+                User: { select: { firstName: true, lastName: true } },
+              },
+            },
+          },
+        },
         Prescriptions: {
           where: { isActive: true, isArchived: false },
           orderBy: { createdAt: "desc" },

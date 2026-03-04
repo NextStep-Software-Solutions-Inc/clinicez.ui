@@ -136,9 +136,22 @@ export default function ConsultationWorkspace({
         </div>
       )}
 
+      {/* ── Add Co-creator Dialog (non-layout, must be outside the scroll container) ── */}
+      {canBeResolved && (
+        <AddCoCreatorDialog
+          open={addCoCreatorOpen}
+          onOpenChange={setAddCoCreatorOpen}
+          consultation={consultation}
+          clinicUid={clinicUid}
+          onCoCreatorsAdded={() => onReloadDetail?.()}
+        />
+      )}
+
+      {/* ── Single scrollable body: summary + sticky tab bar + tab contents ── */}
+      <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full">
+
       {/* ── Appointment / Consultation Summary Bar ── */}
-      {/* max-h + overflow-y-auto: prevents long content from pushing the tab bar off screen */}
-      <div className="shrink-0 px-4 sm:px-6 py-3 sm:py-4 border-b border-border/50 bg-background/80 backdrop-blur overflow-y-auto max-h-[45vh]">
+      <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-border/50 bg-background/80 backdrop-blur">
         {/* ── Subject row: subject title + status badge + case# + Resolve button ── */}
         {/* Resolve lives here — outside the detail block — so it never competes for column space */}
         <div className="flex items-start gap-3 mb-1.5">
@@ -260,25 +273,9 @@ export default function ConsultationWorkspace({
         )}
       </div>
 
-      {/* ── Add Co-creator Dialog ── */}
-      {canBeResolved && (
-        <AddCoCreatorDialog
-          open={addCoCreatorOpen}
-          onOpenChange={setAddCoCreatorOpen}
-          consultation={consultation}
-          clinicUid={clinicUid}
-          onCoCreatorsAdded={() => onReloadDetail?.()}
-        />
-      )}
-
       {/* ── Tabbed Workspace ── */}
-      <div className="flex-1 overflow-hidden">
-        <Tabs
-          value={activeTab}
-          onValueChange={setActiveTab}
-          className="flex flex-col h-full"
-        >
-          <TabsList className="shrink-0 w-full justify-start rounded-none border-b border-border/50 bg-transparent h-10 px-2 sm:px-6 gap-0 overflow-x-auto [&::-webkit-scrollbar]:hidden">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="sticky top-0 z-10 w-full justify-start rounded-none border-b border-border/50 bg-background h-10 px-2 sm:px-6 gap-0 overflow-x-auto [&::-webkit-scrollbar]:hidden">
             <TabsTrigger
               value="notes"
               className="flex items-center gap-1.5 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary h-full px-3 text-xs"
@@ -336,77 +333,75 @@ export default function ConsultationWorkspace({
             </TabsTrigger>
           </TabsList>
 
-          <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full">
-            <TabsContent value="notes" className="mt-0 h-full">
-              <ConsultationNotesEditor
+          <TabsContent value="notes" className="mt-0">
+            <ConsultationNotesEditor
+              clinicUid={clinicUid}
+              consultation={consultation}
+              myHPs={myHPs}
+              onPatchDetail={onPatchDetail}
+              isResolved={isResolved}
+            />
+          </TabsContent>
+
+          <TabsContent value="rx" className="mt-0 p-4 sm:p-6">
+            {hasPatient ? (
+              <ConsultationPrescriptions
                 clinicUid={clinicUid}
+                patient={patient}
                 consultation={consultation}
                 myHPs={myHPs}
                 onPatchDetail={onPatchDetail}
                 isResolved={isResolved}
               />
-            </TabsContent>
+            ) : (
+              <NoPatientPlaceholder />
+            )}
+          </TabsContent>
 
-            <TabsContent value="rx" className="mt-0 p-4 sm:p-6">
-              {hasPatient ? (
-                <ConsultationPrescriptions
-                  clinicUid={clinicUid}
-                  patient={patient}
-                  consultation={consultation}
-                  myHPs={myHPs}
-                  onPatchDetail={onPatchDetail}
-                  isResolved={isResolved}
-                />
-              ) : (
-                <NoPatientPlaceholder />
-              )}
-            </TabsContent>
+          <TabsContent value="certs" className="mt-0 p-4 sm:p-6">
+            {hasPatient ? (
+              <ConsultationMedCerts
+                clinicUid={clinicUid}
+                patient={patient}
+                consultation={consultation}
+                myHPs={myHPs}
+                onPatchDetail={onPatchDetail}
+                isResolved={isResolved}
+              />
+            ) : (
+              <NoPatientPlaceholder />
+            )}
+          </TabsContent>
 
-            <TabsContent value="certs" className="mt-0 p-4 sm:p-6">
-              {hasPatient ? (
-                <ConsultationMedCerts
-                  clinicUid={clinicUid}
-                  patient={patient}
-                  consultation={consultation}
-                  myHPs={myHPs}
-                  onPatchDetail={onPatchDetail}
-                  isResolved={isResolved}
-                />
-              ) : (
-                <NoPatientPlaceholder />
-              )}
-            </TabsContent>
+          <TabsContent value="diagnostics" className="mt-0 p-4 sm:p-6">
+            {hasPatient ? (
+              <ConsultationDiagnostics
+                clinicUid={clinicUid}
+                patient={patient}
+                consultation={consultation}
+                myHPs={myHPs}
+                onPatchDetail={onPatchDetail}
+                isResolved={isResolved}
+              />
+            ) : (
+              <NoPatientPlaceholder />
+            )}
+          </TabsContent>
 
-            <TabsContent value="diagnostics" className="mt-0 p-4 sm:p-6">
-              {hasPatient ? (
-                <ConsultationDiagnostics
-                  clinicUid={clinicUid}
-                  patient={patient}
-                  consultation={consultation}
-                  myHPs={myHPs}
-                  onPatchDetail={onPatchDetail}
-                  isResolved={isResolved}
-                />
-              ) : (
-                <NoPatientPlaceholder />
-              )}
-            </TabsContent>
-
-            <TabsContent value="referrals" className="mt-0 p-4 sm:p-6">
-              {hasPatient ? (
-                <ConsultationReferrals
-                  clinicUid={clinicUid}
-                  patient={patient}
-                  consultation={consultation}
-                  myHPs={myHPs}
-                  onPatchDetail={onPatchDetail}
-                  isResolved={isResolved}
-                />
-              ) : (
-                <NoPatientPlaceholder />
-              )}
-            </TabsContent>
-          </div>
+          <TabsContent value="referrals" className="mt-0 p-4 sm:p-6">
+            {hasPatient ? (
+              <ConsultationReferrals
+                clinicUid={clinicUid}
+                patient={patient}
+                consultation={consultation}
+                myHPs={myHPs}
+                onPatchDetail={onPatchDetail}
+                isResolved={isResolved}
+              />
+            ) : (
+              <NoPatientPlaceholder />
+            )}
+          </TabsContent>
         </Tabs>
       </div>
     </div>

@@ -1,10 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { format } from "date-fns";
+import { formatDistanceToNow } from "date-fns";
 import {
-  CalendarDays,
-  Clock,
+  CalendarClock,
   User,
   Stethoscope,
   CheckCircle,
@@ -82,8 +81,6 @@ export function AppointmentCard({
   const initials = getAppointmentInitials(appointment);
   const patientPicture = appointment.Requesters?.[0]?.User?.picture ?? null;
 
-  const scheduledDate = appointment.AppointmentAttribute?.date;
-  const timeStart = appointment.AppointmentAttribute?.timeStart;
   const activeRouting = appointment.AppointmentRouting?.find(
     (r) => r.status === "ACCEPTED" || r.status === "PENDING"
   );
@@ -149,33 +146,25 @@ export function AppointmentCard({
     }
   };
 
+  // For regular appointments, show complaint separately from subject
+  const chiefComplaint = !isWalkIn ? appointment.complaint : null;
+
   return (
     <div
       className="flex flex-col rounded-xl border border-white/30 dark:border-slate-700/30 bg-white/20 dark:bg-slate-800/20 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden"
       style={{ borderLeftWidth: 4, borderLeftColor: "hsl(var(--primary) / 0.25)" }}
     >
       {/* ── Main row ────────────────────────────────────────────────────────── */}
-      <div className="flex items-start gap-3 sm:gap-4">
+      <div className="flex items-stretch gap-0">
         {/* ── Clickable info area ──────────────────────────────────────────── */}
         <button
           type="button"
-          className="flex flex-1 items-start gap-3 sm:gap-4 px-4 py-3 text-left group hover:bg-white/30 dark:hover:bg-slate-700/30 transition-colors min-w-0"
+          className="flex flex-1 flex-col px-4 py-3 text-left group hover:bg-white/30 dark:hover:bg-slate-700/30 transition-colors min-w-0"
           onClick={() => onSelect(appointment)}
         >
-          <Avatar className="h-10 w-10 rounded-full border border-white/50 dark:border-slate-600/50 flex-shrink-0 mt-0.5">
-            {patientPicture && (
-              <AvatarImage src={patientPicture} alt={fullName} className="object-cover" />
-            )}
-            <AvatarFallback className="text-xs font-semibold bg-primary/10 text-primary">
-              {initials || <User className="h-4 w-4" />}
-            </AvatarFallback>
-          </Avatar>
-
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start gap-2 flex-wrap">
-              <p className="font-semibold text-sm line-clamp-1 group-hover:text-primary transition-colors">
-                {fullName}
-              </p>
+          {/* ── Top row: badges + date ──────────────────────────────────────── */}
+          <div className="flex items-center justify-between gap-2 w-full mb-1.5">
+            <div className="flex items-center gap-1.5 flex-wrap">
               <Badge className={`text-xs px-2 py-0.5 border-0 font-medium ${statusConfig.className}`}>
                 {statusConfig.label}
               </Badge>
@@ -185,57 +174,72 @@ export function AppointmentCard({
                   Walk-In
                 </Badge>
               )}
-            </div>
-            {displaySubject && (
-              <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{displaySubject}</p>
-            )}
-
-            {/* Meta row */}
-            <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-              {scheduledDate && (
-                <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                  <CalendarDays className="h-3 w-3" />
-                  {format(new Date(scheduledDate), "MMM d, yyyy")}
-                </span>
-              )}
-              {timeStart && (
-                <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                  <Clock className="h-3 w-3" />
-                  {timeStart}
-                </span>
-              )}
-              {doctorName && (
-                <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                  <Stethoscope className="h-3 w-3" />
-                  {doctorName}
-                </span>
-              )}
-              {taggedHps.length > 0 && (
-                <span className="flex items-center gap-1 text-xs text-muted-foreground/70">
-                  <Tags className="h-3 w-3" />
-                  {taggedHps
-                    .map((t) => {
-                      const hp = t.HealthcareProvider;
-                      return (
-                        hp.HPProfile?.name ??
-                        `${hp.User.firstName ?? ""} ${hp.User.lastName ?? ""}`.trim()
-                      );
-                    })
-                    .filter(Boolean)
-                    .join(", ")}
-                </span>
-              )}
               {appointment.AppointmentAttribute?.AppointmentType && (
-                <span className="text-xs text-muted-foreground/60">
+                <span className="text-xs text-muted-foreground/60 hidden sm:inline">
                   {appointment.AppointmentAttribute.AppointmentType.name}
                 </span>
               )}
+              <span className="flex items-center gap-1 text-xs text-muted-foreground/60">
+                <CalendarClock className="h-3 w-3" />
+                {formatDistanceToNow(new Date(appointment.createdAt), { addSuffix: true })}
+              </span>
             </div>
+          </div>
+
+          {/* ── Subject: primary/prominent ───────────────────────────────────── */}
+          {displaySubject && (
+            <p className="font-semibold text-sm line-clamp-1 group-hover:text-primary transition-colors">
+              {displaySubject}
+            </p>
+          )}
+
+          {/* ── Chief complaint: secondary, up to 2 lines ────────────────────── */}
+          {chiefComplaint && (
+            <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">
+              {chiefComplaint}
+            </p>
+          )}
+
+          {/* ── Patient + meta row ───────────────────────────────────────────── */}
+          <div className="flex items-center gap-3 mt-2 flex-wrap">
+            <div className="flex items-center gap-1.5">
+              <Avatar className="h-5 w-5 rounded-full border border-white/50 dark:border-slate-600/50 flex-shrink-0">
+                {patientPicture && (
+                  <AvatarImage src={patientPicture} alt={fullName} className="object-cover" />
+                )}
+                <AvatarFallback className="text-[0.5rem] font-semibold bg-primary/10 text-primary">
+                  {initials || <User className="h-3 w-3" />}
+                </AvatarFallback>
+              </Avatar>
+              <span className="text-xs text-muted-foreground">{fullName}</span>
+            </div>
+            {doctorName && (
+              <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                <Stethoscope className="h-3 w-3" />
+                {doctorName}
+              </span>
+            )}
+            {taggedHps.length > 0 && (
+              <span className="flex items-center gap-1 text-xs text-muted-foreground/70">
+                <Tags className="h-3 w-3" />
+                {taggedHps
+                  .map((t) => {
+                    const hp = t.HealthcareProvider;
+                    return (
+                      hp.HPProfile?.name ??
+                      `${hp.User.firstName ?? ""} ${hp.User.lastName ?? ""}`.trim()
+                    );
+                  })
+                  .filter(Boolean)
+                  .join(", ")}
+              </span>
+            )}
           </div>
         </button>
 
         {/* ── Actions area (NOT inside the clickable zone) ───────────────── */}
-        <div className="flex items-center gap-1.5 flex-shrink-0 flex-wrap justify-end px-3 py-3 self-center">
+        <div className="hidden md:flex flex-col items-end gap-1.5 flex-shrink-0 px-3 py-3 self-center">
+          <div className="flex flex-wrap gap-1.5 justify-end">
           {status === "PENDING" && (
             <>
               <Button
@@ -320,6 +324,7 @@ export function AppointmentCard({
               View Details
             </Button>
           )}
+          </div>
         </div>
       </div>
 

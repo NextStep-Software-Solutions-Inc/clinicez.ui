@@ -47,8 +47,8 @@ export function ClinicSelector({
       <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
         <DropdownMenuTrigger asChild>
           <button className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-muted/50 transition-colors group">
-            <div className="text-left">
-              <p className="text-sm font-semibold text-foreground/90">
+            <div className="text-left min-w-0">
+              <p className="text-sm font-semibold text-foreground/90 truncate max-w-[120px] md:max-w-[200px]">
                 {activeClinic.name}
               </p>
               <p className="text-xs text-foreground/50 capitalize">

@@ -7,6 +7,8 @@ import { withRetry } from "@/lib/database-health";
 import { findUserSafely } from "@/lib/user-sync";
 import { Prisma } from "@prisma/client";
 import { getCachedSession } from "@actions/session.action";
+import { getPermissionsAction } from "@actions/permission.action";
+import { PERMISSIONS } from "@lib/permissions";
 
 const calculateBMI = (weight: number, height: number) => {
   return weight / Math.pow(height / 100, 2);
@@ -32,6 +34,21 @@ export const createUserVitalSignAction = withErrorHandling(async (payload: BaseV
   // Validate input
   if (!userId) {
     throw new Error("User ID is required");
+  }
+
+  // Permission check: allow self-recording or require WRITE:CLINIC:VITAL_SIGNS
+  const session = await getCachedSession();
+  if (!session) throw new Error("User not authenticated.");
+
+  const isOwn = session.user.sub === userId;
+  if (!isOwn) {
+    const myPermissions = await getPermissionsAction({ userId: session.user.sub, type: "CLINIC" });
+    const myPermissionSet = new Set(myPermissions.map(p => p.name));
+    const writeVitalsPermission = PERMISSIONS.CLINIC["WRITE:CLINIC:VITAL_SIGNS"].name;
+    const superAdminPermission = PERMISSIONS.USER["SUPER_ADMIN"].name;
+    if (!myPermissionSet.has(writeVitalsPermission) && !myPermissionSet.has(superAdminPermission)) {
+      throw new Error(`You do not have permission to record vital signs for this patient. Required permission: ${writeVitalsPermission}`);
+    }
   }
 
   // Use retry mechanism to handle database conflicts

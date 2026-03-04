@@ -90,6 +90,7 @@ export function PhilHealthRecordEditForm({
     }
 
     setIsLoading(true)
+    let saveErrorMessage: string | null = null
 
     try {
       const result = await updatePhilhealthRecord(userId, formData as PhilHealthRecordFormInput)
@@ -101,12 +102,16 @@ export function PhilHealthRecordEditForm({
         onSuccess?.()
       } else {
         toast.error(result.error || 'An unexpected error occurred')
+        saveErrorMessage = result.error || 'An unexpected error occurred'
       }
     } catch (err) {
       toast.error('An unexpected error occurred. Please try again.')
+      throw err
     } finally {
       setIsLoading(false)
     }
+
+    if (saveErrorMessage) throw new Error(saveErrorMessage)
   }
 
   const handleFieldChange = (field: keyof PhilHealthRecordFormInput, value: any) => {

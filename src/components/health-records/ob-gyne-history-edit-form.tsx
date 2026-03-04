@@ -56,6 +56,7 @@ export function ObGyneHistoryEditForm({
     }
 
     setIsLoading(true)
+    let saveErrorMessage: string | null = null
 
     try {
       const result = await updateObGyneHistory(userId, formData as ObGyneHistoryFormInput)
@@ -67,12 +68,16 @@ export function ObGyneHistoryEditForm({
         onSuccess?.()
       } else {
         toast.error(result.error || 'An unexpected error occurred')
+        saveErrorMessage = result.error || 'An unexpected error occurred'
       }
     } catch (err) {
       toast.error('An unexpected error occurred. Please try again.')
+      throw err
     } finally {
       setIsLoading(false)
     }
+
+    if (saveErrorMessage) throw new Error(saveErrorMessage)
   }
 
   const handleFieldChange = (field: keyof ObGyneHistoryFormInput, value: any) => {

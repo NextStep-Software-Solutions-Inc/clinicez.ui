@@ -53,6 +53,7 @@ export function PhysicalExaminationEditForm({
     }
 
     setIsLoading(true)
+    let saveErrorMessage: string | null = null
 
     try {
       console.log('[PhysicalExamForm] Submitting:', formData)
@@ -68,13 +69,17 @@ export function PhysicalExaminationEditForm({
         console.log('[PhysicalExamForm] After onSuccess, waiting for data sync')
       } else {
         toast.error(result.error || 'An unexpected error occurred')
+        saveErrorMessage = result.error || 'An unexpected error occurred'
       }
     } catch (err) {
       console.error('[PhysicalExamForm] Error:', err)
       toast.error('An unexpected error occurred. Please try again.')
+      throw err
     } finally {
       setIsLoading(false)
     }
+
+    if (saveErrorMessage) throw new Error(saveErrorMessage)
   }
 
   const handleFieldChange = (field: keyof PhysicalExaminationFormInput, value: any) => {

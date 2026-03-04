@@ -56,6 +56,7 @@ export function FamilyMedicalHistoryEditForm({
     }
 
     setIsLoading(true)
+    let saveErrorMessage: string | null = null
 
     try {
       const result = await updateFamilyMedicalConditions(userId, {
@@ -68,12 +69,16 @@ export function FamilyMedicalHistoryEditForm({
         if (!inline) setIsOpen(false)
       } else {
         toast.error(result.error || 'An unexpected error occurred')
+        saveErrorMessage = result.error || 'An unexpected error occurred'
       }
     } catch (err) {
       toast.error('An unexpected error occurred. Please try again.')
+      throw err
     } finally {
       setIsLoading(false)
     }
+
+    if (saveErrorMessage) throw new Error(saveErrorMessage)
   }
 
   // Expose submit handler to parent via saveRef (no deps — always keeps ref current with latest closure)

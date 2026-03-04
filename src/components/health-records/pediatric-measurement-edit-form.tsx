@@ -61,6 +61,7 @@ export function PediatricMeasurementEditForm({
     }
 
     setIsLoading(true)
+    let saveErrorMessage: string | null = null
 
     try {
       console.log('[PediatricForm] Submitting:', formData)
@@ -81,13 +82,17 @@ export function PediatricMeasurementEditForm({
         console.log('[PediatricForm] After onSuccess, waiting for data sync')
       } else {
         toast.error(result.error || 'An unexpected error occurred')
+        saveErrorMessage = result.error || 'An unexpected error occurred'
       }
     } catch (err) {
       console.error('[PediatricForm] Error:', err)
       toast.error('An unexpected error occurred. Please try again.')
+      throw err
     } finally {
       setIsLoading(false)
     }
+
+    if (saveErrorMessage) throw new Error(saveErrorMessage)
   }
 
   const handleFieldChange = (field: keyof PediatricMeasurementFormInput, value: any) => {

@@ -207,7 +207,7 @@ export function AppointmentCard({
                 {patientPicture && (
                   <AvatarImage src={patientPicture} alt={fullName} className="object-cover" />
                 )}
-                <AvatarFallback className="text-xs font-semibold bg-primary/10 text-primary">
+                <AvatarFallback className="text-[0.5rem] font-semibold bg-primary/10 text-primary">
                   {initials || <User className="h-3 w-3" />}
                 </AvatarFallback>
               </Avatar>

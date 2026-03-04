@@ -143,13 +143,24 @@ function ICD10Combobox({
           </span>
           <div className="flex items-center gap-1 ml-2 shrink-0">
             {icd10Code && (
-              <X
-                className="h-3 w-3 opacity-50 hover:opacity-100"
+              <span
+                role="button"
+                tabIndex={0}
+                aria-label="Clear selection"
+                className="h-3 w-3 opacity-50 hover:opacity-100 cursor-pointer flex items-center"
                 onClick={(e) => {
                   e.stopPropagation();
                   onClear();
                 }}
-              />
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.stopPropagation();
+                    onClear();
+                  }
+                }}
+              >
+                <X className="h-3 w-3" />
+              </span>
             )}
             <ChevronsUpDown className="h-3 w-3 opacity-50" />
           </div>

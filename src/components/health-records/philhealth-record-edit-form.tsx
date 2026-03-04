@@ -560,14 +560,6 @@ export function PhilHealthRecordEditForm({
     return (
       <div className="space-y-6">
         {formContent}
-
-        <button
-          onClick={handleSubmit}
-          disabled={isLoading || !hasChanges}
-          className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
-        >
-          {isLoading ? 'Saving...' : 'Save PhilHealth Info'}
-        </button>
       </div>
     )
   }

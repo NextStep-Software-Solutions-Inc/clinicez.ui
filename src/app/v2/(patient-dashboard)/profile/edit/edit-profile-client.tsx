@@ -890,7 +890,6 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
             ← Back to Profile
           </button>
           <div className="flex flex-col sm:flex-row items-center gap-4">
-            <p className="text-sm text-slate-600 dark:text-slate-400">Use <strong>Save All Changes</strong> at the bottom to save all sections at once</p>
           </div>
         </div>
       </div>

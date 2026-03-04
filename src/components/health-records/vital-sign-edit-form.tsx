@@ -77,6 +77,16 @@ export function VitalSignEditForm({
       return
     }
 
+    const measurementFields: (keyof VitalSignFormInput)[] = [
+      'height', 'weight', 'bpSystolic', 'bpDiastolic',
+      'pulseRate', 'respRate', 'spo2', 'temp',
+    ]
+    const hasAnyMeasurement = measurementFields.some((f) => formData[f] !== undefined)
+    if (!hasAnyMeasurement) {
+      toast.error('Please enter at least one measurement before saving.')
+      return
+    }
+
     setIsLoading(true)
     const wasCreatingNew = !isEditingExisting
 

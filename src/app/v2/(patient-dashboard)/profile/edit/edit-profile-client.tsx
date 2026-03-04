@@ -47,8 +47,8 @@ import './edit-profile.css'
 /**
  * Open/Closed: add new sections only to the `sections` array.
  * `handleSaveAll` derives its behaviour automatically from `saveType`.
- *  - 'auto'  → persists immediately on each add/remove; no manual save needed
  *  - 'batch' → requires an explicit Save All trigger; must provide a saveRef
+ *  - 'auto'  → persists when the user confirms each item (add/remove); not included in Save All
  */
 type Section = {
   id: string
@@ -80,13 +80,12 @@ interface EditProfileClientProps {
 
 type SaveRefHandle = { submit: () => Promise<void>; hasChanges: boolean }
 
-type SaveAllStatus = 'idle' | 'pending' | 'saving' | 'saved' | 'error' | 'no-changes' | 'auto'
+type SaveAllStatus = 'idle' | 'pending' | 'saving' | 'saved' | 'error' | 'no-changes'
 
 interface SaveAllItem {
   id: string
   label: string
   icon: string
-  type: 'batch' | 'auto'
   status: SaveAllStatus
   error?: string
 }
@@ -372,18 +371,15 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
   // Consolidated "Save All" — derives items directly from the sections array (OCP: add new
   // sections only to the sections array above; this function requires no changes).
   const handleSaveAll = useCallback(async () => {
-    // Build initial status from sections — single source of truth
-    const initialItems: SaveAllItem[] = sections.map((section) => ({
-      id: section.id,
-      label: section.label,
-      icon: section.icon,
-      type: section.saveType,
-      status: (
-        section.saveType === 'auto'
-          ? 'auto'
-          : section.saveRef.current?.hasChanges ? 'pending' : 'no-changes'
-      ) as SaveAllStatus,
-    }))
+    // Build initial status from batch sections only — auto-save sections persist on each user action
+    const initialItems: SaveAllItem[] = sections
+      .filter((section): section is typeof section & { saveType: 'batch' } => section.saveType === 'batch')
+      .map((section) => ({
+        id: section.id,
+        label: section.label,
+        icon: section.icon,
+        status: (section.saveRef.current?.hasChanges ? 'pending' : 'no-changes') as SaveAllStatus,
+      }))
 
     setSaveAllItems(initialItems)
     setSaveAllOpen(true)
@@ -951,7 +947,6 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
                     {item.status === 'saved' && <CheckCircle2 className="w-4 h-4 text-green-500" />}
                     {item.status === 'error' && <XCircle className="w-4 h-4 text-red-500" />}
                     {item.status === 'no-changes' && <span className="text-xs text-slate-400 italic">No changes</span>}
-                    {item.status === 'auto' && <span className="text-xs text-slate-400 italic">Auto-saves</span>}
                   </span>
                 </div>
               ))}

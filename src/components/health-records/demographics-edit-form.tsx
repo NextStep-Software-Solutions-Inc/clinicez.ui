@@ -43,6 +43,7 @@ export interface DemographicsEditFormProps {
   onSuccess?: () => void
   inline?: boolean
   saveRef?: React.MutableRefObject<{ submit: () => Promise<void>; hasChanges: boolean } | null>
+  onDirtyChange?: (isDirty: boolean) => void
 }
 
 /**
@@ -56,6 +57,7 @@ export function DemographicsEditForm({
   onSuccess,
   inline = false,
   saveRef,
+  onDirtyChange,
 }: DemographicsEditFormProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -104,6 +106,7 @@ export function DemographicsEditForm({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (saveRef) saveRef.current = { submit: handleSubmit, hasChanges }
+    onDirtyChange?.(hasChanges)
   })
 
   const formContent = (

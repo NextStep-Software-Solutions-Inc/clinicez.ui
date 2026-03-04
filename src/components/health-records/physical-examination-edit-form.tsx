@@ -13,6 +13,7 @@ export interface PhysicalExaminationEditFormProps {
   onSuccess?: () => void
   inline?: boolean
   saveRef?: React.MutableRefObject<{ submit: () => Promise<void>; hasChanges: boolean } | null>
+  onDirtyChange?: (isDirty: boolean) => void
 }
 
 /**
@@ -25,6 +26,7 @@ export function PhysicalExaminationEditForm({
   onSuccess,
   inline = false,
   saveRef,
+  onDirtyChange,
 }: PhysicalExaminationEditFormProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -86,6 +88,7 @@ export function PhysicalExaminationEditForm({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (saveRef) saveRef.current = { submit: handleSubmit, hasChanges }
+    onDirtyChange?.(hasChanges)
   })
 
   const formContent = (

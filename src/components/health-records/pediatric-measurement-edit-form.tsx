@@ -14,6 +14,7 @@ export interface PediatricMeasurementEditFormProps {
   onSuccess?: () => void
   inline?: boolean
   saveRef?: React.MutableRefObject<{ submit: () => Promise<void>; hasChanges: boolean } | null>
+  onDirtyChange?: (isDirty: boolean) => void
 }
 
 /**
@@ -26,6 +27,7 @@ export function PediatricMeasurementEditForm({
   onSuccess,
   inline = false,
   saveRef,
+  onDirtyChange,
 }: PediatricMeasurementEditFormProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -99,6 +101,7 @@ export function PediatricMeasurementEditForm({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (saveRef) saveRef.current = { submit: handleSubmit, hasChanges }
+    onDirtyChange?.(hasChanges)
   })
 
   const formContent = (

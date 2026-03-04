@@ -25,6 +25,7 @@ import {
   Undo2,
   Sparkles,
   Loader2,
+  HeartPulse,
 } from "lucide-react";
 import {
   Sheet,
@@ -69,11 +70,20 @@ import { useAllergies } from "@/hooks/useAllergy";
 import { useIllnesses } from "@/hooks/useIllness";
 import { useDisabilities } from "@/hooks/useDisability";
 import { useHealthHistory } from "@/hooks/useHealthHistory";
+import { useUserVitalSigns } from "@/hooks/useUserVitalSign";
 import { calculateAge } from "@/lib/utils";
 
 type Appointment = NonNullable<GetAppointments["data"]>[number];
 type SubPanel = "confirm" | "assign" | "preAssessment" | "tag" | "reschedule";
 type PreAssessmentNote = NonNullable<NonNullable<GetPreAssessmentNotes["data"]>[number]>;
+
+function getVitalsFreshness(dateTaken: Date | string) {
+  const hoursDiff = (Date.now() - new Date(dateTaken).getTime()) / (1000 * 60 * 60);
+  if (hoursDiff < 1) return { label: "Just taken", className: "border-emerald-200 text-emerald-700 bg-emerald-50 dark:border-emerald-800/40 dark:text-emerald-400 dark:bg-emerald-950/20" };
+  if (hoursDiff < 24) return { label: "Recent (today)", className: "border-yellow-200 text-yellow-700 bg-yellow-50 dark:border-yellow-800/40 dark:text-yellow-400 dark:bg-yellow-950/20" };
+  if (hoursDiff < 72) return { label: "Within 3 days", className: "border-orange-200 text-orange-700 bg-orange-50 dark:border-orange-800/40 dark:text-orange-400 dark:bg-orange-950/20" };
+  return { label: "Older vitals", className: "border-red-200 text-red-700 bg-red-50 dark:border-red-800/40 dark:text-red-400 dark:bg-red-950/20" };
+}
 
 interface AppointmentDetailSheetProps {
   appointment: Appointment | null;
@@ -134,6 +144,10 @@ export function AppointmentDetailSheet({
   const { data: patientDisabilities } = useDisabilities(patientUserId);
   const { data: patientHealthHistory } = useHealthHistory(patientUserId);
 
+  // Recent vitals for this patient
+  const { data: patientVitals, mutate: mutateVitals } = useUserVitalSigns(patientUserId);
+  const [vitalsExpanded, setVitalsExpanded] = useState(false);
+
   const refreshNotes = useCallback((appointmentId: number) => {
     getPreAssessmentNotesAction(appointmentId).then((result) => {
       if (result.status && result.data) {
@@ -178,6 +192,7 @@ export function AppointmentDetailSheet({
     setShowReturnForm(false);
     setReturnReason("");
     setAiPendingResult(null);
+    setVitalsExpanded(false);
   }, [appointment]);
 
   if (!appointment) return null;
@@ -476,9 +491,6 @@ export function AppointmentDetailSheet({
                   <ExternalLink className="h-3.5 w-3.5" />
                   View Patient Profile
                 </a>
-                {requester.userId && (
-                  <AddVitalsDialog patientUserId={requester.userId} />
-                )}
                 {currentUserHpIds.length > 0 && (
                   <PatientAIInsightButton
                     patientId={requester.id}
@@ -490,6 +502,87 @@ export function AppointmentDetailSheet({
               </div>
             )}
           </div>
+
+          {/* Recent Vitals */}
+          {!isWalkIn && requester?.userId && (
+            <div className="rounded-xl border bg-muted/30 p-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                  <HeartPulse className="h-3.5 w-3.5" />
+                  Recent Vitals
+                </h3>
+                <div className="flex items-center gap-2">
+                  {patientVitals && patientVitals.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setVitalsExpanded((prev) => !prev)}
+                      className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                    >
+                      {vitalsExpanded ? <><ChevronUp className="h-3 w-3" />Hide</> : <><ChevronDown className="h-3 w-3" />View</>}
+                    </button>
+                  )}
+                  <AddVitalsDialog
+                    patientUserId={requester.userId}
+                    onSaved={() => mutateVitals()}
+                  />
+                </div>
+              </div>
+              {(() => {
+                const latestVital = patientVitals && patientVitals.length > 0
+                  ? [...patientVitals].sort((a, b) => new Date(b.dateTaken).getTime() - new Date(a.dateTaken).getTime())[0]
+                  : null;
+                if (!latestVital) {
+                  return (
+                    <p className="text-xs text-muted-foreground">No vitals recorded yet.</p>
+                  );
+                }
+                const freshness = getVitalsFreshness(latestVital.dateTaken);
+                return (
+                  <>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <Badge variant="outline" className={`text-xs ${freshness.className}`}>
+                        {freshness.label}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">
+                        Taken {formatDistanceToNow(new Date(latestVital.dateTaken), { addSuffix: true })}
+                      </span>
+                    </div>
+                    {vitalsExpanded && (
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-1 pt-1 text-xs border-t mt-1">
+                        {latestVital.bpSystolic != null && latestVital.bpDiastolic != null && (
+                          <div><span className="text-muted-foreground">BP:</span> <span className="font-medium">{latestVital.bpSystolic}/{latestVital.bpDiastolic} mmHg</span></div>
+                        )}
+                        {latestVital.pulseRate != null && (
+                          <div><span className="text-muted-foreground">HR:</span> <span className="font-medium">{latestVital.pulseRate} bpm</span></div>
+                        )}
+                        {latestVital.temp != null && (
+                          <div><span className="text-muted-foreground">Temp:</span> <span className="font-medium">{latestVital.temp}°C</span></div>
+                        )}
+                        {latestVital.spo2 != null && (
+                          <div><span className="text-muted-foreground">SpO₂:</span> <span className="font-medium">{latestVital.spo2}%</span></div>
+                        )}
+                        {latestVital.respRate != null && (
+                          <div><span className="text-muted-foreground">RR:</span> <span className="font-medium">{latestVital.respRate} br/min</span></div>
+                        )}
+                        {latestVital.weight != null && (
+                          <div><span className="text-muted-foreground">Weight:</span> <span className="font-medium">{latestVital.weight} kg</span></div>
+                        )}
+                        {latestVital.height != null && (
+                          <div><span className="text-muted-foreground">Height:</span> <span className="font-medium">{latestVital.height} cm</span></div>
+                        )}
+                        {latestVital.bmi != null && (
+                          <div><span className="text-muted-foreground">BMI:</span> <span className="font-medium">{Number(latestVital.bmi).toFixed(1)}</span></div>
+                        )}
+                        {latestVital.notes && (
+                          <div className="col-span-2 mt-0.5"><span className="text-muted-foreground">Notes:</span> <span className="font-medium">{latestVital.notes}</span></div>
+                        )}
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
+            </div>
+          )}
 
           {/* Appointment Info */}
           <div className="rounded-xl border bg-muted/30 p-4 space-y-3">

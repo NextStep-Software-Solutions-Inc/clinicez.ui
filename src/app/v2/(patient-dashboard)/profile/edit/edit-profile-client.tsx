@@ -243,6 +243,14 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
     [sections],
   )
 
+  // Auto-scroll the active tab button into view in the nav strip whenever the active section changes
+  useEffect(() => {
+    if (typeof document === 'undefined') return
+    document.querySelectorAll<HTMLButtonElement>(`[data-tab-id="${activeSection}"]`).forEach((btn) => {
+      btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' })
+    })
+  }, [activeSection])
+
   // Memoize mapped form data — only recompute when patientData changes, not on every scroll / activeSection update
   const demographicsData = useMemo(
     () => mapPatientDataToDemographicsFormInput(patientData),
@@ -322,6 +330,7 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
             {sections.map((section) => (
               <button
                 key={section.id}
+                data-tab-id={section.id}
                 onClick={() => scrollToSection(section.id)}
                 className={`whitespace-nowrap px-3 md:px-4 py-1.5 md:py-2 rounded-lg font-medium text-xs md:text-sm transition-all ${
                   activeSection === section.id
@@ -375,6 +384,7 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
             {sections.map((section) => (
               <button
                 key={section.id}
+                data-tab-id={section.id}
                 onClick={() => scrollToSection(section.id)}
                 className={`whitespace-nowrap px-3 md:px-4 py-1.5 md:py-2 rounded-lg font-medium text-xs md:text-sm transition-all ${
                   activeSection === section.id

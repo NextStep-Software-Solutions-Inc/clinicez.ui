@@ -13,6 +13,7 @@ export interface PediatricMeasurementEditFormProps {
   currentData?: PediatricMeasurementFormInput
   onSuccess?: () => void
   inline?: boolean
+  saveRef?: React.MutableRefObject<{ submit: () => Promise<void>; hasChanges: boolean } | null>
 }
 
 /**
@@ -24,6 +25,7 @@ export function PediatricMeasurementEditForm({
   currentData,
   onSuccess,
   inline = false,
+  saveRef,
 }: PediatricMeasurementEditFormProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -92,6 +94,12 @@ export function PediatricMeasurementEditForm({
       [field]: value === '' ? null : value,
     }))
   }
+
+  // Expose submit handler to parent via saveRef (no deps — always keeps ref current with latest closure)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (saveRef) saveRef.current = { submit: handleSubmit, hasChanges }
+  })
 
   const formContent = (
     <>

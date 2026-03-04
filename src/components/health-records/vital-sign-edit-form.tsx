@@ -16,6 +16,7 @@ export interface VitalSignEditFormProps {
   recentVitals?: VitalSign[]
   onSuccess?: () => void
   inline?: boolean
+  saveRef?: React.MutableRefObject<{ submit: () => Promise<void>; hasChanges: boolean } | null>
 }
 
 /**
@@ -29,6 +30,7 @@ export function VitalSignEditForm({
   recentVitals = [],
   onSuccess,
   inline = false,
+  saveRef,
 }: VitalSignEditFormProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -134,6 +136,12 @@ export function VitalSignEditForm({
       [field]: value === '' ? undefined : value,
     }))
   }
+
+  // Expose submit handler to parent via saveRef (no deps — always keeps ref current with latest closure)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (saveRef) saveRef.current = { submit: handleSubmit, hasChanges }
+  })
 
   const formContent = (
     <>

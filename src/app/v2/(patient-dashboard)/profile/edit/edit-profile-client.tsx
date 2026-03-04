@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, useMemo, useCallback, Suspense } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Save, CheckCircle2, XCircle, Loader2, MinusCircle } from 'lucide-react'
 import {
   mapPersonalHistoryToFormInput,
   mapPatientDataToDemographicsFormInput,
@@ -64,6 +64,19 @@ interface EditProfileClientProps {
   refreshFn?: () => Promise<PatientHealthRecordsResponse | null>
 }
 
+type SaveRefHandle = { submit: () => Promise<void>; hasChanges: boolean }
+
+type SaveAllStatus = 'idle' | 'pending' | 'saving' | 'saved' | 'error' | 'no-changes' | 'auto'
+
+interface SaveAllItem {
+  id: string
+  label: string
+  icon: string
+  type: 'batch' | 'auto'
+  status: SaveAllStatus
+  error?: string
+}
+
 /** Suspense fallback — defined at module level so React preserves its identity across re-renders */
 function FormLoadingFallback() {
   return (
@@ -119,6 +132,22 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
   const vaccinationsRef = useRef<HTMLDivElement>(null)
   const disabilitiesRef = useRef<HTMLDivElement>(null)
   const surgicalRef = useRef<HTMLDivElement>(null)
+
+  // Save refs for batch-save forms (forms with a single "Save Changes" button)
+  const demographicsSaveRef = useRef<SaveRefHandle | null>(null)
+  const vitalSignsSaveRef = useRef<SaveRefHandle | null>(null)
+  const personalHistorySaveRef = useRef<SaveRefHandle | null>(null)
+  const obGyneSaveRef = useRef<SaveRefHandle | null>(null)
+  const pediatricSaveRef = useRef<SaveRefHandle | null>(null)
+  const medicalSaveRef = useRef<SaveRefHandle | null>(null)
+  const familySaveRef = useRef<SaveRefHandle | null>(null)
+  const examinationSaveRef = useRef<SaveRefHandle | null>(null)
+  const philhealthSaveRef = useRef<SaveRefHandle | null>(null)
+
+  // Save All dialog state
+  const [saveAllOpen, setSaveAllOpen] = useState(false)
+  const [saveAllItems, setSaveAllItems] = useState<SaveAllItem[]>([])
+  const [isSavingAll, setIsSavingAll] = useState(false)
 
   const sections: Section[] = useMemo(
     () => [
@@ -318,6 +347,69 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
     }
   }, [refreshFn, onDataRefresh])
 
+  // Consolidated "Save All" — saves every batch-save section that has pending changes
+  const handleSaveAll = useCallback(async () => {
+    const batchItems: Array<{ id: string; label: string; icon: string; ref: React.MutableRefObject<SaveRefHandle | null> }> = [
+      { id: 'demographics', label: 'Demographics', icon: '👤', ref: demographicsSaveRef },
+      { id: 'vital-signs', label: 'Vital Signs', icon: '❤️', ref: vitalSignsSaveRef },
+      { id: 'personal-history', label: 'Personal History', icon: '📋', ref: personalHistorySaveRef },
+      { id: 'ob-gyne', label: 'OB/GYN History', icon: '👶', ref: obGyneSaveRef },
+      { id: 'pediatric', label: 'Pediatric', icon: '📏', ref: pediatricSaveRef },
+      { id: 'medical', label: 'Medical Conditions', icon: '🏥', ref: medicalSaveRef },
+      { id: 'family', label: 'Family History', icon: '👨‍👩‍👧‍👦', ref: familySaveRef },
+      { id: 'examination', label: 'Physical Exam', icon: '🔍', ref: examinationSaveRef },
+      { id: 'philhealth', label: 'PhilHealth', icon: '🏛️', ref: philhealthSaveRef },
+    ]
+    const autoItems: SaveAllItem[] = [
+      { id: 'addresses', label: 'Addresses', icon: '📍', type: 'auto', status: 'auto' },
+      { id: 'emergency-contacts', label: 'Emergency Contacts', icon: '🆘', type: 'auto', status: 'auto' },
+      { id: 'allergies', label: 'Allergies', icon: '⚠️', type: 'auto', status: 'auto' },
+      { id: 'vaccinations', label: 'Vaccinations', icon: '💉', type: 'auto', status: 'auto' },
+      { id: 'disabilities', label: 'Disabilities', icon: '♿', type: 'auto', status: 'auto' },
+      { id: 'surgical', label: 'Surgical History', icon: '⚕️', type: 'auto', status: 'auto' },
+    ]
+
+    // Build initial items list: batch items first, then auto items
+    const initialItems: SaveAllItem[] = [
+      ...batchItems.map((item) => ({
+        id: item.id,
+        label: item.label,
+        icon: item.icon,
+        type: 'batch' as const,
+        status: (item.ref.current?.hasChanges ? 'pending' : 'no-changes') as SaveAllStatus,
+      })),
+      ...autoItems,
+    ]
+
+    setSaveAllItems(initialItems)
+    setSaveAllOpen(true)
+    setIsSavingAll(true)
+
+    // Process each batch item sequentially
+    for (const item of batchItems) {
+      const handle = item.ref.current
+      if (!handle?.hasChanges) continue
+
+      setSaveAllItems((prev) =>
+        prev.map((i) => (i.id === item.id ? { ...i, status: 'saving' } : i))
+      )
+
+      try {
+        await handle.submit()
+        setSaveAllItems((prev) =>
+          prev.map((i) => (i.id === item.id ? { ...i, status: 'saved' } : i))
+        )
+      } catch (err) {
+        console.error(`[SaveAll] Failed to save section "${item.id}":`, err)
+        setSaveAllItems((prev) =>
+          prev.map((i) => (i.id === item.id ? { ...i, status: 'error', error: err instanceof Error ? err.message : 'Unknown error' } : i))
+        )
+      }
+    }
+
+    setIsSavingAll(false)
+  }, [])
+
   // Section nav strip — defined before early return so it's always in scope.
   // topClass controls sticky offset:
   //   'top-12' when headerSlot=null (just below DashboardShell horizontal nav)
@@ -434,6 +526,7 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
                     inline={true}
                     currentData={demographicsData}
                     onSuccess={handleSuccess}
+                    saveRef={demographicsSaveRef}
                   />
                 </Suspense>
               )}
@@ -577,6 +670,7 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
                     currentData={vitalSignData}
                     recentVitals={convertVitalSignsToDateObjects(patientData?.vitalSigns)}
                     onSuccess={handleSuccess}
+                    saveRef={vitalSignsSaveRef}
                   />
                 </Suspense>
               )}
@@ -600,6 +694,7 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
                     inline={true}
                     currentData={personalHistoryData}
                     onSuccess={handleSuccess}
+                    saveRef={personalHistorySaveRef}
                   />
                 </Suspense>
               )}
@@ -624,7 +719,7 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
                     </div>
                   ) : (
                     <Suspense fallback={<FormLoadingFallback />}>
-                      <ObGyneHistoryEditForm userId={patientData.userId} inline={true} onSuccess={handleSuccess} />
+                      <ObGyneHistoryEditForm userId={patientData.userId} inline={true} onSuccess={handleSuccess} saveRef={obGyneSaveRef} />
                     </Suspense>
                   )}
                 </>
@@ -649,6 +744,7 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
                     inline={true}
                     currentData={pediatricData as PediatricMeasurementFormInput}
                     onSuccess={handleSuccess}
+                    saveRef={pediatricSaveRef}
                   />
                 </Suspense>
               )}
@@ -675,6 +771,7 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
                       details: h.details || undefined,
                     }))}
                     onSuccess={handleSuccess}
+                    saveRef={medicalSaveRef}
                   />
                 </Suspense>
               )}
@@ -724,6 +821,7 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
                       details: h.details || undefined,
                     }))}
                     onSuccess={handleSuccess}
+                    saveRef={familySaveRef}
                   />
                 </Suspense>
               )}
@@ -747,6 +845,7 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
                     inline={true}
                     currentData={physicalExaminationData}
                     onSuccess={handleSuccess}
+                    saveRef={examinationSaveRef}
                   />
                 </Suspense>
               )}
@@ -771,9 +870,10 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
                       inline={true}
                       currentData={philHealthCurrentData}
                       onSuccess={handleSuccess}
+                      saveRef={philhealthSaveRef}
                     />
                   ) : (
-                    <PhilHealthRecordEditForm userId={patientData.userId} inline={true} onSuccess={handleSuccess} />
+                    <PhilHealthRecordEditForm userId={patientData.userId} inline={true} onSuccess={handleSuccess} saveRef={philhealthSaveRef} />
                   )}
                 </Suspense>
               )}
@@ -782,7 +882,7 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
         </div>
 
         {/* Footer */}
-        <div className="mt-12 pb-8 flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div className="mt-12 pb-24 flex flex-col sm:flex-row justify-between items-center gap-4">
           <button
             onClick={() => router.back()}
             className="px-8 py-3 rounded-lg font-medium text-sm transition-all backdrop-blur-sm border border-white/20 dark:border-slate-700/20 bg-white/20 dark:bg-slate-800/20 text-slate-700 dark:text-slate-300 hover:bg-white/40 dark:hover:bg-slate-800/40"
@@ -790,13 +890,76 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
             ← Back to Profile
           </button>
           <div className="flex flex-col sm:flex-row items-center gap-4">
-            <p className="text-sm text-slate-600 dark:text-slate-400">Changes are saved automatically per section</p>
-            {patientData && (
-              <p className="text-xs text-slate-500 dark:text-slate-500">Last updated: {new Date().toLocaleTimeString()}</p>
-            )}
+            <p className="text-sm text-slate-600 dark:text-slate-400">Use <strong>Save All Changes</strong> at the bottom to save all sections at once</p>
           </div>
         </div>
       </div>
+
+      {/* Sticky Save All Changes bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 backdrop-blur-md bg-white/80 dark:bg-slate-900/80 border-t border-slate-200/60 dark:border-slate-700/60 px-4 py-3 shadow-lg">
+        <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
+          <p className="text-sm text-slate-600 dark:text-slate-400 hidden sm:block">
+            Fill in multiple sections then save them all at once
+          </p>
+          <button
+            onClick={() => void handleSaveAll()}
+            disabled={isSavingAll}
+            className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-xl font-medium text-sm shadow-lg shadow-blue-500/30 hover:from-blue-600 hover:to-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all ml-auto"
+          >
+            <Save className="w-4 h-4" />
+            Save All Changes
+          </button>
+        </div>
+      </div>
+
+      {/* Save All Progress Dialog */}
+      {saveAllOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => !isSavingAll && setSaveAllOpen(false)} />
+          <div className="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md max-h-[85vh] flex flex-col overflow-hidden border border-slate-200/60 dark:border-slate-700/60">
+            {/* Dialog header */}
+            <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between shrink-0">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white">Save All Changes</h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  {isSavingAll ? 'Saving your profile sections…' : 'All sections processed'}
+                </p>
+              </div>
+              {isSavingAll && <Loader2 className="w-5 h-5 text-blue-500 animate-spin shrink-0" />}
+            </div>
+
+            {/* Checklist */}
+            <div className="overflow-y-auto flex-1 px-6 py-4 space-y-2">
+              {saveAllItems.map((item) => (
+                <div key={item.id} className="flex items-center gap-3 py-2">
+                  <span className="text-base shrink-0">{item.icon}</span>
+                  <span className="flex-1 text-sm font-medium text-slate-800 dark:text-slate-200">{item.label}</span>
+                  <span className="shrink-0">
+                    {item.status === 'pending' && <MinusCircle className="w-4 h-4 text-slate-400" />}
+                    {item.status === 'saving' && <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />}
+                    {item.status === 'saved' && <CheckCircle2 className="w-4 h-4 text-green-500" />}
+                    {item.status === 'error' && <XCircle className="w-4 h-4 text-red-500" />}
+                    {item.status === 'no-changes' && <span className="text-xs text-slate-400 italic">No changes</span>}
+                    {item.status === 'auto' && <span className="text-xs text-slate-400 italic">Auto-saves</span>}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {/* Footer */}
+            {!isSavingAll && (
+              <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-700 shrink-0">
+                <button
+                  onClick={() => setSaveAllOpen(false)}
+                  className="w-full py-2.5 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-xl font-medium text-sm hover:from-blue-600 hover:to-cyan-600 transition-all"
+                >
+                  Done
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

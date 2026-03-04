@@ -12,6 +12,7 @@ export interface FamilyMedicalHistoryEditFormProps {
   currentConditions?: FamilyMedicalHistoryFormInput[]
   onSuccess?: () => void
   inline?: boolean
+  saveRef?: React.MutableRefObject<{ submit: () => Promise<void>; hasChanges: boolean } | null>
 }
 
 /**
@@ -23,6 +24,7 @@ export function FamilyMedicalHistoryEditForm({
   currentConditions,
   onSuccess,
   inline = false,
+  saveRef,
 }: FamilyMedicalHistoryEditFormProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -71,6 +73,12 @@ export function FamilyMedicalHistoryEditForm({
       setIsLoading(false)
     }
   }
+
+  // Expose submit handler to parent via saveRef (no deps — always keeps ref current with latest closure)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (saveRef) saveRef.current = { submit: handleSubmit, hasChanges }
+  })
 
   const formContent = (
     <div className="space-y-6">

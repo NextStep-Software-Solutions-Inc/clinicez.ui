@@ -42,6 +42,7 @@ export interface DemographicsEditFormProps {
   currentPicture?: string | null
   onSuccess?: () => void
   inline?: boolean
+  saveRef?: React.MutableRefObject<{ submit: () => Promise<void>; hasChanges: boolean } | null>
 }
 
 /**
@@ -54,6 +55,7 @@ export function DemographicsEditForm({
   currentPicture,
   onSuccess,
   inline = false,
+  saveRef,
 }: DemographicsEditFormProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -97,6 +99,12 @@ export function DemographicsEditForm({
       [field]: value || undefined,
     }))
   }
+
+  // Expose submit handler to parent via saveRef (no deps — always keeps ref current with latest closure)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (saveRef) saveRef.current = { submit: handleSubmit, hasChanges }
+  })
 
   const formContent = (
     <>

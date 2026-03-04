@@ -14,6 +14,7 @@ export interface ObGyneHistoryEditFormProps {
   currentData?: ObGyneHistoryFormInput
   onSuccess?: () => void
   inline?: boolean
+  saveRef?: React.MutableRefObject<{ submit: () => Promise<void>; hasChanges: boolean } | null>
 }
 
 /**
@@ -25,6 +26,7 @@ export function ObGyneHistoryEditForm({
   currentData,
   onSuccess,
   inline = false,
+  saveRef,
 }: ObGyneHistoryEditFormProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -77,6 +79,12 @@ export function ObGyneHistoryEditForm({
       [field]: value === '' ? null : value,
     }))
   }
+
+  // Expose submit handler to parent via saveRef (no deps — always keeps ref current with latest closure)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (saveRef) saveRef.current = { submit: handleSubmit, hasChanges }
+  })
 
   const formContent = (
     <>

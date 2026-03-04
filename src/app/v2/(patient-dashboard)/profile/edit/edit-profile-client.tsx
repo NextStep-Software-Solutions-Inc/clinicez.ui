@@ -910,14 +910,11 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
       {/* Sticky Save All Changes bar — only visible when there are unsaved changes */}
       {hasPendingChanges && (
         <div className="fixed bottom-0 left-0 right-0 z-50 backdrop-blur-md bg-white/80 dark:bg-slate-900/80 border-t border-slate-200/60 dark:border-slate-700/60 px-4 py-3 shadow-lg flex items-center">
-          <div className="max-w-6xl mx-auto w-full flex items-center justify-between gap-4">
-            <p className="text-sm text-slate-600 dark:text-slate-400 hidden sm:block">
-              Fill in multiple sections then save them all at once
-            </p>
+          <div className="max-w-6xl mx-auto w-full flex items-center justify-center">
             <button
               onClick={() => void handleSaveAll()}
               disabled={isSavingAll}
-              className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-xl font-medium text-sm shadow-lg shadow-blue-500/30 hover:from-blue-600 hover:to-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all ml-auto"
+              className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-xl font-medium text-sm shadow-lg shadow-blue-500/30 hover:from-blue-600 hover:to-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             >
               <Save className="w-4 h-4" />
               Save All Changes

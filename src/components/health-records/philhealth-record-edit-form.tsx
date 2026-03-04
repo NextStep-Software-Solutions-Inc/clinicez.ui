@@ -17,6 +17,8 @@ export interface PhilHealthRecordEditFormProps {
   currentData?: PhilHealthRecordFormInput & { id?: number; dependents?: any[] }
   onSuccess?: () => void
   inline?: boolean
+  saveRef?: React.MutableRefObject<{ submit: () => Promise<void>; hasChanges: boolean } | null>
+  onDirtyChange?: (isDirty: boolean) => void
 }
 
 /**
@@ -28,6 +30,8 @@ export function PhilHealthRecordEditForm({
   currentData,
   onSuccess,
   inline = false,
+  saveRef,
+  onDirtyChange,
 }: PhilHealthRecordEditFormProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -86,6 +90,7 @@ export function PhilHealthRecordEditForm({
     }
 
     setIsLoading(true)
+    let saveErrorMessage: string | null = null
 
     try {
       const result = await updatePhilhealthRecord(userId, formData as PhilHealthRecordFormInput)
@@ -97,12 +102,16 @@ export function PhilHealthRecordEditForm({
         onSuccess?.()
       } else {
         toast.error(result.error || 'An unexpected error occurred')
+        saveErrorMessage = result.error || 'An unexpected error occurred'
       }
     } catch (err) {
       toast.error('An unexpected error occurred. Please try again.')
+      throw err
     } finally {
       setIsLoading(false)
     }
+
+    if (saveErrorMessage) throw new Error(saveErrorMessage)
   }
 
   const handleFieldChange = (field: keyof PhilHealthRecordFormInput, value: any) => {
@@ -227,6 +236,13 @@ export function PhilHealthRecordEditForm({
       setIsUploadingPhoto(false)
     }
   }
+
+  // Expose submit handler to parent via saveRef (no deps — always keeps ref current with latest closure)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (saveRef) saveRef.current = { submit: handleSubmit, hasChanges }
+    onDirtyChange?.(hasChanges)
+  })
 
   const formContent = (
     <>
@@ -552,14 +568,6 @@ export function PhilHealthRecordEditForm({
     return (
       <div className="space-y-6">
         {formContent}
-
-        <button
-          onClick={handleSubmit}
-          disabled={isLoading || !hasChanges}
-          className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
-        >
-          {isLoading ? 'Saving...' : 'Save PhilHealth Info'}
-        </button>
       </div>
     )
   }

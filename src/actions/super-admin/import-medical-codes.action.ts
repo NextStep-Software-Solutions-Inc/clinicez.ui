@@ -14,8 +14,12 @@ async function requireSuperAdmin(): Promise<void> {
 // ─────────────────────────────────────────────────────────────
 
 export interface ICD10Row {
+  orderNum?: number;
   code: string;
   description: string;
+  shortDescription?: string;
+  longDescription?: string;
+  hippaCovered?: boolean;
   category?: string;
 }
 
@@ -38,27 +42,28 @@ export async function importICD10BatchAction(
 
   for (const row of rows) {
     const code = row.code?.trim().toUpperCase();
-    const description = row.description?.trim();
+    const displayDescription = row.shortDescription?.trim() || row.description?.trim();
 
-    if (!code || !description) {
+    if (!code || !displayDescription) {
       errors.push(`Skipped row – missing code or description`);
       continue;
     }
 
+    const upsertData = {
+      description: displayDescription,
+      shortDescription: row.shortDescription?.trim() || null,
+      longDescription: row.longDescription?.trim() || null,
+      hippaCovered: row.hippaCovered ?? false,
+      orderNum: row.orderNum ?? null,
+      category: row.category?.trim() || null,
+      isActive: true,
+    };
+
     try {
       await prisma.iCD10Code.upsert({
         where: { code },
-        update: {
-          description,
-          category: row.category?.trim() || null,
-          isActive: true,
-        },
-        create: {
-          code,
-          description,
-          category: row.category?.trim() || null,
-          isActive: true,
-        },
+        update: upsertData,
+        create: { code, ...upsertData },
       });
       upserted++;
     } catch (err) {
@@ -220,6 +225,8 @@ export async function searchICD10CodesAction(
       OR: [
         { code: { contains: query.trim(), mode: "insensitive" } },
         { description: { contains: query.trim(), mode: "insensitive" } },
+        { shortDescription: { contains: query.trim(), mode: "insensitive" } },
+        { longDescription: { contains: query.trim(), mode: "insensitive" } },
       ],
     },
     select: { code: true, description: true, category: true },

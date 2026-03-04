@@ -46,6 +46,53 @@ interface ImportCodesDialogProps {
   onImportComplete?: () => void;
 }
 
+// ─── Fixed-width ICD-10 TXT parser ────────────────────────────────────────────
+// Official CMS ICD-10 order file format:
+//   Pos  1-5  : Order number (right-justified, zero-filled)
+//   Pos  7-13 : Code (7 chars, no dots)
+//   Pos  15   : HIPAA indicator (1=valid, 0=header)
+//   Pos 17-76 : Short description (60 chars)
+//   Pos 78+   : Long description
+
+interface ParsedICD10TXTRow {
+  orderNum: number;
+  code: string;
+  hippaCovered: boolean;
+  shortDescription: string;
+  longDescription: string;
+}
+
+function parseICD10TXT(text: string): ParsedICD10TXTRow[] {
+  const rows: ParsedICD10TXTRow[] = [];
+  const lines = text.split(/\r?\n/);
+
+  for (const line of lines) {
+    if (line.trim().length === 0) continue;
+    // Need at least 17 chars to reach the short description field (position 17+)
+    if (line.length < 17) continue;
+
+    const orderNum = parseInt(line.substring(0, 5).trim(), 10);
+    const code = line.substring(6, 13).trim();              // positions 7–13 (1-indexed)
+    const hipaaChar = line.substring(14, 15).trim();        // position 15 (1-indexed)
+    const shortDescription = line.substring(16, 76).trim(); // positions 17–76 (1-indexed)
+    const longDescription = line.length > 77 ? line.substring(77).trim() : ""; // position 78+ (1-indexed)
+
+    if (!code) continue;
+
+    rows.push({
+      orderNum: isNaN(orderNum) ? 0 : orderNum,
+      code,
+      hippaCovered: hipaaChar === "1",
+      shortDescription,
+      longDescription,
+    });
+  }
+
+  return rows;
+}
+
+// ─── CSV parser ───────────────────────────────────────────────────────────────
+
 function parseCSV(text: string): string[][] {
   const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
   return lines.map((line) => {
@@ -83,6 +130,10 @@ export function ImportCodesDialog({
   const [importType, setImportType] = useState<ImportType>("icd10");
   const [rvsType, setRvsType] = useState<RVSProcedureType>("imaging");
   const [fileName, setFileName] = useState<string | null>(null);
+  const [fileFormat, setFileFormat] = useState<"txt" | "csv" | null>(null);
+  // For TXT files, rows are already parsed into ICD10Row
+  const [icd10TxtRows, setIcd10TxtRows] = useState<ICD10Row[] | null>(null);
+  // For CSV files, rows remain as raw string arrays
   const [parsedRows, setParsedRows] = useState<string[][] | null>(null);
   const [headers, setHeaders] = useState<string[]>([]);
   const [parseError, setParseError] = useState<string | null>(null);
@@ -93,6 +144,8 @@ export function ImportCodesDialog({
 
   const reset = () => {
     setFileName(null);
+    setFileFormat(null);
+    setIcd10TxtRows(null);
     setParsedRows(null);
     setHeaders([]);
     setParseError(null);
@@ -109,21 +162,47 @@ export function ImportCodesDialog({
     setFileName(file.name);
     setParseError(null);
     setParsedRows(null);
+    setIcd10TxtRows(null);
     setResult(null);
+
+    const isTxt = file.name.toLowerCase().endsWith(".txt");
+    setFileFormat(isTxt ? "txt" : "csv");
 
     const reader = new FileReader();
     reader.onload = (ev) => {
       const text = ev.target?.result as string;
       try {
-        const rows = parseCSV(text);
-        if (rows.length < 2) {
-          setParseError("File must have at least a header row and one data row.");
-          return;
+        if (isTxt && importType === "icd10") {
+          // Parse official CMS fixed-width format
+          const txtRows = parseICD10TXT(text);
+          if (txtRows.length === 0) {
+            setParseError(
+              "No valid rows found. Ensure this is an official CMS ICD-10 order file."
+            );
+            return;
+          }
+          // Convert to ICD10Row
+          const rows: ICD10Row[] = txtRows.map((r) => ({
+            orderNum: r.orderNum,
+            code: r.code,
+            description: r.shortDescription,
+            shortDescription: r.shortDescription,
+            longDescription: r.longDescription,
+            hippaCovered: r.hippaCovered,
+          }));
+          setIcd10TxtRows(rows);
+        } else {
+          // CSV path
+          const rows = parseCSV(text);
+          if (rows.length < 2) {
+            setParseError("File must have at least a header row and one data row.");
+            return;
+          }
+          setHeaders(rows[0]);
+          setParsedRows(rows.slice(1));
         }
-        setHeaders(rows[0]);
-        setParsedRows(rows.slice(1)); // data rows only
       } catch {
-        setParseError("Failed to parse CSV. Please ensure it is a valid CSV file.");
+        setParseError("Failed to parse file. Please check the file format.");
       }
     };
     reader.readAsText(file);
@@ -171,8 +250,11 @@ export function ImportCodesDialog({
     };
   };
 
+  // Determine total importable rows for display
+  const totalDataRows = icd10TxtRows?.length ?? parsedRows?.length ?? 0;
+
   const handleImport = async () => {
-    if (!parsedRows || parsedRows.length === 0) return;
+    if (totalDataRows === 0) return;
 
     setImporting(true);
     setProgress(0);
@@ -181,23 +263,23 @@ export function ImportCodesDialog({
     const errors: string[] = [];
     let totalUpserted = 0;
 
-    const totalBatches = Math.ceil(parsedRows.length / BATCH_SIZE);
-    // Reserve 90% of bar for batches, 10% for finalize
-    const batchWeight = 90 / totalBatches;
-
     if (importType === "icd10") {
+      // Build ICD10Row array from either TXT or CSV
+      const allRows: ICD10Row[] = icd10TxtRows
+        ? icd10TxtRows
+        : (parsedRows ?? [])
+            .map((r) => normalizeICD10Row(r, headers))
+            .filter((r): r is ICD10Row => r !== null && r.code.trim() !== "");
+
       const importedCodes: string[] = [];
+      const totalBatches = Math.ceil(allRows.length / BATCH_SIZE);
+      const batchWeight = 90 / totalBatches;
 
       for (let b = 0; b < totalBatches; b++) {
-        const slice = parsedRows.slice(b * BATCH_SIZE, (b + 1) * BATCH_SIZE);
-        const rows: ICD10Row[] = slice
-          .map((r) => normalizeICD10Row(r, headers))
-          .filter((r): r is ICD10Row => r !== null && r.code.trim() !== "");
-
-        importedCodes.push(...rows.map((r) => r.code.trim().toUpperCase()));
-
+        const slice = allRows.slice(b * BATCH_SIZE, (b + 1) * BATCH_SIZE);
+        importedCodes.push(...slice.map((r) => r.code.trim().toUpperCase()));
         setProgressLabel(`Processing batch ${b + 1} of ${totalBatches}…`);
-        const batchResult = await importICD10BatchAction(rows);
+        const batchResult = await importICD10BatchAction(slice);
         totalUpserted += batchResult.upserted;
         errors.push(...batchResult.errors);
         setProgress(Math.round((b + 1) * batchWeight));
@@ -209,16 +291,18 @@ export function ImportCodesDialog({
       setProgress(100);
       setProgressLabel("Import complete");
       setResult({
-        totalRows: parsedRows.length,
+        totalRows: allRows.length,
         upserted: totalUpserted,
         deactivated: finalResult.deactivated,
         errors,
       });
     } else {
       const importedNames: string[] = [];
+      const totalBatches = Math.ceil((parsedRows?.length ?? 0) / BATCH_SIZE);
+      const batchWeight = 90 / (totalBatches || 1);
 
       for (let b = 0; b < totalBatches; b++) {
-        const slice = parsedRows.slice(b * BATCH_SIZE, (b + 1) * BATCH_SIZE);
+        const slice = (parsedRows ?? []).slice(b * BATCH_SIZE, (b + 1) * BATCH_SIZE);
         const rows: RVSProcedureRow[] = slice
           .map((r) => normalizeRVSRow(r, headers))
           .filter((r): r is RVSProcedureRow => r !== null && r.name.trim() !== "");
@@ -238,7 +322,7 @@ export function ImportCodesDialog({
       setProgress(100);
       setProgressLabel("Import complete");
       setResult({
-        totalRows: parsedRows.length,
+        totalRows: parsedRows?.length ?? 0,
         upserted: totalUpserted,
         deactivated: finalResult.deactivated,
         errors,
@@ -250,9 +334,8 @@ export function ImportCodesDialog({
     onImportComplete?.();
   };
 
-  const icd10Headers = ["code", "description", "category"];
+  const icd10CsvHeaders = ["code", "description", "category"];
   const rvsHeaders = ["name", "category", "rvsCode", "description"];
-  const expectedHeaders = importType === "icd10" ? icd10Headers : rvsHeaders;
 
   return (
     <Dialog
@@ -313,21 +396,53 @@ export function ImportCodesDialog({
             )}
           </div>
 
-          {/* CSV format hint */}
-          <div className="rounded-md bg-muted/50 border border-border/50 px-3 py-2">
-            <p className="text-xs font-medium text-muted-foreground mb-1">
-              Expected CSV columns:
-            </p>
-            <div className="flex gap-1.5 flex-wrap">
-              {expectedHeaders.map((h) => (
-                <Badge key={h} variant="secondary" className="text-[10px] font-mono">
-                  {h}
-                </Badge>
-              ))}
-            </div>
-            <p className="text-[11px] text-muted-foreground mt-1.5">
-              First row must be a header. Column names are matched by keyword (case-insensitive).
-            </p>
+          {/* Format hint */}
+          <div className="rounded-md bg-muted/50 border border-border/50 px-3 py-2 space-y-1.5">
+            {importType === "icd10" ? (
+              <>
+                <p className="text-xs font-medium text-muted-foreground">
+                  Accepted formats:
+                </p>
+                <div className="space-y-1">
+                  <div>
+                    <p className="text-[11px] font-semibold text-foreground/80">
+                      Official CMS fixed-width .txt (recommended)
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      Fields: order (1–5) · code (7–13) · HIPAA (15) · shortDescription (17–76) · longDescription (78+)
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[11px] font-semibold text-foreground/80">
+                      CSV fallback
+                    </p>
+                    <div className="flex gap-1 flex-wrap mt-0.5">
+                      {icd10CsvHeaders.map((h) => (
+                        <Badge key={h} variant="secondary" className="text-[10px] font-mono">
+                          {h}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-xs font-medium text-muted-foreground">
+                  Expected CSV columns:
+                </p>
+                <div className="flex gap-1.5 flex-wrap">
+                  {rvsHeaders.map((h) => (
+                    <Badge key={h} variant="secondary" className="text-[10px] font-mono">
+                      {h}
+                    </Badge>
+                  ))}
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  First row must be a header. Column names are matched by keyword.
+                </p>
+              </>
+            )}
           </div>
 
           {/* File picker */}
@@ -336,7 +451,7 @@ export function ImportCodesDialog({
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".csv,text/csv"
+                accept={importType === "icd10" ? ".txt,.csv,text/plain,text/csv" : ".csv,text/csv"}
                 className="hidden"
                 onChange={handleFileChange}
                 disabled={importing}
@@ -349,6 +464,11 @@ export function ImportCodesDialog({
                   <div className="flex items-center justify-center gap-2">
                     <FileText className="h-5 w-5 text-primary" />
                     <span className="text-sm font-medium">{fileName}</span>
+                    {fileFormat && (
+                      <Badge variant="outline" className="text-[10px] uppercase">
+                        {fileFormat}
+                      </Badge>
+                    )}
                     {!importing && (
                       <button
                         type="button"
@@ -366,7 +486,9 @@ export function ImportCodesDialog({
                   <div className="flex flex-col items-center gap-1">
                     <Upload className="h-8 w-8 text-muted-foreground" />
                     <p className="text-sm text-muted-foreground">
-                      Click to select a CSV file
+                      {importType === "icd10"
+                        ? "Click to select a .txt or .csv file"
+                        : "Click to select a CSV file"}
                     </p>
                   </div>
                 )}
@@ -383,11 +505,15 @@ export function ImportCodesDialog({
           )}
 
           {/* Row count preview */}
-          {parsedRows && !result && !importing && (
+          {totalDataRows > 0 && !result && !importing && (
             <p className="text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">{parsedRows.length}</span>{" "}
-              data rows detected. Columns:{" "}
-              <span className="font-mono text-xs">{headers.join(", ")}</span>
+              <span className="font-medium text-foreground">{totalDataRows}</span>{" "}
+              {fileFormat === "txt"
+                ? "rows detected from fixed-width file."
+                : `data rows detected. Columns: `}
+              {fileFormat === "csv" && (
+                <span className="font-mono text-xs">{headers.join(", ")}</span>
+              )}
             </p>
           )}
 
@@ -465,7 +591,7 @@ export function ImportCodesDialog({
                 </Button>
                 <Button
                   onClick={handleImport}
-                  disabled={!parsedRows || parsedRows.length === 0 || importing}
+                  disabled={totalDataRows === 0 || importing}
                 >
                   {importing ? "Importing…" : "Import"}
                 </Button>

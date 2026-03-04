@@ -2708,3 +2708,18 @@ model PatientInsight {
   @@index([patientId, clinicId])
   @@index([validUntil])
 }
+
+/// Master reference table for ICD-10 diagnosis codes.
+/// Populated via the super-admin import feature; used for autocomplete in consultations.
+model ICD10Code {
+  id          Int      @id @default(autoincrement())
+  code        String   @unique
+  description String
+  category    String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([code])
+  @@index([category])
+}

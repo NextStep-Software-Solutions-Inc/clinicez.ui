@@ -118,7 +118,7 @@ export default function ConsultationsPageClient({
   }, [clinicUid, selectedId]);
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-16rem)] overflow-hidden">
+    <div className="flex flex-col h-[calc(100dvh-11rem)] sm:h-[calc(100dvh-11.5rem)] overflow-hidden">
       {/* ── Mobile back button (workspace → list) ── */}
       {mobileView === "workspace" && (
         <div className="md:hidden shrink-0 flex items-center gap-2 px-4 py-2.5 border-b border-border/50 bg-background/80 backdrop-blur">

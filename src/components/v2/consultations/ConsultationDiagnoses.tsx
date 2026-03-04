@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
-import { Plus, Trash2, Edit2, Check, X, Search } from "lucide-react";
+import { useRef, useState, useTransition } from "react";
+import { Plus, Trash2, Edit2, Check, X, ChevronsUpDown, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,6 +13,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
   addConsultationDiagnosisAction,
@@ -45,90 +58,145 @@ const TYPE_COLORS: Record<string, string> = {
     "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400",
 };
 
-// ─── ICD-10 search combobox ────────────────────────────────────────────────
+// ─── ICD-10 autocomplete combobox ─────────────────────────────────────────────
 
-interface ICD10SearchInputProps {
-  value: string;
+interface ICD10ComboboxProps {
+  icd10Code: string;
+  description: string;
   onSelect: (result: ICD10SearchResult) => void;
-  onChange: (val: string) => void;
+  onClear: () => void;
   placeholder?: string;
   className?: string;
 }
 
-function ICD10SearchInput({
-  value,
+function ICD10Combobox({
+  icd10Code,
+  description,
   onSelect,
-  onChange,
+  onClear,
   placeholder = "Search ICD-10 code or description…",
   className,
-}: ICD10SearchInputProps) {
-  const [suggestions, setSuggestions] = useState<ICD10SearchResult[]>([]);
+}: ICD10ComboboxProps) {
   const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [suggestions, setSuggestions] = useState<ICD10SearchResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
 
-  const search = useCallback(async (q: string) => {
-    if (q.length < 2) { setSuggestions([]); setOpen(false); return; }
-    const results = await searchICD10CodesAction(q, 10);
-    setSuggestions(results);
-    setOpen(results.length > 0);
-  }, []);
+  const displayValue = icd10Code
+    ? description
+      ? `${icd10Code} – ${description}`
+      : icd10Code
+    : "";
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const q = e.target.value;
-    onChange(q);
+  const handleQueryChange = (val: string) => {
+    setQuery(val);
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => search(q), 250);
+    if (val.length < 2) {
+      setSuggestions([]);
+      setIsSearching(false);
+      return;
+    }
+    setIsSearching(true);
+    debounceRef.current = setTimeout(async () => {
+      const results = await searchICD10CodesAction(val, 10);
+      setSuggestions(results);
+      setIsSearching(false);
+    }, 250);
   };
 
   const handleSelect = (result: ICD10SearchResult) => {
     onSelect(result);
-    setSuggestions([]);
     setOpen(false);
+    setQuery("");
+    setSuggestions([]);
   };
 
-  // Close on outside click
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
+  const handleOpenChange = (o: boolean) => {
+    setOpen(o);
+    if (!o) {
+      setQuery("");
+      setSuggestions([]);
+      setIsSearching(false);
+    }
+  };
 
   return (
-    <div ref={containerRef} className={`relative ${className ?? ""}`}>
-      <div className="relative">
-        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-        <Input
-          className="h-8 text-xs pl-8 mt-1"
-          placeholder={placeholder}
-          value={value}
-          onChange={handleChange}
-          onFocus={() => suggestions.length > 0 && setOpen(true)}
-          autoComplete="off"
-        />
-      </div>
-      {open && suggestions.length > 0 && (
-        <ul className="absolute z-50 mt-0.5 w-full rounded-md border border-border bg-popover shadow-md text-xs max-h-52 overflow-y-auto">
-          {suggestions.map((r) => (
-            <li
-              key={r.code}
-              className="flex gap-2 px-3 py-2 cursor-pointer hover:bg-muted/60"
-              onMouseDown={(e) => { e.preventDefault(); handleSelect(r); }}
-            >
-              <span className="font-mono font-semibold text-primary shrink-0">{r.code}</span>
-              <span className="truncate text-foreground/80">{r.description}</span>
-              {r.category && (
-                <span className="ml-auto shrink-0 text-muted-foreground">{r.category}</span>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
+    <Popover open={open} onOpenChange={handleOpenChange}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className={cn(
+            "w-full justify-between h-8 text-xs font-normal mt-1",
+            className
+          )}
+        >
+          <span
+            className={cn(
+              "truncate text-left",
+              !displayValue && "text-muted-foreground"
+            )}
+          >
+            {displayValue || placeholder}
+          </span>
+          <div className="flex items-center gap-1 ml-2 shrink-0">
+            {icd10Code && (
+              <X
+                className="h-3 w-3 opacity-50 hover:opacity-100"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onClear();
+                }}
+              />
+            )}
+            <ChevronsUpDown className="h-3 w-3 opacity-50" />
+          </div>
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent
+        className="p-0 w-[var(--radix-popover-trigger-width)]"
+        align="start"
+      >
+        <Command shouldFilter={false}>
+          <CommandInput
+            placeholder="Type to search ICD-10…"
+            value={query}
+            onValueChange={handleQueryChange}
+          />
+          <CommandList>
+            {isSearching && (
+              <div className="flex justify-center py-4">
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              </div>
+            )}
+            {!isSearching && query.length >= 2 && suggestions.length === 0 && (
+              <CommandEmpty>No ICD-10 codes found</CommandEmpty>
+            )}
+            {!isSearching &&
+              suggestions.map((r) => (
+                <CommandItem
+                  key={r.code}
+                  value={r.code}
+                  onSelect={() => handleSelect(r)}
+                  className="text-xs gap-2"
+                >
+                  <span className="font-mono font-semibold text-primary shrink-0">
+                    {r.code}
+                  </span>
+                  <span className="truncate">{r.description}</span>
+                  {r.category && (
+                    <span className="ml-auto shrink-0 text-muted-foreground">
+                      {r.category}
+                    </span>
+                  )}
+                </CommandItem>
+              ))}
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
   );
 }
 
@@ -172,13 +240,6 @@ export default function ConsultationDiagnoses({
   const [isPending, startTransition] = useTransition();
 
   const diagnoses = consultation.ConsultationDiagnoses ?? [];
-
-  /** Format `code – description` for the search input display. */
-  const searchDisplayValue = (state: DiagnosisFormState) => {
-    if (!state.icd10Code && !state.description) return "";
-    if (state.icd10Code && state.description) return `${state.icd10Code} – ${state.description}`;
-    return state.icd10Code || state.description;
-  };
 
   const refreshDiagnoses = (updated: Diagnosis[]) => {
     onPatchDetail({ ConsultationDiagnoses: updated });
@@ -300,19 +361,17 @@ export default function ConsultationDiagnoses({
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div className="sm:col-span-3">
               <Label className="text-xs">Search ICD-10 *</Label>
-              <ICD10SearchInput
-                value={searchDisplayValue(form)}
-                onChange={(val) => {
-                  // free-text fallback: keep as code if no autocomplete selection
-                  setForm({ ...form, icd10Code: val, description: "" });
-                }}
-                onSelect={(result) => {
+              <ICD10Combobox
+                icd10Code={form.icd10Code}
+                description={form.description}
+                onSelect={(result) =>
                   setForm({
                     ...form,
                     icd10Code: result.code,
                     description: result.description,
-                  });
-                }}
+                  })
+                }
+                onClear={() => setForm({ ...form, icd10Code: "", description: "" })}
               />
             </div>
             {(form.icd10Code || form.description) && (
@@ -403,6 +462,23 @@ export default function ConsultationDiagnoses({
                 className="rounded-lg border border-primary/40 bg-muted/30 p-3 space-y-2"
               >
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                  <div className="sm:col-span-3">
+                    <Label className="text-xs">Search ICD-10</Label>
+                    <ICD10Combobox
+                      icd10Code={editForm.icd10Code}
+                      description={editForm.description}
+                      onSelect={(result) =>
+                        setEditForm({
+                          ...editForm,
+                          icd10Code: result.code,
+                          description: result.description,
+                        })
+                      }
+                      onClear={() =>
+                        setEditForm({ ...editForm, icd10Code: "", description: "" })
+                      }
+                    />
+                  </div>
                   <div>
                     <Label className="text-xs">ICD-10 Code *</Label>
                     <Input

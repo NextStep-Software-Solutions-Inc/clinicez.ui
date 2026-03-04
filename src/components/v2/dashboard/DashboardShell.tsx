@@ -142,7 +142,7 @@ export default function DashboardShell({
           {/* Desktop Header */}
           <div className="hidden sm:flex h-16 items-center justify-between px-6 gap-6">
           {/* Left: Title/Clinic Section */}
-          <div className="flex-1 min-w-0">
+          <div className={activeClinic || activeOrg ? "shrink-0 min-w-0" : "flex-1 min-w-0"}>
             {activeClinic ? (
               <ClinicSelector
                 activeClinic={activeClinic}

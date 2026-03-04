@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { format, parse } from "date-fns";
+import { format, formatDistanceToNow, parse } from "date-fns";
 import {
   User,
   CalendarDays,
@@ -546,7 +546,7 @@ export function AppointmentDetailSheet({
                 <span className="text-muted-foreground text-xs">Submitted</span>
                 <div className="flex items-center gap-2 mt-0.5">
                   <CalendarClock className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-medium">{format(new Date(appointment.createdAt), "MMMM d, yyyy h:mm a")}</span>
+                  <span className="font-medium">{formatDistanceToNow(new Date(appointment.createdAt), { addSuffix: true })}</span>
                 </div>
               </div>
             </div>

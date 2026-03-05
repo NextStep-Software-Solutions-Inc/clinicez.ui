@@ -8,55 +8,55 @@ import {
   getBodyFatCategory,
   generateClinicalRemarks,
 } from '../../_lib/vitals-utils'
-import type { SerializedPatientHealthRecordsResponse } from '@/types/patient-profile'
+import type { OverviewTabData } from '@/types/patient-profile-tabs'
 
-type Props = { patient: SerializedPatientHealthRecordsResponse }
+type Props = { data: OverviewTabData }
 
-export function OverviewTab({ patient }: Props) {
+export function OverviewTab({ data }: Props) {
   return (
     <div className="space-y-6">
-      <DemographicsCard patient={patient} />
-      <QuickStatsGrid patient={patient} />
-      {patient.latestVitals && <LatestVitalsCard patient={patient} />}
+      <DemographicsCard data={data} />
+      <QuickStatsGrid data={data} />
+      {data.latestVitals && <LatestVitalsCard data={data} />}
     </div>
   )
 }
 
-function DemographicsCard({ patient }: Props) {
+function DemographicsCard({ data }: Props) {
   return (
     <div className="glassmorphic-card p-6">
       <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">📋 Demographics</h3>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {patient.email && <InfoCell label="Email" value={patient.email} />}
-        {patient.mobile && <InfoCell label="Mobile" value={patient.mobile} />}
-        {patient.telephone && <InfoCell label="Telephone" value={patient.telephone} />}
-        {patient.dob && <InfoCell label="DOB" value={new Date(patient.dob).toLocaleDateString()} />}
-        {patient.gender && <InfoCell label="Gender" value={patient.gender} className="capitalize" />}
-        {patient.suffix && <InfoCell label="Suffix" value={patient.suffix} />}
-        {patient.nickname && <InfoCell label="Nickname" value={patient.nickname} />}
-        {patient.nationality && <InfoCell label="Nationality" value={patient.nationality} />}
-        {patient.religion && <InfoCell label="Religion" value={patient.religion} />}
+        {data.email && <InfoCell label="Email" value={data.email} />}
+        {data.mobile && <InfoCell label="Mobile" value={data.mobile} />}
+        {data.telephone && <InfoCell label="Telephone" value={data.telephone} />}
+        {data.dob && <InfoCell label="DOB" value={new Date(data.dob).toLocaleDateString()} />}
+        {data.gender && <InfoCell label="Gender" value={data.gender} className="capitalize" />}
+        {data.suffix && <InfoCell label="Suffix" value={data.suffix} />}
+        {data.nickname && <InfoCell label="Nickname" value={data.nickname} />}
+        {data.nationality && <InfoCell label="Nationality" value={data.nationality} />}
+        {data.religion && <InfoCell label="Religion" value={data.religion} />}
       </div>
     </div>
   )
 }
 
-function QuickStatsGrid({ patient }: Props) {
+function QuickStatsGrid({ data }: Props) {
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-      <StatCard value={patient.medicalHistories.length} label="Medical Conditions" color="text-blue-500" />
-      <StatCard value={patient.vitalSigns.length} label="Vital Records" color="text-green-500" />
-      <StatCard value={patient.medicalCertificates.length} label="Certificates" color="text-purple-500" />
-      <StatCard value={patient.referralSlips.length} label="Referrals" color="text-orange-500" />
+      <StatCard value={data.medicalHistoriesCount} label="Medical Conditions" color="text-blue-500" />
+      <StatCard value={data.vitalSignsCount} label="Vital Records" color="text-green-500" />
+      <StatCard value={data.medicalCertificatesCount} label="Certificates" color="text-purple-500" />
+      <StatCard value={data.referralSlipsCount} label="Referrals" color="text-orange-500" />
     </div>
   )
 }
 
-function LatestVitalsCard({ patient }: Props) {
-  const vitals = patient.latestVitals!
+function LatestVitalsCard({ data }: Props) {
+  const vitals = data.latestVitals!
   const displayBMI = vitals.bmi ?? calculateBMI(vitals.weight, vitals.height)
-  const displayBodyFat = calculateBodyFat(vitals.weight, vitals.height, patient.gender)
-  const clinicalRemarks = generateClinicalRemarks(vitals, patient.gender)
+  const displayBodyFat = calculateBodyFat(vitals.weight, vitals.height, data.gender)
+  const clinicalRemarks = generateClinicalRemarks(vitals, data.gender)
 
   return (
     <div className="glassmorphic-card p-6 border border-red-200/30 dark:border-red-500/20">
@@ -68,57 +68,48 @@ function LatestVitalsCard({ patient }: Props) {
       {/* Primary vitals — 3 columns */}
       <div className="grid grid-cols-3 gap-8 mb-6">
         <div className="space-y-6">
-          {!!vitals.bpSystolic && (
-            <VitalMetric label="BP" value={`${vitals.bpSystolic}/${vitals.bpDiastolic}`} unit="mmHg" color="text-red-600 dark:text-red-400" />
-          )}
-          {!!vitals.height && (
-            <VitalMetric label="HEIGHT" value={String(vitals.height)} unit="cm" color="text-blue-600 dark:text-blue-400" />
-          )}
+            <VitalMetric label="BP" value={vitals.bpSystolic && vitals.bpDiastolic ? `${vitals.bpSystolic} / ${vitals.bpDiastolic}` : '-'} unit="mmHg" color="text-red-600 dark:text-red-400" />
+            <VitalMetric label="HEIGHT" value={String(vitals.height || '-')} unit="cm" color="text-blue-600 dark:text-blue-400" />
         </div>
         <div className="space-y-6">
-          {!!vitals.pulseRate && (
-            <VitalMetric label="HR" value={String(vitals.pulseRate)} unit="bpm" color="text-blue-600 dark:text-blue-400" />
-          )}
-          {!!displayBMI && (
-            <VitalMetric label="BMI" value={String(displayBMI)} unit={getBMICategory(parseFloat(String(displayBMI)))} color="text-purple-600 dark:text-purple-400" />
-          )}
+            <VitalMetric label="HR" value={String(vitals.pulseRate || '-')} unit="bpm" color="text-blue-600 dark:text-blue-400" />
+            <VitalMetric label="BMI" value={String(displayBMI || '-')} unit={getBMICategory(parseFloat(String(displayBMI || '0')))} color="text-purple-600 dark:text-purple-400" />
         </div>
         <div className="space-y-6">
-          {!!vitals.temp && (
-            <VitalMetric label="TEMP" value={String(vitals.temp)} unit="°C" color="text-orange-600 dark:text-orange-400" />
-          )}
-          {!!displayBodyFat && (
+            <VitalMetric label="TEMP" value={String(vitals.temp || '-')} unit="°C" color="text-orange-600 dark:text-orange-400" />
             <VitalMetric
               label="BODY FAT"
-              value={`${displayBodyFat}%`}
-              unit={getBodyFatCategory(parseFloat(displayBodyFat), patient.gender)}
+              value={`${displayBodyFat || '-'}%`}
+              unit={getBodyFatCategory(parseFloat(displayBodyFat || '0'), data.gender)}
               color="text-amber-600 dark:text-amber-400"
             />
-          )}
         </div>
       </div>
 
       {/* Secondary vitals row */}
       <div className="grid grid-cols-3 gap-8 mb-6 pb-6 border-b border-slate-300/30 dark:border-white/10">
-        {!!vitals.spo2 && (
           <div>
             <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1">SpO₂</p>
-            <p className="text-2xl font-bold text-green-600 dark:text-green-400">{vitals.spo2}%</p>
+            {
+                vitals.spo2 ? (
+                    <p className="text-2xl font-bold text-green-600 dark:text-green-400">{vitals.spo2}%</p>
+                ) : "-"
+            }
+            <p className="text-xs text-slate-600 dark:text-slate-400">%</p>
           </div>
-        )}
-        {!!vitals.respRate && (
           <div>
             <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1">RR</p>
-            <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{vitals.respRate}</p>
+            {vitals.respRate ? (
+              <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{vitals.respRate}</p>
+            ) : "-"}
             <p className="text-xs text-slate-600 dark:text-slate-400">br/min</p>
           </div>
-        )}
-        {!!vitals.weight && (
           <div>
             <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1">WEIGHT</p>
-            <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{vitals.weight}kg</p>
+            {vitals.weight ? (
+              <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{vitals.weight}kg</p>
+            ) : "-"}
           </div>
-        )}
       </div>
 
       {/* Clinical remarks */}

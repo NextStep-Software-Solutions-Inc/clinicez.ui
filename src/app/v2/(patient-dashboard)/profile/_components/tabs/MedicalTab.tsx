@@ -1,18 +1,18 @@
 'use client'
 
-import type { SerializedPatientHealthRecordsResponse } from '@/types/patient-profile'
+import type { MedicalTabData } from '@/types/patient-profile-tabs'
 
-type Props = { patient: SerializedPatientHealthRecordsResponse }
+type Props = { data: MedicalTabData }
 
-export function MedicalTab({ patient }: Props) {
+export function MedicalTab({ data }: Props) {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="glassmorphic-card p-6">
           <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">🏥 Medical History</h3>
-          {patient.medicalHistories.length > 0 ? (
+          {data.medicalHistories.length > 0 ? (
             <div className="space-y-2">
-              {patient.medicalHistories.map((h, i) => (
+              {data.medicalHistories.map((h, i) => (
                 <div key={i} className="p-3 rounded-lg bg-slate-100/50 dark:bg-white/5">
                   <p className="font-semibold text-slate-900 dark:text-white">{h.condition}</p>
                   {h.details && <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">{h.details}</p>}
@@ -26,9 +26,9 @@ export function MedicalTab({ patient }: Props) {
 
         <div className="glassmorphic-card p-6">
           <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">👨‍👩‍👧 Family History</h3>
-          {patient.familyMedicalHistories.length > 0 ? (
+          {data.familyMedicalHistories.length > 0 ? (
             <div className="space-y-2">
-              {patient.familyMedicalHistories.map((h, i) => (
+              {data.familyMedicalHistories.map((h, i) => (
                 <div key={i} className="p-3 rounded-lg bg-slate-100/50 dark:bg-white/5">
                   <p className="font-semibold text-slate-900 dark:text-white">{h.condition}</p>
                   {h.details && <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">{h.details}</p>}
@@ -43,9 +43,9 @@ export function MedicalTab({ patient }: Props) {
 
       <div className="glassmorphic-card p-6">
         <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">⚕️ Surgical History</h3>
-        {patient.surgicalHistories.length > 0 ? (
+        {data.surgicalHistories.length > 0 ? (
           <div className="space-y-3">
-            {patient.surgicalHistories.map((surgery) => (
+            {data.surgicalHistories.map((surgery) => (
               <div key={surgery.id} className="p-4 rounded-lg border border-orange-200 dark:border-orange-800 bg-orange-50/50 dark:bg-orange-950/20">
                 <p className="font-semibold text-slate-900 dark:text-white">{surgery.operationName}</p>
                 {surgery.operationDate && (

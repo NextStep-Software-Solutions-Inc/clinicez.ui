@@ -1,20 +1,20 @@
 'use client'
 
 import { PhilHealthRecords } from '@/components/patient-dashboard-v2/PhilHealthRecords'
-import type { SerializedPatientHealthRecordsResponse } from '@/types/patient-profile'
+import type { InsuranceTabData } from '@/types/patient-profile-tabs'
 
-type Props = { patient: SerializedPatientHealthRecordsResponse }
+type Props = { data: InsuranceTabData }
 
-export function InsuranceTab({ patient }: Props) {
+export function InsuranceTab({ data }: Props) {
   return (
     <div className="space-y-6">
-      <PhilHealthRecords records={(patient.philHealthRecords?.filter(r => r.PhilHealthMemberType) || []) as never} />
+      <PhilHealthRecords records={(data.philHealthRecords?.filter(r => r.PhilHealthMemberType) || []) as never} />
 
       <div className="glassmorphic-card p-6">
         <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">📜 Medical Certificates</h3>
-        {patient.medicalCertificates.length > 0 ? (
+        {data.medicalCertificates.length > 0 ? (
           <div className="space-y-2">
-            {patient.medicalCertificates.map((c, i) => (
+            {data.medicalCertificates.map((c, i) => (
               <div key={i} className="p-3 rounded-lg bg-slate-100/50 dark:bg-white/5 text-sm">
                 <p className="font-semibold text-slate-900 dark:text-white">{c.serialNumber}</p>
                 <p className="text-xs text-slate-600 dark:text-slate-400">
@@ -30,9 +30,9 @@ export function InsuranceTab({ patient }: Props) {
 
       <div className="glassmorphic-card p-6">
         <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">📋 Referral Slips</h3>
-        {patient.referralSlips.length > 0 ? (
+        {data.referralSlips.length > 0 ? (
           <div className="space-y-2">
-            {patient.referralSlips.map((r, i) => (
+            {data.referralSlips.map((r, i) => (
               <div key={i} className="p-3 rounded-lg bg-slate-100/50 dark:bg-white/5 text-sm">
                 <p className="font-semibold text-slate-900 dark:text-white">Referred to: {r.referredTo || 'N/A'}</p>
                 <p className="text-xs text-slate-600 dark:text-slate-400">Reason: {r.reason || 'N/A'}</p>
@@ -49,9 +49,9 @@ export function InsuranceTab({ patient }: Props) {
 
       <div className="glassmorphic-card p-6">
         <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">⚕️ Procedure History</h3>
-        {patient.procedureHistory.length > 0 ? (
+        {data.procedureHistory.length > 0 ? (
           <div className="space-y-2">
-            {patient.procedureHistory.map((p, i) => (
+            {data.procedureHistory.map((p, i) => (
               <div key={i} className="p-3 rounded-lg bg-slate-100/50 dark:bg-white/5 text-sm">
                 <p className="font-semibold text-slate-900 dark:text-white">
                   {new Date(p.usedAt).toLocaleDateString()}

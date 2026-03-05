@@ -1,8 +1,8 @@
 'use client'
 
-import type { SerializedPatientHealthRecordsResponse } from '@/types/patient-profile'
+import type { ExamsTabData } from '@/types/patient-profile-tabs'
 
-type Props = { patient: SerializedPatientHealthRecordsResponse }
+type Props = { data: ExamsTabData }
 
 function getExamStatusStyle(status: string | null) {
   if (!status) return { color: 'text-slate-500', bg: 'bg-slate-100 dark:bg-slate-800' }
@@ -44,15 +44,15 @@ const STATUS_DOT_COLORS: Record<string, string> = {
   abnormal: '#dc2626',
 }
 
-export function ExamsTab({ patient }: Props) {
+export function ExamsTab({ data }: Props) {
   return (
     <div className="space-y-6">
       <div className="glassmorphic-card p-6">
         <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">🔍 Physical Examinations</h3>
         <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">Latest physical examination records</p>
-        {patient.physicalExaminations.length > 0 ? (
+        {data.physicalExaminations.length > 0 ? (
           <div className="space-y-3">
-            {patient.physicalExaminations.map((e, i) => {
+            {data.physicalExaminations.map((e, i) => {
               const statusInfo = getExamStatusStyle(e.status)
               const dateTime = new Date(e.createdAt)
               const date = dateTime.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })

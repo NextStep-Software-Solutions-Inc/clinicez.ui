@@ -7,14 +7,14 @@ import {
   Tooltip as RechartsTooltip, Legend, ResponsiveContainer,
 } from 'recharts'
 import { calculateAgeInMonths, formatAge, getLengthPercentile, getWeightPercentile, getGrowthStatusColor } from '@/lib/pediatric-growth-utils'
-import type { SerializedPatientHealthRecordsResponse } from '@/types/patient-profile'
+import type { PediatricTabData } from '@/types/patient-profile-tabs'
 
-type Props = { patient: SerializedPatientHealthRecordsResponse }
+type Props = { data: PediatricTabData }
 
-export function PediatricTab({ patient }: Props) {
+export function PediatricTab({ data }: Props) {
   const [viewMode, setViewMode] = useState<'list' | 'chart'>('list')
 
-  if (patient.pediatricMeasurements.length === 0) {
+  if (data.pediatricMeasurements.length === 0) {
     return (
       <div className="glassmorphic-card p-6">
         <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">📏 Pediatric Measurements</h3>
@@ -55,22 +55,22 @@ export function PediatricTab({ patient }: Props) {
         </div>
 
         {viewMode === 'list' ? (
-          <PediatricListView patient={patient} />
+          <PediatricListView data={data} />
         ) : (
-          <PediatricChartView patient={patient} />
+          <PediatricChartView data={data} />
         )}
       </div>
     </div>
   )
 }
 
-function PediatricListView({ patient }: Props) {
+function PediatricListView({ data }: Props) {
   return (
     <div className="space-y-4">
-      {patient.pediatricMeasurements.map((p, i) => {
-        const ageMonths = calculateAgeInMonths(new Date(patient.dob!), new Date(p.dateTaken))
-        const lengthPercentile = p.length ? getLengthPercentile(ageMonths, Number(p.length), patient.gender as 'MALE' | 'FEMALE') : null
-        const weightPercentile = p.length ? getWeightPercentile(ageMonths, Number(p.length), patient.gender as 'MALE' | 'FEMALE') : null
+      {data.pediatricMeasurements.map((p, i) => {
+        const ageMonths = calculateAgeInMonths(new Date(data.dob!), new Date(p.dateTaken))
+        const lengthPercentile = p.length ? getLengthPercentile(ageMonths, Number(p.length), data.gender as 'MALE' | 'FEMALE') : null
+        const weightPercentile = p.length ? getWeightPercentile(ageMonths, Number(p.length), data.gender as 'MALE' | 'FEMALE') : null
 
         return (
           <div key={i} className="border rounded-lg p-4 bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700">
@@ -80,7 +80,7 @@ function PediatricListView({ patient }: Props) {
                   {new Date(p.dateTaken).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                 </p>
                 <p className="text-xs text-slate-600 dark:text-slate-400">
-                  Age: {formatAge(new Date(patient.dob!), new Date(p.dateTaken))} ({ageMonths} months)
+                  Age: {formatAge(new Date(data.dob!), new Date(p.dateTaken))} ({ageMonths} months)
                 </p>
               </div>
               <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
@@ -162,12 +162,12 @@ const PEDIATRIC_CHART_LABELS: Record<string, string> = {
   skinfoldThickness: 'Skinfold (mm)',
 }
 
-function PediatricChartView({ patient }: Props) {
-  const chartData = patient.pediatricMeasurements
+function PediatricChartView({ data }: Props) {
+  const chartData = data.pediatricMeasurements
     .map(p => ({
       date: new Date(p.dateTaken).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
       timestamp: new Date(p.dateTaken).getTime(),
-      ageMonths: calculateAgeInMonths(new Date(patient.dob!), new Date(p.dateTaken)),
+      ageMonths: calculateAgeInMonths(new Date(data.dob!), new Date(p.dateTaken)),
       length: p.length ? Number(p.length) : null,
       headCircumference: p.headCircumference ? Number(p.headCircumference) : null,
       waistCircumference: p.waistCircumference ? Number(p.waistCircumference) : null,
@@ -200,16 +200,16 @@ function PediatricChartView({ patient }: Props) {
             }}
           />
           <Legend wrapperStyle={{ paddingTop: '20px' }} iconType="line" />
-          {patient.pediatricMeasurements.some(p => p.length) && (
+          {data.pediatricMeasurements.some(p => p.length) && (
             <Line type="monotone" dataKey="length" stroke="#06b6d4" dot={false} name="Length (cm)" strokeWidth={2} />
           )}
-          {patient.pediatricMeasurements.some(p => p.headCircumference) && (
+          {data.pediatricMeasurements.some(p => p.headCircumference) && (
             <Line type="monotone" dataKey="headCircumference" stroke="#f97316" dot={false} name="HC (cm)" strokeWidth={2} />
           )}
-          {patient.pediatricMeasurements.some(p => p.waistCircumference) && (
+          {data.pediatricMeasurements.some(p => p.waistCircumference) && (
             <Line type="monotone" dataKey="waistCircumference" stroke="#ec4899" dot={false} name="Waist (cm)" strokeWidth={2} />
           )}
-          {patient.pediatricMeasurements.some(p => p.midUpperArmCircumference) && (
+          {data.pediatricMeasurements.some(p => p.midUpperArmCircumference) && (
             <Line type="monotone" dataKey="midUpperArmCircumference" stroke="#8b5cf6" dot={false} name="MUAC (cm)" strokeWidth={2} />
           )}
         </LineChart>

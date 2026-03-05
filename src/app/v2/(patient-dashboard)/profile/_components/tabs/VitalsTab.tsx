@@ -14,14 +14,14 @@ import {
   getVitalStatusColor,
   generateVitalRemarks,
 } from '../../_lib/vitals-utils'
-import type { SerializedPatientHealthRecordsResponse } from '@/types/patient-profile'
+import type { VitalsTabData } from '@/types/patient-profile-tabs'
 
-type Props = { patient: SerializedPatientHealthRecordsResponse }
+type Props = { data: VitalsTabData }
 
-export function VitalsTab({ patient }: Props) {
+export function VitalsTab({ data }: Props) {
   const [viewMode, setViewMode] = useState<'list' | 'chart'>('list')
 
-  if (patient.vitalSigns.length === 0) {
+  if (data.vitalSigns.length === 0) {
     return (
       <div className="glassmorphic-card p-6">
         <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">❤️ Vital Signs</h3>
@@ -65,24 +65,24 @@ export function VitalsTab({ patient }: Props) {
         </div>
 
         {viewMode === 'list' ? (
-          <VitalsListView patient={patient} />
+          <VitalsListView data={data} />
         ) : (
-          <VitalsChartView patient={patient} />
+          <VitalsChartView data={data} />
         )}
       </div>
     </div>
   )
 }
 
-function VitalsListView({ patient }: Props) {
+function VitalsListView({ data }: Props) {
   return (
     <div className="space-y-3">
-      {patient.vitalSigns.map((v, i) => {
+      {data.vitalSigns.map((v, i) => {
         const bmi = calculateBMI(v.weight, v.height)
-        const bodyFat = calculateBodyFat(v.weight, v.height, patient.gender)
+        const bodyFat = calculateBodyFat(v.weight, v.height, data.gender)
         const bmiInfo = getBMICategoryWithColor(bmi ? parseFloat(bmi) : null)
-        const bodyFatInfo = getBodyFatCategoryWithColor(bodyFat ? parseFloat(bodyFat) : null, patient.gender)
-        const remarks = generateVitalRemarks(v, patient.gender)
+        const bodyFatInfo = getBodyFatCategoryWithColor(bodyFat ? parseFloat(bodyFat) : null, data.gender)
+        const remarks = generateVitalRemarks(v, data.gender)
         const dateTime = new Date(v.dateTaken)
         const date = dateTime.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
         const time = dateTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })
@@ -97,71 +97,77 @@ function VitalsListView({ patient }: Props) {
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-              {(v.bpSystolic || v.bpDiastolic) && (
+              
                 <div className="flex flex-col">
                   <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1">BP</p>
-                  <p className={`text-sm font-bold ${getVitalStatusColor(v.bpSystolic, 90, 120, 140)}`}>
-                    {v.bpSystolic}/{v.bpDiastolic}
-                  </p>
+                    {v.bpSystolic && v.bpDiastolic ? (
+                        <p className={`text-sm font-bold ${getVitalStatusColor(v.bpSystolic, 90, 120, 140) || getVitalStatusColor(v.bpDiastolic, 60, 80, 90)}`}>
+                        {v.bpSystolic}/{v.bpDiastolic}
+                        </p>
+                    ) : "-"}
                   <p className="text-xs text-slate-500 dark:text-slate-400">mmHg</p>
                 </div>
-              )}
-              {v.pulseRate && (
+            
                 <div className="flex flex-col">
                   <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1">HR</p>
-                  <p className={`text-sm font-bold ${getVitalStatusColor(v.pulseRate, 50, 72, 100)}`}>{v.pulseRate}</p>
+                    {v.pulseRate ? (
+                    <p className={`text-sm font-bold ${getVitalStatusColor(v.pulseRate, 60, 100, 120)}`}>{v.pulseRate}</p>
+                    ) : "-"}
                   <p className="text-xs text-slate-500 dark:text-slate-400">bpm</p>
                 </div>
-              )}
-              {v.temp && (
                 <div className="flex flex-col">
                   <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1">Temp</p>
-                  <p className={`text-sm font-bold ${getVitalStatusColor(v.temp, 36, 37, 38.5)}`}>{v.temp}</p>
+                  {
+                    v.temp ? (
+                      <p className={`text-sm font-bold ${getVitalStatusColor(v.temp, 36.1, 37.2, 38)}`}>{v.temp}</p>
+                    ) : "-"
+                  }
                   <p className="text-xs text-slate-500 dark:text-slate-400">°C</p>
                 </div>
-              )}
-              {v.spo2 && (
                 <div className="flex flex-col">
                   <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1">SpO₂</p>
-                  <p className={`text-sm font-bold ${getVitalStatusColor(v.spo2, 94, 98, 100)}`}>{v.spo2}</p>
+                  {v.spo2 ? (
+                    <p className={`text-sm font-bold ${getVitalStatusColor(v.spo2, 94, 98, 100)}`}>{v.spo2}</p>
+                  ) : "-"}  
                   <p className="text-xs text-slate-500 dark:text-slate-400">%</p>
                 </div>
-              )}
-              {v.respRate && (
                 <div className="flex flex-col">
                   <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1">RR</p>
-                  <p className={`text-sm font-bold ${getVitalStatusColor(v.respRate, 12, 16, 20)}`}>{v.respRate}</p>
+                  {v.respRate ? (
+                    <p className={`text-sm font-bold ${getVitalStatusColor(v.respRate, 12, 16, 20)}`}>{v.respRate}</p>
+                  ) : "-"}
                   <p className="text-xs text-slate-500 dark:text-slate-400">br/min</p>
                 </div>
-              )}
-              {v.weight && (
                 <div className="flex flex-col">
                   <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1">Weight</p>
-                  <p className="text-sm font-bold text-slate-900 dark:text-white">{v.weight}</p>
+                  {v.weight ? (
+                    <p className="text-sm font-bold text-slate-900 dark:text-white">{v.weight}</p>
+                  ) : "-"}
                   <p className="text-xs text-slate-500 dark:text-slate-400">kg</p>
                 </div>
-              )}
-              {v.height && (
                 <div className="flex flex-col">
                   <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1">Height</p>
-                  <p className="text-sm font-bold text-slate-900 dark:text-white">{v.height}</p>
+                  {v.height ? (
+                    <p className="text-sm font-bold text-slate-900 dark:text-white">{v.height}</p>
+                  ) : "-"}  
                   <p className="text-xs text-slate-500 dark:text-slate-400">cm</p>
                 </div>
-              )}
-              {bmi && (
                 <div className="flex flex-col">
                   <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1">BMI</p>
-                  <p className={`text-sm font-bold ${bmiInfo.color}`}>{bmi}</p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">{bmiInfo.category}</p>
+                    {bmi ? (<>
+                      <p className={`text-sm font-bold ${bmiInfo.color}`}>{bmi}</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">{bmiInfo.category}</p>
+                    </>) : "-"}
                 </div>
-              )}
-              {bodyFat && (
                 <div className="flex flex-col">
                   <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1">Body Fat</p>
-                  <p className={`text-sm font-bold ${bodyFatInfo.color}`}>{bodyFat}%</p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">{bodyFatInfo.category}</p>
+                  {bodyFat ? (
+                    <>
+                      <p className={`text-sm font-bold ${bodyFatInfo.color}`}>{bodyFat}%</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">{bodyFatInfo.category}</p>
+                    </>
+                  ) : "-"}  
                 </div>
-              )}
             </div>
 
             {remarks.length > 0 && (
@@ -188,8 +194,8 @@ function VitalsListView({ patient }: Props) {
   )
 }
 
-function VitalsChartView({ patient }: Props) {
-  const chartData = patient.vitalSigns
+function VitalsChartView({ data }: Props) {
+  const chartData = data.vitalSigns
     .map(v => ({
       date: new Date(v.dateTaken).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
       timestamp: new Date(v.dateTaken).getTime(),
@@ -223,22 +229,22 @@ function VitalsChartView({ patient }: Props) {
           <YAxis stroke="rgb(100, 116, 139)" strokeOpacity={0.5} tick={{ fontSize: 12 }} />
           <RechartsTooltip {...tooltipStyle} />
           <Legend wrapperStyle={{ paddingTop: '20px' }} iconType="line" />
-          {patient.vitalSigns.some(v => v.bpSystolic) && (
+          {data.vitalSigns.some(v => v.bpSystolic) && (
             <Line type="monotone" dataKey="bpSystolic" stroke="#ef4444" dot={false} name="BP Systolic (mmHg)" strokeWidth={2} />
           )}
-          {patient.vitalSigns.some(v => v.bpDiastolic) && (
+          {data.vitalSigns.some(v => v.bpDiastolic) && (
             <Line type="monotone" dataKey="bpDiastolic" stroke="#f97316" dot={false} name="BP Diastolic (mmHg)" strokeWidth={2} />
           )}
-          {patient.vitalSigns.some(v => v.pulseRate) && (
+          {data.vitalSigns.some(v => v.pulseRate) && (
             <Line type="monotone" dataKey="pulseRate" stroke="#06b6d4" dot={false} name="Heart Rate (bpm)" strokeWidth={2} />
           )}
-          {patient.vitalSigns.some(v => v.temp) && (
+          {data.vitalSigns.some(v => v.temp) && (
             <Line type="monotone" dataKey="temp" stroke="#ec4899" dot={false} name="Temperature (°C)" strokeWidth={2} />
           )}
-          {patient.vitalSigns.some(v => v.spo2) && (
+          {data.vitalSigns.some(v => v.spo2) && (
             <Line type="monotone" dataKey="spo2" stroke="#8b5cf6" dot={false} name="SpO₂ (%)" strokeWidth={2} />
           )}
-          {patient.vitalSigns.some(v => v.respRate) && (
+          {data.vitalSigns.some(v => v.respRate) && (
             <Line type="monotone" dataKey="respRate" stroke="#14b8a6" dot={false} name="Respiration Rate (br/min)" strokeWidth={2} />
           )}
         </LineChart>

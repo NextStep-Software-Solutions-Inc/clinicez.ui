@@ -1,11 +1,11 @@
 'use client'
 
-import type { SerializedPatientHealthRecordsResponse } from '@/types/patient-profile'
+import type { ObGynTabData } from '@/types/patient-profile-tabs'
 
-type Props = { patient: SerializedPatientHealthRecordsResponse }
+type Props = { data: ObGynTabData }
 
-export function ObGynTab({ patient }: Props) {
-  if (patient.gender?.toUpperCase() === 'MALE') {
+export function ObGynTab({ data }: Props) {
+  if (data.gender?.toUpperCase() === 'MALE') {
     return (
       <div className="glassmorphic-card p-6">
         <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">👶 OB/GYN History</h3>
@@ -25,24 +25,24 @@ export function ObGynTab({ patient }: Props) {
   return (
     <div className="glassmorphic-card p-6">
       <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">👶 OB/GYN History</h3>
-      {patient.obGyneHistory ? (
+      {data.obGyneHistory ? (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {patient.obGyneHistory.menarche && (
+          {data.obGyneHistory.menarche && (
             <div className="p-3 rounded-lg bg-slate-100/50 dark:bg-white/5">
               <p className="text-xs text-slate-600 dark:text-slate-400">Menarche</p>
-              <p className="font-semibold">{patient.obGyneHistory.menarche} yrs</p>
+              <p className="font-semibold">{data.obGyneHistory.menarche} yrs</p>
             </div>
           )}
-          {patient.obGyneHistory.gravidity && (
+          {data.obGyneHistory.gravidity && (
             <div className="p-3 rounded-lg bg-slate-100/50 dark:bg-white/5">
               <p className="text-xs text-slate-600 dark:text-slate-400">Gravidity</p>
-              <p className="font-semibold">{patient.obGyneHistory.gravidity}</p>
+              <p className="font-semibold">{data.obGyneHistory.gravidity}</p>
             </div>
           )}
-          {patient.obGyneHistory.parity && (
+          {data.obGyneHistory.parity && (
             <div className="p-3 rounded-lg bg-slate-100/50 dark:bg-white/5">
               <p className="text-xs text-slate-600 dark:text-slate-400">Parity</p>
-              <p className="font-semibold">{patient.obGyneHistory.parity}</p>
+              <p className="font-semibold">{data.obGyneHistory.parity}</p>
             </div>
           )}
         </div>

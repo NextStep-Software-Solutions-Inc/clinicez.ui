@@ -3,10 +3,10 @@
 import { Info } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { formatBloodType } from '@/lib/utils'
-import type { SerializedPatientHealthRecordsResponse } from '@/types/patient-profile'
+import type { PatientBaseData } from '@/types/patient-profile-tabs'
 
 interface ProfileCardProps {
-  patient: SerializedPatientHealthRecordsResponse
+  patient: PatientBaseData
 }
 
 export function ProfileCard({ patient }: ProfileCardProps) {

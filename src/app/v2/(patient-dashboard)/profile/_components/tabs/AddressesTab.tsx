@@ -1,17 +1,17 @@
 'use client'
 
-import type { SerializedPatientHealthRecordsResponse } from '@/types/patient-profile'
+import type { AddressesTabData } from '@/types/patient-profile-tabs'
 
-type Props = { patient: SerializedPatientHealthRecordsResponse }
+type Props = { data: AddressesTabData }
 
-export function AddressesTab({ patient }: Props) {
+export function AddressesTab({ data }: Props) {
   return (
     <div className="space-y-6">
       <div className="glassmorphic-card p-6">
         <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">📍 Addresses</h3>
-        {patient.userAddresses.length > 0 ? (
+        {data.userAddresses.length > 0 ? (
           <div className="space-y-3">
-            {patient.userAddresses.map((addr) => (
+            {data.userAddresses.map((addr) => (
               <div key={addr.id} className="p-4 rounded-lg bg-green-50/30 dark:bg-green-950/20 border border-green-200/30 dark:border-green-800/30">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>

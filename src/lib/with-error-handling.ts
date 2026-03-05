@@ -1,4 +1,5 @@
 import { hasContextProperty } from '@/lib/utils'
+import { PermissionError } from '@/lib/permission-errors'
 
 type AsyncFunction<T, A extends any[]> = (...args: A) => Promise<{ status: boolean, message: string, data: T }>;
 type Result<T> = { status: boolean, message: string, data: T | null };
@@ -39,10 +40,16 @@ export function withErrorHandling<TData, A extends unknown[]>(
       if (error && typeof error === 'object' && 'meta' in error) {
         console.error('Prisma error details:', JSON.stringify(error, null, 2));
       }
-      if (error instanceof Error) message = error.message;
+      // Preserve the specific message from PermissionError (includes context)
+      if (error instanceof PermissionError) {
+        message = error.context
+          ? `${error.message} (${error.context})`
+          : error.message;
+      } else if (error instanceof Error) {
+        message = error.message;
+      }
       if (customErrorHandler) {
         const maybe = customErrorHandler(error, { functionName: fn.name, args });
-        const m = maybe instanceof Promise ? await maybe : maybe;
         const resolvedMessage = maybe instanceof Promise ? await maybe : maybe;
         if (resolvedMessage !== undefined && resolvedMessage !== null) message = resolvedMessage.toString();
       }

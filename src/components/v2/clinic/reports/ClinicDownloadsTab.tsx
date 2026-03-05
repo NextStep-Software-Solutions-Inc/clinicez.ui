@@ -46,6 +46,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn, calculateAge } from "@/lib/utils";
 import { exportXLSX, type XLSXExportData } from "@/lib/file-manipulation";
 import { toast } from "sonner";
+import { getActionErrorMessage } from "@/lib/action-error";
 import { getClinicExportDataAction, type GetClinicExportData } from "@/actions/clinics/clinic-report-download.action";
 
 /* ─────────────────────────────────────────────────────── */
@@ -617,8 +618,8 @@ function ConsultationAppointmentReportCard({ clinicUid }: { clinicUid: string })
 
       exportXLSX(columns, rows, { filename, sheetName });
       toast.success(`Report downloaded successfully (${rows.length} records)`);
-    } catch {
-      toast.error("Failed to download report");
+    } catch (error) {
+      toast.error(getActionErrorMessage(error, "Failed to download report"));
     } finally {
       setIsLoading(false);
     }
@@ -926,10 +927,8 @@ function SAPGenerationCard({ clinicUid }: { clinicUid: string }) {
       toast.success(result.message, { id: toastId });
       form.reset();
     } catch (error) {
-      toast.error("Failed to download bulk EKAS", {
+      toast.error(getActionErrorMessage(error, "Failed to download bulk EKAS"), {
         id: toastId,
-        description:
-          error instanceof Error ? error.message : "Unknown error occurred",
       });
     } finally {
       setIsLoading(false);

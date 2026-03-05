@@ -49,7 +49,6 @@ export const getMedicationDrugsAction = withErrorHandling(async (medicationId: n
  
 }, async error => {
   if(hasCodeProperty(error) && error.code === "P2002") return "Medication drugs not found";
-  return "Failed to fetch medication drugs";
 })
 
 type AddMedicationDrugPayload = {
@@ -97,7 +96,6 @@ export const addMedicationDrugAction = withErrorHandling(async (payload: AddMedi
 
 }, async error => {
   if(hasCodeProperty(error) && error.code === "P2002") return "Medication drug already exists";
-  return "Failed to add medication drug";
 })
 
 
@@ -130,5 +128,4 @@ export const removeMedicationDrugAction = withErrorHandling(async (medicationDru
 
 }, async error => {
   if(hasCodeProperty(error) && error.code === "P2025") return  "Medication drug not found";
-  return "Failed to delete medication drug";
 })

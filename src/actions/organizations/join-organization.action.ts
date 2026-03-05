@@ -115,7 +115,6 @@ export const joinOrganizationAction = withErrorHandling(async (payload: JoinOrga
 }, async error => {
   if (hasCodeProperty(error) && error.code === "P2002") return "User is already a member of the organization";
   if (error instanceof Error && error.message === "User email is not verified") return "Your email address is not verified. Please verify your email before joining an organization.";
-  return "An error occurred while sending the membership request. Please try again later.";
 })
 
 const sendEmailNotifications = async (adminEmails: string[], orgName: string, applicantName: string, applicantEmail: string) => {

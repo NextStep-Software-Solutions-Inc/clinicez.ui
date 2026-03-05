@@ -112,8 +112,6 @@ export const receiveAppointmentAction = withErrorHandling(async (formData: FormD
   if (hasCodeProperty(error) && error.code === 'P2025') {
     return "This appointment is already being handled by another staff member. Please refresh to see the current status.";
   }
-  if (error instanceof Error) return error.message;
-  return "An error occurred while receiving appointment."
 })
 
 export const completeAppointmentAction = withErrorHandling(async (formData: FormData) => {
@@ -159,7 +157,6 @@ export const completeAppointmentAction = withErrorHandling(async (formData: Form
   return { message: 'Appointment completed', data: undefined };
 }, async error => {
   if (error instanceof Error) return error.message;
-  return "An error occurred while completing appointment."
 })
 
 type ConfirmAppointmentBookingPayload = {
@@ -247,7 +244,6 @@ export const confirmAppointmentBookingAction = withErrorHandling(async (payload:
   return { message: "Appointment booking confirmed", data: undefined };
 }, async (error) => {
   if (error instanceof Error) return error.message;
-  return "An error occurred while confirming appointment booking.";
 });
 
 export const rejectAppointmentAction = withErrorHandling(async (formData: FormData) => {
@@ -315,7 +311,6 @@ export const rejectAppointmentAction = withErrorHandling(async (formData: FormDa
     }
     return error.message;
   }
-  return "An error occurred while rejecting appointment."
 })
 
 export const cancelAppointmentAction = withErrorHandling(async (formData: FormData) => {
@@ -363,7 +358,6 @@ export const cancelAppointmentAction = withErrorHandling(async (formData: FormDa
     }
     return error.message;
   }
-  return "An error occurred while cancelling the appointment.";
 })
 
 type RescheduleAppointmentPayload = {
@@ -442,7 +436,6 @@ export const rescheduleAppointmentAction = withErrorHandling(async (payload: Res
   return { message: "Appointment rescheduled", data: undefined };
 }, async (error) => {
   if (error instanceof Error) return error.message;
-  return "An error occurred while rescheduling the appointment.";
 });
 
 export const returnAppointmentAction = withErrorHandling(async (formData: FormData) => {
@@ -486,7 +479,6 @@ export const returnAppointmentAction = withErrorHandling(async (formData: FormDa
     }
     return error.message;
   }
-  return "An error occurred while returning the appointment.";
 });
 /**
  * Save AI symptom analysis to the AppointmentAttribute record.

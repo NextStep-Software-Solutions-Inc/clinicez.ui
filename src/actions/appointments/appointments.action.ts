@@ -810,7 +810,6 @@ export const createWalkInAppointmentAction = withErrorHandling(async (payload: C
   return { message: "Walk-in appointment created", data: null };
 }, async (error) => {
   if (error instanceof Error) return error.message;
-  return "Failed to create walk-in appointment";
 });
 
 

@@ -30,7 +30,7 @@ export function withErrorHandling<TData, A extends unknown[]>(
   customErrorHandler?: CustomErrorHandler
 ): (...args: A) => Promise<Result<TData>> {
   return async (...args: A): Promise<Result<TData>> => {
-    let message = "Operation completed successfully";
+    let message = "An unexpected error occurred";
     try {
       const result = await fn(...args);
       return { ...result, status: true };

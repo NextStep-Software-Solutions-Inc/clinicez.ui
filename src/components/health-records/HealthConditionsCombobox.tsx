@@ -7,6 +7,7 @@ import {
   Command,
   CommandEmpty,
   CommandInput,
+  CommandItem,
   CommandList,
 } from '@/components/ui/command'
 import {
@@ -206,17 +207,10 @@ export function HealthConditionsCombobox({
                       {filteredTopConditions.map((condition) => {
                         const isSelected = value.some((c) => c.conditionId === condition.id)
                         return (
-                          <div
-                            key={condition.id}
-                            className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground"
-                            onClick={() => toggleCondition(condition.id)}
-                          >
+                          <CommandItem key={condition.id} value={condition.name}>
                             <Checkbox
                               checked={isSelected}
-                              onCheckedChange={(e) => {
-                                // Event is already handled by parent onClick
-                                // This handler is here only for accessibility
-                              }}
+                              onCheckedChange={() => toggleCondition(condition.id)}
                               className="mr-2"
                             />
                             <span className="flex-1">{condition.name}</span>
@@ -225,7 +219,7 @@ export function HealthConditionsCombobox({
                                 ({condition.usageCount})
                               </span>
                             )}
-                          </div>
+                          </CommandItem>
                         )
                       })}
                     </>
@@ -243,21 +237,14 @@ export function HealthConditionsCombobox({
                       {filteredOtherConditions.map((condition) => {
                         const isSelected = value.some((c) => c.conditionId === condition.id)
                         return (
-                          <div
-                            key={condition.id}
-                            className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground"
-                            onClick={() => toggleCondition(condition.id)}
-                          >
+                          <CommandItem key={condition.id} value={condition.name}>
                             <Checkbox
                               checked={isSelected}
-                              onCheckedChange={(e) => {
-                                // Event is already handled by parent onClick
-                                // This handler is here only for accessibility
-                              }}
+                              onCheckedChange={() => toggleCondition(condition.id)}
                               className="mr-2"
                             />
                             <span className="flex-1">{condition.name}</span>
-                          </div>
+                          </CommandItem>
                         )
                       })}
                     </>

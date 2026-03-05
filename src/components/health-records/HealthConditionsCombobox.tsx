@@ -94,12 +94,46 @@ export function HealthConditionsCombobox({
 
   const allConditions = [...topConditions, ...otherConditions]
 
+  /**
+   * Flexible search that matches conditions in multiple ways:
+   * 1. Substring match: "acne" matches "Acne"
+   * 2. Fuzzy match: "ance" matches "Acne" (all chars present)
+   * 3. Sequential match: "hbp" matches "High Blood Pressure"
+   */
+  const matchesSearch = (conditionName: string, search: string): boolean => {
+    if (!search) return true
+    
+    const nameLower = conditionName.toLowerCase()
+    const searchLower = search.toLowerCase()
+    
+    // First try exact substring match (fastest and most intuitive)
+    if (nameLower.includes(searchLower)) return true
+    
+    // Then try flexible fuzzy matching:
+    // Check if all search characters exist in the condition name
+    const searchChars = searchLower.split('')
+    const nameChars = nameLower.split('')
+    
+    // Try to match all search characters (order-independent for better UX)
+    const remainingNameChars = [...nameChars]
+    for (const searchChar of searchChars) {
+      const index = remainingNameChars.indexOf(searchChar)
+      if (index === -1) {
+        return false // Character not found
+      }
+      // Remove the matched character so we don't reuse it
+      remainingNameChars.splice(index, 1)
+    }
+    
+    return true
+  }
+
   const filteredTopConditions = topConditions.filter((c) =>
-    c.name.toLowerCase().includes(searchTerm.toLowerCase())
+    matchesSearch(c.name, searchTerm)
   )
 
   const filteredOtherConditions = otherConditions.filter((c) =>
-    c.name.toLowerCase().includes(searchTerm.toLowerCase())
+    matchesSearch(c.name, searchTerm)
   )
 
   const toggleCondition = (conditionId: number) => {

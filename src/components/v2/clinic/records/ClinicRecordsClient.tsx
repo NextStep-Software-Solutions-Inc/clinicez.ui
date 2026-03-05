@@ -22,7 +22,6 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from "sonner";
-import { getActionErrorMessage } from "@/lib/action-error";
 import dayjs from "@/lib/day-utils";
 
 import type { GetPrescriptions } from "@/actions/clinics/clinical-record/prescription.action";
@@ -753,15 +752,15 @@ export function ClinicRecordsClient({
         !medCertsResult.status ||
         !referralResult.status
       ) {
-        const failedResult = [
+        const failedMessage = [
           prescriptionsResult,
           labResult,
           imagingResult,
           heartResult,
           medCertsResult,
           referralResult,
-        ].find((r) => !r.status);
-        toast.error(getActionErrorMessage(failedResult, "Failed to refresh records"));
+        ].find((r) => !r.status)?.message;
+        toast.error(failedMessage || "Failed to refresh records");
         return;
       }
 

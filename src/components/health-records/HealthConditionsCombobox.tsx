@@ -173,7 +173,7 @@ export function HealthConditionsCombobox({
             role="combobox"
             aria-expanded={open}
             disabled={disabled}
-            className="w-full justify-between"
+            className="w-full justify-between dark:text-gray-300"
           >
             {value.length === 0 ? 'Select conditions...' : `${value.length} condition(s) selected`}
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -258,10 +258,10 @@ export function HealthConditionsCombobox({
       {/* Details Fields for Selected Conditions */}
       {value.length > 0 && (
         <div className="space-y-3 border-t pt-4">
-          <h4 className="text-sm font-medium">Add Details</h4>
+          <h4 className="text-sm font-medium dark:text-gray-400">Add Details</h4>
           {value.map((cond) => (
             <div key={cond.conditionId} className="space-y-1">
-              <label className="text-xs font-medium text-gray-700">
+              <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
                 {getConditionName(cond.conditionId)}
               </label>
               <Input

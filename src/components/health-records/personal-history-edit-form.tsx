@@ -92,7 +92,7 @@ export function PersonalHistoryEditForm({
   })
 
   const formContent = (
-    <>
+    <div className="dark:text-gray-400 space-y-6">
       {/* Smoking History */}
       <div className="space-y-4 border-b pb-4">
         <h3 className="text-sm font-semibold">Smoking</h3>
@@ -220,7 +220,7 @@ export function PersonalHistoryEditForm({
           </Select>
         </FormField>
       </div>
-    </>
+    </div>
   )
 
   if (inline) {

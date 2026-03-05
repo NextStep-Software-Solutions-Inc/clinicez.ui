@@ -7,6 +7,7 @@ import { FormModal, FormField, EditButton } from './index'
 import { Input } from '@/components/ui/input'
 import { toast } from 'sonner'
 import { getActionErrorMessage } from '@/lib/action-error'
+import { Textarea } from '../ui/textarea'
 
 export interface PhysicalExaminationEditFormProps {
   userId: string
@@ -100,7 +101,7 @@ export function PhysicalExaminationEditForm({
   const formContent = (
     <>
       {/* Visual Acuity */}
-        <div className="space-y-4 border-b pb-4">
+        <div className="space-y-4 border-b pb-4 dark:text-gray-400">
           <h3 className="text-sm font-semibold">Visual Acuity (Optional)</h3>
 
           <FormField
@@ -135,7 +136,7 @@ export function PhysicalExaminationEditForm({
         </div>
 
         {/* Examination Findings */}
-        <div className="space-y-4 pt-4">
+        <div className="space-y-4 pt-4 dark:text-gray-400">
           <h3 className="text-sm font-semibold">Examination Findings (Optional)</h3>
 
           <FormField
@@ -143,13 +144,13 @@ export function PhysicalExaminationEditForm({
             htmlFor="status"
             helpText="Document any abnormal findings or notes (up to 200 characters)"
           >
-            <textarea
+            <Textarea
               id="status"
               value={formData.status || ''}
               onChange={(e) => handleFieldChange('status', e.target.value || null)}
               maxLength={200}
               placeholder="e.g., Normal examination, no abnormalities detected"
-              className="min-h-16 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-950"
+              className="min-h-16 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm"
             />
           </FormField>
         </div>

@@ -246,7 +246,7 @@ export function PhilHealthRecordEditForm({
   })
 
   const formContent = (
-    <>
+    <div className="space-y-6 dark:text-gray-400">
       {/* Required Information */}
       <div className="space-y-4 border-b pb-4">
         <h3 className="text-sm font-semibold">Required Information</h3>
@@ -287,7 +287,7 @@ export function PhilHealthRecordEditForm({
       </div>
 
       {/* Optional Information */}
-      <div className="space-y-4 border-b py-4">
+      <div className="space-y-4 border-b py-4 dark:text-gray-400">
         <h3 className="text-sm font-semibold">Additional Information</h3>
 
         <FormField label="TIN (Tax Identification Number)" htmlFor="tin" helpText={philHealthRecordLabels.tin}>
@@ -562,7 +562,7 @@ export function PhilHealthRecordEditForm({
           <p className="text-xs text-gray-500 dark:text-gray-400">No dependents added yet</p>
         )}
       </div>
-    </>
+    </div>
   )
 
   if (inline) {

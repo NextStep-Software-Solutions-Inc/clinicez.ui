@@ -111,7 +111,7 @@ export function PediatricMeasurementEditForm({
   })
 
   const formContent = (
-    <>
+    <div className='dark:text-gray-400 space-y-6'>
       {/* Date */}
       <div className="space-y-4 border-b pb-4">
         <h3 className="text-sm font-semibold">Measurement Date</h3>
@@ -252,7 +252,7 @@ export function PediatricMeasurementEditForm({
             />
           </FormField>
         </div>
-    </>
+    </div>
   )
 
   if (inline) {

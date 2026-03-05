@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Plus, Edit2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { getActionErrorMessage } from '@/lib/action-error'
+import { Textarea } from '../ui/textarea'
 
 export interface VitalSignEditFormProps {
   userId: string
@@ -275,12 +276,12 @@ export function VitalSignEditForm({
       <div className="space-y-4 pt-4">
         <h3 className="text-sm font-semibold">Notes (Optional)</h3>
         <FormField label="Additional Notes" htmlFor="notes" helpText="Up to 500 characters">
-          <textarea
+          <Textarea
             id="notes"
             value={formData.notes || ''}
             onChange={(e) => handleFieldChange('notes', e.target.value)}
             placeholder="e.g., Patient was anxious, measurements taken after rest"
-            className="min-h-20 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-950"
+            className="min-h-20 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm"
           />
         </FormField>
       </div>
@@ -289,7 +290,7 @@ export function VitalSignEditForm({
 
   if (inline) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-6 dark:text-gray-400">
         {/* Form Title & Action Buttons */}
         <div className="space-y-3">
           <h3 className="text-sm font-semibold">{isEditingExisting ? 'Update Last Measurement' : 'Add New Measurement'}</h3>

@@ -14,6 +14,7 @@ import { Input } from "@components/ui/input";
 import { Badge } from "@components/ui/badge";
 import { Search, Plus, Edit, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { getActionErrorMessage } from "@/lib/action-error";
 import {
   Dialog,
   DialogContent,
@@ -52,7 +53,7 @@ export default function OrganizationRolesTable({ initialData, orgId }: Organizat
       });
       setData(result);
     } catch (error) {
-      toast.error("Failed to load roles");
+      toast.error(getActionErrorMessage(error, "Failed to load roles"));
     } finally {
       setIsLoading(false);
     }
@@ -99,8 +100,8 @@ export default function OrganizationRolesTable({ initialData, orgId }: Organizat
       }
       setShowDialog(false);
       loadData(data.pageNumber);
-    } catch (error: any) {
-      toast.error(error.message || "Failed to save role");
+    } catch (error) {
+      toast.error(getActionErrorMessage(error, "Failed to save role"));
     }
   };
 
@@ -113,8 +114,8 @@ export default function OrganizationRolesTable({ initialData, orgId }: Organizat
       await deleteOrganizationRoleAction(roleId);
       toast.success("Role deleted successfully");
       loadData(data.pageNumber);
-    } catch (error: any) {
-      toast.error(error.message || "Failed to delete role");
+    } catch (error) {
+      toast.error(getActionErrorMessage(error, "Failed to delete role"));
     }
   };
 
@@ -126,8 +127,8 @@ export default function OrganizationRolesTable({ initialData, orgId }: Organizat
       });
       toast.success(`Role ${!currentStatus ? "activated" : "deactivated"} successfully`);
       loadData(data.pageNumber);
-    } catch (error: any) {
-      toast.error(error.message || "Failed to update role status");
+    } catch (error) {
+      toast.error(getActionErrorMessage(error, "Failed to update role status"));
     }
   };
 

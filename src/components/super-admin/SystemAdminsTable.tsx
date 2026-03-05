@@ -10,6 +10,7 @@ import { Input } from "@components/ui/input";
 import { Badge } from "@components/ui/badge";
 import { Search, UserPlus, UserMinus } from "lucide-react";
 import { toast } from "sonner";
+import { getActionErrorMessage } from "@/lib/action-error";
 import { formatDistance } from "date-fns";
 import {
   Dialog,
@@ -66,7 +67,7 @@ export default function SystemAdminsTable({ initialData }: SystemAdminsTableProp
       });
       setData(result);
     } catch (error) {
-      toast.error("Failed to load system admins");
+      toast.error(getActionErrorMessage(error, "Failed to load system admins"));
     } finally {
       setIsLoading(false);
     }
@@ -95,8 +96,8 @@ export default function SystemAdminsTable({ initialData }: SystemAdminsTableProp
       await revokeSystemAdminAction({ userId: userToRevoke.id });
       toast.success("System admin privileges revoked successfully");
       loadData(data.pageNumber);
-    } catch (error: any) {
-      toast.error(error.message || "Failed to revoke system admin privileges");
+    } catch (error) {
+      toast.error(getActionErrorMessage(error, "Failed to revoke system admin privileges"));
     } finally {
       setShowRevokeDialog(false);
       setUserToRevoke(null);
@@ -119,7 +120,7 @@ export default function SystemAdminsTable({ initialData }: SystemAdminsTableProp
       );
       setAvailableUsers(filtered);
     } catch (error) {
-      toast.error("Failed to search users");
+      toast.error(getActionErrorMessage(error, "Failed to search users"));
     } finally {
       setIsLoadingUsers(false);
     }
@@ -136,8 +137,8 @@ export default function SystemAdminsTable({ initialData }: SystemAdminsTableProp
       setUserSearch("");
       setAvailableUsers([]);
       loadData(data.pageNumber);
-    } catch (error: any) {
-      toast.error(error.message || "Failed to grant system admin privileges");
+    } catch (error) {
+      toast.error(getActionErrorMessage(error, "Failed to grant system admin privileges"));
     }
   };
 

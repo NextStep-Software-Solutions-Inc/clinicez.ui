@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Check, ChevronsUpDown, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { getActionErrorMessage } from "@/lib/action-error";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -78,7 +79,7 @@ export const UserSearchCombobox = ({
         }
       } catch (error) {
         console.error("Failed to fetch users:", error);
-        toast.error("Failed to load users");
+        toast.error(getActionErrorMessage(error, "Failed to load users"));
       } finally {
         setIsLoading(false);
       }

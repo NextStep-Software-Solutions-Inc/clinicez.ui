@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Gender } from "@prisma/client";
 import { toast } from "sonner";
+import { getActionErrorMessage } from "@/lib/action-error";
 import { Card, CardContent } from "@components/ui/card";
 import {
   Form,
@@ -85,8 +86,8 @@ export default function UserOnboardingPage({
         } else {
           toast.error(result.message);
         }
-      } catch {
-        toast.error("Failed to complete onboarding.");
+      } catch (error) {
+        toast.error(getActionErrorMessage(error, "Failed to complete onboarding."));
       } finally {
         setIsLoading(false);
       }

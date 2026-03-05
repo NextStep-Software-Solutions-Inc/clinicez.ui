@@ -21,6 +21,7 @@ import { Specialties } from "./Specialties"
 import { Languages } from "./Languages"
 import { HPProfileType, profileSchema } from "../hp-form.schema"
 import { toast } from "sonner"
+import { getActionErrorMessage } from "@/lib/action-error"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useParams } from "next/navigation"
 import React from "react"
@@ -60,7 +61,7 @@ export default function HPProfileForm({ profile }: HPProfileProps) {
           eSignatureUrl = url;
         } catch (error) {
           console.error("Signature upload error:", error);
-          toast.error("Failed to upload signature. Please try again.");
+          toast.error(getActionErrorMessage(error, "Failed to upload signature. Please try again."));
           return;
         }
       }

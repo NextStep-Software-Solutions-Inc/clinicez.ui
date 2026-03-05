@@ -19,6 +19,7 @@ import { formatHealthcareProviderName } from "@/lib/utils/format-healthcare-prov
 import { addConsultationTicketHPAction } from "@/actions/consultation/consultation-ticket.action";
 import { useHPs } from "@/hooks/useHP";
 import { toast } from "sonner";
+import { getSettledErrors } from "@/lib/action-error";
 import type { GetPatientConsultationDetail } from "@/actions/consultation/patient-consultations.action";
 
 type Detail = NonNullable<GetPatientConsultationDetail["data"]>;
@@ -106,11 +107,9 @@ export default function AddCoCreatorDialog({
         )
       );
 
-      const failures = results.filter(
-        (r) => r.status === "rejected" || (r.status === "fulfilled" && r.value?.status !== true)
-      );
-      if (failures.length > 0) {
-        toast.error(`Failed to add ${failures.length} provider(s). Please try again.`);
+      const errors = getSettledErrors(results);
+      if (errors.length > 0) {
+        errors.forEach((msg) => toast.error(msg));
       }
       const successes = results.filter((r) => r.status === "fulfilled" && r.value?.status);
       if (successes.length > 0) {

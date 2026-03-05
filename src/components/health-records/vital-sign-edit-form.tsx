@@ -9,6 +9,8 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Plus, Edit2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { getActionErrorMessage } from '@/lib/action-error'
+import { Textarea } from '../ui/textarea'
 
 export interface VitalSignEditFormProps {
   userId: string
@@ -16,6 +18,8 @@ export interface VitalSignEditFormProps {
   recentVitals?: VitalSign[]
   onSuccess?: () => void
   inline?: boolean
+  saveRef?: React.MutableRefObject<{ submit: () => Promise<void>; hasChanges: boolean } | null>
+  onDirtyChange?: (isDirty: boolean) => void
 }
 
 /**
@@ -29,6 +33,8 @@ export function VitalSignEditForm({
   recentVitals = [],
   onSuccess,
   inline = false,
+  saveRef,
+  onDirtyChange,
 }: VitalSignEditFormProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -88,7 +94,7 @@ export function VitalSignEditForm({
     }
 
     setIsLoading(true)
-    const wasCreatingNew = !isEditingExisting
+    let saveErrorMessage: string | null = null
 
     try {
       let result
@@ -119,13 +125,17 @@ export function VitalSignEditForm({
         onSuccess?.()
       } else {
         toast.error(result.error || 'An unexpected error occurred')
+        saveErrorMessage = result.error || 'An unexpected error occurred'
       }
     } catch (err) {
       console.error('Save error:', err)
-      toast.error('An unexpected error occurred. Please try again.')
+      toast.error(getActionErrorMessage(err, 'An unexpected error occurred. Please try again.'))
+      throw err
     } finally {
       setIsLoading(false)
     }
+
+    if (saveErrorMessage) throw new Error(saveErrorMessage)
   }
 
   const handleFieldChange = (field: keyof VitalSignFormInput, value: any) => {
@@ -134,6 +144,13 @@ export function VitalSignEditForm({
       [field]: value === '' ? undefined : value,
     }))
   }
+
+  // Expose submit handler to parent via saveRef (no deps — always keeps ref current with latest closure)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (saveRef) saveRef.current = { submit: handleSubmit, hasChanges }
+    onDirtyChange?.(hasChanges)
+  })
 
   const formContent = (
     <>
@@ -259,12 +276,12 @@ export function VitalSignEditForm({
       <div className="space-y-4 pt-4">
         <h3 className="text-sm font-semibold">Notes (Optional)</h3>
         <FormField label="Additional Notes" htmlFor="notes" helpText="Up to 500 characters">
-          <textarea
+          <Textarea
             id="notes"
             value={formData.notes || ''}
             onChange={(e) => handleFieldChange('notes', e.target.value)}
             placeholder="e.g., Patient was anxious, measurements taken after rest"
-            className="min-h-20 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-950"
+            className="min-h-20 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm"
           />
         </FormField>
       </div>
@@ -273,7 +290,7 @@ export function VitalSignEditForm({
 
   if (inline) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-6 dark:text-gray-400">
         {/* Form Title & Action Buttons */}
         <div className="space-y-3">
           <h3 className="text-sm font-semibold">{isEditingExisting ? 'Update Last Measurement' : 'Add New Measurement'}</h3>
@@ -312,14 +329,6 @@ export function VitalSignEditForm({
         </div>
 
         {formContent}
-
-        <button
-          onClick={handleSubmit}
-          disabled={isLoading || !hasChanges}
-          className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
-        >
-          {isLoading ? 'Saving...' : 'Save Measurements'}
-        </button>
       </div>
     )
   }

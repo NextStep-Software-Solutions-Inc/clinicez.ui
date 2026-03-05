@@ -13,6 +13,7 @@ import { FormModal, FormField, EditButton } from './index'
 import { Input } from '@/components/ui/input'
 import { RelationshipCombobox } from './RelationshipCombobox'
 import { toast } from 'sonner'
+import { getActionErrorMessage } from '@/lib/action-error'
 import { Trash2, Plus, Star } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -67,11 +68,7 @@ export function EmergencyContactEditForm({
         onSuccess?.()
       }
     } catch (err) {
-      if (err instanceof Error) {
-        toast.error(err.message)
-      } else {
-        toast.error('Failed to add emergency contact')
-      }
+      toast.error(getActionErrorMessage(err, 'Failed to add emergency contact'))
     } finally {
       setIsLoading(false)
     }
@@ -102,11 +99,7 @@ export function EmergencyContactEditForm({
       setNewContact({})
       onSuccess?.()
     } catch (err) {
-      if (err instanceof Error) {
-        toast.error(err.message)
-      } else {
-        toast.error('Failed to update emergency contact')
-      }
+      toast.error(getActionErrorMessage(err, 'Failed to update emergency contact'))
     } finally {
       setIsLoading(false)
     }
@@ -124,11 +117,7 @@ export function EmergencyContactEditForm({
       onSuccess?.()
     } catch (err) {
       console.error('Delete contact error:', err)
-      if (err instanceof Error) {
-        toast.error(err.message)
-      } else {
-        toast.error('Failed to remove emergency contact')
-      }
+      toast.error(getActionErrorMessage(err, 'Failed to remove emergency contact'))
     } finally {
       setIsLoading(false)
     }
@@ -148,11 +137,7 @@ export function EmergencyContactEditForm({
       onSuccess?.()
     } catch (err) {
       console.error('Set primary contact error:', err)
-      if (err instanceof Error) {
-        toast.error(err.message)
-      } else {
-        toast.error('Failed to update primary contact')
-      }
+      toast.error(getActionErrorMessage(err, 'Failed to update primary contact'))
     } finally {
       setIsLoading(false)
     }

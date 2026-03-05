@@ -8,6 +8,7 @@ import ActionButton from "@components/ActionButton";
 import { updateUserAction } from "@actions/users/user.action";
 import { uploadMediaAction } from "@actions/blob.action";
 import { toast } from "sonner";
+import { getActionErrorMessage } from "@/lib/action-error";
 import { revalidatePath } from "@actions/cache.action";
 import ConditionalRender from "@components/utils/ConditionalRender";
 import { useState } from "react";
@@ -52,7 +53,7 @@ export const Picture = ({ user, readOnly = true }: PictureProps) => {
 
     } catch (error) {
       console.error("Something went wrong:", error);
-      toast.error("Something went wrong while processing the image");
+      toast.error(getActionErrorMessage(error, "Something went wrong while processing the image"));
     }
   }
 

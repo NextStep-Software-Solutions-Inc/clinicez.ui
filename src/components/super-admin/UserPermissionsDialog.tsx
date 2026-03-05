@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
+import { getActionErrorMessage } from "@/lib/action-error";
 import {
   Dialog,
   DialogContent,
@@ -79,7 +80,7 @@ export function UserPermissionsDialog({
       }
     } catch (error) {
       console.error('[LOAD_DATA_ERROR]', error)
-      toast.error('Failed to load permissions')
+      toast.error(getActionErrorMessage(error, 'Failed to load permissions'))
     } finally {
       setLoading(false)
     }
@@ -124,7 +125,7 @@ export function UserPermissionsDialog({
       }
     } catch (error) {
       console.error('[SAVE_CHANGES_ERROR]', error)
-      toast.error('Failed to save permission changes')
+      toast.error(getActionErrorMessage(error, 'Failed to save permission changes'))
     } finally {
       setSaving(false)
     }
@@ -146,7 +147,7 @@ export function UserPermissionsDialog({
       }
     } catch (error) {
       console.error('[ASSIGN_ALL_ERROR]', error)
-      toast.error('Failed to assign all permissions')
+      toast.error(getActionErrorMessage(error, 'Failed to assign all permissions'))
     } finally {
       setSaving(false)
     }

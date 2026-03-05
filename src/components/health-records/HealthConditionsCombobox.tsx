@@ -20,7 +20,9 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
+import { getActionErrorMessage } from '@/lib/action-error'
 import { getHealthConditionsAction } from '@/actions/health-records/get-health-conditions.action'
+import { matchesSearch } from '@/lib/search-utils'
 
 interface HealthCondition {
   id: number
@@ -86,7 +88,7 @@ export function HealthConditionsCombobox({
       }
     } catch (err) {
       console.error('Error fetching conditions:', err)
-      toast.error('Failed to load health conditions')
+      toast.error(getActionErrorMessage(err, 'Failed to load health conditions'))
     } finally {
       setIsLoading(false)
     }
@@ -95,13 +97,13 @@ export function HealthConditionsCombobox({
   const allConditions = [...topConditions, ...otherConditions]
 
   const filteredTopConditions = topConditions.filter((c) =>
-    c.name.toLowerCase().includes(searchTerm.toLowerCase())
+    matchesSearch(c.name, searchTerm)
   )
 
   const filteredOtherConditions = otherConditions.filter((c) =>
-    c.name.toLowerCase().includes(searchTerm.toLowerCase())
+    matchesSearch(c.name, searchTerm)
   )
-
+  
   const toggleCondition = (conditionId: number) => {
     const isSelected = value.some((c) => c.conditionId === conditionId)
 
@@ -171,7 +173,7 @@ export function HealthConditionsCombobox({
             role="combobox"
             aria-expanded={open}
             disabled={disabled}
-            className="w-full justify-between"
+            className="w-full justify-between dark:text-gray-300"
           >
             {value.length === 0 ? 'Select conditions...' : `${value.length} condition(s) selected`}
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -179,7 +181,7 @@ export function HealthConditionsCombobox({
         </PopoverTrigger>
 
         <PopoverContent className="w-full p-0" align="start">
-          <Command>
+          <Command shouldFilter={false}>
             <CommandInput
               placeholder="Search conditions..."
               value={searchTerm}
@@ -206,10 +208,9 @@ export function HealthConditionsCombobox({
                       {filteredTopConditions.map((condition) => {
                         const isSelected = value.some((c) => c.conditionId === condition.id)
                         return (
-                          <CommandItem key={condition.id} value={condition.id.toString()}>
+                          <CommandItem key={condition.id} value={condition.name} onSelect={() => toggleCondition(condition.id)}>
                             <Checkbox
                               checked={isSelected}
-                              onCheckedChange={() => toggleCondition(condition.id)}
                               className="mr-2"
                             />
                             <span className="flex-1">{condition.name}</span>
@@ -236,10 +237,9 @@ export function HealthConditionsCombobox({
                       {filteredOtherConditions.map((condition) => {
                         const isSelected = value.some((c) => c.conditionId === condition.id)
                         return (
-                          <CommandItem key={condition.id} value={condition.id.toString()}>
+                          <CommandItem key={condition.id} value={condition.name} onSelect={() => toggleCondition(condition.id)}>
                             <Checkbox
                               checked={isSelected}
-                              onCheckedChange={() => toggleCondition(condition.id)}
                               className="mr-2"
                             />
                             <span className="flex-1">{condition.name}</span>
@@ -258,10 +258,10 @@ export function HealthConditionsCombobox({
       {/* Details Fields for Selected Conditions */}
       {value.length > 0 && (
         <div className="space-y-3 border-t pt-4">
-          <h4 className="text-sm font-medium">Add Details</h4>
+          <h4 className="text-sm font-medium dark:text-gray-400">Add Details</h4>
           {value.map((cond) => (
             <div key={cond.conditionId} className="space-y-1">
-              <label className="text-xs font-medium text-gray-700">
+              <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
                 {getConditionName(cond.conditionId)}
               </label>
               <Input

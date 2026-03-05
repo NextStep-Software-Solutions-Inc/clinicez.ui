@@ -95,7 +95,6 @@ export const upsertEmploymentRecordAction = withErrorHandling(async (payload: Cr
   return { success: true, message: "Employee record created/updated successfully", data: employeeRecord };
 }, async (error) => {
   if (hasCodeProperty(error) && error.code === "P2002") return "The provided Employee ID is already taken. Please use a different Employee ID. If you think this is an internal error, please contact the administrator.";
-  return "An error occurred while creating or updating the employee record. Please try again later.";
 });
 
 export type GetOrgUserEmploymentRecord = Awaited<ReturnType<typeof getOrgUserEmploymentRecordAction>>

@@ -123,7 +123,6 @@ export const createFolderAction = withErrorHandling(async ({ name, userId, clini
 
       default:
         console.error(`Unhandled Prisma error code: ${error.code}`);
-        return "Failed to create folder. Please try again.";
     }
   }
 
@@ -145,8 +144,6 @@ export const createFolderAction = withErrorHandling(async ({ name, userId, clini
       return error.message;
     }
   }
-
-  return "Failed to create folder. Please try again.";
 })
 
 export const getFoldersAction = async (userId: string, clinicUid?: string) => {

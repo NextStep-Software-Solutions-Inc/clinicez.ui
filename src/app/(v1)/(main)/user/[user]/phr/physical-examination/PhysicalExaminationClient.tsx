@@ -26,6 +26,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@comp
 import { Separator } from "@components/ui/separator";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import { getActionErrorMessage } from "@/lib/action-error";
 import {
   getPhysicalExaminationAction,
   savePhysicalExaminationAction,
@@ -77,7 +78,7 @@ export default function PhysicalExaminationClient({
       }
     } catch (error) {
       console.error("Error loading physical examination:", error);
-      toast.error("Failed to load physical examination data");
+      toast.error(getActionErrorMessage(error, "Failed to load physical examination data"));
     } finally {
       setLoading(false);
     }
@@ -95,7 +96,7 @@ export default function PhysicalExaminationClient({
       }
     } catch (error) {
       console.error("Error saving physical examination:", error);
-      toast.error("Failed to save physical examination");
+      toast.error(getActionErrorMessage(error, "Failed to save physical examination"));
     } finally {
       setSaving(false);
     }

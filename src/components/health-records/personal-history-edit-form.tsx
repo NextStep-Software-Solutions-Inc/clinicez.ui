@@ -7,12 +7,15 @@ import { FormModal, FormField, EditButton } from './index'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import { toast } from 'sonner'
+import { getActionErrorMessage } from '@/lib/action-error'
 
 export interface PersonalHistoryEditFormProps {
   userId: string
   currentData?: PersonalHistoryFormInput
   onSuccess?: () => void
   inline?: boolean
+  saveRef?: React.MutableRefObject<{ submit: () => Promise<void>; hasChanges: boolean } | null>
+  onDirtyChange?: (isDirty: boolean) => void
 }
 
 /**
@@ -24,6 +27,8 @@ export function PersonalHistoryEditForm({
   currentData,
   onSuccess,
   inline = false,
+  saveRef,
+  onDirtyChange,
 }: PersonalHistoryEditFormProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -48,6 +53,7 @@ export function PersonalHistoryEditForm({
     }
 
     setIsLoading(true)
+    let saveErrorMessage: string | null = null
 
     try {
       const result = await updatePersonalHistory(userId, formData as PersonalHistoryFormInput)
@@ -59,12 +65,16 @@ export function PersonalHistoryEditForm({
         onSuccess?.()
       } else {
         toast.error(result.error || 'An unexpected error occurred')
+        saveErrorMessage = result.error || 'An unexpected error occurred'
       }
     } catch (err) {
-      toast.error('An unexpected error occurred. Please try again.')
+      toast.error(getActionErrorMessage(err, 'An unexpected error occurred. Please try again.'))
+      throw err
     } finally {
       setIsLoading(false)
     }
+
+    if (saveErrorMessage) throw new Error(saveErrorMessage)
   }
 
   const handleFieldChange = (field: keyof PersonalHistoryFormInput, value: any) => {
@@ -74,8 +84,15 @@ export function PersonalHistoryEditForm({
     }))
   }
 
+  // Expose submit handler to parent via saveRef (no deps — always keeps ref current with latest closure)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (saveRef) saveRef.current = { submit: handleSubmit, hasChanges }
+    onDirtyChange?.(hasChanges)
+  })
+
   const formContent = (
-    <>
+    <div className="dark:text-gray-400 space-y-6">
       {/* Smoking History */}
       <div className="space-y-4 border-b pb-4">
         <h3 className="text-sm font-semibold">Smoking</h3>
@@ -203,21 +220,13 @@ export function PersonalHistoryEditForm({
           </Select>
         </FormField>
       </div>
-    </>
+    </div>
   )
 
   if (inline) {
     return (
       <div className="space-y-6">
         {formContent}
-
-        <button
-          onClick={handleSubmit}
-          disabled={isLoading || !hasChanges}
-          className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
-        >
-          {isLoading ? 'Saving...' : 'Save History'}
-        </button>
       </div>
     )
   }

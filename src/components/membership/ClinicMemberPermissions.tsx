@@ -13,6 +13,7 @@ import { PERMISSIONS } from "@lib/permissions";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+import { getActionErrorMessage } from "@/lib/action-error";
 
 const FormSchema = z.object({
   permissionIds: z.array(z.number()).refine((value) => value.some((item) => item), {
@@ -75,7 +76,7 @@ export const ClinicMemberPermissions = ({ clinicUid, userId }: ClinicMemberPermi
           form.reset(data)
         }
       } catch (error) {
-        toast.error("Error while saving changes");
+        toast.error(getActionErrorMessage(error, "Error while saving changes"));
       }
     })();
   }

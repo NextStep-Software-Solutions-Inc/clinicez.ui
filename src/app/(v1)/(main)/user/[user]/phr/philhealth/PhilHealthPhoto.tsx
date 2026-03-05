@@ -11,6 +11,7 @@ import { uploadMediaAction } from "@/actions/blob.action";
 import { updatePhilHealthRecordPhotoAction } from "@/actions/philhealth/philhealth-record.action";
 import { revalidatePath } from "@/actions/cache.action";
 import { toast } from "sonner";
+import { getActionErrorMessage } from "@/lib/action-error";
 import logger from "@/lib/logger";
 
 interface PhilHealthPhotoProps {
@@ -141,7 +142,7 @@ export function PhilHealthPhoto({ userUid, philHealthRecordId, existingUrl, read
     } catch (e: unknown) {
       logger.error("Failed to process photo", e);
       toast.dismiss();
-      toast.error("Failed to process photo");
+      toast.error(getActionErrorMessage(e, "Failed to process photo"));
     }
   }, [preview, philHealthRecordId, userUid, file]);
 

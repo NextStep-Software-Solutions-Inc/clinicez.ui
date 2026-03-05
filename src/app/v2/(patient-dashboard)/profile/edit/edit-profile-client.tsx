@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, useMemo, useCallback, Suspense } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Save, CheckCircle2, XCircle, Loader2, MinusCircle } from 'lucide-react'
 import {
   mapPersonalHistoryToFormInput,
   mapPatientDataToDemographicsFormInput,
@@ -44,12 +44,26 @@ import {
 import type { PatientHealthRecordsResponse } from '@/types/patient-profile'
 import './edit-profile.css'
 
-interface Section {
+/**
+ * Open/Closed: add new sections only to the `sections` array.
+ * `handleSaveAll` derives its behaviour automatically from `saveType`.
+ *  - 'batch' → requires an explicit Save All trigger; must provide a saveRef
+ *  - 'auto'  → persists when the user confirms each item (add/remove); not included in Save All
+ */
+type Section = {
   id: string
   label: string
   icon: string
   ref: React.RefObject<HTMLDivElement | null>
-}
+} & (
+  | { saveType: 'auto' }
+  | {
+      saveType: 'batch'
+      saveRef: React.MutableRefObject<SaveRefHandle | null>
+      /** Called by the form whenever its dirty state changes — drives sticky bar visibility */
+      onDirtyChange: (isDirty: boolean) => void
+    }
+)
 
 interface LoadedSections {
   [key: string]: boolean
@@ -62,6 +76,18 @@ interface EditProfileClientProps {
   headerSlot?: React.ReactNode
   /** Override the data-refresh function called after each section save. Defaults to getPatientHealthRecords() (authed user). */
   refreshFn?: () => Promise<PatientHealthRecordsResponse | null>
+}
+
+type SaveRefHandle = { submit: () => Promise<void>; hasChanges: boolean }
+
+type SaveAllStatus = 'idle' | 'pending' | 'saving' | 'saved' | 'error' | 'no-changes'
+
+interface SaveAllItem {
+  id: string
+  label: string
+  icon: string
+  status: SaveAllStatus
+  error?: string
 }
 
 /** Suspense fallback — defined at module level so React preserves its identity across re-renders */
@@ -120,25 +146,49 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
   const disabilitiesRef = useRef<HTMLDivElement>(null)
   const surgicalRef = useRef<HTMLDivElement>(null)
 
+  // Save refs for batch-save forms (forms with a single "Save Changes" button)
+  const demographicsSaveRef = useRef<SaveRefHandle | null>(null)
+  const vitalSignsSaveRef = useRef<SaveRefHandle | null>(null)
+  const personalHistorySaveRef = useRef<SaveRefHandle | null>(null)
+  const obGyneSaveRef = useRef<SaveRefHandle | null>(null)
+  const pediatricSaveRef = useRef<SaveRefHandle | null>(null)
+  const medicalSaveRef = useRef<SaveRefHandle | null>(null)
+  const familySaveRef = useRef<SaveRefHandle | null>(null)
+  const examinationSaveRef = useRef<SaveRefHandle | null>(null)
+  const philhealthSaveRef = useRef<SaveRefHandle | null>(null)
+
+  // Save All dialog state
+  const [saveAllOpen, setSaveAllOpen] = useState(false)
+  const [saveAllItems, setSaveAllItems] = useState<SaveAllItem[]>([])
+  const [isSavingAll, setIsSavingAll] = useState(false)
+
+  // Track which batch sections have unsaved changes (drives sticky bar visibility)
+  const dirtyMap = useRef(new Map<string, boolean>())
+  const [hasPendingChanges, setHasPendingChanges] = useState(false)
+  const onSectionDirtyChange = useCallback((sectionId: string, isDirty: boolean) => {
+    dirtyMap.current.set(sectionId, isDirty)
+    setHasPendingChanges([...dirtyMap.current.values()].some(Boolean))
+  }, [])
+
   const sections: Section[] = useMemo(
     () => [
-      { id: 'demographics', label: 'Demographics', icon: '👤', ref: demographicsRef },
-      { id: 'addresses', label: 'Addresses', icon: '📍', ref: addressesRef },
-      { id: 'emergency-contacts', label: 'Contacts', icon: '🆘', ref: emergencyContactsRef },
-      { id: 'allergies', label: 'Allergies', icon: '⚠️', ref: allergiesRef },
-      { id: 'vaccinations', label: 'Vaccinations', icon: '💉', ref: vaccinationsRef },
-      { id: 'disabilities', label: 'Disabilities', icon: '♿', ref: disabilitiesRef },
-      { id: 'vital-signs', label: 'Vitals', icon: '❤️', ref: vitalSignsRef },
-      { id: 'personal-history', label: 'History', icon: '📋', ref: personalHistoryRef },
-      { id: 'ob-gyne', label: 'OB/GYN', icon: '👶', ref: obGyneRef },
-      { id: 'pediatric', label: 'Pediatric', icon: '📏', ref: pediatricRef },
-      { id: 'medical', label: 'Conditions', icon: '🏥', ref: medicalRef },
-      { id: 'surgical', label: 'Surgical', icon: '⚕️', ref: surgicalRef },
-      { id: 'family', label: 'Family', icon: '👨‍👩‍👧‍👦', ref: familyRef },
-      { id: 'examination', label: 'Exam', icon: '🔍', ref: examinationRef },
-      { id: 'philhealth', label: 'PhilHealth', icon: '🏛️', ref: philhealthRef },
+      { id: 'demographics', label: 'Demographics', icon: '👤', ref: demographicsRef, saveType: 'batch', saveRef: demographicsSaveRef, onDirtyChange: (d) => onSectionDirtyChange('demographics', d) },
+      { id: 'addresses', label: 'Addresses', icon: '📍', ref: addressesRef, saveType: 'auto' },
+      { id: 'emergency-contacts', label: 'Contacts', icon: '🆘', ref: emergencyContactsRef, saveType: 'auto' },
+      { id: 'allergies', label: 'Allergies', icon: '⚠️', ref: allergiesRef, saveType: 'auto' },
+      { id: 'vaccinations', label: 'Vaccinations', icon: '💉', ref: vaccinationsRef, saveType: 'auto' },
+      { id: 'disabilities', label: 'Disabilities', icon: '♿', ref: disabilitiesRef, saveType: 'auto' },
+      { id: 'vital-signs', label: 'Vitals', icon: '❤️', ref: vitalSignsRef, saveType: 'batch', saveRef: vitalSignsSaveRef, onDirtyChange: (d) => onSectionDirtyChange('vital-signs', d) },
+      { id: 'personal-history', label: 'History', icon: '📋', ref: personalHistoryRef, saveType: 'batch', saveRef: personalHistorySaveRef, onDirtyChange: (d) => onSectionDirtyChange('personal-history', d) },
+      { id: 'ob-gyne', label: 'OB/GYN', icon: '👶', ref: obGyneRef, saveType: 'batch', saveRef: obGyneSaveRef, onDirtyChange: (d) => onSectionDirtyChange('ob-gyne', d) },
+      { id: 'pediatric', label: 'Pediatric', icon: '📏', ref: pediatricRef, saveType: 'batch', saveRef: pediatricSaveRef, onDirtyChange: (d) => onSectionDirtyChange('pediatric', d) },
+      { id: 'medical', label: 'Conditions', icon: '🏥', ref: medicalRef, saveType: 'batch', saveRef: medicalSaveRef, onDirtyChange: (d) => onSectionDirtyChange('medical', d) },
+      { id: 'surgical', label: 'Surgical', icon: '⚕️', ref: surgicalRef, saveType: 'auto' },
+      { id: 'family', label: 'Family', icon: '👨‍👩‍👧‍👦', ref: familyRef, saveType: 'batch', saveRef: familySaveRef, onDirtyChange: (d) => onSectionDirtyChange('family', d) },
+      { id: 'examination', label: 'Exam', icon: '🔍', ref: examinationRef, saveType: 'batch', saveRef: examinationSaveRef, onDirtyChange: (d) => onSectionDirtyChange('examination', d) },
+      { id: 'philhealth', label: 'PhilHealth', icon: '🏛️', ref: philhealthRef, saveType: 'batch', saveRef: philhealthSaveRef, onDirtyChange: (d) => onSectionDirtyChange('philhealth', d) },
     ],
-    [],
+    [onSectionDirtyChange],
   )
 
   // Intersection Observer - track active section based on what's in view
@@ -243,6 +293,14 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
     [sections],
   )
 
+  // Auto-scroll the active tab button into view in the nav strip whenever the active section changes
+  useEffect(() => {
+    if (typeof document === 'undefined') return
+    document.querySelectorAll<HTMLButtonElement>(`[data-tab-id="${activeSection}"]`).forEach((btn) => {
+      btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' })
+    })
+  }, [activeSection])
+
   // Memoize mapped form data — only recompute when patientData changes, not on every scroll / activeSection update
   const demographicsData = useMemo(
     () => mapPatientDataToDemographicsFormInput(patientData),
@@ -310,6 +368,49 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
     }
   }, [refreshFn, onDataRefresh])
 
+  // Consolidated "Save All" — derives items directly from the sections array (OCP: add new
+  // sections only to the sections array above; this function requires no changes).
+  const handleSaveAll = useCallback(async () => {
+    // Build initial status from batch sections only — auto-save sections persist on each user action
+    const initialItems: SaveAllItem[] = sections
+      .filter((section): section is typeof section & { saveType: 'batch' } => section.saveType === 'batch')
+      .map((section) => ({
+        id: section.id,
+        label: section.label,
+        icon: section.icon,
+        status: (section.saveRef.current?.hasChanges ? 'pending' : 'no-changes') as SaveAllStatus,
+      }))
+
+    setSaveAllItems(initialItems)
+    setSaveAllOpen(true)
+    setIsSavingAll(true)
+
+    // Process each batch section sequentially
+    for (const section of sections) {
+      if (section.saveType !== 'batch') continue
+      const handle = section.saveRef.current
+      if (!handle?.hasChanges) continue
+
+      setSaveAllItems((prev) =>
+        prev.map((i) => (i.id === section.id ? { ...i, status: 'saving' } : i))
+      )
+
+      try {
+        await handle.submit()
+        setSaveAllItems((prev) =>
+          prev.map((i) => (i.id === section.id ? { ...i, status: 'saved' } : i))
+        )
+      } catch (err) {
+        console.error(`[SaveAll] Failed to save section "${section.id}":`, err)
+        setSaveAllItems((prev) =>
+          prev.map((i) => (i.id === section.id ? { ...i, status: 'error', error: err instanceof Error ? err.message : 'Unknown error' } : i))
+        )
+      }
+    }
+
+    setIsSavingAll(false)
+  }, [sections])
+
   // Section nav strip — defined before early return so it's always in scope.
   // topClass controls sticky offset:
   //   'top-12' when headerSlot=null (just below DashboardShell horizontal nav)
@@ -322,6 +423,7 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
             {sections.map((section) => (
               <button
                 key={section.id}
+                data-tab-id={section.id}
                 onClick={() => scrollToSection(section.id)}
                 className={`whitespace-nowrap px-3 md:px-4 py-1.5 md:py-2 rounded-lg font-medium text-xs md:text-sm transition-all ${
                   activeSection === section.id
@@ -351,7 +453,7 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
   }
 
   const defaultHeader = (
-    <div className="sticky top-0 z-50 backdrop-blur-sm bg-white/20 dark:bg-slate-950/20 border-b border-slate-200/20 dark:border-slate-800/20 mb-6 md:mb-8 -mx-4 md:-mx-8 px-4 md:px-8 py-3 md:py-4 rounded-b-3xl">
+    <div className="sticky top-0 z-50 backdrop-blur-sm bg-white/20 dark:bg-slate-950/20 border-b border-slate-200/20 dark:border-slate-800/20 mb-4 md:mb-6 -mx-4 md:-mx-8 px-4 md:px-8 py-3 md:py-4 rounded-b-3xl">
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 md:gap-3 min-w-0">
@@ -375,6 +477,7 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
             {sections.map((section) => (
               <button
                 key={section.id}
+                data-tab-id={section.id}
                 onClick={() => scrollToSection(section.id)}
                 className={`whitespace-nowrap px-3 md:px-4 py-1.5 md:py-2 rounded-lg font-medium text-xs md:text-sm transition-all ${
                   activeSection === section.id
@@ -424,32 +527,28 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
                     inline={true}
                     currentData={demographicsData}
                     onSuccess={handleSuccess}
+                    saveRef={demographicsSaveRef}
+                    onDirtyChange={(d) => onSectionDirtyChange('demographics', d)}
                   />
                 </Suspense>
               )}
             </div>
           </div>
 
-          {/* Allergies Section */}
-          <div ref={sections[3].ref} id="allergies" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-200">
+          {/* Addresses Section */}
+          <div ref={sections[1].ref} id="addresses" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-100">
             <div className="backdrop-blur-xl bg-white/30 dark:bg-slate-800/30 border border-white/40 dark:border-slate-700/40 rounded-2xl shadow-2xl p-6 md:p-8 hover:bg-white/40 dark:hover:bg-slate-800/40 transition-all duration-300">
               <div className="mb-6 flex items-center gap-3">
-                <div className="w-1.5 h-8 bg-gradient-to-b from-red-500 to-orange-500 rounded-full"></div>
+                <div className="w-1.5 h-8 bg-gradient-to-b from-green-500 to-emerald-500 rounded-full"></div>
                 <div>
-                  <h2 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">Allergies</h2>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">Manage your known allergies</p>
+                  <h2 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">Addresses</h2>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">Manage your residential addresses</p>
                 </div>
               </div>
-              {loadedSections['allergies'] && (
+              {loadedSections['addresses'] && (
                 <Suspense fallback={<FormLoadingFallback />}>
-                  <AllergyEditForm
+                  <AddressEditForm
                     userId={patientData.userId}
-                    currentAllergies={patientData.userAllergies?.map(allergy => ({
-                      id: allergy.id,
-                      allergen: allergy.allergen,
-                      reaction: allergy.reaction,
-                      notes: allergy.notes,
-                    })) || []}
                     inline={true}
                     onSuccess={handleSuccess}
                   />
@@ -481,20 +580,26 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
             </div>
           </div>
 
-          {/* Addresses Section */}
-          <div ref={sections[1].ref} id="addresses" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-100">
+          {/* Allergies Section */}
+          <div ref={sections[3].ref} id="allergies" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-200">
             <div className="backdrop-blur-xl bg-white/30 dark:bg-slate-800/30 border border-white/40 dark:border-slate-700/40 rounded-2xl shadow-2xl p-6 md:p-8 hover:bg-white/40 dark:hover:bg-slate-800/40 transition-all duration-300">
               <div className="mb-6 flex items-center gap-3">
-                <div className="w-1.5 h-8 bg-gradient-to-b from-green-500 to-emerald-500 rounded-full"></div>
+                <div className="w-1.5 h-8 bg-gradient-to-b from-red-500 to-orange-500 rounded-full"></div>
                 <div>
-                  <h2 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">Addresses</h2>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">Manage your residential addresses</p>
+                  <h2 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">Allergies</h2>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">Manage your known allergies</p>
                 </div>
               </div>
-              {loadedSections['addresses'] && (
+              {loadedSections['allergies'] && (
                 <Suspense fallback={<FormLoadingFallback />}>
-                  <AddressEditForm
+                  <AllergyEditForm
                     userId={patientData.userId}
+                    currentAllergies={patientData.userAllergies?.map(allergy => ({
+                      id: allergy.id,
+                      allergen: allergy.allergen,
+                      reaction: allergy.reaction,
+                      notes: allergy.notes,
+                    })) || []}
                     inline={true}
                     onSuccess={handleSuccess}
                   />
@@ -567,6 +672,8 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
                     currentData={vitalSignData}
                     recentVitals={convertVitalSignsToDateObjects(patientData?.vitalSigns)}
                     onSuccess={handleSuccess}
+                    saveRef={vitalSignsSaveRef}
+                    onDirtyChange={(d) => onSectionDirtyChange('vital-signs', d)}
                   />
                 </Suspense>
               )}
@@ -590,6 +697,8 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
                     inline={true}
                     currentData={personalHistoryData}
                     onSuccess={handleSuccess}
+                    saveRef={personalHistorySaveRef}
+                    onDirtyChange={(d) => onSectionDirtyChange('personal-history', d)}
                   />
                 </Suspense>
               )}
@@ -614,7 +723,7 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
                     </div>
                   ) : (
                     <Suspense fallback={<FormLoadingFallback />}>
-                      <ObGyneHistoryEditForm userId={patientData.userId} inline={true} onSuccess={handleSuccess} />
+                      <ObGyneHistoryEditForm userId={patientData.userId} inline={true} onSuccess={handleSuccess} saveRef={obGyneSaveRef} onDirtyChange={(d) => onSectionDirtyChange('ob-gyne', d)} />
                     </Suspense>
                   )}
                 </>
@@ -639,6 +748,8 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
                     inline={true}
                     currentData={pediatricData as PediatricMeasurementFormInput}
                     onSuccess={handleSuccess}
+                    saveRef={pediatricSaveRef}
+                    onDirtyChange={(d) => onSectionDirtyChange('pediatric', d)}
                   />
                 </Suspense>
               )}
@@ -665,6 +776,8 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
                       details: h.details || undefined,
                     }))}
                     onSuccess={handleSuccess}
+                    saveRef={medicalSaveRef}
+                    onDirtyChange={(d) => onSectionDirtyChange('medical', d)}
                   />
                 </Suspense>
               )}
@@ -714,6 +827,8 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
                       details: h.details || undefined,
                     }))}
                     onSuccess={handleSuccess}
+                    saveRef={familySaveRef}
+                    onDirtyChange={(d) => onSectionDirtyChange('family', d)}
                   />
                 </Suspense>
               )}
@@ -737,6 +852,8 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
                     inline={true}
                     currentData={physicalExaminationData}
                     onSuccess={handleSuccess}
+                    saveRef={examinationSaveRef}
+                    onDirtyChange={(d) => onSectionDirtyChange('examination', d)}
                   />
                 </Suspense>
               )}
@@ -761,9 +878,11 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
                       inline={true}
                       currentData={philHealthCurrentData}
                       onSuccess={handleSuccess}
+                      saveRef={philhealthSaveRef}
+                      onDirtyChange={(d) => onSectionDirtyChange('philhealth', d)}
                     />
                   ) : (
-                    <PhilHealthRecordEditForm userId={patientData.userId} inline={true} onSuccess={handleSuccess} />
+                    <PhilHealthRecordEditForm userId={patientData.userId} inline={true} onSuccess={handleSuccess} saveRef={philhealthSaveRef} onDirtyChange={(d) => onSectionDirtyChange('philhealth', d)} />
                   )}
                 </Suspense>
               )}
@@ -772,7 +891,7 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
         </div>
 
         {/* Footer */}
-        <div className="mt-12 pb-8 flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div className="mt-12 pb-24 flex flex-col sm:flex-row justify-between items-center gap-4">
           <button
             onClick={() => router.back()}
             className="px-8 py-3 rounded-lg font-medium text-sm transition-all backdrop-blur-sm border border-white/20 dark:border-slate-700/20 bg-white/20 dark:bg-slate-800/20 text-slate-700 dark:text-slate-300 hover:bg-white/40 dark:hover:bg-slate-800/40"
@@ -780,13 +899,73 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
             ← Back to Profile
           </button>
           <div className="flex flex-col sm:flex-row items-center gap-4">
-            <p className="text-sm text-slate-600 dark:text-slate-400">Changes are saved automatically per section</p>
-            {patientData && (
-              <p className="text-xs text-slate-500 dark:text-slate-500">Last updated: {new Date().toLocaleTimeString()}</p>
-            )}
           </div>
         </div>
       </div>
+
+      {/* Sticky Save All Changes bar — only visible when there are unsaved changes */}
+      {hasPendingChanges && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 backdrop-blur-md bg-white/80 dark:bg-slate-900/80 border-t border-slate-200/60 dark:border-slate-700/60 px-4 py-3 shadow-lg flex items-center">
+          <div className="max-w-6xl mx-auto w-full flex items-center justify-center">
+            <button
+              onClick={() => void handleSaveAll()}
+              disabled={isSavingAll}
+              className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-xl font-medium text-sm shadow-lg shadow-blue-500/30 hover:from-blue-600 hover:to-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            >
+              <Save className="w-4 h-4" />
+              Save All Changes
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Save All Progress Dialog */}
+      {saveAllOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => !isSavingAll && setSaveAllOpen(false)} />
+          <div className="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md max-h-[85vh] flex flex-col overflow-hidden border border-slate-200/60 dark:border-slate-700/60">
+            {/* Dialog header */}
+            <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between shrink-0">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white">Save All Changes</h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  {isSavingAll ? 'Saving your profile sections…' : 'All sections processed'}
+                </p>
+              </div>
+              {isSavingAll && <Loader2 className="w-5 h-5 text-blue-500 animate-spin shrink-0" />}
+            </div>
+
+            {/* Checklist */}
+            <div className="overflow-y-auto flex-1 px-6 py-4 space-y-2">
+              {saveAllItems.map((item) => (
+                <div key={item.id} className="flex items-center gap-3 py-2">
+                  <span className="text-base shrink-0">{item.icon}</span>
+                  <span className="flex-1 text-sm font-medium text-slate-800 dark:text-slate-200">{item.label}</span>
+                  <span className="shrink-0">
+                    {item.status === 'pending' && <MinusCircle className="w-4 h-4 text-slate-400" />}
+                    {item.status === 'saving' && <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />}
+                    {item.status === 'saved' && <CheckCircle2 className="w-4 h-4 text-green-500" />}
+                    {item.status === 'error' && <XCircle className="w-4 h-4 text-red-500" />}
+                    {item.status === 'no-changes' && <span className="text-xs text-slate-400 italic">No changes</span>}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {/* Footer */}
+            {!isSavingAll && (
+              <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-700 shrink-0">
+                <button
+                  onClick={() => setSaveAllOpen(false)}
+                  className="w-full py-2.5 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-xl font-medium text-sm hover:from-blue-600 hover:to-cyan-600 transition-all"
+                >
+                  Done
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

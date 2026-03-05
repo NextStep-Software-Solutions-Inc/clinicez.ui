@@ -11,6 +11,7 @@ import { Input } from '@components/ui/input'
 import { Badge } from '@components/ui/badge'
 import { Search, Lock, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { getActionErrorMessage } from "@/lib/action-error";
 import { formatDistance } from 'date-fns'
 import { MemberPermissionsDialog } from './MemberPermissionsDialog'
 
@@ -51,8 +52,8 @@ export default function ClinicMembersTable({ initialData, clinicId }: ClinicMemb
       }
       setHasMore(result.hasMore)
       setNextCursor(result.nextCursor)
-    } catch {
-      toast.error('Failed to load members')
+    } catch (error) {
+      toast.error(getActionErrorMessage(error, 'Failed to load members'))
     } finally {
       setIsLoading(false)
     }

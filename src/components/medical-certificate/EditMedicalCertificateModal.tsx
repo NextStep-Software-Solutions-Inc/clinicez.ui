@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from "@components/ui/dialog";
 import { UnsavedChangesAlert } from "@/components/UnsavedChangesAlert";
+import { getActionErrorMessage } from "@/lib/action-error";
 import {
   Form,
   FormControl,
@@ -153,7 +154,7 @@ export default function EditMedicalCertificateModal({
 
         setOriginalValues(values);
       } catch (error) {
-        toast.error("Failed to load form data");
+        toast.error(getActionErrorMessage(error, "Failed to load form data"));
       }
     };
 

@@ -22,6 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from "sonner";
+import { getActionErrorMessage } from "@/lib/action-error";
 import dayjs from "@/lib/day-utils";
 
 import type { GetPrescriptions } from "@/actions/clinics/clinical-record/prescription.action";
@@ -718,8 +719,8 @@ export function ClinicRecordsClient({
       try {
         const html = await builder(id);
         setPreview({ open: true, html, title, loading: false });
-      } catch {
-        toast.error("Unable to load document preview. Please try again.");
+      } catch (error) {
+        toast.error(getActionErrorMessage(error, "Unable to load document preview. Please try again."));
         setPreview({ open: false, html: "", title: "", loading: false });
       }
     },
@@ -752,7 +753,15 @@ export function ClinicRecordsClient({
         !medCertsResult.status ||
         !referralResult.status
       ) {
-        toast.error("Failed to refresh records");
+        const failedMessage = [
+          prescriptionsResult,
+          labResult,
+          imagingResult,
+          heartResult,
+          medCertsResult,
+          referralResult,
+        ].find((r) => !r.status)?.message;
+        toast.error(failedMessage || "Failed to refresh records");
         return;
       }
 

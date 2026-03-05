@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@comp
 import { Button } from "@components/ui/button";
 import { Badge } from "@components/ui/badge";
 import { toast } from "sonner";
+import { getActionErrorMessage } from "@/lib/action-error";
 import { Loader2, Database, Shield, Stethoscope, Heart, Syringe, Play } from "lucide-react";
 import {
   seedPermissionsAction,
@@ -74,7 +75,7 @@ export default function SeedConsole() {
         }
       } catch (error) {
         console.error(`Seed ${key} failed:`, error);
-        toast.error(`Failed to run seed: ${key}`);
+        toast.error(getActionErrorMessage(error, `Failed to run seed: ${key}`));
       } finally {
         setRunningSeeds((prev) => {
           const next = new Set(prev);
@@ -100,7 +101,7 @@ export default function SeedConsole() {
         }
       } catch (error) {
         console.error("Seed all failed:", error);
-        toast.error("Failed to run all seeds");
+        toast.error(getActionErrorMessage(error, "Failed to run all seeds"));
       } finally {
         setRunningSeeds((prev) => {
           const next = new Set(prev);

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
+import { getActionErrorMessage } from "@/lib/action-error";
 import { upsertObGyneHistoryAction } from "@/actions/family-and-personal-history.action";
 import type { ObGyneHistory } from "@prisma/client";
 
@@ -76,7 +77,7 @@ export const ObGyneHistorySection = ({
           toast.error(result.message);
         }
       } catch (error) {
-        toast.error("Failed to save OB-Gyne history");
+        toast.error(getActionErrorMessage(error, "Failed to save OB-Gyne history"));
       }
     });
   };

@@ -10,6 +10,7 @@ import { Plus, Search } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@components/ui/dialog";
 import { Label } from "@components/ui/label";
 import { toast } from "sonner";
+import { getActionErrorMessage } from "@/lib/action-error";
 import { Switch } from "@components/ui/switch";
 
 interface RolesTableProps {
@@ -35,7 +36,7 @@ export default function RolesTable({ initialData, type }: RolesTableProps) {
       });
       setData(result);
     } catch (error) {
-      toast.error("Failed to load roles");
+      toast.error(getActionErrorMessage(error, "Failed to load roles"));
     } finally {
       setIsLoading(false);
     }
@@ -52,7 +53,7 @@ export default function RolesTable({ initialData, type }: RolesTableProps) {
         toast.success("Role updated successfully");
         loadData(data.pageNumber);
       } catch (error) {
-        toast.error("Failed to update role");
+        toast.error(getActionErrorMessage(error, "Failed to update role"));
       }
     } else {
       toast.info("Organization role management not yet implemented");
@@ -68,7 +69,7 @@ export default function RolesTable({ initialData, type }: RolesTableProps) {
         setCreateForm({ name: "" });
         loadData(1);
       } catch (error) {
-        toast.error("Failed to create role");
+        toast.error(getActionErrorMessage(error, "Failed to create role"));
       }
     } else {
       toast.info("Organization role creation not yet implemented");

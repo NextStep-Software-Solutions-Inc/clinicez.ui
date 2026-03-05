@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Gender } from "@prisma/client";
 import { toast } from "sonner";
+import { getActionErrorMessage } from "@/lib/action-error";
 import {
   Dialog,
   DialogContent,
@@ -79,8 +80,8 @@ export default function BasicInfoModal({
         } else {
           toast.error(result.message);
         }
-      } catch {
-        toast.error("Failed to save your information.");
+      } catch (error) {
+        toast.error(getActionErrorMessage(error, "Failed to save your information."));
       } finally {
         setIsLoading(false);
       }

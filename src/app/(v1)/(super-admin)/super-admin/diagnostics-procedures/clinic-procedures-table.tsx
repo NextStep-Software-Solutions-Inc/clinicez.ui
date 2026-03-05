@@ -30,6 +30,7 @@ import { Badge } from "@/components/ui/badge";
 import { Trash2, Edit2, Search } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { getActionErrorMessage } from "@/lib/action-error";
 import {
   getClinicProceduresByTypeAction,
   deleteClinicProcedureAction,
@@ -81,7 +82,7 @@ export function ClinicProceduresTable({
       refetch();
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to delete procedure"
+        getActionErrorMessage(error, "Failed to delete procedure")
       );
     }
   }, [deleteId, type, refetch]);

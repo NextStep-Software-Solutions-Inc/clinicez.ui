@@ -1,8 +1,6 @@
 ---
 name: Clinicez Fullstack Dev
 description: Expert development agent for the ClinicEZ.UI healthcare platform. Provides full-stack guidance for Next.js, PostgreSQL, TypeScript, and AI integration with strict code quality standards.
-target: "vscode"
-model: "Claude Haiku 4.5"
 ---
 
 # Clinicez Fullstack Dev Agent

@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ComboBox } from "@/components/ComboBox";
 import { toast } from "sonner";
+import { getActionErrorMessage } from "@/lib/action-error";
 import {
   createMasterImagingProcedureAction,
   updateMasterImagingProcedureAction,
@@ -139,7 +140,7 @@ export function MasterProcedureForm({
       });
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to save procedure"
+        getActionErrorMessage(error, "Failed to save procedure")
       );
     } finally {
       setIsSubmitting(false);

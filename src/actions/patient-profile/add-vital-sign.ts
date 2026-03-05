@@ -61,7 +61,14 @@ export async function addVitalSign(
 
     let validatedInput: VitalSignFormInput
     try {
-      validatedInput = vitalSignSchema.parse(input)
+      // Strip 0/null/undefined values for numeric fields — 0 is not a valid measurement
+      // value for any vital sign and the schema's min() checks would reject it
+      const numericFields = ['height', 'weight', 'bpSystolic', 'bpDiastolic', 'pulseRate', 'respRate', 'spo2', 'temp'] as const
+      const cleanedInput = { ...input }
+      for (const field of numericFields) {
+        if (cleanedInput[field] == null || cleanedInput[field] === 0) cleanedInput[field] = undefined
+      }
+      validatedInput = vitalSignSchema.parse(cleanedInput)
     } catch (validationError: any) {
       const fieldErrors = validationError.flatten?.().fieldErrors || {}
       const errorMessages = Object.entries(fieldErrors)

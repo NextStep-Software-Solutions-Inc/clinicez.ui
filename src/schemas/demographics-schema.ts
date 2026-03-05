@@ -52,7 +52,7 @@ export const demographicsSchema = z.object({
     .nullable(),
 
   gender: z
-    .enum(["MALE", "FEMALE", "OTHER"], {
+    .enum(["MALE", "FEMALE"], {
       errorMap: () => ({ message: "Please select a valid gender" }),
     })
     .optional()
@@ -68,6 +68,9 @@ export const demographicsSchema = z.object({
       "B_NEGATIVE",
       "AB_POSITIVE",
       "AB_NEGATIVE",
+      "RH_POSITIVE",
+      "RH_NEGATIVE",
+      "UNKNOWN",
     ], {
       errorMap: () => ({ message: "Please select a valid blood type" }),
     })
@@ -75,7 +78,7 @@ export const demographicsSchema = z.object({
     .nullable(),
 
   civilStatus: z
-    .enum(["SINGLE", "MARRIED", "DIVORCED", "WIDOWED"], {
+    .enum(["SINGLE", "MARRIED", "DIVORCED", "WIDOWED", "SEPARATED"], {
       errorMap: () => ({ message: "Please select a valid civil status" }),
     })
     .optional()

@@ -10,8 +10,9 @@ import {
   List,
   FolderOpen,
   ClipboardList,
+  Info,
 } from 'lucide-react'
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from 'recharts'
 import { ThemeToggle } from '@/components/patient-dashboard-v2/ThemeToggle'
 import { PhilHealthRecords } from '@/components/patient-dashboard-v2/PhilHealthRecords'
 import { formatBloodType } from '@/lib/utils'
@@ -19,6 +20,7 @@ import { calculateAgeInMonths, formatAge, getLengthPercentile, getWeightPercenti
 import type { SerializedPatientHealthRecordsResponse } from '@/types/patient-profile'
 import { DownloadPHRButton } from '@/components/v2/phr/DownloadPHRButton'
 import { PatientAIInsightButton } from '@/components/v2/patients/PatientAIInsightButton'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 
 interface ProfileClientProps {
   patient: SerializedPatientHealthRecordsResponse
@@ -229,7 +231,19 @@ export default function ProfileClient({ patient, headerSlot, editProfileHref, fi
                     <p className="text-lg md:text-2xl font-bold text-red-500">{formatBloodType(patient.bloodType) || 'N/A'}</p>
                   </div>
                   <div className="flex flex-col gap-0.5 md:gap-1">
-                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Clinic</p>
+                    <div className="flex items-center gap-1">
+                      <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Clinic</p>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-3 w-3 text-slate-400 dark:text-slate-500 cursor-help shrink-0" />
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-xs text-center">
+                            The primary healthcare facility where this patient is registered and receives care.
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
                     <p className="text-xs md:text-sm font-semibold text-slate-900 dark:text-white leading-snug">{patient.clinic?.name || 'N/A'}</p>
                   </div>
                 </div>
@@ -968,7 +982,7 @@ export default function ProfileClient({ patient, headerSlot, editProfileHref, fi
                         strokeOpacity={0.5}
                         tick={{ fontSize: 12 }}
                       />
-                      <Tooltip
+                      <RechartsTooltip
                         contentStyle={{
                           backgroundColor: 'rgb(15, 23, 42)',
                           border: '1px solid rgb(71, 85, 105)',
@@ -1366,7 +1380,7 @@ export default function ProfileClient({ patient, headerSlot, editProfileHref, fi
                         strokeOpacity={0.5}
                         tick={{ fontSize: 12 }}
                       />
-                      <Tooltip
+                      <RechartsTooltip
                         contentStyle={{
                           backgroundColor: 'rgb(15, 23, 42)',
                           border: '1px solid rgb(71, 85, 105)',

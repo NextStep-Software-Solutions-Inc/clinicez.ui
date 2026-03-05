@@ -27,6 +27,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
+import { getActionErrorMessage } from "@/lib/action-error";
 import { useQuery } from "@tanstack/react-query";
 import { Plus, Link as LinkIcon, Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -187,7 +188,7 @@ export function ClinicProcedureForm({
       });
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to save procedure"
+        getActionErrorMessage(error, "Failed to save procedure")
       );
     } finally {
       setIsSubmitting(false);

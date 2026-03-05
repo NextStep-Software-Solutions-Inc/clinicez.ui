@@ -214,7 +214,7 @@ export function HealthConditionsCombobox({
                           >
                             <Checkbox
                               checked={isSelected}
-                              className="mr-2"
+                              className="mr-2 pointer-events-none"
                             />
                             <span className="flex-1">{condition.name}</span>
                             {condition.usageCount && condition.usageCount > 0 && (
@@ -247,7 +247,7 @@ export function HealthConditionsCombobox({
                           >
                             <Checkbox
                               checked={isSelected}
-                              className="mr-2"
+                              className="mr-2 pointer-events-none"
                             />
                             <span className="flex-1">{condition.name}</span>
                           </CommandItem>

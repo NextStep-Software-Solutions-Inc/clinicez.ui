@@ -180,7 +180,7 @@ export function HealthConditionsCombobox({
         </PopoverTrigger>
 
         <PopoverContent className="w-full p-0" align="start">
-          <Command>
+          <Command shouldFilter={false}>
             <CommandInput
               placeholder="Search conditions..."
               value={searchTerm}
@@ -207,7 +207,7 @@ export function HealthConditionsCombobox({
                       {filteredTopConditions.map((condition) => {
                         const isSelected = value.some((c) => c.conditionId === condition.id)
                         return (
-                          <CommandItem key={condition.id} value={condition.id.toString()}>
+                          <CommandItem key={condition.id} value={condition.name}>
                             <Checkbox
                               checked={isSelected}
                               onCheckedChange={() => toggleCondition(condition.id)}
@@ -237,7 +237,7 @@ export function HealthConditionsCombobox({
                       {filteredOtherConditions.map((condition) => {
                         const isSelected = value.some((c) => c.conditionId === condition.id)
                         return (
-                          <CommandItem key={condition.id} value={condition.id.toString()}>
+                          <CommandItem key={condition.id} value={condition.name}>
                             <Checkbox
                               checked={isSelected}
                               onCheckedChange={() => toggleCondition(condition.id)}

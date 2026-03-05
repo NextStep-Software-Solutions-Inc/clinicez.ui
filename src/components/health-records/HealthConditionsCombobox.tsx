@@ -213,7 +213,8 @@ export function HealthConditionsCombobox({
                           >
                             <Checkbox
                               checked={isSelected}
-                              className="mr-2 pointer-events-none"
+                              onCheckedChange={() => toggleCondition(condition.id)}
+                              className="mr-2"
                             />
                             <span className="flex-1">{condition.name}</span>
                             {condition.usageCount && condition.usageCount > 0 && (
@@ -246,7 +247,8 @@ export function HealthConditionsCombobox({
                           >
                             <Checkbox
                               checked={isSelected}
-                              className="mr-2 pointer-events-none"
+                              onCheckedChange={() => toggleCondition(condition.id)}
+                              className="mr-2"
                             />
                             <span className="flex-1">{condition.name}</span>
                           </div>

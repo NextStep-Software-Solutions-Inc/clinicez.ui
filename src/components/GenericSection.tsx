@@ -9,6 +9,7 @@ import { AccordionContent, AccordionTrigger } from "@components/ui/accordion"
 import { Textarea } from "@components/ui/textarea"
 import { toast } from "sonner"
 import { cn } from "@lib/utils"
+import { getActionErrorMessage } from "@/lib/action-error"
 
 interface GenericSectionProps {
   hpId: number;
@@ -83,7 +84,7 @@ export default function GenericSection({ hpId, name, label, consultationId, valu
           form.reset(data)
         }
       } catch (error) {
-        toast.error("Failed to save consultation notes");
+        toast.error(getActionErrorMessage(error, "Failed to save consultation notes"));
       }
     })()
   };

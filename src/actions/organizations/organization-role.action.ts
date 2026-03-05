@@ -55,7 +55,6 @@ export const createOrganizationRoleAction = withErrorHandling(async (payload: Cr
   if (hasCodeProperty(error) && error.code === "P2002") {
     return "Role with the same name or id already exists"
   }
-  return "An error occurred while creating the organization role"
 })
 
 export type GetOrganizationRolesFilters = {
@@ -224,7 +223,6 @@ export const updateOrganizationRoleAction = withErrorHandling(async (orgRoleId: 
   if (hasCodeProperty(error) && error.code === "P2002") {
     return "Role with the same name already exists"
   }
-  return "An error occurred while updating the organization role"
 })
 
 /* ──────────────────────────────────────────────────────────────────── */

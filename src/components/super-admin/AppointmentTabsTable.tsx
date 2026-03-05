@@ -10,6 +10,7 @@ import { Plus, Search } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@components/ui/dialog";
 import { Label } from "@components/ui/label";
 import { toast } from "sonner";
+import { getActionErrorMessage } from "@/lib/action-error";
 import { Switch } from "@components/ui/switch";
 import { Textarea } from "@components/ui/textarea";
 
@@ -34,7 +35,7 @@ export default function AppointmentTabsTable({ initialData }: AppointmentTabsTab
       });
       setData(result);
     } catch (error) {
-      toast.error("Failed to load appointment tabs");
+      toast.error(getActionErrorMessage(error, "Failed to load appointment tabs"));
     } finally {
       setIsLoading(false);
     }
@@ -50,7 +51,7 @@ export default function AppointmentTabsTable({ initialData }: AppointmentTabsTab
       toast.success("Appointment tab updated successfully");
       loadData(data.pageNumber);
     } catch (error) {
-      toast.error("Failed to update appointment tab");
+      toast.error(getActionErrorMessage(error, "Failed to update appointment tab"));
     }
   };
 
@@ -62,7 +63,7 @@ export default function AppointmentTabsTable({ initialData }: AppointmentTabsTab
       setCreateForm({ name: "", description: "" });
       loadData(1);
     } catch (error) {
-      toast.error("Failed to create appointment tab");
+      toast.error(getActionErrorMessage(error, "Failed to create appointment tab"));
     }
   };
 

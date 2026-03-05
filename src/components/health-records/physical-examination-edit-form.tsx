@@ -6,6 +6,7 @@ import { physicalExaminationSchema, type PhysicalExaminationFormInput } from '@/
 import { FormModal, FormField, EditButton } from './index'
 import { Input } from '@/components/ui/input'
 import { toast } from 'sonner'
+import { getActionErrorMessage } from '@/lib/action-error'
 
 export interface PhysicalExaminationEditFormProps {
   userId: string
@@ -73,7 +74,7 @@ export function PhysicalExaminationEditForm({
       }
     } catch (err) {
       console.error('[PhysicalExamForm] Error:', err)
-      toast.error('An unexpected error occurred. Please try again.')
+      toast.error(getActionErrorMessage(err, 'An unexpected error occurred. Please try again.'))
       throw err
     } finally {
       setIsLoading(false)

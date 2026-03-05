@@ -17,6 +17,7 @@ import { z } from "zod";
 import { useForm, useWatch } from "react-hook-form";
 import ActionButton from "@components/ActionButton";
 import { toast } from "sonner";
+import { getActionErrorMessage } from "@/lib/action-error";
 import { upsertPreAssessmentNoteAction } from "@actions/appointments/pre-assessment-note.action";
 import { useClinicAppointment } from "@hooks/useAppointment";
 import { Checkbox } from "@components/ui/checkbox";
@@ -211,7 +212,7 @@ export default function PreAssessmentNoteSheet({ children, disabled, preAssessme
         attachments.length > 0 ? attachments : undefined
       );
     } catch (error) {
-      toast.error('Failed to generate notes. Please try again.');
+      toast.error(getActionErrorMessage(error, 'Failed to generate notes. Please try again.'));
     }
   };
 

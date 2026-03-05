@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { X, Upload, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { getActionErrorMessage } from '@/lib/action-error'
 
 export interface PhilHealthRecordEditFormProps {
   userId: string
@@ -105,7 +106,7 @@ export function PhilHealthRecordEditForm({
         saveErrorMessage = result.error || 'An unexpected error occurred'
       }
     } catch (err) {
-      toast.error('An unexpected error occurred. Please try again.')
+      toast.error(getActionErrorMessage(err, 'An unexpected error occurred. Please try again.'))
       throw err
     } finally {
       setIsLoading(false)
@@ -153,7 +154,7 @@ export function PhilHealthRecordEditForm({
         toast.error(result.error || 'Failed to add dependent')
       }
     } catch (err) {
-      toast.error('An unexpected error occurred')
+      toast.error(getActionErrorMessage(err, 'An unexpected error occurred'))
     } finally {
       setIsLoading(false)
     }
@@ -175,7 +176,7 @@ export function PhilHealthRecordEditForm({
         toast.error(result.error || 'Failed to remove dependent')
       }
     } catch (err) {
-      toast.error('An unexpected error occurred')
+      toast.error(getActionErrorMessage(err, 'An unexpected error occurred'))
     } finally {
       setIsLoading(false)
     }

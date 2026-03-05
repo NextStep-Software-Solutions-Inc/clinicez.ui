@@ -13,6 +13,7 @@ import { format } from "date-fns"
 import { CalendarIcon, Download, FileSpreadsheet } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
+import { getActionErrorMessage } from "@/lib/action-error"
 
 const bulkEKASSchema = z.object({
   startDate: z.date({
@@ -87,9 +88,8 @@ export function BulkEKASDownload({ clinicUid }: BulkEKASDownloadProps) {
       toast.success(result.message, { id: toastId })
       form.reset()
     } catch (error) {
-      toast.error("Failed to download bulk EKAS", {
+      toast.error(getActionErrorMessage(error, "Failed to download bulk EKAS"), {
         id: toastId,
-        description: error instanceof Error ? error.message : "Unknown error occurred"
       })
     } finally {
       setIsLoading(false)

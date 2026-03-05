@@ -22,6 +22,7 @@ import {
 } from "@components/ui/select";
 import { Search } from "lucide-react";
 import { toast } from "sonner";
+import { getActionErrorMessage } from "@/lib/action-error";
 import { formatDistance } from "date-fns";
 
 type AuditLogData = NonNullable<GetAuditLogs["data"]>;
@@ -79,8 +80,8 @@ export default function AuditLogTable({ initialData }: AuditLogTableProps) {
       } else {
         toast.error(result.message || "Failed to load audit logs");
       }
-    } catch {
-      toast.error("Failed to load audit logs");
+    } catch (error) {
+      toast.error(getActionErrorMessage(error, "Failed to load audit logs"));
     } finally {
       setIsLoading(false);
     }

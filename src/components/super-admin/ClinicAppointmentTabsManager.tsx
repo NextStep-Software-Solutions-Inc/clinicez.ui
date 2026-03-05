@@ -6,6 +6,7 @@ import { Button } from "@components/ui/button";
 import { Checkbox } from "@components/ui/checkbox";
 import { Badge } from "@components/ui/badge";
 import { toast } from "sonner";
+import { getActionErrorMessage } from "@/lib/action-error";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@components/ui/card";
 import { Save, X } from "lucide-react";
 
@@ -80,7 +81,7 @@ export default function ClinicAppointmentTabsManager({
       
       toast.success("Appointment tabs updated successfully");
     } catch (error) {
-      toast.error("Failed to update appointment tabs");
+      toast.error(getActionErrorMessage(error, "Failed to update appointment tabs"));
       console.error(error);
     } finally {
       setIsSaving(false);

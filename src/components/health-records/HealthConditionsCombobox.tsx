@@ -20,6 +20,7 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
+import { getActionErrorMessage } from '@/lib/action-error'
 import { getHealthConditionsAction } from '@/actions/health-records/get-health-conditions.action'
 
 interface HealthCondition {
@@ -86,7 +87,7 @@ export function HealthConditionsCombobox({
       }
     } catch (err) {
       console.error('Error fetching conditions:', err)
-      toast.error('Failed to load health conditions')
+      toast.error(getActionErrorMessage(err, 'Failed to load health conditions'))
     } finally {
       setIsLoading(false)
     }

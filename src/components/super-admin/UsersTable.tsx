@@ -8,6 +8,7 @@ import { Input } from "@components/ui/input";
 import { Badge } from "@components/ui/badge";
 import { Search, Lock } from "lucide-react";
 import { toast } from "sonner";
+import { getActionErrorMessage } from "@/lib/action-error";
 import { formatDistance } from "date-fns";
 import { UserPermissionsDialog } from "./UserPermissionsDialog";
 
@@ -37,7 +38,7 @@ export default function UsersTable({ initialData }: UsersTableProps) {
       });
       setData(result);
     } catch (error) {
-      toast.error("Failed to load users");
+      toast.error(getActionErrorMessage(error, "Failed to load users"));
     } finally {
       setIsLoading(false);
     }

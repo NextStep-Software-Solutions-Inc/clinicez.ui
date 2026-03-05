@@ -7,6 +7,7 @@ import { FormModal, FormField, EditButton } from './index'
 import { AllergenCombobox } from './AllergenCombobox'
 import { Textarea } from '@/components/ui/textarea'
 import { toast } from 'sonner'
+import { getActionErrorMessage } from '@/lib/action-error'
 import { Trash2, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -56,11 +57,7 @@ export function AllergyEditForm({
         onSuccess?.()
       }
     } catch (err) {
-      if (err instanceof Error) {
-        toast.error(err.message)
-      } else {
-        toast.error('Failed to add allergy')
-      }
+      toast.error(getActionErrorMessage(err, 'Failed to add allergy'))
     } finally {
       setIsLoading(false)
     }
@@ -82,11 +79,7 @@ export function AllergyEditForm({
       setAllergies((prev) => prev.filter((_, i) => i !== index))
       onSuccess?.()
     } catch (err) {
-      if (err instanceof Error) {
-        toast.error(err.message)
-      } else {
-        toast.error('Failed to remove allergy')
-      }
+      toast.error(getActionErrorMessage(err, 'Failed to remove allergy'))
     } finally {
       setIsLoading(false)
     }

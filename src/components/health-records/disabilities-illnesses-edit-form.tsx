@@ -6,6 +6,7 @@ import { FormModal, FormField, EditButton } from './index'
 import { DisabilityCombobox } from './DisabilityCombobox'
 import { Textarea } from '@/components/ui/textarea'
 import { toast } from 'sonner'
+import { getActionErrorMessage } from '@/lib/action-error'
 import { Trash2, Plus, Calendar } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
@@ -107,11 +108,7 @@ export function DisabilitiesEditForm({
         onSuccess?.()
       }
     } catch (err) {
-      if (err instanceof Error) {
-        toast.error(err.message)
-      } else {
-        toast.error('Failed to add disability record')
-      }
+      toast.error(getActionErrorMessage(err, 'Failed to add disability record'))
     } finally {
       setIsLoading(false)
     }
@@ -133,11 +130,7 @@ export function DisabilitiesEditForm({
       setDisabilities((prev) => prev.filter((_, i) => i !== index))
       onSuccess?.()
     } catch (err) {
-      if (err instanceof Error) {
-        toast.error(err.message)
-      } else {
-        toast.error('Failed to remove disability record')
-      }
+      toast.error(getActionErrorMessage(err, 'Failed to remove disability record'))
     } finally {
       setIsLoading(false)
     }

@@ -6,6 +6,7 @@ import { medicalHistorySchema, medicalHistoryGuidance, type MedicalHistoryFormIn
 import { FormModal, EditButton } from './index'
 import { HealthConditionsCombobox } from './HealthConditionsCombobox'
 import { toast } from 'sonner'
+import { getActionErrorMessage } from '@/lib/action-error'
 
 export interface MedicalConditionsEditFormProps {
   userId: string
@@ -72,7 +73,7 @@ export function MedicalConditionsEditForm({
         saveErrorMessage = result.error || 'An unexpected error occurred'
       }
     } catch (err) {
-      toast.error('An unexpected error occurred. Please try again.')
+      toast.error(getActionErrorMessage(err, 'An unexpected error occurred. Please try again.'))
       throw err
     } finally {
       setIsLoading(false)

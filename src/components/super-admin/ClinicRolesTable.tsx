@@ -11,6 +11,7 @@ import { Input } from "@components/ui/input";
 import { Badge } from "@components/ui/badge";
 import { Search } from "lucide-react";
 import { toast } from "sonner";
+import { getActionErrorMessage } from "@/lib/action-error";
 
 interface ClinicRolesTableProps {
   initialData: GetClinicRoles;
@@ -33,7 +34,7 @@ export default function ClinicRolesTable({ initialData }: ClinicRolesTableProps)
       });
       setData(result);
     } catch (error) {
-      toast.error("Failed to load roles");
+      toast.error(getActionErrorMessage(error, "Failed to load roles"));
     } finally {
       setIsLoading(false);
     }

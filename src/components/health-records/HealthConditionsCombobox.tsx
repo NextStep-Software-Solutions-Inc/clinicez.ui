@@ -7,7 +7,6 @@ import {
   Command,
   CommandEmpty,
   CommandInput,
-  CommandItem,
   CommandList,
 } from '@/components/ui/command'
 import {
@@ -207,10 +206,10 @@ export function HealthConditionsCombobox({
                       {filteredTopConditions.map((condition) => {
                         const isSelected = value.some((c) => c.conditionId === condition.id)
                         return (
-                          <CommandItem 
-                            key={condition.id} 
-                            value={condition.name}
-                            onSelect={() => toggleCondition(condition.id)}
+                          <div
+                            key={condition.id}
+                            className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground"
+                            onClick={() => toggleCondition(condition.id)}
                           >
                             <Checkbox
                               checked={isSelected}
@@ -222,7 +221,7 @@ export function HealthConditionsCombobox({
                                 ({condition.usageCount})
                               </span>
                             )}
-                          </CommandItem>
+                          </div>
                         )
                       })}
                     </>
@@ -240,17 +239,17 @@ export function HealthConditionsCombobox({
                       {filteredOtherConditions.map((condition) => {
                         const isSelected = value.some((c) => c.conditionId === condition.id)
                         return (
-                          <CommandItem 
-                            key={condition.id} 
-                            value={condition.name}
-                            onSelect={() => toggleCondition(condition.id)}
+                          <div
+                            key={condition.id}
+                            className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground"
+                            onClick={() => toggleCondition(condition.id)}
                           >
                             <Checkbox
                               checked={isSelected}
                               className="mr-2 pointer-events-none"
                             />
                             <span className="flex-1">{condition.name}</span>
-                          </CommandItem>
+                          </div>
                         )
                       })}
                     </>

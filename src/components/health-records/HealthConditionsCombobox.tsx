@@ -21,6 +21,7 @@ import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { getHealthConditionsAction } from '@/actions/health-records/get-health-conditions.action'
+import { matchesSearch } from '@/lib/search-utils'
 
 interface HealthCondition {
   id: number
@@ -93,42 +94,6 @@ export function HealthConditionsCombobox({
   }, [])
 
   const allConditions = [...topConditions, ...otherConditions]
-
-  /**
-   * Flexible search that matches conditions in multiple ways:
-   * 1. Substring match: "acne" matches "Acne"
-   * 2. Fuzzy match: "ance" matches "Acne" (all chars present)
-   * 3. Abbreviation match: "hbp" matches "High Blood Pressure" (character presence)
-   */
-  const matchesSearch = (conditionName: string, search: string): boolean => {
-    if (!search) return true
-    
-    const nameLower = conditionName.toLowerCase()
-    const searchLower = search.toLowerCase()
-    
-    // First try exact substring match (fastest and most intuitive)
-    if (nameLower.includes(searchLower)) return true
-    
-    // Then try flexible fuzzy matching using character frequency map
-    // Check if all search characters exist in the condition name
-    const charCount = new Map<string, number>()
-    
-    // Count characters in the condition name
-    for (const char of nameLower) {
-      charCount.set(char, (charCount.get(char) || 0) + 1)
-    }
-    
-    // Check if all search characters are available
-    for (const searchChar of searchLower) {
-      const count = charCount.get(searchChar) || 0
-      if (count === 0) {
-        return false // Character not found or already used up
-      }
-      charCount.set(searchChar, count - 1)
-    }
-    
-    return true
-  }
 
   const filteredTopConditions = topConditions.filter((c) =>
     matchesSearch(c.name, searchTerm)

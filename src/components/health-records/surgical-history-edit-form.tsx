@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { Edit2, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { getActionErrorMessage } from '@/lib/action-error'
 
 interface SurgicalRecord {
   id: number
@@ -92,10 +93,10 @@ export function SurgicalHistoryEditForm({
         setFormData({ operationName: '', operationDate: '', notes: '' })
         onSuccess?.()
       } else {
-        toast.error('Failed to add surgical history')
+        toast.error(result.message || 'Failed to add surgical history')
       }
     } catch (err) {
-      toast.error('An unexpected error occurred. Please try again.')
+      toast.error(getActionErrorMessage(err, 'An unexpected error occurred. Please try again.'))
       console.error(err)
     } finally {
       setIsLoading(false)
@@ -140,10 +141,10 @@ export function SurgicalHistoryEditForm({
         setEditingId(null)
         onSuccess?.()
       } else {
-        toast.error('Failed to update surgical history')
+        toast.error(result.message || 'Failed to update surgical history')
       }
     } catch (err) {
-      toast.error('An unexpected error occurred. Please try again.')
+      toast.error(getActionErrorMessage(err, 'An unexpected error occurred. Please try again.'))
       console.error(err)
     } finally {
       setIsLoading(false)
@@ -165,10 +166,10 @@ export function SurgicalHistoryEditForm({
         setSurgeries(surgeries.filter((s) => s.id !== id))
         onSuccess?.()
       } else {
-        toast.error('Failed to delete surgical history')
+        toast.error(result.message || 'Failed to delete surgical history')
       }
     } catch (err) {
-      toast.error('An unexpected error occurred. Please try again.')
+      toast.error(getActionErrorMessage(err, 'An unexpected error occurred. Please try again.'))
       console.error(err)
     } finally {
       setIsLoading(false)

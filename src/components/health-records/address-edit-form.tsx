@@ -8,6 +8,7 @@ import {
   getAddressesAction,
 } from '@/actions/address.action'
 import { getRegions } from '@/actions/locations.action'
+import { getActionErrorMessage } from '@/lib/action-error'
 import { addressSchema, type AddressFormInput } from '@/schemas'
 import { FormModal, FormField, EditButton } from './index'
 import { Input } from '@/components/ui/input'
@@ -143,11 +144,7 @@ export function AddressEditForm({
         onSuccess?.()
       }
     } catch (err) {
-      if (err instanceof Error) {
-        toast.error(err.message)
-      } else {
-        toast.error('Failed to add address')
-      }
+      toast.error(getActionErrorMessage(err, 'Failed to add address'))
     } finally {
       setIsLoading(false)
     }
@@ -187,11 +184,7 @@ export function AddressEditForm({
       setSelectedBarangayCode('')
       onSuccess?.()
     } catch (err) {
-      if (err instanceof Error) {
-        toast.error(err.message)
-      } else {
-        toast.error('Failed to update address')
-      }
+      toast.error(getActionErrorMessage(err, 'Failed to update address'))
     } finally {
       setIsLoading(false)
     }
@@ -205,7 +198,7 @@ export function AddressEditForm({
       setAddresses((prev) => prev.filter((a) => a.id !== id))
       onSuccess?.()
     } catch (err) {
-      toast.error('Failed to remove address')
+      toast.error(getActionErrorMessage(err, 'Failed to remove address'))
     } finally {
       setIsLoading(false)
     }
@@ -232,7 +225,7 @@ export function AddressEditForm({
         onSuccess?.()
       }
     } catch (err) {
-      toast.error('Failed to update primary address')
+      toast.error(getActionErrorMessage(err, 'Failed to update primary address'))
     } finally {
       setIsLoading(false)
     }

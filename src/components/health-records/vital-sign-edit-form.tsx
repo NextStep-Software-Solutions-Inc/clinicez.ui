@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Plus, Edit2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { getActionErrorMessage } from '@/lib/action-error'
 
 export interface VitalSignEditFormProps {
   userId: string
@@ -127,7 +128,7 @@ export function VitalSignEditForm({
       }
     } catch (err) {
       console.error('Save error:', err)
-      toast.error('An unexpected error occurred. Please try again.')
+      toast.error(getActionErrorMessage(err, 'An unexpected error occurred. Please try again.'))
       throw err
     } finally {
       setIsLoading(false)

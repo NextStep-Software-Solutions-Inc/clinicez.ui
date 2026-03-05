@@ -22,6 +22,7 @@ import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { getActionErrorMessage } from '@/lib/action-error'
 import { getHealthConditionsAction } from '@/actions/health-records/get-health-conditions.action'
+import { matchesSearch } from '@/lib/search-utils'
 
 interface HealthCondition {
   id: number
@@ -96,11 +97,11 @@ export function HealthConditionsCombobox({
   const allConditions = [...topConditions, ...otherConditions]
 
   const filteredTopConditions = topConditions.filter((c) =>
-    c.name.toLowerCase().includes(searchTerm.toLowerCase())
+    matchesSearch(c.name, searchTerm)
   )
 
   const filteredOtherConditions = otherConditions.filter((c) =>
-    c.name.toLowerCase().includes(searchTerm.toLowerCase())
+    matchesSearch(c.name, searchTerm)
   )
 
   const toggleCondition = (conditionId: number) => {
@@ -180,7 +181,7 @@ export function HealthConditionsCombobox({
         </PopoverTrigger>
 
         <PopoverContent className="w-full p-0" align="start">
-          <Command>
+          <Command shouldFilter={false}>
             <CommandInput
               placeholder="Search conditions..."
               value={searchTerm}
@@ -207,7 +208,7 @@ export function HealthConditionsCombobox({
                       {filteredTopConditions.map((condition) => {
                         const isSelected = value.some((c) => c.conditionId === condition.id)
                         return (
-                          <CommandItem key={condition.id} value={condition.id.toString()}>
+                          <CommandItem key={condition.id} value={condition.name}>
                             <Checkbox
                               checked={isSelected}
                               onCheckedChange={() => toggleCondition(condition.id)}
@@ -237,7 +238,7 @@ export function HealthConditionsCombobox({
                       {filteredOtherConditions.map((condition) => {
                         const isSelected = value.some((c) => c.conditionId === condition.id)
                         return (
-                          <CommandItem key={condition.id} value={condition.id.toString()}>
+                          <CommandItem key={condition.id} value={condition.name}>
                             <Checkbox
                               checked={isSelected}
                               onCheckedChange={() => toggleCondition(condition.id)}

@@ -33,12 +33,15 @@ export function MedicalConditionsEditForm({
   const [isLoading, setIsLoading] = useState(false)
   const [conditions, setConditions] = useState<Partial<MedicalHistoryFormInput>[]>(currentConditions || [])
 
-  // Sync form state with parent props when dialog opens or props change
+  // Sync form state with parent props when modal opens
+  // Note: inline mode uses useState initial value — we intentionally omit currentConditions
+  // from deps to avoid resetting on every parent re-render (it's a new reference each time)
   useEffect(() => {
-    if (isOpen || inline) {
+    if (isOpen) {
       setConditions(currentConditions || [])
     }
-  }, [isOpen, currentConditions, inline])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen])
 
   // Track if form has unsaved changes
   const hasChanges = useMemo(() => {

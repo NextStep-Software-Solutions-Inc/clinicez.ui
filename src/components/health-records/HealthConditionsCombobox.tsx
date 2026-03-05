@@ -98,7 +98,7 @@ export function HealthConditionsCombobox({
    * Flexible search that matches conditions in multiple ways:
    * 1. Substring match: "acne" matches "Acne"
    * 2. Fuzzy match: "ance" matches "Acne" (all chars present)
-   * 3. Sequential match: "hbp" matches "High Blood Pressure"
+   * 3. Abbreviation match: "hbp" matches "High Blood Pressure" (character presence)
    */
   const matchesSearch = (conditionName: string, search: string): boolean => {
     if (!search) return true
@@ -109,20 +109,22 @@ export function HealthConditionsCombobox({
     // First try exact substring match (fastest and most intuitive)
     if (nameLower.includes(searchLower)) return true
     
-    // Then try flexible fuzzy matching:
+    // Then try flexible fuzzy matching using character frequency map
     // Check if all search characters exist in the condition name
-    const searchChars = searchLower.split('')
-    const nameChars = nameLower.split('')
+    const charCount = new Map<string, number>()
     
-    // Try to match all search characters (order-independent for better UX)
-    const remainingNameChars = [...nameChars]
-    for (const searchChar of searchChars) {
-      const index = remainingNameChars.indexOf(searchChar)
-      if (index === -1) {
-        return false // Character not found
+    // Count characters in the condition name
+    for (const char of nameLower) {
+      charCount.set(char, (charCount.get(char) || 0) + 1)
+    }
+    
+    // Check if all search characters are available
+    for (const searchChar of searchLower) {
+      const count = charCount.get(searchChar) || 0
+      if (count === 0) {
+        return false // Character not found or already used up
       }
-      // Remove the matched character so we don't reuse it
-      remainingNameChars.splice(index, 1)
+      charCount.set(searchChar, count - 1)
     }
     
     return true

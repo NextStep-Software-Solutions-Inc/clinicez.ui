@@ -207,10 +207,13 @@ export function HealthConditionsCombobox({
                       {filteredTopConditions.map((condition) => {
                         const isSelected = value.some((c) => c.conditionId === condition.id)
                         return (
-                          <CommandItem key={condition.id} value={condition.name}>
+                          <CommandItem 
+                            key={condition.id} 
+                            value={condition.name}
+                            onSelect={() => toggleCondition(condition.id)}
+                          >
                             <Checkbox
                               checked={isSelected}
-                              onCheckedChange={() => toggleCondition(condition.id)}
                               className="mr-2"
                             />
                             <span className="flex-1">{condition.name}</span>
@@ -237,10 +240,13 @@ export function HealthConditionsCombobox({
                       {filteredOtherConditions.map((condition) => {
                         const isSelected = value.some((c) => c.conditionId === condition.id)
                         return (
-                          <CommandItem key={condition.id} value={condition.name}>
+                          <CommandItem 
+                            key={condition.id} 
+                            value={condition.name}
+                            onSelect={() => toggleCondition(condition.id)}
+                          >
                             <Checkbox
                               checked={isSelected}
-                              onCheckedChange={() => toggleCondition(condition.id)}
                               className="mr-2"
                             />
                             <span className="flex-1">{condition.name}</span>

@@ -271,6 +271,32 @@ async function authHeaders() {
   };
 }
 
+/**
+ * fetch with automatic token-refresh retry on 403.
+ * On a 403 response the token is refreshed once and the request is retried.
+ * Any other non-OK status throws immediately.
+ */
+async function fetchWithRetry(url, body) {
+  const MAX_RETRIES = 2;
+  let lastStatus = 0;
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: await authHeaders(),
+      body: JSON.stringify(body),
+    });
+    if (res.ok) return res;
+    lastStatus = res.status;
+    if (res.status !== 403) {
+      // Non-auth failure — surface immediately, no retry
+      throw new Error('HTTP ' + res.status + ' from ' + url);
+    }
+    // 403: token may have expired between the refresh and the request
+    // — loop to fetch a new token and retry
+  }
+  throw new Error('HTTP ' + lastStatus + ' from ' + url + ' (after ' + MAX_RETRIES + ' attempts)');
+}
+
 async function importICD10Batches(origin, rows, batchSize) {
   const totalBatches = Math.ceil(rows.length / batchSize);
   const batchWeight = 90 / (totalBatches || 1);
@@ -283,24 +309,14 @@ async function importICD10Batches(origin, rows, batchSize) {
     importedCodes.push(...slice.map(r => r.code.trim().toUpperCase()));
     self.postMessage({ type: 'progress', progress: Math.round((b + 1) * batchWeight), label: 'Processing batch ' + (b + 1) + ' of ' + totalBatches + '...' });
 
-    const res = await fetch(origin + '/api/super-admin/import/icd10', {
-      method: 'POST',
-      headers: await authHeaders(),
-      body: JSON.stringify({ rows: slice }),
-    });
-    if (!res.ok) throw new Error('Batch ' + (b + 1) + ' failed: HTTP ' + res.status);
+    const res = await fetchWithRetry(origin + '/api/super-admin/import/icd10', { rows: slice });
     const batchResult = await res.json();
     totalUpserted += batchResult.upserted || 0;
     if (batchResult.errors) errors.push(...batchResult.errors);
   }
 
   self.postMessage({ type: 'progress', progress: 95, label: 'Finalizing – deactivating removed codes...' });
-  const finalRes = await fetch(origin + '/api/super-admin/import/icd10/finalize', {
-    method: 'POST',
-    headers: await authHeaders(),
-    body: JSON.stringify({ importedCodes }),
-  });
-  if (!finalRes.ok) throw new Error('Finalize failed: HTTP ' + finalRes.status);
+  const finalRes = await fetchWithRetry(origin + '/api/super-admin/import/icd10/finalize', { importedCodes });
   const finalResult = await finalRes.json();
 
   return { totalRows: rows.length, upserted: totalUpserted, deactivated: finalResult.deactivated || 0, errors };
@@ -336,12 +352,7 @@ async function importRVSBatches(origin, rows, batchSize) {
       const progress = Math.min(90, Math.round((overallBatch / (totalBatchCount || 1)) * 90));
       self.postMessage({ type: 'progress', progress, label: 'Processing ' + type + ': batch ' + (b + 1) + ' of ' + totalBatches + '...' });
 
-      const res = await fetch(origin + '/api/super-admin/import/rvs', {
-        method: 'POST',
-        headers: await authHeaders(),
-        body: JSON.stringify({ type, rows: slice }),
-      });
-      if (!res.ok) throw new Error('RVS batch failed: HTTP ' + res.status);
+      const res = await fetchWithRetry(origin + '/api/super-admin/import/rvs', { type, rows: slice });
       const batchResult = await res.json();
       totalUpserted += batchResult.upserted || 0;
       if (batchResult.errors) errors.push(...batchResult.errors);
@@ -352,12 +363,7 @@ async function importRVSBatches(origin, rows, batchSize) {
   let totalDeactivated = 0;
   for (const type of types) {
     if (importedByType[type].length === 0) continue;
-    const finalRes = await fetch(origin + '/api/super-admin/import/rvs/finalize', {
-      method: 'POST',
-      headers: await authHeaders(),
-      body: JSON.stringify({ type, importedNames: importedByType[type] }),
-    });
-    if (!finalRes.ok) throw new Error('RVS finalize failed: HTTP ' + finalRes.status);
+    const finalRes = await fetchWithRetry(origin + '/api/super-admin/import/rvs/finalize', { type, importedNames: importedByType[type] });
     const finalResult = await finalRes.json();
     totalDeactivated += finalResult.deactivated || 0;
   }

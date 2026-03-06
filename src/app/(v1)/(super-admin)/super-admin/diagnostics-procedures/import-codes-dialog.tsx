@@ -245,7 +245,7 @@ type UploadWorkerMessage = UploadProgressMessage | UploadCompleteMessage | Uploa
  * Uses fetch with credentials:'include' so Clerk session cookies are forwarded.
  */
 const UPLOAD_WORKER_CODE = `
-async function importICD10Batches(rows, batchSize) {
+async function importICD10Batches(origin, rows, batchSize) {
   const totalBatches = Math.ceil(rows.length / batchSize);
   const batchWeight = 90 / (totalBatches || 1);
   let totalUpserted = 0;
@@ -257,7 +257,7 @@ async function importICD10Batches(rows, batchSize) {
     importedCodes.push(...slice.map(r => r.code.trim().toUpperCase()));
     self.postMessage({ type: 'progress', progress: Math.round((b + 1) * batchWeight), label: 'Processing batch ' + (b + 1) + ' of ' + totalBatches + '...' });
 
-    const res = await fetch('/api/super-admin/import/icd10', {
+    const res = await fetch(origin + '/api/super-admin/import/icd10', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -270,7 +270,7 @@ async function importICD10Batches(rows, batchSize) {
   }
 
   self.postMessage({ type: 'progress', progress: 95, label: 'Finalizing – deactivating removed codes...' });
-  const finalRes = await fetch('/api/super-admin/import/icd10/finalize', {
+  const finalRes = await fetch(origin + '/api/super-admin/import/icd10/finalize', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
@@ -282,7 +282,7 @@ async function importICD10Batches(rows, batchSize) {
   return { totalRows: rows.length, upserted: totalUpserted, deactivated: finalResult.deactivated || 0, errors };
 }
 
-async function importRVSBatches(rows, batchSize) {
+async function importRVSBatches(origin, rows, batchSize) {
   const grouped = { imaging: [], laboratory: [], heart_station: [] };
   const errors = [];
 
@@ -312,7 +312,7 @@ async function importRVSBatches(rows, batchSize) {
       const progress = Math.min(90, Math.round((overallBatch / (totalBatchCount || 1)) * 90));
       self.postMessage({ type: 'progress', progress, label: 'Processing ' + type + ': batch ' + (b + 1) + ' of ' + totalBatches + '...' });
 
-      const res = await fetch('/api/super-admin/import/rvs', {
+      const res = await fetch(origin + '/api/super-admin/import/rvs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -329,7 +329,7 @@ async function importRVSBatches(rows, batchSize) {
   let totalDeactivated = 0;
   for (const type of types) {
     if (importedByType[type].length === 0) continue;
-    const finalRes = await fetch('/api/super-admin/import/rvs/finalize', {
+    const finalRes = await fetch(origin + '/api/super-admin/import/rvs/finalize', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -344,11 +344,11 @@ async function importRVSBatches(rows, batchSize) {
 }
 
 self.onmessage = async function(e) {
-  const { importType, rows, batchSize } = e.data;
+  const { importType, origin, rows, batchSize } = e.data;
   try {
     const result = importType === 'icd10'
-      ? await importICD10Batches(rows, batchSize)
-      : await importRVSBatches(rows, batchSize);
+      ? await importICD10Batches(origin, rows, batchSize)
+      : await importRVSBatches(origin, rows, batchSize);
     self.postMessage({ type: 'complete', result });
   } catch (err) {
     self.postMessage({ type: 'error', message: err.message || String(err) });
@@ -388,7 +388,7 @@ function runUploadWorker(
       reject(new Error(e.message));
     };
 
-    worker.postMessage({ importType, rows, batchSize });
+    worker.postMessage({ importType, origin: window.location.origin, rows, batchSize });
   });
 }
 

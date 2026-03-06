@@ -507,20 +507,17 @@ export function ImportCodesDialog({
     const codeIdx = idx("code");
     const shortDescIdx = idx("shortdescription");
     const longDescIdx = idx("longdescription");
-    const descIdx = shortDescIdx !== -1 ? shortDescIdx : (idx("description") !== -1 ? idx("description") : -1);
-    const catIdx = idx("category") !== -1 ? idx("category") : -1;
     const hipaaIdx = idx("hippacovered") !== -1 ? idx("hippacovered") : -1;
     const orderIdx = idx("ordernum") !== -1 ? idx("ordernum") : -1;
-    if (codeIdx === -1 || descIdx === -1) return null;
+    if (codeIdx === -1 || shortDescIdx === -1) return null;
     const hipaaVal = hipaaIdx !== -1 ? (row[hipaaIdx] ?? "").trim() : "";
     return {
       code: row[codeIdx] ?? "",
-      description: row[descIdx] ?? "",
-      shortDescription: shortDescIdx !== -1 ? row[shortDescIdx] : undefined,
+      description: row[shortDescIdx] ?? "",
+      shortDescription: row[shortDescIdx],
       longDescription: longDescIdx !== -1 ? row[longDescIdx] : undefined,
       hippaCovered: hipaaVal === "1" || hipaaVal.toLowerCase() === "true",
       orderNum: orderIdx !== -1 ? parseInt(row[orderIdx] ?? "", 10) || undefined : undefined,
-      category: catIdx !== -1 ? row[catIdx] ?? "" : undefined,
     };
   };
 
@@ -601,7 +598,7 @@ export function ImportCodesDialog({
     }
   };
 
-  const icd10CsvHeaders = ["orderNum", "code", "hippaCovered", "shortDescription", "longDescription", "description", "category"];
+  const icd10CsvHeaders = ["orderNum", "code", "hippaCovered", "shortDescription", "longDescription"];
   const rvsHeaders = ["procedureType", "name", "category", "rvsCode", "description"];
 
   return (

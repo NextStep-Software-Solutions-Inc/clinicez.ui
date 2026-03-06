@@ -853,27 +853,44 @@ export function ImportCodesDialog({
             </p>
           )}
 
-          {/* ICD-10 parsed sample preview - 3 rows */}
-          {importType === "icd10" && totalDataRows > 0 && !result && !importing && (
-            <div className="rounded-md border border-border/50 bg-muted/20 p-3 space-y-2">
-              <p className="text-[11px] font-semibold text-foreground/80">
-                Sample preview (first 3 rows):
-              </p>
-              <div className="rounded bg-background border border-border/40 divide-y divide-border/30 overflow-hidden">
-                {(icd10TxtRows
-                  ? icd10TxtRows.slice(0, 3)
-                  : (parsedRows?.slice(0, 10).map(r => normalizeICD10Row(r, headers)).filter((r): r is ICD10Row => r !== null).slice(0, 3) ?? [])
-                ).map((row, i) => (
-                    <div key={i} className="px-2 py-1.5 text-[11px] grid grid-cols-2 gap-x-3">
-                      <span className="truncate font-mono font-semibold text-primary">{row.code}</span>
-                      <span className="truncate text-muted-foreground">{row.hippaCovered ? "HIPAA ✓" : ""}</span>
-                      <span className="col-span-2 truncate">{row.shortDescription || row.description}</span>
-                      {row.longDescription && <span className="col-span-2 truncate text-muted-foreground text-[10px]">{row.longDescription}</span>}
-                    </div>
-                  ))}
+          {/* ICD-10 parsed sample preview - 3 rows, all columns */}
+          {importType === "icd10" && totalDataRows > 0 && !result && !importing && (() => {
+            const sampleRows = icd10TxtRows
+              ? icd10TxtRows.slice(0, 3)
+              : (parsedRows?.slice(0, 10).map(r => normalizeICD10Row(r, headers)).filter((r): r is ICD10Row => r !== null).slice(0, 3) ?? []);
+            if (sampleRows.length === 0) return null;
+            return (
+              <div className="rounded-md border border-border/50 bg-muted/20 p-3 space-y-2">
+                <p className="text-[11px] font-semibold text-foreground/80">
+                  Sample preview (first 3 rows):
+                </p>
+                <div className="overflow-x-auto rounded bg-background border border-border/40">
+                  <table className="w-full text-[11px] border-collapse">
+                    <thead>
+                      <tr className="bg-muted/40 border-b border-border/40">
+                        <th className="px-2 py-1 text-left font-semibold text-muted-foreground whitespace-nowrap">#</th>
+                        <th className="px-2 py-1 text-left font-semibold text-muted-foreground whitespace-nowrap">Code</th>
+                        <th className="px-2 py-1 text-left font-semibold text-muted-foreground whitespace-nowrap">HIPAA</th>
+                        <th className="px-2 py-1 text-left font-semibold text-muted-foreground whitespace-nowrap">Short Description</th>
+                        <th className="px-2 py-1 text-left font-semibold text-muted-foreground whitespace-nowrap">Long Description</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border/30">
+                      {sampleRows.map((row, i) => (
+                        <tr key={i} className="hover:bg-muted/10">
+                          <td className="px-2 py-1.5 text-muted-foreground tabular-nums">{row.orderNum ?? "—"}</td>
+                          <td className="px-2 py-1.5 font-mono font-semibold text-primary whitespace-nowrap">{row.code}</td>
+                          <td className="px-2 py-1.5 text-center">{row.hippaCovered ? "✓" : "—"}</td>
+                          <td className="px-2 py-1.5 max-w-[180px] truncate">{row.shortDescription ?? "—"}</td>
+                          <td className="px-2 py-1.5 max-w-[220px] truncate text-muted-foreground">{row.longDescription ?? "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* RVS distribution preview - computed once over all rows */}
           {importType === "rvs" && totalDataRows > 0 && !result && !importing && parsedRows && (() => {

@@ -153,7 +153,7 @@ function PatientDashboardContent() {
       {/* Header with greeting and theme toggle */}
       <div className="mb-8 flex items-center justify-between">
         <div className="min-w-0 flex-1 mr-4">
-          <h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-2 truncate">
+          <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white mb-2 truncate">
             {getGreeting()}, {getCurrentUserName()}
           </h1>
           <p className="text-slate-600 dark:text-slate-400">

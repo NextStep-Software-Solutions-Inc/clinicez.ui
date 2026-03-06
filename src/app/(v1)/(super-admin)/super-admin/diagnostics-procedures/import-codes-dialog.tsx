@@ -30,12 +30,6 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { toast } from "sonner";
-import {
-  importICD10BatchAction,
-  finalizeICD10ImportAction,
-  importRVSProcedureBatchAction,
-  finalizeRVSImportAction,
-} from "@/actions/super-admin/import-medical-codes.action";
 import type {
   ICD10Row,
   RVSProcedureRow,
@@ -222,6 +216,182 @@ interface ImportResult {
   errors: string[];
 }
 
+/** Row type accepted by the upload worker — either ICD-10 or RVS (with optional procedureType) */
+type UploadRow = ICD10Row | (RVSProcedureRow & { procedureType?: RVSProcedureType });
+
+// ─── Upload worker (batch upsert via API routes, fully off the main thread) ───
+
+interface UploadProgressMessage {
+  type: 'progress';
+  progress: number;
+  label: string;
+}
+
+interface UploadCompleteMessage {
+  type: 'complete';
+  result: ImportResult;
+}
+
+interface UploadErrorMessage {
+  type: 'error';
+  message: string;
+}
+
+type UploadWorkerMessage = UploadProgressMessage | UploadCompleteMessage | UploadErrorMessage;
+
+/**
+ * Inline blob-URL worker that handles all HTTP batch uploads.
+ * Runs entirely off the main thread; communicates progress via postMessage.
+ * Uses fetch with credentials:'include' so Clerk session cookies are forwarded.
+ */
+const UPLOAD_WORKER_CODE = `
+async function importICD10Batches(rows, batchSize) {
+  const totalBatches = Math.ceil(rows.length / batchSize);
+  const batchWeight = 90 / (totalBatches || 1);
+  let totalUpserted = 0;
+  const errors = [];
+  const importedCodes = [];
+
+  for (let b = 0; b < totalBatches; b++) {
+    const slice = rows.slice(b * batchSize, (b + 1) * batchSize);
+    importedCodes.push(...slice.map(r => r.code.trim().toUpperCase()));
+    self.postMessage({ type: 'progress', progress: Math.round((b + 1) * batchWeight), label: 'Processing batch ' + (b + 1) + ' of ' + totalBatches + '...' });
+
+    const res = await fetch('/api/super-admin/import/icd10', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ rows: slice }),
+    });
+    if (!res.ok) throw new Error('Batch ' + (b + 1) + ' failed: HTTP ' + res.status);
+    const batchResult = await res.json();
+    totalUpserted += batchResult.upserted || 0;
+    if (batchResult.errors) errors.push(...batchResult.errors);
+  }
+
+  self.postMessage({ type: 'progress', progress: 95, label: 'Finalizing – deactivating removed codes...' });
+  const finalRes = await fetch('/api/super-admin/import/icd10/finalize', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ importedCodes }),
+  });
+  if (!finalRes.ok) throw new Error('Finalize failed: HTTP ' + finalRes.status);
+  const finalResult = await finalRes.json();
+
+  return { totalRows: rows.length, upserted: totalUpserted, deactivated: finalResult.deactivated || 0, errors };
+}
+
+async function importRVSBatches(rows, batchSize) {
+  const grouped = { imaging: [], laboratory: [], heart_station: [] };
+  const errors = [];
+
+  for (const row of rows) {
+    if (row.procedureType && grouped[row.procedureType]) {
+      grouped[row.procedureType].push(row);
+    } else {
+      errors.push('Skipped row "' + row.name + '" – missing or invalid procedureType');
+    }
+  }
+
+  const types = ['imaging', 'laboratory', 'heart_station'];
+  const totalBatchCount = types.reduce((sum, t) => sum + Math.ceil(grouped[t].length / batchSize), 0);
+  let overallBatch = 0;
+  let totalUpserted = 0;
+  const importedByType = { imaging: [], laboratory: [], heart_station: [] };
+
+  for (const type of types) {
+    const typeRows = grouped[type];
+    if (typeRows.length === 0) continue;
+    const totalBatches = Math.ceil(typeRows.length / batchSize);
+
+    for (let b = 0; b < totalBatches; b++) {
+      const slice = typeRows.slice(b * batchSize, (b + 1) * batchSize);
+      importedByType[type].push(...slice.map(r => r.name.trim()));
+      overallBatch++;
+      const progress = Math.min(90, Math.round((overallBatch / (totalBatchCount || 1)) * 90));
+      self.postMessage({ type: 'progress', progress, label: 'Processing ' + type + ': batch ' + (b + 1) + ' of ' + totalBatches + '...' });
+
+      const res = await fetch('/api/super-admin/import/rvs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ type, rows: slice }),
+      });
+      if (!res.ok) throw new Error('RVS batch failed: HTTP ' + res.status);
+      const batchResult = await res.json();
+      totalUpserted += batchResult.upserted || 0;
+      if (batchResult.errors) errors.push(...batchResult.errors);
+    }
+  }
+
+  self.postMessage({ type: 'progress', progress: 95, label: 'Finalizing – deactivating removed procedures...' });
+  let totalDeactivated = 0;
+  for (const type of types) {
+    if (importedByType[type].length === 0) continue;
+    const finalRes = await fetch('/api/super-admin/import/rvs/finalize', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ type, importedNames: importedByType[type] }),
+    });
+    if (!finalRes.ok) throw new Error('RVS finalize failed: HTTP ' + finalRes.status);
+    const finalResult = await finalRes.json();
+    totalDeactivated += finalResult.deactivated || 0;
+  }
+
+  return { totalRows: rows.length, upserted: totalUpserted, deactivated: totalDeactivated, errors };
+}
+
+self.onmessage = async function(e) {
+  const { importType, rows, batchSize } = e.data;
+  try {
+    const result = importType === 'icd10'
+      ? await importICD10Batches(rows, batchSize)
+      : await importRVSBatches(rows, batchSize);
+    self.postMessage({ type: 'complete', result });
+  } catch (err) {
+    self.postMessage({ type: 'error', message: err.message || String(err) });
+  }
+};
+`;
+
+function runUploadWorker(
+  importType: 'icd10' | 'rvs',
+  rows: UploadRow[],
+  batchSize: number,
+  onProgress: (progress: number, label: string) => void,
+): Promise<ImportResult> {
+  return new Promise((resolve, reject) => {
+    const blob = new Blob([UPLOAD_WORKER_CODE], { type: 'application/javascript' });
+    const url = URL.createObjectURL(blob);
+    const worker = new Worker(url);
+
+    worker.onmessage = (e: MessageEvent<UploadWorkerMessage>) => {
+      const msg = e.data;
+      if (msg.type === 'progress') {
+        onProgress(msg.progress, msg.label);
+      } else if (msg.type === 'complete') {
+        URL.revokeObjectURL(url);
+        worker.terminate();
+        resolve(msg.result);
+      } else {
+        URL.revokeObjectURL(url);
+        worker.terminate();
+        reject(new Error(msg.message));
+      }
+    };
+
+    worker.onerror = (e: ErrorEvent) => {
+      URL.revokeObjectURL(url);
+      worker.terminate();
+      reject(new Error(e.message));
+    };
+
+    worker.postMessage({ importType, rows, batchSize });
+  });
+}
+
 interface ImportCodesDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -385,105 +555,50 @@ export function ImportCodesDialog({
     if (totalDataRows === 0) return;
     setImporting(true);
     setProgress(0);
+    setProgressLabel("Preparing data...");
     setResult(null);
 
-    const errors: string[] = [];
-    let totalUpserted = 0;
+    let succeeded = false;
+    try {
+      // Build the flat row list to hand off to the upload worker
+      const rows: UploadRow[] =
+        importType === "icd10"
+          ? (icd10TxtRows
+              ? icd10TxtRows
+              : (parsedRows ?? [])
+                  .map((r) => normalizeICD10Row(r, headers))
+                  .filter((r): r is ICD10Row => r !== null && r.code.trim() !== ""))
+          : (parsedRows ?? [])
+              .map((r) => normalizeRVSRow(r, headers))
+              .filter(
+                (r): r is RVSProcedureRow & { procedureType?: RVSProcedureType } =>
+                  r !== null && r.name.trim() !== ""
+              );
 
-    if (importType === "icd10") {
-      const allRows: ICD10Row[] = icd10TxtRows
-        ? icd10TxtRows
-        : (parsedRows ?? [])
-            .map((r) => normalizeICD10Row(r, headers))
-            .filter((r): r is ICD10Row => r !== null && r.code.trim() !== "");
+      const result = await runUploadWorker(
+        importType,
+        rows,
+        BATCH_SIZE,
+        (prog, label) => {
+          setProgress(prog);
+          setProgressLabel(label);
+        },
+      );
 
-      const importedCodes: string[] = [];
-      const totalBatches = Math.ceil(allRows.length / BATCH_SIZE);
-      const batchWeight = 90 / (totalBatches || 1);
-
-      for (let b = 0; b < totalBatches; b++) {
-        const slice = allRows.slice(b * BATCH_SIZE, (b + 1) * BATCH_SIZE);
-        importedCodes.push(...slice.map((r) => r.code.trim().toUpperCase()));
-        setProgressLabel(`Processing batch ${b + 1} of ${totalBatches}...`);
-        const batchResult = await importICD10BatchAction(slice);
-        totalUpserted += batchResult.upserted;
-        errors.push(...batchResult.errors);
-        setProgress(Math.round((b + 1) * batchWeight));
-      }
-
-      setProgressLabel("Finalizing - deactivating removed codes...");
-      const finalResult = await finalizeICD10ImportAction(importedCodes);
       setProgress(100);
       setProgressLabel("Import complete");
-      setResult({
-        totalRows: allRows.length,
-        upserted: totalUpserted,
-        deactivated: finalResult.deactivated,
-        errors,
-      });
-    } else {
-      const allRows = (parsedRows ?? [])
-        .map((r) => normalizeRVSRow(r, headers))
-        .filter((r): r is RVSProcedureRow & { procedureType?: RVSProcedureType } =>
-          r !== null && r.name.trim() !== "");
-
-      // Group by procedureType
-      const grouped = new Map<RVSProcedureType, typeof allRows>([
-        ["imaging", []],
-        ["laboratory", []],
-        ["heart_station", []],
-      ]);
-      for (const row of allRows) {
-        if (row.procedureType && grouped.has(row.procedureType)) {
-          grouped.get(row.procedureType)!.push(row);
-        } else {
-          errors.push(`Skipped row "${row.name}" – missing or invalid procedureType`);
-        }
-      }
-
-      const importedByType = new Map<RVSProcedureType, string[]>([
-        ["imaging", []],
-        ["laboratory", []],
-        ["heart_station", []],
-      ]);
-
-      for (const [type, rows] of grouped.entries()) {
-        if (rows.length === 0) continue;
-        const totalBatches = Math.ceil(rows.length / BATCH_SIZE);
-        const batchWeight = 90 / (totalBatches * grouped.size || 1);
-
-        for (let b = 0; b < totalBatches; b++) {
-          const slice = rows.slice(b * BATCH_SIZE, (b + 1) * BATCH_SIZE);
-          importedByType.get(type)!.push(...slice.map(r => r.name.trim()));
-          setProgressLabel(`Processing ${type}: batch ${b + 1} of ${totalBatches}...`);
-          const batchResult = await importRVSProcedureBatchAction(type, slice);
-          totalUpserted += batchResult.upserted;
-          errors.push(...batchResult.errors);
-          setProgress((prev) => Math.min(90, prev + batchWeight));
-        }
-      }
-
-      setProgressLabel("Finalizing - deactivating removed procedures...");
-      let totalDeactivated = 0;
-      for (const [type, names] of importedByType.entries()) {
-        if (names.length > 0) {
-          const finalResult = await finalizeRVSImportAction(type, names);
-          totalDeactivated += finalResult.deactivated;
-        }
-      }
-      setProgress(100);
-      setProgressLabel("Import complete");
-      setResult({
-        totalRows: allRows.length,
-        upserted: totalUpserted,
-        deactivated: totalDeactivated,
-        errors,
-      });
+      setResult(result);
+      succeeded = true;
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Import failed. Please try again.");
+    } finally {
+      setImporting(false);
     }
 
-    setImporting(false);
-    toast.success("Import finished successfully");
-    onImportComplete?.();
+    if (succeeded) {
+      toast.success("Import finished successfully");
+      onImportComplete?.();
+    }
   };
 
   const icd10CsvHeaders = ["orderNum", "code", "hippaCovered", "shortDescription", "longDescription", "description", "category"];

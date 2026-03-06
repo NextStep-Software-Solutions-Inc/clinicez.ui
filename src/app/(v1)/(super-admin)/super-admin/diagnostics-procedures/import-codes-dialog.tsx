@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -28,6 +28,7 @@ import {
   X,
   ChevronDown,
   ChevronRight,
+  Minimize2,
 } from "lucide-react";
 import { toast } from "sonner";
 import type {
@@ -406,6 +407,8 @@ export function ImportCodesDialog({
   onImportComplete,
 }: ImportCodesDialogProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  /** true while dialog is closed but a worker import is still running */
+  const minimizedRef = useRef(false);
 
   // Core state
   const [importType, setImportType] = useState<ImportType>("icd10");
@@ -428,6 +431,14 @@ export function ImportCodesDialog({
   const [progress, setProgress] = useState(0);
   const [progressLabel, setProgressLabel] = useState("");
   const [result, setResult] = useState<ImportResult | null>(null);
+
+  // When dialog is reopened while import runs in background: dismiss the background toast.
+  useEffect(() => {
+    if (open && minimizedRef.current) {
+      minimizedRef.current = false;
+      toast.dismiss("import-bg-progress");
+    }
+  }, [open]);
 
   const resetFileState = () => {
     setFileName(null);
@@ -579,6 +590,14 @@ export function ImportCodesDialog({
         (prog, label) => {
           setProgress(prog);
           setProgressLabel(label);
+          // Keep the background toast in sync while dialog is minimized
+          if (minimizedRef.current) {
+            toast.loading(label, {
+              id: "import-bg-progress",
+              description: `${prog}% complete`,
+              duration: Infinity,
+            });
+          }
         },
       );
 
@@ -587,13 +606,18 @@ export function ImportCodesDialog({
       setResult(result);
       succeeded = true;
     } catch (err) {
+      toast.dismiss("import-bg-progress");
       toast.error(err instanceof Error ? err.message : "Import failed. Please try again.");
     } finally {
+      minimizedRef.current = false;
       setImporting(false);
     }
 
     if (succeeded) {
-      toast.success("Import finished successfully");
+      toast.dismiss("import-bg-progress");
+      toast.success("Import finished successfully", {
+        action: { label: "View Result", onClick: () => onOpenChange(true) },
+      });
       onImportComplete?.();
     }
   };
@@ -605,7 +629,21 @@ export function ImportCodesDialog({
     <Dialog
       open={open}
       onOpenChange={(v) => {
-        if (!importing) { onOpenChange(v); if (!v) reset(); }
+        if (v) {
+          onOpenChange(true);
+        } else if (importing) {
+          // Minimize: close dialog but let the worker keep running
+          minimizedRef.current = true;
+          onOpenChange(false);
+          toast.loading(progressLabel || "Importing…", {
+            id: "import-bg-progress",
+            description: `${progress}% complete`,
+            duration: Infinity,
+          });
+        } else {
+          onOpenChange(false);
+          reset();
+        }
       }}
     >
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -977,13 +1015,30 @@ export function ImportCodesDialog({
               </Button>
             ) : (
               <>
-                <Button
-                  variant="outline"
-                  onClick={() => { onOpenChange(false); reset(); }}
-                  disabled={importing}
-                >
-                  Cancel
-                </Button>
+                {importing ? (
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      minimizedRef.current = true;
+                      onOpenChange(false);
+                      toast.loading(progressLabel || "Importing…", {
+                        id: "import-bg-progress",
+                        description: `${progress}% complete`,
+                        duration: Infinity,
+                      });
+                    }}
+                  >
+                    <Minimize2 className="h-4 w-4 mr-1.5" />
+                    Minimize
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    onClick={() => { onOpenChange(false); reset(); }}
+                  >
+                    Cancel
+                  </Button>
+                )}
                 <Button
                   onClick={handleImport}
                   disabled={totalDataRows === 0 || importing}

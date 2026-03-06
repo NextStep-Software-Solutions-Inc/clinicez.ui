@@ -9,6 +9,7 @@ import { Input } from "@components/ui/input";
 import { Badge } from "@components/ui/badge";
 import { Search, ChevronDown, ChevronRight, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
+import { getActionErrorMessage } from "@/lib/action-error";
 
 interface TenantsTableProps {
   initialData: GetAllTenants;
@@ -33,7 +34,7 @@ export default function TenantsTable({ initialData }: TenantsTableProps) {
       });
       setData(result);
     } catch (error) {
-      toast.error("Failed to load tenants");
+      toast.error(getActionErrorMessage(error, "Failed to load tenants"));
     } finally {
       setIsLoading(false);
     }
@@ -60,7 +61,7 @@ export default function TenantsTable({ initialData }: TenantsTableProps) {
           setTenantOrganizations({ ...tenantOrganizations, [tenantId]: orgs });
           setTenantClinics({ ...tenantClinics, [tenantId]: clinics });
         } catch (error) {
-          toast.error("Failed to load tenant details");
+          toast.error(getActionErrorMessage(error, "Failed to load tenant details"));
         }
       }
     }

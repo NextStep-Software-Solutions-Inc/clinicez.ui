@@ -46,11 +46,7 @@ export const getMyUserPreferenceAction = withErrorHandling(async () => {
   return { message: "User preference fetched successfully.", data: userPreference };
 }, async (error) => {
   console.error(`Error fetching user preference: ${error}`);
-  let message = "An error occurred while fetching user preference.";
-  if (error instanceof Error) {
-    message = error.message;
-  }
-  return message;
+  if (error instanceof Error) return error.message;
 });
 
 type UpsertUserPreferencePayload = {
@@ -108,8 +104,5 @@ export const upsertMyUserPreference = withErrorHandling(async (payload: UpsertUs
   return { message: "User preference updated successfully.", data: userPreference };
 }, async (error) => {
   console.error(`Error upserting user preference: ${error}`);
-  if (error instanceof Error) {
-    return error.message;
-  }
-  return "An error occurred while updating user preference.";
+  if (error instanceof Error) return error.message;
 });

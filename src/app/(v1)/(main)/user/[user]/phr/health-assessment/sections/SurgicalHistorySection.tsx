@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Trash2, Plus } from "lucide-react";
 import { toast } from "sonner";
+import { getActionErrorMessage } from "@/lib/action-error";
 import { createSurgicalHistoryAction, updateSurgicalHistoryAction, deleteSurgicalHistoryAction } from "@/actions/family-and-personal-history.action";
 import type { SurgicalHistory } from "@prisma/client";
 
@@ -55,7 +56,7 @@ export const SurgicalHistorySection = ({
           toast.error(result.message);
         }
       } catch (error) {
-        toast.error("Failed to add surgical history");
+        toast.error(getActionErrorMessage(error, "Failed to add surgical history"));
       }
     });
   };
@@ -72,7 +73,7 @@ export const SurgicalHistorySection = ({
           toast.error(result.message);
         }
       } catch (error) {
-        toast.error("Failed to delete surgical history");
+        toast.error(getActionErrorMessage(error, "Failed to delete surgical history"));
       }
     });
   };

@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { getActionErrorMessage } from "@/lib/action-error";
 import { formatHealthcareProviderName } from "@/lib/utils/format-healthcare-provider-name";
 import {
   Dialog,
@@ -103,8 +104,8 @@ export default function NewConsultationDialog({
         .then((result) => {
           setConfirmedAppointments(result.data ?? []);
         })
-        .catch(() => {
-          toast.error("Failed to load confirmed appointments");
+        .catch((err: unknown) => {
+          toast.error(getActionErrorMessage(err, "Failed to load confirmed appointments"));
         })
         .finally(() => {
           setLoadingAppointments(false);

@@ -18,6 +18,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
+import { getActionErrorMessage } from '@/lib/action-error'
 import { getAllergensAction, type GetAllergensResult } from '@/actions/allergen/get-allergens.action'
 import { createAllergenAction } from '@/actions/allergen/create-allergen.action'
 
@@ -73,7 +74,7 @@ export function AllergenCombobox({
       }
     } catch (err) {
       console.error('[ALLERGEN_COMBOBOX_ERROR]', err)
-      toast.error('Failed to load allergens')
+      toast.error(getActionErrorMessage(err, 'Failed to load allergens'))
     } finally {
       setIsLoading(false)
     }
@@ -135,7 +136,7 @@ export function AllergenCombobox({
       }
     } catch (err) {
       console.error('[CREATE_ALLERGEN_ERROR]', err)
-      toast.error('Failed to create allergen')
+      toast.error(getActionErrorMessage(err, 'Failed to create allergen'))
     } finally {
       setIsLoading(false)
     }

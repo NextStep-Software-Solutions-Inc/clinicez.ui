@@ -6,6 +6,7 @@ import { familyMedicalHistorySchema, familyMedicalHistoryGuidance, type FamilyMe
 import { FormModal, EditButton } from './index'
 import { HealthConditionsCombobox } from './HealthConditionsCombobox'
 import { toast } from 'sonner'
+import { getActionErrorMessage } from '@/lib/action-error'
 
 export interface FamilyMedicalHistoryEditFormProps {
   userId: string
@@ -32,12 +33,15 @@ export function FamilyMedicalHistoryEditForm({
   const [isLoading, setIsLoading] = useState(false)
   const [conditions, setConditions] = useState<Partial<FamilyMedicalHistoryFormInput>[]>(currentConditions || [])
 
-  // Sync form state with parent props when dialog opens or props change
+  // Sync form state with parent props when modal opens
+  // Note: inline mode uses useState initial value — we intentionally omit currentConditions
+  // from deps to avoid resetting on every parent re-render (it's a new reference each time)
   useEffect(() => {
-    if (isOpen || inline) {
+    if (isOpen) {
       setConditions(currentConditions || [])
     }
-  }, [isOpen, currentConditions, inline])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen])
 
   // Track if form has unsaved changes
   const hasChanges = useMemo(() => {
@@ -72,7 +76,7 @@ export function FamilyMedicalHistoryEditForm({
         saveErrorMessage = result.error || 'An unexpected error occurred'
       }
     } catch (err) {
-      toast.error('An unexpected error occurred. Please try again.')
+      toast.error(getActionErrorMessage(err, 'An unexpected error occurred. Please try again.'))
       throw err
     } finally {
       setIsLoading(false)

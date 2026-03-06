@@ -81,6 +81,43 @@ const user = { name: 'John', age: 30 }; // const user: { name: string; age: numb
 4. ❌ **DON'T**: Use `any` type (use `unknown` if necessary, then type narrow)
 5. ❌ **DON'T**: Use type assertions (`as`) without exhausting all other options
 
+## ⭐ Data Fetching — Required Pattern for Lazy / Tab-Triggered Data
+
+**When data is only needed after user interaction (tab switch, panel open, accordion expand), always use:**
+
+### Server Action + SWR + Custom Hook + Suspense
+
+```
+page.tsx (SSR)  →  slim base query  →  Client Component
+Client Component  →  tab change  →  <TabContent tab={activeTab} />
+TabContent  →  <Suspense fallback={<Skeleton/>}>  →  <TabLoader>
+TabLoader  →  useFeatureTab(tabId, { suspense: true })  →  SWR
+SWR  →  getPatientVitalsData()  →  Server Action  →  Prisma
+```
+
+**Rules:**
+1. Each server action has **one responsibility** — one function per data domain, no switch routing
+2. Auth lives **inside** the server action (`currentUser()`) — never a parameter
+3. SWR key is a **tuple** — always use the exported `buildXxxSWRKey(tab)` builder
+4. `revalidateOnFocus: false` — invalidate explicitly with `invalidateXxxTabData(tab)` after mutations
+5. Tab components are **pure display** — no fetching, only `{ data: TabDataType }` prop
+6. `PatientTabDataMap` (or equivalent) enforces exhaustive compile-time tab coverage
+
+```ts
+// ✅ CORRECT – single-purpose server action
+export async function getPatientVitalsData(): Promise<VitalsTabData | null> { ... }
+
+// ❌ WRONG – switch router pretending to be one function
+export async function getPatientTabData(tab: string) {
+  switch (tab) { case 'vitals': ... case 'medical': ... }
+}
+```
+
+📖 **Full documentation:** [`docs/agents/DATA_FETCHING_PATTERNS.md`](../docs/agents/DATA_FETCHING_PATTERNS.md)  
+📌 **Real implementation:** `src/actions/patient-profile/get-patient-tab-data.ts` · `src/hooks/use-patient-tab.ts` · `src/app/v2/(patient-dashboard)/profile/_components/TabContent.tsx`
+
+---
+
 ## Build & Compilation
 
 ### Fast Type-Checking Strategy

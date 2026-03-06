@@ -7,6 +7,7 @@ import { FormModal, FormField, EditButton } from './index'
 import { VaccineCombobox } from './VaccineCombobox'
 import { Textarea } from '@/components/ui/textarea'
 import { toast } from 'sonner'
+import { getActionErrorMessage } from '@/lib/action-error'
 import { Trash2, Plus, Calendar } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -103,7 +104,7 @@ export function VaccinationEditForm({
         }
       } catch (error) {
         console.error('Failed to load vaccine options:', error)
-        toast.error('Failed to load vaccine options')
+        toast.error(getActionErrorMessage(error, 'Failed to load vaccine options'))
       }
     }
 
@@ -167,11 +168,7 @@ export function VaccinationEditForm({
         onSuccess?.()
       }
     } catch (err) {
-      if (err instanceof Error) {
-        toast.error(err.message)
-      } else {
-        toast.error('Failed to add vaccination')
-      }
+      toast.error(getActionErrorMessage(err, 'Failed to add vaccination'))
     } finally {
       setIsLoading(false)
     }
@@ -193,11 +190,7 @@ export function VaccinationEditForm({
       setVaccinations((prev) => prev.filter((_, i) => i !== index))
       onSuccess?.()
     } catch (err) {
-      if (err instanceof Error) {
-        toast.error(err.message)
-      } else {
-        toast.error('Failed to remove vaccination')
-      }
+      toast.error(getActionErrorMessage(err, 'Failed to remove vaccination'))
     } finally {
       setIsLoading(false)
     }

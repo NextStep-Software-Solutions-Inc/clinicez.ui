@@ -9,3 +9,4 @@ export { MasterProcedureForm } from "./master-procedure-form";
 export { MasterProceduresTab } from "./master-procedures-tab";
 export { CategoriesManager } from "./categories-manager";
 export { DiagnosticsProceduresConsole } from "./diagnostics-procedures-console";
+export { ImportCodesDialog } from "./import-codes-dialog";

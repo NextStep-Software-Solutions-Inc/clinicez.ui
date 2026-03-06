@@ -6,6 +6,7 @@ import { useUser } from "@clerk/nextjs";
 import { upsertUserAllergyAction } from "@actions/users/user-allergy.action";
 import ActionButton from "@components/ActionButton";
 import { toast } from "sonner";
+import { getActionErrorMessage } from "@/lib/action-error";
 
 interface DoneEditingButtonProps {
   index: number
@@ -47,7 +48,7 @@ export default function DoneEditingButton({ index, update, form }: DoneEditingBu
           form.reset(resetData);
         }
       } catch (error) {
-        toast.error("Failed to update allergy, Check if duplicate entry");
+        toast.error(getActionErrorMessage(error, "Failed to update allergy. Check if duplicate entry"));
       }
     })();
   }

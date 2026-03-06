@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { X, Upload, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { getActionErrorMessage } from '@/lib/action-error'
 
 export interface PhilHealthRecordEditFormProps {
   userId: string
@@ -105,7 +106,7 @@ export function PhilHealthRecordEditForm({
         saveErrorMessage = result.error || 'An unexpected error occurred'
       }
     } catch (err) {
-      toast.error('An unexpected error occurred. Please try again.')
+      toast.error(getActionErrorMessage(err, 'An unexpected error occurred. Please try again.'))
       throw err
     } finally {
       setIsLoading(false)
@@ -153,7 +154,7 @@ export function PhilHealthRecordEditForm({
         toast.error(result.error || 'Failed to add dependent')
       }
     } catch (err) {
-      toast.error('An unexpected error occurred')
+      toast.error(getActionErrorMessage(err, 'An unexpected error occurred'))
     } finally {
       setIsLoading(false)
     }
@@ -175,7 +176,7 @@ export function PhilHealthRecordEditForm({
         toast.error(result.error || 'Failed to remove dependent')
       }
     } catch (err) {
-      toast.error('An unexpected error occurred')
+      toast.error(getActionErrorMessage(err, 'An unexpected error occurred'))
     } finally {
       setIsLoading(false)
     }
@@ -245,7 +246,7 @@ export function PhilHealthRecordEditForm({
   })
 
   const formContent = (
-    <>
+    <div className="space-y-6 dark:text-gray-400">
       {/* Required Information */}
       <div className="space-y-4 border-b pb-4">
         <h3 className="text-sm font-semibold">Required Information</h3>
@@ -286,7 +287,7 @@ export function PhilHealthRecordEditForm({
       </div>
 
       {/* Optional Information */}
-      <div className="space-y-4 border-b py-4">
+      <div className="space-y-4 border-b py-4 dark:text-gray-400">
         <h3 className="text-sm font-semibold">Additional Information</h3>
 
         <FormField label="TIN (Tax Identification Number)" htmlFor="tin" helpText={philHealthRecordLabels.tin}>
@@ -561,7 +562,7 @@ export function PhilHealthRecordEditForm({
           <p className="text-xs text-gray-500 dark:text-gray-400">No dependents added yet</p>
         )}
       </div>
-    </>
+    </div>
   )
 
   if (inline) {

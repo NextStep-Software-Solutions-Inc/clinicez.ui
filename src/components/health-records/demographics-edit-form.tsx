@@ -6,6 +6,7 @@ import { demographicsSchema, type DemographicsFormInput } from '@/schemas'
 import { FormModal, FormField, EditButton, ProfilePictureUpload } from './index'
 import { Input } from '@/components/ui/input'
 import { toast } from 'sonner'
+import { getActionErrorMessage } from '@/lib/action-error'
 import { formatBloodType } from '@/lib/utils'
 import {
   Select,
@@ -91,7 +92,7 @@ export function DemographicsEditForm({
         saveErrorMessage = result.error || 'An unexpected error occurred'
       }
     } catch (err) {
-      toast.error('An unexpected error occurred. Please try again.')
+      toast.error(getActionErrorMessage(err, 'An unexpected error occurred. Please try again.'))
       throw err
     } finally {
       setIsLoading(false)

@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { getActionErrorMessage } from "@/lib/action-error";
 import { upsertPersonalHistoryAction } from "@/actions/family-and-personal-history.action";
 import type { PersonalHistory } from "@prisma/client";
 
@@ -53,7 +54,7 @@ export const PersonalHistorySection = ({
           toast.error(result.message);
         }
       } catch (error) {
-        toast.error("Failed to save personal history");
+        toast.error(getActionErrorMessage(error, "Failed to save personal history"));
       }
     });
   };

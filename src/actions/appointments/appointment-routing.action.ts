@@ -130,8 +130,6 @@ export const assignAppointmentAction = withErrorHandling(async (data: AssignAppo
   return { message: `Appointment assigned`, data: null };
 }, async error => {
   if (hasCodeProperty(error) && error.code === 'P2025') return 'Appointment not found or you are not authorized to assign it';
-  if (error instanceof Error) return error.message;
-  return 'Failed to assign appointment';
 })
 
 export const acceptAppointmentAction = withErrorHandling(async (formData: FormData) => {
@@ -161,7 +159,6 @@ export const acceptAppointmentAction = withErrorHandling(async (formData: FormDa
   return { message: 'Appointment accepted', data: undefined };
 }, async error => {
   if (hasCodeProperty(error) && error.code === 'P2025') return 'Appointment assignment not found or you are not authorized to accept it';
-  return 'Failed to accept appointment';
 })
 
 export const declineAppointmentAction = withErrorHandling(async (formData: FormData) => {
@@ -222,7 +219,6 @@ export const declineAppointmentAction = withErrorHandling(async (formData: FormD
   return { message: `Appointment assignment declined with reason: ${reason}`, data: undefined };
 }, async error => {
   if (hasCodeProperty(error) && error.code === 'P2025') return 'Appointment assignment not found or you are not authorized to decline it';
-  return 'Failed to decline appointment';
 })
 
 export const cancelAppointmentRoutingAction = withErrorHandling(async ({ appointmentRoutingId, reason }: { appointmentRoutingId: number; reason: string }) => {
@@ -290,7 +286,6 @@ export const cancelAppointmentRoutingAction = withErrorHandling(async ({ appoint
   return { message: 'Appointment cancelled', data: undefined };
 }, async error => {
   if (hasCodeProperty(error) && error.code === 'P2025') return 'Appointment assignment not found or you are not authorized to cancel it';
-  return 'Failed to cancel appointment assignment';
 })
 
 /**
@@ -380,15 +375,8 @@ export const returnAppointmentAssignmentAction = withErrorHandling(async (formDa
 
   return { message: `Appointment assignment returned with reason: ${reason}`, data: undefined };
 }, async (error) => {
-  // Preserve the original error message for permission and validation errors
-  if (error instanceof Error) {
-    // Return the specific error message for known error types
-    return error.message;
-  }
   // Handle Prisma errors
   if (hasCodeProperty(error) && error.code === 'P2025') {
     return 'Appointment assignment not found or you are not authorized to return it';
   }
-  // Generic fallback for unknown errors
-  return 'Failed to return appointment assignment';
 })

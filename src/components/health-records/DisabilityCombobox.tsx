@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
+import { getActionErrorMessage } from '@/lib/action-error'
 import { getDisabilitiesAction, type GetDisabilitiesResult } from '@/actions/disability/get-disabilities.action'
 import { createDisabilityAction } from '@/actions/disability/create-disability.action'
 
@@ -72,7 +73,7 @@ export function DisabilityCombobox({
       }
     } catch (err) {
       console.error('[DISABILITY_COMBOBOX_ERROR]', err)
-      toast.error('Failed to load disabilities')
+      toast.error(getActionErrorMessage(err, 'Failed to load disabilities'))
     } finally {
       setIsLoading(false)
     }
@@ -135,7 +136,7 @@ export function DisabilityCombobox({
       }
     } catch (err) {
       console.error('[CREATE_DISABILITY_ERROR]', err)
-      toast.error('Failed to create disability')
+      toast.error(getActionErrorMessage(err, 'Failed to create disability'))
     } finally {
       setIsLoading(false)
     }

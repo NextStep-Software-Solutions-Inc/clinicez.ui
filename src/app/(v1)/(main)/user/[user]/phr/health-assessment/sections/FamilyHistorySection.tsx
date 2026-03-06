@@ -7,6 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { getActionErrorMessage } from "@/lib/action-error";
 import { updateFamilyMedicalHistoryAction } from "@/actions/family-and-personal-history.action";
 import { getHealthConditionsAction } from "@/actions/health-condition.action";
 import type { FamilyMedicalHistoryWithCondition, HealthCondition } from "@/types/health-history.types";
@@ -41,7 +42,7 @@ export const FamilyHistorySection = ({
         setConditions(result);
       } catch (error) {
         console.error("Error fetching conditions:", error);
-        toast.error("Failed to load health conditions");
+        toast.error(getActionErrorMessage(error, "Failed to load health conditions"));
       }
     };
     fetchConditions();
@@ -107,7 +108,7 @@ export const FamilyHistorySection = ({
           toast.error(result.message);
         }
       } catch (error) {
-        toast.error("Failed to save family medical history");
+        toast.error(getActionErrorMessage(error, "Failed to save family medical history"));
       }
     });
   };

@@ -7,6 +7,7 @@ import {
     getImagingDiagnosticsByIdsAction
 } from "@/actions/clinics/clinical-record/optimized-diagnostics.action";
 import { toast } from "sonner";
+import { getActionErrorMessage } from "@/lib/action-error";
 
 interface ImagingDiagnostic {
     id: number;
@@ -54,7 +55,7 @@ export default function ImagingDiagnosticsMultiSelect({
                 }));
             } catch (error) {
                 console.error("Error searching diagnostics:", error);
-                toast.error("Failed to search diagnostics");
+                toast.error(getActionErrorMessage(error, "Failed to search diagnostics"));
                 return [];
             }
         },
@@ -80,7 +81,7 @@ export default function ImagingDiagnosticsMultiSelect({
                 }));
             } catch (error) {
                 console.error("Error loading diagnostics:", error);
-                toast.error("Failed to load diagnostics");
+                toast.error(getActionErrorMessage(error, "Failed to load diagnostics"));
                 return [];
             }
         },

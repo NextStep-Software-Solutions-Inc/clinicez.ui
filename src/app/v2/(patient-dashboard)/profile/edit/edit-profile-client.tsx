@@ -453,7 +453,7 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
   }
 
   const defaultHeader = (
-    <div className="sticky top-0 z-50 backdrop-blur-sm bg-white/20 dark:bg-slate-950/20 border-b border-slate-200/20 dark:border-slate-800/20 mb-6 md:mb-8 -mx-4 md:-mx-8 px-4 md:px-8 py-3 md:py-4 rounded-b-3xl">
+    <div className="sticky top-0 z-50 backdrop-blur-sm bg-white/20 dark:bg-slate-950/20 border-b border-slate-200/20 dark:border-slate-800/20 mb-4 md:mb-6 -mx-4 md:-mx-8 px-4 md:px-8 py-3 md:py-4 rounded-b-3xl">
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 md:gap-3 min-w-0">

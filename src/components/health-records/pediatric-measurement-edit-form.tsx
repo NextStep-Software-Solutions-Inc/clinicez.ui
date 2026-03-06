@@ -7,6 +7,7 @@ import { FormModal, FormField, EditButton } from './index'
 import { Input } from '@/components/ui/input'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { toast } from 'sonner'
+import { getActionErrorMessage } from '@/lib/action-error'
 
 export interface PediatricMeasurementEditFormProps {
   userId: string
@@ -86,7 +87,7 @@ export function PediatricMeasurementEditForm({
       }
     } catch (err) {
       console.error('[PediatricForm] Error:', err)
-      toast.error('An unexpected error occurred. Please try again.')
+      toast.error(getActionErrorMessage(err, 'An unexpected error occurred. Please try again.'))
       throw err
     } finally {
       setIsLoading(false)
@@ -110,7 +111,7 @@ export function PediatricMeasurementEditForm({
   })
 
   const formContent = (
-    <>
+    <div className='dark:text-gray-400 space-y-6'>
       {/* Date */}
       <div className="space-y-4 border-b pb-4">
         <h3 className="text-sm font-semibold">Measurement Date</h3>
@@ -251,7 +252,7 @@ export function PediatricMeasurementEditForm({
             />
           </FormField>
         </div>
-    </>
+    </div>
   )
 
   if (inline) {

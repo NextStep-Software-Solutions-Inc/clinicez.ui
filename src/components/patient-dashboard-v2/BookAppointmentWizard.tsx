@@ -12,6 +12,7 @@ import { useRouter } from 'next/navigation'
 import { useAtom } from 'jotai'
 import { useUser } from '@clerk/nextjs'
 import { toast } from 'sonner'
+import { getActionErrorMessage } from '@/lib/action-error'
 import { mutate } from 'swr'
 import useSound from 'use-sound'
 import dayjs from '@/lib/day-utils'
@@ -870,8 +871,8 @@ function Step5Review({
         try {
           const result = await uploadMediaAction(fd)
           attachmentUrls.push(result.url)
-        } catch {
-          toast.error(`Failed to upload ${file.name}. Please try again.`)
+        } catch (error) {
+          toast.error(getActionErrorMessage(error, `Failed to upload ${file.name}. Please try again.`))
           setIsSubmitting(false)
           return
         } finally {
@@ -913,8 +914,8 @@ function Step5Review({
       } else {
         toast.error(result.message || 'Failed to book appointment.')
       }
-    } catch {
-      toast.error('An unexpected error occurred. Please try again.')
+    } catch (error) {
+      toast.error(getActionErrorMessage(error, 'An unexpected error occurred. Please try again.'))
     } finally {
       setIsSubmitting(false)
     }

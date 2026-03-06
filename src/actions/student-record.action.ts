@@ -94,7 +94,6 @@ export const upsertStudentRecordAction = withErrorHandling(async (payload: Creat
       return "The provided Student ID or LRN is already taken. Please use a different Student ID or LRN. If you think this is an internal error, please contact the administrator."
     }
   }
-  return "An error occurred while creating or updating the student record. Please try again later.";
 })
 
 export type GetOrgStudentRecord = Awaited<ReturnType<typeof getOrgStudentRecordAction>>

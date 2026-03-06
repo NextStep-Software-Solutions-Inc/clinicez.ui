@@ -471,6 +471,7 @@ model HealthcareProvider {
   LaboratoryRequests    ClinicLaboratoryRequest[]
   MedicalCertificates   ClinicMedicalCertificate[]
   ConsultationNote      ConsultationNote[]
+  ConsultationDiagnoses ConsultationDiagnosis[]
   ConsultationTicketHPs ConsultationTicketHP[]
   HPProfile             HPProfile?
   HPType                HealthcareProviderType      @relation(fields: [hpTypeId], references: [id])
@@ -1607,6 +1608,7 @@ model ConsultationTicket {
   MedicalCertificates         ClinicMedicalCertificate[]
   ClinicReferralSlips         ClinicReferralSlip[]
   ConsultationNotes           ConsultationNote[]
+  ConsultationDiagnoses       ConsultationDiagnosis[]
   Appointment                 Appointment?                 @relation(fields: [appointmentId], references: [id], onUpdate: NoAction)
   ClinicPatient               ClinicPatient?               @relation(fields: [clinicPatientId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   Clinic                      Clinic                       @relation(fields: [clinicId], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -1642,6 +1644,21 @@ model ConsultationTicketAttribute {
   whitelistEmails         String[]           @default([])
   ConsultationTicket      ConsultationTicket @relation(fields: [consultationTicketId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   NoteTemplate            NoteTemplate       @relation(fields: [noteTemplateId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model ConsultationDiagnosis {
+  id                   Int                @id @default(autoincrement())
+  consultationTicketId Int
+  icd10Code            String
+  description          String
+  type                 String             @default("PRIMARY")
+  hpId                 Int
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  ConsultationTicket   ConsultationTicket @relation(fields: [consultationTicketId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  HealthCareProvider   HealthcareProvider @relation(fields: [hpId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([consultationTicketId])
 }
 
 model System {
@@ -1939,6 +1956,7 @@ model ImagingProcedure {
   description             String?
   isActive                Boolean                  @default(true)
   category                String
+  rvsCode                 String?
   createdAt               DateTime                 @default(now())
   updatedAt               DateTime                 @updatedAt
   ClinicImagingProcedures ClinicImagingProcedure[]
@@ -1952,6 +1970,7 @@ model LaboratoryProcedure {
   description                String?
   isActive                   Boolean                     @default(true)
   category                   String
+  rvsCode                    String?
   createdAt                  DateTime                    @default(now())
   updatedAt                  DateTime                    @updatedAt
   ClinicLaboratoryProcedures ClinicLaboratoryProcedure[]
@@ -1965,6 +1984,7 @@ model HeartStationProcedure {
   description                  String?
   isActive                     Boolean                       @default(true)
   category                     String
+  rvsCode                      String?
   createdAt                    DateTime                      @default(now())
   updatedAt                    DateTime                      @updatedAt
   ClinicHeartStationProcedures ClinicHeartStationProcedure[]
@@ -1982,6 +2002,7 @@ model ClinicImagingProcedure {
   createdAt                DateTime                        @default(now())
   updatedAt                DateTime                        @updatedAt
   category                 String?
+  rvsCode                  String?
   Clinic                   Clinic                          @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   MasterProcedure          ImagingProcedure?               @relation(fields: [masterProcedureId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   ImagingRequestProcedures ClinicImagingRequestProcedure[]
@@ -2000,6 +2021,7 @@ model ClinicLaboratoryProcedure {
   createdAt                   DateTime                           @default(now())
   updatedAt                   DateTime                           @updatedAt
   category                    String?
+  rvsCode                     String?
   Clinic                      Clinic                             @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   MasterProcedure             LaboratoryProcedure?               @relation(fields: [masterProcedureId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   LaboratoryRequestProcedures ClinicLaboratoryRequestProcedure[]
@@ -2018,6 +2040,7 @@ model ClinicHeartStationProcedure {
   createdAt                     DateTime                             @default(now())
   updatedAt                     DateTime                             @updatedAt
   category                      String?
+  rvsCode                       String?
   Clinic                        Clinic                               @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   MasterProcedure               HeartStationProcedure?               @relation(fields: [masterProcedureId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   HeartStationRequestProcedures ClinicHeartStationRequestProcedure[]
@@ -2684,4 +2707,23 @@ model PatientInsight {
 
   @@index([patientId, clinicId])
   @@index([validUntil])
+}
+
+/// Master reference table for ICD-10 diagnosis codes.
+/// Populated via the super-admin import feature; used for autocomplete in consultations.
+model ICD10Code {
+  id               Int      @id @default(autoincrement())
+  orderNum         Int?
+  code             String   @unique
+  description      String
+  shortDescription String?
+  longDescription  String?
+  hippaCovered     Boolean  @default(false)
+  category         String?
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([code])
+  @@index([category])
 }

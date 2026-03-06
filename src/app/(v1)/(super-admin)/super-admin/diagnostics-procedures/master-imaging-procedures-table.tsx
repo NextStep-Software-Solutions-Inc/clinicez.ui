@@ -12,6 +12,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -30,25 +37,28 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, Edit2, Search } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { getActionErrorMessage } from "@/lib/action-error";
 import {
   getAllMasterImagingProceduresAction,
   deleteMasterImagingProcedureAction,
 } from "@/actions/super-admin/diagnostics-procedures.action";
 import { MasterProcedureForm } from "./master-procedure-form";
 
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100, 500, 1000, 5000, 10000];
+
 export function MasterImagingProceduresTable() {
   const [pageNumber, setPageNumber] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [search, setSearch] = useState("");
   const [includeInactive, setIncludeInactive] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
 
-  const pageSize = 10;
-
   const { data, isLoading, refetch } = useQuery({
     queryKey: [
       "master-imaging-procedures",
       pageNumber,
+      pageSize,
       search,
       includeInactive,
     ],
@@ -71,7 +81,7 @@ export function MasterImagingProceduresTable() {
       refetch();
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to delete procedure"
+        getActionErrorMessage(error, "Failed to delete procedure")
       );
     }
   }, [deleteId, refetch]);
@@ -94,6 +104,27 @@ export function MasterImagingProceduresTable() {
             }}
             className="w-full pl-10"
           />
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground whitespace-nowrap">Rows per page</span>
+          <Select
+            value={String(pageSize)}
+            onValueChange={(v) => {
+              setPageSize(Number(v));
+              setPageNumber(1);
+            }}
+          >
+            <SelectTrigger className="w-24">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {PAGE_SIZE_OPTIONS.map((n) => (
+                <SelectItem key={n} value={String(n)}>
+                  {n.toLocaleString()}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <Button
           variant="outline"
@@ -129,6 +160,7 @@ export function MasterImagingProceduresTable() {
             <TableRow>
               <TableHead>Name</TableHead>
               <TableHead>Category</TableHead>
+              <TableHead>RVS Code</TableHead>
               <TableHead>Description</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -140,6 +172,9 @@ export function MasterImagingProceduresTable() {
                 <TableRow key={procedure.id}>
                   <TableCell className="font-medium">{procedure.name}</TableCell>
                   <TableCell>{procedure.category}</TableCell>
+                  <TableCell className="font-mono text-sm">
+                    {procedure.rvsCode || "-"}
+                  </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     {procedure.description || "-"}
                   </TableCell>
@@ -185,7 +220,7 @@ export function MasterImagingProceduresTable() {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                   No procedures found
                 </TableCell>
               </TableRow>
@@ -205,18 +240,23 @@ export function MasterImagingProceduresTable() {
             Previous
           </Button>
           <div className="flex gap-1">
-            {Array.from({ length: data.totalPages }, (_, i) => i + 1).map(
-              (page) => (
-                <Button
-                  key={page}
-                  variant={pageNumber === page ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setPageNumber(page)}
-                  className="w-10"
-                >
-                  {page}
-                </Button>
-              )
+            {Array.from(
+              { length: Math.min(data.totalPages, 10) },
+              (_, i) => {
+                const page = pageNumber <= 5 ? i + 1 : pageNumber - 4 + i;
+                if (page > data.totalPages) return null;
+                return (
+                  <Button
+                    key={page}
+                    variant={pageNumber === page ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setPageNumber(page)}
+                    className="w-10"
+                  >
+                    {page}
+                  </Button>
+                );
+              }
             )}
           </div>
           <Button

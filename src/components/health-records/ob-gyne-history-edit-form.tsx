@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
 import { toast } from 'sonner'
+import { getActionErrorMessage } from '@/lib/action-error'
 
 export interface ObGyneHistoryEditFormProps {
   userId: string
@@ -71,7 +72,7 @@ export function ObGyneHistoryEditForm({
         saveErrorMessage = result.error || 'An unexpected error occurred'
       }
     } catch (err) {
-      toast.error('An unexpected error occurred. Please try again.')
+      toast.error(getActionErrorMessage(err, 'An unexpected error occurred. Please try again.'))
       throw err
     } finally {
       setIsLoading(false)

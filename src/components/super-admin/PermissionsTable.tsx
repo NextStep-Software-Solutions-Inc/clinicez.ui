@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from "@components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@components/ui/select";
 import { toast } from "sonner";
+import { getActionErrorMessage } from "@/lib/action-error";
 import { Switch } from "@components/ui/switch";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@components/ui/alert-dialog";
 
@@ -54,7 +55,7 @@ export default function PermissionsTable({ initialData }: PermissionsTableProps)
       });
       setData(result);
     } catch (error) {
-      toast.error("Failed to load permissions");
+      toast.error(getActionErrorMessage(error, "Failed to load permissions"));
     } finally {
       setIsLoading(false);
     }
@@ -85,7 +86,7 @@ export default function PermissionsTable({ initialData }: PermissionsTableProps)
       loadData(data.pageNumber);
       setStatusChangeDialog(null);
     } catch (error) {
-      toast.error("Failed to update permission status");
+      toast.error(getActionErrorMessage(error, "Failed to update permission status"));
     }
   };
 
@@ -111,7 +112,7 @@ export default function PermissionsTable({ initialData }: PermissionsTableProps)
       loadData(data.pageNumber);
       setTypeChangeDialog(null);
     } catch (error) {
-      toast.error("Failed to update permission type");
+      toast.error(getActionErrorMessage(error, "Failed to update permission type"));
     }
   };
 
@@ -123,7 +124,7 @@ export default function PermissionsTable({ initialData }: PermissionsTableProps)
       setCreateForm({ name: "", description: "", type: "USER" });
       loadData(1);
     } catch (error) {
-      toast.error("Failed to create permission");
+      toast.error(getActionErrorMessage(error, "Failed to create permission"));
     }
   };
 

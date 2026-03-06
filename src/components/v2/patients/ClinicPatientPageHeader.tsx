@@ -21,14 +21,14 @@ export function ClinicPatientPageHeader({
   mode,
 }: ClinicPatientPageHeaderProps) {
   return (
-    <div className="sticky top-12 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b border-border/50 px-6 sm:px-8 py-4 -mx-6 sm:-mx-8">
+    <div className="sticky top-12 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b border-border/50 px-6 sm:px-8 py-2 -mx-6 sm:-mx-8">
       <div className="flex items-center justify-between gap-4">
-        <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-base min-w-0">
+        <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-sm min-w-0">
           <Link
             href={`/v2/clinic/${clinicUid}/patients`}
             className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors shrink-0"
           >
-            <ArrowLeft className="w-4.5 h-4.5" />
+            <ArrowLeft className="w-4 h-4" />
             Patients
           </Link>
 

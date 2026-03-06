@@ -502,7 +502,7 @@ onClick={() => onSelect(appointment)}  // Creates new function on each render
 ### Data Fetching
 
 ```tsx
-✅ CORRECT - Server component for data
+✅ CORRECT - Server component for data available at page load
 export default async function Dashboard() {
   const appointments = await getPatientAppointments(patientId);
   return <AppointmentList appointments={appointments} />;
@@ -516,10 +516,42 @@ useEffect(() => {
 }, []);
 ```
 
+### ⭐ Lazy / Tab-Triggered Data: Server Action + SWR + Custom Hook + Suspense
+
+When data is only needed **after the user interacts** (switches tabs, opens a panel, etc.), use this layered pattern instead of loading everything on page render.
+
+**5-layer architecture:**
+
+| Layer | Responsibility | Location |
+|---|---|---|
+| Server Action | Single-purpose fetcher, one per data domain | `src/actions/<feature>/get-*-tab-data.ts` |
+| Type Definition | `<Name>TabData` interface + `TabDataMap` | `src/types/<feature>-tabs.ts` |
+| Custom SWR Hook | Cache key builder, fetcher map, invalidation helper | `src/hooks/use-<feature>-tab.ts` |
+| Suspense Boundary | `createTabLoader` factory + `<Suspense>` per tab | `_components/TabContent.tsx` |
+| Tab Component | Pure display, receives `data` prop | `_components/tabs/<Name>Tab.tsx` |
+
+**Key rules:**
+
+- Each server action does **one thing** — no switch routing, no generic tab param
+- Auth is handled **inside** the server action (`currentUser()`) — never passed as a parameter
+- SWR key is a **tuple** `['feature-tab', tabId]` — use the exported `buildXxxSWRKey` helper everywhere
+- `revalidateOnFocus: false` — tab data is stable; call `invalidateXxxTabData(tab)` after any mutation
+- Tab components are **pure display** — no fetching, no auth, no Prisma
+
+📖 **Full pattern documentation with copy-paste templates:**
+**[docs/agents/DATA_FETCHING_PATTERNS.md](./DATA_FETCHING_PATTERNS.md)**
+
+📌 **Real implementation reference:**
+
+- `src/actions/patient-profile/get-patient-tab-data.ts` — 13 individual server actions
+- `src/hooks/use-patient-tab.ts` — SWR hook with typed fetcher map
+- `src/app/v2/(patient-dashboard)/profile/_components/TabContent.tsx` — Suspense + factory pattern
+
 ---
 
 **Related Documentation:**
 
 - [Clinicez Fullstack Dev](./CLINICEZ_FULLSTACK_DEV.md)
 - [Architecture Guide](./ARCHITECTURE.md)
+- [Data Fetching Patterns](./DATA_FETCHING_PATTERNS.md)
 - [Data Models](./DATA_MODELS.md)

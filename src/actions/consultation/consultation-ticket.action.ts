@@ -791,7 +791,6 @@ export const addConsultationTicketHPAction = withErrorHandling(async ({ consulta
 }, async error => {
   if (hasCodeProperty(error) && error.code === 'P2025') return "Consultation record not found"
   if (hasCodeProperty(error) && error.code === 'P2002') return "Healthcare provider is already assigned to this consultation"
-  return "Failed to add healthcare provider to consultation"
 })
 
 export const updateConsultationTicketAction = withErrorHandling(async ({ consultationId, subject }: UpdateConsultationTicketPayload) => {
@@ -877,7 +876,6 @@ export const deleteConsultationTicketAction = withErrorHandling(async (consultat
   return { message: "Consultation Ticket deleted successfully", data: undefined }
 }, async error => {
   if (hasCodeProperty(error) && error.code === 'P2025') return "Consultation record not found"
-  return "Failed to delete consultation record"
 })
 
 export const toggleArchiveConsultationTicketAction = withErrorHandling(async (consultationId: number, isArchived: boolean) => {
@@ -921,7 +919,6 @@ export const toggleArchiveConsultationTicketAction = withErrorHandling(async (co
 
 }, async error => {
   if (hasCodeProperty(error) && error.code === 'P2025') return "Consultation record not found"
-  return "Failed to toggle archive status"
 })
 
 export const resolveConsultationTicket = withErrorHandling(async (consultationId: number) => {
@@ -952,5 +949,4 @@ export const resolveConsultationTicket = withErrorHandling(async (consultationId
 
 }, async error => {
   if (hasCodeProperty(error) && error.code === 'P2025') return "Consultation record not found";
-  return "Failed to resolve consultation record"
 })

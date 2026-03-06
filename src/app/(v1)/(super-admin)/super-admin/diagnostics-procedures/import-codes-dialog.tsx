@@ -362,11 +362,15 @@ function runUploadWorker(
   rows: UploadRow[],
   batchSize: number,
   onProgress: (progress: number, label: string) => void,
-): Promise<ImportResult> {
-  return new Promise((resolve, reject) => {
-    const blob = new Blob([UPLOAD_WORKER_CODE], { type: 'application/javascript' });
-    const url = URL.createObjectURL(blob);
-    const worker = new Worker(url);
+): { promise: Promise<ImportResult>; cancel: () => void } {
+  const blob = new Blob([UPLOAD_WORKER_CODE], { type: 'application/javascript' });
+  const url = URL.createObjectURL(blob);
+  const worker = new Worker(url);
+
+  let rejectFn: ((reason: Error) => void) | null = null;
+
+  const promise = new Promise<ImportResult>((resolve, reject) => {
+    rejectFn = reject;
 
     worker.onmessage = (e: MessageEvent<UploadWorkerMessage>) => {
       const msg = e.data;
@@ -374,23 +378,29 @@ function runUploadWorker(
         onProgress(msg.progress, msg.label);
       } else if (msg.type === 'complete') {
         URL.revokeObjectURL(url);
-        worker.terminate();
         resolve(msg.result);
       } else {
         URL.revokeObjectURL(url);
-        worker.terminate();
         reject(new Error(msg.message));
       }
     };
 
     worker.onerror = (e: ErrorEvent) => {
       URL.revokeObjectURL(url);
-      worker.terminate();
       reject(new Error(e.message));
     };
 
     worker.postMessage({ importType, origin: window.location.origin, rows, batchSize });
   });
+
+  const cancel = () => {
+    URL.revokeObjectURL(url);
+    worker.terminate();
+    rejectFn?.(new Error("Import cancelled."));
+    rejectFn = null;
+  };
+
+  return { promise, cancel };
 }
 
 interface ImportCodesDialogProps {
@@ -409,6 +419,8 @@ export function ImportCodesDialog({
   const fileInputRef = useRef<HTMLInputElement>(null);
   /** true while dialog is closed but a worker import is still running */
   const minimizedRef = useRef(false);
+  /** cancels (terminates) the active upload worker */
+  const cancelWorkerRef = useRef<(() => void) | null>(null);
 
   // Core state
   const [importType, setImportType] = useState<ImportType>("icd10");
@@ -567,6 +579,7 @@ export function ImportCodesDialog({
     setResult(null);
 
     let succeeded = false;
+    let cancelled = false;
     try {
       // Build the flat row list to hand off to the upload worker
       const rows: UploadRow[] =
@@ -583,7 +596,7 @@ export function ImportCodesDialog({
                   r !== null && r.name.trim() !== ""
               );
 
-      const result = await runUploadWorker(
+      const { promise, cancel } = runUploadWorker(
         importType,
         rows,
         BATCH_SIZE,
@@ -600,15 +613,26 @@ export function ImportCodesDialog({
           }
         },
       );
+      cancelWorkerRef.current = cancel;
+
+      const result = await promise;
 
       setProgress(100);
       setProgressLabel("Import complete");
       setResult(result);
       succeeded = true;
     } catch (err) {
+      const msg = err instanceof Error ? err.message : "Import failed. Please try again.";
+      // Suppress the AbortError that arrives when we terminate the worker ourselves
+      if (msg.toLowerCase().includes("cancelled") || msg.toLowerCase().includes("abort")) {
+        cancelled = true;
+      }
       toast.dismiss("import-bg-progress");
-      toast.error(err instanceof Error ? err.message : "Import failed. Please try again.");
+      if (!cancelled) {
+        toast.error(msg);
+      }
     } finally {
+      cancelWorkerRef.current = null;
       minimizedRef.current = false;
       setImporting(false);
     }
@@ -620,6 +644,16 @@ export function ImportCodesDialog({
       });
       onImportComplete?.();
     }
+  };
+
+  const handleCancel = () => {
+    cancelWorkerRef.current?.();
+    cancelWorkerRef.current = null;
+    toast.dismiss("import-bg-progress");
+    minimizedRef.current = false;
+    setImporting(false);
+    setProgress(0);
+    setProgressLabel("");
   };
 
   const icd10CsvHeaders = ["orderNum", "code", "hippaCovered", "shortDescription", "longDescription"];
@@ -1016,21 +1050,29 @@ export function ImportCodesDialog({
             ) : (
               <>
                 {importing ? (
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      minimizedRef.current = true;
-                      onOpenChange(false);
-                      toast.loading(progressLabel || "Importing…", {
-                        id: "import-bg-progress",
-                        description: `${progress}% complete`,
-                        duration: Infinity,
-                      });
-                    }}
-                  >
-                    <Minimize2 className="h-4 w-4 mr-1.5" />
-                    Minimize
-                  </Button>
+                  <>
+                    <Button
+                      variant="destructive"
+                      onClick={handleCancel}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        minimizedRef.current = true;
+                        onOpenChange(false);
+                        toast.loading(progressLabel || "Importing…", {
+                          id: "import-bg-progress",
+                          description: `${progress}% complete`,
+                          duration: Infinity,
+                        });
+                      }}
+                    >
+                      <Minimize2 className="h-4 w-4 mr-1.5" />
+                      Minimize
+                    </Button>
+                  </>
                 ) : (
                   <Button
                     variant="outline"

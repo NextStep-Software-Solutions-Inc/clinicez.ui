@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
+import { useAuth } from "@clerk/nextjs";
 import {
   Dialog,
   DialogContent,
@@ -238,14 +239,38 @@ interface UploadErrorMessage {
   message: string;
 }
 
-type UploadWorkerMessage = UploadProgressMessage | UploadCompleteMessage | UploadErrorMessage;
+interface UploadNeedTokenMessage {
+  type: 'needToken';
+}
+
+type UploadWorkerMessage = UploadProgressMessage | UploadCompleteMessage | UploadErrorMessage | UploadNeedTokenMessage;
 
 /**
  * Inline blob-URL worker that handles all HTTP batch uploads.
  * Runs entirely off the main thread; communicates progress via postMessage.
- * Uses fetch with credentials:'include' so Clerk session cookies are forwarded.
+ * Requests a fresh Clerk auth token from the main thread before every fetch
+ * so long imports (> 60 s) don't hit 403s from session-token expiry.
  */
 const UPLOAD_WORKER_CODE = `
+let pendingTokenResolve = null;
+
+/** Ask the main thread for a fresh Clerk session token. */
+async function getAuthToken() {
+  return new Promise(function(resolve) {
+    pendingTokenResolve = resolve;
+    self.postMessage({ type: 'needToken' });
+  });
+}
+
+/** Build fetch headers with a freshly-obtained Bearer token. */
+async function authHeaders() {
+  const token = await getAuthToken();
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer ' + token,
+  };
+}
+
 async function importICD10Batches(origin, rows, batchSize) {
   const totalBatches = Math.ceil(rows.length / batchSize);
   const batchWeight = 90 / (totalBatches || 1);
@@ -260,8 +285,7 @@ async function importICD10Batches(origin, rows, batchSize) {
 
     const res = await fetch(origin + '/api/super-admin/import/icd10', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
+      headers: await authHeaders(),
       body: JSON.stringify({ rows: slice }),
     });
     if (!res.ok) throw new Error('Batch ' + (b + 1) + ' failed: HTTP ' + res.status);
@@ -273,8 +297,7 @@ async function importICD10Batches(origin, rows, batchSize) {
   self.postMessage({ type: 'progress', progress: 95, label: 'Finalizing – deactivating removed codes...' });
   const finalRes = await fetch(origin + '/api/super-admin/import/icd10/finalize', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
+    headers: await authHeaders(),
     body: JSON.stringify({ importedCodes }),
   });
   if (!finalRes.ok) throw new Error('Finalize failed: HTTP ' + finalRes.status);
@@ -315,8 +338,7 @@ async function importRVSBatches(origin, rows, batchSize) {
 
       const res = await fetch(origin + '/api/super-admin/import/rvs', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        headers: await authHeaders(),
         body: JSON.stringify({ type, rows: slice }),
       });
       if (!res.ok) throw new Error('RVS batch failed: HTTP ' + res.status);
@@ -332,8 +354,7 @@ async function importRVSBatches(origin, rows, batchSize) {
     if (importedByType[type].length === 0) continue;
     const finalRes = await fetch(origin + '/api/super-admin/import/rvs/finalize', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
+      headers: await authHeaders(),
       body: JSON.stringify({ type, importedNames: importedByType[type] }),
     });
     if (!finalRes.ok) throw new Error('RVS finalize failed: HTTP ' + finalRes.status);
@@ -345,6 +366,15 @@ async function importRVSBatches(origin, rows, batchSize) {
 }
 
 self.onmessage = async function(e) {
+  // Token response from main thread
+  if (e.data.type === 'authToken') {
+    if (pendingTokenResolve) {
+      pendingTokenResolve(e.data.token || '');
+      pendingTokenResolve = null;
+    }
+    return;
+  }
+
   const { importType, origin, rows, batchSize } = e.data;
   try {
     const result = importType === 'icd10'
@@ -362,6 +392,7 @@ function runUploadWorker(
   rows: UploadRow[],
   batchSize: number,
   onProgress: (progress: number, label: string) => void,
+  getToken: () => Promise<string | null>,
 ): { promise: Promise<ImportResult>; cancel: () => void } {
   const blob = new Blob([UPLOAD_WORKER_CODE], { type: 'application/javascript' });
   const url = URL.createObjectURL(blob);
@@ -374,7 +405,12 @@ function runUploadWorker(
 
     worker.onmessage = (e: MessageEvent<UploadWorkerMessage>) => {
       const msg = e.data;
-      if (msg.type === 'progress') {
+      if (msg.type === 'needToken') {
+        // Worker needs a fresh Clerk session token — get one and send it back
+        getToken()
+          .then((token) => worker.postMessage({ type: 'authToken', token: token ?? '' }))
+          .catch(() => worker.postMessage({ type: 'authToken', token: '' }));
+      } else if (msg.type === 'progress') {
         onProgress(msg.progress, msg.label);
       } else if (msg.type === 'complete') {
         URL.revokeObjectURL(url);
@@ -416,6 +452,7 @@ export function ImportCodesDialog({
   onOpenChange,
   onImportComplete,
 }: ImportCodesDialogProps) {
+  const { getToken } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   /** true while dialog is closed but a worker import is still running */
   const minimizedRef = useRef(false);
@@ -612,6 +649,7 @@ export function ImportCodesDialog({
             });
           }
         },
+        getToken,
       );
       cancelWorkerRef.current = cancel;
 

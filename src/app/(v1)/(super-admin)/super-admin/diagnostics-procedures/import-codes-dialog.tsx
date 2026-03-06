@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
+import { useAuth } from "@clerk/nextjs";
 import {
   Dialog,
   DialogContent,
@@ -28,15 +29,9 @@ import {
   X,
   ChevronDown,
   ChevronRight,
-  Loader2,
+  Minimize2,
 } from "lucide-react";
 import { toast } from "sonner";
-import {
-  importICD10BatchAction,
-  finalizeICD10ImportAction,
-  importRVSProcedureBatchAction,
-  finalizeRVSImportAction,
-} from "@/actions/super-admin/import-medical-codes.action";
 import type {
   ICD10Row,
   RVSProcedureRow,
@@ -46,7 +41,7 @@ import type {
 const BATCH_SIZE = 100;
 
 type ImportType = "icd10" | "rvs";
-type FileFormat = "txt" | "csv" | "pdf";
+type FileFormat = "txt" | "csv";
 
 // ─── ICD-10 TXT configurable field positions ──────────────────────────────────
 
@@ -130,110 +125,88 @@ function parseCSV(text: string): string[][] {
   });
 }
 
-// ─── PDF text extraction (client-side via pdfjs-dist) ────────────────────────
-
-interface TextItemLike {
-  str?: string;
-  transform?: number[];
+// Worker code string for inline blob worker
+const PARSE_WORKER_CODE = `
+function parseCSV(text) {
+  const lines = text.split(/\\r?\\n/).filter(function(l) { return l.trim().length > 0; });
+  return lines.map(function(line) {
+    let row = [];
+    let current = '';
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') {
+        if (inQuotes && line[i + 1] === '"') { current += '"'; i++; }
+        else inQuotes = !inQuotes;
+      } else if (ch === ',' && !inQuotes) {
+        row.push(current.trim());
+        current = '';
+      } else {
+        current += ch;
+      }
+    }
+    row.push(current.trim());
+    return row;
+  });
 }
 
-async function extractPDFLines(file: File): Promise<string[]> {
-  // Dynamic import keeps the bundle small. The worker is loaded from the
-  // unpkg CDN pinned to the exact installed version — this is intentional
-  // for a super-admin feature where internet access is expected.
-  const pdfjsLib = await import("pdfjs-dist");
-  pdfjsLib.GlobalWorkerOptions.workerSrc = [
-    "https://unpkg.com/pdfjs-dist@",
-    pdfjsLib.version,
-    "/build/pdf.worker.min.mjs",
-  ].join("");
-
-  const buffer = await file.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
-  const allLines: string[] = [];
-
-  for (let p = 1; p <= pdf.numPages; p++) {
-    const page = await pdf.getPage(p);
-    const content = await page.getTextContent();
-    const byY = new Map<number, Array<{ str: string; x: number }>>();
-
-    for (const raw of content.items) {
-      const item = raw as TextItemLike;
-      if (!item.str || !item.transform) continue;
-      const y = Math.round(item.transform[5] / 2) * 2; // 2px tolerance: groups items on the same visual line
-      if (!byY.has(y)) byY.set(y, []);
-      byY.get(y)!.push({ str: item.str, x: item.transform[4] });
-    }
-
-    // Higher Y = higher on page; sort descending
-    for (const y of Array.from(byY.keys()).sort((a, b) => b - a)) {
-      const line = byY
-        .get(y)!
-        .sort((a, b) => a.x - b.x)
-        .map((i) => i.str)
-        .join("")
-        .trim();
-      if (line) allLines.push(line);
-    }
+function parseTXTWithConfig(text, cfg) {
+  const rows = [];
+  function extract(line, s, l) { return line.substring(s - 1, s - 1 + l).trim(); }
+  const lines = text.split(/\\r?\\n/);
+  for (let j = 0; j < lines.length; j++) {
+    const line = lines[j];
+    if (!line.trim()) continue;
+    if (line.length < cfg.code.start + cfg.code.length - 1) continue;
+    const code = extract(line, cfg.code.start, cfg.code.length);
+    if (!code) continue;
+    const shortDescription = extract(line, cfg.shortDesc.start, cfg.shortDesc.length);
+    const longDescription = line.length >= cfg.longDescStart ? line.substring(cfg.longDescStart - 1).trim() : '';
+    const orderRaw = parseInt(extract(line, cfg.order.start, cfg.order.length), 10);
+    rows.push({
+      orderNum: isNaN(orderRaw) ? undefined : orderRaw,
+      code: code,
+      description: shortDescription,
+      shortDescription: shortDescription,
+      longDescription: longDescription,
+      hippaCovered: extract(line, cfg.hipaa.start, cfg.hipaa.length) === '1',
+    });
   }
-  return allLines;
+  return rows;
 }
 
-// ─── RVS PDF column mapping ───────────────────────────────────────────────────
-
-function splitToColumns(line: string, delimiter: string): string[] {
-  if (delimiter === "auto") return line.split(/\s{2,}/).map((s) => s.trim()).filter(Boolean);
-  if (delimiter === "tab")  return line.split("\t").map((s) => s.trim());
-  return line.split(delimiter).map((s) => s.trim());
-}
-
-interface RVSColumnMap {
-  nameCol: number;
-  rvsCodeCol: number | null;
-  categoryCol: number | null;
-  descriptionCol: number | null;
-}
-
-const DEFAULT_COL_MAP: RVSColumnMap = {
-  nameCol: 0,
-  rvsCodeCol: 1,
-  categoryCol: null,
-  descriptionCol: null,
+self.onmessage = function(e) {
+  const type = e.data.type;
+  try {
+    if (type === 'csv') {
+      self.postMessage({ success: true, rows: parseCSV(e.data.text) });
+    } else if (type === 'txt') {
+      self.postMessage({ success: true, rows: parseTXTWithConfig(e.data.text, e.data.config) });
+    }
+  } catch(err) {
+    self.postMessage({ success: false, error: err.message });
+  }
 };
+`;
 
-function mapPDFRows(
-  lines: string[],
-  delimiter: string,
-  cm: RVSColumnMap
-): RVSProcedureRow[] {
-  return lines
-    .map((line): RVSProcedureRow | null => {
-      const cols = splitToColumns(line, delimiter);
-      const name = cm.nameCol < cols.length ? (cols[cm.nameCol] ?? "").trim() : "";
-      if (!name) return null;
-      return {
-        name,
-        category:
-          cm.categoryCol !== null && cm.categoryCol < cols.length
-            ? (cols[cm.categoryCol] ?? "").trim()
-            : "",
-        rvsCode:
-          cm.rvsCodeCol !== null && cm.rvsCodeCol < cols.length
-            ? (cols[cm.rvsCodeCol] ?? "").trim() || undefined
-            : undefined,
-        description:
-          cm.descriptionCol !== null && cm.descriptionCol < cols.length
-            ? (cols[cm.descriptionCol] ?? "").trim() || undefined
-            : undefined,
-      };
-    })
-    .filter((r): r is RVSProcedureRow => r !== null);
-}
-
-/** Returns the column index (>= 0) or null if the value is empty, negative, or not a number. */
-function parseColumnIndex(val: string): number | null {
-  const n = parseInt(val, 10);
-  return isNaN(n) || n < 0 ? null : n;
+function runParseWorker<T>(type: 'csv' | 'txt', text: string, config?: ICD10TxtConfig): Promise<T[]> {
+  return new Promise((resolve, reject) => {
+    const blob = new Blob([PARSE_WORKER_CODE], { type: 'application/javascript' });
+    const url = URL.createObjectURL(blob);
+    const worker = new Worker(url);
+    worker.onmessage = (e: MessageEvent<{ success: boolean; rows: T[]; error?: string }>) => {
+      URL.revokeObjectURL(url);
+      worker.terminate();
+      if (e.data.success) resolve(e.data.rows);
+      else reject(new Error(e.data.error ?? 'Parse worker failed'));
+    };
+    worker.onerror = (e: ErrorEvent) => {
+      URL.revokeObjectURL(url);
+      worker.terminate();
+      reject(new Error(e.message));
+    };
+    worker.postMessage({ type, text, config });
+  });
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -243,6 +216,233 @@ interface ImportResult {
   upserted: number;
   deactivated: number;
   errors: string[];
+}
+
+/** Row type accepted by the upload worker — either ICD-10 or RVS (with optional procedureType) */
+type UploadRow = ICD10Row | (RVSProcedureRow & { procedureType?: RVSProcedureType });
+
+// ─── Upload worker (batch upsert via API routes, fully off the main thread) ───
+
+interface UploadProgressMessage {
+  type: 'progress';
+  progress: number;
+  label: string;
+}
+
+interface UploadCompleteMessage {
+  type: 'complete';
+  result: ImportResult;
+}
+
+interface UploadErrorMessage {
+  type: 'error';
+  message: string;
+}
+
+interface UploadNeedTokenMessage {
+  type: 'needToken';
+}
+
+type UploadWorkerMessage = UploadProgressMessage | UploadCompleteMessage | UploadErrorMessage | UploadNeedTokenMessage;
+
+/**
+ * Inline blob-URL worker that handles all HTTP batch uploads.
+ * Runs entirely off the main thread; communicates progress via postMessage.
+ * Requests a fresh Clerk auth token from the main thread before every fetch
+ * so long imports (> 60 s) don't hit 403s from session-token expiry.
+ */
+const UPLOAD_WORKER_CODE = `
+let pendingTokenResolve = null;
+
+/** Ask the main thread for a fresh Clerk session token. */
+async function getAuthToken() {
+  return new Promise(function(resolve) {
+    pendingTokenResolve = resolve;
+    self.postMessage({ type: 'needToken' });
+  });
+}
+
+/** Build fetch headers with a freshly-obtained Bearer token. */
+async function authHeaders() {
+  const token = await getAuthToken();
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer ' + token,
+  };
+}
+
+/**
+ * fetch with automatic token-refresh retry on 403.
+ * On a 403 response the token is refreshed once and the request is retried.
+ * Any other non-OK status throws immediately.
+ */
+async function fetchWithRetry(url, body) {
+  const MAX_RETRIES = 2;
+  let lastStatus = 0;
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: await authHeaders(),
+      body: JSON.stringify(body),
+    });
+    if (res.ok) return res;
+    lastStatus = res.status;
+    if (res.status !== 403) {
+      // Non-auth failure — surface immediately, no retry
+      throw new Error('HTTP ' + res.status + ' from ' + url);
+    }
+    // 403: token may have expired between the refresh and the request
+    // — loop to fetch a new token and retry
+  }
+  throw new Error('HTTP ' + lastStatus + ' from ' + url + ' (after ' + MAX_RETRIES + ' attempts)');
+}
+
+async function importICD10Batches(origin, rows, batchSize) {
+  const totalBatches = Math.ceil(rows.length / batchSize);
+  const batchWeight = 90 / (totalBatches || 1);
+  let totalUpserted = 0;
+  const errors = [];
+  const importedCodes = [];
+
+  for (let b = 0; b < totalBatches; b++) {
+    const slice = rows.slice(b * batchSize, (b + 1) * batchSize);
+    importedCodes.push(...slice.map(r => r.code.trim().toUpperCase()));
+    self.postMessage({ type: 'progress', progress: Math.round((b + 1) * batchWeight), label: 'Processing batch ' + (b + 1) + ' of ' + totalBatches + '...' });
+
+    const res = await fetchWithRetry(origin + '/api/super-admin/import/icd10', { rows: slice });
+    const batchResult = await res.json();
+    totalUpserted += batchResult.upserted || 0;
+    if (batchResult.errors) errors.push(...batchResult.errors);
+  }
+
+  self.postMessage({ type: 'progress', progress: 95, label: 'Finalizing – deactivating removed codes...' });
+  const finalRes = await fetchWithRetry(origin + '/api/super-admin/import/icd10/finalize', { importedCodes });
+  const finalResult = await finalRes.json();
+
+  return { totalRows: rows.length, upserted: totalUpserted, deactivated: finalResult.deactivated || 0, errors };
+}
+
+async function importRVSBatches(origin, rows, batchSize) {
+  const grouped = { imaging: [], laboratory: [], heart_station: [] };
+  const errors = [];
+
+  for (const row of rows) {
+    if (row.procedureType && grouped[row.procedureType]) {
+      grouped[row.procedureType].push(row);
+    } else {
+      errors.push('Skipped row "' + row.name + '" – missing or invalid procedureType');
+    }
+  }
+
+  const types = ['imaging', 'laboratory', 'heart_station'];
+  const totalBatchCount = types.reduce((sum, t) => sum + Math.ceil(grouped[t].length / batchSize), 0);
+  let overallBatch = 0;
+  let totalUpserted = 0;
+  const importedByType = { imaging: [], laboratory: [], heart_station: [] };
+
+  for (const type of types) {
+    const typeRows = grouped[type];
+    if (typeRows.length === 0) continue;
+    const totalBatches = Math.ceil(typeRows.length / batchSize);
+
+    for (let b = 0; b < totalBatches; b++) {
+      const slice = typeRows.slice(b * batchSize, (b + 1) * batchSize);
+      importedByType[type].push(...slice.map(r => r.name.trim()));
+      overallBatch++;
+      const progress = Math.min(90, Math.round((overallBatch / (totalBatchCount || 1)) * 90));
+      self.postMessage({ type: 'progress', progress, label: 'Processing ' + type + ': batch ' + (b + 1) + ' of ' + totalBatches + '...' });
+
+      const res = await fetchWithRetry(origin + '/api/super-admin/import/rvs', { type, rows: slice });
+      const batchResult = await res.json();
+      totalUpserted += batchResult.upserted || 0;
+      if (batchResult.errors) errors.push(...batchResult.errors);
+    }
+  }
+
+  self.postMessage({ type: 'progress', progress: 95, label: 'Finalizing – deactivating removed procedures...' });
+  let totalDeactivated = 0;
+  for (const type of types) {
+    if (importedByType[type].length === 0) continue;
+    const finalRes = await fetchWithRetry(origin + '/api/super-admin/import/rvs/finalize', { type, importedNames: importedByType[type] });
+    const finalResult = await finalRes.json();
+    totalDeactivated += finalResult.deactivated || 0;
+  }
+
+  return { totalRows: rows.length, upserted: totalUpserted, deactivated: totalDeactivated, errors };
+}
+
+self.onmessage = async function(e) {
+  // Token response from main thread
+  if (e.data.type === 'authToken') {
+    if (pendingTokenResolve) {
+      pendingTokenResolve(e.data.token || '');
+      pendingTokenResolve = null;
+    }
+    return;
+  }
+
+  const { importType, origin, rows, batchSize } = e.data;
+  try {
+    const result = importType === 'icd10'
+      ? await importICD10Batches(origin, rows, batchSize)
+      : await importRVSBatches(origin, rows, batchSize);
+    self.postMessage({ type: 'complete', result });
+  } catch (err) {
+    self.postMessage({ type: 'error', message: err.message || String(err) });
+  }
+};
+`;
+
+function runUploadWorker(
+  importType: 'icd10' | 'rvs',
+  rows: UploadRow[],
+  batchSize: number,
+  onProgress: (progress: number, label: string) => void,
+  getToken: () => Promise<string | null>,
+): { promise: Promise<ImportResult>; cancel: () => void } {
+  const blob = new Blob([UPLOAD_WORKER_CODE], { type: 'application/javascript' });
+  const url = URL.createObjectURL(blob);
+  const worker = new Worker(url);
+
+  let rejectFn: ((reason: Error) => void) | null = null;
+
+  const promise = new Promise<ImportResult>((resolve, reject) => {
+    rejectFn = reject;
+
+    worker.onmessage = (e: MessageEvent<UploadWorkerMessage>) => {
+      const msg = e.data;
+      if (msg.type === 'needToken') {
+        // Worker needs a fresh Clerk session token — get one and send it back
+        getToken()
+          .then((token) => worker.postMessage({ type: 'authToken', token: token ?? '' }))
+          .catch(() => worker.postMessage({ type: 'authToken', token: '' }));
+      } else if (msg.type === 'progress') {
+        onProgress(msg.progress, msg.label);
+      } else if (msg.type === 'complete') {
+        URL.revokeObjectURL(url);
+        resolve(msg.result);
+      } else {
+        URL.revokeObjectURL(url);
+        reject(new Error(msg.message));
+      }
+    };
+
+    worker.onerror = (e: ErrorEvent) => {
+      URL.revokeObjectURL(url);
+      reject(new Error(e.message));
+    };
+
+    worker.postMessage({ importType, origin: window.location.origin, rows, batchSize });
+  });
+
+  const cancel = () => {
+    URL.revokeObjectURL(url);
+    worker.terminate();
+    rejectFn?.(new Error("Import cancelled."));
+    rejectFn = null;
+  };
+
+  return { promise, cancel };
 }
 
 interface ImportCodesDialogProps {
@@ -258,11 +458,15 @@ export function ImportCodesDialog({
   onOpenChange,
   onImportComplete,
 }: ImportCodesDialogProps) {
+  const { getToken } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  /** true while dialog is closed but a worker import is still running */
+  const minimizedRef = useRef(false);
+  /** cancels (terminates) the active upload worker */
+  const cancelWorkerRef = useRef<(() => void) | null>(null);
 
   // Core state
   const [importType, setImportType] = useState<ImportType>("icd10");
-  const [rvsType, setRvsType] = useState<RVSProcedureType>("imaging");
   const [fileName, setFileName] = useState<string | null>(null);
   const [fileFormat, setFileFormat] = useState<FileFormat | null>(null);
 
@@ -276,19 +480,20 @@ export function ImportCodesDialog({
   const [parsedRows, setParsedRows] = useState<string[][] | null>(null);
   const [headers, setHeaders] = useState<string[]>([]);
 
-  // PDF state
-  const [pdfLines, setPdfLines] = useState<string[] | null>(null);
-  const [pdfLoading, setPdfLoading] = useState(false);
-  const [pdfDelimiter, setPdfDelimiter] = useState("auto");
-  const [colMap, setColMap] = useState<RVSColumnMap>(DEFAULT_COL_MAP);
-  const [pdfMappedRows, setPdfMappedRows] = useState<RVSProcedureRow[] | null>(null);
-
   // UI state
   const [parseError, setParseError] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
   const [progress, setProgress] = useState(0);
   const [progressLabel, setProgressLabel] = useState("");
   const [result, setResult] = useState<ImportResult | null>(null);
+
+  // When dialog is reopened while import runs in background: dismiss the background toast.
+  useEffect(() => {
+    if (open && minimizedRef.current) {
+      minimizedRef.current = false;
+      toast.dismiss("import-bg-progress");
+    }
+  }, [open]);
 
   const resetFileState = () => {
     setFileName(null);
@@ -297,8 +502,6 @@ export function ImportCodesDialog({
     setIcd10TxtRows(null);
     setParsedRows(null);
     setHeaders([]);
-    setPdfLines(null);
-    setPdfMappedRows(null);
     setParseError(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
@@ -308,8 +511,6 @@ export function ImportCodesDialog({
     setProgress(0);
     setProgressLabel("");
     setResult(null);
-    setColMap(DEFAULT_COL_MAP);
-    setPdfDelimiter("auto");
     setIcd10Config(CMS_DEFAULTS);
     setPosConfigOpen(false);
   };
@@ -327,14 +528,6 @@ export function ImportCodesDialog({
     }
   };
 
-  // Apply PDF column mapping
-  const applyPdfMapping = (cm: RVSColumnMap = colMap, delim: string = pdfDelimiter) => {
-    if (!pdfLines) return;
-    const rows = mapPDFRows(pdfLines, delim, cm);
-    setPdfMappedRows(rows);
-    setParseError(rows.length === 0 ? "No rows mapped. Check column indices and delimiter." : null);
-  };
-
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -344,45 +537,23 @@ export function ImportCodesDialog({
     setFileName(file.name);
 
     const ext = file.name.toLowerCase().split(".").pop() ?? "";
-    const fmt: FileFormat = ext === "txt" ? "txt" : ext === "pdf" ? "pdf" : "csv";
+    const fmt: FileFormat = ext === "txt" ? "txt" : "csv";
     setFileFormat(fmt);
 
-    if (fmt === "pdf") {
-      setPdfLoading(true);
-      try {
-        const lines = (await extractPDFLines(file)).filter((l) => l.trim());
-        if (lines.length === 0) {
-          setParseError("No text could be extracted from this PDF.");
-          return;
-        }
-        setPdfLines(lines);
-        const rows = mapPDFRows(lines, "auto", DEFAULT_COL_MAP);
-        setPdfMappedRows(rows);
-      } catch (err) {
-        setParseError(
-          `PDF extraction failed: ${err instanceof Error ? err.message : "Unknown error"}. ` +
-            "Ensure the file is not password-protected."
-        );
-      } finally {
-        setPdfLoading(false);
-      }
-      return;
-    }
-
     const reader = new FileReader();
-    reader.onload = (ev) => {
+    reader.onload = async (ev) => {
       const text = ev.target?.result as string;
       try {
         if (fmt === "txt" && importType === "icd10") {
           setRawTxtContent(text);
-          const rows = parseTXTWithConfig(text, icd10Config);
+          const rows = await runParseWorker<ICD10Row>('txt', text, icd10Config);
           if (rows.length === 0) {
             setParseError("No valid rows found. Check the file or adjust field positions below.");
           } else {
             setIcd10TxtRows(rows);
           }
         } else {
-          const rows = parseCSV(text);
+          const rows = await runParseWorker<string[]>('csv', text);
           if (rows.length < 2) {
             setParseError("File must have at least a header row and one data row.");
             return;
@@ -398,38 +569,48 @@ export function ImportCodesDialog({
   };
 
   const normalizeICD10Row = (row: string[], hdrs: string[]): ICD10Row | null => {
-    const idx = (name: string) =>
-      hdrs.findIndex((h) => h.toLowerCase().includes(name.toLowerCase()));
+    const idx = (name: string) => hdrs.findIndex((h) => h.toLowerCase() === name.toLowerCase());
     const codeIdx = idx("code");
-    const descIdx = idx("desc") !== -1 ? idx("desc") : idx("name");
-    const catIdx  = idx("cat")  !== -1 ? idx("cat")  : idx("chapter");
-    if (codeIdx === -1 || descIdx === -1) return null;
+    const shortDescIdx = idx("shortdescription");
+    const longDescIdx = idx("longdescription");
+    const hipaaIdx = idx("hippacovered") !== -1 ? idx("hippacovered") : -1;
+    const orderIdx = idx("ordernum") !== -1 ? idx("ordernum") : -1;
+    if (codeIdx === -1 || shortDescIdx === -1) return null;
+    const hipaaVal = hipaaIdx !== -1 ? (row[hipaaIdx] ?? "").trim() : "";
     return {
-      code:        row[codeIdx] ?? "",
-      description: row[descIdx] ?? "",
-      category:    catIdx !== -1 ? (row[catIdx] ?? "") : undefined,
+      code: row[codeIdx] ?? "",
+      description: row[shortDescIdx] ?? "",
+      shortDescription: row[shortDescIdx],
+      longDescription: longDescIdx !== -1 ? row[longDescIdx] : undefined,
+      hippaCovered: hipaaVal === "1" || hipaaVal.toLowerCase() === "true",
+      orderNum: orderIdx !== -1 ? parseInt(row[orderIdx] ?? "", 10) || undefined : undefined,
     };
   };
 
-  const normalizeRVSRow = (row: string[], hdrs: string[]): RVSProcedureRow | null => {
-    const idx = (name: string) =>
-      hdrs.findIndex((h) => h.toLowerCase().includes(name.toLowerCase()));
-    const nameIdx = idx("name")  !== -1 ? idx("name")  : idx("procedure");
-    const catIdx  = idx("cat")   !== -1 ? idx("cat")   : idx("type");
-    const rvsIdx  = idx("rvs")   !== -1 ? idx("rvs")   : idx("code");
-    const descIdx = idx("desc");
-    if (nameIdx === -1 || catIdx === -1) return null;
+  const normalizeRVSRow = (row: string[], hdrs: string[]): (RVSProcedureRow & { procedureType?: RVSProcedureType }) | null => {
+    const idx = (name: string) => hdrs.findIndex((h) => h.toLowerCase() === name.toLowerCase());
+    const nameExact = idx("name");
+    const nameIdx = nameExact !== -1 ? nameExact : hdrs.findIndex(h => h.toLowerCase().includes("procedure"));
+    const catIdx = idx("category") !== -1 ? idx("category") : hdrs.findIndex(h => h.toLowerCase().includes("cat"));
+    const rvsIdx = idx("rvscode") !== -1 ? idx("rvscode") : hdrs.findIndex(h => h.toLowerCase().includes("rvs") || h.toLowerCase() === "code");
+    const descIdx = hdrs.findIndex(h => h.toLowerCase().includes("desc"));
+    const typeIdx = idx("proceduretype") !== -1 ? idx("proceduretype") : hdrs.findIndex(h => h.toLowerCase().includes("type"));
+    if (nameIdx === -1) return null;
+    const procType = typeIdx !== -1 ? (row[typeIdx] ?? "").trim().toLowerCase() : "";
+    const validType = (["imaging", "laboratory", "heart_station"] as const).includes(procType as RVSProcedureType)
+      ? procType as RVSProcedureType
+      : undefined;
     return {
-      name:        row[nameIdx] ?? "",
-      category:    row[catIdx]  ?? "",
-      rvsCode:     rvsIdx  !== -1 ? (row[rvsIdx]  ?? "") : undefined,
-      description: descIdx !== -1 ? (row[descIdx] ?? "") : undefined,
+      name: row[nameIdx] ?? "",
+      category: catIdx !== -1 ? row[catIdx] ?? "" : "",
+      rvsCode: rvsIdx !== -1 ? row[rvsIdx] ?? undefined : undefined,
+      description: descIdx !== -1 ? row[descIdx] ?? undefined : undefined,
+      procedureType: validType,
     };
   };
 
   const totalDataRows =
     icd10TxtRows?.length ??
-    pdfMappedRows?.length ??
     parsedRows?.length ??
     0;
 
@@ -437,90 +618,110 @@ export function ImportCodesDialog({
     if (totalDataRows === 0) return;
     setImporting(true);
     setProgress(0);
+    setProgressLabel("Preparing data...");
     setResult(null);
 
-    const errors: string[] = [];
-    let totalUpserted = 0;
+    let succeeded = false;
+    let cancelled = false;
+    try {
+      // Build the flat row list to hand off to the upload worker
+      const rows: UploadRow[] =
+        importType === "icd10"
+          ? (icd10TxtRows
+              ? icd10TxtRows
+              : (parsedRows ?? [])
+                  .map((r) => normalizeICD10Row(r, headers))
+                  .filter((r): r is ICD10Row => r !== null && r.code.trim() !== ""))
+          : (parsedRows ?? [])
+              .map((r) => normalizeRVSRow(r, headers))
+              .filter(
+                (r): r is RVSProcedureRow & { procedureType?: RVSProcedureType } =>
+                  r !== null && r.name.trim() !== ""
+              );
 
-    if (importType === "icd10") {
-      const allRows: ICD10Row[] = icd10TxtRows
-        ? icd10TxtRows
-        : (parsedRows ?? [])
-            .map((r) => normalizeICD10Row(r, headers))
-            .filter((r): r is ICD10Row => r !== null && r.code.trim() !== "");
+      const { promise, cancel } = runUploadWorker(
+        importType,
+        rows,
+        BATCH_SIZE,
+        (prog, label) => {
+          setProgress(prog);
+          setProgressLabel(label);
+          // Keep the background toast in sync while dialog is minimized
+          if (minimizedRef.current) {
+            toast.loading(label, {
+              id: "import-bg-progress",
+              description: `${prog}% complete`,
+              duration: Infinity,
+            });
+          }
+        },
+        getToken,
+      );
+      cancelWorkerRef.current = cancel;
 
-      const importedCodes: string[] = [];
-      const totalBatches = Math.ceil(allRows.length / BATCH_SIZE);
-      const batchWeight = 90 / (totalBatches || 1);
+      const result = await promise;
 
-      for (let b = 0; b < totalBatches; b++) {
-        const slice = allRows.slice(b * BATCH_SIZE, (b + 1) * BATCH_SIZE);
-        importedCodes.push(...slice.map((r) => r.code.trim().toUpperCase()));
-        setProgressLabel(`Processing batch ${b + 1} of ${totalBatches}...`);
-        const batchResult = await importICD10BatchAction(slice);
-        totalUpserted += batchResult.upserted;
-        errors.push(...batchResult.errors);
-        setProgress(Math.round((b + 1) * batchWeight));
-      }
-
-      setProgressLabel("Finalizing - deactivating removed codes...");
-      const finalResult = await finalizeICD10ImportAction(importedCodes);
       setProgress(100);
       setProgressLabel("Import complete");
-      setResult({
-        totalRows: allRows.length,
-        upserted: totalUpserted,
-        deactivated: finalResult.deactivated,
-        errors,
-      });
-    } else {
-      const allRows: RVSProcedureRow[] = pdfMappedRows
-        ? pdfMappedRows
-        : (parsedRows ?? [])
-            .map((r) => normalizeRVSRow(r, headers))
-            .filter((r): r is RVSProcedureRow => r !== null && r.name.trim() !== "");
-
-      const importedNames: string[] = [];
-      const totalBatches = Math.ceil(allRows.length / BATCH_SIZE);
-      const batchWeight = 90 / (totalBatches || 1);
-
-      for (let b = 0; b < totalBatches; b++) {
-        const slice = allRows.slice(b * BATCH_SIZE, (b + 1) * BATCH_SIZE);
-        importedNames.push(...slice.map((r) => r.name.trim()));
-        setProgressLabel(`Processing batch ${b + 1} of ${totalBatches}...`);
-        const batchResult = await importRVSProcedureBatchAction(rvsType, slice);
-        totalUpserted += batchResult.upserted;
-        errors.push(...batchResult.errors);
-        setProgress(Math.round((b + 1) * batchWeight));
+      setResult(result);
+      succeeded = true;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Import failed. Please try again.";
+      // Suppress the AbortError that arrives when we terminate the worker ourselves
+      if (msg.toLowerCase().includes("cancelled") || msg.toLowerCase().includes("abort")) {
+        cancelled = true;
       }
-
-      setProgressLabel("Finalizing - deactivating removed procedures...");
-      const finalResult = await finalizeRVSImportAction(rvsType, importedNames);
-      setProgress(100);
-      setProgressLabel("Import complete");
-      setResult({
-        totalRows: allRows.length,
-        upserted: totalUpserted,
-        deactivated: finalResult.deactivated,
-        errors,
-      });
+      toast.dismiss("import-bg-progress");
+      if (!cancelled) {
+        toast.error(msg);
+      }
+    } finally {
+      cancelWorkerRef.current = null;
+      minimizedRef.current = false;
+      setImporting(false);
     }
 
-    setImporting(false);
-    toast.success("Import finished successfully");
-    onImportComplete?.();
+    if (succeeded) {
+      toast.dismiss("import-bg-progress");
+      toast.success("Import finished successfully", {
+        action: { label: "View Result", onClick: () => onOpenChange(true) },
+      });
+      onImportComplete?.();
+    }
   };
 
-  const icd10CsvHeaders = ["code", "description", "category"];
-  const rvsHeaders      = ["name", "category", "rvsCode", "description"];
-  const pdfPreviewLines = pdfLines?.slice(0, 8) ?? [];
-  const pdfPreview      = pdfMappedRows?.slice(0, 3) ?? [];
+  const handleCancel = () => {
+    cancelWorkerRef.current?.();
+    cancelWorkerRef.current = null;
+    toast.dismiss("import-bg-progress");
+    minimizedRef.current = false;
+    setImporting(false);
+    setProgress(0);
+    setProgressLabel("");
+  };
+
+  const icd10CsvHeaders = ["orderNum", "code", "hippaCovered", "shortDescription", "longDescription"];
+  const rvsHeaders = ["procedureType", "name", "category", "rvsCode", "description"];
 
   return (
     <Dialog
       open={open}
       onOpenChange={(v) => {
-        if (!importing) { onOpenChange(v); if (!v) reset(); }
+        if (v) {
+          onOpenChange(true);
+        } else if (importing) {
+          // Minimize: close dialog but let the worker keep running
+          minimizedRef.current = true;
+          onOpenChange(false);
+          toast.loading(progressLabel || "Importing…", {
+            id: "import-bg-progress",
+            description: `${progress}% complete`,
+            duration: Infinity,
+          });
+        } else {
+          onOpenChange(false);
+          reset();
+        }
       }}
     >
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -529,7 +730,7 @@ export function ImportCodesDialog({
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Type / category selectors */}
+          {/* Type selector */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label className="text-xs mb-1 block">Import Type</Label>
@@ -545,24 +746,6 @@ export function ImportCodesDialog({
                 </SelectContent>
               </Select>
             </div>
-
-            {importType === "rvs" && (
-              <div>
-                <Label className="text-xs mb-1 block">Procedure Category</Label>
-                <Select
-                  value={rvsType}
-                  onValueChange={(v) => setRvsType(v as RVSProcedureType)}
-                  disabled={importing}
-                >
-                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="imaging">Imaging</SelectItem>
-                    <SelectItem value="laboratory">Laboratory</SelectItem>
-                    <SelectItem value="heart_station">Heart Station</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
           </div>
 
           {/* Format hint */}
@@ -594,18 +777,10 @@ export function ImportCodesDialog({
               </>
             ) : (
               <>
-                <p className="text-xs font-medium text-muted-foreground">Accepted formats:</p>
+                <p className="text-xs font-medium text-muted-foreground">CSV format</p>
                 <div className="space-y-1">
                   <div>
-                    <p className="text-[11px] font-semibold text-foreground/80">
-                      PhilHealth RVS PDF
-                    </p>
-                    <p className="text-[11px] text-muted-foreground">
-                      Text is extracted automatically. Configure column mapping after upload.
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-[11px] font-semibold text-foreground/80">CSV fallback</p>
+                    <p className="text-[11px] font-semibold text-foreground/80">Required columns:</p>
                     <div className="flex gap-1 flex-wrap mt-0.5">
                       {rvsHeaders.map((h) => (
                         <Badge key={h} variant="secondary" className="text-[10px] font-mono">
@@ -613,6 +788,9 @@ export function ImportCodesDialog({
                         </Badge>
                       ))}
                     </div>
+                    <p className="text-[11px] text-muted-foreground mt-1">
+                      procedureType must be one of: imaging, laboratory, heart_station
+                    </p>
                   </div>
                 </div>
               </>
@@ -628,7 +806,7 @@ export function ImportCodesDialog({
                 accept={
                   importType === "icd10"
                     ? ".txt,.csv,text/plain,text/csv"
-                    : ".pdf,.csv,application/pdf,text/csv"
+                    : ".csv,text/csv"
                 }
                 className="hidden"
                 onChange={handleFileChange}
@@ -636,14 +814,9 @@ export function ImportCodesDialog({
               />
               <div
                 className="border-2 border-dashed border-border/60 rounded-lg py-6 text-center cursor-pointer hover:border-primary/50 hover:bg-muted/20 transition-colors"
-                onClick={() => !importing && !pdfLoading && fileInputRef.current?.click()}
+                onClick={() => !importing && fileInputRef.current?.click()}
               >
-                {pdfLoading ? (
-                  <div className="flex flex-col items-center gap-2">
-                    <Loader2 className="h-7 w-7 text-primary animate-spin" />
-                    <p className="text-sm text-muted-foreground">Extracting PDF text...</p>
-                  </div>
-                ) : fileName ? (
+                {fileName ? (
                   <div className="flex items-center justify-center gap-2">
                     <FileText className="h-5 w-5 text-primary" />
                     <span className="text-sm font-medium">{fileName}</span>
@@ -668,7 +841,7 @@ export function ImportCodesDialog({
                     <p className="text-sm text-muted-foreground">
                       {importType === "icd10"
                         ? "Click to select a .txt or .csv file"
-                        : "Click to select a PDF or CSV file"}
+                        : "Click to select a CSV file"}
                     </p>
                   </div>
                 )}
@@ -772,126 +945,6 @@ export function ImportCodesDialog({
             </div>
           )}
 
-          {/* RVS PDF: column mapping */}
-          {importType === "rvs" && fileFormat === "pdf" && pdfLines && !result && (
-            <div className="rounded-md border border-border/50 p-3 space-y-3">
-              <p className="text-xs font-semibold">PDF Column Mapping</p>
-
-              <div>
-                <p className="text-[11px] text-muted-foreground mb-1">
-                  Extracted text preview (first {pdfPreviewLines.length} lines):
-                </p>
-                <div className="rounded bg-muted/30 border border-border/40 p-2 max-h-28 overflow-y-auto">
-                  {pdfPreviewLines.map((line, i) => (
-                    <p
-                      key={i}
-                      className="text-[11px] font-mono text-foreground/80 whitespace-pre truncate"
-                    >
-                      {line}
-                    </p>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <Label className="text-xs shrink-0">Column delimiter:</Label>
-                <Select
-                  value={pdfDelimiter}
-                  onValueChange={(v) => { setPdfDelimiter(v); applyPdfMapping(colMap, v); }}
-                  disabled={importing}
-                >
-                  <SelectTrigger className="h-8 text-xs w-44">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="auto">Multi-space (auto)</SelectItem>
-                    <SelectItem value="tab">Tab</SelectItem>
-                    <SelectItem value=",">Comma</SelectItem>
-                    <SelectItem value="|">Pipe</SelectItem>
-                    <SelectItem value=";">Semicolon</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <p className="text-[11px] text-muted-foreground">
-                Assign a 0-based column index to each field. Set to empty or{" "}
-                <span className="font-mono">-1</span> to skip optional fields.
-              </p>
-
-              <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-                {(
-                  [
-                    { label: "Procedure Name *", field: "nameCol",        required: true  },
-                    { label: "RVS Code",         field: "rvsCodeCol",     required: false },
-                    { label: "Category",         field: "categoryCol",    required: false },
-                    { label: "Description",      field: "descriptionCol", required: false },
-                  ] as const
-                ).map(({ label, field, required }) => (
-                  <div key={field} className="flex items-center gap-2">
-                    <Label className="text-xs w-36 shrink-0">{label}</Label>
-                    <Input
-                      type="number"
-                      min={required ? 0 : -1}
-                      placeholder={required ? "0" : "-1 = skip"}
-                      value={colMap[field] ?? ""}
-                      className="h-7 text-xs w-20 text-center"
-                      onChange={(e) => {
-                        const n = required
-                          ? Math.max(0, parseInt(e.target.value, 10) || 0)
-                          : parseColumnIndex(e.target.value);
-                        setColMap((p) => ({ ...p, [field]: n }));
-                      }}
-                      disabled={importing}
-                    />
-                  </div>
-                ))}
-              </div>
-
-              <Button
-                size="sm"
-                variant="secondary"
-                className="h-7 text-xs"
-                onClick={() => applyPdfMapping()}
-                disabled={importing}
-              >
-                Apply Mapping
-              </Button>
-
-              {pdfPreview.length > 0 && (
-                <div>
-                  <p className="text-[11px] text-muted-foreground mb-1">
-                    Mapped preview ({(pdfMappedRows?.length ?? 0).toLocaleString()} total rows):
-                  </p>
-                  <div className="rounded bg-muted/20 border border-border/40 divide-y divide-border/30">
-                    {pdfPreview.map((row, i) => (
-                      <div
-                        key={i}
-                        className="px-2 py-1.5 text-[11px] grid grid-cols-2 gap-x-3"
-                      >
-                        <span className="truncate">
-                          <span className="text-muted-foreground">Name: </span>
-                          {row.name}
-                        </span>
-                        <span className="truncate">
-                          <span className="text-muted-foreground">RVS: </span>
-                          {row.rvsCode ?? "N/A"}
-                        </span>
-                        <span className="truncate">
-                          <span className="text-muted-foreground">Cat: </span>
-                          {row.category || "N/A"}
-                        </span>
-                        <span className="truncate">
-                          <span className="text-muted-foreground">Desc: </span>
-                          {row.description ?? "N/A"}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
           {/* Parse error */}
           {parseError && (
             <Alert variant="destructive">
@@ -907,7 +960,6 @@ export function ImportCodesDialog({
                 {totalDataRows.toLocaleString()}
               </span>{" "}
               {fileFormat === "txt" && "rows detected from fixed-width file."}
-              {fileFormat === "pdf" && "rows mapped from PDF."}
               {fileFormat === "csv" && (
                 <>
                   data rows detected. Columns:{" "}
@@ -917,10 +969,71 @@ export function ImportCodesDialog({
             </p>
           )}
 
+          {/* ICD-10 parsed sample preview - 3 rows, all columns */}
+          {importType === "icd10" && totalDataRows > 0 && !result && !importing && (() => {
+            const sampleRows = icd10TxtRows
+              ? icd10TxtRows.slice(0, 3)
+              : (parsedRows?.slice(0, 10).map(r => normalizeICD10Row(r, headers)).filter((r): r is ICD10Row => r !== null).slice(0, 3) ?? []);
+            if (sampleRows.length === 0) return null;
+            return (
+              <div className="rounded-md border border-border/50 bg-muted/20 p-3 space-y-2">
+                <p className="text-[11px] font-semibold text-foreground/80">
+                  Sample preview (first 3 rows):
+                </p>
+                <div className="overflow-x-auto rounded bg-background border border-border/40">
+                  <table className="w-full text-[11px] border-collapse">
+                    <thead>
+                      <tr className="bg-muted/40 border-b border-border/40">
+                        <th className="px-2 py-1 text-left font-semibold text-muted-foreground whitespace-nowrap">#</th>
+                        <th className="px-2 py-1 text-left font-semibold text-muted-foreground whitespace-nowrap">Code</th>
+                        <th className="px-2 py-1 text-left font-semibold text-muted-foreground whitespace-nowrap">HIPAA</th>
+                        <th className="px-2 py-1 text-left font-semibold text-muted-foreground whitespace-nowrap">Short Description</th>
+                        <th className="px-2 py-1 text-left font-semibold text-muted-foreground whitespace-nowrap">Long Description</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border/30">
+                      {sampleRows.map((row, i) => (
+                        <tr key={i} className="hover:bg-muted/10">
+                          <td className="px-2 py-1.5 text-muted-foreground tabular-nums">{row.orderNum ?? "—"}</td>
+                          <td className="px-2 py-1.5 font-mono font-semibold text-primary whitespace-nowrap">{row.code}</td>
+                          <td className="px-2 py-1.5 text-center">{row.hippaCovered ? "✓" : "—"}</td>
+                          <td className="px-2 py-1.5 max-w-[180px] truncate">{row.shortDescription ?? "—"}</td>
+                          <td className="px-2 py-1.5 max-w-[220px] truncate text-muted-foreground">{row.longDescription ?? "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* RVS distribution preview - computed once over all rows */}
+          {importType === "rvs" && totalDataRows > 0 && !result && !importing && parsedRows && (() => {
+            const dist = { imaging: 0, laboratory: 0, heart_station: 0 } as Record<RVSProcedureType, number>;
+            for (const r of parsedRows) {
+              const row = normalizeRVSRow(r, headers);
+              if (row?.procedureType && row.procedureType in dist) dist[row.procedureType]++;
+            }
+            return (
+              <div className="rounded-md border border-border/50 bg-muted/20 p-3 space-y-2">
+                <p className="text-[11px] font-semibold text-foreground/80">Distribution by procedure type:</p>
+                <div className="flex gap-2 flex-wrap">
+                  {(["imaging", "laboratory", "heart_station"] as const).map((type) => (
+                    <div key={type} className="rounded bg-background border border-border/40 px-3 py-1.5 text-center min-w-[100px]">
+                      <p className="text-sm font-bold">{dist[type].toLocaleString()}</p>
+                      <p className="text-[10px] text-muted-foreground capitalize">{type.replace("_", " ")}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
+
           {/* Progress bar */}
           {importing && (
             <div className="space-y-2">
-              <Progress value={progress} className="h-2" />
+              <Progress value={progress} className="h-3 bg-muted-foreground/20" />
               <p className="text-xs text-muted-foreground text-center">
                 {progressLabel} ({progress}%)
               </p>
@@ -980,16 +1093,41 @@ export function ImportCodesDialog({
               </Button>
             ) : (
               <>
-                <Button
-                  variant="outline"
-                  onClick={() => { onOpenChange(false); reset(); }}
-                  disabled={importing}
-                >
-                  Cancel
-                </Button>
+                {importing ? (
+                  <>
+                    <Button
+                      variant="destructive"
+                      onClick={handleCancel}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        minimizedRef.current = true;
+                        onOpenChange(false);
+                        toast.loading(progressLabel || "Importing…", {
+                          id: "import-bg-progress",
+                          description: `${progress}% complete`,
+                          duration: Infinity,
+                        });
+                      }}
+                    >
+                      <Minimize2 className="h-4 w-4 mr-1.5" />
+                      Minimize
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    variant="outline"
+                    onClick={() => { onOpenChange(false); reset(); }}
+                  >
+                    Cancel
+                  </Button>
+                )}
                 <Button
                   onClick={handleImport}
-                  disabled={totalDataRows === 0 || importing || pdfLoading}
+                  disabled={totalDataRows === 0 || importing}
                 >
                   {importing ? "Importing..." : "Import"}
                 </Button>

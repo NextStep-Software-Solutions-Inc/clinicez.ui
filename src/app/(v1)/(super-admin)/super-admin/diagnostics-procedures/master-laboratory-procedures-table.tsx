@@ -12,6 +12,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -37,18 +44,20 @@ import {
 } from "@/actions/super-admin/diagnostics-procedures.action";
 import { MasterProcedureForm } from "./master-procedure-form";
 
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100, 500, 1000, 5000, 10000];
+
 export function MasterLaboratoryProceduresTable() {
   const [pageNumber, setPageNumber] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [search, setSearch] = useState("");
   const [includeInactive, setIncludeInactive] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
-
-  const pageSize = 10;
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: [
       "master-laboratory-procedures",
       pageNumber,
+      pageSize,
       search,
       includeInactive,
     ],
@@ -94,6 +103,27 @@ export function MasterLaboratoryProceduresTable() {
             }}
             className="w-full pl-10"
           />
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground whitespace-nowrap">Rows per page</span>
+          <Select
+            value={String(pageSize)}
+            onValueChange={(v) => {
+              setPageSize(Number(v));
+              setPageNumber(1);
+            }}
+          >
+            <SelectTrigger className="w-24">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {PAGE_SIZE_OPTIONS.map((n) => (
+                <SelectItem key={n} value={String(n)}>
+                  {n.toLocaleString()}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <Button
           variant="outline"
@@ -204,18 +234,23 @@ export function MasterLaboratoryProceduresTable() {
             Previous
           </Button>
           <div className="flex gap-1">
-            {Array.from({ length: data.totalPages }, (_, i) => i + 1).map(
-              (page) => (
-                <Button
-                  key={page}
-                  variant={pageNumber === page ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setPageNumber(page)}
-                  className="w-10"
-                >
-                  {page}
-                </Button>
-              )
+            {Array.from(
+              { length: Math.min(data.totalPages, 10) },
+              (_, i) => {
+                const page = pageNumber <= 5 ? i + 1 : pageNumber - 4 + i;
+                if (page > data.totalPages) return null;
+                return (
+                  <Button
+                    key={page}
+                    variant={pageNumber === page ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setPageNumber(page)}
+                    className="w-10"
+                  >
+                    {page}
+                  </Button>
+                );
+              }
             )}
           </div>
           <Button

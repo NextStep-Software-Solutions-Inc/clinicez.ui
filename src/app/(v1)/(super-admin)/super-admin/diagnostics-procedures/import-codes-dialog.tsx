@@ -28,7 +28,6 @@ import {
   X,
   ChevronDown,
   ChevronRight,
-  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -46,7 +45,7 @@ import type {
 const BATCH_SIZE = 100;
 
 type ImportType = "icd10" | "rvs";
-type FileFormat = "txt" | "csv" | "pdf";
+type FileFormat = "txt" | "csv";
 
 // ─── ICD-10 TXT configurable field positions ──────────────────────────────────
 
@@ -130,110 +129,88 @@ function parseCSV(text: string): string[][] {
   });
 }
 
-// ─── PDF text extraction (client-side via pdfjs-dist) ────────────────────────
-
-interface TextItemLike {
-  str?: string;
-  transform?: number[];
+// Worker code string for inline blob worker
+const PARSE_WORKER_CODE = `
+function parseCSV(text) {
+  const lines = text.split(/\\r?\\n/).filter(function(l) { return l.trim().length > 0; });
+  return lines.map(function(line) {
+    var row = [];
+    var current = '';
+    var inQuotes = false;
+    for (var i = 0; i < line.length; i++) {
+      var ch = line[i];
+      if (ch === '"') {
+        if (inQuotes && line[i + 1] === '"') { current += '"'; i++; }
+        else inQuotes = !inQuotes;
+      } else if (ch === ',' && !inQuotes) {
+        row.push(current.trim());
+        current = '';
+      } else {
+        current += ch;
+      }
+    }
+    row.push(current.trim());
+    return row;
+  });
 }
 
-async function extractPDFLines(file: File): Promise<string[]> {
-  // Dynamic import keeps the bundle small. The worker is loaded from the
-  // unpkg CDN pinned to the exact installed version — this is intentional
-  // for a super-admin feature where internet access is expected.
-  const pdfjsLib = await import("pdfjs-dist");
-  pdfjsLib.GlobalWorkerOptions.workerSrc = [
-    "https://unpkg.com/pdfjs-dist@",
-    pdfjsLib.version,
-    "/build/pdf.worker.min.mjs",
-  ].join("");
-
-  const buffer = await file.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
-  const allLines: string[] = [];
-
-  for (let p = 1; p <= pdf.numPages; p++) {
-    const page = await pdf.getPage(p);
-    const content = await page.getTextContent();
-    const byY = new Map<number, Array<{ str: string; x: number }>>();
-
-    for (const raw of content.items) {
-      const item = raw as TextItemLike;
-      if (!item.str || !item.transform) continue;
-      const y = Math.round(item.transform[5] / 2) * 2; // 2px tolerance: groups items on the same visual line
-      if (!byY.has(y)) byY.set(y, []);
-      byY.get(y)!.push({ str: item.str, x: item.transform[4] });
-    }
-
-    // Higher Y = higher on page; sort descending
-    for (const y of Array.from(byY.keys()).sort((a, b) => b - a)) {
-      const line = byY
-        .get(y)!
-        .sort((a, b) => a.x - b.x)
-        .map((i) => i.str)
-        .join("")
-        .trim();
-      if (line) allLines.push(line);
-    }
+function parseTXTWithConfig(text, cfg) {
+  var rows = [];
+  function extract(line, s, l) { return line.substring(s - 1, s - 1 + l).trim(); }
+  var lines = text.split(/\\r?\\n/);
+  for (var j = 0; j < lines.length; j++) {
+    var line = lines[j];
+    if (!line.trim()) continue;
+    if (line.length < cfg.code.start + cfg.code.length - 1) continue;
+    var code = extract(line, cfg.code.start, cfg.code.length);
+    if (!code) continue;
+    var shortDescription = extract(line, cfg.shortDesc.start, cfg.shortDesc.length);
+    var longDescription = line.length >= cfg.longDescStart ? line.substring(cfg.longDescStart - 1).trim() : '';
+    var orderRaw = parseInt(extract(line, cfg.order.start, cfg.order.length), 10);
+    rows.push({
+      orderNum: isNaN(orderRaw) ? undefined : orderRaw,
+      code: code,
+      description: shortDescription,
+      shortDescription: shortDescription,
+      longDescription: longDescription,
+      hippaCovered: extract(line, cfg.hipaa.start, cfg.hipaa.length) === '1',
+    });
   }
-  return allLines;
+  return rows;
 }
 
-// ─── RVS PDF column mapping ───────────────────────────────────────────────────
-
-function splitToColumns(line: string, delimiter: string): string[] {
-  if (delimiter === "auto") return line.split(/\s{2,}/).map((s) => s.trim()).filter(Boolean);
-  if (delimiter === "tab")  return line.split("\t").map((s) => s.trim());
-  return line.split(delimiter).map((s) => s.trim());
-}
-
-interface RVSColumnMap {
-  nameCol: number;
-  rvsCodeCol: number | null;
-  categoryCol: number | null;
-  descriptionCol: number | null;
-}
-
-const DEFAULT_COL_MAP: RVSColumnMap = {
-  nameCol: 0,
-  rvsCodeCol: 1,
-  categoryCol: null,
-  descriptionCol: null,
+self.onmessage = function(e) {
+  var type = e.data.type;
+  try {
+    if (type === 'csv') {
+      self.postMessage({ success: true, rows: parseCSV(e.data.text) });
+    } else if (type === 'txt') {
+      self.postMessage({ success: true, rows: parseTXTWithConfig(e.data.text, e.data.config) });
+    }
+  } catch(err) {
+    self.postMessage({ success: false, error: err.message });
+  }
 };
+`;
 
-function mapPDFRows(
-  lines: string[],
-  delimiter: string,
-  cm: RVSColumnMap
-): RVSProcedureRow[] {
-  return lines
-    .map((line): RVSProcedureRow | null => {
-      const cols = splitToColumns(line, delimiter);
-      const name = cm.nameCol < cols.length ? (cols[cm.nameCol] ?? "").trim() : "";
-      if (!name) return null;
-      return {
-        name,
-        category:
-          cm.categoryCol !== null && cm.categoryCol < cols.length
-            ? (cols[cm.categoryCol] ?? "").trim()
-            : "",
-        rvsCode:
-          cm.rvsCodeCol !== null && cm.rvsCodeCol < cols.length
-            ? (cols[cm.rvsCodeCol] ?? "").trim() || undefined
-            : undefined,
-        description:
-          cm.descriptionCol !== null && cm.descriptionCol < cols.length
-            ? (cols[cm.descriptionCol] ?? "").trim() || undefined
-            : undefined,
-      };
-    })
-    .filter((r): r is RVSProcedureRow => r !== null);
-}
-
-/** Returns the column index (>= 0) or null if the value is empty, negative, or not a number. */
-function parseColumnIndex(val: string): number | null {
-  const n = parseInt(val, 10);
-  return isNaN(n) || n < 0 ? null : n;
+function runParseWorker<T>(type: 'csv' | 'txt', text: string, config?: ICD10TxtConfig): Promise<T[]> {
+  return new Promise((resolve, reject) => {
+    const blob = new Blob([PARSE_WORKER_CODE], { type: 'application/javascript' });
+    const url = URL.createObjectURL(blob);
+    const worker = new Worker(url);
+    worker.onmessage = (e: MessageEvent<{ success: boolean; rows: T[]; error?: string }>) => {
+      URL.revokeObjectURL(url);
+      worker.terminate();
+      if (e.data.success) resolve(e.data.rows);
+      else reject(new Error(e.data.error ?? 'Parse worker failed'));
+    };
+    worker.onerror = (e: ErrorEvent) => {
+      URL.revokeObjectURL(url);
+      worker.terminate();
+      reject(new Error(e.message));
+    };
+    worker.postMessage({ type, text, config });
+  });
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -262,7 +239,6 @@ export function ImportCodesDialog({
 
   // Core state
   const [importType, setImportType] = useState<ImportType>("icd10");
-  const [rvsType, setRvsType] = useState<RVSProcedureType>("imaging");
   const [fileName, setFileName] = useState<string | null>(null);
   const [fileFormat, setFileFormat] = useState<FileFormat | null>(null);
 
@@ -275,13 +251,6 @@ export function ImportCodesDialog({
   // CSV state
   const [parsedRows, setParsedRows] = useState<string[][] | null>(null);
   const [headers, setHeaders] = useState<string[]>([]);
-
-  // PDF state
-  const [pdfLines, setPdfLines] = useState<string[] | null>(null);
-  const [pdfLoading, setPdfLoading] = useState(false);
-  const [pdfDelimiter, setPdfDelimiter] = useState("auto");
-  const [colMap, setColMap] = useState<RVSColumnMap>(DEFAULT_COL_MAP);
-  const [pdfMappedRows, setPdfMappedRows] = useState<RVSProcedureRow[] | null>(null);
 
   // UI state
   const [parseError, setParseError] = useState<string | null>(null);
@@ -297,8 +266,6 @@ export function ImportCodesDialog({
     setIcd10TxtRows(null);
     setParsedRows(null);
     setHeaders([]);
-    setPdfLines(null);
-    setPdfMappedRows(null);
     setParseError(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
@@ -308,8 +275,6 @@ export function ImportCodesDialog({
     setProgress(0);
     setProgressLabel("");
     setResult(null);
-    setColMap(DEFAULT_COL_MAP);
-    setPdfDelimiter("auto");
     setIcd10Config(CMS_DEFAULTS);
     setPosConfigOpen(false);
   };
@@ -327,14 +292,6 @@ export function ImportCodesDialog({
     }
   };
 
-  // Apply PDF column mapping
-  const applyPdfMapping = (cm: RVSColumnMap = colMap, delim: string = pdfDelimiter) => {
-    if (!pdfLines) return;
-    const rows = mapPDFRows(pdfLines, delim, cm);
-    setPdfMappedRows(rows);
-    setParseError(rows.length === 0 ? "No rows mapped. Check column indices and delimiter." : null);
-  };
-
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -344,45 +301,23 @@ export function ImportCodesDialog({
     setFileName(file.name);
 
     const ext = file.name.toLowerCase().split(".").pop() ?? "";
-    const fmt: FileFormat = ext === "txt" ? "txt" : ext === "pdf" ? "pdf" : "csv";
+    const fmt: FileFormat = ext === "txt" ? "txt" : "csv";
     setFileFormat(fmt);
 
-    if (fmt === "pdf") {
-      setPdfLoading(true);
-      try {
-        const lines = (await extractPDFLines(file)).filter((l) => l.trim());
-        if (lines.length === 0) {
-          setParseError("No text could be extracted from this PDF.");
-          return;
-        }
-        setPdfLines(lines);
-        const rows = mapPDFRows(lines, "auto", DEFAULT_COL_MAP);
-        setPdfMappedRows(rows);
-      } catch (err) {
-        setParseError(
-          `PDF extraction failed: ${err instanceof Error ? err.message : "Unknown error"}. ` +
-            "Ensure the file is not password-protected."
-        );
-      } finally {
-        setPdfLoading(false);
-      }
-      return;
-    }
-
     const reader = new FileReader();
-    reader.onload = (ev) => {
+    reader.onload = async (ev) => {
       const text = ev.target?.result as string;
       try {
         if (fmt === "txt" && importType === "icd10") {
           setRawTxtContent(text);
-          const rows = parseTXTWithConfig(text, icd10Config);
+          const rows = await runParseWorker<ICD10Row>('txt', text, icd10Config);
           if (rows.length === 0) {
             setParseError("No valid rows found. Check the file or adjust field positions below.");
           } else {
             setIcd10TxtRows(rows);
           }
         } else {
-          const rows = parseCSV(text);
+          const rows = await runParseWorker<string[]>('csv', text);
           if (rows.length < 2) {
             setParseError("File must have at least a header row and one data row.");
             return;
@@ -398,38 +333,50 @@ export function ImportCodesDialog({
   };
 
   const normalizeICD10Row = (row: string[], hdrs: string[]): ICD10Row | null => {
-    const idx = (name: string) =>
-      hdrs.findIndex((h) => h.toLowerCase().includes(name.toLowerCase()));
+    const idx = (name: string) => hdrs.findIndex((h) => h.toLowerCase() === name.toLowerCase());
     const codeIdx = idx("code");
-    const descIdx = idx("desc") !== -1 ? idx("desc") : idx("name");
-    const catIdx  = idx("cat")  !== -1 ? idx("cat")  : idx("chapter");
+    const shortDescIdx = idx("shortdescription");
+    const longDescIdx = idx("longdescription");
+    const descIdx = shortDescIdx !== -1 ? shortDescIdx : (idx("description") !== -1 ? idx("description") : -1);
+    const catIdx = idx("category") !== -1 ? idx("category") : -1;
+    const hipaaIdx = idx("hippacovered") !== -1 ? idx("hippacovered") : -1;
+    const orderIdx = idx("ordernum") !== -1 ? idx("ordernum") : -1;
     if (codeIdx === -1 || descIdx === -1) return null;
+    const hipaaVal = hipaaIdx !== -1 ? (row[hipaaIdx] ?? "").trim() : "";
     return {
-      code:        row[codeIdx] ?? "",
+      code: row[codeIdx] ?? "",
       description: row[descIdx] ?? "",
-      category:    catIdx !== -1 ? (row[catIdx] ?? "") : undefined,
+      shortDescription: shortDescIdx !== -1 ? row[shortDescIdx] : undefined,
+      longDescription: longDescIdx !== -1 ? row[longDescIdx] : undefined,
+      hippaCovered: hipaaVal === "1" || hipaaVal.toLowerCase() === "true",
+      orderNum: orderIdx !== -1 ? parseInt(row[orderIdx] ?? "", 10) || undefined : undefined,
+      category: catIdx !== -1 ? row[catIdx] ?? "" : undefined,
     };
   };
 
-  const normalizeRVSRow = (row: string[], hdrs: string[]): RVSProcedureRow | null => {
-    const idx = (name: string) =>
-      hdrs.findIndex((h) => h.toLowerCase().includes(name.toLowerCase()));
-    const nameIdx = idx("name")  !== -1 ? idx("name")  : idx("procedure");
-    const catIdx  = idx("cat")   !== -1 ? idx("cat")   : idx("type");
-    const rvsIdx  = idx("rvs")   !== -1 ? idx("rvs")   : idx("code");
-    const descIdx = idx("desc");
-    if (nameIdx === -1 || catIdx === -1) return null;
+  const normalizeRVSRow = (row: string[], hdrs: string[]): (RVSProcedureRow & { procedureType?: RVSProcedureType }) | null => {
+    const idx = (name: string) => hdrs.findIndex((h) => h.toLowerCase() === name.toLowerCase());
+    const nameIdx = idx("name") !== -1 ? idx("name") : hdrs.findIndex(h => h.toLowerCase().includes("procedure"));
+    const catIdx = idx("category") !== -1 ? idx("category") : hdrs.findIndex(h => h.toLowerCase().includes("cat"));
+    const rvsIdx = idx("rvscode") !== -1 ? idx("rvscode") : hdrs.findIndex(h => h.toLowerCase().includes("rvs") || h.toLowerCase() === "code");
+    const descIdx = hdrs.findIndex(h => h.toLowerCase().includes("desc"));
+    const typeIdx = idx("proceduretype") !== -1 ? idx("proceduretype") : hdrs.findIndex(h => h.toLowerCase().includes("type"));
+    if (nameIdx === -1) return null;
+    const procType = typeIdx !== -1 ? (row[typeIdx] ?? "").trim().toLowerCase() : "";
+    const validType = (["imaging", "laboratory", "heart_station"] as const).includes(procType as RVSProcedureType)
+      ? procType as RVSProcedureType
+      : undefined;
     return {
-      name:        row[nameIdx] ?? "",
-      category:    row[catIdx]  ?? "",
-      rvsCode:     rvsIdx  !== -1 ? (row[rvsIdx]  ?? "") : undefined,
-      description: descIdx !== -1 ? (row[descIdx] ?? "") : undefined,
+      name: row[nameIdx] ?? "",
+      category: catIdx !== -1 ? row[catIdx] ?? "" : "",
+      rvsCode: rvsIdx !== -1 ? row[rvsIdx] ?? undefined : undefined,
+      description: descIdx !== -1 ? row[descIdx] ?? undefined : undefined,
+      procedureType: validType,
     };
   };
 
   const totalDataRows =
     icd10TxtRows?.length ??
-    pdfMappedRows?.length ??
     parsedRows?.length ??
     0;
 
@@ -474,34 +421,61 @@ export function ImportCodesDialog({
         errors,
       });
     } else {
-      const allRows: RVSProcedureRow[] = pdfMappedRows
-        ? pdfMappedRows
-        : (parsedRows ?? [])
-            .map((r) => normalizeRVSRow(r, headers))
-            .filter((r): r is RVSProcedureRow => r !== null && r.name.trim() !== "");
+      const allRows = (parsedRows ?? [])
+        .map((r) => normalizeRVSRow(r, headers))
+        .filter((r): r is RVSProcedureRow & { procedureType?: RVSProcedureType } =>
+          r !== null && r.name.trim() !== "");
 
-      const importedNames: string[] = [];
-      const totalBatches = Math.ceil(allRows.length / BATCH_SIZE);
-      const batchWeight = 90 / (totalBatches || 1);
+      // Group by procedureType
+      const grouped = new Map<RVSProcedureType, typeof allRows>([
+        ["imaging", []],
+        ["laboratory", []],
+        ["heart_station", []],
+      ]);
+      for (const row of allRows) {
+        if (row.procedureType && grouped.has(row.procedureType)) {
+          grouped.get(row.procedureType)!.push(row);
+        } else {
+          errors.push(`Skipped row "${row.name}" – missing or invalid procedureType`);
+        }
+      }
 
-      for (let b = 0; b < totalBatches; b++) {
-        const slice = allRows.slice(b * BATCH_SIZE, (b + 1) * BATCH_SIZE);
-        importedNames.push(...slice.map((r) => r.name.trim()));
-        setProgressLabel(`Processing batch ${b + 1} of ${totalBatches}...`);
-        const batchResult = await importRVSProcedureBatchAction(rvsType, slice);
-        totalUpserted += batchResult.upserted;
-        errors.push(...batchResult.errors);
-        setProgress(Math.round((b + 1) * batchWeight));
+      const importedByType = new Map<RVSProcedureType, string[]>([
+        ["imaging", []],
+        ["laboratory", []],
+        ["heart_station", []],
+      ]);
+
+      for (const [type, rows] of grouped.entries()) {
+        if (rows.length === 0) continue;
+        const totalBatches = Math.ceil(rows.length / BATCH_SIZE);
+        const batchWeight = 90 / (totalBatches * grouped.size || 1);
+
+        for (let b = 0; b < totalBatches; b++) {
+          const slice = rows.slice(b * BATCH_SIZE, (b + 1) * BATCH_SIZE);
+          importedByType.get(type)!.push(...slice.map(r => r.name.trim()));
+          setProgressLabel(`Processing ${type}: batch ${b + 1} of ${totalBatches}...`);
+          const batchResult = await importRVSProcedureBatchAction(type, slice);
+          totalUpserted += batchResult.upserted;
+          errors.push(...batchResult.errors);
+          setProgress((prev) => Math.min(90, prev + batchWeight));
+        }
       }
 
       setProgressLabel("Finalizing - deactivating removed procedures...");
-      const finalResult = await finalizeRVSImportAction(rvsType, importedNames);
+      let totalDeactivated = 0;
+      for (const [type, names] of importedByType.entries()) {
+        if (names.length > 0) {
+          const finalResult = await finalizeRVSImportAction(type, names);
+          totalDeactivated += finalResult.deactivated;
+        }
+      }
       setProgress(100);
       setProgressLabel("Import complete");
       setResult({
         totalRows: allRows.length,
         upserted: totalUpserted,
-        deactivated: finalResult.deactivated,
+        deactivated: totalDeactivated,
         errors,
       });
     }
@@ -511,10 +485,8 @@ export function ImportCodesDialog({
     onImportComplete?.();
   };
 
-  const icd10CsvHeaders = ["code", "description", "category"];
-  const rvsHeaders      = ["name", "category", "rvsCode", "description"];
-  const pdfPreviewLines = pdfLines?.slice(0, 8) ?? [];
-  const pdfPreview      = pdfMappedRows?.slice(0, 3) ?? [];
+  const icd10CsvHeaders = ["orderNum", "code", "hippaCovered", "shortDescription", "longDescription", "description", "category"];
+  const rvsHeaders = ["procedureType", "name", "category", "rvsCode", "description"];
 
   return (
     <Dialog
@@ -529,7 +501,7 @@ export function ImportCodesDialog({
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Type / category selectors */}
+          {/* Type selector */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label className="text-xs mb-1 block">Import Type</Label>
@@ -545,24 +517,6 @@ export function ImportCodesDialog({
                 </SelectContent>
               </Select>
             </div>
-
-            {importType === "rvs" && (
-              <div>
-                <Label className="text-xs mb-1 block">Procedure Category</Label>
-                <Select
-                  value={rvsType}
-                  onValueChange={(v) => setRvsType(v as RVSProcedureType)}
-                  disabled={importing}
-                >
-                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="imaging">Imaging</SelectItem>
-                    <SelectItem value="laboratory">Laboratory</SelectItem>
-                    <SelectItem value="heart_station">Heart Station</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
           </div>
 
           {/* Format hint */}
@@ -594,18 +548,10 @@ export function ImportCodesDialog({
               </>
             ) : (
               <>
-                <p className="text-xs font-medium text-muted-foreground">Accepted formats:</p>
+                <p className="text-xs font-medium text-muted-foreground">CSV format</p>
                 <div className="space-y-1">
                   <div>
-                    <p className="text-[11px] font-semibold text-foreground/80">
-                      PhilHealth RVS PDF
-                    </p>
-                    <p className="text-[11px] text-muted-foreground">
-                      Text is extracted automatically. Configure column mapping after upload.
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-[11px] font-semibold text-foreground/80">CSV fallback</p>
+                    <p className="text-[11px] font-semibold text-foreground/80">Required columns:</p>
                     <div className="flex gap-1 flex-wrap mt-0.5">
                       {rvsHeaders.map((h) => (
                         <Badge key={h} variant="secondary" className="text-[10px] font-mono">
@@ -613,6 +559,9 @@ export function ImportCodesDialog({
                         </Badge>
                       ))}
                     </div>
+                    <p className="text-[11px] text-muted-foreground mt-1">
+                      procedureType must be one of: imaging, laboratory, heart_station
+                    </p>
                   </div>
                 </div>
               </>
@@ -628,7 +577,7 @@ export function ImportCodesDialog({
                 accept={
                   importType === "icd10"
                     ? ".txt,.csv,text/plain,text/csv"
-                    : ".pdf,.csv,application/pdf,text/csv"
+                    : ".csv,text/csv"
                 }
                 className="hidden"
                 onChange={handleFileChange}
@@ -636,14 +585,9 @@ export function ImportCodesDialog({
               />
               <div
                 className="border-2 border-dashed border-border/60 rounded-lg py-6 text-center cursor-pointer hover:border-primary/50 hover:bg-muted/20 transition-colors"
-                onClick={() => !importing && !pdfLoading && fileInputRef.current?.click()}
+                onClick={() => !importing && fileInputRef.current?.click()}
               >
-                {pdfLoading ? (
-                  <div className="flex flex-col items-center gap-2">
-                    <Loader2 className="h-7 w-7 text-primary animate-spin" />
-                    <p className="text-sm text-muted-foreground">Extracting PDF text...</p>
-                  </div>
-                ) : fileName ? (
+                {fileName ? (
                   <div className="flex items-center justify-center gap-2">
                     <FileText className="h-5 w-5 text-primary" />
                     <span className="text-sm font-medium">{fileName}</span>
@@ -668,7 +612,7 @@ export function ImportCodesDialog({
                     <p className="text-sm text-muted-foreground">
                       {importType === "icd10"
                         ? "Click to select a .txt or .csv file"
-                        : "Click to select a PDF or CSV file"}
+                        : "Click to select a CSV file"}
                     </p>
                   </div>
                 )}
@@ -772,126 +716,6 @@ export function ImportCodesDialog({
             </div>
           )}
 
-          {/* RVS PDF: column mapping */}
-          {importType === "rvs" && fileFormat === "pdf" && pdfLines && !result && (
-            <div className="rounded-md border border-border/50 p-3 space-y-3">
-              <p className="text-xs font-semibold">PDF Column Mapping</p>
-
-              <div>
-                <p className="text-[11px] text-muted-foreground mb-1">
-                  Extracted text preview (first {pdfPreviewLines.length} lines):
-                </p>
-                <div className="rounded bg-muted/30 border border-border/40 p-2 max-h-28 overflow-y-auto">
-                  {pdfPreviewLines.map((line, i) => (
-                    <p
-                      key={i}
-                      className="text-[11px] font-mono text-foreground/80 whitespace-pre truncate"
-                    >
-                      {line}
-                    </p>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <Label className="text-xs shrink-0">Column delimiter:</Label>
-                <Select
-                  value={pdfDelimiter}
-                  onValueChange={(v) => { setPdfDelimiter(v); applyPdfMapping(colMap, v); }}
-                  disabled={importing}
-                >
-                  <SelectTrigger className="h-8 text-xs w-44">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="auto">Multi-space (auto)</SelectItem>
-                    <SelectItem value="tab">Tab</SelectItem>
-                    <SelectItem value=",">Comma</SelectItem>
-                    <SelectItem value="|">Pipe</SelectItem>
-                    <SelectItem value=";">Semicolon</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <p className="text-[11px] text-muted-foreground">
-                Assign a 0-based column index to each field. Set to empty or{" "}
-                <span className="font-mono">-1</span> to skip optional fields.
-              </p>
-
-              <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-                {(
-                  [
-                    { label: "Procedure Name *", field: "nameCol",        required: true  },
-                    { label: "RVS Code",         field: "rvsCodeCol",     required: false },
-                    { label: "Category",         field: "categoryCol",    required: false },
-                    { label: "Description",      field: "descriptionCol", required: false },
-                  ] as const
-                ).map(({ label, field, required }) => (
-                  <div key={field} className="flex items-center gap-2">
-                    <Label className="text-xs w-36 shrink-0">{label}</Label>
-                    <Input
-                      type="number"
-                      min={required ? 0 : -1}
-                      placeholder={required ? "0" : "-1 = skip"}
-                      value={colMap[field] ?? ""}
-                      className="h-7 text-xs w-20 text-center"
-                      onChange={(e) => {
-                        const n = required
-                          ? Math.max(0, parseInt(e.target.value, 10) || 0)
-                          : parseColumnIndex(e.target.value);
-                        setColMap((p) => ({ ...p, [field]: n }));
-                      }}
-                      disabled={importing}
-                    />
-                  </div>
-                ))}
-              </div>
-
-              <Button
-                size="sm"
-                variant="secondary"
-                className="h-7 text-xs"
-                onClick={() => applyPdfMapping()}
-                disabled={importing}
-              >
-                Apply Mapping
-              </Button>
-
-              {pdfPreview.length > 0 && (
-                <div>
-                  <p className="text-[11px] text-muted-foreground mb-1">
-                    Mapped preview ({(pdfMappedRows?.length ?? 0).toLocaleString()} total rows):
-                  </p>
-                  <div className="rounded bg-muted/20 border border-border/40 divide-y divide-border/30">
-                    {pdfPreview.map((row, i) => (
-                      <div
-                        key={i}
-                        className="px-2 py-1.5 text-[11px] grid grid-cols-2 gap-x-3"
-                      >
-                        <span className="truncate">
-                          <span className="text-muted-foreground">Name: </span>
-                          {row.name}
-                        </span>
-                        <span className="truncate">
-                          <span className="text-muted-foreground">RVS: </span>
-                          {row.rvsCode ?? "N/A"}
-                        </span>
-                        <span className="truncate">
-                          <span className="text-muted-foreground">Cat: </span>
-                          {row.category || "N/A"}
-                        </span>
-                        <span className="truncate">
-                          <span className="text-muted-foreground">Desc: </span>
-                          {row.description ?? "N/A"}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
           {/* Parse error */}
           {parseError && (
             <Alert variant="destructive">
@@ -907,7 +731,6 @@ export function ImportCodesDialog({
                 {totalDataRows.toLocaleString()}
               </span>{" "}
               {fileFormat === "txt" && "rows detected from fixed-width file."}
-              {fileFormat === "pdf" && "rows mapped from PDF."}
               {fileFormat === "csv" && (
                 <>
                   data rows detected. Columns:{" "}
@@ -915,6 +738,48 @@ export function ImportCodesDialog({
                 </>
               )}
             </p>
+          )}
+
+          {/* ICD-10 parsed sample preview - 3 rows */}
+          {importType === "icd10" && totalDataRows > 0 && !result && !importing && (
+            <div className="rounded-md border border-border/50 bg-muted/20 p-3 space-y-2">
+              <p className="text-[11px] font-semibold text-foreground/80">
+                Sample preview (first 3 rows):
+              </p>
+              <div className="rounded bg-background border border-border/40 divide-y divide-border/30 overflow-hidden">
+                {(icd10TxtRows ?? (parsedRows?.map(r => normalizeICD10Row(r, headers)).filter((r): r is ICD10Row => r !== null) ?? []))
+                  .slice(0, 3)
+                  .map((row, i) => (
+                    <div key={i} className="px-2 py-1.5 text-[11px] grid grid-cols-2 gap-x-3">
+                      <span className="truncate font-mono font-semibold text-primary">{row.code}</span>
+                      <span className="truncate text-muted-foreground">{row.hippaCovered ? "HIPAA ✓" : ""}</span>
+                      <span className="col-span-2 truncate">{row.shortDescription || row.description}</span>
+                      {row.longDescription && <span className="col-span-2 truncate text-muted-foreground text-[10px]">{row.longDescription}</span>}
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
+
+          {/* RVS distribution preview */}
+          {importType === "rvs" && totalDataRows > 0 && !result && !importing && parsedRows && (
+            <div className="rounded-md border border-border/50 bg-muted/20 p-3 space-y-2">
+              <p className="text-[11px] font-semibold text-foreground/80">Distribution by procedure type:</p>
+              <div className="flex gap-2 flex-wrap">
+                {(["imaging", "laboratory", "heart_station"] as const).map((type) => {
+                  const count = parsedRows
+                    .map(r => normalizeRVSRow(r, headers))
+                    .filter((r): r is RVSProcedureRow & { procedureType?: RVSProcedureType } => r !== null && r.procedureType === type)
+                    .length;
+                  return (
+                    <div key={type} className="rounded bg-background border border-border/40 px-3 py-1.5 text-center min-w-[100px]">
+                      <p className="text-sm font-bold">{count.toLocaleString()}</p>
+                      <p className="text-[10px] text-muted-foreground capitalize">{type.replace("_", " ")}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           )}
 
           {/* Progress bar */}
@@ -989,7 +854,7 @@ export function ImportCodesDialog({
                 </Button>
                 <Button
                   onClick={handleImport}
-                  disabled={totalDataRows === 0 || importing || pdfLoading}
+                  disabled={totalDataRows === 0 || importing}
                 >
                   {importing ? "Importing..." : "Import"}
                 </Button>

@@ -685,3 +685,63 @@ export async function getAllClinicsForSelectionAction() {
 
   return { data: clinics };
 }
+
+
+// ICD-10 CODE MANAGEMENT
+export type GetAllICD10Codes = Awaited<ReturnType<typeof getAllICD10CodesAction>>;
+export async function getAllICD10CodesAction({
+  search,
+  pageSize = 20,
+  pageNumber = 1,
+  includeInactive = false,
+}: {
+  search?: string;
+  pageSize?: number;
+  pageNumber?: number;
+  includeInactive?: boolean;
+}) {
+  const where = {
+    ...(!includeInactive ? { isActive: true } : {}),
+    ...(search
+      ? {
+          OR: [
+            { code: { contains: search, mode: "insensitive" as const } },
+            { description: { contains: search, mode: "insensitive" as const } },
+            { shortDescription: { contains: search, mode: "insensitive" as const } },
+            { category: { contains: search, mode: "insensitive" as const } },
+          ],
+        }
+      : {}),
+  };
+
+  const [codes, total] = await Promise.all([
+    prisma.iCD10Code.findMany({
+      where,
+      orderBy: [{ code: "asc" }],
+      skip: (pageNumber - 1) * pageSize,
+      take: pageSize,
+    }),
+    prisma.iCD10Code.count({ where }),
+  ]);
+
+  return {
+    data: codes,
+    total,
+    pageSize,
+    pageNumber,
+    totalPages: Math.ceil(total / pageSize),
+  };
+}
+
+export async function toggleICD10CodeStatusAction({ id }: { id: number }) {
+  const code = await prisma.iCD10Code.findUnique({ where: { id }, select: { isActive: true } });
+  if (!code) throw new Error("ICD-10 code not found");
+  return prisma.iCD10Code.update({
+    where: { id },
+    data: { isActive: !code.isActive },
+  });
+}
+
+export async function deleteICD10CodeAction({ id }: { id: number }) {
+  await prisma.iCD10Code.delete({ where: { id } });
+}

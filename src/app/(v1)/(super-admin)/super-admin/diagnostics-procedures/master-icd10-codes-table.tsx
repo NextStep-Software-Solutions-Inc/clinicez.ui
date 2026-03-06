@@ -13,6 +13,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -34,8 +41,11 @@ import {
 
 type ICD10CodeRow = NonNullable<GetAllICD10Codes["data"][number]>;
 
+const PAGE_SIZE_OPTIONS = [20, 50, 100, 500, 1000, 5000, 10000];
+
 export function MasterICD10CodesTable() {
   const [pageNumber, setPageNumber] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
   const [search, setSearch] = useState("");
   const [includeInactive, setIncludeInactive] = useState(false);
   /** id of a single row queued for deletion */
@@ -45,10 +55,8 @@ export function MasterICD10CodesTable() {
   /** batch delete confirmation open */
   const [batchDeleteOpen, setBatchDeleteOpen] = useState(false);
 
-  const pageSize = 20;
-
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ["master-icd10-codes", pageNumber, search, includeInactive],
+    queryKey: ["master-icd10-codes", pageNumber, pageSize, search, includeInactive],
     queryFn: () =>
       getAllICD10CodesAction({
         pageNumber,
@@ -138,6 +146,27 @@ export function MasterICD10CodesTable() {
             }}
             className="w-full pl-10"
           />
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground whitespace-nowrap">Rows per page</span>
+          <Select
+            value={String(pageSize)}
+            onValueChange={(v) => {
+              setPageSize(Number(v));
+              setPageNumber(1);
+            }}
+          >
+            <SelectTrigger className="w-24">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {PAGE_SIZE_OPTIONS.map((n) => (
+                <SelectItem key={n} value={String(n)}>
+                  {n.toLocaleString()}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <Button
           variant="outline"

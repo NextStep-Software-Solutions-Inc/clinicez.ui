@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import {
   Table,
   TableBody,
@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,6 +28,7 @@ import { getActionErrorMessage } from "@/lib/action-error";
 import {
   getAllICD10CodesAction,
   deleteICD10CodeAction,
+  deleteICD10CodesAction,
   type GetAllICD10Codes,
 } from "@/actions/super-admin/diagnostics-procedures.action";
 
@@ -36,7 +38,12 @@ export function MasterICD10CodesTable() {
   const [pageNumber, setPageNumber] = useState(1);
   const [search, setSearch] = useState("");
   const [includeInactive, setIncludeInactive] = useState(false);
+  /** id of a single row queued for deletion */
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  /** selected row ids */
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  /** batch delete confirmation open */
+  const [batchDeleteOpen, setBatchDeleteOpen] = useState(false);
 
   const pageSize = 20;
 
@@ -51,19 +58,71 @@ export function MasterICD10CodesTable() {
       }),
   });
 
+  const pageIds = useMemo(
+    () => (data?.data ?? []).map((r: ICD10CodeRow) => r.id),
+    [data],
+  );
+
+  const allPageSelected =
+    pageIds.length > 0 && pageIds.every((id) => selectedIds.has(id));
+  const somePageSelected =
+    !allPageSelected && pageIds.some((id) => selectedIds.has(id));
+
+  const toggleSelectAll = useCallback(() => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allPageSelected) {
+        pageIds.forEach((id) => next.delete(id));
+      } else {
+        pageIds.forEach((id) => next.add(id));
+      }
+      return next;
+    });
+  }, [allPageSelected, pageIds]);
+
+  const toggleRow = useCallback((id: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
   const handleDelete = useCallback(async () => {
     if (!deleteId) return;
     try {
       await deleteICD10CodeAction({ id: deleteId });
       toast.success("ICD-10 code deleted successfully");
       setDeleteId(null);
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(deleteId);
+        return next;
+      });
       void refetch();
     } catch (error) {
       toast.error(getActionErrorMessage(error, "Failed to delete ICD-10 code"));
     }
   }, [deleteId, refetch]);
 
+  const handleBatchDelete = useCallback(async () => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    try {
+      const result = await deleteICD10CodesAction({ ids });
+      toast.success(`${result.deleted} ICD-10 code${result.deleted === 1 ? "" : "s"} deleted`);
+      setSelectedIds(new Set());
+      setBatchDeleteOpen(false);
+      void refetch();
+    } catch (error) {
+      toast.error(getActionErrorMessage(error, "Failed to delete ICD-10 codes"));
+    }
+  }, [selectedIds, refetch]);
+
   if (isLoading) return <div className="text-center py-8">Loading...</div>;
+
+  const selectedCount = selectedIds.size;
 
   return (
     <div className="space-y-4">
@@ -89,10 +148,41 @@ export function MasterICD10CodesTable() {
         </Button>
       </div>
 
+      {/* Batch action toolbar */}
+      {selectedCount > 0 && (
+        <div className="flex items-center gap-3 rounded-md bg-muted px-4 py-2 text-sm">
+          <span className="flex-1 font-medium">
+            {selectedCount} row{selectedCount === 1 ? "" : "s"} selected
+          </span>
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => setBatchDeleteOpen(true)}
+          >
+            <Trash2 className="h-4 w-4 mr-1.5" />
+            Delete selected
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setSelectedIds(new Set())}
+          >
+            Clear
+          </Button>
+        </div>
+      )}
+
       <div className="border rounded-lg overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-10">
+                <Checkbox
+                  checked={allPageSelected ? true : somePageSelected ? "indeterminate" : false}
+                  onCheckedChange={toggleSelectAll}
+                  aria-label="Select all on this page"
+                />
+              </TableHead>
               <TableHead className="font-mono">Code</TableHead>
               <TableHead>Short Description</TableHead>
               <TableHead>Category</TableHead>
@@ -104,7 +194,17 @@ export function MasterICD10CodesTable() {
           <TableBody>
             {data?.data && data.data.length > 0 ? (
               data.data.map((code: ICD10CodeRow) => (
-                <TableRow key={code.id}>
+                <TableRow
+                  key={code.id}
+                  data-state={selectedIds.has(code.id) ? "selected" : undefined}
+                >
+                  <TableCell>
+                    <Checkbox
+                      checked={selectedIds.has(code.id)}
+                      onCheckedChange={() => toggleRow(code.id)}
+                      aria-label={`Select ${code.code}`}
+                    />
+                  </TableCell>
                   <TableCell className="font-mono font-semibold text-primary">
                     {code.code}
                   </TableCell>
@@ -140,7 +240,7 @@ export function MasterICD10CodesTable() {
             ) : (
               <TableRow>
                 <TableCell
-                  colSpan={6}
+                  colSpan={7}
                   className="text-center py-8 text-muted-foreground"
                 >
                   No ICD-10 codes found. Import codes using the Import button
@@ -199,6 +299,7 @@ export function MasterICD10CodesTable() {
         {(data?.total ?? 0).toLocaleString()} total codes
       </div>
 
+      {/* Single-row delete confirmation */}
       <AlertDialog
         open={deleteId !== null}
         onOpenChange={() => setDeleteId(null)}
@@ -212,6 +313,22 @@ export function MasterICD10CodesTable() {
           <div className="flex gap-2 justify-end">
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Batch delete confirmation */}
+      <AlertDialog open={batchDeleteOpen} onOpenChange={setBatchDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogTitle>Delete {selectedCount} ICD-10 Code{selectedCount === 1 ? "" : "s"}</AlertDialogTitle>
+          <AlertDialogDescription>
+            Are you sure you want to permanently delete the {selectedCount} selected ICD-10 code{selectedCount === 1 ? "" : "s"}? This action cannot be undone.
+          </AlertDialogDescription>
+          <div className="flex gap-2 justify-end">
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleBatchDelete}>
+              Delete {selectedCount} code{selectedCount === 1 ? "" : "s"}
+            </AlertDialogAction>
           </div>
         </AlertDialogContent>
       </AlertDialog>

@@ -736,3 +736,9 @@ export async function getAllICD10CodesAction({
 export async function deleteICD10CodeAction({ id }: { id: number }) {
   await prisma.iCD10Code.delete({ where: { id } });
 }
+
+export async function deleteICD10CodesAction({ ids }: { ids: number[] }) {
+  if (ids.length === 0) return { deleted: 0 };
+  const result = await prisma.iCD10Code.deleteMany({ where: { id: { in: ids } } });
+  return { deleted: result.count };
+}

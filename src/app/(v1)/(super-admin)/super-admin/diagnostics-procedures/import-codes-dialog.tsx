@@ -134,11 +134,11 @@ const PARSE_WORKER_CODE = `
 function parseCSV(text) {
   const lines = text.split(/\\r?\\n/).filter(function(l) { return l.trim().length > 0; });
   return lines.map(function(line) {
-    var row = [];
-    var current = '';
-    var inQuotes = false;
-    for (var i = 0; i < line.length; i++) {
-      var ch = line[i];
+    let row = [];
+    let current = '';
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
       if (ch === '"') {
         if (inQuotes && line[i + 1] === '"') { current += '"'; i++; }
         else inQuotes = !inQuotes;
@@ -155,18 +155,18 @@ function parseCSV(text) {
 }
 
 function parseTXTWithConfig(text, cfg) {
-  var rows = [];
+  const rows = [];
   function extract(line, s, l) { return line.substring(s - 1, s - 1 + l).trim(); }
-  var lines = text.split(/\\r?\\n/);
-  for (var j = 0; j < lines.length; j++) {
-    var line = lines[j];
+  const lines = text.split(/\\r?\\n/);
+  for (let j = 0; j < lines.length; j++) {
+    const line = lines[j];
     if (!line.trim()) continue;
     if (line.length < cfg.code.start + cfg.code.length - 1) continue;
-    var code = extract(line, cfg.code.start, cfg.code.length);
+    const code = extract(line, cfg.code.start, cfg.code.length);
     if (!code) continue;
-    var shortDescription = extract(line, cfg.shortDesc.start, cfg.shortDesc.length);
-    var longDescription = line.length >= cfg.longDescStart ? line.substring(cfg.longDescStart - 1).trim() : '';
-    var orderRaw = parseInt(extract(line, cfg.order.start, cfg.order.length), 10);
+    const shortDescription = extract(line, cfg.shortDesc.start, cfg.shortDesc.length);
+    const longDescription = line.length >= cfg.longDescStart ? line.substring(cfg.longDescStart - 1).trim() : '';
+    const orderRaw = parseInt(extract(line, cfg.order.start, cfg.order.length), 10);
     rows.push({
       orderNum: isNaN(orderRaw) ? undefined : orderRaw,
       code: code,
@@ -180,7 +180,7 @@ function parseTXTWithConfig(text, cfg) {
 }
 
 self.onmessage = function(e) {
-  var type = e.data.type;
+  const type = e.data.type;
   try {
     if (type === 'csv') {
       self.postMessage({ success: true, rows: parseCSV(e.data.text) });
@@ -356,7 +356,8 @@ export function ImportCodesDialog({
 
   const normalizeRVSRow = (row: string[], hdrs: string[]): (RVSProcedureRow & { procedureType?: RVSProcedureType }) | null => {
     const idx = (name: string) => hdrs.findIndex((h) => h.toLowerCase() === name.toLowerCase());
-    const nameIdx = idx("name") !== -1 ? idx("name") : hdrs.findIndex(h => h.toLowerCase().includes("procedure"));
+    const nameExact = idx("name");
+    const nameIdx = nameExact !== -1 ? nameExact : hdrs.findIndex(h => h.toLowerCase().includes("procedure"));
     const catIdx = idx("category") !== -1 ? idx("category") : hdrs.findIndex(h => h.toLowerCase().includes("cat"));
     const rvsIdx = idx("rvscode") !== -1 ? idx("rvscode") : hdrs.findIndex(h => h.toLowerCase().includes("rvs") || h.toLowerCase() === "code");
     const descIdx = hdrs.findIndex(h => h.toLowerCase().includes("desc"));
@@ -747,9 +748,10 @@ export function ImportCodesDialog({
                 Sample preview (first 3 rows):
               </p>
               <div className="rounded bg-background border border-border/40 divide-y divide-border/30 overflow-hidden">
-                {(icd10TxtRows ?? (parsedRows?.map(r => normalizeICD10Row(r, headers)).filter((r): r is ICD10Row => r !== null) ?? []))
-                  .slice(0, 3)
-                  .map((row, i) => (
+                {(icd10TxtRows
+                  ? icd10TxtRows.slice(0, 3)
+                  : (parsedRows?.slice(0, 10).map(r => normalizeICD10Row(r, headers)).filter((r): r is ICD10Row => r !== null).slice(0, 3) ?? [])
+                ).map((row, i) => (
                     <div key={i} className="px-2 py-1.5 text-[11px] grid grid-cols-2 gap-x-3">
                       <span className="truncate font-mono font-semibold text-primary">{row.code}</span>
                       <span className="truncate text-muted-foreground">{row.hippaCovered ? "HIPAA ✓" : ""}</span>
@@ -761,26 +763,27 @@ export function ImportCodesDialog({
             </div>
           )}
 
-          {/* RVS distribution preview */}
-          {importType === "rvs" && totalDataRows > 0 && !result && !importing && parsedRows && (
-            <div className="rounded-md border border-border/50 bg-muted/20 p-3 space-y-2">
-              <p className="text-[11px] font-semibold text-foreground/80">Distribution by procedure type:</p>
-              <div className="flex gap-2 flex-wrap">
-                {(["imaging", "laboratory", "heart_station"] as const).map((type) => {
-                  const count = parsedRows
-                    .map(r => normalizeRVSRow(r, headers))
-                    .filter((r): r is RVSProcedureRow & { procedureType?: RVSProcedureType } => r !== null && r.procedureType === type)
-                    .length;
-                  return (
+          {/* RVS distribution preview - computed once over all rows */}
+          {importType === "rvs" && totalDataRows > 0 && !result && !importing && parsedRows && (() => {
+            const dist = { imaging: 0, laboratory: 0, heart_station: 0 } as Record<RVSProcedureType, number>;
+            for (const r of parsedRows) {
+              const row = normalizeRVSRow(r, headers);
+              if (row?.procedureType && row.procedureType in dist) dist[row.procedureType]++;
+            }
+            return (
+              <div className="rounded-md border border-border/50 bg-muted/20 p-3 space-y-2">
+                <p className="text-[11px] font-semibold text-foreground/80">Distribution by procedure type:</p>
+                <div className="flex gap-2 flex-wrap">
+                  {(["imaging", "laboratory", "heart_station"] as const).map((type) => (
                     <div key={type} className="rounded bg-background border border-border/40 px-3 py-1.5 text-center min-w-[100px]">
-                      <p className="text-sm font-bold">{count.toLocaleString()}</p>
+                      <p className="text-sm font-bold">{dist[type].toLocaleString()}</p>
                       <p className="text-[10px] text-muted-foreground capitalize">{type.replace("_", " ")}</p>
                     </div>
-                  );
-                })}
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* Progress bar */}
           {importing && (

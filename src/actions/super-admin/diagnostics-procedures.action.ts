@@ -733,15 +733,6 @@ export async function getAllICD10CodesAction({
   };
 }
 
-export async function toggleICD10CodeStatusAction({ id }: { id: number }) {
-  const code = await prisma.iCD10Code.findUnique({ where: { id }, select: { isActive: true } });
-  if (!code) throw new Error(`ICD-10 code with id ${id} not found`);
-  return prisma.iCD10Code.update({
-    where: { id },
-    data: { isActive: !code.isActive },
-  });
-}
-
 export async function deleteICD10CodeAction({ id }: { id: number }) {
   await prisma.iCD10Code.delete({ where: { id } });
 }

@@ -989,7 +989,7 @@ export function ImportCodesDialog({
           {/* Progress bar */}
           {importing && (
             <div className="space-y-2">
-              <Progress value={progress} className="h-2" />
+              <Progress value={progress} className="h-3 bg-muted-foreground/20" />
               <p className="text-xs text-muted-foreground text-center">
                 {progressLabel} ({progress}%)
               </p>

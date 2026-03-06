@@ -68,6 +68,7 @@ export function MasterProcedureForm({
     description: procedure?.description || "",
     category: procedure?.category || "",
     isActive: procedure?.isActive ?? true,
+    rvsCode: procedure?.rvsCode || "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -135,6 +136,7 @@ export function MasterProcedureForm({
         description: "",
         category: "",
         isActive: true,
+        rvsCode: "",
       });
     } catch (error) {
       toast.error(
@@ -166,6 +168,18 @@ export function MasterProcedureForm({
           value={formData.category}
           onChange={(value) => setFormData({ ...formData, category: value })}
           options={categories}
+        />
+      </div>
+
+      <div>
+        <Label htmlFor="rvsCode">RVS Code</Label>
+        <Input
+          id="rvsCode"
+          value={formData.rvsCode}
+          onChange={(e) =>
+            setFormData({ ...formData, rvsCode: e.target.value })
+          }
+          placeholder="e.g., 71046"
         />
       </div>
 

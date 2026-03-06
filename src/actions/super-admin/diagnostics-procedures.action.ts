@@ -57,16 +57,19 @@ export async function createMasterImagingProcedureAction({
   name,
   description,
   category,
+  rvsCode,
 }: {
   name: string;
   description?: string;
   category: string;
+  rvsCode?: string;
 }) {
   const procedure = await prisma.imagingProcedure.create({
     data: {
       name,
       description,
       category,
+      rvsCode,
       isActive: true,
     },
   });
@@ -83,12 +86,14 @@ export async function updateMasterImagingProcedureAction({
   description,
   category,
   isActive,
+  rvsCode,
 }: {
   id: number;
   name?: string;
   description?: string;
   category?: string;
   isActive?: boolean;
+  rvsCode?: string;
 }) {
   const procedure = await prisma.imagingProcedure.update({
     where: { id },
@@ -97,6 +102,7 @@ export async function updateMasterImagingProcedureAction({
       ...(description !== undefined ? { description } : {}),
       ...(category !== undefined ? { category } : {}),
       ...(isActive !== undefined ? { isActive } : {}),
+      ...(rvsCode !== undefined ? { rvsCode } : {}),
     },
   });
 
@@ -183,16 +189,19 @@ export async function createMasterLaboratoryProcedureAction({
   name,
   description,
   category,
+  rvsCode,
 }: {
   name: string;
   description?: string;
   category: string;
+  rvsCode?: string;
 }) {
   const procedure = await prisma.laboratoryProcedure.create({
     data: {
       name,
       description,
       category,
+      rvsCode,
       isActive: true,
     },
   });
@@ -209,12 +218,14 @@ export async function updateMasterLaboratoryProcedureAction({
   description,
   category,
   isActive,
+  rvsCode,
 }: {
   id: number;
   name?: string;
   description?: string;
   category?: string;
   isActive?: boolean;
+  rvsCode?: string;
 }) {
   const procedure = await prisma.laboratoryProcedure.update({
     where: { id },
@@ -223,6 +234,7 @@ export async function updateMasterLaboratoryProcedureAction({
       ...(description !== undefined ? { description } : {}),
       ...(category !== undefined ? { category } : {}),
       ...(isActive !== undefined ? { isActive } : {}),
+      ...(rvsCode !== undefined ? { rvsCode } : {}),
     },
   });
 
@@ -309,16 +321,19 @@ export async function createMasterHeartStationProcedureAction({
   name,
   description,
   category,
+  rvsCode,
 }: {
   name: string;
   description?: string;
   category: string;
+  rvsCode?: string;
 }) {
   const procedure = await prisma.heartStationProcedure.create({
     data: {
       name,
       description,
       category,
+      rvsCode,
       isActive: true,
     },
   });
@@ -335,12 +350,14 @@ export async function updateMasterHeartStationProcedureAction({
   description,
   category,
   isActive,
+  rvsCode,
 }: {
   id: number;
   name?: string;
   description?: string;
   category?: string;
   isActive?: boolean;
+  rvsCode?: string;
 }) {
   const procedure = await prisma.heartStationProcedure.update({
     where: { id },
@@ -349,6 +366,7 @@ export async function updateMasterHeartStationProcedureAction({
       ...(description !== undefined ? { description } : {}),
       ...(category !== undefined ? { category } : {}),
       ...(isActive !== undefined ? { isActive } : {}),
+      ...(rvsCode !== undefined ? { rvsCode } : {}),
     },
   });
 

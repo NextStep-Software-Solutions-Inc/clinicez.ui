@@ -1,0 +1,6 @@
+-- AlterTable
+ALTER TABLE "ICD10Code"
+  ADD COLUMN IF NOT EXISTS "orderNum"         INTEGER,
+  ADD COLUMN IF NOT EXISTS "shortDescription" TEXT,
+  ADD COLUMN IF NOT EXISTS "longDescription"  TEXT,
+  ADD COLUMN IF NOT EXISTS "hippaCovered"     BOOLEAN NOT NULL DEFAULT false;

@@ -15,6 +15,7 @@ import {
   ExternalLink,
   GitFork,
   UserPlus,
+  ClipboardList,
 } from "lucide-react";
 import Link from "next/link";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -30,6 +31,7 @@ import ConsultationPrescriptions from "./ConsultationPrescriptions";
 import ConsultationMedCerts from "./ConsultationMedCerts";
 import ConsultationDiagnostics from "./ConsultationDiagnostics";
 import ConsultationReferrals from "./ConsultationReferrals";
+import ConsultationDiagnoses from "./ConsultationDiagnoses";
 import { PatientAIInsightButton } from "@/components/v2/patients/PatientAIInsightButton";
 import AddCoCreatorDialog from "./AddCoCreatorDialog";
 
@@ -106,6 +108,7 @@ export default function ConsultationWorkspace({
   const imgCount = consultation.ImagingRequests?.length ?? 0;
   const hsCount = consultation.HeartStationRequests?.length ?? 0;
   const refCount = consultation.ClinicReferralSlips?.length ?? 0;
+  const diagnosesCount = consultation.ConsultationDiagnoses?.length ?? 0;
 
   // Placeholder shown inside patient-requiring tabs when patient context is unavailable
   const NoPatientPlaceholder = () => (
@@ -331,6 +334,18 @@ export default function ConsultationWorkspace({
                 </span>
               )}
             </TabsTrigger>
+            <TabsTrigger
+              value="diagnoses"
+              className="flex items-center gap-1.5 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary h-full px-3 text-xs"
+            >
+              <ClipboardList className="h-3.5 w-3.5" />
+              Diagnoses
+              {diagnosesCount > 0 && (
+                <span className="ml-1 bg-primary/10 text-primary text-[10px] px-1.5 rounded-full">
+                  {diagnosesCount}
+                </span>
+              )}
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="notes" className="mt-0">
@@ -401,6 +416,15 @@ export default function ConsultationWorkspace({
             ) : (
               <NoPatientPlaceholder />
             )}
+          </TabsContent>
+
+          <TabsContent value="diagnoses" className="mt-0">
+            <ConsultationDiagnoses
+              consultation={consultation}
+              myHPs={myHPs}
+              onPatchDetail={onPatchDetail}
+              isResolved={isResolved}
+            />
           </TabsContent>
         </Tabs>
       </div>

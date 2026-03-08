@@ -17,6 +17,7 @@ import { sessionCheck } from '@/lib/auth';
 import { isOwnResource, requireUserPermission } from '@/lib/permission-checker';
 import { PermissionError } from '@/lib/permission-errors';
 import { PERMISSIONS } from '@/lib/permissions';
+import { createNotification } from '@/actions/notifications/notification.action';
 
 export type PrismaTransactionalClient = Parameters<Parameters<typeof prisma['$transaction']>[0]>[0];
 
@@ -373,6 +374,17 @@ export const updateUserAction = withErrorHandling(async (userId: string, data: P
       ...verificationReset,
     }
   });
+
+  // Notify the user if their verification status was reset
+  if (isPersonalInfoUpdate && currentUserData?.verificationStatus === 'VERIFIED') {
+    await createNotification({
+      userId: updatedUser.id,
+      type: "VERIFICATION_RESET",
+      title: "Verification Status Reset",
+      message: "Your verified status has been reset because personal information was updated. Please re-submit for verification.",
+      link: "/v2/profile",
+    });
+  }
 
   const { firstName, lastName, middleName, suffix, picture, nickname } = updatedUser
 

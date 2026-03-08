@@ -4,6 +4,7 @@ import "server-only";
 import prisma from "@lib/prisma";
 import { isSuperAdminAction } from "./admin-check.action";
 import { getCachedSession } from "@actions/session.action";
+import { createNotification } from "@/actions/notifications/notification.action";
 import type { VerificationStatus, ValidIDLevel } from "@prisma/client";
 
 // ──────────────────────────────────────────────────────────────
@@ -167,6 +168,15 @@ export async function approveVerificationRequestAction({
     }),
   ]);
 
+  // Notify the user that their verification has been approved
+  await createNotification({
+    userId: request.userId,
+    type: "VERIFICATION_APPROVED",
+    title: "Identity Verified",
+    message: "Your identity verification has been approved. Your account is now verified.",
+    link: "/v2/profile",
+  });
+
   return { data: updatedRequest };
 }
 
@@ -210,6 +220,15 @@ export async function rejectVerificationRequestAction({
       },
     }),
   ]);
+
+  // Notify the user that their verification has been rejected
+  await createNotification({
+    userId: request.userId,
+    type: "VERIFICATION_REJECTED",
+    title: "Verification Rejected",
+    message: `Your identity verification was not approved. Reason: ${reviewerNotes}`,
+    link: "/v2/profile",
+  });
 
   return { data: updatedRequest };
 }

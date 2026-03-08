@@ -10,6 +10,7 @@ import type {
     PhilHealthRecord,
     PhilHealthMemberType,
     PhilHealthDependent,
+    VerificationStatus,
 } from '@prisma/client'
 import type {
     MedicalHistoryData,
@@ -91,6 +92,7 @@ export interface PatientBaseData {
     nickname: string | null
     suffix: string | null
     clinic: ClinicInfo | null
+    verificationStatus: VerificationStatus
     badges: PatientBadgeCounts
 }
 

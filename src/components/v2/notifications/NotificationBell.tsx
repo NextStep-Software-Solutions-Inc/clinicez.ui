@@ -56,6 +56,10 @@ const NOTIFICATION_ICONS: Record<NotificationType, string> = {
   ORG_MEMBERSHIP_SUSPENDED: "⏸️",
   ORG_MEMBERSHIP_DEACTIVATED: "🔒",
   FILE_SHARED: "📁",
+  VERIFICATION_SUBMITTED: "🆔",
+  VERIFICATION_APPROVED: "✅",
+  VERIFICATION_REJECTED: "🚫",
+  VERIFICATION_RESET: "🔄",
 };
 
 // ── Component ─────────────────────────────────────────────────────────────────

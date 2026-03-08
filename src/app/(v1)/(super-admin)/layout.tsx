@@ -35,6 +35,10 @@ const sidebarNavItems = [
     href: "/super-admin/users",
   },
   {
+    title: "Verification",
+    href: "/super-admin/verification",
+  },
+  {
     title: "Audit Logs",
     href: "/super-admin/audit-logs",
   },

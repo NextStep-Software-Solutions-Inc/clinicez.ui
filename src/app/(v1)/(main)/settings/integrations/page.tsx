@@ -1,10 +1,8 @@
-import { clerkClient, currentUser } from "@clerk/nextjs/server";
 import { Separator } from "@components/ui/separator";
 import React from "react";
 import Integrations from "./Integrations";
 import { Metadata } from "next";
-import { getGoogleAuthToken } from "@/actions/google/auth.action";
-// import { getGoogleAccessToken } from "@actions/google/auth.action";
+import { checkGoogleCalendarAccess } from "@/actions/google/auth.action";
 
 export const metadata: Metadata = {
   title: "Integrations | Account Settings",
@@ -12,7 +10,7 @@ export const metadata: Metadata = {
 };
 
 export default async function IntegrationsPage() {
-  const googleToken = getGoogleAuthToken();
+  const { connected } = await checkGoogleCalendarAccess();
   return (
     <div className="space-y-6">
       <div>
@@ -24,8 +22,9 @@ export default async function IntegrationsPage() {
       <Separator />
       <Integrations integrations={[{
         name: "Google Calendar",
-        status: !!googleToken
+        status: connected,
       }]} />
     </div>
   )
 }
+

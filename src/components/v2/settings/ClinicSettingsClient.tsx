@@ -34,6 +34,7 @@ import {
   ListChecks,
   ChevronRight,
   KeyRound,
+  Link2,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -146,6 +147,7 @@ import type { GetAppointmentTypes } from "@/actions/appointments/appointment-typ
 import type { GetClinicServiceCategories } from "@/actions/clinics/clinic-service-category.action";
 import type { GetClinicAppointmentTabs } from "@/actions/clinics/clinic-appointment-tab..action";
 import type { GetAppointmentTabs } from "@/actions/appointment-tab.action";
+import { GoogleCalendarIntegration } from "@/components/v2/integrations/GoogleCalendarIntegration";
 
 /* ─────────────────────────────────────────────────────────────────── */
 /*  Types                                                              */
@@ -179,6 +181,7 @@ interface ClinicSettingsClientProps {
   serviceCategories: ServiceCategoriesData;
   clinicAppointmentTabs: ClinicAppointmentTabsData;
   allAppointmentTabs: AllAppointmentTabsData;
+  googleCalendarConnected?: boolean;
 }
 
 /* ─────────────────────────────────────────────────────────────────── */
@@ -2592,6 +2595,7 @@ export function ClinicSettingsClient({
   serviceCategories,
   clinicAppointmentTabs,
   allAppointmentTabs,
+  googleCalendarConnected = false,
 }: ClinicSettingsClientProps) {
   const [activeTab, setActiveTab] = useState("general");
 
@@ -2654,6 +2658,10 @@ export function ClinicSettingsClient({
               </Badge>
             )}
           </TabsTrigger>
+          <TabsTrigger value="integrations" className="gap-1.5 flex-shrink-0">
+            <Link2 className="h-3.5 w-3.5" />
+            Integrations
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="general" className="mt-6">
@@ -2704,6 +2712,18 @@ export function ClinicSettingsClient({
             roles={roles}
             allPermissions={allClinicPermissions}
           />
+        </TabsContent>
+
+        <TabsContent value="integrations" className="mt-6">
+          <div className="max-w-2xl">
+            <div className="mb-6">
+              <h2 className="text-base font-semibold">Integrations</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Connect third-party apps to enhance your clinic workflows.
+              </p>
+            </div>
+            <GoogleCalendarIntegration connected={googleCalendarConnected} />
+          </div>
         </TabsContent>
       </Tabs>
     </div>

@@ -618,7 +618,9 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
               firstName: true,
               lastName: true,
             }
-          }
+          },
+          eventId: true,
+          meetingUrl: true,
         }
       },
       AppointmentTag: {

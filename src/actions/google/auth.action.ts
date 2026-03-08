@@ -10,26 +10,27 @@ import { withErrorHandling } from "@/lib/with-error-handling";
 import { getPermissionsAction } from "../permission.action";
 import { PERMISSIONS } from "@/lib/permissions";
 
-type Credentials = {
-  refresh_token?: string | null;
-  expiry_date?: number | null;
-  access_token?: string | null;
-  token_type?: string | null;
-  id_token?: string | null;
-  scope?: string;
-}
+const GOOGLE_CALENDAR_METADATA_KEY = "googleCalendarCredentials";
 
-const oauth2Client = new google.auth.OAuth2(
-  process.env.GOOGLE_CLIENT_ID,
-  process.env.GOOGLE_CLIENT_SECRET,
-);
+function createOAuth2Client() {
+  return new google.auth.OAuth2(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
+    `${process.env.NEXT_PUBLIC_APP_URL}/api/google/code`,
+  );
+}
 
 export async function getGoogleAuthUrl(redirectUrl: string) {
   try {
-    const scopes = ["https://www.googleapis.com/auth/calendar"];
+    const oauth2Client = createOAuth2Client();
+    const scopes = [
+      "https://www.googleapis.com/auth/calendar",
+      "https://www.googleapis.com/auth/calendar.events",
+    ];
     const url = oauth2Client.generateAuthUrl({
       access_type: "offline",
       scope: scopes,
+      prompt: "consent",
       redirect_uri: redirectUrl,
     });
 
@@ -48,47 +49,140 @@ export async function getGoogleAuthUrl(redirectUrl: string) {
   }
 }
 
+/** Exchange the OAuth authorization code for tokens and persist them in Clerk private metadata. */
+export async function exchangeGoogleCode(code: string): Promise<boolean> {
+  try {
+    const oauth2Client = createOAuth2Client();
+    const { tokens } = await oauth2Client.getToken(code);
+    if (!tokens.refresh_token && !tokens.access_token) return false;
+
+    const clerkApi = await clerkClient();
+    const clerkyUser = await currentUser();
+    if (!clerkyUser) return false;
+
+    // Store tokens in private metadata so they persist across sessions
+    const existing = (clerkyUser.privateMetadata ?? {}) as Record<string, unknown>;
+    await clerkApi.users.updateUser(clerkyUser.id, {
+      privateMetadata: {
+        ...existing,
+        [GOOGLE_CALENDAR_METADATA_KEY]: {
+          access_token: tokens.access_token,
+          // Preserve existing refresh_token if a new one wasn't returned
+          refresh_token: tokens.refresh_token ?? (existing[GOOGLE_CALENDAR_METADATA_KEY] as Record<string, unknown> | undefined)?.refresh_token,
+          expiry_date: tokens.expiry_date,
+          token_type: tokens.token_type,
+          scope: tokens.scope,
+        },
+      },
+    });
+    return true;
+  } catch (error) {
+    console.error("Failed to exchange Google code:", error);
+    return false;
+  }
+}
+
+/** Returns a configured OAuth2 client with valid credentials, or null if not connected. */
+async function getAuthenticatedCalendarClient() {
+  const clerkApi = await clerkClient();
+  const clerkyUser = await currentUser();
+  if (!clerkyUser) return null;
+
+  const stored = (clerkyUser.privateMetadata?.[GOOGLE_CALENDAR_METADATA_KEY] ?? null) as Record<string, unknown> | null;
+
+  if (stored?.access_token || stored?.refresh_token) {
+    const oauth2Client = createOAuth2Client();
+    oauth2Client.setCredentials({
+      access_token: stored.access_token as string | undefined,
+      refresh_token: stored.refresh_token as string | undefined,
+      expiry_date: stored.expiry_date as number | undefined,
+      token_type: stored.token_type as string | undefined,
+    });
+
+    // Refresh access token if expired
+    if (stored.refresh_token) {
+      try {
+        const { credentials } = await oauth2Client.refreshAccessToken();
+        // Persist the refreshed access_token back
+        const existing = (clerkyUser.privateMetadata ?? {}) as Record<string, unknown>;
+        await clerkApi.users.updateUser(clerkyUser.id, {
+          privateMetadata: {
+            ...existing,
+            [GOOGLE_CALENDAR_METADATA_KEY]: {
+              ...stored,
+              access_token: credentials.access_token,
+              expiry_date: credentials.expiry_date,
+            },
+          },
+        });
+        oauth2Client.setCredentials(credentials);
+      } catch {
+        // Refresh failed — try with existing access token
+      }
+    }
+    return oauth2Client;
+  }
+
+  // Fall back to Clerk's social OAuth token (may lack calendar scope)
+  const tokenResult = await clerkApi.users.getUserOauthAccessToken(clerkyUser.id, "google");
+  const token = tokenResult.data.find(t => t.provider === "google")?.token;
+  if (token) {
+    const oauth2Client = createOAuth2Client();
+    oauth2Client.setCredentials({ access_token: token });
+    return oauth2Client;
+  }
+
+  return null;
+}
+
+/** Check whether the current user has connected Google Calendar. */
+export async function checkGoogleCalendarAccess(): Promise<{ connected: boolean }> {
+  try {
+    const clerkApi = await clerkClient();
+    const clerkyUser = await currentUser();
+    if (!clerkyUser) return { connected: false };
+
+    const stored = (clerkyUser.privateMetadata?.[GOOGLE_CALENDAR_METADATA_KEY] ?? null) as Record<string, unknown> | null;
+    if (stored?.refresh_token || stored?.access_token) {
+      return { connected: true };
+    }
+
+    // Check Clerk social OAuth
+    const tokenResult = await clerkApi.users.getUserOauthAccessToken(clerkyUser.id, "google");
+    const hasToken = tokenResult.data.some(t => t.provider === "google");
+    return { connected: hasToken };
+  } catch {
+    return { connected: false };
+  }
+}
+
+/** Disconnect Google Calendar by clearing stored credentials. */
+export async function disconnectGoogleCalendar(): Promise<{ success: boolean }> {
+  try {
+    const clerkApi = await clerkClient();
+    const clerkyUser = await currentUser();
+    if (!clerkyUser) return { success: false };
+
+    const existing = (clerkyUser.privateMetadata ?? {}) as Record<string, unknown>;
+    const updated = { ...existing };
+    delete updated[GOOGLE_CALENDAR_METADATA_KEY];
+    await clerkApi.users.updateUser(clerkyUser.id, { privateMetadata: updated });
+    return { success: true };
+  } catch {
+    return { success: false };
+  }
+}
+
 export async function getGoogleAuthToken() {
-  const client = await clerkClient();
-  const current = await currentUser();
+  const clerkApi = await clerkClient();
+  const clerkyUser = await currentUser();
 
-  if (!current) throw new Error("Unauthorized");
+  if (!clerkyUser) throw new Error("Unauthorized");
 
-  const googleToken = await client.users.getUserOauthAccessToken(current.id, "google")
-
+  const googleToken = await clerkApi.users.getUserOauthAccessToken(clerkyUser.id, "google")
 
   return googleToken.data.find(token => token.provider === "google")?.token || null;
 }
-
-
-// Will no longer be needed since Clerk has built-in Google OAuth
-// export const getGoogleAccessToken = async () => {
-//   const session = await getCachedSession();
-//   if (!session?.user?.sub) {
-//     throw new Error("No valid session found");
-//   }
-//   try {
-//     const auth0User = await managementClient.users.get({id: session.user.sub, fields: "user_metadata"});
-
-//     const user_metadata = auth0User.data.user_metadata as {idp: {provider: string, credentials: Credentials}};
-//     // find google credentials
-//     if("idp" in user_metadata) {
-//       const idp = user_metadata.idp;
-//       if(idp.provider === "google-oauth2") {
-//         const credentials = idp.credentials;
-//         oauth2Client.setCredentials(credentials);
-//       }
-//     } else {
-//       throw new Error("Credentials not found");
-//     }
-
-//     const { token } = await oauth2Client.getAccessToken();
-//     return token;
-//   } catch (error) {
-//     console.error(`Error fetching access token: ${error}`);
-//     return null;
-//   }
-// };
 
 type InsertCalendarPayload = {
   emails: string[];
@@ -105,10 +199,46 @@ type InsertCalendarPayload = {
     timeZone: string;
   };
   meet: boolean;
-
 }
-export const insertToCalendar = withErrorHandling(async (appointmentId: number) => {
 
+/** Fetch appointment details needed for calendar event construction. */
+async function fetchAppointmentForCalendar(appointmentId: number) {
+  return prisma.appointment.findUniqueOrThrow({
+    where: { id: appointmentId, isActive: true },
+    select: {
+      id: true,
+      subject: true,
+      complaint: true,
+      Requesters: {
+        select: {
+          User: { select: { email: true } }
+        }
+      },
+      AppointmentAttribute: {
+        select: {
+          id: true,
+          eventId: true,
+          AppointmentMode: { select: { name: true } },
+          date: true,
+          timeStart: true,
+          timeEnd: true,
+        }
+      },
+      AppointmentRouting: {
+        // Include both PENDING and ACCEPTED routings so all assigned HPs receive the calendar invite
+        where: { status: { in: ["PENDING", "ACCEPTED"] } },
+        select: {
+          RoutedTo: {
+            select: { User: { select: { email: true } } }
+          },
+          status: true,
+        }
+      }
+    }
+  });
+}
+
+export const insertToCalendar = withErrorHandling(async (appointmentId: number, createMeet = true) => {
   const session = await getCachedSession();
   if (!session) throw new Error("Session not found");
 
@@ -118,101 +248,123 @@ export const insertToCalendar = withErrorHandling(async (appointmentId: number) 
   const canConfirmBooking = confirmBookingPermissions.every(p => myPermissionArray.includes(p));
 
   if (!canConfirmBooking) throw new Error("You don't have permission to confirm booking");
-  const googleToken = await getGoogleAuthToken();
-  if (!googleToken) throw new Error("Google token not found");
-  oauth2Client.setCredentials({ access_token: googleToken });
 
-  // construct event
+  const authClient = await getAuthenticatedCalendarClient();
+  if (!authClient) throw new Error("Google Calendar not connected. Please connect your Google account in Settings → Integrations.");
 
-  const appointment = await prisma.appointment.findUniqueOrThrow({
-    where: {
-      id: appointmentId,
-      isActive: true
-    },
-    select: {
-      id: true,
-      subject: true,
-      complaint: true,
-      Requesters: {
-        select: {
-          User: {
-            select: {
-              email: true
-            }
-          }
-        }
-      },
-      AppointmentAttribute: {
-        select: {
-          id: true,
-          AppointmentMode: {
-            select: {
-              name: true
-            }
-          },
-          date: true,
-          timeStart: true,
-          timeEnd: true
-        }
-      },
-      AppointmentRouting: {
-        where: {
-          status: "ACCEPTED"
-        },
-        select: {
-          RoutedTo: {
-            select: {
-              User: {
-                select: {
-                  email: true
-                }
-              }
-            }
-          },
-          status: true
-        }
-      }
-    }
-  })
+  const appointment = await fetchAppointmentForCalendar(appointmentId);
+  const attr = appointment.AppointmentAttribute;
+  if (!attr?.date || !attr.timeStart || !attr.timeEnd) {
+    throw new Error("Appointment schedule is incomplete.");
+  }
 
+  const calendar = google.calendar({ version: "v3", auth: authClient });
+  const attendees = [
+    ...appointment.AppointmentRouting.map(h => ({ email: h.RoutedTo.User.email })),
+    ...appointment.Requesters.map(p => ({ email: p.User.email })),
+  ];
 
-  const calendar = google.calendar({ version: "v3", auth: oauth2Client });
   const event = {
     summary: appointment.subject,
-    location: appointment.AppointmentAttribute?.AppointmentMode.name,
-    description: appointment.complaint,
-    start: {
-      dateTime: combineDateTime(appointment.AppointmentAttribute!.date!, appointment.AppointmentAttribute!.timeStart!),
-      timeZone: "Asia/Manila"
-    },
-    end: {
-      dateTime: combineDateTime(appointment.AppointmentAttribute!.date!, appointment.AppointmentAttribute!.timeEnd!),
-      timeZone: "Asia/Manila"
-    },
-    attendees: [...appointment.AppointmentRouting.map(h => ({ email: h.RoutedTo.User.email })), ...appointment.Requesters.map(p => ({ email: p.User.email }))],
-    conferenceData: {
-      createRequest: {
-        requestId: `meet-${appointmentId}`
+    location: attr.AppointmentMode.name,
+    description: appointment.complaint ?? undefined,
+    start: { dateTime: combineDateTime(attr.date, attr.timeStart), timeZone: "Asia/Manila" },
+    end:   { dateTime: combineDateTime(attr.date, attr.timeEnd),   timeZone: "Asia/Manila" },
+    attendees,
+    ...(createMeet ? {
+      conferenceData: {
+        // Timestamp suffix prevents duplicate request ID errors if the event is re-created
+        createRequest: { requestId: `meet-${appointmentId}-${Date.now()}` }
       }
-    }
-  }
+    } : {}),
+  };
 
   const { data: calendarEvent, status } = await calendar.events.insert({
     calendarId: "primary",
-    conferenceDataVersion: 1,
+    conferenceDataVersion: createMeet ? 1 : 0,
     sendUpdates: "all",
     sendNotifications: true,
-    requestBody: { ...event }
+    requestBody: event,
   });
 
   if (![200, 201, 202].includes(status)) throw new Error("Error inserting to calendar");
 
   await prisma.appointmentAttribute.update({
-    where: { id: appointment.AppointmentAttribute!.id },
+    where: { id: attr.id },
     data: {
-      eventId: calendarEvent.id,
-      meetingUrl: calendarEvent.hangoutLink
+      eventId: calendarEvent.id ?? "",
+      meetingUrl: calendarEvent.hangoutLink ?? "",
     }
-  })
-  return { message: "Event inserted to calendar", data: undefined }
-})
+  });
+
+  return {
+    message: "Event added to Google Calendar",
+    data: {
+      eventId: calendarEvent.id ?? null,
+      meetingUrl: calendarEvent.hangoutLink ?? null,
+    }
+  };
+});
+
+/** Update an existing Google Calendar event after a reschedule. */
+export const updateCalendarEvent = withErrorHandling(async (appointmentId: number) => {
+  const session = await getCachedSession();
+  if (!session) throw new Error("Session not found");
+
+  const authClient = await getAuthenticatedCalendarClient();
+  if (!authClient) return { message: "Google Calendar not connected — event not updated", data: null };
+
+  const appointment = await fetchAppointmentForCalendar(appointmentId);
+  const attr = appointment.AppointmentAttribute;
+  if (!attr?.eventId) return { message: "No calendar event to update", data: null };
+  if (!attr.date || !attr.timeStart || !attr.timeEnd) return { message: "Schedule is incomplete", data: null };
+
+  const calendar = google.calendar({ version: "v3", auth: authClient });
+  const attendees = [
+    ...appointment.AppointmentRouting.map(h => ({ email: h.RoutedTo.User.email })),
+    ...appointment.Requesters.map(p => ({ email: p.User.email })),
+  ];
+
+  await calendar.events.patch({
+    calendarId: "primary",
+    eventId: attr.eventId,
+    sendUpdates: "all",
+    requestBody: {
+      summary: appointment.subject,
+      location: attr.AppointmentMode.name,
+      description: appointment.complaint ?? undefined,
+      start: { dateTime: combineDateTime(attr.date, attr.timeStart), timeZone: "Asia/Manila" },
+      end:   { dateTime: combineDateTime(attr.date, attr.timeEnd),   timeZone: "Asia/Manila" },
+      attendees,
+    },
+  });
+
+  return { message: "Google Calendar event updated", data: null };
+});
+
+/** Delete a Google Calendar event (e.g. on cancellation). */
+export const deleteCalendarEvent = withErrorHandling(async (appointmentId: number) => {
+  const session = await getCachedSession();
+  if (!session) throw new Error("Session not found");
+
+  const authClient = await getAuthenticatedCalendarClient();
+  if (!authClient) return { message: "Google Calendar not connected", data: null };
+
+  const appointment = await fetchAppointmentForCalendar(appointmentId);
+  const eventId = appointment.AppointmentAttribute?.eventId;
+  if (!eventId) return { message: "No calendar event found", data: null };
+
+  const calendar = google.calendar({ version: "v3", auth: authClient });
+  await calendar.events.delete({
+    calendarId: "primary",
+    eventId,
+    sendUpdates: "all",
+  });
+
+  await prisma.appointmentAttribute.update({
+    where: { id: appointment.AppointmentAttribute!.id },
+    data: { eventId: "", meetingUrl: "" },
+  });
+
+  return { message: "Google Calendar event deleted", data: null };
+});

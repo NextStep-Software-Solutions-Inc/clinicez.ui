@@ -78,6 +78,7 @@ export default async function ClinicSettingsPage({ params }: ClinicSettingsPageP
       clinicAppointmentTabs={clinicAppointmentTabsResult.data ?? []}
       allAppointmentTabs={allAppointmentTabs}
       googleCalendarConnected={googleAccess.connected}
+      googleCalendarEmail={googleAccess.email}
     />
   );
 }

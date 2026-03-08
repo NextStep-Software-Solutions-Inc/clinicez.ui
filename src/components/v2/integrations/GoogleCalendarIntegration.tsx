@@ -5,14 +5,16 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, XCircle, Calendar, Video } from "lucide-react";
+import { CheckCircle2, XCircle, Calendar, Video, Mail } from "lucide-react";
 import { getGoogleAuthUrl, disconnectGoogleCalendar } from "@/actions/google/auth.action";
 
 interface GoogleCalendarIntegrationProps {
   connected: boolean;
+  /** Google email address that is currently connected, if known. */
+  email?: string | null;
 }
 
-export function GoogleCalendarIntegration({ connected }: GoogleCalendarIntegrationProps) {
+export function GoogleCalendarIntegration({ connected, email }: GoogleCalendarIntegrationProps) {
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
@@ -54,8 +56,16 @@ export function GoogleCalendarIntegration({ connected }: GoogleCalendarIntegrati
         <div className="flex items-center gap-2 py-2">
           {connected ? (
             <>
-              <CheckCircle2 className="h-5 w-5 text-green-500" />
-              <span className="font-medium text-green-600">Connected</span>
+              <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
+              <div>
+                <span className="font-medium text-green-600">Connected</span>
+                {email && (
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <Mail className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">{email}</span>
+                  </div>
+                )}
+              </div>
             </>
           ) : (
             <>
@@ -82,16 +92,26 @@ export function GoogleCalendarIntegration({ connected }: GoogleCalendarIntegrati
         </ul>
 
         {/* Action */}
-        <div className="flex items-center gap-3 pt-2 border-t">
+        <div className="flex flex-wrap items-center gap-3 pt-2 border-t">
           {connected ? (
-            <Button
-              variant="destructive"
-              onClick={handleDisconnect}
-              disabled={isPending}
-              size="sm"
-            >
-              {isPending ? "Disconnecting…" : "Disconnect Google Calendar"}
-            </Button>
+            <>
+              <Button
+                variant="destructive"
+                onClick={handleDisconnect}
+                disabled={isPending}
+                size="sm"
+              >
+                {isPending ? "Disconnecting…" : "Disconnect"}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleConnect}
+                disabled={isPending}
+                size="sm"
+              >
+                Reconnect with another account
+              </Button>
+            </>
           ) : (
             <Button onClick={handleConnect} size="sm">
               Connect Google Calendar

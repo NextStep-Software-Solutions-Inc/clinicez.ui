@@ -26,6 +26,8 @@ export async function getGoogleAuthUrl(redirectUrl: string) {
     const scopes = [
       "https://www.googleapis.com/auth/calendar",
       "https://www.googleapis.com/auth/calendar.events",
+      // email scope so we can surface the connected account's email address
+      "https://www.googleapis.com/auth/userinfo.email",
     ];
     const url = oauth2Client.generateAuthUrl({
       access_type: "offline",
@@ -60,6 +62,17 @@ export async function exchangeGoogleCode(code: string): Promise<boolean> {
     const clerkyUser = await currentUser();
     if (!clerkyUser) return false;
 
+    // Fetch the Google account email so we can display it in the integration UI
+    let connectedEmail: string | null = null;
+    try {
+      oauth2Client.setCredentials(tokens);
+      const oauth2Api = google.oauth2({ version: "v2", auth: oauth2Client });
+      const { data: userInfo } = await oauth2Api.userinfo.get();
+      connectedEmail = userInfo.email ?? null;
+    } catch {
+      // Non-critical — proceed without email
+    }
+
     // Store tokens in private metadata so they persist across sessions
     const existing = (clerkyUser.privateMetadata ?? {}) as Record<string, unknown>;
     await clerkApi.users.updateUser(clerkyUser.id, {
@@ -72,6 +85,7 @@ export async function exchangeGoogleCode(code: string): Promise<boolean> {
           expiry_date: tokens.expiry_date,
           token_type: tokens.token_type,
           scope: tokens.scope,
+          email: connectedEmail,
         },
       },
     });
@@ -136,23 +150,34 @@ async function getAuthenticatedCalendarClient() {
 }
 
 /** Check whether the current user has connected Google Calendar. */
-export async function checkGoogleCalendarAccess(): Promise<{ connected: boolean }> {
+export async function checkGoogleCalendarAccess(): Promise<{ connected: boolean; email: string | null }> {
   try {
     const clerkApi = await clerkClient();
     const clerkyUser = await currentUser();
-    if (!clerkyUser) return { connected: false };
+    if (!clerkyUser) return { connected: false, email: null };
 
+    // 1. Check credentials stored via our custom OAuth flow (works for all users)
     const stored = (clerkyUser.privateMetadata?.[GOOGLE_CALENDAR_METADATA_KEY] ?? null) as Record<string, unknown> | null;
     if (stored?.refresh_token || stored?.access_token) {
-      return { connected: true };
+      const storedEmail = (stored.email as string | undefined) ?? null;
+      return { connected: true, email: storedEmail };
     }
 
-    // Check Clerk social OAuth
+    // 2. Fall back to Clerk social OAuth (for users who signed in / linked via Google)
     const tokenResult = await clerkApi.users.getUserOauthAccessToken(clerkyUser.id, "google");
     const hasToken = tokenResult.data.some(t => t.provider === "google");
-    return { connected: hasToken };
+    if (hasToken) {
+      // Get the email from the linked external account
+      const googleAccount = clerkyUser.externalAccounts?.find(
+        (a) => a.provider === "google" || a.provider === "oauth_google",
+      );
+      const email = googleAccount?.emailAddress ?? null;
+      return { connected: true, email };
+    }
+
+    return { connected: false, email: null };
   } catch {
-    return { connected: false };
+    return { connected: false, email: null };
   }
 }
 

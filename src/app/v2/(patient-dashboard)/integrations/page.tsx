@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function PatientIntegrationsPage() {
-  const { connected } = await checkGoogleCalendarAccess();
+  const { connected, email } = await checkGoogleCalendarAccess();
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
@@ -24,7 +24,7 @@ export default async function PatientIntegrationsPage() {
         </p>
       </div>
       <Separator />
-      <GoogleCalendarIntegration connected={connected} />
+      <GoogleCalendarIntegration connected={connected} email={email} />
     </div>
   );
 }

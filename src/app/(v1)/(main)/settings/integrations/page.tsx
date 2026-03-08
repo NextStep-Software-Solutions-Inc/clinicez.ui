@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 };
 
 export default async function IntegrationsPage() {
-  const { connected } = await checkGoogleCalendarAccess();
+  const { connected, email } = await checkGoogleCalendarAccess();
   return (
     <div className="space-y-6">
       <div>
@@ -23,6 +23,7 @@ export default async function IntegrationsPage() {
       <Integrations integrations={[{
         name: "Google Calendar",
         status: connected,
+        email: email ?? undefined,
       }]} />
     </div>
   )

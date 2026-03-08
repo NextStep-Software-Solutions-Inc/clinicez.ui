@@ -182,6 +182,7 @@ interface ClinicSettingsClientProps {
   clinicAppointmentTabs: ClinicAppointmentTabsData;
   allAppointmentTabs: AllAppointmentTabsData;
   googleCalendarConnected?: boolean;
+  googleCalendarEmail?: string | null;
 }
 
 /* ─────────────────────────────────────────────────────────────────── */
@@ -2596,6 +2597,7 @@ export function ClinicSettingsClient({
   clinicAppointmentTabs,
   allAppointmentTabs,
   googleCalendarConnected = false,
+  googleCalendarEmail = null,
 }: ClinicSettingsClientProps) {
   const [activeTab, setActiveTab] = useState("general");
 
@@ -2722,7 +2724,7 @@ export function ClinicSettingsClient({
                 Connect third-party apps to enhance your clinic workflows.
               </p>
             </div>
-            <GoogleCalendarIntegration connected={googleCalendarConnected} />
+            <GoogleCalendarIntegration connected={googleCalendarConnected} email={googleCalendarEmail} />
           </div>
         </TabsContent>
       </Tabs>

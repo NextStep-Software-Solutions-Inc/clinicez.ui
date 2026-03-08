@@ -174,7 +174,7 @@ export async function approveVerificationRequestAction({
     type: "VERIFICATION_APPROVED",
     title: "Identity Verified",
     message: "Your identity verification has been approved. Your account is now verified.",
-    link: "/v2/profile",
+    link: "/v2/profile/verification",
   });
 
   return { data: updatedRequest };
@@ -227,7 +227,7 @@ export async function rejectVerificationRequestAction({
     type: "VERIFICATION_REJECTED",
     title: "Verification Rejected",
     message: `Your identity verification was not approved. Reason: ${reviewerNotes}`,
-    link: "/v2/profile",
+    link: "/v2/profile/verification",
   });
 
   return { data: updatedRequest };

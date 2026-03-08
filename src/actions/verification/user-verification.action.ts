@@ -157,7 +157,7 @@ export const submitVerificationRequestAction = withErrorHandling(
         select: { userId: true },
       });
 
-      const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ") || "A user";
+      const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ") || "Unknown user";
 
       await createNotifications(
         adminUsers.map((admin) => ({

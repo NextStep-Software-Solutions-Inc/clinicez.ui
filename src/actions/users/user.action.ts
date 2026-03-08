@@ -382,7 +382,7 @@ export const updateUserAction = withErrorHandling(async (userId: string, data: P
       type: "VERIFICATION_RESET",
       title: "Verification Status Reset",
       message: "Your verified status has been reset because personal information was updated. Please re-submit for verification.",
-      link: "/v2/profile",
+      link: "/v2/profile/verification",
     });
   }
 

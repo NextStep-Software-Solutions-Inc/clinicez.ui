@@ -50,12 +50,12 @@ export default function VerificationRequestsTable({ initialData }: VerificationR
   const [reviewerNotes, setReviewerNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const loadData = async (page = 1, searchTerm = search) => {
+  const loadData = async (page = 1, searchTerm = search, filterStatus = statusFilter) => {
     setIsLoading(true);
     try {
       const result = await getAllVerificationRequestsAction({
         search: searchTerm || undefined,
-        status: statusFilter === "ALL" ? undefined : statusFilter,
+        status: filterStatus === "ALL" ? undefined : filterStatus,
         pageNumber: page,
         pageSize: data.pageSize,
       });
@@ -72,9 +72,9 @@ export default function VerificationRequestsTable({ initialData }: VerificationR
   };
 
   const handleFilterChange = (value: string) => {
-    setStatusFilter(value as VerificationStatus | "ALL");
-    // Trigger reload with new filter
-    setTimeout(() => loadData(1), 0);
+    const newFilter = value as VerificationStatus | "ALL";
+    setStatusFilter(newFilter);
+    loadData(1, search, newFilter);
   };
 
   const handleViewRequest = (request: VerificationRequestItem) => {

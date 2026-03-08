@@ -3,6 +3,7 @@
 import "server-only";
 import prisma from "@lib/prisma";
 import { isSuperAdminAction } from "./admin-check.action";
+import { getCachedSession } from "@actions/session.action";
 import type { VerificationStatus, ValidIDLevel } from "@prisma/client";
 
 // ──────────────────────────────────────────────────────────────
@@ -17,6 +18,18 @@ const ERROR_MESSAGES = {
 async function requireSuperAdmin(): Promise<void> {
   const isSuperAdmin = await isSuperAdminAction();
   if (!isSuperAdmin) throw new Error(ERROR_MESSAGES.UNAUTHORIZED);
+}
+
+async function getCurrentUserId(): Promise<number> {
+  const session = await getCachedSession();
+  if (!session?.user?.sub) throw new Error(ERROR_MESSAGES.UNAUTHORIZED);
+
+  const user = await prisma.user.findUnique({
+    where: { userId: session.user.sub },
+    select: { id: true },
+  });
+  if (!user) throw new Error(ERROR_MESSAGES.UNAUTHORIZED);
+  return user.id;
 }
 
 // ──────────────────────────────────────────────────────────────
@@ -133,16 +146,7 @@ export async function approveVerificationRequestAction({
   if (!request) throw new Error(ERROR_MESSAGES.REQUEST_NOT_FOUND);
   if (request.status !== "PENDING") throw new Error(ERROR_MESSAGES.ALREADY_REVIEWED);
 
-  const reviewer = await prisma.user.findFirst({
-    where: {
-      UserPermissions: {
-        some: {
-          Permission: { name: "super_admin", isActive: true },
-        },
-      },
-    },
-    select: { id: true },
-  });
+  const reviewerId = await getCurrentUserId();
 
   const [updatedRequest] = await prisma.$transaction([
     prisma.verificationRequest.update({
@@ -150,7 +154,7 @@ export async function approveVerificationRequestAction({
       data: {
         status: "VERIFIED",
         reviewerNotes,
-        reviewedBy: reviewer?.id,
+        reviewedBy: reviewerId,
         reviewedAt: new Date(),
       },
     }),
@@ -187,16 +191,7 @@ export async function rejectVerificationRequestAction({
   if (!request) throw new Error(ERROR_MESSAGES.REQUEST_NOT_FOUND);
   if (request.status !== "PENDING") throw new Error(ERROR_MESSAGES.ALREADY_REVIEWED);
 
-  const reviewer = await prisma.user.findFirst({
-    where: {
-      UserPermissions: {
-        some: {
-          Permission: { name: "super_admin", isActive: true },
-        },
-      },
-    },
-    select: { id: true },
-  });
+  const reviewerId = await getCurrentUserId();
 
   const [updatedRequest] = await prisma.$transaction([
     prisma.verificationRequest.update({
@@ -204,7 +199,7 @@ export async function rejectVerificationRequestAction({
       data: {
         status: "REJECTED",
         reviewerNotes,
-        reviewedBy: reviewer?.id,
+        reviewedBy: reviewerId,
         reviewedAt: new Date(),
       },
     }),

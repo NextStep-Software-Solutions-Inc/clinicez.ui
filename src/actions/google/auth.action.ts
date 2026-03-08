@@ -168,6 +168,8 @@ export async function checkGoogleCalendarAccess(): Promise<{ connected: boolean;
     const hasToken = tokenResult.data.some(t => t.provider === "google");
     if (hasToken) {
       // Get the email from the linked external account
+      // Clerk uses "oauth_google" for accounts linked via OAuth and "google" for
+      // accounts created directly via Google social login — check both.
       const googleAccount = clerkyUser.externalAccounts?.find(
         (a) => a.provider === "google" || a.provider === "oauth_google",
       );

@@ -53,10 +53,10 @@ export function GoogleCalendarIntegration({ connected, email }: GoogleCalendarIn
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Status */}
-        <div className="flex items-center gap-2 py-2">
+        <div className="flex items-start gap-2 py-2">
           {connected ? (
             <>
-              <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
+              <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
               <div>
                 <span className="font-medium text-green-600">Connected</span>
                 {email && (
@@ -69,7 +69,7 @@ export function GoogleCalendarIntegration({ connected, email }: GoogleCalendarIn
             </>
           ) : (
             <>
-              <XCircle className="h-5 w-5 text-muted-foreground" />
+              <XCircle className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
               <span className="text-muted-foreground">Not connected</span>
             </>
           )}

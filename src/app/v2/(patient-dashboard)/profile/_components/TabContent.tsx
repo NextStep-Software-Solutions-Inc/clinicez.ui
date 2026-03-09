@@ -50,9 +50,9 @@ export function TabSkeleton() {
 function createTabLoader<T extends keyof PatientTabDataMap>(
   tabId: T,
   TabComponent: React.ComponentType<{ data: PatientTabDataMap[T] }>,
-): React.ComponentType {
-  function TabLoader() {
-    const { data } = usePatientTab(tabId, { suspense: true })
+): React.ComponentType<{ userId?: string }> {
+  function TabLoader({ userId }: { userId?: string }) {
+    const { data } = usePatientTab(tabId, { suspense: true, userId })
     if (!data) return null
     return <TabComponent data={data as PatientTabDataMap[T]} />
   }
@@ -63,7 +63,7 @@ function createTabLoader<T extends keyof PatientTabDataMap>(
 // ---------------------------------------------------------------------------
 // Map of tab id → lazy loader component
 // ---------------------------------------------------------------------------
-const TAB_LOADERS: Record<keyof PatientTabDataMap, React.ComponentType> = {
+const TAB_LOADERS: Record<keyof PatientTabDataMap, React.ComponentType<{ userId?: string }>> = {
   overview:     createTabLoader('overview',     OverviewTab),
   medical:      createTabLoader('medical',      MedicalTab),
   vitals:       createTabLoader('vitals',       VitalsTab),
@@ -85,40 +85,19 @@ const TAB_LOADERS: Record<keyof PatientTabDataMap, React.ComponentType> = {
 interface TabContentProps {
   tab: keyof PatientTabDataMap
   /**
-   * When provided (e.g. clinic-staff viewing a specific patient), renders the
-   * tab directly from pre-fetched data instead of lazy-loading via SWR.
-   * This prevents the SWR server actions (which use currentUser()) from
-   * returning the authenticated user's data instead of the patient's.
+   * Clerk userId of the patient whose data should be loaded.
+   * When omitted the authenticated user's own data is loaded.
+   * Required when clinic staff view a specific patient's profile so that
+   * the lazy-loaded tabs fetch that patient's data, not the viewer's.
    */
-  prefetchedData?: PatientTabDataMap
+  userId?: string
 }
 
-export function TabContent({ tab, prefetchedData }: TabContentProps) {
-  if (prefetchedData) {
-    // Render directly from pre-fetched data — no SWR needed
-    const tabData = prefetchedData[tab]
-    if (!tabData) return null
-    switch (tab) {
-      case 'overview':     return <OverviewTab     data={prefetchedData.overview} />
-      case 'medical':      return <MedicalTab      data={prefetchedData.medical} />
-      case 'vitals':       return <VitalsTab       data={prefetchedData.vitals} />
-      case 'exams':        return <ExamsTab        data={prefetchedData.exams} />
-      case 'obgyn':        return <ObGynTab        data={prefetchedData.obgyn} />
-      case 'pediatric':    return <PediatricTab    data={prefetchedData.pediatric} />
-      case 'addresses':    return <AddressesTab    data={prefetchedData.addresses} />
-      case 'contacts':     return <ContactsTab     data={prefetchedData.contacts} />
-      case 'lifestyle':    return <LifestyleTab    data={prefetchedData.lifestyle} />
-      case 'allergies':    return <AllergiesTab    data={prefetchedData.allergies} />
-      case 'vaccinations': return <VaccinationsTab data={prefetchedData.vaccinations} />
-      case 'disabilities': return <DisabilitiesTab data={prefetchedData.disabilities} />
-      case 'insurance':    return <InsuranceTab    data={prefetchedData.insurance} />
-    }
-  }
-
+export function TabContent({ tab, userId }: TabContentProps) {
   const Loader = TAB_LOADERS[tab]
   return (
     <Suspense fallback={<TabSkeleton />}>
-      <Loader />
+      <Loader userId={userId} />
     </Suspense>
   )
 }

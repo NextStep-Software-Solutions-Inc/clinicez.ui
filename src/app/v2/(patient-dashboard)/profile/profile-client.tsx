@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import type { PatientBaseData, PatientTabDataMap } from '@/types/patient-profile-tabs'
+import type { PatientBaseData } from '@/types/patient-profile-tabs'
 import { getTabBadge } from './_lib/tab-badges'
 import { ProfileHeader } from './_components/ProfileHeader'
 import { ProfileCard } from './_components/ProfileCard'
@@ -26,12 +26,12 @@ interface ProfileClientProps {
   /** When provided, renders the AI Patient Insight button (healthcare providers only) */
   aiInsightConfig?: { patientId: number; clinicId?: number }
   /**
-   * When provided, tab content is rendered directly from this data instead of
-   * fetching lazily via SWR server actions (which use currentUser()).
-   * Required when a clinic staff member views a specific patient's profile so
-   * the tabs show the patient's data, not the authenticated user's data.
+   * Clerk userId of the patient whose tab data should be loaded.
+   * When omitted the authenticated user's own data is loaded (own profile).
+   * Pass this when clinic staff view a specific patient's profile so that
+   * the lazy-loaded tabs fetch that patient's records, not the viewer's.
    */
-  prefetchedTabData?: PatientTabDataMap
+  patientUserId?: string
 }
 
 const PROFILE_TABS = [
@@ -61,7 +61,7 @@ export default function ProfileClient({
   appointmentsHref,
   downloadPHRHref = '/api/phr/patient',
   aiInsightConfig,
-  prefetchedTabData,
+  patientUserId,
 }: ProfileClientProps) {
   const [activeTab, setActiveTab] = useState<ProfileTabId>('overview')
 
@@ -88,7 +88,7 @@ export default function ProfileClient({
         />
 
         {/* Tab content is fetched lazily — each tab loads its own data on first visit */}
-        <TabContent tab={activeTab} prefetchedData={prefetchedTabData} />
+        <TabContent tab={activeTab} userId={patientUserId} />
 
         <FloatingActions
           patientName={patient.fullName}

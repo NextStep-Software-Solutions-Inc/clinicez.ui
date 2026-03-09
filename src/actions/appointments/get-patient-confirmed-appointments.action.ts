@@ -50,6 +50,7 @@ export const getPatientConfirmedAppointmentsAction = withErrorHandling(
             date: true,
             timeStart: true,
             AppointmentType: { select: { name: true } },
+            System: { select: { id: true, name: true } },
           },
         },
         AppointmentRouting: {

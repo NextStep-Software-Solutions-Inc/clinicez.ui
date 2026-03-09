@@ -621,6 +621,12 @@ export function AppointmentDetailSheet({
                   <p className="font-medium">{appointment.AppointmentAttribute.Service.name}</p>
                 </div>
               )}
+              {appointment.AppointmentAttribute?.System && (
+                <div>
+                  <span className="text-muted-foreground text-xs">System / Department</span>
+                  <p className="font-medium">{appointment.AppointmentAttribute.System.name}</p>
+                </div>
+              )}
               {scheduledDate && (
                 <div>
                   <span className="text-muted-foreground text-xs">Scheduled</span>

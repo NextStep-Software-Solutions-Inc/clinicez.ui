@@ -43,7 +43,7 @@ export default async function ConsultationPage(props: AppRouterPageRouteOpts) {
             <Badge variant={statusBadge[consultation.data.ConsultationTicketAttribute?.status as keyof typeof statusBadge]}>{consultation.data.ConsultationTicketAttribute?.status}</Badge>
           </div>
           <div className="flex h-5 items-center gap-2 mt-3 capitalize">
-            <Badge>{consultation.data.System.name}</Badge>
+            <Badge>{consultation.data.System?.name}</Badge>
             <Separator orientation="vertical" />
             <Badge variant="outline">{consultation.data.Appointment?.AppointmentAttribute?.Service?.name}</Badge>
             <Separator orientation="vertical" />

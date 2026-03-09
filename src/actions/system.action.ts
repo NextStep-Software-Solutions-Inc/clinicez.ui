@@ -24,7 +24,7 @@ type CreateSystemPayload = {
 export const createSystemAction = async (payload: CreateSystemPayload) => {
   const { name, clinicUid } = payload;
   try {
-    await prisma.system.create({
+    const system = await prisma.system.create({
       data: {
         Clinic: {
           connect: {
@@ -32,14 +32,15 @@ export const createSystemAction = async (payload: CreateSystemPayload) => {
           }
         },
         name
-      }
+      },
+      select: { id: true, name: true }
     });
-    return { status: true, message: "System created successfully" }
+    return { status: true, message: "System created successfully", data: system }
   } catch (error) {
     console.error(`Failed to create system: ${error}`);
     let message = "Failed to create system";
     if(error instanceof Error) message = error.message;
-    return { status: false, message }    
+    return { status: false, message, data: null }    
   }
 }
 

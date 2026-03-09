@@ -11,6 +11,7 @@ import { getClinicServiceCategoriesAction } from "@/actions/clinics/clinic-servi
 import { getClinicAppointmentTabsAction } from "@/actions/clinics/clinic-appointment-tab..action";
 import { getAppointmentTabsAction } from "@/actions/appointment-tab.action";
 import { checkGoogleCalendarAccess } from "@/actions/google/auth.action";
+import { getSystemsAction } from "@/actions/system.action";
 import { ClinicSettingsClient } from "@/components/v2/settings/ClinicSettingsClient";
 import { notFound } from "next/navigation";
 
@@ -42,6 +43,7 @@ export default async function ClinicSettingsPage({ params }: ClinicSettingsPageP
     clinicAppointmentTabsResult,
     allAppointmentTabs,
     googleAccess,
+    initialSystems,
   ] = await Promise.all([
     getClinicAction(clinicUid),
     getClinicSettingAction(clinicUid),
@@ -56,6 +58,7 @@ export default async function ClinicSettingsPage({ params }: ClinicSettingsPageP
     getClinicAppointmentTabsAction(clinicUid),
     getAppointmentTabsAction(),
     checkGoogleCalendarAccess(),
+    getSystemsAction(clinicUid),
   ]);
 
   if (!clinicResult.status || !clinicResult.data) {
@@ -79,6 +82,7 @@ export default async function ClinicSettingsPage({ params }: ClinicSettingsPageP
       allAppointmentTabs={allAppointmentTabs}
       googleCalendarConnected={googleAccess.connected}
       googleCalendarEmail={googleAccess.email}
+      initialSystems={initialSystems}
     />
   );
 }

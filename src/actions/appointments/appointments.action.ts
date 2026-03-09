@@ -751,6 +751,7 @@ type CreateWalkInAppointmentPayload = {
   modeId: number;
   typeId: number;
   serviceId: number;
+  systemId: number;
   hpId?: number;
   date?: Date;
   timeStart?: string;
@@ -766,7 +767,7 @@ export const createWalkInAppointmentAction = withErrorHandling(async (payload: C
   const session = await getCachedSession();
   if (!session) throw new Error("Unauthorized");
 
-  const { clinicUid, patientId, patientName, subject, complaint, modeId, typeId, serviceId, hpId, date, timeStart, timeEnd } = payload;
+  const { clinicUid, patientId, patientName, subject, complaint, modeId, typeId, serviceId, systemId, hpId, date, timeStart, timeEnd } = payload;
 
   if (!subject?.trim()) throw new Error("Subject is required");
   if (!complaint?.trim()) throw new Error("Chief complaint is required");
@@ -828,6 +829,7 @@ export const createWalkInAppointmentAction = withErrorHandling(async (payload: C
             modeId,
             typeId,
             serviceId,
+            systemId,
             // Walk-in appointments skip PENDING: the secretary creates and locks in one step.
             // If a doctor is pre-assigned, go straight to ROUTED; otherwise RECEIVED.
             status: hpId ? "ROUTED" : "RECEIVED",

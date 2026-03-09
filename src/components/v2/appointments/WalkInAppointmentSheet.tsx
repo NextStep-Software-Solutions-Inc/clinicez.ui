@@ -30,6 +30,7 @@ import type { GetAppointmentModes } from "@/actions/appointments/appointment-mod
 import type { GetAppointmentTypes } from "@/actions/appointments/appointment-type.action";
 import type { GetClinicServiceCategories } from "@/actions/clinics/clinic-service-category.action";
 import type { GetHPsType } from "@/actions/hp.actions";
+import type { GetSystems } from "@/actions/system.action";
 
 /** Delay before closing the dropdown (allows click events to fire before blur) */
 const DROPDOWN_CLOSE_DELAY = 150;
@@ -42,6 +43,7 @@ interface WalkInAppointmentSheetProps {
   modes: GetAppointmentModes;
   types: GetAppointmentTypes;
   serviceCategories: GetClinicServiceCategories;
+  systems: NonNullable<GetSystems>;
   hps: GetHPsType;
   onClose: () => void;
   onSuccess: () => void;
@@ -53,6 +55,7 @@ export function WalkInAppointmentSheet({
   modes,
   types,
   serviceCategories,
+  systems,
   hps,
   onClose,
   onSuccess,
@@ -78,6 +81,7 @@ export function WalkInAppointmentSheet({
   const [modeId, setModeId] = useState<string>("");
   const [typeId, setTypeId] = useState<string>("");
   const [serviceId, setServiceId] = useState<string>("");
+  const [systemId, setSystemId] = useState<string>("");
   const [hpId, setHpId] = useState<string>("");
   const [date, setDate] = useState<string>("");
   const [timeStart, setTimeStart] = useState<string>("");
@@ -95,6 +99,7 @@ export function WalkInAppointmentSheet({
     setModeId("");
     setTypeId("");
     setServiceId("");
+    setSystemId("");
     setHpId("");
     setDate("");
     setTimeStart("");
@@ -179,6 +184,10 @@ export function WalkInAppointmentSheet({
       toast.error("Please fill in appointment mode, type, and service.");
       return;
     }
+    if (!systemId) {
+      toast.error("Please select a system / department.");
+      return;
+    }
 
     setIsPending(true);
     const result = await createWalkInAppointmentAction({
@@ -190,6 +199,7 @@ export function WalkInAppointmentSheet({
       modeId: parseInt(modeId),
       typeId: parseInt(typeId),
       serviceId: parseInt(serviceId),
+      systemId: parseInt(systemId),
       hpId: hpId ? parseInt(hpId) : undefined,
       date: date ? (() => { const [y, m, d] = date.split("-").map(Number); return new Date(y, m - 1, d); })() : undefined,
       timeStart: timeStart || undefined,
@@ -411,6 +421,21 @@ export function WalkInAppointmentSheet({
                       <SelectItem key={service.id} value={String(service.id)}>{service.name}</SelectItem>
                     ))}
                   </SelectGroup>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* ── System / Department ───────────────────────────────────────── */}
+          <div className="space-y-1.5">
+            <Label className="text-xs font-medium">
+              System / Department <span className="text-destructive">*</span>
+            </Label>
+            <Select value={systemId} onValueChange={setSystemId}>
+              <SelectTrigger><SelectValue placeholder="Select system / department" /></SelectTrigger>
+              <SelectContent>
+                {systems.map((system) => (
+                  <SelectItem key={system.id} value={String(system.id)}>{system.name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>

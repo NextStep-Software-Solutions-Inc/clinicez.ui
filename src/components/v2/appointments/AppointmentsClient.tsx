@@ -533,6 +533,7 @@ export function AppointmentsClient({
         modes={modes}
         types={types}
         serviceCategories={serviceCategories}
+        systems={systems}
         hps={hps}
         onClose={() => setActivePanel(null)}
         onSuccess={() => {

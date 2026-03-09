@@ -32,6 +32,7 @@ export async function getPatientBaseData(): Promise<PatientBaseData | null> {
                 suffix: true,
                 nickname: true,
                 caseNumber: true,
+                verificationStatus: true,
                 // Count relations in a single query — no full arrays
                 _count: {
                     select: {
@@ -91,6 +92,7 @@ export async function getPatientBaseData(): Promise<PatientBaseData | null> {
             nickname: patient.nickname,
             suffix: patient.suffix,
             clinic: clinicPatient?.Clinic ?? null,
+            verificationStatus: patient.verificationStatus,
             badges: {
                 hasEmail: !!patient.email,
                 hasMobile: !!(patient.mobile || patient.telephone),

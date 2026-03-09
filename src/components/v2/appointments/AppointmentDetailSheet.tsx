@@ -26,6 +26,7 @@ import {
   Sparkles,
   Loader2,
   HeartPulse,
+  Video,
 } from "lucide-react";
 import {
   Sheet,
@@ -648,6 +649,25 @@ export function AppointmentDetailSheet({
                   <span className="font-medium">{formatDistanceToNow(new Date(appointment.createdAt), { addSuffix: true })}</span>
                 </div>
               </div>
+              {appointment.AppointmentAttribute?.meetingUrl && (
+                <div>
+                  <span className="text-muted-foreground text-xs">Virtual Meeting</span>
+                  <div className="mt-1.5">
+                    <a
+                      href={appointment.AppointmentAttribute.meetingUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium transition-colors"
+                    >
+                      <Video className="h-3.5 w-3.5" />
+                      Join Google Meet
+                    </a>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Click to open the virtual consultation room.
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

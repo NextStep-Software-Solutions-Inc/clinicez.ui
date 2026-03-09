@@ -263,8 +263,10 @@ export const createAppointmentAction = withErrorHandling(async (payload: CreateA
         }
       },
       select: {
+        id: true,
         Clinic: {
           select: {
+            id: true,
             name: true,
             email: true
           }
@@ -320,6 +322,45 @@ export const createAppointmentAction = withErrorHandling(async (payload: CreateA
         message: `Your appointment "${subject}" has been submitted and is pending review.`,
       })),
     );
+  } catch {
+    // non-critical
+  }
+
+  // Notify clinic healthcare providers that a new appointment has arrived
+  try {
+    const receivePermission = await prisma.permission.findFirst({
+      where: { name: "receive:clinic:appointment" },
+      select: { id: true },
+    });
+    if (receivePermission) {
+      const staffMembers = await prisma.clinicMember.findMany({
+        where: {
+          clinicId: newAppointment.Clinic.id,
+          isActive: true,
+          ClinicMemberPermissions: {
+            some: { permissionId: receivePermission.id },
+          },
+        },
+        select: { User: { select: { id: true } } },
+      });
+      const requesterUserIds = new Set(
+        newAppointment.Requesters.flatMap((r) => (r.User?.id != null ? [r.User.id] : [])),
+      );
+      const staffUserIds = staffMembers
+        .map((m) => m.User.id)
+        .filter((id) => !requesterUserIds.has(id));
+      if (staffUserIds.length > 0) {
+        await createNotifications(
+          staffUserIds.map((userId) => ({
+            userId,
+            type: "APPOINTMENT_RECEIVED" as const,
+            title: "New Appointment",
+            message: `A new appointment "${subject}" has been submitted to your clinic and is awaiting review.`,
+            link: `/v2/appointments?_appointment=${newAppointment.id}`,
+          })),
+        );
+      }
+    }
   } catch {
     // non-critical
   }
@@ -623,7 +664,9 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
               firstName: true,
               lastName: true,
             }
-          }
+          },
+          eventId: true,
+          meetingUrl: true,
         }
       },
       AppointmentTag: {

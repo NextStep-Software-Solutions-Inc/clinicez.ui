@@ -54,13 +54,14 @@ type UpsertUserPreferencePayload = {
   autoAcceptAppointmentAssignment: boolean;
   autoAssignAppointmentToSelf: boolean;
   defaultHpId?: number;
+  muteNotifications: boolean;
 }
 
 export const upsertMyUserPreference = withErrorHandling(async (payload: UpsertUserPreferencePayload) => {
   const session = await getCachedSession();
   if (!session) throw new Error("User not authenticated.");
 
-  const { defaultHpId, autoAssignAppointmentToSelf, autoAcceptAppointmentAssignment } = payload;
+  const { defaultHpId, autoAssignAppointmentToSelf, autoAcceptAppointmentAssignment, muteNotifications } = payload;
 
   // Use retry mechanism to handle database conflicts
   const userPreference = await withRetry(async () => {
@@ -87,11 +88,13 @@ export const upsertMyUserPreference = withErrorHandling(async (payload: UpsertUs
           } : {}),
           autoAcceptAppointmentAssignment,
           autoAssignAppointmentToSelf,
+          muteNotifications,
         },
         update: {
           ...(autoAssignAppointmentToSelf && defaultHpId ? { defaultHpId } : { defaultHpId: null }),
           autoAcceptAppointmentAssignment,
-          autoAssignAppointmentToSelf
+          autoAssignAppointmentToSelf,
+          muteNotifications,
         }
       });
     }, {

@@ -26,6 +26,7 @@ function toPatientBaseData(p: SerializedPatientHealthRecordsResponse): PatientBa
     bloodType:      p.bloodType,
     gender:         p.gender,
     clinic:         p.clinic,
+    verificationStatus: p.verificationStatus,
     badges: {
       hasEmail:                    !!p.email,
       hasMobile:                   !!(p.mobile || p.telephone),
@@ -99,6 +100,7 @@ export default async function ClinicPatientProfilePage({
   return (
     <ProfileClient
       patient={toPatientBaseData(patient)}
+      patientUserId={patient.userId}
       headerSlot={
         <ClinicPatientPageHeader
           clinicUid={clinicUid}

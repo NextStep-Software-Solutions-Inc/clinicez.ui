@@ -16,6 +16,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { rescheduleAppointmentAction } from "@/actions/appointments/appointment-attribute.action";
+import { updateCalendarEvent } from "@/actions/google/auth.action";
 import type { GetAppointments } from "@/actions/appointments/appointments.action";
 import type { GetHPsType } from "@/actions/hp.actions";
 import { getAppointmentPatientName } from "./appointment-utils";
@@ -76,14 +77,29 @@ export function RescheduleDialog({
       // Only send newHpId if it changed
       newHpId: selectedHpId !== currentHpId && selectedHpId !== null ? selectedHpId : undefined,
     });
-    setIsPending(false);
 
-    if (result.status) {
-      toast.success(result.message);
-      onSuccess();
-    } else {
+    if (!result.status) {
+      setIsPending(false);
       toast.error(result.message);
+      return;
     }
+
+    // Update Google Calendar event if one exists
+    const hasEvent = !!appointment.AppointmentAttribute?.eventId;
+    if (hasEvent) {
+      const calResult = await updateCalendarEvent(appointment.id);
+      if (!calResult.status) {
+        toast.success(result.message);
+        toast.warning("Appointment rescheduled but Google Calendar was not updated: " + calResult.message);
+      } else {
+        toast.success(`${result.message} — Google Calendar updated.`);
+      }
+    } else {
+      toast.success(result.message);
+    }
+
+    setIsPending(false);
+    onSuccess();
   };
 
   return (

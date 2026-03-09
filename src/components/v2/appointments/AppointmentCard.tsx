@@ -211,7 +211,7 @@ export function AppointmentCard({
                   {initials || <User className="h-3 w-3" />}
                 </AvatarFallback>
               </Avatar>
-              <span className="text-xs text-muted-foreground">{fullName}</span>
+              <span className="text-xs text-muted-foreground font-bold">{fullName}</span>
             </div>
             {doctorName && (
               <span className="flex items-center gap-1 text-xs text-muted-foreground">

@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Separator } from "@/components/ui/separator";
 import { GoogleCalendarIntegration } from "@/components/v2/integrations/GoogleCalendarIntegration";
-import { checkGoogleCalendarAccess } from "@/actions/google/auth.action";
+import { CalendarEventsList } from "@/components/v2/integrations/CalendarEventsList";
+import { checkGoogleCalendarAccess, getCalendarEvents } from "@/actions/google/auth.action";
 
 export const metadata: Metadata = {
   title: "Integrations",
@@ -14,6 +15,7 @@ export const dynamic = "force-dynamic";
 
 export default async function PatientIntegrationsPage() {
   const { connected, email } = await checkGoogleCalendarAccess();
+  const events = connected ? await getCalendarEvents(20) : [];
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
@@ -25,6 +27,7 @@ export default async function PatientIntegrationsPage() {
       </div>
       <Separator />
       <GoogleCalendarIntegration connected={connected} email={email} />
+      {connected && <CalendarEventsList events={events} />}
     </div>
   );
 }

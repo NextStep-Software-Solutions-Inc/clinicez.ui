@@ -369,6 +369,55 @@ export const updateCalendarEvent = withErrorHandling(async (appointmentId: numbe
   return { message: "Google Calendar event updated", data: null };
 });
 
+export type CalendarEventItem = {
+  id: string;
+  summary: string;
+  start: string;
+  end: string;
+  isAllDay: boolean;
+  location: string | null;
+  hangoutLink: string | null;
+  /** Direct link to open the event in Google Calendar */
+  htmlLink: string | null;
+};
+
+/**
+ * Fetch the next upcoming events from the current user's primary Google Calendar.
+ * Returns an empty array when the calendar is not connected.
+ */
+export async function getCalendarEvents(maxResults = 20): Promise<CalendarEventItem[]> {
+  try {
+    const authClient = await getAuthenticatedCalendarClient();
+    if (!authClient) return [];
+
+    const calendar = google.calendar({ version: "v3", auth: authClient });
+    const { data } = await calendar.events.list({
+      calendarId: "primary",
+      timeMin: new Date().toISOString(),
+      maxResults,
+      singleEvents: true,
+      orderBy: "startTime",
+    });
+
+    return (data.items ?? []).map((e) => {
+      const isAllDay = Boolean(e.start?.date && !e.start?.dateTime);
+      return {
+        id: e.id ?? "",
+        summary: e.summary ?? "(No title)",
+        start: e.start?.dateTime ?? e.start?.date ?? "",
+        end: e.end?.dateTime ?? e.end?.date ?? "",
+        isAllDay,
+        location: e.location ?? null,
+        hangoutLink: e.hangoutLink ?? null,
+        htmlLink: e.htmlLink ?? null,
+      };
+    });
+  } catch (error) {
+    console.error("Failed to fetch Google Calendar events:", error);
+    return [];
+  }
+}
+
 /** Delete a Google Calendar event (e.g. on cancellation). */
 export const deleteCalendarEvent = withErrorHandling(async (appointmentId: number) => {
   const session = await getCachedSession();

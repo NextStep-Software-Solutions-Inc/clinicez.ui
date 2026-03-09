@@ -1373,6 +1373,7 @@ model NoteSection {
   showOnPatient  Boolean      @default(true)
   description    String?
   isActive       Boolean      @default(true)
+  sortOrder      Int          @default(0)
   NoteTemplate   NoteTemplate @relation(fields: [noteTemplateId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@unique([noteTemplateId, name], name: "unique_note_section")

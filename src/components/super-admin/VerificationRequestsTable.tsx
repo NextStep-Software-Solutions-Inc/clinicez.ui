@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@components/ui/button";
 import { Input } from "@components/ui/input";
 import { Badge } from "@components/ui/badge";
-import { Search, CheckCircle, XCircle, Eye } from "lucide-react";
+import { Search, CheckCircle, XCircle, Eye, X } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -33,12 +33,18 @@ import { toast } from "sonner";
 import { getActionErrorMessage } from "@/lib/action-error";
 import { formatDistance } from "date-fns";
 import type { VerificationStatus } from "@prisma/client";
+import Image from "next/image";
 
 interface VerificationRequestsTableProps {
   initialData: GetAllVerificationRequests;
 }
 
 type VerificationRequestItem = GetAllVerificationRequests["data"][number];
+
+interface ImagePreview {
+  url: string;
+  label: string;
+}
 
 export default function VerificationRequestsTable({ initialData }: VerificationRequestsTableProps) {
   const [data, setData] = useState(initialData);
@@ -49,6 +55,7 @@ export default function VerificationRequestsTable({ initialData }: VerificationR
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
   const [reviewerNotes, setReviewerNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [imagePreview, setImagePreview] = useState<ImagePreview | null>(null);
 
   const loadData = async (page = 1, searchTerm = search, filterStatus = statusFilter) => {
     setIsLoading(true);
@@ -281,29 +288,39 @@ export default function VerificationRequestsTable({ initialData }: VerificationR
                 <div className="mt-2 space-y-2">
                   {selectedRequest.VerificationDocuments.map((doc) => (
                     <div key={doc.id} className="border rounded-md p-3">
-                      <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center justify-between mb-3">
                         <span className="font-medium text-sm">{doc.ValidIDType.name}</span>
                         <Badge variant="outline">{doc.ValidIDType.level}</Badge>
                       </div>
-                      <div className="grid grid-cols-3 gap-2 text-xs text-muted-foreground">
-                        <div>
-                          <p className="font-medium">ID Photo</p>
-                          <a href={doc.idPhotoUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                            View
-                          </a>
-                        </div>
-                        <div>
-                          <p className="font-medium">Selfie with ID</p>
-                          <a href={doc.selfieWithIdUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                            View
-                          </a>
-                        </div>
-                        <div>
-                          <p className="font-medium">Selfie without ID</p>
-                          <a href={doc.selfieWithoutIdUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                            View
-                          </a>
-                        </div>
+                      <div className="grid grid-cols-3 gap-3">
+                        {(
+                          [
+                            { label: "ID Photo", url: doc.idPhotoUrl },
+                            { label: "Selfie with ID", url: doc.selfieWithIdUrl },
+                            { label: "Selfie without ID", url: doc.selfieWithoutIdUrl },
+                          ] as const
+                        ).map(({ label, url }) => (
+                          <button
+                            key={label}
+                            type="button"
+                            aria-label={`View ${label}`}
+                            onClick={() => setImagePreview({ url, label })}
+                            className="group flex flex-col items-center gap-1.5 focus:outline-none"
+                          >
+                            <div className="relative w-full aspect-[4/3] rounded-md overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 group-hover:ring-2 group-hover:ring-blue-400 group-focus:ring-2 group-focus:ring-blue-400 transition-all">
+                              <Image
+                                src={url}
+                                alt={label}
+                                fill
+                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 25vw"
+                                className="object-cover"
+                              />
+                            </div>
+                            <span className="text-xs text-blue-600 dark:text-blue-400 font-medium group-hover:underline">
+                              {label}
+                            </span>
+                          </button>
+                        ))}
                       </div>
                     </div>
                   ))}
@@ -360,6 +377,44 @@ export default function VerificationRequestsTable({ initialData }: VerificationR
               </>
             )}
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Image Preview Dialog */}
+      <Dialog open={!!imagePreview} onOpenChange={(open) => { if (!open) setImagePreview(null); }}>
+        <DialogContent className="max-w-3xl p-0 overflow-hidden bg-black/90 border-0">
+          <div className="relative">
+            {/* Close button */}
+            <button
+              type="button"
+              onClick={() => setImagePreview(null)}
+              className="absolute top-3 right-3 z-10 p-1.5 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
+              aria-label="Close image preview"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            {/* Image label */}
+            {imagePreview && (
+              <p className="absolute top-3 left-4 z-10 text-sm font-medium text-white/90 drop-shadow">
+                {imagePreview.label}
+              </p>
+            )}
+
+            {/* Image */}
+            {imagePreview && (
+              <div className="relative w-full min-h-[300px] max-h-[80vh]">
+                <Image
+                  src={imagePreview.url}
+                  alt={imagePreview.label}
+                  width={1200}
+                  height={900}
+                  sizes="100vw"
+                  className="w-full h-auto object-contain max-h-[80vh]"
+                />
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>

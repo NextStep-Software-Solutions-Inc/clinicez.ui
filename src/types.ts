@@ -1,4 +1,4 @@
-export type PermissionType = "USER" | "ORGANIZATION" | "CLINIC";
+export type PermissionType = "USER" | "ORGANIZATION" | "CLINIC" | "ADMIN";
 export type OrganizationMemberStatus = "ACTIVE" | "SUSPENDED" | "PENDING" | "INACTIVE";
 export type ClinicMemberStatus = "ACTIVE" | "SUSPENDED" | "PENDING" | "INACTIVE";
 export type Severity = "MILD" | "MODERATE" | "SEVERE" | "CRITICAL";

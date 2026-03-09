@@ -17,6 +17,7 @@ import { sessionCheck } from '@/lib/auth';
 import { isOwnResource, requireUserPermission } from '@/lib/permission-checker';
 import { PermissionError } from '@/lib/permission-errors';
 import { PERMISSIONS } from '@/lib/permissions';
+import { createNotification } from '@/actions/notifications/notification.action';
 
 export type PrismaTransactionalClient = Parameters<Parameters<typeof prisma['$transaction']>[0]>[0];
 
@@ -343,13 +344,47 @@ export const updateUserAction = withErrorHandling(async (userId: string, data: P
   // Get current user data to compare changes
   const currentUserData = await prisma.user.findUnique({
     where: { userId },
-    select: { firstName: true, lastName: true, picture: true }
+    select: { firstName: true, lastName: true, picture: true, verificationStatus: true }
   });
+
+  // Determine if this is a personal information update that should reset verification
+  const personalInfoFields: (keyof Prisma.UserUpdateInput)[] = [
+    'firstName', 'lastName', 'middleName', 'suffix', 'dob',
+    'gender', 'nationality', 'civilStatus', 'placeOfBirth',
+  ];
+  const isPersonalInfoUpdate = personalInfoFields.some(
+    (field) => data[field] !== undefined
+  );
+
+  // If verified user updates personal info, reset their verification status
+  const verificationReset = (
+    isPersonalInfoUpdate && currentUserData?.verificationStatus === 'VERIFIED'
+  ) ? {
+    verificationStatus: 'UNVERIFIED' as const,
+    verifiedAt: null,
+    lastProfileUpdateAt: new Date(),
+  } : {
+    lastProfileUpdateAt: new Date(),
+  };
 
   const updatedUser = await prisma.user.update({
     where: { userId },
-    data
+    data: {
+      ...data,
+      ...verificationReset,
+    }
   });
+
+  // Notify the user if their verification status was reset
+  if (isPersonalInfoUpdate && currentUserData?.verificationStatus === 'VERIFIED') {
+    await createNotification({
+      userId: updatedUser.id,
+      type: "VERIFICATION_RESET",
+      title: "Verification Status Reset",
+      message: "Your verified status has been reset because personal information was updated. Please re-submit for verification.",
+      link: "/v2/profile/verification",
+    });
+  }
 
   const { firstName, lastName, middleName, suffix, picture, nickname } = updatedUser
 

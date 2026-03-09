@@ -64,7 +64,7 @@ async function generateAndExportConsultationReport(
 
     const matchesSystem = filterValues.system === "ALL" ||
       !filterValues.system ||
-      ticket.System.name === filterValues.system
+      ticket.System?.name === filterValues.system
 
     return isInDateRange && matchesGender && matchesStatus && matchesSystem
   })
@@ -268,7 +268,7 @@ async function generateAndExportConsultationReport(
       "Nurse In-charge": nurseIncharge,
       "Tagged Doctor": taggedDoctor,
       "Nursing Impression": nurseImpression,
-      "System": ticket.System.name || "-",
+      "System": ticket.System?.name || "-",
     }
   })
 
@@ -382,8 +382,8 @@ export function ReportsFilters({ clinicUid }: ReportsFiltersProps) {
     { value: "ALL", label: "All Systems" },
     ...(consultations?.data
       ?.reduce((acc: Array<{ value: string, label: string }>, ticket) => {
-        const systemName = ticket.System.name
-        if (!acc.find(item => item.value === systemName)) {
+        const systemName = ticket.System?.name
+        if (systemName && !acc.find(item => item.value === systemName)) {
           acc.push({ value: systemName, label: systemName })
         }
         return acc

@@ -15,6 +15,7 @@ import type { GetAppointmentModes } from "@/actions/appointments/appointment-mod
 import type { GetAppointmentTypes } from "@/actions/appointments/appointment-type.action";
 import type { GetClinicServiceCategories } from "@/actions/clinics/clinic-service-category.action";
 import type { GetHPsType } from "@/actions/hp.actions";
+import type { GetSystems } from "@/actions/system.action";
 import { AppointmentCard } from "./AppointmentCard";
 import { AppointmentDetailSheet } from "./AppointmentDetailSheet";
 import { WalkInAppointmentSheet } from "./WalkInAppointmentSheet";
@@ -67,6 +68,7 @@ interface AppointmentsClientProps {
   types: GetAppointmentTypes;
   serviceCategories: GetClinicServiceCategories;
   hps: GetHPsType;
+  systems: NonNullable<GetSystems>;
   currentUserHpIds: number[];
   currentUserSub: string;
   /** Tab names (uppercased) visible to the current user's role. null = show all. */
@@ -81,6 +83,7 @@ export function AppointmentsClient({
   types,
   serviceCategories,
   hps,
+  systems,
   currentUserHpIds,
   currentUserSub,
   visibleTabNames,
@@ -530,6 +533,7 @@ export function AppointmentsClient({
         modes={modes}
         types={types}
         serviceCategories={serviceCategories}
+        systems={systems}
         hps={hps}
         onClose={() => setActivePanel(null)}
         onSuccess={() => {
@@ -547,6 +551,7 @@ export function AppointmentsClient({
           types={types}
           serviceCategories={serviceCategories}
           hps={hps}
+          systems={systems}
           onClose={backToDetail}
           onSuccess={() => {
             refresh();

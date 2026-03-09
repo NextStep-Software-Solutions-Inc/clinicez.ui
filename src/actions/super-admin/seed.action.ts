@@ -37,6 +37,9 @@ export async function seedPermissionsAction(): Promise<SeedResult> {
     for (const permission of Object.values(PERMISSIONS.ORGANIZATION)) {
       permissions.push({ name: permission.name, description: permission.description, type: "ORGANIZATION" });
     }
+    for (const permission of Object.values(PERMISSIONS.ADMIN)) {
+      permissions.push({ name: permission.name, description: permission.description, type: "ADMIN" });
+    }
 
     let created = 0;
     let skipped = 0;

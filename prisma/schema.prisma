@@ -155,6 +155,11 @@ model User {
   VitalSigns                       VitalSign[]
   Notifications                    Notification[]
   PatientInsights                  PatientInsight[]
+  VerificationRequests             VerificationRequest[]
+  ReviewedVerifications            VerificationRequest[]            @relation("VerificationReviewer")
+  verificationStatus               VerificationStatus               @default(UNVERIFIED)
+  verifiedAt                       DateTime?
+  lastProfileUpdateAt              DateTime?
 
   @@index([caseNumber])
 }
@@ -257,6 +262,7 @@ model UserPreference {
   autoAcceptAppointmentAssignment Boolean             @default(false)
   autoAssignAppointmentToSelf     Boolean             @default(false)
   defaultHpId                     Int?
+  muteNotifications               Boolean             @default(false)
   HealthCareProvider              HealthcareProvider? @relation(fields: [defaultHpId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   User                            User                @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
@@ -1474,6 +1480,7 @@ model AppointmentAttribute {
   eventId            String?             @default("")
   meetingUrl         String?             @default("")
   aiSymptomAnalysis  String?
+  systemId           Int?
   Appointment        Appointment         @relation(fields: [appointmentId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   CompletedBy        User?               @relation("CompletedBy", fields: [completedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
   AppointmentMode    AppointmentMode     @relation(fields: [modeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -1483,6 +1490,7 @@ model AppointmentAttribute {
   RescheduledBy      User?               @relation("RescheduledBy", fields: [rescheduledBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
   Service            Service             @relation(fields: [serviceId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   AppointmentType    AppointmentType     @relation(fields: [typeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  System             System?             @relation(fields: [systemId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model AppointmentType {
@@ -1589,7 +1597,7 @@ model ServiceAttribute {
 
 model ConsultationTicket {
   id                          Int                          @id @default(autoincrement())
-  systemId                    Int
+  systemId                    Int?
   appointmentId               Int?
   clinicPatientId             Int?
   clinicId                    Int
@@ -1613,7 +1621,7 @@ model ConsultationTicket {
   Appointment                 Appointment?                 @relation(fields: [appointmentId], references: [id], onUpdate: NoAction)
   ClinicPatient               ClinicPatient?               @relation(fields: [clinicPatientId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   Clinic                      Clinic                       @relation(fields: [clinicId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  System                      System                       @relation(fields: [systemId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  System                      System?                      @relation(fields: [systemId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   ConsultationTicketAttribute ConsultationTicketAttribute?
   ConsultationTicketHPs       ConsultationTicketHP[]
   Interventions               Intervention[]
@@ -1663,12 +1671,13 @@ model ConsultationDiagnosis {
 }
 
 model System {
-  id                  Int                  @id @default(autoincrement())
-  clinicId            Int
-  name                String
-  isActive            Boolean              @default(true)
-  ConsultationTickets ConsultationTicket[]
-  Clinic              Clinic               @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id                    Int                    @id @default(autoincrement())
+  clinicId              Int
+  name                  String
+  isActive              Boolean                @default(true)
+  ConsultationTickets   ConsultationTicket[]
+  AppointmentAttributes AppointmentAttribute[]
+  Clinic                Clinic                 @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model ConsultationNote {
@@ -2668,6 +2677,10 @@ enum NotificationType {
   ORG_MEMBERSHIP_SUSPENDED
   ORG_MEMBERSHIP_DEACTIVATED
   FILE_SHARED
+  VERIFICATION_SUBMITTED
+  VERIFICATION_APPROVED
+  VERIFICATION_REJECTED
+  VERIFICATION_RESET
 }
 
 model Notification {
@@ -2727,4 +2740,68 @@ model ICD10Code {
 
   @@index([code])
   @@index([category])
+}
+
+// ─── User Verification ──────────────────────────────────────────────────────
+
+enum VerificationStatus {
+  UNVERIFIED
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum ValidIDLevel {
+  PRIMARY
+  SECONDARY
+}
+
+/// Master reference table for valid ID types that users can submit for verification.
+model ValidIDType {
+  id                    Int                    @id @default(autoincrement())
+  name                  String                 @unique
+  level                 ValidIDLevel
+  description           String?
+  /// Whether this ID type supports automated verification (e.g. PhilSys/PhilID)
+  automatedVerification Boolean                @default(false)
+  isActive              Boolean                @default(true)
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  VerificationDocuments VerificationDocument[]
+}
+
+/// A user's request to verify their identity via KYC.
+model VerificationRequest {
+  id                     Int                    @id @default(autoincrement())
+  userId                 Int
+  status                 VerificationStatus     @default(PENDING)
+  /// Optional reviewer notes (reason for rejection, etc.)
+  reviewerNotes          String?
+  reviewedBy             Int?
+  reviewedAt             DateTime?
+  createdAt              DateTime               @default(now())
+  updatedAt              DateTime               @updatedAt
+  User                   User                   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  Reviewer               User?                  @relation("VerificationReviewer", fields: [reviewedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  VerificationDocuments  VerificationDocument[]
+
+  @@index([userId, status])
+  @@index([status])
+}
+
+/// Individual document uploaded as part of a verification request.
+model VerificationDocument {
+  id                    Int                 @id @default(autoincrement())
+  verificationRequestId Int
+  validIdTypeId         Int
+  /// URL to the uploaded ID photo
+  idPhotoUrl            String
+  /// URL to the selfie with the ID
+  selfieWithIdUrl       String
+  /// URL to the selfie without the ID
+  selfieWithoutIdUrl    String
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+  VerificationRequest   VerificationRequest @relation(fields: [verificationRequestId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  ValidIDType           ValidIDType         @relation(fields: [validIdTypeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }

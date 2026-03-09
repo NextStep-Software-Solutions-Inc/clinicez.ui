@@ -25,6 +25,13 @@ interface ProfileClientProps {
   downloadPHRHref?: string
   /** When provided, renders the AI Patient Insight button (healthcare providers only) */
   aiInsightConfig?: { patientId: number; clinicId?: number }
+  /**
+   * Clerk userId of the patient whose tab data should be loaded.
+   * When omitted the authenticated user's own data is loaded (own profile).
+   * Pass this when clinic staff view a specific patient's profile so that
+   * the lazy-loaded tabs fetch that patient's records, not the viewer's.
+   */
+  patientUserId?: string
 }
 
 const PROFILE_TABS = [
@@ -54,6 +61,7 @@ export default function ProfileClient({
   appointmentsHref,
   downloadPHRHref = '/api/phr/patient',
   aiInsightConfig,
+  patientUserId,
 }: ProfileClientProps) {
   const [activeTab, setActiveTab] = useState<ProfileTabId>('overview')
 
@@ -80,7 +88,7 @@ export default function ProfileClient({
         />
 
         {/* Tab content is fetched lazily — each tab loads its own data on first visit */}
-        <TabContent tab={activeTab} />
+        <TabContent tab={activeTab} userId={patientUserId} />
 
         <FloatingActions
           patientName={patient.fullName}

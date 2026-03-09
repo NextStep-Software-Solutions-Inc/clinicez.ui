@@ -15,6 +15,7 @@ import type {
   HealthCondition,
   Clinic,
   User,
+  VerificationStatus,
 } from '@prisma/client'
 
 export interface MedicalHistoryData {
@@ -79,6 +80,7 @@ export interface SerializedPatientHealthRecordsResponse {
   suffix: string | null
   nickname: string | null
   caseNumber: string | null
+  verificationStatus: VerificationStatus
   createdAt: string  // ISO string
   updatedAt: string  // ISO string
   clinic: ClinicInfo | null

@@ -53,7 +53,7 @@ type ConfirmedAppointment = NonNullable<
 
 const schema = z.object({
   subject: z.string().optional(),
-  systemId: z.coerce.number().min(1, "Please select a system"),
+  systemId: z.coerce.number().optional(),
   hpId: z.coerce.number().min(1, "Please select your HP profile"),
   appointmentId: z.coerce.number().optional(),
 });
@@ -87,7 +87,7 @@ export default function NewConsultationDialog({
     resolver: zodResolver(schema),
     defaultValues: {
       subject: "",
-      systemId: systems[0]?.id,
+      systemId: undefined,
       hpId: myHPs[0]?.id,
       appointmentId: undefined,
     },
@@ -229,34 +229,6 @@ export default function NewConsultationDialog({
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="systemId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>System / Department</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value?.toString()}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select system" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {systems.map((s) => (
-                        <SelectItem key={s.id} value={s.id.toString()}>
-                          {s.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
             {/* Link to appointment toggle */}
             <div className="rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5">
               <div className="flex items-center justify-between">
@@ -293,6 +265,10 @@ export default function NewConsultationDialog({
                             "subject",
                             selected.complaint ?? selected.subject ?? ""
                           );
+                          // Pre-fill systemId from the appointment's confirmed system
+                          if (selected.AppointmentAttribute?.System?.id) {
+                            form.setValue("systemId", selected.AppointmentAttribute.System.id);
+                          }
                           // Pre-select co-creators: check HPs with ACCEPTED status by default
                           const acceptedHpIds = (selected.AppointmentRouting ?? [])
                             .filter((r) => r.status === "ACCEPTED")

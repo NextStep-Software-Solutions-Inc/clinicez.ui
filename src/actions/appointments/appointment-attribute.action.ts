@@ -165,6 +165,7 @@ type ConfirmAppointmentBookingPayload = {
   typeId: number;
   serviceId: number;
   hpId?: number;
+  systemId?: number;
   date?: Date;
   timeStart?: string;
   timeEnd?: string;
@@ -181,7 +182,7 @@ export const confirmAppointmentBookingAction = withErrorHandling(async (payload:
 
   if (!canReceiveAppointment) throw new Error("You do not have permission to confirm appointment booking.");
 
-  const { appointmentId, modeId, typeId, serviceId, hpId, date, timeStart, timeEnd } = payload;
+  const { appointmentId, modeId, typeId, serviceId, hpId, systemId, date, timeStart, timeEnd } = payload;
 
   if (timeStart && timeEnd && timeEnd <= timeStart) {
     throw new Error("End time must be later than start time.");
@@ -202,6 +203,7 @@ export const confirmAppointmentBookingAction = withErrorHandling(async (payload:
         date,
         timeStart,
         timeEnd,
+        ...(systemId ? { systemId } : {}),
         status: hpId ? "ROUTED" : "RECEIVED",
         receivedAt: new Date(),
         receivedBy: user.id,

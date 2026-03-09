@@ -10,6 +10,7 @@ import { getAppointmentTypesAction } from "@/actions/appointments/appointment-ty
 import { getClinicServiceCategoriesAction } from "@/actions/clinics/clinic-service-category.action";
 import { getClinicAppointmentTabsAction } from "@/actions/clinics/clinic-appointment-tab..action";
 import { getAppointmentTabsAction } from "@/actions/appointment-tab.action";
+import { getSystemsAction } from "@/actions/system.action";
 import { ClinicSettingsClient } from "@/components/v2/settings/ClinicSettingsClient";
 import { notFound } from "next/navigation";
 
@@ -40,6 +41,7 @@ export default async function ClinicSettingsPage({ params }: ClinicSettingsPageP
     serviceCategories,
     clinicAppointmentTabsResult,
     allAppointmentTabs,
+    initialSystems,
   ] = await Promise.all([
     getClinicAction(clinicUid),
     getClinicSettingAction(clinicUid),
@@ -53,6 +55,7 @@ export default async function ClinicSettingsPage({ params }: ClinicSettingsPageP
     getClinicServiceCategoriesAction(clinicUid),
     getClinicAppointmentTabsAction(clinicUid),
     getAppointmentTabsAction(),
+    getSystemsAction(clinicUid),
   ]);
 
   if (!clinicResult.status || !clinicResult.data) {
@@ -74,6 +77,7 @@ export default async function ClinicSettingsPage({ params }: ClinicSettingsPageP
       serviceCategories={serviceCategories}
       clinicAppointmentTabs={clinicAppointmentTabsResult.data ?? []}
       allAppointmentTabs={allAppointmentTabs}
+      initialSystems={initialSystems}
     />
   );
 }

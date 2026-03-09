@@ -98,9 +98,9 @@ export const columns: ColumnDef<NonNullable<GetConsultationTickets["data"]>[numb
   },
   {
     accessorKey: "system",
-    accessorFn: (row) => row.System.name,
+    accessorFn: (row) => row.System?.name,
     filterFn: (row, id, filterValues) => {
-      return filterValues.includes(row.original.System.name)
+      return filterValues.includes(row.original.System?.name)
     },
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="System" />
@@ -110,7 +110,7 @@ export const columns: ColumnDef<NonNullable<GetConsultationTickets["data"]>[numb
         <div>
           <Requester requester={row.original.Appointment?.Requesters[0].User!} />
           <div className="flex flex-wrap items-center gap-1">
-            <Badge>{row.original.System.name}</Badge>
+            {row.original.System?.name && <Badge>{row.original.System.name}</Badge>}
             <Badge variant="outline">{row.original.Appointment?.AppointmentAttribute?.Service?.name}</Badge>
           </div>
         </div>

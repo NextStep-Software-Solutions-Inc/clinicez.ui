@@ -28,6 +28,7 @@ import type { GetAppointmentModes } from "@/actions/appointments/appointment-mod
 import type { GetAppointmentTypes } from "@/actions/appointments/appointment-type.action";
 import type { GetClinicServiceCategories } from "@/actions/clinics/clinic-service-category.action";
 import type { GetHPsType } from "@/actions/hp.actions";
+import type { GetSystems } from "@/actions/system.action";
 
 type Appointment = NonNullable<GetAppointments["data"]>[number];
 
@@ -38,6 +39,7 @@ interface ConfirmBookingSheetProps {
   types: GetAppointmentTypes;
   serviceCategories: GetClinicServiceCategories;
   hps: GetHPsType;
+  systems: NonNullable<GetSystems>;
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -49,6 +51,7 @@ export function ConfirmBookingSheet({
   types,
   serviceCategories,
   hps,
+  systems,
   onClose,
   onSuccess,
 }: ConfirmBookingSheetProps) {
@@ -57,6 +60,7 @@ export function ConfirmBookingSheet({
   const [typeId, setTypeId] = useState<string>("");
   const [serviceId, setServiceId] = useState<string>("");
   const [hpId, setHpId] = useState<string>("");
+  const [systemId, setSystemId] = useState<string>("");
   const [date, setDate] = useState<string>("");
   const [timeStart, setTimeStart] = useState<string>("");
   const [timeEnd, setTimeEnd] = useState<string>("");
@@ -80,6 +84,7 @@ export function ConfirmBookingSheet({
       typeId: parseInt(typeId),
       serviceId: parseInt(serviceId),
       hpId: hpId ? parseInt(hpId) : undefined,
+      systemId: systemId ? parseInt(systemId) : undefined,
       date: date ? new Date(date) : undefined,
       timeStart: timeStart || undefined,
       timeEnd: timeEnd || undefined,
@@ -180,6 +185,27 @@ export function ConfirmBookingSheet({
               </SelectContent>
             </Select>
           </div>
+
+          {/* System / Department (optional) */}
+          {systems.length > 0 && (
+            <div className="space-y-1.5">
+              <Label htmlFor="system" className="text-xs font-medium">
+                System / Department <span className="text-muted-foreground font-normal">(optional)</span>
+              </Label>
+              <Select value={systemId} onValueChange={setSystemId}>
+                <SelectTrigger id="system">
+                  <SelectValue placeholder="Select system (optional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  {systems.map((system) => (
+                    <SelectItem key={system.id} value={String(system.id)}>
+                      {system.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {/* Assign Healthcare Provider (optional) */}
           <div className="space-y-1.5">

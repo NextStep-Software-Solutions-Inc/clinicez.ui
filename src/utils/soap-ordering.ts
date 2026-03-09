@@ -10,6 +10,7 @@ export interface NoteSectionBase {
   noteTemplateId?: number;
   description?: string | null;
   isActive?: boolean;
+  sortOrder?: number;
 }
 
 export interface ConsultationNoteSection extends NoteSectionBase {
@@ -31,27 +32,26 @@ export function sortNoteSectionsSOAP<T extends NoteSectionBase>(sections: T[]): 
     return [];
   }
 
-  const soapSections: T[] = [];
-  const nonSoapSections: T[] = [];
+  // Pre-compute SOAP index map for O(1) lookups during sort
+  const soapIndexMap = new Map<string, number>(
+    SOAP_ORDER.map((name, idx) => [name, idx])
+  );
+  const nonSoapIndex = SOAP_ORDER.length;
 
-  const soapSectionMap = new Map<SOAPSectionName, T>();
+  return [...sections].sort((a, b) => {
+    const aOrder = a.sortOrder ?? 0;
+    const bOrder = b.sortOrder ?? 0;
 
-  sections.forEach(section => {
-    if (isSOAPSection(section.name)) {
-      soapSectionMap.set(section.name as SOAPSectionName, section);
-    } else {
-      nonSoapSections.push(section);
+    if (aOrder !== bOrder) {
+      return aOrder - bOrder;
     }
-  });
 
-  SOAP_ORDER.forEach(soapName => {
-    const section = soapSectionMap.get(soapName);
-    if (section) {
-      soapSections.push(section);
-    }
-  });
+    // Tiebreaker: SOAP order (S→O→A→P, then non-SOAP sections)
+    const aSOAPOrder = soapIndexMap.get(a.name) ?? nonSoapIndex;
+    const bSOAPOrder = soapIndexMap.get(b.name) ?? nonSoapIndex;
 
-  return [...soapSections, ...nonSoapSections];
+    return aSOAPOrder - bSOAPOrder;
+  });
 }
 
 export interface ConsultationNoteData {

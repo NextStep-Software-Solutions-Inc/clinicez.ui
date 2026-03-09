@@ -134,8 +134,8 @@ export const getPatientConsultationDetailAction = withErrorHandling(
                 name: true,
                 NoteSections: {
                   where: { isActive: true },
-                  orderBy: { id: "asc" },
-                  select: { id: true, name: true, label: true, description: true },
+                  orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
+                  select: { id: true, name: true, label: true, description: true, sortOrder: true, showOnPatient: true },
                 },
               },
             },

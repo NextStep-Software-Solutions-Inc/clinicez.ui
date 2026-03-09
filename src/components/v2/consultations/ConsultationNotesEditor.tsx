@@ -12,6 +12,7 @@ import type { GetPatientConsultationDetail } from "@/actions/consultation/patien
 import type { GetHPsType } from "@/actions/hp.actions";
 import MarkdownEditor from "./MarkdownEditor";
 import { MedicalNoteSummarizer } from "@/components/ai";
+import { sortNoteSectionsSOAP } from "@/utils/soap-ordering";
 
 type Detail = NonNullable<GetPatientConsultationDetail["data"]>;
 
@@ -29,8 +30,9 @@ export default function ConsultationNotesEditor({
   onPatchDetail,
   isResolved = false,
 }: ConsultationNotesEditorProps) {
-  const sections =
-    consultation.ConsultationTicketAttribute?.NoteTemplate?.NoteSections ?? [];
+  const sections = sortNoteSectionsSOAP(
+    consultation.ConsultationTicketAttribute?.NoteTemplate?.NoteSections ?? []
+  );
 
   // Determine which HP to write notes as (prefer HP already on this ticket)
   const ticketHpIds = consultation.ConsultationTicketHPs.map(

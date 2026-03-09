@@ -61,6 +61,7 @@ export default async function VerificationPage() {
 
   return (
     <VerificationClient
+      userId={dbUser.userId}
       verificationStatus={dbUser.verificationStatus}
       verifiedAt={dbUser.verifiedAt?.toISOString() ?? null}
       latestRequest={dbUser.VerificationRequests[0] ?? null}

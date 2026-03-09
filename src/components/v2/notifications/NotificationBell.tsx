@@ -10,7 +10,15 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import useBreakpoints from "@/hooks/useBreakpoints";
 import { formatDistanceToNow } from "date-fns";
 import { useRouter } from "next/navigation";
 import {
@@ -70,6 +78,8 @@ const NOTIFICATION_ICONS: Record<NotificationType, string> = {
 
 export function NotificationBell() {
   const router = useRouter();
+  const { sm, md } = useBreakpoints();
+  const isMobile = sm || md; // covers viewports < 768px (phones + portrait tablets)
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -229,33 +239,225 @@ export function NotificationBell() {
     }
   };
 
-  // ── Render ─────────────────────────────────────────────────────────────────
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
+  // ── Bell trigger button ────────────────────────────────────────────────────
+  const bellButton = (
+    <Button
+      variant="ghost"
+      size="icon"
+      className="relative h-8 w-8 rounded-lg hover:bg-muted"
+      aria-label={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ""}`}
+    >
+      {isMuted ? (
+        <BellOff className="h-4 w-4 text-muted-foreground" />
+      ) : (
+        <Bell className="h-4 w-4" />
+      )}
+      {unreadCount > 0 && !isMuted && (
+        <Badge
+          className={cn(
+            "absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold",
+            "bg-red-500 text-white border-0 pointer-events-none",
+          )}
+        >
+          {unreadCount > 99 ? "99+" : unreadCount}
+        </Badge>
+      )}
+    </Button>
+  );
+
+  // ── Shared panel content ───────────────────────────────────────────────────
+  const panelContent = (
+    <>
+      {/* Muted banner */}
+      {isMuted && (
+        <div className="flex items-center gap-2 border-b bg-muted/40 px-4 py-2 text-xs text-muted-foreground">
+          <BellOff className="h-3 w-3 shrink-0" />
+          <span>Notifications are muted. New notifications will not appear.</span>
+        </div>
+      )}
+
+      {/* List */}
+      <ScrollArea className="h-[360px]">
+        {notifications.length === 0 ? (
+          <div className="flex flex-col items-center justify-center gap-2 py-10 text-muted-foreground">
+            <Bell className="h-8 w-8 opacity-30" />
+            <p className="text-sm">You&apos;re all caught up!</p>
+            <p className="text-xs opacity-70">No notifications yet.</p>
+          </div>
+        ) : (
+          <ul className="divide-y">
+            {notifications.map((notification) => (
+              <li
+                key={notification.id}
+                className={cn(
+                  "group flex cursor-pointer items-start gap-3 px-4 py-3 transition-colors hover:bg-muted/50",
+                  !notification.isRead && "bg-accent/5",
+                )}
+                onClick={() => handleNotificationClick(notification)}
+              >
+                {/* Icon */}
+                <span
+                  className="mt-0.5 shrink-0 text-lg leading-none"
+                  aria-hidden
+                >
+                  {NOTIFICATION_ICONS[notification.type] ?? "🔔"}
+                </span>
+
+                {/* Content */}
+                <div className="min-w-0 flex-1">
+                  <p
+                    className={cn(
+                      "text-sm leading-snug",
+                      !notification.isRead
+                        ? "font-semibold text-foreground"
+                        : "text-foreground/80",
+                    )}
+                  >
+                    {notification.title}
+                  </p>
+                  <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">
+                    {notification.message}
+                  </p>
+                  <p className="mt-1 text-[11px] text-muted-foreground/60">
+                    {formatDistanceToNow(new Date(notification.createdAt), {
+                      addSuffix: true,
+                    })}
+                  </p>
+                </div>
+
+                {/* Right-side actions */}
+                <div className="flex shrink-0 flex-col items-end gap-1">
+                  {!notification.isRead && (
+                    <span className="h-2 w-2 rounded-full bg-blue-500" />
+                  )}
+                  {notification.link && (
+                    <ExternalLink className="h-3 w-3 text-muted-foreground/50 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  )}
+                  <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {!notification.isRead && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-5 w-5"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleMarkRead(notification.id);
+                        }}
+                        aria-label="Mark as read"
+                        title="Mark as read"
+                      >
+                        <Check className="h-3 w-3" />
+                      </Button>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-5 w-5 text-muted-foreground hover:text-destructive"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDismiss(notification.id);
+                      }}
+                      aria-label="Dismiss notification"
+                      title="Dismiss"
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </ScrollArea>
+
+      {/* Footer */}
+      {notifications.length > 0 && (
+        <div className="flex items-center justify-between border-t px-4 py-2">
+          <p className="text-xs text-muted-foreground">
+            {notifications.length} notification{notifications.length !== 1 ? "s" : ""}
+          </p>
+          {readCount > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 gap-1 text-xs text-muted-foreground hover:text-destructive"
+              onClick={handleClearRead}
+              disabled={isLoading}
+              title="Remove all read notifications"
+            >
+              <Trash2 className="h-3 w-3" />
+              Clear read
+            </Button>
+          )}
+        </div>
+      )}
+    </>
+  );
+
+  // ── Header actions (shared between Sheet and Popover) ──────────────────────
+  const headerActions = (
+    <div className="flex items-center gap-1">
+      {unreadCount > 0 && (
         <Button
           variant="ghost"
-          size="icon"
-          className="relative h-8 w-8 rounded-lg hover:bg-muted"
-          aria-label={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ""}`}
+          size="sm"
+          className="h-7 gap-1 text-xs text-muted-foreground hover:text-foreground"
+          onClick={handleMarkAllRead}
+          disabled={isLoading}
+          title="Mark all as read"
         >
-          {isMuted ? (
-            <BellOff className="h-4 w-4 text-muted-foreground" />
-          ) : (
-            <Bell className="h-4 w-4" />
-          )}
-          {unreadCount > 0 && !isMuted && (
-            <Badge
-              className={cn(
-                "absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold",
-                "bg-red-500 text-white border-0 pointer-events-none",
-              )}
-            >
-              {unreadCount > 99 ? "99+" : unreadCount}
-            </Badge>
-          )}
+          <CheckCheck className="h-3 w-3" />
+          Mark all read
         </Button>
-      </PopoverTrigger>
+      )}
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-7 w-7"
+        onClick={handleToggleMute}
+        title={isMuted ? "Unmute notifications" : "Mute notifications"}
+      >
+        {isMuted ? (
+          <Bell className="h-3.5 w-3.5 text-muted-foreground" />
+        ) : (
+          <BellOff className="h-3.5 w-3.5 text-muted-foreground" />
+        )}
+      </Button>
+    </div>
+  );
+
+  // ── Render ─────────────────────────────────────────────────────────────────
+
+  // Mobile: bottom Sheet
+  if (isMobile) {
+    return (
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetTrigger asChild>{bellButton}</SheetTrigger>
+        <SheetContent side="bottom" className="p-0 rounded-t-2xl max-h-[85vh] flex flex-col">
+          <SheetHeader className="flex-row items-center justify-between border-b px-4 py-3 space-y-0">
+            <div className="flex items-center gap-2">
+              <Bell className="h-4 w-4 text-muted-foreground" />
+              <SheetTitle className="text-sm font-semibold">Notifications</SheetTitle>
+              {unreadCount > 0 && (
+                <Badge variant="secondary" className="text-xs">
+                  {unreadCount} new
+                </Badge>
+              )}
+            </div>
+            {headerActions}
+          </SheetHeader>
+          <div className="flex flex-col overflow-hidden flex-1">
+            {panelContent}
+          </div>
+        </SheetContent>
+      </Sheet>
+    );
+  }
+
+  // Desktop: Popover
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>{bellButton}</PopoverTrigger>
 
       <PopoverContent
         align="end"
@@ -273,159 +475,9 @@ export function NotificationBell() {
               </Badge>
             )}
           </div>
-          <div className="flex items-center gap-1">
-            {unreadCount > 0 && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 gap-1 text-xs text-muted-foreground hover:text-foreground"
-                onClick={handleMarkAllRead}
-                disabled={isLoading}
-                title="Mark all as read"
-              >
-                <CheckCheck className="h-3 w-3" />
-                Mark all read
-              </Button>
-            )}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
-              onClick={handleToggleMute}
-              title={isMuted ? "Unmute notifications" : "Mute notifications"}
-            >
-              {isMuted ? (
-                <Bell className="h-3.5 w-3.5 text-muted-foreground" />
-              ) : (
-                <BellOff className="h-3.5 w-3.5 text-muted-foreground" />
-              )}
-            </Button>
-          </div>
+          {headerActions}
         </div>
-
-        {/* Muted banner */}
-        {isMuted && (
-          <div className="flex items-center gap-2 border-b bg-muted/40 px-4 py-2 text-xs text-muted-foreground">
-            <BellOff className="h-3 w-3 shrink-0" />
-            <span>Notifications are muted. New notifications will not appear.</span>
-          </div>
-        )}
-
-        {/* List */}
-        <ScrollArea className="h-[360px]">
-          {notifications.length === 0 ? (
-            <div className="flex flex-col items-center justify-center gap-2 py-10 text-muted-foreground">
-              <Bell className="h-8 w-8 opacity-30" />
-              <p className="text-sm">You&apos;re all caught up!</p>
-              <p className="text-xs opacity-70">No notifications yet.</p>
-            </div>
-          ) : (
-            <ul className="divide-y">
-              {notifications.map((notification) => (
-                <li
-                  key={notification.id}
-                  className={cn(
-                    "group flex cursor-pointer items-start gap-3 px-4 py-3 transition-colors hover:bg-muted/50",
-                    !notification.isRead && "bg-accent/5",
-                  )}
-                  onClick={() => handleNotificationClick(notification)}
-                >
-                  {/* Icon */}
-                  <span
-                    className="mt-0.5 shrink-0 text-lg leading-none"
-                    aria-hidden
-                  >
-                    {NOTIFICATION_ICONS[notification.type] ?? "🔔"}
-                  </span>
-
-                  {/* Content */}
-                  <div className="min-w-0 flex-1">
-                    <p
-                      className={cn(
-                        "text-sm leading-snug",
-                        !notification.isRead
-                          ? "font-semibold text-foreground"
-                          : "text-foreground/80",
-                      )}
-                    >
-                      {notification.title}
-                    </p>
-                    <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">
-                      {notification.message}
-                    </p>
-                    <p className="mt-1 text-[11px] text-muted-foreground/60">
-                      {formatDistanceToNow(new Date(notification.createdAt), {
-                        addSuffix: true,
-                      })}
-                    </p>
-                  </div>
-
-                  {/* Right-side actions */}
-                  <div className="flex shrink-0 flex-col items-end gap-1">
-                    {!notification.isRead && (
-                      <span className="h-2 w-2 rounded-full bg-blue-500" />
-                    )}
-                    {notification.link && (
-                      <ExternalLink className="h-3 w-3 text-muted-foreground/50 opacity-0 group-hover:opacity-100 transition-opacity" />
-                    )}
-                    <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                      {!notification.isRead && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-5 w-5"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleMarkRead(notification.id);
-                          }}
-                          aria-label="Mark as read"
-                          title="Mark as read"
-                        >
-                          <Check className="h-3 w-3" />
-                        </Button>
-                      )}
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-5 w-5 text-muted-foreground hover:text-destructive"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDismiss(notification.id);
-                        }}
-                        aria-label="Dismiss notification"
-                        title="Dismiss"
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </ScrollArea>
-
-        {/* Footer */}
-        {notifications.length > 0 && (
-          <div className="flex items-center justify-between border-t px-4 py-2">
-            <p className="text-xs text-muted-foreground">
-              {notifications.length} notification{notifications.length !== 1 ? "s" : ""}
-            </p>
-            {readCount > 0 && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 gap-1 text-xs text-muted-foreground hover:text-destructive"
-                onClick={handleClearRead}
-                disabled={isLoading}
-                title="Remove all read notifications"
-              >
-                <Trash2 className="h-3 w-3" />
-                Clear read
-              </Button>
-            )}
-          </div>
-        )}
+        {panelContent}
       </PopoverContent>
     </Popover>
   );

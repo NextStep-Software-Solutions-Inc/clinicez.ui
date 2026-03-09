@@ -6,7 +6,6 @@ import { ChevronDown, ChevronUp, FileText, GripVertical } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import Each from "@/components/utils/Each";
 import { GetNoteTemplatesWithSections } from "@/actions/note-template.action";
 import { updateNoteSectionsSortOrderAction } from "@/actions/note-template.action";
@@ -99,48 +98,50 @@ function TemplateCard({
   const [open, setOpen] = useState(false);
 
   return (
-    <Collapsible open={open} onOpenChange={setOpen}>
-      <div className="rounded-md border">
-        <CollapsibleTrigger asChild>
-          <button className="flex w-full items-center gap-3 p-3 text-left hover:bg-muted/50 transition-colors">
-            <div className="flex-1">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">{template.name}</span>
-                <Badge variant="outline">{template.NoteSections.length} sections</Badge>
-                {!template.isActive && (
-                  <Badge variant="secondary">Inactive</Badge>
-                )}
-              </div>
-            </div>
-            {open ? (
-              <ChevronUp className="h-4 w-4 text-muted-foreground shrink-0" />
-            ) : (
-              <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
+    <div className="rounded-md border">
+      <button
+        type="button"
+        className="flex w-full items-center gap-3 p-3 text-left hover:bg-muted/50 transition-colors"
+        onClick={() => setOpen(prev => !prev)}
+        aria-expanded={open}
+        aria-label={`Toggle ${template.name} sections`}
+      >
+        <div className="flex-1">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium">{template.name}</span>
+            <Badge variant="outline">{template.NoteSections.length} sections</Badge>
+            {!template.isActive && (
+              <Badge variant="secondary">Inactive</Badge>
             )}
-          </button>
-        </CollapsibleTrigger>
-        <CollapsibleContent>
-          <div className="border-t px-3 pb-3 pt-2 space-y-1">
-            {template.NoteSections.length === 0 && (
-              <p className="text-sm text-muted-foreground py-1">No sections defined.</p>
-            )}
-            <Each
-              of={template.NoteSections}
-              render={(section, index) => (
-                <SectionRow
-                  key={section.id}
-                  section={section}
-                  index={index}
-                  total={template.NoteSections.length}
-                  onMoveUp={() => onMove(template, index, index - 1)}
-                  onMoveDown={() => onMove(template, index, index + 1)}
-                />
-              )}
-            />
           </div>
-        </CollapsibleContent>
-      </div>
-    </Collapsible>
+        </div>
+        {open ? (
+          <ChevronUp className="h-4 w-4 text-muted-foreground shrink-0" />
+        ) : (
+          <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
+        )}
+      </button>
+      {open && (
+        <div className="border-t px-3 pb-3 pt-2 space-y-1">
+          {template.NoteSections.length === 0 && (
+            <p className="text-sm text-muted-foreground py-1">No sections defined.</p>
+          )}
+          <Each
+            of={template.NoteSections}
+            render={(section, index) => (
+              <SectionRow
+                key={section.id}
+                section={section}
+                index={index}
+                total={template.NoteSections.length}
+                onMoveUp={() => onMove(template, index, index - 1)}
+                onMoveDown={() => onMove(template, index, index + 1)}
+              />
+            )}
+          />
+        </div>
+      )}
+    </div>
   );
 }
 

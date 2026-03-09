@@ -59,6 +59,7 @@ export const updateNoteSectionsSortOrderAction = withErrorHandling(
         prisma.noteSection.update({ where: { id }, data: { sortOrder } })
       )
     );
+    return { message: "Section order updated", data: null };
   },
   () => undefined
 );

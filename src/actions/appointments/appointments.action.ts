@@ -612,6 +612,11 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
               name: true
             }
           },
+          System: {
+            select: {
+              name: true
+            }
+          },
           ReceivedBy: {
             select: {
               userId: true,

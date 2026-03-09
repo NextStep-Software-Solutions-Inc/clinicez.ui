@@ -1922,7 +1922,7 @@ function SystemsTab({
     startTransition(async () => {
       const result = await createSystemAction({ clinicUid, name: newName.trim() });
       if (result.status && result.data) {
-        setSystems(prev => [...prev, result.data!]);
+        setSystems(prev => [...prev, result.data]);
         setShowCreate(false);
         setNewName("");
         toast.success("System created.");

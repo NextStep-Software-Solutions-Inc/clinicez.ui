@@ -100,7 +100,7 @@ export const columns: ColumnDef<NonNullable<GetConsultationTickets["data"]>[numb
     accessorKey: "system",
     accessorFn: (row) => row.System?.name,
     filterFn: (row, id, filterValues) => {
-      return filterValues.includes(row.original.System?.name)
+      return row.original.System?.name ? filterValues.includes(row.original.System.name) : false
     },
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="System" />

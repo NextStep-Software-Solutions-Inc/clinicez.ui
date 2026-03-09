@@ -267,7 +267,7 @@ export default function NewConsultationDialog({
                           );
                           // Pre-fill systemId from the appointment's confirmed system
                           if (selected.AppointmentAttribute?.System?.id) {
-                            form.setValue("systemId", selected.AppointmentAttribute.System.id);
+                            form.setValue("systemId", selected.AppointmentAttribute.System?.id);
                           }
                           // Pre-select co-creators: check HPs with ACCEPTED status by default
                           const acceptedHpIds = (selected.AppointmentRouting ?? [])

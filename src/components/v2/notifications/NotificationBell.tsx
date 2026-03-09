@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Bell, Check, CheckCheck, ExternalLink } from "lucide-react";
+import { Bell, BellOff, Check, CheckCheck, ExternalLink, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -17,6 +17,10 @@ import {
   getNotificationsAction,
   markAllNotificationsReadAction,
   markNotificationReadAction,
+  deleteNotificationAction,
+  deleteAllReadNotificationsAction,
+  getMuteNotificationsAction,
+  toggleMuteNotificationsAction,
 } from "@/actions/notifications/notification.action";
 import type { GetNotificationsResult } from "@/actions/notifications/notification.action";
 import { NotificationType } from "@prisma/client";
@@ -65,6 +69,7 @@ export function NotificationBell() {
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
 
   // Refs for SSE and fallback polling cleanup
   const esRef = useRef<EventSource | null>(null);
@@ -72,6 +77,7 @@ export function NotificationBell() {
   const reconnectRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
+  const readCount = notifications.filter((n) => n.isRead).length;
 
   // ── Fetch via server action (used as fallback + on-demand) ─────────────────
   const fetchNotifications = useCallback(async () => {
@@ -141,6 +147,13 @@ export function NotificationBell() {
 
   // ── Bootstrap SSE on mount ─────────────────────────────────────────────────
   useEffect(() => {
+    // Load mute preference once on mount
+    getMuteNotificationsAction().then((result) => {
+      if (result.status && result.data !== null) {
+        setIsMuted(result.data);
+      }
+    });
+
     // EventSource is not available in SSR
     if (typeof EventSource === "undefined") {
       // Fallback: plain polling
@@ -176,6 +189,32 @@ export function NotificationBell() {
     setIsLoading(false);
   };
 
+  const handleDismiss = async (id: number) => {
+    const previous = notifications;
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
+    const result = await deleteNotificationAction(id);
+    if (!result.status) {
+      setNotifications(previous);
+    }
+  };
+
+  const handleClearRead = async () => {
+    setIsLoading(true);
+    const previous = notifications;
+    setNotifications((prev) => prev.filter((n) => !n.isRead));
+    const result = await deleteAllReadNotificationsAction();
+    if (!result.status) {
+      setNotifications(previous);
+    }
+    setIsLoading(false);
+  };
+
+  const handleToggleMute = async () => {
+    const newMuted = !isMuted;
+    setIsMuted(newMuted);
+    await toggleMuteNotificationsAction(newMuted);
+  };
+
   const handleNotificationClick = async (notification: NotificationItem) => {
     if (!notification.isRead) {
       await handleMarkRead(notification.id);
@@ -196,8 +235,12 @@ export function NotificationBell() {
           className="relative h-8 w-8 rounded-lg hover:bg-muted"
           aria-label={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ""}`}
         >
-          <Bell className="h-4 w-4" />
-          {unreadCount > 0 && (
+          {isMuted ? (
+            <BellOff className="h-4 w-4 text-muted-foreground" />
+          ) : (
+            <Bell className="h-4 w-4" />
+          )}
+          {unreadCount > 0 && !isMuted && (
             <Badge
               className={cn(
                 "absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold",
@@ -226,22 +269,46 @@ export function NotificationBell() {
               </Badge>
             )}
           </div>
-          {unreadCount > 0 && (
+          <div className="flex items-center gap-1">
+            {unreadCount > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 gap-1 text-xs text-muted-foreground hover:text-foreground"
+                onClick={handleMarkAllRead}
+                disabled={isLoading}
+                title="Mark all as read"
+              >
+                <CheckCheck className="h-3 w-3" />
+                Mark all read
+              </Button>
+            )}
             <Button
               variant="ghost"
-              size="sm"
-              className="h-7 gap-1 text-xs text-muted-foreground hover:text-foreground"
-              onClick={handleMarkAllRead}
-              disabled={isLoading}
+              size="icon"
+              className="h-7 w-7"
+              onClick={handleToggleMute}
+              title={isMuted ? "Unmute notifications" : "Mute notifications"}
             >
-              <CheckCheck className="h-3 w-3" />
-              Mark all read
+              {isMuted ? (
+                <Bell className="h-3.5 w-3.5 text-muted-foreground" />
+              ) : (
+                <BellOff className="h-3.5 w-3.5 text-muted-foreground" />
+              )}
             </Button>
-          )}
+          </div>
         </div>
 
+        {/* Muted banner */}
+        {isMuted && (
+          <div className="flex items-center gap-2 border-b bg-muted/40 px-4 py-2 text-xs text-muted-foreground">
+            <BellOff className="h-3 w-3 shrink-0" />
+            <span>Notifications are muted. New notifications will not appear.</span>
+          </div>
+        )}
+
         {/* List */}
-        <ScrollArea className="max-h-[400px]">
+        <ScrollArea className="h-[360px]">
           {notifications.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-2 py-10 text-muted-foreground">
               <Bell className="h-8 w-8 opacity-30" />
@@ -297,20 +364,36 @@ export function NotificationBell() {
                     {notification.link && (
                       <ExternalLink className="h-3 w-3 text-muted-foreground/50 opacity-0 group-hover:opacity-100 transition-opacity" />
                     )}
-                    {!notification.isRead && (
+                    <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                      {!notification.isRead && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-5 w-5"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleMarkRead(notification.id);
+                          }}
+                          aria-label="Mark as read"
+                          title="Mark as read"
+                        >
+                          <Check className="h-3 w-3" />
+                        </Button>
+                      )}
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="h-5 w-5 text-muted-foreground hover:text-destructive"
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleMarkRead(notification.id);
+                          handleDismiss(notification.id);
                         }}
-                        aria-label="Mark as read"
+                        aria-label="Dismiss notification"
+                        title="Dismiss"
                       >
-                        <Check className="h-3 w-3" />
+                        <X className="h-3 w-3" />
                       </Button>
-                    )}
+                    </div>
                   </div>
                 </li>
               ))}
@@ -320,11 +403,23 @@ export function NotificationBell() {
 
         {/* Footer */}
         {notifications.length > 0 && (
-          <div className="border-t px-4 py-2 text-center">
+          <div className="flex items-center justify-between border-t px-4 py-2">
             <p className="text-xs text-muted-foreground">
-              Showing last {notifications.length} notification
-              {notifications.length !== 1 ? "s" : ""}
+              {notifications.length} notification{notifications.length !== 1 ? "s" : ""}
             </p>
+            {readCount > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 gap-1 text-xs text-muted-foreground hover:text-destructive"
+                onClick={handleClearRead}
+                disabled={isLoading}
+                title="Remove all read notifications"
+              >
+                <Trash2 className="h-3 w-3" />
+                Clear read
+              </Button>
+            )}
           </div>
         )}
       </PopoverContent>

@@ -37,7 +37,7 @@ export default async function CalendarPage({ params }: CalendarPageProps) {
   });
 
   return (
-    <div className="pb-10">
+    <div className="p-4 sm:p-6 pb-10">
       <ClinicCalendar
         clinicUid={clinicUid}
         initialEvents={eventsResult.data ?? []}

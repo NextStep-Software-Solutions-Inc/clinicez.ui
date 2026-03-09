@@ -370,6 +370,32 @@ export const PERMISSIONS = {
       description: "User can update permissions within the organization.",
     },
   },
+  ADMIN: {
+    "REVIEW:ADMIN:VERIFICATION": {
+      name: "review:admin:verification",
+      description: "Admin can review and process user verification requests.",
+    },
+    "APPROVE:ADMIN:VERIFICATION": {
+      name: "approve:admin:verification",
+      description: "Admin can approve user verification requests.",
+    },
+    "REJECT:ADMIN:VERIFICATION": {
+      name: "reject:admin:verification",
+      description: "Admin can reject user verification requests.",
+    },
+    "VIEW:ADMIN:VERIFICATION": {
+      name: "view:admin:verification",
+      description: "Admin can view all user verification requests and documents.",
+    },
+    "MANAGE:ADMIN:VALID_ID_TYPES": {
+      name: "manage:admin:valid_id_types",
+      description: "Admin can manage valid ID types for verification.",
+    },
+    "MANAGE:ADMIN:USER_VERIFICATION_STATUS": {
+      name: "manage:admin:user_verification_status",
+      description: "Admin can manually update user verification status.",
+    },
+  },
 }
 
 /**

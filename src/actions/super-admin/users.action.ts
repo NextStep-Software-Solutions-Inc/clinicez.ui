@@ -38,6 +38,8 @@ export async function getAllUsersAction({
         dob: true,
         createdAt: true,
         updatedAt: true,
+        verificationStatus: true,
+        verifiedAt: true,
         _count: {
           select: {
             ClinicMembers: true,

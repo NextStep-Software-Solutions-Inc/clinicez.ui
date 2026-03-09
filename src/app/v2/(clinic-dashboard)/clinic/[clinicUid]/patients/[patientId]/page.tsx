@@ -7,7 +7,7 @@ import { getClinicAction } from "@/actions/clinics/clinic.action";
 import ProfileClient from "@/app/v2/(patient-dashboard)/profile/profile-client";
 import { ClinicPatientPageHeader } from "@/components/v2/patients/ClinicPatientPageHeader";
 import type { SerializedPatientHealthRecordsResponse } from "@/types/patient-profile";
-import type { PatientBaseData } from "@/types/patient-profile-tabs";
+import type { PatientBaseData, PatientTabDataMap } from "@/types/patient-profile-tabs";
 
 /** Derives the slim ProfileCard data from the full clinic patient response. */
 function toPatientBaseData(p: SerializedPatientHealthRecordsResponse): PatientBaseData {
@@ -48,6 +48,86 @@ function toPatientBaseData(p: SerializedPatientHealthRecordsResponse): PatientBa
         (p.medicalCertificates?.length ?? 0) +
         (p.referralSlips?.length ?? 0) +
         (p.procedureHistory?.length ?? 0),
+    },
+  }
+}
+
+/**
+ * Builds the full tab data map from the already-fetched clinic patient response.
+ * This prevents ProfileClient's lazy-loading SWR hooks (which resolve via
+ * currentUser()) from returning the authenticated user's data instead of the
+ * patient's data when a clinic staff member views a patient profile.
+ */
+function toPatientTabData(p: SerializedPatientHealthRecordsResponse): PatientTabDataMap {
+  return {
+    overview: {
+      email:                   p.email ?? '',
+      mobile:                  p.mobile,
+      telephone:               p.telephone,
+      dob:                     p.dob,
+      gender:                  p.gender,
+      suffix:                  p.suffix,
+      nickname:                p.nickname,
+      nationality:             p.nationality,
+      religion:                p.religion,
+      civilStatus:             p.civilStatus,
+      medicalHistoriesCount:   p.medicalHistories.length,
+      vitalSignsCount:         p.vitalSigns.length,
+      medicalCertificatesCount: p.medicalCertificates?.length ?? 0,
+      referralSlipsCount:      p.referralSlips?.length ?? 0,
+      latestVitals:            p.latestVitals,
+    },
+    medical: {
+      medicalHistories:       p.medicalHistories,
+      familyMedicalHistories: p.familyMedicalHistories,
+      surgicalHistories:      p.surgicalHistories,
+    },
+    vitals: {
+      vitalSigns: p.vitalSigns,
+      gender:     p.gender,
+    },
+    exams: {
+      physicalExaminations: p.physicalExaminations,
+    },
+    obgyn: {
+      gender:       p.gender,
+      obGyneHistory: p.obGyneHistory,
+    },
+    pediatric: {
+      dob:                   p.dob,
+      gender:                p.gender,
+      pediatricMeasurements: p.pediatricMeasurements,
+    },
+    addresses: {
+      userAddresses: p.userAddresses,
+    },
+    contacts: {
+      userEmergencyContacts: p.userEmergencyContacts,
+    },
+    lifestyle: {
+      personalHistory: p.personalHistory,
+    },
+    allergies: {
+      userAllergies: p.userAllergies,
+    },
+    vaccinations: {
+      userVaccinations: p.userVaccinations,
+    },
+    disabilities: {
+      userDisabilities: p.userDisabilities,
+    },
+    insurance: {
+      philHealthRecords:  p.philHealthRecords,
+      medicalCertificates: p.medicalCertificates ?? [],
+      referralSlips:      p.referralSlips ?? [],
+      procedureHistory:   (p.procedureHistory ?? []).map(ph => ({
+        id:            ph.id,
+        userId:        ph.userId,
+        clinicId:      ph.clinicId,
+        procedureType: ph.procedureType ?? null,
+        procedureName: ph.procedureName ?? null,
+        usedAt:        ph.usedAt,
+      })),
     },
   }
 }
@@ -99,6 +179,7 @@ export default async function ClinicPatientProfilePage({
   return (
     <ProfileClient
       patient={toPatientBaseData(patient)}
+      prefetchedTabData={toPatientTabData(patient)}
       headerSlot={
         <ClinicPatientPageHeader
           clinicUid={clinicUid}

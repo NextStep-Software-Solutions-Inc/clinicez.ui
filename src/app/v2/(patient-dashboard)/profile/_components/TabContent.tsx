@@ -84,9 +84,37 @@ const TAB_LOADERS: Record<keyof PatientTabDataMap, React.ComponentType> = {
 // ---------------------------------------------------------------------------
 interface TabContentProps {
   tab: keyof PatientTabDataMap
+  /**
+   * When provided (e.g. clinic-staff viewing a specific patient), renders the
+   * tab directly from pre-fetched data instead of lazy-loading via SWR.
+   * This prevents the SWR server actions (which use currentUser()) from
+   * returning the authenticated user's data instead of the patient's.
+   */
+  prefetchedData?: PatientTabDataMap
 }
 
-export function TabContent({ tab }: TabContentProps) {
+export function TabContent({ tab, prefetchedData }: TabContentProps) {
+  if (prefetchedData) {
+    // Render directly from pre-fetched data — no SWR needed
+    const tabData = prefetchedData[tab]
+    if (!tabData) return null
+    switch (tab) {
+      case 'overview':     return <OverviewTab     data={prefetchedData.overview} />
+      case 'medical':      return <MedicalTab      data={prefetchedData.medical} />
+      case 'vitals':       return <VitalsTab       data={prefetchedData.vitals} />
+      case 'exams':        return <ExamsTab        data={prefetchedData.exams} />
+      case 'obgyn':        return <ObGynTab        data={prefetchedData.obgyn} />
+      case 'pediatric':    return <PediatricTab    data={prefetchedData.pediatric} />
+      case 'addresses':    return <AddressesTab    data={prefetchedData.addresses} />
+      case 'contacts':     return <ContactsTab     data={prefetchedData.contacts} />
+      case 'lifestyle':    return <LifestyleTab    data={prefetchedData.lifestyle} />
+      case 'allergies':    return <AllergiesTab    data={prefetchedData.allergies} />
+      case 'vaccinations': return <VaccinationsTab data={prefetchedData.vaccinations} />
+      case 'disabilities': return <DisabilitiesTab data={prefetchedData.disabilities} />
+      case 'insurance':    return <InsuranceTab    data={prefetchedData.insurance} />
+    }
+  }
+
   const Loader = TAB_LOADERS[tab]
   return (
     <Suspense fallback={<TabSkeleton />}>

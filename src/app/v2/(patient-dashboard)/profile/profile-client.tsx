@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import type { PatientBaseData } from '@/types/patient-profile-tabs'
+import type { PatientBaseData, PatientTabDataMap } from '@/types/patient-profile-tabs'
 import { getTabBadge } from './_lib/tab-badges'
 import { ProfileHeader } from './_components/ProfileHeader'
 import { ProfileCard } from './_components/ProfileCard'
@@ -25,6 +25,13 @@ interface ProfileClientProps {
   downloadPHRHref?: string
   /** When provided, renders the AI Patient Insight button (healthcare providers only) */
   aiInsightConfig?: { patientId: number; clinicId?: number }
+  /**
+   * When provided, tab content is rendered directly from this data instead of
+   * fetching lazily via SWR server actions (which use currentUser()).
+   * Required when a clinic staff member views a specific patient's profile so
+   * the tabs show the patient's data, not the authenticated user's data.
+   */
+  prefetchedTabData?: PatientTabDataMap
 }
 
 const PROFILE_TABS = [
@@ -54,6 +61,7 @@ export default function ProfileClient({
   appointmentsHref,
   downloadPHRHref = '/api/phr/patient',
   aiInsightConfig,
+  prefetchedTabData,
 }: ProfileClientProps) {
   const [activeTab, setActiveTab] = useState<ProfileTabId>('overview')
 
@@ -80,7 +88,7 @@ export default function ProfileClient({
         />
 
         {/* Tab content is fetched lazily — each tab loads its own data on first visit */}
-        <TabContent tab={activeTab} />
+        <TabContent tab={activeTab} prefetchedData={prefetchedTabData} />
 
         <FloatingActions
           patientName={patient.fullName}

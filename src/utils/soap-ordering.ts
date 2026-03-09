@@ -32,12 +32,6 @@ export function sortNoteSectionsSOAP<T extends NoteSectionBase>(sections: T[]): 
     return [];
   }
 
-  // Pre-compute SOAP index map for O(1) lookups during sort
-  const soapIndexMap = new Map<string, number>(
-    SOAP_ORDER.map((name, idx) => [name, idx])
-  );
-  const nonSoapIndex = SOAP_ORDER.length;
-
   return [...sections].sort((a, b) => {
     const aOrder = a.sortOrder ?? 0;
     const bOrder = b.sortOrder ?? 0;
@@ -46,11 +40,11 @@ export function sortNoteSectionsSOAP<T extends NoteSectionBase>(sections: T[]): 
       return aOrder - bOrder;
     }
 
-    // Tiebreaker: SOAP order (S→O→A→P, then non-SOAP sections)
-    const aSOAPOrder = soapIndexMap.get(a.name) ?? nonSoapIndex;
-    const bSOAPOrder = soapIndexMap.get(b.name) ?? nonSoapIndex;
-
-    return aSOAPOrder - bSOAPOrder;
+    // Stable tiebreaker: insertion order (id ascending)
+    if (a.id !== undefined && b.id !== undefined) {
+      return a.id - b.id;
+    }
+    return 0;
   });
 }
 

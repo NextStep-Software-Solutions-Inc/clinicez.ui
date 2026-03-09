@@ -19,7 +19,9 @@ export const getNoteTemplateAction = async (name: string) => {
       name
     },
     include: {
-      NoteSections: true
+      NoteSections: {
+        orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
+      },
     }
   });
   return sections;

@@ -12,16 +12,91 @@ function buildHpName(hpProfile: { title?: string | null; name?: string | null; s
   return name || null
 }
 
+/** Shared Prisma include shape used by both upcoming and previous appointment queries. */
+const APPOINTMENT_INCLUDE = {
+  AppointmentAttribute: {
+    include: {
+      PreferredAppointee: {
+        include: {
+          User: {
+            select: {
+              firstName: true,
+              lastName: true,
+              picture: true,
+            },
+          },
+          HPProfile: {
+            select: {
+              name: true,
+              title: true,
+              suffix: true,
+              specialties: true,
+            },
+          },
+        },
+      },
+      AppointmentMode: true,
+      AppointmentType: true,
+      Service: true,
+    },
+  },
+  Clinic: {
+    select: {
+      id: true,
+      name: true,
+      clinicUid: true,
+    },
+  },
+} as const
+
+type PrismaAppointmentWithIncludes = Awaited<ReturnType<typeof prisma.appointment.findFirst<{ include: typeof APPOINTMENT_INCLUDE }>>>
+
+/** Map a Prisma appointment row to the DashboardAppointment shape. */
+function mapRowToDashboardAppointment(row: NonNullable<PrismaAppointmentWithIncludes>): DashboardAppointment {
+  const attr = row.AppointmentAttribute!
+  const doctor = attr.PreferredAppointee
+    ? {
+        id: attr.PreferredAppointee.id,
+        firstName: attr.PreferredAppointee.User?.firstName ?? null,
+        lastName: attr.PreferredAppointee.User?.lastName ?? null,
+        hpName: buildHpName(attr.PreferredAppointee.HPProfile),
+        specialization: attr.PreferredAppointee.HPProfile?.specialties?.[0] ?? null,
+        picture: attr.PreferredAppointee.User?.picture ?? null,
+      }
+    : { id: 0, firstName: 'Unassigned', lastName: 'Doctor', hpName: null, specialization: null, picture: null }
+
+  return {
+    id: row.id,
+    caseNumber: row.caseNumber,
+    subject: row.subject,
+    complaint: row.complaint,
+    date: attr.date,
+    timeStart: attr.timeStart,
+    timeEnd: attr.timeEnd,
+    status: attr.status,
+    recurring: attr.recurring,
+    maxDuration: attr.maxDuration,
+    meetingUrl: attr.meetingUrl,
+    doctor,
+    clinic: { id: row.Clinic.id, name: row.Clinic.name, uid: row.Clinic.clinicUid },
+    mode: { id: attr.AppointmentMode?.id ?? 0, name: attr.AppointmentMode?.name ?? 'Unknown' },
+    service: { id: attr.Service?.id ?? 0, name: attr.Service?.name ?? 'General' },
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  }
+}
+
 /**
- * Get next upcoming appointment for patient
- * Returns appointment with doctor, clinic, and mode details
+ * Get next upcoming appointment for patient.
+ * When there is no upcoming appointment, `previousAppointment` will contain the
+ * most recent past appointment so the UI can display it with the elapsed time.
  */
 export async function getNextAppointment(patientId: number): Promise<NextAppointmentData> {
   try {
     // Fetch up to 10 upcoming appointments (by date) so we can skip any that
     // have already elapsed on the same day (date is a DATE-only field in the DB,
     // so "today" appointments pass the date filter regardless of timeStart).
-    const appointments = await prisma.appointment.findMany({
+    const upcomingRows = await prisma.appointment.findMany({
       where: {
         Requesters: { some: { userId: patientId } },
         AppointmentAttribute: {
@@ -29,64 +104,41 @@ export async function getNextAppointment(patientId: number): Promise<NextAppoint
           date: { gte: new Date() },
         },
       },
-      orderBy: {
-        AppointmentAttribute: {
-          date: 'asc',
-        },
-      },
+      orderBy: { AppointmentAttribute: { date: 'asc' } },
       take: 10,
-      include: {
-        AppointmentAttribute: {
-          include: {
-            PreferredAppointee: {
-              include: {
-                User: {
-                  select: {
-                    firstName: true,
-                    lastName: true,
-                    picture: true,
-                  },
-                },
-                HPProfile: {
-                  select: {
-                    name: true,
-                    title: true,
-                    suffix: true,
-                    specialties: true,
-                  },
-                },
-              },
-            },
-            AppointmentMode: true,
-            AppointmentType: true,
-            Service: true,
-          },
-        },
-        Clinic: {
-          select: {
-            id: true,
-            name: true,
-            clinicUid: true,
-          },
-        },
-      },
+      include: APPOINTMENT_INCLUDE,
     })
 
     const now = new Date()
 
     // Find the first appointment that has not yet elapsed (uses combined date+timeStart)
-    let appointment = null
-    for (const apt of appointments) {
+    let upcomingAppointment: NonNullable<PrismaAppointmentWithIncludes> | null = null
+    for (const apt of upcomingRows) {
       const attr = apt.AppointmentAttribute
       if (!attr?.date) continue
-
       if (combineDateWithTime(new Date(attr.date), attr.timeStart) >= now) {
-        appointment = apt
+        upcomingAppointment = apt
         break
       }
     }
 
-    if (!appointment?.AppointmentAttribute) {
+    // Only fetch the previous appointment when there is no upcoming one
+    let previousAppointment: DashboardAppointment | null = null
+    if (!upcomingAppointment) {
+      const previousRow = await prisma.appointment.findFirst({
+        where: {
+          Requesters: { some: { userId: patientId } },
+          AppointmentAttribute: { date: { lt: new Date() } },
+        },
+        orderBy: { AppointmentAttribute: { date: 'desc' } },
+        include: APPOINTMENT_INCLUDE,
+      })
+      if (previousRow?.AppointmentAttribute) {
+        previousAppointment = mapRowToDashboardAppointment(previousRow)
+      }
+    }
+
+    if (!upcomingAppointment?.AppointmentAttribute) {
       return {
         appointment: null,
         daysUntil: null,
@@ -94,10 +146,11 @@ export async function getNextAppointment(patientId: number): Promise<NextAppoint
         isToday: false,
         isUpcoming: false,
         isPast: false,
+        previousAppointment,
       }
     }
 
-    const attr = appointment.AppointmentAttribute
+    const attr = upcomingAppointment.AppointmentAttribute
     const appointmentDate = attr.date ? new Date(attr.date) : null
 
     if (!appointmentDate) {
@@ -108,6 +161,7 @@ export async function getNextAppointment(patientId: number): Promise<NextAppoint
         isToday: false,
         isUpcoming: false,
         isPast: false,
+        previousAppointment,
       }
     }
 
@@ -118,67 +172,18 @@ export async function getNextAppointment(patientId: number): Promise<NextAppoint
     const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
     const diffHours = Math.ceil(diffMs / (1000 * 60 * 60))
 
-    const isToday =
-      appointmentDate.toDateString() === now.toDateString()
+    const isToday = appointmentDate.toDateString() === now.toDateString()
     const isUpcoming = diffMs > 0
     const isPast = diffMs < 0
 
-    const doctor = attr.PreferredAppointee
-      ? {
-        id: attr.PreferredAppointee.id,
-        firstName: attr.PreferredAppointee.User?.firstName ?? null,
-        lastName: attr.PreferredAppointee.User?.lastName ?? null,
-        hpName: buildHpName(attr.PreferredAppointee.HPProfile),
-        specialization:
-          attr.PreferredAppointee.HPProfile?.specialties?.[0] ?? null,
-        picture: attr.PreferredAppointee.User?.picture ?? null,
-      }
-      : {
-        id: 0,
-        firstName: 'Unassigned',
-        lastName: 'Doctor',
-        hpName: null,
-        specialization: null,
-        picture: null,
-      }
-
-    const appointmentData: DashboardAppointment = {
-      id: appointment.id,
-      caseNumber: appointment.caseNumber,
-      subject: appointment.subject,
-      complaint: appointment.complaint,
-      date: attr.date,
-      timeStart: attr.timeStart,
-      timeEnd: attr.timeEnd,
-      status: attr.status,
-      recurring: attr.recurring,
-      maxDuration: attr.maxDuration,
-      meetingUrl: attr.meetingUrl,
-      doctor,
-      clinic: {
-        id: appointment.Clinic.id,
-        name: appointment.Clinic.name,
-        uid: appointment.Clinic.clinicUid,
-      },
-      mode: {
-        id: attr.AppointmentMode?.id ?? 0,
-        name: attr.AppointmentMode?.name ?? 'Unknown',
-      },
-      service: {
-        id: attr.Service?.id ?? 0,
-        name: attr.Service?.name ?? 'General',
-      },
-      createdAt: appointment.createdAt,
-      updatedAt: appointment.updatedAt,
-    }
-
     return {
-      appointment: appointmentData,
+      appointment: mapRowToDashboardAppointment(upcomingAppointment),
       daysUntil: isUpcoming ? diffDays : null,
       hoursUntil: isUpcoming ? diffHours : null,
       isToday,
       isUpcoming,
       isPast,
+      previousAppointment,
     }
   } catch (error) {
     console.error('Error fetching next appointment:', error)
@@ -189,6 +194,7 @@ export async function getNextAppointment(patientId: number): Promise<NextAppoint
       isToday: false,
       isUpcoming: false,
       isPast: false,
+      previousAppointment: null,
     }
   }
 }

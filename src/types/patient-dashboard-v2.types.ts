@@ -66,6 +66,8 @@ export interface NextAppointmentData {
   isToday: boolean
   isUpcoming: boolean
   isPast: boolean
+  /** Most recent past appointment, returned when there is no upcoming appointment. */
+  previousAppointment: DashboardAppointment | null
 }
 
 export interface UpcomingAppointmentsData {

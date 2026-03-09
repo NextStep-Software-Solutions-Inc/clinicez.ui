@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Calendar, Clock, MapPin, Video, Stethoscope } from 'lucide-react';
+import { Calendar, Clock, MapPin, Video, Stethoscope, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatTime12Hr, combineDateWithTime } from '@/lib/day-utils';
+import dayjs from '@/lib/day-utils';
 import type { NextAppointmentData } from '@/types/patient-dashboard-v2.types';
 
 interface NextAppointmentHeroCardProps {
@@ -55,14 +56,102 @@ export function NextAppointmentHeroCard({ appointment, isLoading }: NextAppointm
     );
   }
 
+  // No upcoming appointment — show most recent past appointment with elapsed time
   if (!appointment?.appointment) {
-    return (
-      <div className="w-full dark:bg-slate-800/40 bg-white/60 rounded-xl px-6 py-5 border dark:border-white/10 border-slate-200/70 flex items-center gap-3">
-        <Calendar className="w-9 h-9 dark:text-slate-500 text-slate-400 flex-shrink-0" />
-        <div>
-          <p className="text-sm font-medium dark:text-slate-300 text-slate-700">No upcoming appointments</p>
-          <p className="text-xs dark:text-slate-400 text-slate-500">Schedule your next visit with your doctor</p>
+    const prev = appointment?.previousAppointment ?? null;
+
+    if (!prev) {
+      return (
+        <div className="w-full dark:bg-slate-800/40 bg-white/60 rounded-xl px-6 py-5 border dark:border-white/10 border-slate-200/70 flex items-center gap-3">
+          <Calendar className="w-9 h-9 dark:text-slate-500 text-slate-400 flex-shrink-0" />
+          <div>
+            <p className="text-sm font-medium dark:text-slate-300 text-slate-700">No upcoming appointments</p>
+            <p className="text-xs dark:text-slate-400 text-slate-500">Schedule your next visit with your doctor</p>
+          </div>
         </div>
+      );
+    }
+
+    const prevDateTime = prev.date
+      ? combineDateWithTime(new Date(prev.date), prev.timeStart)
+      : null;
+    const elapsedLabel = prevDateTime ? dayjs(prevDateTime).fromNow() : null;
+    const isVirtualPrev = prev.mode.name === 'VIRTUAL' || prev.mode.name === 'virtual';
+    const doctorName = prev.doctor.hpName ?? `${prev.doctor.firstName ?? ''} ${prev.doctor.lastName ?? ''}`.trim();
+
+    return (
+      <div className="w-full dark:bg-slate-800/40 bg-white/60 rounded-xl px-6 py-5 border dark:border-white/10 border-slate-200/70 flex flex-wrap items-center gap-4 relative opacity-80">
+        {/* Previous badge */}
+        <span className="absolute top-3 right-3 text-xs dark:bg-slate-700/60 bg-slate-100 dark:text-slate-400 text-slate-500 px-2 py-0.5 rounded font-medium">
+          Last Visit
+        </span>
+
+        {/* Doctor info */}
+        <div className="flex items-center gap-3 min-w-0 flex-shrink-0 max-w-[260px]">
+          <div className="w-11 h-11 rounded-full dark:bg-slate-600/30 bg-slate-100 flex items-center justify-center flex-shrink-0">
+            <Stethoscope className="w-5 h-5 dark:text-slate-400 text-slate-500" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm dark:text-slate-400 text-slate-500 font-medium mb-0.5">Previous Appointment</p>
+            <p
+              className="font-semibold dark:text-slate-300 text-slate-700 text-base leading-tight truncate"
+              title={doctorName || 'Unknown'}
+            >
+              {doctorName || 'Unknown'}
+            </p>
+            <p className="text-xs dark:text-slate-500 text-slate-500 truncate">
+              {prev.doctor.specialization || 'Healthcare Provider'}
+            </p>
+          </div>
+        </div>
+
+        {/* Divider */}
+        <div className="hidden sm:block w-px h-10 dark:bg-white/10 bg-slate-200" />
+
+        {/* Date / Time / Location chips */}
+        <div className="flex flex-wrap items-center gap-3 flex-grow">
+          <div className="flex items-center gap-1.5 text-sm dark:text-slate-400 text-slate-600">
+            <Calendar className="w-4 h-4 text-slate-400 flex-shrink-0" />
+            <span className="font-medium">
+              {prev.date
+                ? new Date(prev.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                : 'TBD'}
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5 text-sm dark:text-slate-400 text-slate-600">
+            <Clock className="w-4 h-4 text-slate-400 flex-shrink-0" />
+            <span className="font-medium">{formatTime12Hr(prev.timeStart)}</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-sm dark:text-slate-400 text-slate-600">
+            {isVirtualPrev ? (
+              <Video className="w-4 h-4 text-slate-400 flex-shrink-0" />
+            ) : (
+              <MapPin className="w-4 h-4 text-slate-400 flex-shrink-0" />
+            )}
+            <span className="font-medium truncate max-w-[160px]" title={isVirtualPrev ? 'Video Call' : prev.clinic.name}>
+              {isVirtualPrev ? 'Video Call' : prev.clinic.name}
+            </span>
+          </div>
+
+          {/* Elapsed time chip */}
+          {elapsedLabel && (
+            <div className="flex items-center gap-1.5 ml-auto">
+              <History className="w-3.5 h-3.5 dark:text-slate-500 text-slate-400" />
+              <span className="text-xs dark:text-slate-400 text-slate-500 font-medium">{elapsedLabel}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Divider */}
+        <div className="hidden sm:block w-px h-10 dark:bg-white/10 bg-slate-200" />
+
+        {/* CTA */}
+        <Button
+          variant="outline"
+          onClick={() => router.push(`/v2/appointments-consultations?appointment=${prev.id}`)}
+        >
+          View Details
+        </Button>
       </div>
     );
   }

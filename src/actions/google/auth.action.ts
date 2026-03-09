@@ -4,13 +4,24 @@ import "server-only";
 import { google } from "googleapis";
 import { clerkClient, currentUser } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
-import { combineDateTime } from "@/lib/day-utils";
+import dayjs from "@/lib/day-utils";
 import { getCachedSession } from "../session.action";
 import { withErrorHandling } from "@/lib/with-error-handling";
 import { getPermissionsAction } from "../permission.action";
 import { PERMISSIONS } from "@/lib/permissions";
 
 const GOOGLE_CALENDAR_METADATA_KEY = "googleCalendarCredentials";
+
+/**
+ * Produce a proper RFC3339 datetime string in Asia/Manila timezone.
+ * Google Calendar API requires seconds in the datetime (e.g. "2024-03-10T09:00:00+08:00").
+ * The `time` argument is typically stored as "HH:mm" — this function normalises it to "HH:mm:ss".
+ */
+function toCalendarRFC3339(date: Date, time: string): string {
+  const timePart = time.split(":").length === 2 ? `${time}:00` : time;
+  const dateStr = dayjs(date).format("YYYY-MM-DD");
+  return dayjs.tz(`${dateStr}T${timePart}`, "Asia/Manila").format();
+}
 
 function createOAuth2Client() {
   return new google.auth.OAuth2(
@@ -295,8 +306,8 @@ export const insertToCalendar = withErrorHandling(async (appointmentId: number, 
     summary: appointment.subject,
     location: attr.AppointmentMode.name,
     description: appointment.complaint ?? undefined,
-    start: { dateTime: combineDateTime(attr.date, attr.timeStart), timeZone: "Asia/Manila" },
-    end:   { dateTime: combineDateTime(attr.date, attr.timeEnd),   timeZone: "Asia/Manila" },
+    start: { dateTime: toCalendarRFC3339(attr.date, attr.timeStart), timeZone: "Asia/Manila" },
+    end:   { dateTime: toCalendarRFC3339(attr.date, attr.timeEnd),   timeZone: "Asia/Manila" },
     attendees,
     ...(createMeet ? {
       conferenceData: {
@@ -360,8 +371,8 @@ export const updateCalendarEvent = withErrorHandling(async (appointmentId: numbe
       summary: appointment.subject,
       location: attr.AppointmentMode.name,
       description: appointment.complaint ?? undefined,
-      start: { dateTime: combineDateTime(attr.date, attr.timeStart), timeZone: "Asia/Manila" },
-      end:   { dateTime: combineDateTime(attr.date, attr.timeEnd),   timeZone: "Asia/Manila" },
+      start: { dateTime: toCalendarRFC3339(attr.date, attr.timeStart), timeZone: "Asia/Manila" },
+      end:   { dateTime: toCalendarRFC3339(attr.date, attr.timeEnd),   timeZone: "Asia/Manila" },
       attendees,
     },
   });

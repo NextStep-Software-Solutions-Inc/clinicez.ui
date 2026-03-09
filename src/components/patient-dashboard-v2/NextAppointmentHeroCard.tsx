@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Calendar, Clock, MapPin, Video, Stethoscope } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { formatTime12Hr, combineDateWithTime } from '@/lib/day-utils';
 import type { NextAppointmentData } from '@/types/patient-dashboard-v2.types';
 
 interface NextAppointmentHeroCardProps {
@@ -24,8 +25,12 @@ export function NextAppointmentHeroCard({ appointment, isLoading }: NextAppointm
 
     const updateCountdown = () => {
       const now = new Date();
-      const appointmentDate = new Date(appointment.appointment!.date!);
-      const diff = appointmentDate.getTime() - now.getTime();
+      // Combine date + timeStart for an accurate countdown
+      const appointmentDateTime = combineDateWithTime(
+        new Date(appointment.appointment!.date!),
+        appointment.appointment!.timeStart,
+      );
+      const diff = appointmentDateTime.getTime() - now.getTime();
 
       if (diff <= 0) {
         setCountdownState({ daysLeft: 0, hoursLeft: 0, minutesLeft: 0 });
@@ -42,7 +47,7 @@ export function NextAppointmentHeroCard({ appointment, isLoading }: NextAppointm
     updateCountdown();
     const interval = setInterval(updateCountdown, 60000);
     return () => clearInterval(interval);
-  }, [appointment?.appointment?.date]);
+  }, [appointment?.appointment?.date, appointment?.appointment?.timeStart]);
 
   if (isLoading) {
     return (
@@ -65,6 +70,7 @@ export function NextAppointmentHeroCard({ appointment, isLoading }: NextAppointm
   const apt = appointment.appointment;
   const isToday = appointment.isToday;
   const isVirtual = apt.mode.name === 'VIRTUAL' || apt.mode.name === 'virtual';
+  const hasMeetLink = !!apt.meetingUrl;
 
   return (
     <div className="w-full dark:bg-slate-800/40 bg-white/60 rounded-xl px-6 py-5 border dark:border-white/10 border-slate-200/70 flex flex-wrap items-center gap-4 relative">
@@ -111,7 +117,7 @@ export function NextAppointmentHeroCard({ appointment, isLoading }: NextAppointm
         </div>
         <div className="flex items-center gap-1.5 text-sm dark:text-slate-300 text-slate-700">
           <Clock className="w-4 h-4 text-blue-400 flex-shrink-0" />
-          <span className="font-medium">{apt.timeStart || 'TBD'}</span>
+          <span className="font-medium">{formatTime12Hr(apt.timeStart)}</span>
         </div>
         <div className="flex items-center gap-1.5 text-sm dark:text-slate-300 text-slate-700">
           {isVirtual ? (
@@ -149,14 +155,14 @@ export function NextAppointmentHeroCard({ appointment, isLoading }: NextAppointm
       {/* CTA */}
       <Button
         onClick={() => {
-          if (isToday && apt.meetingUrl) {
-            window.open(apt.meetingUrl, '_blank');
+          if (hasMeetLink) {
+            window.open(apt.meetingUrl!, '_blank');
           } else {
             router.push(`/v2/appointments-consultations?appointment=${apt.id}`);
           }
         }}
       >
-        {isToday ? 'Join Now' : 'View Details'}
+        {hasMeetLink ? 'Join Now' : 'View Details'}
       </Button>
     </div>
   );

@@ -1,6 +1,7 @@
 'use server'
 
 import prisma from '@/lib/prisma'
+import { combineDateWithTime } from '@/lib/day-utils'
 import type { NextAppointmentData, UpcomingAppointmentsData, DashboardAppointment } from '@/types/patient-dashboard-v2.types'
 
 function buildHpName(hpProfile: { title?: string | null; name?: string | null; suffix?: string | null } | null | undefined): string | null {
@@ -17,8 +18,10 @@ function buildHpName(hpProfile: { title?: string | null; name?: string | null; s
  */
 export async function getNextAppointment(patientId: number): Promise<NextAppointmentData> {
   try {
-    // Get next appointment for this patient across all clinics
-    const appointment = await prisma.appointment.findFirst({
+    // Fetch up to 10 upcoming appointments (by date) so we can skip any that
+    // have already elapsed on the same day (date is a DATE-only field in the DB,
+    // so "today" appointments pass the date filter regardless of timeStart).
+    const appointments = await prisma.appointment.findMany({
       where: {
         Requesters: { some: { userId: patientId } },
         AppointmentAttribute: {
@@ -31,6 +34,7 @@ export async function getNextAppointment(patientId: number): Promise<NextAppoint
           date: 'asc',
         },
       },
+      take: 10,
       include: {
         AppointmentAttribute: {
           include: {
@@ -68,6 +72,20 @@ export async function getNextAppointment(patientId: number): Promise<NextAppoint
       },
     })
 
+    const now = new Date()
+
+    // Find the first appointment that has not yet elapsed (uses combined date+timeStart)
+    let appointment = null
+    for (const apt of appointments) {
+      const attr = apt.AppointmentAttribute
+      if (!attr?.date) continue
+
+      if (combineDateWithTime(new Date(attr.date), attr.timeStart) >= now) {
+        appointment = apt
+        break
+      }
+    }
+
     if (!appointment?.AppointmentAttribute) {
       return {
         appointment: null,
@@ -93,8 +111,10 @@ export async function getNextAppointment(patientId: number): Promise<NextAppoint
       }
     }
 
-    const now = new Date()
-    const diffMs = appointmentDate.getTime() - now.getTime()
+    // Use combined date+timeStart for accurate diff calculations
+    const fullAppointmentDateTime = combineDateWithTime(new Date(appointmentDate), attr.timeStart)
+
+    const diffMs = fullAppointmentDateTime.getTime() - now.getTime()
     const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
     const diffHours = Math.ceil(diffMs / (1000 * 60 * 60))
 
@@ -230,11 +250,21 @@ export async function getUpcomingAppointments(
           date: 'asc',
         },
       },
-      take: limit,
+      take: limit + 5, // Fetch a few extra to account for elapsed same-day appointments
     })
 
+    const now = new Date()
+
     const result: DashboardAppointment[] = appointments
-      .filter((a) => a.AppointmentAttribute)
+      .filter((a) => {
+        if (!a.AppointmentAttribute) return false
+        const attr = a.AppointmentAttribute
+        if (!attr.date) return false
+
+        // Combine date+timeStart to skip elapsed appointments
+        return combineDateWithTime(new Date(attr.date), attr.timeStart) >= now
+      })
+      .slice(0, limit)
       .map((appointment: (typeof appointments)[0]) => {
         const attr = appointment.AppointmentAttribute!
         const doctor = attr.PreferredAppointee

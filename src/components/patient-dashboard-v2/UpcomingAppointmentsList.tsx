@@ -1,6 +1,7 @@
 'use client';
 
 import { Calendar, Clock, MapPin, Video, Stethoscope, CheckCircle, AlertCircle, X, Clock as ClockIcon, Send, Mail } from 'lucide-react';
+import { formatTime12Hr } from '@/lib/day-utils';
 import type { DashboardAppointment } from '@/types/patient-dashboard-v2.types';
 
 interface UpcomingAppointmentsProps {
@@ -132,7 +133,7 @@ export function UpcomingAppointmentsList({ appointments, isLoading }: UpcomingAp
                 </div>
                 <div className="flex items-center gap-2 text-sm dark:text-slate-400 text-slate-600 mb-2">
                   <Clock className="w-3.5 h-3.5 text-blue-400" />
-                  {appointment.timeStart || 'TBD'}
+                  {formatTime12Hr(appointment.timeStart)}
                 </div>
                 {isToday && (
                   <span className="text-xs dark:bg-red-500/30 dark:text-red-200 dark:border-red-400/30 bg-red-100/70 text-red-700 border-red-300/50 px-2 py-0.5 rounded-full border">

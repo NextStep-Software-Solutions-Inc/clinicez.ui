@@ -59,3 +59,35 @@ export const getMinDateSixMonthsAgo = (): string => {
 export const getMaxDate = (): string => {
   return dayjs().format("YYYY-MM-DD");
 }
+
+/**
+ * Convert a "HH:MM" 24-hour time string to "h:MM AM/PM" 12-hour format.
+ * Returns "TBD" when the input is falsy.
+ */
+export const formatTime12Hr = (timeStr: string | null | undefined): string => {
+  if (!timeStr) return 'TBD';
+  const parts = timeStr.split(':');
+  const hour = parseInt(parts[0], 10);
+  const minute = parts[1] ?? '00';
+  const period = hour >= 12 ? 'PM' : 'AM';
+  const hour12 = hour % 12 || 12;
+  return `${hour12}:${minute} ${period}`;
+}
+
+/**
+ * Combine a Date (typically a date-only @db.Date field stored as midnight) with
+ * a "HH:MM" timeStart string to produce a full datetime for comparison.
+ * When timeStart is absent, the returned Date is set to end-of-day (23:59:59).
+ */
+export const combineDateWithTime = (date: Date, timeStart: string | null | undefined): Date => {
+  const result = new Date(date);
+  if (timeStart) {
+    const parts = timeStart.split(':');
+    const hours = parseInt(parts[0], 10);
+    const minutes = parseInt(parts[1] ?? '0', 10);
+    result.setHours(hours, minutes, 0, 0);
+  } else {
+    result.setHours(23, 59, 59, 999);
+  }
+  return result;
+}

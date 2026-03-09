@@ -99,6 +99,7 @@ export default async function ClinicPatientProfilePage({
   return (
     <ProfileClient
       patient={toPatientBaseData(patient)}
+      patientUserId={patient.userId}
       headerSlot={
         <ClinicPatientPageHeader
           clinicUid={clinicUid}

@@ -50,9 +50,9 @@ export function TabSkeleton() {
 function createTabLoader<T extends keyof PatientTabDataMap>(
   tabId: T,
   TabComponent: React.ComponentType<{ data: PatientTabDataMap[T] }>,
-): React.ComponentType {
-  function TabLoader() {
-    const { data } = usePatientTab(tabId, { suspense: true })
+): React.ComponentType<{ userId?: string }> {
+  function TabLoader({ userId }: { userId?: string }) {
+    const { data } = usePatientTab(tabId, { suspense: true, userId })
     if (!data) return null
     return <TabComponent data={data as PatientTabDataMap[T]} />
   }
@@ -63,7 +63,7 @@ function createTabLoader<T extends keyof PatientTabDataMap>(
 // ---------------------------------------------------------------------------
 // Map of tab id → lazy loader component
 // ---------------------------------------------------------------------------
-const TAB_LOADERS: Record<keyof PatientTabDataMap, React.ComponentType> = {
+const TAB_LOADERS: Record<keyof PatientTabDataMap, React.ComponentType<{ userId?: string }>> = {
   overview:     createTabLoader('overview',     OverviewTab),
   medical:      createTabLoader('medical',      MedicalTab),
   vitals:       createTabLoader('vitals',       VitalsTab),
@@ -84,13 +84,20 @@ const TAB_LOADERS: Record<keyof PatientTabDataMap, React.ComponentType> = {
 // ---------------------------------------------------------------------------
 interface TabContentProps {
   tab: keyof PatientTabDataMap
+  /**
+   * Clerk userId of the patient whose data should be loaded.
+   * When omitted the authenticated user's own data is loaded.
+   * Required when clinic staff view a specific patient's profile so that
+   * the lazy-loaded tabs fetch that patient's data, not the viewer's.
+   */
+  userId?: string
 }
 
-export function TabContent({ tab }: TabContentProps) {
+export function TabContent({ tab, userId }: TabContentProps) {
   const Loader = TAB_LOADERS[tab]
   return (
     <Suspense fallback={<TabSkeleton />}>
-      <Loader />
+      <Loader userId={userId} />
     </Suspense>
   )
 }

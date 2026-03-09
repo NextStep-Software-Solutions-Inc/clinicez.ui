@@ -43,12 +43,16 @@ function serializeDateFields<
     }
 }
 
-/** Resolves internal numeric patient id from the Clerk session. */
-async function resolvePatientId(): Promise<number | null> {
-    const user = await currentUser()
-    if (!user?.id) return null
+/**
+ * Resolves internal numeric patient id.
+ * When `userId` (Clerk id) is provided it is used directly;
+ * otherwise falls back to the currently authenticated user.
+ */
+async function resolvePatientId(userId?: string): Promise<number | null> {
+    const uid = userId ?? (await currentUser())?.id
+    if (!uid) return null
     const record = await prisma.user.findUnique({
-        where: { userId: user.id },
+        where: { userId: uid },
         select: { id: true },
     })
     return record?.id ?? null
@@ -59,13 +63,13 @@ async function resolvePatientId(): Promise<number | null> {
 // ---------------------------------------------------------------------------
 
 /** Fetches demographics + latest vitals + stat counts for the Overview tab. */
-export async function getPatientOverviewData(): Promise<OverviewTabData | null> {
+export async function getPatientOverviewData(userId?: string): Promise<OverviewTabData | null> {
     try {
-        const user = await currentUser()
-        if (!user?.id) return null
+        const uid = userId ?? (await currentUser())?.id
+        if (!uid) return null
 
         const patient = await prisma.user.findUnique({
-            where: { userId: user.id },
+            where: { userId: uid },
             select: {
                 id: true,
                 email: true,
@@ -128,9 +132,9 @@ export async function getPatientOverviewData(): Promise<OverviewTabData | null> 
 }
 
 /** Fetches medical histories, family histories, and surgical histories for the Medical tab. */
-export async function getPatientMedicalData(): Promise<MedicalTabData | null> {
+export async function getPatientMedicalData(userId?: string): Promise<MedicalTabData | null> {
     try {
-        const patientId = await resolvePatientId()
+        const patientId = await resolvePatientId(userId)
         if (!patientId) return null
 
         const [medical, familyMedical, surgical] = await Promise.all([
@@ -173,13 +177,13 @@ export async function getPatientMedicalData(): Promise<MedicalTabData | null> {
 }
 
 /** Fetches vital sign records and gender for the Vitals tab. */
-export async function getPatientVitalsData(): Promise<VitalsTabData | null> {
+export async function getPatientVitalsData(userId?: string): Promise<VitalsTabData | null> {
     try {
-        const user = await currentUser()
-        if (!user?.id) return null
+        const uid = userId ?? (await currentUser())?.id
+        if (!uid) return null
 
         const patient = await prisma.user.findUnique({
-            where: { userId: user.id },
+            where: { userId: uid },
             select: { id: true, gender: true },
         })
         if (!patient) return null
@@ -204,9 +208,9 @@ export async function getPatientVitalsData(): Promise<VitalsTabData | null> {
 }
 
 /** Fetches physical examination records for the Exams tab. */
-export async function getPatientExamsData(): Promise<ExamsTabData | null> {
+export async function getPatientExamsData(userId?: string): Promise<ExamsTabData | null> {
     try {
-        const patientId = await resolvePatientId()
+        const patientId = await resolvePatientId(userId)
         if (!patientId) return null
 
         const exams = await prisma.physicalExamination.findMany({
@@ -225,13 +229,13 @@ export async function getPatientExamsData(): Promise<ExamsTabData | null> {
 }
 
 /** Fetches OB/GYN history and gender for the OB/GYN tab. */
-export async function getPatientObGynData(): Promise<ObGynTabData | null> {
+export async function getPatientObGynData(userId?: string): Promise<ObGynTabData | null> {
     try {
-        const user = await currentUser()
-        if (!user?.id) return null
+        const uid = userId ?? (await currentUser())?.id
+        if (!uid) return null
 
         const patient = await prisma.user.findUnique({
-            where: { userId: user.id },
+            where: { userId: uid },
             select: { id: true, gender: true },
         })
         if (!patient) return null
@@ -249,13 +253,13 @@ export async function getPatientObGynData(): Promise<ObGynTabData | null> {
 }
 
 /** Fetches pediatric growth measurements, DOB, and gender for the Pediatric tab. */
-export async function getPatientPediatricData(): Promise<PediatricTabData | null> {
+export async function getPatientPediatricData(userId?: string): Promise<PediatricTabData | null> {
     try {
-        const user = await currentUser()
-        if (!user?.id) return null
+        const uid = userId ?? (await currentUser())?.id
+        if (!uid) return null
 
         const patient = await prisma.user.findUnique({
-            where: { userId: user.id },
+            where: { userId: uid },
             select: { id: true, dob: true, gender: true },
         })
         if (!patient) return null
@@ -293,9 +297,9 @@ export async function getPatientPediatricData(): Promise<PediatricTabData | null
 }
 
 /** Fetches home and mailing addresses for the Addresses tab. */
-export async function getPatientAddressesData(): Promise<AddressesTabData | null> {
+export async function getPatientAddressesData(userId?: string): Promise<AddressesTabData | null> {
     try {
-        const patientId = await resolvePatientId()
+        const patientId = await resolvePatientId(userId)
         if (!patientId) return null
 
         const addresses = await prisma.userAddress.findMany({
@@ -328,9 +332,9 @@ export async function getPatientAddressesData(): Promise<AddressesTabData | null
 }
 
 /** Fetches emergency contacts for the Contacts tab. */
-export async function getPatientContactsData(): Promise<ContactsTabData | null> {
+export async function getPatientContactsData(userId?: string): Promise<ContactsTabData | null> {
     try {
-        const patientId = await resolvePatientId()
+        const patientId = await resolvePatientId(userId)
         if (!patientId) return null
 
         const contacts = await prisma.userEmergencyContact.findMany({
@@ -359,9 +363,9 @@ export async function getPatientContactsData(): Promise<ContactsTabData | null> 
 }
 
 /** Fetches personal/lifestyle history for the Lifestyle tab. */
-export async function getPatientLifestyleData(): Promise<LifestyleTabData | null> {
+export async function getPatientLifestyleData(userId?: string): Promise<LifestyleTabData | null> {
     try {
-        const patientId = await resolvePatientId()
+        const patientId = await resolvePatientId(userId)
         if (!patientId) return null
 
         const personalHistory = await prisma.personalHistory.findFirst({ where: { userId: patientId } })
@@ -376,9 +380,9 @@ export async function getPatientLifestyleData(): Promise<LifestyleTabData | null
 }
 
 /** Fetches allergen records for the Allergies tab. */
-export async function getPatientAllergiesData(): Promise<AllergiesTabData | null> {
+export async function getPatientAllergiesData(userId?: string): Promise<AllergiesTabData | null> {
     try {
-        const patientId = await resolvePatientId()
+        const patientId = await resolvePatientId(userId)
         if (!patientId) return null
 
         const allergies = await prisma.userAllergy.findMany({
@@ -401,9 +405,9 @@ export async function getPatientAllergiesData(): Promise<AllergiesTabData | null
 }
 
 /** Fetches vaccination records for the Vaccinations tab. */
-export async function getPatientVaccinationsData(): Promise<VaccinationsTabData | null> {
+export async function getPatientVaccinationsData(userId?: string): Promise<VaccinationsTabData | null> {
     try {
-        const patientId = await resolvePatientId()
+        const patientId = await resolvePatientId(userId)
         if (!patientId) return null
 
         const vaccinations = await prisma.userVaccination.findMany({
@@ -435,9 +439,9 @@ export async function getPatientVaccinationsData(): Promise<VaccinationsTabData 
 }
 
 /** Fetches disability and chronic illness records for the Disabilities tab. */
-export async function getPatientDisabilitiesData(): Promise<DisabilitiesTabData | null> {
+export async function getPatientDisabilitiesData(userId?: string): Promise<DisabilitiesTabData | null> {
     try {
-        const patientId = await resolvePatientId()
+        const patientId = await resolvePatientId(userId)
         if (!patientId) return null
 
         const disabilities = await prisma.userDisability.findMany({
@@ -469,9 +473,9 @@ export async function getPatientDisabilitiesData(): Promise<DisabilitiesTabData 
 }
 
 /** Fetches PhilHealth records, certificates, referrals, and procedures for the Insurance tab. */
-export async function getPatientInsuranceData(): Promise<InsuranceTabData | null> {
+export async function getPatientInsuranceData(userId?: string): Promise<InsuranceTabData | null> {
     try {
-        const patientId = await resolvePatientId()
+        const patientId = await resolvePatientId(userId)
         if (!patientId) return null
 
         const clinicPatient = await prisma.clinicPatient.findFirst({

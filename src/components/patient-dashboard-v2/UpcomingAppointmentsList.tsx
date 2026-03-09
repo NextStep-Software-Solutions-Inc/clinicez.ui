@@ -111,6 +111,7 @@ export function UpcomingAppointmentsList({ appointments, isLoading }: UpcomingAp
 
         const doctorName = appointment.doctor.hpName ?? `${appointment.doctor.firstName ?? ''} ${appointment.doctor.lastName ?? ''}`.trim();
         const isVirtual = appointment.mode.name === 'VIRTUAL' || appointment.mode.name === 'virtual';
+        const hasMeetLink = isVirtual && !!appointment.meetingUrl;
 
         return (
           <div
@@ -171,6 +172,21 @@ export function UpcomingAppointmentsList({ appointments, isLoading }: UpcomingAp
                     </>
                   )}
                 </div>
+
+                {/* Join Meeting button */}
+                {hasMeetLink && (
+                  <div className="mt-2">
+                    <a
+                      href={appointment.meetingUrl ?? ""}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-600/90 hover:bg-emerald-600 text-white text-xs font-medium transition-colors"
+                    >
+                      <Video className="w-3 h-3" />
+                      Join Meeting
+                    </a>
+                  </div>
+                )}
               </div>
 
               {/* Right: Status */}

@@ -69,6 +69,12 @@ export default async function ClinicUidLayout(
       badgeCount: pendingAppointmentCount,
     },
     {
+      name: "Calendar",
+      href: `/v2/clinic/${clinicUid}/calendar`,
+      icon: "calendar-days",
+      badgeCount: undefined,
+    },
+    {
       name: "Consultations",
       href: `/v2/clinic/${clinicUid}/consultations`,
       icon: "stethoscope",

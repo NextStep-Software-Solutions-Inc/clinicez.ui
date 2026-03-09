@@ -226,15 +226,18 @@ export const confirmAppointmentBookingAction = withErrorHandling(async (payload:
       select: {
         subject: true,
         Requesters: { select: { User: { select: { id: true } } } },
+        AppointmentAttribute: { select: { meetingUrl: true } },
       },
     });
     if (appointment) {
+      const meetingUrl = appointment.AppointmentAttribute?.meetingUrl;
       await createNotifications(
         appointment.Requesters.map((r) => ({
           userId: r.User.id,
           type: "APPOINTMENT_CONFIRMED" as const,
           title: "Appointment Confirmed",
-          message: `Your appointment "${appointment.subject}" has been confirmed.`,
+          message: `Your appointment "${appointment.subject}" has been confirmed.${meetingUrl ? " A Google Meet link has been created for your virtual consultation." : ""}`,
+          link: meetingUrl || "/v2/appointments-consultations",
         })),
       );
     }

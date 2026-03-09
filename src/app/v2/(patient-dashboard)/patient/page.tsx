@@ -148,6 +148,10 @@ function PatientDashboardContent() {
   const handleViewHistory = () => {
     router.push('/v2/appointments-consultations');
   };
+
+  const handleViewIntegrations = () => {
+    router.push('/v2/integrations');
+  };
   return (
     <div className="w-full">
       {/* Header with greeting and theme toggle */}
@@ -273,6 +277,7 @@ function PatientDashboardContent() {
         onViewProfile={handleViewProfile}
         onViewFiles={handleViewFiles}
         onViewHistory={handleViewHistory}
+        onViewIntegrations={handleViewIntegrations}
       />
 
       {/* Select Clinic Dialog */}

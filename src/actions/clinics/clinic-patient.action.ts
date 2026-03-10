@@ -87,6 +87,7 @@ export interface GetClinicPatientsResult {
   data: Array<{
     stats: { appointments: number; conditions: number; medications: number };
     id: number;
+    createdAt: Date;
     profileCompletionStatus: string;
     Clinic: {
       id: number;
@@ -175,10 +176,10 @@ export const getClinicPatientsAction = async (filters: GetClinicPatientFilters):
         ...userId ? { userId } : {},
         ...(gender && gender !== 'all') ? { gender: gender as 'MALE' | 'FEMALE' } : {},
         AND: [
-          // Include patients with no DOB (treated as age 0) OR within the age range
+          // Patients with no DOB are treated as age 0; only include them when the filter range includes 0
           ...(minAge !== undefined || maxAge !== undefined) ? [{
             OR: [
-              { dob: null },
+              ...(minAge <= 0 ? [{ dob: null }] : []),
               {
                 dob: {
                   ...(minBirthDate && { lte: minBirthDate }),
@@ -194,6 +195,7 @@ export const getClinicPatientsAction = async (filters: GetClinicPatientFilters):
     },
     select: {
       id: true,
+      createdAt: true,
       profileCompletionStatus: true,
       Clinic: {
         select: {
@@ -300,10 +302,10 @@ export const getClinicPatientsAction = async (filters: GetClinicPatientFilters):
         ...userId ? { userId } : {},
         ...(gender && gender !== 'all') ? { gender: gender as 'MALE' | 'FEMALE' } : {},
         AND: [
-          // Include patients with no DOB (treated as age 0) OR within the age range
+          // Patients with no DOB are treated as age 0; only include them when the filter range includes 0
           ...(minAge !== undefined || maxAge !== undefined) ? [{
             OR: [
-              { dob: null },
+              ...(minAge <= 0 ? [{ dob: null }] : []),
               {
                 dob: {
                   ...(minBirthDate && { lte: minBirthDate }),

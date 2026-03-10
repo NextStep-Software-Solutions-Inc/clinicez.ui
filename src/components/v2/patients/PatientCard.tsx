@@ -19,28 +19,29 @@ interface PatientCardProps {
   isProvider?: boolean;
 }
 
-/** Maps ProfileCompletionStatus enum values to a visual badge */
+/** Maps ProfileCompletionStatus enum values to a visual badge.
+ *  Label text is hidden on mobile to conserve space. */
 function ProfileStatusBadge({ status }: { status: string }) {
   if (status === "COMPLETE") {
     return (
       <span className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-700 dark:text-emerald-400">
-        <CheckCircle2 className="h-3 w-3" />
-        Complete
+        <CheckCircle2 className="h-3 w-3 flex-shrink-0" />
+        <span className="hidden sm:inline">Complete</span>
       </span>
     );
   }
   if (status === "PARTIAL") {
     return (
       <span className="inline-flex items-center gap-1 text-[10px] font-medium text-amber-600 dark:text-amber-400">
-        <Clock className="h-3 w-3" />
-        Partial
+        <Clock className="h-3 w-3 flex-shrink-0" />
+        <span className="hidden sm:inline">Partial</span>
       </span>
     );
   }
   return (
     <span className="inline-flex items-center gap-1 text-[10px] font-medium text-muted-foreground">
-      <XCircle className="h-3 w-3" />
-      Incomplete
+      <XCircle className="h-3 w-3 flex-shrink-0" />
+      <span className="hidden sm:inline">Incomplete</span>
     </span>
   );
 }
@@ -149,17 +150,17 @@ export const PatientCard = memo(function PatientCard({
           </div>
 
           <div className="flex items-center justify-between">
-            <ProfileStatusBadge status={profileCompletionStatus} />
+            <div className="flex items-center gap-2">
+              <ProfileStatusBadge status={profileCompletionStatus} />
+              <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                <UserPlus className="h-3 w-3 flex-shrink-0" />
+                Added {joinedAgo}
+              </span>
+            </div>
             <span className="text-xs text-muted-foreground group-hover:text-primary transition-colors flex items-center gap-0.5">
               View Profile
               <ChevronRight className="h-3.5 w-3.5" />
             </span>
-          </div>
-
-          {/* Joined time ago */}
-          <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-            <UserPlus className="h-3 w-3 flex-shrink-0" />
-            <span>Patient {joinedAgo}</span>
           </div>
         </Link>
 
@@ -223,11 +224,13 @@ export const PatientCard = memo(function PatientCard({
                 {formatBloodType(bloodType)}
               </Badge>
             )}
-            <ProfileStatusBadge status={profileCompletionStatus} />
           </div>
-          <div className="flex items-center gap-1 mt-0.5 text-[10px] text-muted-foreground">
-            <UserPlus className="h-3 w-3 flex-shrink-0" />
-            <span>Patient {joinedAgo}</span>
+          <div className="flex items-center gap-2 mt-0.5">
+            <ProfileStatusBadge status={profileCompletionStatus} />
+            <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+              <UserPlus className="h-3 w-3 flex-shrink-0" />
+              Added {joinedAgo}
+            </span>
           </div>
         </div>
 

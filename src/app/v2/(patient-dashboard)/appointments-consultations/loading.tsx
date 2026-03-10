@@ -1,8 +1,8 @@
 export default function AppointmentsConsultationsLoading() {
   return (
-    <div className="w-full">
+    <div className="-mx-4 sm:-mx-6 md:-mx-8 -mb-6 md:-mb-8 lg:-mb-10">
       {/* Header skeleton */}
-      <div className="mb-6 flex items-center justify-between">
+      <div className="px-4 sm:px-6 md:px-8 mb-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg dark:bg-slate-700/50 bg-slate-200/60 animate-pulse" />
           <div>
@@ -14,7 +14,7 @@ export default function AppointmentsConsultationsLoading() {
       </div>
 
       {/* Split panel skeleton */}
-      <div className="flex h-[calc(100dvh-14rem)] overflow-hidden dark:bg-slate-800/30 bg-white/40 rounded-2xl dark:border-white/10 border-slate-200/60 border">
+      <div className="flex h-[calc(100dvh-5.5rem)] md:h-[calc(100dvh-6.5rem)] lg:h-[calc(100dvh-7rem)] overflow-hidden dark:bg-slate-800/30 bg-white/40 rounded-t-2xl dark:border-white/10 border-slate-200/60 border-t border-x">
         {/* Left: list */}
         <aside className="w-80 shrink-0 dark:border-r dark:border-white/10 border-r border-slate-200/60 flex flex-col">
           <div className="px-4 py-3 dark:border-b dark:border-white/10 border-b border-slate-200/60">

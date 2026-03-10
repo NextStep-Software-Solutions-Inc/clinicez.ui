@@ -11,6 +11,7 @@ import { Plus, Edit2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { getActionErrorMessage } from '@/lib/action-error'
 import { Textarea } from '../ui/textarea'
+import dayjs from '@/lib/day-utils'
 
 export interface VitalSignEditFormProps {
   userId: string
@@ -162,7 +163,7 @@ export function VitalSignEditForm({
           <Input
             id="dateTaken"
             type="datetime-local"
-            value={formData.dateTaken ? new Date(formData.dateTaken).toISOString().slice(0, 16) : ''}
+            value={formData.dateTaken ? dayjs(formData.dateTaken).format("YYYY-MM-DDTHH:mm") : ''}
             onChange={(e) => handleFieldChange('dateTaken', e.target.value ? new Date(e.target.value) : undefined)}
           />
         </FormField>

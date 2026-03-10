@@ -834,9 +834,9 @@ export default function PatientHistoryClient({
   ]
 
   return (
-    <div className="w-full overflow-x-hidden">
+    <div className="-mx-4 sm:-mx-6 md:-mx-8 -mb-6 md:-mb-8 lg:-mb-10 overflow-x-hidden">
       {/* Page Header */}
-      <div className="mb-5 flex items-center justify-between gap-3">
+      <div className="px-4 sm:px-6 md:px-8 mb-5 flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
           <Link
             href="/v2/patient"
@@ -856,8 +856,12 @@ export default function PatientHistoryClient({
         <ThemeToggle />
       </div>
 
-      {/* Split panel */}
-      <div className="flex h-[calc(100dvh-12rem)] sm:h-[calc(100dvh-13rem)] min-h-0 overflow-hidden dark:bg-slate-900/50 bg-white/60 backdrop-blur-xl rounded-2xl dark:border-white/8 border-slate-200/70 border shadow-xl dark:shadow-slate-950/40">
+      {/* Split panel — fills remaining viewport height.
+           Height = 100dvh − (layout top padding + header height + header margin-bottom)
+           mobile : 1.5rem pt  + ~2.75rem header + 1.25rem mb-5 ≈ 5.5rem
+           md     : 2rem    pt  + ~3.25rem header + 1.25rem mb-5 ≈ 6.5rem
+           lg     : 2.5rem  pt  + ~3.25rem header + 1.25rem mb-5 ≈ 7rem   */}
+      <div className="flex h-[calc(100dvh-5.5rem)] md:h-[calc(100dvh-6.5rem)] lg:h-[calc(100dvh-7rem)] min-h-0 overflow-hidden dark:bg-slate-900/50 bg-white/60 backdrop-blur-xl rounded-t-2xl dark:border-white/8 border-slate-200/70 border-t border-x shadow-xl dark:shadow-slate-950/40">
         {/* Left: List */}
         <aside
           className={`shrink-0 flex-col dark:border-r dark:border-white/8 border-r border-slate-200/70 overflow-hidden w-full md:w-[320px] ${

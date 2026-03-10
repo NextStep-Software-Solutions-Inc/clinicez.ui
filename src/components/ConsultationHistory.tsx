@@ -72,7 +72,7 @@ export default function ConsultationHistory({ clinicUid, patientId }: Consultati
                       {ticket.subject || `Consultation #${ticket.id}`}
                     </span>
                     <Badge variant="outline" className="text-primary border-primary">
-                      {ticket.System.name}
+                      {ticket.System?.name}
                     </Badge>
                   </div>
                   <div className="flex items-center gap-1 text-xs text-muted-foreground">

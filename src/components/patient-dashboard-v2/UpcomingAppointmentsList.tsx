@@ -1,6 +1,7 @@
 'use client';
 
 import { Calendar, Clock, MapPin, Video, Stethoscope, CheckCircle, AlertCircle, X, Clock as ClockIcon, Send, Mail } from 'lucide-react';
+import { formatTime12Hr } from '@/lib/day-utils';
 import type { DashboardAppointment } from '@/types/patient-dashboard-v2.types';
 
 interface UpcomingAppointmentsProps {
@@ -111,6 +112,7 @@ export function UpcomingAppointmentsList({ appointments, isLoading }: UpcomingAp
 
         const doctorName = appointment.doctor.hpName ?? `${appointment.doctor.firstName ?? ''} ${appointment.doctor.lastName ?? ''}`.trim();
         const isVirtual = appointment.mode.name === 'VIRTUAL' || appointment.mode.name === 'virtual';
+        const hasMeetLink = isVirtual && !!appointment.meetingUrl;
 
         return (
           <div
@@ -131,7 +133,7 @@ export function UpcomingAppointmentsList({ appointments, isLoading }: UpcomingAp
                 </div>
                 <div className="flex items-center gap-2 text-sm dark:text-slate-400 text-slate-600 mb-2">
                   <Clock className="w-3.5 h-3.5 text-blue-400" />
-                  {appointment.timeStart || 'TBD'}
+                  {formatTime12Hr(appointment.timeStart)}
                 </div>
                 {isToday && (
                   <span className="text-xs dark:bg-red-500/30 dark:text-red-200 dark:border-red-400/30 bg-red-100/70 text-red-700 border-red-300/50 px-2 py-0.5 rounded-full border">
@@ -171,6 +173,21 @@ export function UpcomingAppointmentsList({ appointments, isLoading }: UpcomingAp
                     </>
                   )}
                 </div>
+
+                {/* Join Meeting button */}
+                {hasMeetLink && (
+                  <div className="mt-2">
+                    <a
+                      href={appointment.meetingUrl ?? ""}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-600/90 hover:bg-emerald-600 text-white text-xs font-medium transition-colors"
+                    >
+                      <Video className="w-3 h-3" />
+                      Join Meeting
+                    </a>
+                  </div>
+                )}
               </div>
 
               {/* Right: Status */}

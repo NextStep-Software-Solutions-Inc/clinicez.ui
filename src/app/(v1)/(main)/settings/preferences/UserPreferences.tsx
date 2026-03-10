@@ -30,6 +30,7 @@ const UserPreferenceFormSchema = z.object({
   userPreferenceId: z.number().optional(),
   autoAcceptAppointmentAssignment: z.boolean().default(false),
   autoAssignAppointmentToSelf: z.boolean().default(false),
+  muteNotifications: z.boolean().default(false),
   defaultHpId: z.number({
     coerce: true,
     message: "Please select a default health care provider."
@@ -59,6 +60,7 @@ export default function UserPreferences({ userPreference }: UserPreferenceFormPr
       userPreferenceId: userPreference?.id ?? 0,
       autoAcceptAppointmentAssignment: userPreference?.autoAcceptAppointmentAssignment ?? false,
       autoAssignAppointmentToSelf: userPreference?.autoAssignAppointmentToSelf ?? false,
+      muteNotifications: userPreference?.muteNotifications ?? false,
       defaultHpId: userPreference?.HealthCareProvider?.id
     }
   })
@@ -161,6 +163,28 @@ export default function UserPreferences({ userPreference }: UserPreferenceFormPr
             />
           )
         }
+        <FormField
+          control={form.control}
+          name="muteNotifications"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+              <FormControl>
+                <Checkbox
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <div className="space-y-1 leading-none">
+                <FormLabel>
+                  Mute notifications
+                </FormLabel>
+                <FormDescription>
+                  Stop receiving in-app notifications. You can re-enable them at any time.
+                </FormDescription>
+              </div>
+            </FormItem>
+          )}
+        />
 
         {
           form.formState.isDirty && (

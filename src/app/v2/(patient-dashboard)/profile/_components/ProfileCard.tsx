@@ -1,9 +1,11 @@
 'use client'
 
+import Link from 'next/link'
 import { Info } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { formatBloodType } from '@/lib/utils'
 import type { PatientBaseData } from '@/types/patient-profile-tabs'
+import { VerificationStatusBadge } from './VerificationStatusBadge'
 
 interface ProfileCardProps {
   patient: PatientBaseData
@@ -32,9 +34,14 @@ export function ProfileCard({ patient }: ProfileCardProps) {
           {/* Patient Info */}
           <div className="flex-grow w-full">
             <div className="mb-2">
-              <h2 className="text-xl md:text-3xl font-bold text-slate-900 dark:text-white leading-tight">
-                {patient.fullName}{patient.suffix ? ` ${patient.suffix}` : ''}
-              </h2>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-xl md:text-3xl font-bold text-slate-900 dark:text-white leading-tight">
+                  {patient.fullName}{patient.suffix ? ` ${patient.suffix}` : ''}
+                </h2>
+                <Link href="/v2/profile/verification" className="hover:opacity-80 transition-opacity">
+                  <VerificationStatusBadge status={patient.verificationStatus} />
+                </Link>
+              </div>
               {patient.nickname && (
                 <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">"{patient.nickname}"</p>
               )}

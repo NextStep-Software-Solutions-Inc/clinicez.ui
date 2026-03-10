@@ -385,7 +385,7 @@ function buildConsultationRows(
         "Nurse In-charge": nurseIncharge,
         "Tagged Doctor": primaryDoctorName,
         "Nursing Impression": latestNurseNote?.assessment ?? "-",
-        "System": ticket.System.name ?? "-",
+        "System": ticket.System?.name ?? "-",
         "Subject": ticket.subject ?? "-",
         "Assigned To": "-",
       };

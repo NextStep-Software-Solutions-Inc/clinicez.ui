@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@components/ui/button";
 import { Input } from "@components/ui/input";
 import { Badge } from "@components/ui/badge";
-import { Search, Lock } from "lucide-react";
+import { Search, Lock, ShieldCheck, ShieldAlert, ShieldQuestion, Shield } from "lucide-react";
 import { toast } from "sonner";
 import { getActionErrorMessage } from "@/lib/action-error";
 import { formatDistance } from "date-fns";
@@ -27,6 +27,39 @@ export default function UsersTable({ initialData }: UsersTableProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedUser, setSelectedUser] = useState<SelectedUser | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+
+  const getVerificationBadge = (status: string) => {
+    switch (status) {
+      case "VERIFIED":
+        return (
+          <Badge variant="default" className="bg-green-600 hover:bg-green-700">
+            <ShieldCheck className="h-3 w-3 mr-1" />
+            Verified
+          </Badge>
+        );
+      case "PENDING":
+        return (
+          <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200">
+            <ShieldQuestion className="h-3 w-3 mr-1" />
+            Pending
+          </Badge>
+        );
+      case "REJECTED":
+        return (
+          <Badge variant="destructive">
+            <ShieldAlert className="h-3 w-3 mr-1" />
+            Rejected
+          </Badge>
+        );
+      default:
+        return (
+          <Badge variant="outline">
+            <Shield className="h-3 w-3 mr-1" />
+            Unverified
+          </Badge>
+        );
+    }
+  };
 
   const loadData = async (page = 1, searchTerm = search) => {
     setIsLoading(true);
@@ -74,6 +107,7 @@ export default function UsersTable({ initialData }: UsersTableProps) {
             <TableRow>
               <TableHead>User</TableHead>
               <TableHead>Email</TableHead>
+              <TableHead>Verification</TableHead>
               <TableHead>Clinic Memberships</TableHead>
               <TableHead>Org Memberships</TableHead>
               <TableHead>Owned Tenants</TableHead>
@@ -84,7 +118,7 @@ export default function UsersTable({ initialData }: UsersTableProps) {
           <TableBody>
             {data.data.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center text-muted-foreground">
+                <TableCell colSpan={8} className="text-center text-muted-foreground">
                   No users found
                 </TableCell>
               </TableRow>
@@ -100,6 +134,9 @@ export default function UsersTable({ initialData }: UsersTableProps) {
                     </div>
                   </TableCell>
                   <TableCell className="text-sm">{user.email}</TableCell>
+                  <TableCell>
+                    {getVerificationBadge(user.verificationStatus)}
+                  </TableCell>
                   <TableCell>
                     <Badge variant="outline">{user._count.ClinicMembers}</Badge>
                   </TableCell>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { LayoutGrid, Calendar, Beaker, Pill, Stethoscope, X, FolderOpen, ClipboardList } from 'lucide-react';
+import { LayoutGrid, Calendar, Beaker, Pill, Stethoscope, X, FolderOpen, ClipboardList, Link2 } from 'lucide-react';
 
 interface FloatingActionMenuProps {
   onScheduleAppointment?: () => void;
@@ -10,6 +10,7 @@ interface FloatingActionMenuProps {
   onViewProfile?: () => void;
   onViewFiles?: () => void;
   onViewHistory?: () => void;
+  onViewIntegrations?: () => void;
 }
 
 export function FloatingActionMenu({
@@ -19,6 +20,7 @@ export function FloatingActionMenu({
   onViewProfile,
   onViewFiles,
   onViewHistory,
+  onViewIntegrations,
 }: FloatingActionMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -80,6 +82,16 @@ export function FloatingActionMenu({
       color: 'from-yellow-500 to-amber-500',
       onClick: () => {
         onViewFiles?.();
+        setIsOpen(false);
+      },
+    },
+    {
+      icon: <Link2 className="w-5 h-5" />,
+      label: 'Integrations',
+      description: 'Connect Google Calendar & more',
+      color: 'from-teal-600 to-emerald-500',
+      onClick: () => {
+        onViewIntegrations?.();
         setIsOpen(false);
       },
     },

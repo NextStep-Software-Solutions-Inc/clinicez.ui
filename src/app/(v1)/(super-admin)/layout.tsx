@@ -19,6 +19,10 @@ const sidebarNavItems = [
     href: "/super-admin/appointment-tabs",
   },
   {
+    title: "Note Templates",
+    href: "/super-admin/note-templates",
+  },
+  {
     title: "Diagnostics & Procedures",
     href: "/super-admin/diagnostics-procedures",
   },
@@ -33,6 +37,10 @@ const sidebarNavItems = [
   {
     title: "Users",
     href: "/super-admin/users",
+  },
+  {
+    title: "Verification",
+    href: "/super-admin/verification",
   },
   {
     title: "Audit Logs",

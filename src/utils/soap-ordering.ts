@@ -10,6 +10,7 @@ export interface NoteSectionBase {
   noteTemplateId?: number;
   description?: string | null;
   isActive?: boolean;
+  sortOrder?: number;
 }
 
 export interface ConsultationNoteSection extends NoteSectionBase {
@@ -31,27 +32,20 @@ export function sortNoteSectionsSOAP<T extends NoteSectionBase>(sections: T[]): 
     return [];
   }
 
-  const soapSections: T[] = [];
-  const nonSoapSections: T[] = [];
+  return [...sections].sort((a, b) => {
+    const aOrder = a.sortOrder ?? 0;
+    const bOrder = b.sortOrder ?? 0;
 
-  const soapSectionMap = new Map<SOAPSectionName, T>();
-
-  sections.forEach(section => {
-    if (isSOAPSection(section.name)) {
-      soapSectionMap.set(section.name as SOAPSectionName, section);
-    } else {
-      nonSoapSections.push(section);
+    if (aOrder !== bOrder) {
+      return aOrder - bOrder;
     }
-  });
 
-  SOAP_ORDER.forEach(soapName => {
-    const section = soapSectionMap.get(soapName);
-    if (section) {
-      soapSections.push(section);
+    // Stable tiebreaker: insertion order (id ascending)
+    if (a.id !== undefined && b.id !== undefined) {
+      return a.id - b.id;
     }
+    return 0;
   });
-
-  return [...soapSections, ...nonSoapSections];
 }
 
 export interface ConsultationNoteData {

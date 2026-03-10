@@ -34,6 +34,7 @@ import {
   ListChecks,
   ChevronRight,
   KeyRound,
+  Link2,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -134,6 +135,11 @@ import {
   setClinicAppointmentTabsAction,
   setClinicRoleAppointmentTabsAction,
 } from "@/actions/clinics/clinic-appointment-tab..action";
+import {
+  createSystemAction,
+  updateSystemAction,
+  deleteSystemAction,
+} from "@/actions/system.action";
 
 import type { GetClinic } from "@/actions/clinics/clinic.action";
 import type { GetClinicSetting } from "@/actions/clinics/clinic-setting.action";
@@ -146,6 +152,8 @@ import type { GetAppointmentTypes } from "@/actions/appointments/appointment-typ
 import type { GetClinicServiceCategories } from "@/actions/clinics/clinic-service-category.action";
 import type { GetClinicAppointmentTabs } from "@/actions/clinics/clinic-appointment-tab..action";
 import type { GetAppointmentTabs } from "@/actions/appointment-tab.action";
+import { GoogleCalendarIntegration } from "@/components/v2/integrations/GoogleCalendarIntegration";
+import type { GetSystems } from "@/actions/system.action";
 
 /* ─────────────────────────────────────────────────────────────────── */
 /*  Types                                                              */
@@ -164,6 +172,7 @@ type ServiceCategoriesData = NonNullable<GetClinicServiceCategories>;
 type RolesWithPermissionsData = NonNullable<GetClinicRolesWithPermissions>;
 type ClinicAppointmentTabsData = NonNullable<GetClinicAppointmentTabs["data"]>;
 type AllAppointmentTabsData = NonNullable<GetAppointmentTabs>;
+type SystemsData = NonNullable<GetSystems>;
 
 interface ClinicSettingsClientProps {
   clinicUid: string;
@@ -179,6 +188,9 @@ interface ClinicSettingsClientProps {
   serviceCategories: ServiceCategoriesData;
   clinicAppointmentTabs: ClinicAppointmentTabsData;
   allAppointmentTabs: AllAppointmentTabsData;
+  googleCalendarConnected?: boolean;
+  googleCalendarEmail?: string | null;
+  initialSystems: SystemsData;
 }
 
 /* ─────────────────────────────────────────────────────────────────── */
@@ -1891,6 +1903,145 @@ function ServicesTab({
 }
 
 /* ─────────────────────────────────────────────────────────────────── */
+/*  Tab: Systems                                                       */
+/* ─────────────────────────────────────────────────────────────────── */
+
+function SystemsTab({
+  clinicUid,
+  initialSystems,
+}: {
+  clinicUid: string;
+  initialSystems: SystemsData;
+}) {
+  const [systems, setSystems] = useState(initialSystems);
+  const [editingSystem, setEditingSystem] = useState<SystemsData[number] | null>(null);
+  const [showCreate, setShowCreate] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [editName, setEditName] = useState("");
+  const [isPending, startTransition] = useTransition();
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+
+  const handleCreate = () => {
+    if (!newName.trim()) return;
+    startTransition(async () => {
+      const result = await createSystemAction({ clinicUid, name: newName.trim() });
+      if (result.status && result.data) {
+        setSystems(prev => [...prev, result.data]);
+        setShowCreate(false);
+        setNewName("");
+        toast.success("System created.");
+      } else {
+        toast.error(result.message ?? "Failed to create system.");
+      }
+    });
+  };
+
+  const handleUpdate = () => {
+    if (!editingSystem || !editName.trim()) return;
+    startTransition(async () => {
+      const result = await updateSystemAction({ id: editingSystem.id, name: editName.trim() });
+      if (result.status) {
+        setSystems(prev => prev.map(s => s.id === editingSystem.id ? { ...s, name: editName.trim() } : s));
+        setEditingSystem(null);
+        toast.success("System updated.");
+      } else {
+        toast.error(result.message ?? "Failed to update system.");
+      }
+    });
+  };
+
+  const handleDelete = (id: number) => {
+    setDeletingId(id);
+    startTransition(async () => {
+      const result = await deleteSystemAction(id);
+      if (result.status) {
+        setSystems(prev => prev.filter(s => s.id !== id));
+        toast.success("System deleted.");
+      } else {
+        toast.error(result.message ?? "Failed to delete system.");
+      }
+      setDeletingId(null);
+    });
+  };
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Zap className="h-4 w-4 text-primary" />
+                Systems / Departments
+              </CardTitle>
+              <CardDescription className="mt-1">
+                Define the systems or departments used to categorize consultations and appointments (e.g. Cardiology, Pediatrics).
+              </CardDescription>
+            </div>
+            <Button size="sm" onClick={() => setShowCreate(true)} className="gap-1.5">
+              <Plus className="h-4 w-4" />
+              Add System
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {systems.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-10 text-muted-foreground">
+              <Zap className="h-9 w-9 mb-3 opacity-30" />
+              <p className="text-sm">No systems configured yet.</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {systems.map(system => (
+                <div key={system.id} className="flex items-center gap-3 rounded-lg border p-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium">{system.name}</p>
+                  </div>
+                  <div className="flex gap-1 flex-shrink-0">
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => { setEditingSystem(system); setEditName(system.name); }}>
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive hover:text-destructive" disabled={deletingId === system.id} onClick={() => handleDelete(system.id)}>
+                      {deletingId === system.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Dialog open={showCreate} onOpenChange={v => { setShowCreate(v); if (!v) setNewName(""); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Add System</DialogTitle></DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="space-y-1.5"><Label>Name <span className="text-destructive">*</span></Label><Input value={newName} onChange={e => setNewName(e.target.value)} placeholder="e.g. Cardiology, Pediatrics" /></div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCreate(false)}>Cancel</Button>
+            <Button onClick={handleCreate} disabled={!newName.trim() || isPending}>{isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}Create</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!editingSystem} onOpenChange={v => { if (!v) setEditingSystem(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Edit System</DialogTitle></DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="space-y-1.5"><Label>Name <span className="text-destructive">*</span></Label><Input value={editName} onChange={e => setEditName(e.target.value)} /></div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingSystem(null)}>Cancel</Button>
+            <Button onClick={handleUpdate} disabled={!editName.trim() || isPending}>{isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────────── */
 /*  Tab: Members                                                       */
 /* ─────────────────────────────────────────────────────────────────── */
 
@@ -2592,6 +2743,9 @@ export function ClinicSettingsClient({
   serviceCategories,
   clinicAppointmentTabs,
   allAppointmentTabs,
+  googleCalendarConnected = false,
+  googleCalendarEmail = null,
+  initialSystems,
 }: ClinicSettingsClientProps) {
   const [activeTab, setActiveTab] = useState("general");
 
@@ -2628,6 +2782,10 @@ export function ClinicSettingsClient({
             <Package className="h-3.5 w-3.5" />
             Services
           </TabsTrigger>
+          <TabsTrigger value="systems" className="gap-1.5 flex-shrink-0">
+            <Zap className="h-3.5 w-3.5" />
+            Systems
+          </TabsTrigger>
           <TabsTrigger value="appt-tabs" className="gap-1.5 flex-shrink-0">
             <ListChecks className="h-3.5 w-3.5" />
             Appt Tabs
@@ -2654,6 +2812,10 @@ export function ClinicSettingsClient({
               </Badge>
             )}
           </TabsTrigger>
+          <TabsTrigger value="integrations" className="gap-1.5 flex-shrink-0">
+            <Link2 className="h-3.5 w-3.5" />
+            Integrations
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="general" className="mt-6">
@@ -2674,6 +2836,10 @@ export function ClinicSettingsClient({
 
         <TabsContent value="services" className="mt-6">
           <ServicesTab clinicUid={clinicUid} initialCategories={serviceCategories} />
+        </TabsContent>
+
+        <TabsContent value="systems" className="mt-6">
+          <SystemsTab clinicUid={clinicUid} initialSystems={initialSystems} />
         </TabsContent>
 
         <TabsContent value="appt-tabs" className="mt-6">
@@ -2704,6 +2870,18 @@ export function ClinicSettingsClient({
             roles={roles}
             allPermissions={allClinicPermissions}
           />
+        </TabsContent>
+
+        <TabsContent value="integrations" className="mt-6">
+          <div className="max-w-2xl">
+            <div className="mb-6">
+              <h2 className="text-base font-semibold">Integrations</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Connect third-party apps to enhance your clinic workflows.
+              </p>
+            </div>
+            <GoogleCalendarIntegration connected={googleCalendarConnected} email={googleCalendarEmail} />
+          </div>
         </TabsContent>
       </Tabs>
     </div>

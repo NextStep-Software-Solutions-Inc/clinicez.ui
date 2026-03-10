@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "NoteSection" ADD COLUMN IF NOT EXISTS "sortOrder" INTEGER NOT NULL DEFAULT 0;

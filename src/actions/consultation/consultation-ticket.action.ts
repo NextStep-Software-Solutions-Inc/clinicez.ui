@@ -10,7 +10,7 @@ import { withErrorHandling } from '@/lib/with-error-handling';
 import { getHPsAction, GetHPsType } from '@actions/hp.actions';
 
 type CreateConsultationTicketPayload = {
-  systemId: number;
+  systemId?: number;
   appointmentId?: number;
   clinicPatientId?: number;
   subject?: string;
@@ -44,9 +44,11 @@ export const createConsultationTicketAction = withErrorHandling(async ({ systemI
 
     return await prismaClient.consultationTicket.create({
       data: {
-        System: {
-          connect: { id: systemId }
-        },
+        ...(systemId ? {
+          System: {
+            connect: { id: systemId }
+          }
+        } : {}),
         ...(appointmentId ? {
           Appointment: {
             connect: { id: appointmentId }

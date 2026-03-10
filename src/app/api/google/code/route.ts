@@ -1,15 +1,26 @@
-"use server";
-
-import { getGoogleAuthToken } from "@actions/google/auth.action";
+import { exchangeGoogleCode } from "@/actions/google/auth.action";
 import { redirect } from "next/navigation";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 
 export const GET = async (req: NextRequest) => {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
   const searchParams = req.nextUrl.searchParams;
-  const { code, scope } = Object.fromEntries(searchParams.entries())
-  const token = await getGoogleAuthToken();
+  const code = searchParams.get("code");
+  const error = searchParams.get("error");
 
-  if (token !== null) redirect(`${baseUrl}/settings/integrations`)
-  return NextResponse.json(token, { status: 200 });
-}
+  if (error) {
+    redirect(`${baseUrl}/settings/integrations?error=${encodeURIComponent(error)}`);
+  }
+
+  if (!code) {
+    redirect(`${baseUrl}/settings/integrations?error=no_code`);
+  }
+
+  const success = await exchangeGoogleCode(code);
+
+  if (success) {
+    redirect(`${baseUrl}/settings/integrations?connected=true`);
+  } else {
+    redirect(`${baseUrl}/settings/integrations?error=exchange_failed`);
+  }
+};

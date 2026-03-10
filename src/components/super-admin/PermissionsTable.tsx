@@ -41,7 +41,7 @@ export default function PermissionsTable({ initialData }: PermissionsTableProps)
   const [createForm, setCreateForm] = useState({
     name: "",
     description: "",
-    type: "USER" as "USER" | "CLINIC" | "ORGANIZATION",
+    type: "USER" as "USER" | "CLINIC" | "ORGANIZATION" | "ADMIN",
   });
 
   const loadData = async (page = 1, searchTerm = search) => {
@@ -106,7 +106,7 @@ export default function PermissionsTable({ initialData }: PermissionsTableProps)
     try {
       await updatePermissionAction({ 
         id: typeChangeDialog.permissionId, 
-        type: typeChangeDialog.newType as "USER" | "CLINIC" | "ORGANIZATION"
+        type: typeChangeDialog.newType as "USER" | "CLINIC" | "ORGANIZATION" | "ADMIN"
       });
       toast.success("Permission type updated successfully");
       loadData(data.pageNumber);
@@ -180,7 +180,7 @@ export default function PermissionsTable({ initialData }: PermissionsTableProps)
                 <Label htmlFor="type">Type</Label>
                 <Select
                   value={createForm.type}
-                  onValueChange={(value: "USER" | "CLINIC" | "ORGANIZATION") => setCreateForm({ ...createForm, type: value })}
+                  onValueChange={(value: "USER" | "CLINIC" | "ORGANIZATION" | "ADMIN") => setCreateForm({ ...createForm, type: value })}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -189,6 +189,7 @@ export default function PermissionsTable({ initialData }: PermissionsTableProps)
                     <SelectItem value="USER">User</SelectItem>
                     <SelectItem value="CLINIC">Clinic</SelectItem>
                     <SelectItem value="ORGANIZATION">Organization</SelectItem>
+                    <SelectItem value="ADMIN">Admin</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -238,6 +239,7 @@ export default function PermissionsTable({ initialData }: PermissionsTableProps)
                         <SelectItem value="USER">User</SelectItem>
                         <SelectItem value="CLINIC">Clinic</SelectItem>
                         <SelectItem value="ORGANIZATION">Organization</SelectItem>
+                        <SelectItem value="ADMIN">Admin</SelectItem>
                       </SelectContent>
                     </Select>
                   </TableCell>

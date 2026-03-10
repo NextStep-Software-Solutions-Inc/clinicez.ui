@@ -291,14 +291,14 @@ export const columns: ColumnDef<ConsultationTicketData>[] = [
   },
   {
     accessorKey: "system",
-    accessorFn: (row) => row.System.name,
+    accessorFn: (row) => row.System?.name,
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="System" />
     ),
     cell: ({ row }) => {
       return (
         <Badge>
-          {row.original.System.name}
+          {row.original.System?.name ?? "-"}
         </Badge>
       )
     }

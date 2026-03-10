@@ -75,19 +75,16 @@ export const formatTime12Hr = (timeStr: string | null | undefined): string => {
 }
 
 /**
- * Combine a Date (typically a date-only @db.Date field stored as midnight) with
+ * Combine a Date (typically a date-only @db.Date field stored as UTC midnight) with
  * a "HH:MM" timeStart string to produce a full datetime for comparison.
- * When timeStart is absent, the returned Date is set to end-of-day (23:59:59).
+ * Times are interpreted in Asia/Manila (UTC+8) — the same convention used
+ * throughout the app (e.g. Google Calendar integration in auth.action.ts).
+ * When timeStart is absent, the returned Date is set to end-of-day 23:59:59 PHT.
  */
 export const combineDateWithTime = (date: Date, timeStart: string | null | undefined): Date => {
-  const result = new Date(date);
-  if (timeStart) {
-    const parts = timeStart.split(':');
-    const hours = parseInt(parts[0], 10);
-    const minutes = parseInt(parts[1] ?? '0', 10);
-    result.setHours(hours, minutes, 0, 0);
-  } else {
-    result.setHours(23, 59, 59, 999);
-  }
-  return result;
+  // @db.Date fields are stored as UTC midnight; use UTC components to extract the
+  // calendar date so the result is correct regardless of the server timezone.
+  const dateStr = dayjs.utc(date).format('YYYY-MM-DD');
+  const timeStr = timeStart ?? '23:59:59';
+  return dayjs.tz(`${dateStr} ${timeStr}`, 'Asia/Manila').toDate();
 }

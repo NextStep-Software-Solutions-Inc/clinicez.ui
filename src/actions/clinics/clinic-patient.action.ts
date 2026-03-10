@@ -270,11 +270,10 @@ export const getClinicPatientsAction = async (filters: GetClinicPatientFilters):
       },
       select: { patientId: true },
     }),
-    // Count active medicines from the Prescription (Rx) system, keyed by ClinicPatient.id
+    // Count all medicines from the Prescription (Rx) system, keyed by ClinicPatient.id.
+    // Include consumed/inactive medicines so the count never decreases after a medicine is consumed.
     prismaClient.medicine.findMany({
       where: {
-        isActive: true,
-        deletedAt: null,
         Prescription: {
           patientId: { in: clinicPatientIds },
         },

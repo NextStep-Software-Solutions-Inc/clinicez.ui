@@ -243,10 +243,11 @@ export const getClinicPatientsAction = async (filters: GetClinicPatientFilters):
 
   // Get all patient IDs
   const patientIds = data.map(cp => cp.Patient?.id).filter(Boolean) as number[];
+  const clinicPatientIds = data.map(cp => cp.id);
   const clinicId = data[0]?.Clinic?.id;
 
   // Batch queries for all stats at once
-  const [appointments, conditions, medications] = await Promise.all([
+  const [appointments, conditions, medications, prescriptionMedicines] = await Promise.all([
     prismaClient.appointmentRequester.findMany({
       where: {
         userId: { in: patientIds },
@@ -269,7 +270,28 @@ export const getClinicPatientsAction = async (filters: GetClinicPatientFilters):
       },
       select: { patientId: true },
     }),
+    // Count active medicines from the Prescription (Rx) system, keyed by ClinicPatient.id
+    prismaClient.medicine.findMany({
+      where: {
+        isActive: true,
+        deletedAt: null,
+        Prescription: {
+          patientId: { in: clinicPatientIds },
+        },
+      },
+      select: {
+        Prescription: {
+          select: { patientId: true },
+        },
+      },
+    }),
   ]);
+
+  // Build a lookup: ClinicPatient.id → Patient (User) id
+  const clinicPatientToPatientId = data.reduce((acc, cp) => {
+    if (cp.Patient?.id) acc[cp.id] = cp.Patient.id;
+    return acc;
+  }, {} as Record<number, number>);
 
   // Aggregate counts by patient ID
   const appointmentCounts = appointments.reduce((acc, app) => {
@@ -282,8 +304,19 @@ export const getClinicPatientsAction = async (filters: GetClinicPatientFilters):
     return acc;
   }, {} as Record<number, number>);
 
+  // Old Medication model counts (patientId = User.id)
   const medicationCounts = medications.reduce((acc, med) => {
     acc[med.patientId] = (acc[med.patientId] || 0) + 1;
+    return acc;
+  }, {} as Record<number, number>);
+
+  // New Prescription/Medicine counts (Prescription.patientId = ClinicPatient.id)
+  const prescriptionMedicineCounts = prescriptionMedicines.reduce((acc, med) => {
+    const clinicPatientId = med.Prescription?.patientId;
+    if (clinicPatientId !== undefined) {
+      const patientId = clinicPatientToPatientId[clinicPatientId];
+      if (patientId) acc[patientId] = (acc[patientId] || 0) + 1;
+    }
     return acc;
   }, {} as Record<number, number>);
 
@@ -293,7 +326,7 @@ export const getClinicPatientsAction = async (filters: GetClinicPatientFilters):
     stats: {
       appointments: appointmentCounts[clinicPatient.Patient?.id] || 0,
       conditions: conditionCounts[clinicPatient.Patient?.id] || 0,
-      medications: medicationCounts[clinicPatient.Patient?.id] || 0,
+      medications: (medicationCounts[clinicPatient.Patient?.id] || 0) + (prescriptionMedicineCounts[clinicPatient.Patient?.id] || 0),
     },
   }));
 

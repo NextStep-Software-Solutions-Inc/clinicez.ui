@@ -111,20 +111,25 @@ export async function getNextAppointment(patientId: number): Promise<NextAppoint
 
     const now = new Date()
 
-    // Find the first appointment that has not yet elapsed (uses combined date+timeStart)
+    // Find the first appointment that has not yet fully ended.
+    // An in-progress appointment (timeStart ≤ now ≤ timeEnd) is also shown.
+    // Falls back to timeStart when timeEnd is absent so existing data still works.
     let upcomingAppointment: NonNullable<PrismaAppointmentWithIncludes> | null = null
     for (const apt of upcomingRows) {
       const attr = apt.AppointmentAttribute
       if (!attr?.date) continue
-      if (combineDateWithTime(new Date(attr.date), attr.timeStart) >= now) {
+      const endDateTime = attr.timeEnd
+        ? combineDateWithTime(new Date(attr.date), attr.timeEnd)
+        : combineDateWithTime(new Date(attr.date), attr.timeStart)
+      if (endDateTime >= now) {
         upcomingAppointment = apt
         break
       }
     }
 
-    // Only fetch the previous appointment when there is no upcoming one.
+    // Only fetch the previous appointment when there is no upcoming/current one.
     // Use `lte` (not `lt`) so today's elapsed appointments are also candidates,
-    // then apply the same combined date+timeStart check in app code.
+    // then apply the combined date+timeEnd check in app code.
     let previousAppointment: DashboardAppointment | null = null
     if (!upcomingAppointment) {
       const previousRows = await prisma.appointment.findMany({
@@ -140,11 +145,14 @@ export async function getNextAppointment(patientId: number): Promise<NextAppoint
         include: APPOINTMENT_INCLUDE,
       })
 
-      // Walk from most-recent to find the first row whose combined datetime is truly in the past
+      // Walk from most-recent to find the first row that has fully ended
       for (const row of previousRows) {
         const attr = row.AppointmentAttribute
         if (!attr?.date) continue
-        if (combineDateWithTime(new Date(attr.date), attr.timeStart) < now) {
+        const endDateTime = attr.timeEnd
+          ? combineDateWithTime(new Date(attr.date), attr.timeEnd)
+          : combineDateWithTime(new Date(attr.date), attr.timeStart)
+        if (endDateTime < now) {
           previousAppointment = mapRowToDashboardAppointment(row)
           break
         }
@@ -157,6 +165,7 @@ export async function getNextAppointment(patientId: number): Promise<NextAppoint
         daysUntil: null,
         hoursUntil: null,
         isToday: false,
+        isCurrent: false,
         isUpcoming: false,
         isPast: false,
         previousAppointment,
@@ -172,6 +181,7 @@ export async function getNextAppointment(patientId: number): Promise<NextAppoint
         daysUntil: null,
         hoursUntil: null,
         isToday: false,
+        isCurrent: false,
         isUpcoming: false,
         isPast: false,
         previousAppointment,
@@ -180,20 +190,26 @@ export async function getNextAppointment(patientId: number): Promise<NextAppoint
 
     // Use combined date+timeStart for accurate diff calculations
     const fullAppointmentDateTime = combineDateWithTime(new Date(appointmentDate), attr.timeStart)
+    const fullAppointmentEndDateTime = attr.timeEnd
+      ? combineDateWithTime(new Date(appointmentDate), attr.timeEnd)
+      : fullAppointmentDateTime
 
     const diffMs = fullAppointmentDateTime.getTime() - now.getTime()
     const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
     const diffHours = Math.ceil(diffMs / (1000 * 60 * 60))
 
     const isToday = appointmentDate.toDateString() === now.toDateString()
-    const isUpcoming = diffMs > 0
-    const isPast = diffMs < 0
+    // isCurrent requires timeEnd; without it we can't know if the appointment is still running
+    const isCurrent = !!attr.timeEnd && fullAppointmentDateTime <= now && fullAppointmentEndDateTime >= now
+    const isUpcoming = fullAppointmentDateTime > now
+    const isPast = fullAppointmentEndDateTime < now
 
     return {
       appointment: mapRowToDashboardAppointment(upcomingAppointment),
       daysUntil: isUpcoming ? diffDays : null,
       hoursUntil: isUpcoming ? diffHours : null,
       isToday,
+      isCurrent,
       isUpcoming,
       isPast,
       previousAppointment,
@@ -205,6 +221,7 @@ export async function getNextAppointment(patientId: number): Promise<NextAppoint
       daysUntil: null,
       hoursUntil: null,
       isToday: false,
+      isCurrent: false,
       isUpcoming: false,
       isPast: false,
       previousAppointment: null,
@@ -280,8 +297,11 @@ export async function getUpcomingAppointments(
         const attr = a.AppointmentAttribute
         if (!attr.date) return false
 
-        // Combine date+timeStart to skip elapsed appointments
-        return combineDateWithTime(new Date(attr.date), attr.timeStart) >= now
+        // Use timeEnd (or timeStart as fallback) so in-progress appointments remain visible
+        const endDateTime = attr.timeEnd
+          ? combineDateWithTime(new Date(attr.date), attr.timeEnd)
+          : combineDateWithTime(new Date(attr.date), attr.timeStart)
+        return endDateTime >= now
       })
       .slice(0, limit)
       .map((appointment: (typeof appointments)[0]) => {

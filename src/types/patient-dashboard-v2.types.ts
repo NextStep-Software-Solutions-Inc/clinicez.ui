@@ -64,6 +64,8 @@ export interface NextAppointmentData {
   daysUntil: number | null
   hoursUntil: number | null
   isToday: boolean
+  /** Appointment has started but not yet ended (timeStart ≤ now ≤ timeEnd). */
+  isCurrent: boolean
   isUpcoming: boolean
   isPast: boolean
   /** Most recent past appointment, returned when there is no upcoming appointment. */

@@ -157,18 +157,24 @@ export function NextAppointmentHeroCard({ appointment, isLoading }: NextAppointm
 
   const apt = appointment.appointment;
   const isToday = appointment.isToday;
+  const isCurrent = appointment.isCurrent;
   const isVirtual = apt.mode.name === 'VIRTUAL' || apt.mode.name === 'virtual';
   const hasMeetLink = !!apt.meetingUrl;
 
   return (
     <div className="w-full dark:bg-slate-800/40 bg-white/60 rounded-xl px-6 py-5 border dark:border-white/10 border-slate-200/70 flex flex-wrap items-center gap-4 relative">
-      {/* Today pulse */}
-      {isToday && (
+      {/* Pulse indicator: green for in-progress, red for today */}
+      {isCurrent ? (
+        <span className="absolute top-3 right-3 flex h-2.5 w-2.5">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500" />
+        </span>
+      ) : isToday ? (
         <span className="absolute top-3 right-3 flex h-2.5 w-2.5">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
           <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500" />
         </span>
-      )}
+      ) : null}
 
       {/* Doctor info */}
       <div className="flex items-center gap-3 min-w-0 flex-shrink-0 max-w-[260px]">
@@ -176,7 +182,9 @@ export function NextAppointmentHeroCard({ appointment, isLoading }: NextAppointm
           <Stethoscope className="w-5 h-5 dark:text-blue-400 text-blue-600" />
         </div>
         <div className="min-w-0">
-          <p className="text-sm dark:text-blue-300 text-blue-600 font-medium mb-0.5">Next Appointment</p>
+          <p className="text-sm dark:text-blue-300 text-blue-600 font-medium mb-0.5">
+            {isCurrent ? 'Current Appointment' : 'Next Appointment'}
+          </p>
           <p
             className="font-semibold dark:text-white text-slate-900 text-base leading-tight truncate"
             title={apt.doctor.hpName ?? `${apt.doctor.firstName} ${apt.doctor.lastName}`}
@@ -205,7 +213,10 @@ export function NextAppointmentHeroCard({ appointment, isLoading }: NextAppointm
         </div>
         <div className="flex items-center gap-1.5 text-sm dark:text-slate-300 text-slate-700">
           <Clock className="w-4 h-4 text-blue-400 flex-shrink-0" />
-          <span className="font-medium">{formatTime12Hr(apt.timeStart)}</span>
+          <span className="font-medium">
+            {formatTime12Hr(apt.timeStart)}
+            {apt.timeEnd ? ` to ${formatTime12Hr(apt.timeEnd)}` : ''}
+          </span>
         </div>
         <div className="flex items-center gap-1.5 text-sm dark:text-slate-300 text-slate-700">
           {isVirtual ? (
@@ -221,20 +232,30 @@ export function NextAppointmentHeroCard({ appointment, isLoading }: NextAppointm
           </span>
         </div>
 
-        {/* Compact countdown */}
-        <div className="flex items-center gap-1 text-sm font-mono ml-auto">
-          <span className="dark:bg-slate-700/60 bg-slate-100 dark:text-blue-300 text-blue-700 px-2 py-1 rounded font-semibold">
-            {String(countdownState.daysLeft).padStart(2, '0')}d
-          </span>
-          <span className="dark:text-slate-500 text-slate-400">:</span>
-          <span className="dark:bg-slate-700/60 bg-slate-100 dark:text-purple-300 text-purple-700 px-2 py-1 rounded font-semibold">
-            {String(countdownState.hoursLeft).padStart(2, '0')}h
-          </span>
-          <span className="dark:text-slate-500 text-slate-400">:</span>
-          <span className="dark:bg-slate-700/60 bg-slate-100 dark:text-pink-300 text-pink-700 px-2 py-1 rounded font-semibold">
-            {String(countdownState.minutesLeft).padStart(2, '0')}m
-          </span>
-        </div>
+        {/* Countdown (upcoming) or Happening Now badge (current) */}
+        {isCurrent ? (
+          <div className="flex items-center gap-1.5 ml-auto">
+            <span className="flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-green-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
+            </span>
+            <span className="text-sm font-semibold dark:text-green-300 text-green-600">Happening Now</span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-1 text-sm font-mono ml-auto">
+            <span className="dark:bg-slate-700/60 bg-slate-100 dark:text-blue-300 text-blue-700 px-2 py-1 rounded font-semibold">
+              {String(countdownState.daysLeft).padStart(2, '0')}d
+            </span>
+            <span className="dark:text-slate-500 text-slate-400">:</span>
+            <span className="dark:bg-slate-700/60 bg-slate-100 dark:text-purple-300 text-purple-700 px-2 py-1 rounded font-semibold">
+              {String(countdownState.hoursLeft).padStart(2, '0')}h
+            </span>
+            <span className="dark:text-slate-500 text-slate-400">:</span>
+            <span className="dark:bg-slate-700/60 bg-slate-100 dark:text-pink-300 text-pink-700 px-2 py-1 rounded font-semibold">
+              {String(countdownState.minutesLeft).padStart(2, '0')}m
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Divider */}

@@ -326,31 +326,40 @@ export const createAppointmentAction = withErrorHandling(async (payload: CreateA
     // non-critical
   }
 
-  // Notify all active clinic members that a new appointment has arrived
+  // Notify clinic members with the receive:clinic:appointment permission that a new appointment has arrived
   try {
-    const allMembers = await prisma.clinicMember.findMany({
-      where: {
-        clinicId: newAppointment.Clinic.id,
-        isActive: true,
-      },
-      select: { User: { select: { id: true } } },
+    const receivePermission = await prisma.permission.findFirst({
+      where: { name: "receive:clinic:appointment" },
+      select: { id: true },
     });
-    const requesterUserIds = new Set(
-      newAppointment.Requesters.flatMap((r) => (r.User?.id != null ? [r.User.id] : [])),
-    );
-    const memberUserIds = allMembers
-      .map((m) => m.User.id)
-      .filter((id) => !requesterUserIds.has(id));
-    if (memberUserIds.length > 0) {
-      await createNotifications(
-        memberUserIds.map((userId) => ({
-          userId,
-          type: "APPOINTMENT_RECEIVED" as const,
-          title: "New Appointment",
-          message: `A new appointment "${subject}" has been submitted to your clinic and is awaiting review.`,
-          link: `/v2/appointments?_appointment=${newAppointment.id}`,
-        })),
+    if (receivePermission) {
+      const staffMembers = await prisma.clinicMember.findMany({
+        where: {
+          clinicId: newAppointment.Clinic.id,
+          isActive: true,
+          ClinicMemberPermissions: {
+            some: { permissionId: receivePermission.id },
+          },
+        },
+        select: { User: { select: { id: true } } },
+      });
+      const requesterUserIds = new Set(
+        newAppointment.Requesters.flatMap((r) => (r.User?.id != null ? [r.User.id] : [])),
       );
+      const staffUserIds = staffMembers
+        .map((m) => m.User.id)
+        .filter((id) => !requesterUserIds.has(id));
+      if (staffUserIds.length > 0) {
+        await createNotifications(
+          staffUserIds.map((userId) => ({
+            userId,
+            type: "APPOINTMENT_RECEIVED" as const,
+            title: "New Appointment",
+            message: `A new appointment "${subject}" has been submitted to your clinic and is awaiting review.`,
+            link: `/v2/appointments?_appointment=${newAppointment.id}`,
+          })),
+        );
+      }
     }
   } catch {
     // non-critical

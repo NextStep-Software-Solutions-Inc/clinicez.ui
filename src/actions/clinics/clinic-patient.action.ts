@@ -139,6 +139,9 @@ function buildPatientSearchFilter(search: string) {
   };
 }
 
+const DEFAULT_MIN_AGE = 0;
+const DEFAULT_MAX_AGE = 120;
+
 export const getClinicPatientsAction = async (filters: GetClinicPatientFilters): Promise<GetClinicPatientsResult> => {
 
   const session = await getCachedSession()
@@ -152,7 +155,7 @@ export const getClinicPatientsAction = async (filters: GetClinicPatientFilters):
     "view patient list"
   );
 
-  const { search, cursor, pageSize = 50, distinct = [], clinicUid, userId, gender, minAge = 0, maxAge = 120 } = filters ?? {}
+  const { search, cursor, pageSize = 50, distinct = [], clinicUid, userId, gender, minAge = DEFAULT_MIN_AGE, maxAge = DEFAULT_MAX_AGE } = filters ?? {}
 
   // Calculate birth date range based on age
   // minAge (e.g., 20) = oldest person we want (born 20+ years ago, smaller date)
@@ -176,10 +179,12 @@ export const getClinicPatientsAction = async (filters: GetClinicPatientFilters):
         ...userId ? { userId } : {},
         ...(gender && gender !== 'all') ? { gender: gender as 'MALE' | 'FEMALE' } : {},
         AND: [
-          // Patients with no DOB are treated as age 0; only include them when the filter range includes 0
-          ...(minAge !== undefined || maxAge !== undefined) ? [{
+          // Only apply the DOB filter when the age range has been explicitly changed from defaults.
+          // When both are at defaults (0–120), skip filtering so all patients (including those
+          // with extreme or erroneous DOB values) are included.
+          ...(minAge > DEFAULT_MIN_AGE || maxAge < DEFAULT_MAX_AGE) ? [{
             OR: [
-              ...(minAge <= 0 ? [{ dob: null }] : []),
+              { dob: null },
               {
                 dob: {
                   ...(minBirthDate && { lte: minBirthDate }),
@@ -302,10 +307,12 @@ export const getClinicPatientsAction = async (filters: GetClinicPatientFilters):
         ...userId ? { userId } : {},
         ...(gender && gender !== 'all') ? { gender: gender as 'MALE' | 'FEMALE' } : {},
         AND: [
-          // Patients with no DOB are treated as age 0; only include them when the filter range includes 0
-          ...(minAge !== undefined || maxAge !== undefined) ? [{
+          // Only apply the DOB filter when the age range has been explicitly changed from defaults.
+          // When both are at defaults (0–120), skip filtering so all patients (including those
+          // with extreme or erroneous DOB values) are included.
+          ...(minAge > DEFAULT_MIN_AGE || maxAge < DEFAULT_MAX_AGE) ? [{
             OR: [
-              ...(minAge <= 0 ? [{ dob: null }] : []),
+              { dob: null },
               {
                 dob: {
                   ...(minBirthDate && { lte: minBirthDate }),

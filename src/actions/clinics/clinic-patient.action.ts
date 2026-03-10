@@ -176,7 +176,8 @@ export const getClinicPatientsAction = async (filters: GetClinicPatientFilters):
         ...(gender && gender !== 'all') ? { gender: gender as 'MALE' | 'FEMALE' } : {},
         AND: [
           // Include patients with no DOB (treated as age 0) OR within the age range
-          ...(minAge !== undefined || maxAge !== undefined) ? [{
+          // Only apply when the user has explicitly changed the age range from defaults
+          ...(minAge > 0 || maxAge < 120) ? [{
             OR: [
               { dob: null },
               {
@@ -301,7 +302,8 @@ export const getClinicPatientsAction = async (filters: GetClinicPatientFilters):
         ...(gender && gender !== 'all') ? { gender: gender as 'MALE' | 'FEMALE' } : {},
         AND: [
           // Include patients with no DOB (treated as age 0) OR within the age range
-          ...(minAge !== undefined || maxAge !== undefined) ? [{
+          // Only apply when the user has explicitly changed the age range from defaults
+          ...(minAge > 0 || maxAge < 120) ? [{
             OR: [
               { dob: null },
               {

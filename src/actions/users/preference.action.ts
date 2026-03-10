@@ -97,9 +97,7 @@ export const upsertMyUserPreference = withErrorHandling(async (payload: UpsertUs
           autoAcceptAppointmentAssignment,
           autoAssignAppointmentToSelf,
           muteNotifications,
-          ...(subscribedNotificationTypes !== undefined
-            ? { subscribedNotificationTypes }
-            : {}),
+          subscribedNotificationTypes: subscribedNotificationTypes ?? [],
         }
       });
     }, {

@@ -242,37 +242,40 @@ export default function UserPreferences({ userPreference }: UserPreferenceFormPr
                     </FormDescription>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {ALL_NOTIFICATION_TYPES.map((type) => (
-                      <FormItem
-                        key={type}
-                        className="flex flex-row items-center space-x-2 space-y-0"
-                      >
-                        <FormControl>
-                          <Checkbox
-                            checked={subscribedTypes.includes(type)}
-                            onCheckedChange={(checked) => {
-                              const current = form.getValues("subscribedNotificationTypes")
-                              if (checked) {
-                                form.setValue(
-                                  "subscribedNotificationTypes",
-                                  [...current, type],
-                                  { shouldDirty: true },
-                                )
-                              } else {
-                                form.setValue(
-                                  "subscribedNotificationTypes",
-                                  current.filter((t) => t !== type),
-                                  { shouldDirty: true },
-                                )
-                              }
-                            }}
-                          />
-                        </FormControl>
-                        <FormLabel className="font-normal text-sm cursor-pointer">
-                          {NOTIFICATION_TYPE_LABELS[type]}
-                        </FormLabel>
-                      </FormItem>
-                    ))}
+                    {ALL_NOTIFICATION_TYPES.map((type) => {
+                      const checkboxId = `notif-sub-${type}`
+                      return (
+                        <FormItem
+                          key={type}
+                          className="flex flex-row items-center space-x-2 space-y-0"
+                        >
+                          <FormControl>
+                            <Checkbox
+                              id={checkboxId}
+                              checked={subscribedTypes.includes(type)}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  form.setValue(
+                                    "subscribedNotificationTypes",
+                                    [...subscribedTypes, type],
+                                    { shouldDirty: true },
+                                  )
+                                } else {
+                                  form.setValue(
+                                    "subscribedNotificationTypes",
+                                    subscribedTypes.filter((t) => t !== type),
+                                    { shouldDirty: true },
+                                  )
+                                }
+                              }}
+                            />
+                          </FormControl>
+                          <FormLabel htmlFor={checkboxId} className="font-normal text-sm cursor-pointer">
+                            {NOTIFICATION_TYPE_LABELS[type]}
+                          </FormLabel>
+                        </FormItem>
+                      )
+                    })}
                   </div>
                 </FormItem>
               )}

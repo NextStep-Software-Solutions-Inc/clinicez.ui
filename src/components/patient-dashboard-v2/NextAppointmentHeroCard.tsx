@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Calendar, Clock, MapPin, Video, Stethoscope, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -15,7 +15,6 @@ interface NextAppointmentHeroCardProps {
 
 export function NextAppointmentHeroCard({ appointment, isLoading }: NextAppointmentHeroCardProps) {
   const router = useRouter();
-  const refreshingRef = useRef(false);
   const [countdownState, setCountdownState] = useState({
     daysLeft: 0,
     hoursLeft: 0,
@@ -25,34 +24,13 @@ export function NextAppointmentHeroCard({ appointment, isLoading }: NextAppointm
   useEffect(() => {
     if (!appointment?.appointment?.date) return;
 
-    // Reset the refresh guard whenever the server data changes (i.e., after router.refresh())
-    refreshingRef.current = false;
-
-    const apt = appointment.appointment;
-    const serverIsCurrent = appointment.isCurrent;
-
     const updateCountdown = () => {
       const now = new Date();
-      const startDt = combineDateWithTime(new Date(apt.date!), apt.timeStart);
-      const endDt = apt.timeEnd
-        ? combineDateWithTime(new Date(apt.date!), apt.timeEnd)
-        : null;
-
-      const liveIsCurrent = !!endDt && startDt <= now && now <= endDt;
-      const liveIsPast = endDt ? now > endDt : now > startDt;
-
-      // Trigger a server refresh when:
-      // 1. Appointment has just become current (timeStart passed while page was open)
-      // 2. Appointment has just ended (timeEnd passed while page was open)
-      if ((!serverIsCurrent && liveIsCurrent) || liveIsPast) {
-        if (!refreshingRef.current) {
-          refreshingRef.current = true;
-          router.refresh();
-        }
-        return;
-      }
-
-      const diff = startDt.getTime() - now.getTime();
+      const appointmentDateTime = combineDateWithTime(
+        new Date(appointment.appointment!.date!),
+        appointment.appointment!.timeStart,
+      );
+      const diff = appointmentDateTime.getTime() - now.getTime();
 
       if (diff <= 0) {
         setCountdownState({ daysLeft: 0, hoursLeft: 0, minutesLeft: 0 });
@@ -67,15 +45,9 @@ export function NextAppointmentHeroCard({ appointment, isLoading }: NextAppointm
     };
 
     updateCountdown();
-    const interval = setInterval(updateCountdown, 30000);
+    const interval = setInterval(updateCountdown, 60000);
     return () => clearInterval(interval);
-  }, [
-    appointment?.appointment?.date,
-    appointment?.appointment?.timeStart,
-    appointment?.appointment?.timeEnd,
-    appointment?.isCurrent,
-    router,
-  ]);
+  }, [appointment?.appointment?.date, appointment?.appointment?.timeStart]);
 
   if (isLoading) {
     return (

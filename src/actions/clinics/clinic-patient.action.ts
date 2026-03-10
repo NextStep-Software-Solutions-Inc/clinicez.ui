@@ -85,7 +85,7 @@ export type GetClinicPatientFilters = {
 export interface GetClinicPatientsResult {
   message: string;
   data: Array<{
-    stats: { appointments: number; conditions: number; medications: number };
+    stats: { appointments: number; conditions: number; medications: number; activeMedications: number };
     id: number;
     createdAt: Date;
     profileCompletionStatus: string;
@@ -247,7 +247,7 @@ export const getClinicPatientsAction = async (filters: GetClinicPatientFilters):
   const clinicId = data[0]?.Clinic?.id;
 
   // Batch queries for all stats at once
-  const [appointments, conditions, medications, prescriptionMedicines] = await Promise.all([
+  const [appointments, conditions, medications, activeMedications, prescriptionMedicines, activePrescriptionMedicines] = await Promise.all([
     prismaClient.appointmentRequester.findMany({
       where: {
         userId: { in: patientIds },
@@ -270,10 +270,33 @@ export const getClinicPatientsAction = async (filters: GetClinicPatientFilters):
       },
       select: { patientId: true },
     }),
+    // Legacy Medication model: count only active ones (completedAt = null means not yet completed).
+    prismaClient.medication.findMany({
+      where: {
+        patientId: { in: patientIds },
+        completedAt: null,
+      },
+      select: { patientId: true },
+    }),
     // Count all medicines from the Prescription (Rx) system, keyed by ClinicPatient.id.
     // Include consumed/inactive medicines so the count never decreases after a medicine is consumed.
     prismaClient.medicine.findMany({
       where: {
+        Prescription: {
+          patientId: { in: clinicPatientIds },
+        },
+      },
+      select: {
+        Prescription: {
+          select: { patientId: true },
+        },
+      },
+    }),
+    // Count only currently active medicines (isActive = true, not soft-deleted).
+    prismaClient.medicine.findMany({
+      where: {
+        isActive: true,
+        deletedAt: null,
         Prescription: {
           patientId: { in: clinicPatientIds },
         },
@@ -309,8 +332,24 @@ export const getClinicPatientsAction = async (filters: GetClinicPatientFilters):
     return acc;
   }, {} as Record<number, number>);
 
+  // Active legacy Medication counts (completedAt = null)
+  const activeMedicationCounts = activeMedications.reduce((acc, med) => {
+    acc[med.patientId] = (acc[med.patientId] || 0) + 1;
+    return acc;
+  }, {} as Record<number, number>);
+
   // New Prescription/Medicine counts (Prescription.patientId = ClinicPatient.id)
   const prescriptionMedicineCounts = prescriptionMedicines.reduce((acc, med) => {
+    const clinicPatientId = med.Prescription?.patientId;
+    if (clinicPatientId !== undefined) {
+      const patientId = clinicPatientToPatientId[clinicPatientId];
+      if (patientId) acc[patientId] = (acc[patientId] || 0) + 1;
+    }
+    return acc;
+  }, {} as Record<number, number>);
+
+  // Active Prescription/Medicine counts (isActive = true, deletedAt = null)
+  const activePrescriptionMedicineCounts = activePrescriptionMedicines.reduce((acc, med) => {
     const clinicPatientId = med.Prescription?.patientId;
     if (clinicPatientId !== undefined) {
       const patientId = clinicPatientToPatientId[clinicPatientId];
@@ -326,6 +365,7 @@ export const getClinicPatientsAction = async (filters: GetClinicPatientFilters):
       appointments: appointmentCounts[clinicPatient.Patient?.id] || 0,
       conditions: conditionCounts[clinicPatient.Patient?.id] || 0,
       medications: (medicationCounts[clinicPatient.Patient?.id] || 0) + (prescriptionMedicineCounts[clinicPatient.Patient?.id] || 0),
+      activeMedications: (activeMedicationCounts[clinicPatient.Patient?.id] || 0) + (activePrescriptionMedicineCounts[clinicPatient.Patient?.id] || 0),
     },
   }));
 

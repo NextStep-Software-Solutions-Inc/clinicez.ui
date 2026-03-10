@@ -80,13 +80,7 @@ export function NextAppointmentHeroCard({ appointment, isLoading }: NextAppointm
     const doctorName = prev.doctor.hpName ?? `${prev.doctor.firstName ?? ''} ${prev.doctor.lastName ?? ''}`.trim();
 
     return (
-      <div className="w-full dark:bg-slate-800/40 bg-white/60 rounded-xl px-6 py-5 border dark:border-white/10 border-slate-200/70 flex flex-wrap items-center gap-4 relative">
-        {/* Previous appointment badge */}
-        <span className="absolute top-3 right-3 text-xs dark:bg-slate-700/60 bg-slate-100 dark:text-slate-300 text-slate-600 px-2 py-0.5 rounded font-medium">
-          Previous Appointment
-        </span>
-
-        {/* Doctor info */}
+      <div className="w-full dark:bg-slate-800/40 bg-white/60 rounded-xl px-6 py-5 border dark:border-white/10 border-slate-200/70 flex flex-wrap items-center gap-4">
         <div className="flex items-center gap-3 min-w-0 flex-shrink-0 max-w-[260px]">
           <div className="w-11 h-11 rounded-full dark:bg-blue-500/20 bg-blue-100/70 flex items-center justify-center flex-shrink-0">
             <Stethoscope className="w-5 h-5 dark:text-blue-400 text-blue-600" />

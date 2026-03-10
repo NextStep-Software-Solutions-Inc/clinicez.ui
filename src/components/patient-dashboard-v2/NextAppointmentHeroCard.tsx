@@ -80,26 +80,26 @@ export function NextAppointmentHeroCard({ appointment, isLoading }: NextAppointm
     const doctorName = prev.doctor.hpName ?? `${prev.doctor.firstName ?? ''} ${prev.doctor.lastName ?? ''}`.trim();
 
     return (
-      <div className="w-full dark:bg-slate-800/40 bg-white/60 rounded-xl px-6 py-5 border dark:border-white/10 border-slate-200/70 flex flex-wrap items-center gap-4 relative opacity-80">
-        {/* Previous badge */}
-        <span className="absolute top-3 right-3 text-xs dark:bg-slate-700/60 bg-slate-100 dark:text-slate-400 text-slate-500 px-2 py-0.5 rounded font-medium">
-          Last Visit
+      <div className="w-full dark:bg-slate-800/40 bg-white/60 rounded-xl px-6 py-5 border dark:border-white/10 border-slate-200/70 flex flex-wrap items-center gap-4 relative">
+        {/* Previous appointment badge */}
+        <span className="absolute top-3 right-3 text-xs dark:bg-slate-700/60 bg-slate-100 dark:text-slate-300 text-slate-600 px-2 py-0.5 rounded font-medium">
+          Previous Appointment
         </span>
 
         {/* Doctor info */}
         <div className="flex items-center gap-3 min-w-0 flex-shrink-0 max-w-[260px]">
-          <div className="w-11 h-11 rounded-full dark:bg-slate-600/30 bg-slate-100 flex items-center justify-center flex-shrink-0">
-            <Stethoscope className="w-5 h-5 dark:text-slate-400 text-slate-500" />
+          <div className="w-11 h-11 rounded-full dark:bg-blue-500/20 bg-blue-100/70 flex items-center justify-center flex-shrink-0">
+            <Stethoscope className="w-5 h-5 dark:text-blue-400 text-blue-600" />
           </div>
           <div className="min-w-0">
-            <p className="text-sm dark:text-slate-400 text-slate-500 font-medium mb-0.5">Previous Appointment</p>
+            <p className="text-sm dark:text-blue-300 text-blue-600 font-medium mb-0.5">Previous Appointment</p>
             <p
-              className="font-semibold dark:text-slate-300 text-slate-700 text-base leading-tight truncate"
+              className="font-semibold dark:text-white text-slate-900 text-base leading-tight truncate"
               title={doctorName || 'Unknown'}
             >
               {doctorName || 'Unknown'}
             </p>
-            <p className="text-xs dark:text-slate-500 text-slate-500 truncate">
+            <p className="text-xs dark:text-slate-400 text-slate-600 truncate">
               {prev.doctor.specialization || 'Healthcare Provider'}
             </p>
           </div>
@@ -110,23 +110,23 @@ export function NextAppointmentHeroCard({ appointment, isLoading }: NextAppointm
 
         {/* Date / Time / Location chips */}
         <div className="flex flex-wrap items-center gap-3 flex-grow">
-          <div className="flex items-center gap-1.5 text-sm dark:text-slate-400 text-slate-600">
-            <Calendar className="w-4 h-4 text-slate-400 flex-shrink-0" />
+          <div className="flex items-center gap-1.5 text-sm dark:text-slate-300 text-slate-700">
+            <Calendar className="w-4 h-4 text-blue-400 flex-shrink-0" />
             <span className="font-medium">
               {prev.date
                 ? new Date(prev.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
                 : 'TBD'}
             </span>
           </div>
-          <div className="flex items-center gap-1.5 text-sm dark:text-slate-400 text-slate-600">
-            <Clock className="w-4 h-4 text-slate-400 flex-shrink-0" />
+          <div className="flex items-center gap-1.5 text-sm dark:text-slate-300 text-slate-700">
+            <Clock className="w-4 h-4 text-blue-400 flex-shrink-0" />
             <span className="font-medium">{formatTime12Hr(prev.timeStart)}</span>
           </div>
-          <div className="flex items-center gap-1.5 text-sm dark:text-slate-400 text-slate-600">
+          <div className="flex items-center gap-1.5 text-sm dark:text-slate-300 text-slate-700">
             {isVirtualPrev ? (
-              <Video className="w-4 h-4 text-slate-400 flex-shrink-0" />
+              <Video className="w-4 h-4 text-purple-400 flex-shrink-0" />
             ) : (
-              <MapPin className="w-4 h-4 text-slate-400 flex-shrink-0" />
+              <MapPin className="w-4 h-4 text-green-400 flex-shrink-0" />
             )}
             <span className="font-medium truncate max-w-[160px]" title={isVirtualPrev ? 'Video Call' : prev.clinic.name}>
               {isVirtualPrev ? 'Video Call' : prev.clinic.name}
@@ -136,8 +136,8 @@ export function NextAppointmentHeroCard({ appointment, isLoading }: NextAppointm
           {/* Elapsed time chip */}
           {elapsedLabel && (
             <div className="flex items-center gap-1.5 ml-auto">
-              <History className="w-3.5 h-3.5 dark:text-slate-500 text-slate-400" />
-              <span className="text-xs dark:text-slate-400 text-slate-500 font-medium">{elapsedLabel}</span>
+              <History className="w-3.5 h-3.5 dark:text-slate-400 text-slate-500" />
+              <span className="text-xs dark:text-slate-300 text-slate-600 font-medium">{elapsedLabel}</span>
             </div>
           )}
         </div>
@@ -147,7 +147,6 @@ export function NextAppointmentHeroCard({ appointment, isLoading }: NextAppointm
 
         {/* CTA */}
         <Button
-          variant="outline"
           onClick={() => router.push(`/v2/appointments-consultations?appointment=${prev.id}`)}
         >
           View Details

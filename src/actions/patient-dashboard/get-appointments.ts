@@ -122,19 +122,32 @@ export async function getNextAppointment(patientId: number): Promise<NextAppoint
       }
     }
 
-    // Only fetch the previous appointment when there is no upcoming one
+    // Only fetch the previous appointment when there is no upcoming one.
+    // Use `lte` (not `lt`) so today's elapsed appointments are also candidates,
+    // then apply the same combined date+timeStart check in app code.
     let previousAppointment: DashboardAppointment | null = null
     if (!upcomingAppointment) {
-      const previousRow = await prisma.appointment.findFirst({
+      const previousRows = await prisma.appointment.findMany({
         where: {
           Requesters: { some: { userId: patientId } },
-          AppointmentAttribute: { date: { lt: new Date() } },
+          AppointmentAttribute: { date: { lte: new Date() } },
         },
-        orderBy: { AppointmentAttribute: { date: 'desc' } },
+        orderBy: [
+          { AppointmentAttribute: { date: 'desc' } },
+          { AppointmentAttribute: { timeStart: 'desc' } },
+        ],
+        take: 10,
         include: APPOINTMENT_INCLUDE,
       })
-      if (previousRow?.AppointmentAttribute) {
-        previousAppointment = mapRowToDashboardAppointment(previousRow)
+
+      // Walk from most-recent to find the first row whose combined datetime is truly in the past
+      for (const row of previousRows) {
+        const attr = row.AppointmentAttribute
+        if (!attr?.date) continue
+        if (combineDateWithTime(new Date(attr.date), attr.timeStart) < now) {
+          previousAppointment = mapRowToDashboardAppointment(row)
+          break
+        }
       }
     }
 

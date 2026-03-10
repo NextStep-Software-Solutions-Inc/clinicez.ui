@@ -5,10 +5,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Heart, AlertCircle, Pill, ChevronRight, User, CheckCircle2, Clock, XCircle } from "lucide-react";
+import { Heart, AlertCircle, Pill, ChevronRight, User, CheckCircle2, Clock, XCircle, UserPlus } from "lucide-react";
 import { calculateAge, formatBloodType } from "@/lib/utils";
 import type { ClinicPatientListItem } from "@/types/clinic-patients-v2.types";
 import { PatientAIInsightButton } from "./PatientAIInsightButton";
+import { formatDistanceToNow } from "date-fns";
 
 interface PatientCardProps {
   patient: ClinicPatientListItem;
@@ -52,6 +53,7 @@ export const PatientCard = memo(function PatientCard({
 }: PatientCardProps) {
   const {
     profileCompletionStatus,
+    createdAt,
     Clinic: { id: clinicId },
     Patient: {
       id: patientId,
@@ -77,6 +79,7 @@ export const PatientCard = memo(function PatientCard({
     : null;
 
   const profileHref = `/v2/clinic/${clinicUid}/patients/${patientId}`;
+  const joinedAgo = formatDistanceToNow(new Date(createdAt), { addSuffix: true });
 
   /* ── Grid View ─────────────────────────────────────────────────────────── */
   if (viewMode === "grid") {
@@ -152,6 +155,12 @@ export const PatientCard = memo(function PatientCard({
               <ChevronRight className="h-3.5 w-3.5" />
             </span>
           </div>
+
+          {/* Joined time ago */}
+          <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+            <UserPlus className="h-3 w-3 flex-shrink-0" />
+            <span>Patient {joinedAgo}</span>
+          </div>
         </Link>
 
         {/* AI Insight button – only for healthcare providers */}
@@ -215,6 +224,10 @@ export const PatientCard = memo(function PatientCard({
               </Badge>
             )}
             <ProfileStatusBadge status={profileCompletionStatus} />
+          </div>
+          <div className="flex items-center gap-1 mt-0.5 text-[10px] text-muted-foreground">
+            <UserPlus className="h-3 w-3 flex-shrink-0" />
+            <span>Patient {joinedAgo}</span>
           </div>
         </div>
 

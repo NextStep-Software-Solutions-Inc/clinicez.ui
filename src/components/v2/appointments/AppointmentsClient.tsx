@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import { getAppointmentsAction, type GetAppointments } from "@/actions/appointments/appointments.action";
+import type { AppointmentStatus } from "@public/json/appointment-list";
 import type { GetAppointmentModes } from "@/actions/appointments/appointment-mode.action";
 import type { GetAppointmentTypes } from "@/actions/appointments/appointment-type.action";
 import type { GetClinicServiceCategories } from "@/actions/clinics/clinic-service-category.action";
@@ -164,7 +165,7 @@ export function AppointmentsClient({
   // ── Server-side filter reload ───────────────────────────────────────────────
 
   const reloadWithFilters = useCallback(
-    async (opts: { hpIds: number[]; tagged: boolean; search?: string }) => {
+    async (opts: { hpIds: number[]; tagged: boolean; search?: string; status?: StatusTabKey }) => {
       setIsReloading(true);
       try {
         const result = await getAppointmentsAction({
@@ -172,6 +173,7 @@ export function AppointmentsClient({
           ...(opts.hpIds.length > 0 ? { hpIds: opts.hpIds } : {}),
           ...(opts.tagged ? { tagged: "true" } : {}),
           ...(opts.search ? { search: opts.search } : {}),
+          ...(opts.status && opts.status !== "ALL" ? { status: opts.status as AppointmentStatus } : {}),
         });
         if (result.status && result.data) {
           setAppointments(result.data);
@@ -194,7 +196,7 @@ export function AppointmentsClient({
         : [...hpFilters, id];
       setHpFilters(next);
       setActiveTab("ALL");
-      void reloadWithFilters({ hpIds: next, tagged: taggedOnly, search: activeSearch });
+      void reloadWithFilters({ hpIds: next, tagged: taggedOnly, search: activeSearch, status: "ALL" });
     },
     [hpFilters, taggedOnly, activeSearch, reloadWithFilters]
   );
@@ -202,14 +204,14 @@ export function AppointmentsClient({
   const handleClearHpFilters = useCallback(() => {
     setHpFilters([]);
     setActiveTab("ALL");
-    void reloadWithFilters({ hpIds: [], tagged: taggedOnly, search: activeSearch });
+    void reloadWithFilters({ hpIds: [], tagged: taggedOnly, search: activeSearch, status: "ALL" });
   }, [taggedOnly, activeSearch, reloadWithFilters]);
 
   const handleTaggedToggle = useCallback(() => {
     const next = !taggedOnly;
     setTaggedOnly(next);
     setActiveTab("ALL");
-    void reloadWithFilters({ hpIds: hpFilters, tagged: next, search: activeSearch });
+    void reloadWithFilters({ hpIds: hpFilters, tagged: next, search: activeSearch, status: "ALL" });
   }, [taggedOnly, hpFilters, activeSearch, reloadWithFilters]);
 
   // ── Debounced search ──────────────────────────────────────────────────────
@@ -220,10 +222,10 @@ export function AppointmentsClient({
       if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
       searchTimerRef.current = setTimeout(() => {
         setActiveSearch(value);
-        void reloadWithFilters({ hpIds: hpFilters, tagged: taggedOnly, search: value });
+        void reloadWithFilters({ hpIds: hpFilters, tagged: taggedOnly, search: value, status: activeTab });
       }, 400);
     },
-    [hpFilters, taggedOnly, reloadWithFilters]
+    [hpFilters, taggedOnly, reloadWithFilters, activeTab]
   );
 
   // Clean up debounce timer on unmount
@@ -235,6 +237,16 @@ export function AppointmentsClient({
       }
     };
   }, []);
+
+  // ── Tab change: triggers server-side re-fetch ──────────────────────────────
+
+  const handleTabChange = useCallback(
+    (tab: StatusTabKey) => {
+      setActiveTab(tab);
+      void reloadWithFilters({ hpIds: hpFilters, tagged: taggedOnly, search: activeSearch, status: tab });
+    },
+    [hpFilters, taggedOnly, activeSearch, reloadWithFilters]
+  );
 
   // ── Refresh ────────────────────────────────────────────────────────────────
 
@@ -275,6 +287,7 @@ export function AppointmentsClient({
         ...(hpFilters.length > 0 ? { hpIds: hpFilters } : {}),
         ...(taggedOnly ? { tagged: "true" } : {}),
         ...(activeSearch ? { search: activeSearch } : {}),
+        ...(activeTab !== "ALL" ? { status: activeTab as AppointmentStatus } : {}),
       });
       if (result.status && result.data) {
         const newItems = result.data;
@@ -291,7 +304,7 @@ export function AppointmentsClient({
     } finally {
       setIsLoadingMore(false);
     }
-  }, [clinicUid, appointments, hasMore, isLoadingMore, hpFilters, taggedOnly, activeSearch]);
+  }, [clinicUid, appointments, hasMore, isLoadingMore, hpFilters, taggedOnly, activeSearch, activeTab]);
 
   // IntersectionObserver for scroll-to-load-more
   useEffect(() => {
@@ -307,14 +320,9 @@ export function AppointmentsClient({
     return () => observer.disconnect();
   }, [loadMore]);
 
-  // ── Filtered list (status tab is still client-side; search is server-side) ─
+  // ── Appointments are now filtered server-side; no client-side status filter ─
 
-  const filtered =
-    activeTab === "ALL"
-      ? appointments
-      : appointments.filter((a) => a.AppointmentAttribute?.status === activeTab);
-
-  const totalCount = counts["ALL"] ?? 0;
+  const totalCount = counts[activeTab] ?? 0;
 
   return (
     <div
@@ -331,7 +339,7 @@ export function AppointmentsClient({
           </div>
           <p className="text-xs text-muted-foreground whitespace-nowrap">
             Showing{" "}
-            <span className="font-medium text-foreground">{filtered.length}</span>{" "}
+            <span className="font-medium text-foreground">{appointments.length}</span>{" "}
             of{" "}
             <span className="font-medium text-foreground">{totalCount}</span>{" "}
             appointments
@@ -368,9 +376,10 @@ export function AppointmentsClient({
             {allowedStatusTabs.map((tab) => (
               <button
                 key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
+                onClick={() => handleTabChange(tab.key)}
+                disabled={isReloading}
                 className={cn(
-                  "px-2.5 py-0.5 text-xs rounded-full border transition-all duration-150 font-medium",
+                  "px-2.5 py-0.5 text-xs rounded-full border transition-all duration-150 font-medium disabled:opacity-50 disabled:cursor-not-allowed",
                   activeTab === tab.key
                     ? "bg-primary text-primary-foreground border-primary shadow-sm"
                     : "bg-background/60 border-border/50 text-muted-foreground hover:border-primary/40 hover:text-foreground"
@@ -481,11 +490,11 @@ export function AppointmentsClient({
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
           </div>
         )}
-        {filtered.length === 0 && !isLoadingMore && !isReloading ? (
+        {appointments.length === 0 && !isLoadingMore && !isReloading ? (
           <EmptyState status={activeTab} taggedOnly={taggedOnly} hpFiltered={hpFilters.length > 0} />
         ) : (
           <div className="flex flex-col gap-2 px-4 py-4">
-            {filtered.map((appointment) => (
+            {appointments.map((appointment) => (
               <AppointmentCard
                 key={appointment.id}
                 appointment={appointment}

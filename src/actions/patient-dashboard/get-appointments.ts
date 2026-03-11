@@ -43,7 +43,7 @@ const APPOINTMENT_INCLUDE = {
   // Include the accepted/pending routing HP so the dashboard card shows the
   // actual assigned provider rather than falling back to "Unassigned Doctor".
   AppointmentRouting: {
-    where: { status: { in: ['PENDING', 'ACCEPTED'] } },
+    where: { status: { in: ['PENDING', 'ACCEPTED'] as string[] } },
     take: 1,
     // 'ACCEPTED' sorts before 'PENDING' alphabetically so the accepted HP surfaces first
     orderBy: { status: 'asc' as const },

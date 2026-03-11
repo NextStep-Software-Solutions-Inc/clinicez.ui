@@ -220,6 +220,32 @@ function getConsultationDisplayDate(ticket: ConsultationTicket): Date {
     : new Date(ticket.createdAt)
 }
 
+/** Separator used between start and end times in a time range display */
+const TIME_RANGE_SEPARATOR = ' \u2013 ' // en dash
+
+/** Formats a "HH:MM" time string into "h:mm AM/PM". Returns null for falsy or unparseable input. */
+function formatTime(t: string | null | undefined): string | null {
+  if (!t) return null
+  const parts = t.split(':')
+  const h = parseInt(parts[0], 10)
+  const m = parseInt(parts[1], 10)
+  if (isNaN(h) || isNaN(m)) return null
+  const period = h >= 12 ? 'PM' : 'AM'
+  const hour = h % 12 || 12
+  return `${hour}:${String(m).padStart(2, '0')} ${period}`
+}
+
+/**
+ * Returns a formatted " · start – end" time range string, or null when no time is available.
+ * Suitable for appending directly after a date string.
+ */
+function formatTimeRange(start: string | null | undefined, end: string | null | undefined): string | null {
+  const ts = formatTime(start)
+  if (!ts) return null
+  const te = formatTime(end)
+  return te ? ` · ${ts}${TIME_RANGE_SEPARATOR}${te}` : ` · ${ts}`
+}
+
 // ---------------------------------------------------------------------------
 // Detail panels
 // ---------------------------------------------------------------------------
@@ -283,6 +309,10 @@ function ConsultationDetailPanel({ ticket, onBack }: { ticket: ConsultationTicke
                   day: 'numeric',
                   year: 'numeric',
                 })}
+                {formatTimeRange(
+                  ticket.Appointment?.AppointmentAttribute?.timeStart,
+                  ticket.Appointment?.AppointmentAttribute?.timeEnd
+                )}
               </span>
             </div>
           </div>
@@ -547,6 +577,7 @@ function AppointmentDetailPanel({ appointment, onBack }: { appointment: Appointm
                     day: 'numeric',
                     year: 'numeric',
                   })}
+                  {formatTimeRange(attr.timeStart, attr.timeEnd)}
                 </span>
               ) : (
                 <span className="text-xs dark:text-slate-500 text-slate-400">
@@ -582,10 +613,9 @@ function AppointmentDetailPanel({ appointment, onBack }: { appointment: Appointm
                         day: 'numeric',
                         year: 'numeric',
                       })}
-                      {attr.timeStart && (
+                      {formatTimeRange(attr.timeStart, attr.timeEnd) && (
                         <span className="dark:text-slate-300 text-slate-600">
-                          {' '}· {attr.timeStart}
-                          {attr.timeEnd && ` – ${attr.timeEnd}`}
+                          {formatTimeRange(attr.timeStart, attr.timeEnd)}
                         </span>
                       )}
                     </p>
@@ -731,6 +761,10 @@ function ListItemRow({
                 day: 'numeric',
                 year: 'numeric',
               })}
+              {formatTimeRange(
+                ticket.Appointment?.AppointmentAttribute?.timeStart,
+                ticket.Appointment?.AppointmentAttribute?.timeEnd
+              )}
             </span>
           </div>
           {(ticket.ConsultationNotes.length > 0 || ticket.Prescriptions.length > 0) && (
@@ -790,6 +824,7 @@ function ListItemRow({
                 day: 'numeric',
                 year: 'numeric',
               })}
+              {formatTimeRange(appt.AppointmentAttribute?.timeStart, appt.AppointmentAttribute?.timeEnd)}
             </span>
           )}
         </div>

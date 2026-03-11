@@ -208,6 +208,14 @@ type ListItem =
   | { kind: 'consultation'; data: ConsultationTicket; date: Date }
   | { kind: 'appointment'; data: Appointment; date: Date }
 
+/** Shared shape for a healthcare provider displayed across detail panels. */
+type HpItem = {
+  id: number
+  HPProfile: { title: string | null; name: string | null; suffix: string | null } | null
+  User: { firstName: string | null; lastName: string | null } | null
+  HPType: { name: string } | null
+}
+
 // ---------------------------------------------------------------------------
 // Detail panels
 // ---------------------------------------------------------------------------
@@ -232,21 +240,45 @@ function ConsultationDetailPanel({ ticket, onBack }: { ticket: ConsultationTicke
     ticket.isArchived
   )
 
+  // Determine the effective date to display: scheduled appointment date or creation date
+  const scheduledDate = appointment?.AppointmentAttribute?.date
+    ? new Date(appointment.AppointmentAttribute.date)
+    : null
+  const displayDate = scheduledDate ?? new Date(ticket.createdAt)
+
+  // Build unified HP list: consultation HPs take priority; fall back to accepted appointment HPs
+  const appointmentAcceptedHPs: HpItem[] = (appointment?.AppointmentRouting ?? []).map(r => r.RoutedTo)
+  const appointmentPreferredHP = appointment?.AppointmentAttribute?.PreferredAppointee ?? null
+  const hpsToShow: HpItem[] = hps.length > 0
+    ? hps
+    : appointmentAcceptedHPs.length > 0
+      ? appointmentAcceptedHPs
+      : appointmentPreferredHP
+        ? [appointmentPreferredHP]
+        : []
+
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Detail header */}
       <div className="px-5 pt-5 pb-4 shrink-0 dark:border-b dark:border-white/10 border-b border-slate-200/60">
-        <button
-          type="button"
-          onClick={onBack}
-          className="md:hidden flex items-center gap-1 text-xs dark:text-slate-400 text-slate-500 mb-3 dark:hover:text-white hover:text-slate-900 transition-colors"
-        >
-          <ChevronLeft className="h-3.5 w-3.5" />
-          All Records
-        </button>
+        <div className="flex items-center gap-2 flex-wrap mb-2 md:hidden">
+          <button
+            type="button"
+            onClick={onBack}
+            className="flex items-center gap-1 text-xs dark:text-slate-400 text-slate-500 dark:hover:text-white hover:text-slate-900 transition-colors"
+          >
+            <ChevronLeft className="h-3.5 w-3.5" />
+            All Records
+          </button>
+          <StatusBadge config={statusConfig} />
+          <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full dark:bg-slate-700/60 bg-slate-200/60 dark:text-slate-300 text-slate-600 border dark:border-white/10 border-slate-200/60">
+            <Stethoscope className="h-3 w-3" />
+            Consultation
+          </span>
+        </div>
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <div className="flex items-center gap-2 flex-wrap mb-1.5">
+            <div className="hidden md:flex items-center gap-2 flex-wrap mb-1.5">
               <StatusBadge config={statusConfig} />
               <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full dark:bg-slate-700/60 bg-slate-200/60 dark:text-slate-300 text-slate-600 border dark:border-white/10 border-slate-200/60">
                 <Stethoscope className="h-3 w-3" />
@@ -266,11 +298,14 @@ function ConsultationDetailPanel({ ticket, onBack }: { ticket: ConsultationTicke
                 </span>
               )}
               <span className="text-xs dark:text-slate-500 text-slate-400">
-                {new Date(ticket.createdAt).toLocaleDateString('en-US', {
+                {displayDate.toLocaleDateString('en-US', {
                   month: 'short',
                   day: 'numeric',
                   year: 'numeric',
                 })}
+                {appointment?.AppointmentAttribute?.timeStart && (
+                  <span> · {appointment.AppointmentAttribute.timeStart}</span>
+                )}
               </span>
             </div>
           </div>
@@ -279,13 +314,13 @@ function ConsultationDetailPanel({ ticket, onBack }: { ticket: ConsultationTicke
 
       <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:dark:bg-white/10 [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-full">
         {/* Healthcare Providers */}
-        {hps.length > 0 && (
+        {hpsToShow.length > 0 && (
           <section>
             <p className="text-xs font-semibold dark:text-slate-400 text-slate-500 uppercase tracking-widest mb-2.5">
-              Your Doctors
+              Your Healthcare Providers
             </p>
             <div className="flex flex-col gap-2">
-              {hps.map((hp) => (
+              {hpsToShow.map((hp) => (
                 <div
                   key={hp.id}
                   className="flex items-center gap-3 dark:bg-slate-800/40 bg-slate-100/60 rounded-xl px-3.5 py-2.5"
@@ -495,24 +530,39 @@ function ConsultationDetailPanel({ ticket, onBack }: { ticket: ConsultationTicke
 
 function AppointmentDetailPanel({ appointment, onBack }: { appointment: Appointment; onBack: () => void }) {
   const attr = appointment.AppointmentAttribute
-  const hp = appointment.AppointmentRouting[0]?.RoutedTo
   const statusConfig = getAppointmentStatusConfig(attr?.status)
+
+  // Build the HP list: accepted routing HPs first, then preferred HP fallback
+  const acceptedHPs: HpItem[] = appointment.AppointmentRouting.map(r => r.RoutedTo)
+  const preferredHP = attr?.PreferredAppointee ?? null
+  const hpsToShow: HpItem[] = acceptedHPs.length > 0
+    ? acceptedHPs
+    : preferredHP
+      ? [preferredHP]
+      : []
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Detail header */}
       <div className="px-5 pt-5 pb-4 shrink-0 dark:border-b dark:border-white/10 border-b border-slate-200/60">
-        <button
-          type="button"
-          onClick={onBack}
-          className="md:hidden flex items-center gap-1 text-xs dark:text-slate-400 text-slate-500 mb-3 dark:hover:text-white hover:text-slate-900 transition-colors"
-        >
-          <ChevronLeft className="h-3.5 w-3.5" />
-          All Records
-        </button>
+        <div className="flex items-center gap-2 flex-wrap mb-2 md:hidden">
+          <button
+            type="button"
+            onClick={onBack}
+            className="flex items-center gap-1 text-xs dark:text-slate-400 text-slate-500 dark:hover:text-white hover:text-slate-900 transition-colors"
+          >
+            <ChevronLeft className="h-3.5 w-3.5" />
+            All Records
+          </button>
+          {attr && <StatusBadge config={statusConfig} />}
+          <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full dark:bg-slate-700/60 bg-slate-200/60 dark:text-slate-300 text-slate-600 border dark:border-white/10 border-slate-200/60">
+            <Calendar className="h-3 w-3" />
+            Appointment
+          </span>
+        </div>
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <div className="flex items-center gap-2 flex-wrap mb-1.5">
+            <div className="hidden md:flex items-center gap-2 flex-wrap mb-1.5">
               {attr && <StatusBadge config={statusConfig} />}
               <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full dark:bg-slate-700/60 bg-slate-200/60 dark:text-slate-300 text-slate-600 border dark:border-white/10 border-slate-200/60">
                 <Calendar className="h-3 w-3" />
@@ -527,11 +577,20 @@ function AppointmentDetailPanel({ appointment, onBack }: { appointment: Appointm
                 <span className="text-sm dark:text-slate-400 text-slate-500">{appointment.Clinic.name}</span>
               )}
               <span className="text-xs dark:text-slate-500 text-slate-400">
-                {new Date(appointment.createdAt).toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric',
-                })}
+                {attr?.date
+                  ? new Date(attr.date).toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric',
+                    })
+                  : new Date(appointment.createdAt).toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric',
+                    })}
+                {attr?.timeStart && (
+                  <span> · {attr.timeStart}</span>
+                )}
               </span>
             </div>
           </div>
@@ -539,6 +598,42 @@ function AppointmentDetailPanel({ appointment, onBack }: { appointment: Appointm
       </div>
 
       <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:dark:bg-white/10 [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-full">
+        {/* Your Healthcare Providers */}
+        {hpsToShow.length > 0 && (
+          <section>
+            <p className="text-xs font-semibold dark:text-slate-400 text-slate-500 uppercase tracking-widest mb-2.5">
+              Your Healthcare Providers
+            </p>
+            <div className="flex flex-col gap-2">
+              {hpsToShow.map((hp) => (
+                <div
+                  key={hp.id}
+                  className="flex items-center gap-3 dark:bg-slate-800/40 bg-slate-100/60 rounded-xl px-3.5 py-3"
+                >
+                  <div className="w-9 h-9 rounded-full bg-violet-500/20 flex items-center justify-center shrink-0">
+                    <Stethoscope className="h-4 w-4 text-violet-500" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium dark:text-white text-slate-900 truncate">
+                      {[
+                        hp.HPProfile?.title,
+                        hp.HPProfile?.name ||
+                          `${hp.User?.firstName ?? ''} ${hp.User?.lastName ?? ''}`.trim(),
+                        hp.HPProfile?.suffix,
+                      ]
+                        .filter(Boolean)
+                        .join(' ') || 'Healthcare Provider'}
+                    </p>
+                    {hp.HPType?.name && (
+                      <p className="text-xs dark:text-slate-400 text-slate-500">{hp.HPType.name}</p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
         {/* Appointment Details */}
         {attr && (
           <section>
@@ -604,31 +699,6 @@ function AppointmentDetailPanel({ appointment, onBack }: { appointment: Appointm
             </div>
           </section>
         )}
-
-        {/* Assigned Provider */}
-        {hp && (
-          <section>
-            <p className="text-xs font-semibold dark:text-slate-400 text-slate-500 uppercase tracking-widest mb-2.5">
-              Healthcare Provider
-            </p>
-            <div className="flex items-center gap-3 dark:bg-slate-800/40 bg-slate-100/60 rounded-xl px-3.5 py-3">
-              <div className="w-9 h-9 rounded-full bg-violet-500/20 flex items-center justify-center shrink-0">
-                <Stethoscope className="h-4 w-4 text-violet-500" />
-              </div>
-              <p className="text-sm font-medium dark:text-white text-slate-900">
-                {[
-                  hp.HPProfile?.title,
-                  hp.HPProfile?.name ||
-                    `${hp.User?.firstName ?? ''} ${hp.User?.lastName ?? ''}`.trim(),
-                  hp.HPProfile?.suffix,
-                ]
-                  .filter(Boolean)
-                  .join(' ')}
-              </p>
-            </div>
-          </section>
-        )}
-
         {/* Complaint */}
         {appointment.complaint && (
           <section>
@@ -702,11 +772,17 @@ function ListItemRow({
               <span className="text-xs dark:text-slate-500 text-slate-400 font-mono">#{ticket.caseNumber}</span>
             )}
             <span className="text-xs dark:text-slate-500 text-slate-400">
-              {new Date(ticket.createdAt).toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric',
-              })}
+              {ticket.Appointment?.AppointmentAttribute?.date
+                ? new Date(ticket.Appointment.AppointmentAttribute.date).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                  })
+                : new Date(ticket.createdAt).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                  })}
             </span>
           </div>
           {(ticket.ConsultationNotes.length > 0 || ticket.Prescriptions.length > 0) && (
@@ -792,7 +868,10 @@ export default function PatientHistoryClient({
       (t): ListItem => ({
         kind: 'consultation',
         data: t,
-        date: new Date(t.createdAt),
+        // Use scheduled appointment date if linked, otherwise fall back to creation date
+        date: t.Appointment?.AppointmentAttribute?.date
+          ? new Date(t.Appointment.AppointmentAttribute.date)
+          : new Date(t.createdAt),
       })
     ),
     // Include appointments that have no linked consultation yet

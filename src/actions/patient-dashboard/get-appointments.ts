@@ -45,11 +45,8 @@ const APPOINTMENT_INCLUDE = {
   AppointmentRouting: {
     where: { status: { in: ['PENDING', 'ACCEPTED'] } },
     take: 1,
-    orderBy: [
-      // ACCEPTED sorts before PENDING alphabetically — preferred HP surfaces first
-      { status: 'asc' as const },
-      { createdAt: 'desc' as const },
-    ],
+    // 'ACCEPTED' sorts before 'PENDING' alphabetically so the accepted HP surfaces first
+    orderBy: { status: 'asc' as const },
     select: {
       RoutedTo: {
         select: {
@@ -337,10 +334,8 @@ export async function getUpcomingAppointments(
         AppointmentRouting: {
           where: { status: { in: ['PENDING', 'ACCEPTED'] } },
           take: 1,
-          orderBy: [
-            { status: 'asc' as const },
-            { createdAt: 'desc' as const },
-          ],
+          // 'ACCEPTED' sorts before 'PENDING' alphabetically so the accepted HP surfaces first
+          orderBy: { status: 'asc' as const },
           select: {
             RoutedTo: {
               select: {

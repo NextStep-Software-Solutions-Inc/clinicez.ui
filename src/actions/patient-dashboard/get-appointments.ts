@@ -98,6 +98,7 @@ export async function getNextAppointment(patientId: number): Promise<NextAppoint
     // so "today" appointments pass the date filter regardless of timeStart).
     const upcomingRows = await prisma.appointment.findMany({
       where: {
+        isActive: true,
         Requesters: { some: { userId: patientId } },
         AppointmentAttribute: {
           status: { in: ['PENDING', 'CONFIRMED', 'ROUTED', 'RECEIVED'] },
@@ -134,8 +135,12 @@ export async function getNextAppointment(patientId: number): Promise<NextAppoint
     if (!upcomingAppointment) {
       const previousRows = await prisma.appointment.findMany({
         where: {
+          isActive: true,
           Requesters: { some: { userId: patientId } },
-          AppointmentAttribute: { date: { lte: new Date() } },
+          AppointmentAttribute: {
+            status: { notIn: ['CANCELLED', 'REJECTED'] },
+            date: { lte: new Date() },
+          },
         },
         orderBy: [
           { AppointmentAttribute: { date: 'desc' } },
@@ -240,6 +245,7 @@ export async function getUpcomingAppointments(
     // Get upcoming appointments across all clinics, sorted by date
     const appointments = await prisma.appointment.findMany({
       where: {
+        isActive: true,
         Requesters: { some: { userId: patientId } },
         AppointmentAttribute: {
           status: { in: ['PENDING', 'CONFIRMED', 'ROUTED', 'RECEIVED', 'RESCHEDULED'] },

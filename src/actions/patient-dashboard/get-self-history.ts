@@ -69,8 +69,17 @@ export const getPatientSelfHistoryAction = withErrorHandling(async () => {
         },
       },
       AppointmentRouting: {
+        // Only include active assignments — DECLINED/CANCELLED must never surface
+        // as the patient's "Healthcare Provider". Order so ACCEPTED appears first.
+        where: { status: { in: ['PENDING', 'ACCEPTED'] } },
         take: 1,
-        orderBy: { createdAt: 'desc' },
+        orderBy: [
+          // 'ACCEPTED' sorts before 'PENDING' alphabetically, giving preference
+          // to the HP who has actively confirmed the assignment.
+          // These two status values are stable constants (see appointment-routing.action.ts).
+          { status: 'asc' },
+          { createdAt: 'desc' },
+        ],
         select: {
           RoutedTo: {
             select: {

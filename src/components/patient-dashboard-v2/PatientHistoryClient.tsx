@@ -208,6 +208,18 @@ type ListItem =
   | { kind: 'consultation'; data: ConsultationTicket; date: Date }
   | { kind: 'appointment'; data: Appointment; date: Date }
 
+/**
+ * Returns the most meaningful date to display/sort for a consultation:
+ * 1. Linked appointment date  (the actual day the patient came in)
+ * 2. Ticket creation date     (fallback when no appointment is linked, or
+ *                              the appointment has no AppointmentAttribute yet)
+ */
+function getConsultationDisplayDate(ticket: ConsultationTicket): Date {
+  return ticket.Appointment?.AppointmentAttribute?.date
+    ? new Date(ticket.Appointment.AppointmentAttribute.date)
+    : new Date(ticket.createdAt)
+}
+
 // ---------------------------------------------------------------------------
 // Detail panels
 // ---------------------------------------------------------------------------
@@ -266,7 +278,7 @@ function ConsultationDetailPanel({ ticket, onBack }: { ticket: ConsultationTicke
                 </span>
               )}
               <span className="text-xs dark:text-slate-500 text-slate-400">
-                {new Date(ticket.createdAt).toLocaleDateString('en-US', {
+                {getConsultationDisplayDate(ticket).toLocaleDateString('en-US', {
                   month: 'short',
                   day: 'numeric',
                   year: 'numeric',
@@ -526,13 +538,25 @@ function AppointmentDetailPanel({ appointment, onBack }: { appointment: Appointm
               {appointment.Clinic && (
                 <span className="text-sm dark:text-slate-400 text-slate-500">{appointment.Clinic.name}</span>
               )}
-              <span className="text-xs dark:text-slate-500 text-slate-400">
-                {new Date(appointment.createdAt).toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric',
-                })}
-              </span>
+              {attr?.date ? (
+                <span className="inline-flex items-center gap-1 text-xs dark:text-slate-500 text-slate-400">
+                  <Calendar className="h-3 w-3" />
+                  {new Date(attr.date).toLocaleDateString('en-US', {
+                    weekday: 'short',
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                  })}
+                </span>
+              ) : (
+                <span className="text-xs dark:text-slate-500 text-slate-400">
+                  {new Date(appointment.createdAt).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                  })}
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -702,7 +726,7 @@ function ListItemRow({
               <span className="text-xs dark:text-slate-500 text-slate-400 font-mono">#{ticket.caseNumber}</span>
             )}
             <span className="text-xs dark:text-slate-500 text-slate-400">
-              {new Date(ticket.createdAt).toLocaleDateString('en-US', {
+              {getConsultationDisplayDate(ticket).toLocaleDateString('en-US', {
                 month: 'short',
                 day: 'numeric',
                 year: 'numeric',
@@ -792,7 +816,8 @@ export default function PatientHistoryClient({
       (t): ListItem => ({
         kind: 'consultation',
         data: t,
-        date: new Date(t.createdAt),
+        // Prefer the linked appointment's actual date for consistent sorting
+        date: getConsultationDisplayDate(t),
       })
     ),
     // Include appointments that have no linked consultation yet

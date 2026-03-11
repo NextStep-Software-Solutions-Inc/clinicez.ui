@@ -69,7 +69,7 @@ export const PatientCard = memo(function PatientCard({
       picture,
       email,
     },
-    stats = { appointments: 0, conditions: 0, medications: 0 },
+    stats = { appointments: 0, conditions: 0, medications: 0, activeMedications: 0 },
   } = patient;
 
   const initials = `${firstName?.charAt(0) ?? ""}${lastName?.charAt(0) ?? ""}`;
@@ -146,6 +146,7 @@ export const PatientCard = memo(function PatientCard({
               label="Meds"
               value={stats.medications}
               colorClass="text-blue-500"
+              subLabel={`${stats.activeMedications} active`}
             />
           </div>
 
@@ -253,6 +254,7 @@ export const PatientCard = memo(function PatientCard({
             label="Medications"
             value={stats.medications}
             colorClass="text-blue-500"
+            subLabel={`${stats.activeMedications} active`}
           />
         </div>
       </Link>
@@ -281,11 +283,13 @@ function StatBadge({
   label,
   value,
   colorClass,
+  subLabel,
 }: {
   icon: React.ReactNode;
   label: string;
   value: number;
   colorClass: string;
+  subLabel?: string;
 }) {
   return (
     <div className="text-center">
@@ -294,6 +298,9 @@ function StatBadge({
         <p className="text-xs text-muted-foreground">{label}</p>
       </div>
       <p className="font-bold text-base leading-none">{value}</p>
+      {subLabel && (
+        <p className="text-[10px] text-muted-foreground mt-0.5 leading-none">{subLabel}</p>
+      )}
     </div>
   );
 }

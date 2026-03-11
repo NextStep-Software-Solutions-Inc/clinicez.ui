@@ -337,7 +337,7 @@ function ConsultationDetailPanel({ ticket, onBack }: { ticket: ConsultationTicke
         {hps.length > 0 && (
           <section>
             <p className="text-xs font-semibold dark:text-slate-400 text-slate-500 uppercase tracking-widest mb-2.5">
-              Your Doctors
+              Your Healthcare Providers
             </p>
             <div className="flex flex-col gap-2">
               {hps.map((hp) => (

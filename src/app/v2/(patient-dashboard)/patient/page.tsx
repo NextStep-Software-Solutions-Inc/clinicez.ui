@@ -19,6 +19,7 @@ import {
 import { ThemeToggle } from '@/components/patient-dashboard-v2/ThemeToggle';
 import { getPatientDashboardData } from '@/actions/patient-dashboard';
 import { bookAppointmentAtom } from '@/state/book-appointment';
+import { useUser } from '@clerk/nextjs';
 import { checkIsClinicPatientAction } from '@/actions/clinics/clinic-patient.action';
 import BookAppointmentSheet from '@/components/appointment/BookAppointmentSheet';
 import { NotificationBell } from '@/components/v2/notifications/NotificationBell';
@@ -53,6 +54,7 @@ function DashboardLoadingSkeleton() {
 
 function PatientDashboardContent() {
   const router = useRouter();
+  const { user, isLoaded: isUserLoaded } = useUser();
   const setBookAppointmentForm = useSetAtom(bookAppointmentAtom);
   const [showClinicDialog, setShowClinicDialog] = useState(false);
   const [pendingClinic, setPendingClinic] = useState<{ clinicUid: string; clinicName: string } | null>(null);
@@ -61,8 +63,8 @@ function PatientDashboardContent() {
   const prescriptionsRef = useRef<HTMLDivElement>(null);
   const appointmentRef = useRef<HTMLDivElement>(null);
   
-  const { data: dashboardData, isLoading, error } = useSWR(
-    'patient-dashboard',
+  const { data: dashboardData, isLoading: isDashboardLoading, error } = useSWR(
+    isUserLoaded && user?.id ? `patient-dashboard-${user.id}` : null,
     getPatientDashboardData,
     {
       revalidateOnFocus: false,
@@ -71,6 +73,7 @@ function PatientDashboardContent() {
       focusThrottleInterval: 5 * 60 * 1000,
     }
   );
+  const isLoading = !isUserLoaded || isDashboardLoading;
 
   if (error) {
     return (

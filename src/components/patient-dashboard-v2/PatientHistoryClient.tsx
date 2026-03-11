@@ -263,7 +263,20 @@ function StatusBadge({ config }: { config: StatusConfig }) {
 }
 
 function ConsultationDetailPanel({ ticket, onBack }: { ticket: ConsultationTicket; onBack: () => void }) {
-  const hps = ticket.ConsultationTicketHPs.map((h) => h.HealthCareProvider)
+  // Merge ConsultationTicketHPs (explicit assignment) with the linked
+  // appointment's AppointmentRouting HP (accepted/pending assignment).
+  // This ensures the doctor who accepted the appointment routing is always
+  // shown even when the consultation ticket wasn't created with hpIds.
+  const consultationHPs = ticket.ConsultationTicketHPs.map((h) => h.HealthCareProvider)
+  // [0] is safe here: the query orders by status asc then createdAt desc,
+  // which places the single ACCEPTED entry (alphabetically before PENDING)
+  // first. With take:1, the array always has at most one element.
+  const routingHP = ticket.Appointment?.AppointmentRouting?.[0]?.RoutedTo
+  const hpById = new Map(consultationHPs.map((h) => [h.id, h]))
+  if (routingHP && !hpById.has(routingHP.id)) {
+    hpById.set(routingHP.id, routingHP)
+  }
+  const hps = Array.from(hpById.values())
   const appointment = ticket.Appointment
   const statusConfig = getConsultationStatusConfig(
     ticket.ConsultationTicketAttribute?.status,

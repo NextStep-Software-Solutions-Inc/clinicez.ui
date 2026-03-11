@@ -83,6 +83,7 @@ export const getPatientSelfHistoryAction = withErrorHandling(async () => {
         select: {
           RoutedTo: {
             select: {
+              id: true,
               HPProfile: { select: { title: true, name: true, suffix: true } },
               User: { select: { firstName: true, lastName: true } },
               HPType: { select: { name: true } },
@@ -194,6 +195,27 @@ export const getPatientSelfHistoryAction = withErrorHandling(async () => {
               AppointmentType: { select: { name: true } },
               AppointmentMode: { select: { name: true } },
               Service: { select: { name: true } },
+            },
+          },
+          // Include the accepted/pending HP assignment so the consultation detail
+          // panel can display the doctor even when ConsultationTicketHPs is empty.
+          AppointmentRouting: {
+            where: { status: { in: ['PENDING', 'ACCEPTED'] } },
+            take: 1,
+            // 'ACCEPTED' sorts before 'PENDING' alphabetically — this is intentional
+            // and mirrors the same ordering used in the standalone appointments query
+            // above (line 76). If these two status string values ever change, this
+            // sort must be re-evaluated.
+            orderBy: [{ status: 'asc' }, { createdAt: 'desc' }],
+            select: {
+              RoutedTo: {
+                select: {
+                  id: true,
+                  HPProfile: { select: { title: true, name: true, suffix: true } },
+                  User: { select: { firstName: true, lastName: true } },
+                  HPType: { select: { name: true } },
+                },
+              },
             },
           },
         },

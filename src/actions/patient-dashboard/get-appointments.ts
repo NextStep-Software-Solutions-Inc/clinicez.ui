@@ -40,6 +40,39 @@ const APPOINTMENT_INCLUDE = {
       Service: true,
     },
   },
+  // Include the accepted/pending routing HP so the dashboard card shows the
+  // actual assigned provider rather than falling back to "Unassigned Doctor".
+  AppointmentRouting: {
+    where: { status: { in: ['PENDING', 'ACCEPTED'] } },
+    take: 1,
+    orderBy: [
+      // ACCEPTED sorts before PENDING alphabetically — preferred HP surfaces first
+      { status: 'asc' as const },
+      { createdAt: 'desc' as const },
+    ],
+    select: {
+      RoutedTo: {
+        select: {
+          id: true,
+          HPProfile: {
+            select: {
+              name: true,
+              title: true,
+              suffix: true,
+              specialties: true,
+            },
+          },
+          User: {
+            select: {
+              firstName: true,
+              lastName: true,
+              picture: true,
+            },
+          },
+        },
+      },
+    },
+  },
   Clinic: {
     select: {
       id: true,
@@ -54,7 +87,20 @@ type PrismaAppointmentWithIncludes = Awaited<ReturnType<typeof prisma.appointmen
 /** Map a Prisma appointment row to the DashboardAppointment shape. */
 function mapRowToDashboardAppointment(row: NonNullable<PrismaAppointmentWithIncludes>): DashboardAppointment {
   const attr = row.AppointmentAttribute!
-  const doctor = attr.PreferredAppointee
+
+  // Prefer the HP who accepted/is pending routing over the originally requested HP.
+  // This ensures the dashboard card always shows the actual assigned provider.
+  const routingHP = row.AppointmentRouting?.[0]?.RoutedTo
+  const doctor = routingHP
+    ? {
+        id: routingHP.id,
+        firstName: routingHP.User?.firstName ?? null,
+        lastName: routingHP.User?.lastName ?? null,
+        hpName: buildHpName(routingHP.HPProfile),
+        specialization: routingHP.HPProfile?.specialties?.[0] ?? null,
+        picture: routingHP.User?.picture ?? null,
+      }
+    : attr.PreferredAppointee
     ? {
         id: attr.PreferredAppointee.id,
         firstName: attr.PreferredAppointee.User?.firstName ?? null,
@@ -286,6 +332,38 @@ export async function getUpcomingAppointments(
             Service: true,
           },
         },
+        // Include the accepted/pending routing HP so the upcoming appointments
+        // card shows the actual assigned provider rather than "Unassigned Doctor".
+        AppointmentRouting: {
+          where: { status: { in: ['PENDING', 'ACCEPTED'] } },
+          take: 1,
+          orderBy: [
+            { status: 'asc' as const },
+            { createdAt: 'desc' as const },
+          ],
+          select: {
+            RoutedTo: {
+              select: {
+                id: true,
+                HPProfile: {
+                  select: {
+                    name: true,
+                    title: true,
+                    suffix: true,
+                    specialties: true,
+                  },
+                },
+                User: {
+                  select: {
+                    firstName: true,
+                    lastName: true,
+                    picture: true,
+                  },
+                },
+              },
+            },
+          },
+        },
         Clinic: {
           select: {
             id: true,
@@ -319,7 +397,17 @@ export async function getUpcomingAppointments(
       .slice(0, limit)
       .map((appointment: (typeof appointments)[0]) => {
         const attr = appointment.AppointmentAttribute!
-        const doctor = attr.PreferredAppointee
+        const routingHP = appointment.AppointmentRouting?.[0]?.RoutedTo
+        const doctor = routingHP
+          ? {
+            id: routingHP.id,
+            firstName: routingHP.User?.firstName ?? null,
+            lastName: routingHP.User?.lastName ?? null,
+            hpName: buildHpName(routingHP.HPProfile),
+            specialization: routingHP.HPProfile?.specialties?.[0] ?? null,
+            picture: routingHP.User?.picture ?? null,
+          }
+          : attr.PreferredAppointee
           ? {
             id: attr.PreferredAppointee.id,
             firstName: attr.PreferredAppointee.User?.firstName ?? null,

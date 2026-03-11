@@ -9,7 +9,7 @@ import type { RecentConsultationsData } from '@/types/patient-dashboard-v2.types
  */
 export async function getRecentConsultations(
   clinicPatientIds: number[],
-  patientId: number,
+  clerkUserId: string,
   limit: number = 5
 ): Promise<RecentConsultationsData> {
   try {
@@ -23,7 +23,7 @@ export async function getRecentConsultations(
         isActive: true,
         OR: [
           { clinicPatientId: { in: clinicPatientIds } },
-          { Appointment: { Requesters: { some: { userId: patientId } } } },
+          { Appointment: { Requesters: { some: { User: { userId: clerkUserId } } } } },
         ],
       },
       include: {

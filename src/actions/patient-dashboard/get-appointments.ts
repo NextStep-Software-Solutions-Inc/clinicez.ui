@@ -90,8 +90,13 @@ function mapRowToDashboardAppointment(row: NonNullable<PrismaAppointmentWithIncl
  * Get next upcoming appointment for patient.
  * When there is no upcoming appointment, `previousAppointment` will contain the
  * most recent past appointment so the UI can display it with the elapsed time.
+ *
+ * @param clerkUserId - The Clerk user ID string (User.userId in DB). Using the same
+ *   nested-relation filter `Requesters: { some: { User: { userId: clerkUserId } } }` as
+ *   `getPatientSelfHistoryAction` ensures the dashboard and history page always show the
+ *   same set of appointments.
  */
-export async function getNextAppointment(patientId: number): Promise<NextAppointmentData> {
+export async function getNextAppointment(clerkUserId: string): Promise<NextAppointmentData> {
   try {
     // Fetch up to 10 upcoming appointments (by date) so we can skip any that
     // have already elapsed on the same day (date is a DATE-only field in the DB,
@@ -99,7 +104,7 @@ export async function getNextAppointment(patientId: number): Promise<NextAppoint
     const upcomingRows = await prisma.appointment.findMany({
       where: {
         isActive: true,
-        Requesters: { some: { userId: patientId } },
+        Requesters: { some: { User: { userId: clerkUserId } } },
         AppointmentAttribute: {
           status: { in: ['PENDING', 'CONFIRMED', 'ROUTED', 'RECEIVED'] },
           date: { gte: new Date() },
@@ -136,7 +141,7 @@ export async function getNextAppointment(patientId: number): Promise<NextAppoint
       const previousRows = await prisma.appointment.findMany({
         where: {
           isActive: true,
-          Requesters: { some: { userId: patientId } },
+          Requesters: { some: { User: { userId: clerkUserId } } },
           AppointmentAttribute: {
             status: { notIn: ['CANCELLED', 'REJECTED'] },
             date: { lte: new Date() },
@@ -236,9 +241,11 @@ export async function getNextAppointment(patientId: number): Promise<NextAppoint
 
 /**
  * Get next 3 upcoming appointments for patient
+ *
+ * @param clerkUserId - The Clerk user ID string (User.userId in DB).
  */
 export async function getUpcomingAppointments(
-  patientId: number,
+  clerkUserId: string,
   limit: number = 3
 ): Promise<UpcomingAppointmentsData> {
   try {
@@ -246,7 +253,7 @@ export async function getUpcomingAppointments(
     const appointments = await prisma.appointment.findMany({
       where: {
         isActive: true,
-        Requesters: { some: { userId: patientId } },
+        Requesters: { some: { User: { userId: clerkUserId } } },
         AppointmentAttribute: {
           status: { in: ['PENDING', 'CONFIRMED', 'ROUTED', 'RECEIVED', 'RESCHEDULED'] },
           date: { gte: new Date() },

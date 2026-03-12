@@ -803,6 +803,42 @@ export function AppointmentDetailSheet({
             </div>
           </div>
 
+          {/* Attachments */}
+          {(appointment.AppointmentAttachments?.length ?? 0) > 0 && (
+            <div className="rounded-xl border bg-muted/30 p-4 space-y-3">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                <Paperclip className="h-3.5 w-3.5" />
+                Attachments
+                <Badge variant="outline" className="text-xs px-1.5 py-0 border-primary/30 text-primary ml-1">
+                  {appointment.AppointmentAttachments.length}
+                </Badge>
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {appointment.AppointmentAttachments.map((att, idx) => (
+                  <button
+                    key={att.id}
+                    type="button"
+                    className="relative w-20 h-20 rounded-lg overflow-hidden border border-border/40 bg-muted/40 hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-primary/40 shrink-0"
+                    onClick={() => setLightboxIndex(idx)}
+                    title={att.name || `Attachment ${idx + 1}`}
+                    aria-label={`View ${att.name || `attachment ${idx + 1}`}`}
+                  >
+                    <Image
+                      src={att.url}
+                      alt={att.name || `Attachment ${idx + 1}`}
+                      width={80}
+                      height={80}
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Click an image to view full size.
+              </p>
+            </div>
+          )}
+
           {/* AI Symptoms Analyzer — combined: shows saved analysis + analyze/re-analyze */}
           {(appointment.complaint || savedAiAnalysis) && (
             <div className="rounded-xl border border-violet-200 bg-violet-50/50 dark:bg-violet-950/20 dark:border-violet-800/40 p-4 space-y-2">
@@ -1126,42 +1162,6 @@ export function AppointmentDetailSheet({
                   );
                 })}
               </div>
-            </div>
-          )}
-
-          {/* Attachments */}
-          {(appointment.AppointmentAttachments?.length ?? 0) > 0 && (
-            <div className="rounded-xl border bg-muted/30 p-4 space-y-3">
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
-                <Paperclip className="h-3.5 w-3.5" />
-                Attachments
-                <Badge variant="outline" className="text-xs px-1.5 py-0 border-primary/30 text-primary ml-1">
-                  {appointment.AppointmentAttachments.length}
-                </Badge>
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                {appointment.AppointmentAttachments.map((att, idx) => (
-                  <button
-                    key={att.id}
-                    type="button"
-                    className="relative w-20 h-20 rounded-lg overflow-hidden border border-border/40 bg-muted/40 hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-primary/40 shrink-0"
-                    onClick={() => setLightboxIndex(idx)}
-                    title={att.name || `Attachment ${idx + 1}`}
-                    aria-label={`View ${att.name || `attachment ${idx + 1}`}`}
-                  >
-                    <Image
-                      src={att.url}
-                      alt={att.name || `Attachment ${idx + 1}`}
-                      width={80}
-                      height={80}
-                      className="w-full h-full object-cover"
-                    />
-                  </button>
-                ))}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Click an image to view full size.
-              </p>
             </div>
           )}
 

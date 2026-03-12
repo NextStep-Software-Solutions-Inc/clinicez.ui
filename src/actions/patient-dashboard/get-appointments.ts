@@ -139,6 +139,8 @@ export async function getNextAppointment(patientId: number): Promise<NextAppoint
     const upcomingRows = await prisma.appointment.findMany({
       where: {
         Requesters: { some: { userId: patientId } },
+        isActive: true,
+        deletedAt: null,
         AppointmentAttribute: {
           status: { in: ['PENDING', 'CONFIRMED', 'ROUTED', 'RECEIVED'] },
           date: { gte: new Date() },
@@ -175,6 +177,8 @@ export async function getNextAppointment(patientId: number): Promise<NextAppoint
       const previousRows = await prisma.appointment.findMany({
         where: {
           Requesters: { some: { userId: patientId } },
+          isActive: true,
+          deletedAt: null,
           AppointmentAttribute: { date: { lte: new Date() } },
         },
         orderBy: [
@@ -281,6 +285,8 @@ export async function getUpcomingAppointments(
     const appointments = await prisma.appointment.findMany({
       where: {
         Requesters: { some: { userId: patientId } },
+        isActive: true,
+        deletedAt: null,
         AppointmentAttribute: {
           status: { in: ['PENDING', 'CONFIRMED', 'ROUTED', 'RECEIVED', 'RESCHEDULED'] },
           date: { gte: new Date() },

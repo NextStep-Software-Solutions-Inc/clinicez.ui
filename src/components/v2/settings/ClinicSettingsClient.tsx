@@ -35,6 +35,7 @@ import {
   ChevronRight,
   KeyRound,
   Link2,
+  AlertTriangle,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -102,6 +103,7 @@ import {
   updateClinicMemberRoleAction,
   removeClinicMemberAction,
   searchNonMembersAction,
+  resetClinicMemberPermissionsAction,
 } from "@/actions/clinics/clinic-member.action";
 import { setClinicMemberPermissionsAction } from "@/actions/clinics/clinic-member-permission.action";
 import {
@@ -1292,6 +1294,85 @@ function MemberPermissionsDialog({ clinicUid, member, allPermissions, onSaved }:
 }
 
 /* ─────────────────────────────────────────────────────────────────── */
+/*  Restore Default Permissions Dialog (Clinic)                        */
+/* ─────────────────────────────────────────────────────────────────── */
+
+interface RestoreDefaultPermissionsDialogProps {
+  member: MembersData[number];
+  onRestored: (memberId: number, permissionIds: number[]) => void;
+}
+
+function RestoreDefaultPermissionsDialog({ member, onRestored }: RestoreDefaultPermissionsDialogProps) {
+  const [open, setOpen] = useState(false);
+  const [isPending, startTransition] = useTransition();
+
+  const memberName = [member.User.firstName, member.User.lastName].filter(Boolean).join(" ") || member.User.email;
+
+  const handleConfirm = () => {
+    startTransition(async () => {
+      const result = await resetClinicMemberPermissionsAction(member.id);
+      if (result.status) {
+        toast.success(result.message ?? "Permissions restored to defaults.");
+        onRestored(member.id, result.data ?? []);
+        setOpen(false);
+      } else {
+        toast.error(result.message ?? "Failed to restore permissions.");
+      }
+    });
+  };
+
+  return (
+    <>
+      <DropdownMenuItem
+        onSelect={(e) => { e.preventDefault(); setOpen(true); }}
+        className="gap-2"
+      >
+        <ShieldX className="h-4 w-4" />
+        Restore Default Permissions
+      </DropdownMenuItem>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              Restore Default Permissions
+            </DialogTitle>
+            <DialogDescription>
+              This will reset all permissions for{" "}
+              <span className="font-medium text-foreground">{memberName}</span>{" "}
+              back to the default permissions of their current role (
+              <span className="font-medium text-foreground">{member.Role.name}</span>
+              ).
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-900/50 dark:bg-amber-950/30 p-3 text-sm text-amber-800 dark:text-amber-300 space-y-1">
+            <p className="font-medium flex items-center gap-1.5">
+              <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+              Warning
+            </p>
+            <p>
+              Any custom permission changes made to this member will be permanently lost and replaced with the role&apos;s default permissions. This action cannot be undone.
+            </p>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpen(false)} disabled={isPending}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleConfirm} disabled={isPending}>
+              {isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              Restore Defaults
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────────── */
 /*  Tab: Appointment Modes                                             */
 /* ─────────────────────────────────────────────────────────────────── */
 
@@ -2198,6 +2279,10 @@ function MembersTab({
                               member={member}
                               allPermissions={allPermissions}
                               onSaved={handlePermissionsSaved}
+                            />
+                            <RestoreDefaultPermissionsDialog
+                              member={member}
+                              onRestored={handlePermissionsSaved}
                             />
                             <DropdownMenuSeparator />
                             <DropdownMenuItem

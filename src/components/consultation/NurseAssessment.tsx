@@ -7,6 +7,7 @@ import Each from "@components/utils/Each";
 import { usePreAssessmentNotes } from "@hooks/usePreAssessmentNotes";
 import { useParams } from "next/navigation";
 import dayjs from "@lib/day-utils";
+import { MarkdownRenderer } from "@/components/markdown/MarkdownRenderer";
 
 interface NurseAssessmentProps {
   consultation: NonNullable<GetConsultationTicket["data"]>;
@@ -60,8 +61,8 @@ export const PreConsultationNote = ({ note }: PreConsultationNoteProps) => {
                 Pre-Assessment
               </CardTitle>
             </CardHeader>
-            <CardContent className="whitespace-pre-wrap">
-              {note.assessment}
+            <CardContent>
+              <MarkdownRenderer content={note.assessment ?? ""} />
             </CardContent>
           </Card>
 
@@ -71,8 +72,8 @@ export const PreConsultationNote = ({ note }: PreConsultationNoteProps) => {
                 Instructions
               </CardTitle>
             </CardHeader>
-            <CardContent className="whitespace-pre-wrap">
-              {note.homeInstructions}
+            <CardContent>
+              <MarkdownRenderer content={note.homeInstructions ?? ""} />
             </CardContent>
           </Card>
           <Card className="grow lg:basis-1/4">
@@ -81,8 +82,8 @@ export const PreConsultationNote = ({ note }: PreConsultationNoteProps) => {
                 Remarks
               </CardTitle>
             </CardHeader>
-            <CardContent className="whitespace-pre-wrap">
-              {note.remarks}
+            <CardContent>
+              <MarkdownRenderer content={note.remarks ?? ""} />
             </CardContent>
           </Card>
         </div>

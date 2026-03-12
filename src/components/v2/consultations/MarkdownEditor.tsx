@@ -24,7 +24,7 @@ export default function MarkdownEditor({
   minHeight = "min-h-36",
   disabled = false,
 }: MarkdownEditorProps) {
-  const [mode, setMode] = useState<"edit" | "preview">("edit");
+  const [mode, setMode] = useState<"edit" | "preview">(disabled ? "preview" : "edit");
 
   const insertMarkdown = (prefix: string, suffix = "") => {
     const ta = document.activeElement as HTMLTextAreaElement | null;

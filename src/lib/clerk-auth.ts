@@ -7,6 +7,7 @@ export interface SessionShape {
     email?: string | null;
     given_name?: string | null;
     family_name?: string | null;
+    external_id?: string | null;
   };
 }
 
@@ -38,6 +39,7 @@ export const getSession = async (): Promise<SessionShape | null> => {
         email: user?.emailAddresses?.[0]?.emailAddress ?? null,
         given_name: user?.firstName ?? null,
         family_name: user?.lastName ?? null,
+        external_id: user?.externalId ?? null,
       },
     };
   } catch (error) {

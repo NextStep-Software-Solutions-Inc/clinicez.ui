@@ -2835,7 +2835,7 @@ function DocumentsTab({ clinicUid }: { clinicUid: string }) {
   const { data: allTemplatesResult } = useDocumentTemplates({ clinicUid });
 
   const prescriptionConfig = prescriptionConfigResult?.data ?? null;
-  const documentDefaults = documentDefaultsResult?.data ?? [];
+  const documentDefaults = documentDefaultsResult?.data;
   const documentTypes = documentTypesResult?.data ?? [];
   const allTemplates = allTemplatesResult?.data ?? [];
 
@@ -2849,6 +2849,7 @@ function DocumentsTab({ clinicUid }: { clinicUid: string }) {
 
   // Sync non-prescription defaults from the junction table
   useEffect(() => {
+    if (!documentDefaults) return;
     const map: Record<number, string> = {};
     for (const d of documentDefaults) {
       map[d.documentTypeId] = d.templateId.toString();

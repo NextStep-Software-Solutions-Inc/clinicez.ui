@@ -12,6 +12,7 @@ type ClerkWebhookEvent = {
   type: "user.created" | "user.updated";
   data: {
     id: string;
+    external_id: string | null;
     email_addresses: Array<{
       email_address: string;
       id: string;
@@ -108,15 +109,68 @@ export async function POST(request: NextRequest) {
     const lastName = data.last_name || "";
     // Prioritize profile_image_url (user's uploaded image) over image_url (social login image)
     const picture = data.profile_image_url || data.image_url || null;
+    const externalId = data.external_id || null;
 
     // Upsert user to database
     if (type === "user.created" || type === "user.updated") {
       await prisma.$transaction(
         async (tx) => {
-          // Check if user exists
-          const existingUser = await tx.user.findUnique({
+          // Check if user exists by Clerk userId
+          let existingUser = await tx.user.findUnique({
             where: { userId },
           });
+
+          // Migration case: user was imported from another provider (e.g. Auth0).
+          // Clerk stores the old provider ID as external_id. Find the DB record by
+          // external_id and update it to use the new Clerk userId.
+          if (!existingUser && externalId) {
+            existingUser = await tx.user.findUnique({
+              where: { userId: externalId },
+            });
+
+            if (existingUser) {
+              await tx.user.update({
+                where: { id: existingUser.id },
+                data: {
+                  userId,
+                  email,
+                  firstName,
+                  lastName,
+                  picture,
+                  updatedAt: new Date(),
+                },
+              });
+              console.log(`Migrated user ${externalId} -> ${userId} (${email}) via external_id`);
+              return;
+            }
+          }
+
+          // Secondary fallback: find by email for migrated users where external_id is not set.
+          // Update their userId to the new Clerk ID to avoid duplicate user creation.
+          if (!existingUser) {
+            const userByEmail = await tx.user.findUnique({
+              where: { email },
+            });
+
+            if (userByEmail) {
+              if (userByEmail.userId !== userId) {
+                await tx.user.update({
+                  where: { id: userByEmail.id },
+                  data: {
+                    userId,
+                    firstName,
+                    lastName,
+                    picture,
+                    updatedAt: new Date(),
+                  },
+                });
+                console.log(`Migrated user ${userByEmail.userId} -> ${userId} via email`);
+                return;
+              }
+              // User already has the correct Clerk userId — treat as existing
+              existingUser = userByEmail;
+            }
+          }
 
           if (existingUser) {
             // Update existing user

@@ -596,11 +596,34 @@ export const getCurrentUserAction = withErrorHandling(cache(async () => {
   const session = await sessionCheck();
 
   // Find user in database by Clerk userId
-  const user = await prisma.user.findUnique({
+  let user = await prisma.user.findUnique({
     where: {
       userId: session.user.sub
     }
   });
+
+  // Fallback: migrated users have their old auth provider ID stored as externalId in Clerk
+  // but still stored as userId in the database. Detect and migrate these users.
+  if (!user && session.user.external_id) {
+    const userByExternalId = await prisma.user.findUnique({
+      where: {
+        userId: session.user.external_id
+      }
+    });
+
+    if (userByExternalId) {
+      // Update the userId in the database to the new Clerk ID
+      user = await prisma.user.update({
+        where: { id: userByExternalId.id },
+        data: {
+          userId: session.user.sub,
+          ...(session.user.given_name && { firstName: session.user.given_name }),
+          ...(session.user.family_name && { lastName: session.user.family_name }),
+        }
+      });
+      console.log(`Migrated user ${userByExternalId.userId} -> ${session.user.sub} via externalId`);
+    }
+  }
 
   if (!user) {
     // User doesn't exist in database - this shouldn't happen if webhook is properly configured

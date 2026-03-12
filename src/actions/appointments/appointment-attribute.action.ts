@@ -515,6 +515,44 @@ export const saveAppointmentAISymptomAnalysisAction = withErrorHandling(async ({
 });
 
 /**
+ * Update the subject and/or chief complaint of an appointment.
+ * Only the healthcare provider who received the appointment may update these fields.
+ */
+export const updateAppointmentSubjectComplaintAction = withErrorHandling(async ({
+  appointmentId,
+  subject,
+  complaint,
+}: {
+  appointmentId: number;
+  subject: string;
+  complaint: string;
+}) => {
+  const session = await getCachedSession();
+  if (!session) throw new Error("User not authenticated.");
+
+  // Verify the current user is the receiver of this appointment
+  const attr = await prismaClient.appointmentAttribute.findUnique({
+    where: { appointmentId },
+    select: { ReceivedBy: { select: { userId: true } } },
+  });
+
+  if (!attr) throw new Error("Appointment not found.");
+  if (attr.ReceivedBy?.userId !== session.user.sub) {
+    throw new Error("Only the healthcare provider who received this appointment can update the subject and complaint.");
+  }
+
+  await prismaClient.appointment.update({
+    where: { id: appointmentId },
+    data: {
+      subject: subject.trim(),
+      complaint: complaint.trim() || null,
+    },
+  });
+
+  return { message: "Appointment updated successfully", data: undefined };
+});
+
+/**
  * Fetch the saved AI symptom analysis for an appointment.
  */
 export const getAppointmentAIAnalysisAction = withErrorHandling(async (appointmentId: number) => {

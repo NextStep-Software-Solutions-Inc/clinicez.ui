@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { format, formatDistanceToNow, parse } from "date-fns";
 import {
   User,
@@ -27,6 +27,8 @@ import {
   Loader2,
   HeartPulse,
   Video,
+  Paperclip,
+  X as XIcon,
 } from "lucide-react";
 import {
   Sheet,
@@ -51,7 +53,9 @@ import {
   returnAppointmentAction,
   saveAppointmentAISymptomAnalysisAction,
   getAppointmentAIAnalysisAction,
+  updateAppointmentSubjectComplaintAction,
 } from "@/actions/appointments/appointment-attribute.action";
+import { Input } from "@/components/ui/input";
 import {
   acceptAppointmentAction,
   declineAppointmentAction,
@@ -73,6 +77,7 @@ import { useDisabilities } from "@/hooks/useDisability";
 import { useHealthHistory } from "@/hooks/useHealthHistory";
 import { useUserVitalSigns } from "@/hooks/useUserVitalSign";
 import { calculateAge } from "@/lib/utils";
+import Image from "next/image";
 
 type Appointment = NonNullable<GetAppointments["data"]>[number];
 type SubPanel = "confirm" | "assign" | "preAssessment" | "tag" | "reschedule";
@@ -126,6 +131,12 @@ export function AppointmentDetailSheet({
   const [showReturnForm, setShowReturnForm] = useState(false);
   const [returnReason, setReturnReason] = useState("");
 
+  // Inline subject/complaint edit state
+  const [isEditingSubjectComplaint, setIsEditingSubjectComplaint] = useState(false);
+  const [editSubject, setEditSubject] = useState("");
+  const [editComplaint, setEditComplaint] = useState("");
+  const [isSavingSubjectComplaint, setIsSavingSubjectComplaint] = useState(false);
+
   // Pre-assessment notes state
   const [preAssessmentNotes, setPreAssessmentNotes] = useState<PreAssessmentNote[]>([]);
   const [notesExpanded, setNotesExpanded] = useState(false);
@@ -148,6 +159,29 @@ export function AppointmentDetailSheet({
   // Recent vitals for this patient
   const { data: patientVitals, mutate: mutateVitals } = useUserVitalSigns(patientUserId);
   const [vitalsExpanded, setVitalsExpanded] = useState(false);
+
+  // Attachment lightbox state
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const lightboxRef = useRef<HTMLDivElement>(null);
+
+  // Keyboard navigation for lightbox
+  useEffect(() => {
+    if (lightboxIndex === null || !appointment?.AppointmentAttachments) return;
+    const totalAttachments = appointment.AppointmentAttachments.length;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setLightboxIndex(null);
+      } else if (e.key === "ArrowLeft" && lightboxIndex > 0) {
+        setLightboxIndex(lightboxIndex - 1);
+      } else if (e.key === "ArrowRight" && lightboxIndex < totalAttachments - 1) {
+        setLightboxIndex(lightboxIndex + 1);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    // Move focus to lightbox for accessibility
+    lightboxRef.current?.focus();
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [lightboxIndex, appointment?.AppointmentAttachments]);
 
   const refreshNotes = useCallback((appointmentId: number) => {
     getPreAssessmentNotesAction(appointmentId).then((result) => {
@@ -194,6 +228,10 @@ export function AppointmentDetailSheet({
     setReturnReason("");
     setAiPendingResult(null);
     setVitalsExpanded(false);
+    setIsEditingSubjectComplaint(false);
+    setEditSubject("");
+    setEditComplaint("");
+    setLightboxIndex(null);
   }, [appointment]);
 
   if (!appointment) return null;
@@ -282,6 +320,27 @@ export function AppointmentDetailSheet({
       toast.success("AI symptom analysis saved.");
       setAiPendingResult(null);
       setSavedAiAnalysis(markdown);
+    } else {
+      toast.error(result.message);
+    }
+  };
+
+  const handleSaveSubjectComplaint = async () => {
+    if (!editSubject.trim()) {
+      toast.error("Subject cannot be empty.");
+      return;
+    }
+    setIsSavingSubjectComplaint(true);
+    const result = await updateAppointmentSubjectComplaintAction({
+      appointmentId: appointment.id,
+      subject: editSubject,
+      complaint: editComplaint,
+    });
+    setIsSavingSubjectComplaint(false);
+    if (result.status) {
+      toast.success("Appointment details updated.");
+      setIsEditingSubjectComplaint(false);
+      onRefresh();
     } else {
       toast.error(result.message);
     }
@@ -587,21 +646,94 @@ export function AppointmentDetailSheet({
 
           {/* Appointment Info */}
           <div className="rounded-xl border bg-muted/30 p-4 space-y-3">
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-              Appointment Details
-            </h3>
-            <div className="space-y-2 text-sm">
-              {!isWalkIn && (
-                <div>
-                  <span className="text-muted-foreground text-xs">Subject</span>
-                  <p className="font-medium">{appointment.subject}</p>
-                </div>
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                Appointment Details
+              </h3>
+              {isReceiver && !isEditingSubjectComplaint && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditSubject(appointment.subject);
+                    setEditComplaint(appointment.complaint ?? "");
+                    setIsEditingSubjectComplaint(true);
+                  }}
+                  className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                >
+                  <Pencil className="h-3 w-3" />
+                  Edit
+                </button>
               )}
-              {appointment.complaint && (
-                <div>
-                  <span className="text-muted-foreground text-xs">Complaint</span>
-                  <p className="text-sm">{appointment.complaint}</p>
+            </div>
+            <div className="space-y-2 text-sm">
+              {isReceiver && isEditingSubjectComplaint ? (
+                <div className="space-y-3">
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Subject</Label>
+                    <Input
+                      className="mt-1 h-8 text-sm"
+                      value={editSubject}
+                      onChange={(e) => setEditSubject(e.target.value)}
+                      placeholder="Appointment subject"
+                      disabled={isSavingSubjectComplaint}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Chief Complaint</Label>
+                    <Textarea
+                      className="mt-1 text-sm min-h-[80px] resize-none"
+                      value={editComplaint}
+                      onChange={(e) => setEditComplaint(e.target.value)}
+                      placeholder="Describe the chief complaint..."
+                      disabled={isSavingSubjectComplaint}
+                    />
+                  </div>
+                  <div className="flex items-center gap-2 pt-1">
+                    <Button
+                      size="sm"
+                      className="h-7 text-xs px-3"
+                      onClick={handleSaveSubjectComplaint}
+                      disabled={
+                        isSavingSubjectComplaint ||
+                        !editSubject.trim() ||
+                        (editSubject.trim() === appointment.subject && editComplaint.trim() === (appointment.complaint ?? "").trim())
+                      }
+                    >
+                      {isSavingSubjectComplaint && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
+                      Save
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 text-xs px-3"
+                      onClick={() => setIsEditingSubjectComplaint(false)}
+                      disabled={isSavingSubjectComplaint}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
                 </div>
+              ) : (
+                <>
+                  {!isWalkIn && (
+                    <div>
+                      <span className="text-muted-foreground text-xs">Subject</span>
+                      <p className="font-medium">{appointment.subject}</p>
+                    </div>
+                  )}
+                  {appointment.complaint && (
+                    <div>
+                      <span className="text-muted-foreground text-xs">Complaint</span>
+                      <p className="text-sm">{appointment.complaint}</p>
+                    </div>
+                  )}
+                  {!appointment.complaint && isReceiver && (
+                    <div>
+                      <span className="text-muted-foreground text-xs">Complaint</span>
+                      <p className="text-sm text-muted-foreground italic">No chief complaint recorded.</p>
+                    </div>
+                  )}
+                </>
               )}
               {appointment.AppointmentAttribute?.AppointmentType && (
                 <div>
@@ -670,6 +802,42 @@ export function AppointmentDetailSheet({
               )}
             </div>
           </div>
+
+          {/* Attachments */}
+          {(appointment.AppointmentAttachments?.length ?? 0) > 0 && (
+            <div className="rounded-xl border bg-muted/30 p-4 space-y-3">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                <Paperclip className="h-3.5 w-3.5" />
+                Attachments
+                <Badge variant="outline" className="text-xs px-1.5 py-0 border-primary/30 text-primary ml-1">
+                  {appointment.AppointmentAttachments.length}
+                </Badge>
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {appointment.AppointmentAttachments.map((att, idx) => (
+                  <button
+                    key={att.id}
+                    type="button"
+                    className="relative w-20 h-20 rounded-lg overflow-hidden border border-border/40 bg-muted/40 hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-primary/40 shrink-0"
+                    onClick={() => setLightboxIndex(idx)}
+                    title={att.name || `Attachment ${idx + 1}`}
+                    aria-label={`View ${att.name || `attachment ${idx + 1}`}`}
+                  >
+                    <Image
+                      src={att.url}
+                      alt={att.name || `Attachment ${idx + 1}`}
+                      width={80}
+                      height={80}
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Click an image to view full size.
+              </p>
+            </div>
+          )}
 
           {/* AI Symptoms Analyzer — combined: shows saved analysis + analyze/re-analyze */}
           {(appointment.complaint || savedAiAnalysis) && (
@@ -993,6 +1161,76 @@ export function AppointmentDetailSheet({
                     </div>
                   );
                 })}
+              </div>
+            </div>
+          )}
+
+          {/* Attachment Lightbox */}
+          {lightboxIndex !== null && appointment.AppointmentAttachments && (
+            <div
+              ref={lightboxRef}
+              role="dialog"
+              aria-modal="true"
+              aria-label={`Attachment viewer — ${lightboxIndex + 1} of ${appointment.AppointmentAttachments.length}`}
+              tabIndex={-1}
+              className="fixed inset-0 z-[200] flex items-center justify-center bg-black/90 outline-none"
+              onClick={() => setLightboxIndex(null)}
+            >
+              <button
+                type="button"
+                className="absolute top-4 right-4 text-white/80 hover:text-white"
+                onClick={() => setLightboxIndex(null)}
+                aria-label="Close viewer"
+              >
+                <XIcon className="h-7 w-7" />
+              </button>
+              <div
+                className="flex items-center gap-3 px-4"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {lightboxIndex > 0 && (
+                  <button
+                    type="button"
+                    className="text-white/80 hover:text-white p-2 rounded-full bg-black/40"
+                    onClick={() => setLightboxIndex((i) => (i !== null ? i - 1 : i))}
+                    aria-label="Previous attachment"
+                  >
+                    <ChevronDown className="h-6 w-6 rotate-90" />
+                  </button>
+                )}
+                <div className="relative max-h-[80vh] max-w-[80vw] min-w-[200px] min-h-[200px]">
+                  <Image
+                    src={appointment.AppointmentAttachments[lightboxIndex].url}
+                    alt={appointment.AppointmentAttachments[lightboxIndex].name || `Attachment ${lightboxIndex + 1}`}
+                    width={1920}
+                    height={1080}
+                    className="max-h-[80vh] max-w-[80vw] w-auto h-auto object-contain rounded-lg shadow-2xl"
+                  />
+                </div>
+                {lightboxIndex < appointment.AppointmentAttachments.length - 1 && (
+                  <button
+                    type="button"
+                    className="text-white/80 hover:text-white p-2 rounded-full bg-black/40"
+                    onClick={() => setLightboxIndex((i) => (i !== null ? i + 1 : i))}
+                    aria-label="Next attachment"
+                  >
+                    <ChevronDown className="h-6 w-6 -rotate-90" />
+                  </button>
+                )}
+              </div>
+              <div className="absolute bottom-4 text-white/60 text-xs">
+                {lightboxIndex + 1} / {appointment.AppointmentAttachments.length}
+                {" · "}
+                <a
+                  href={appointment.AppointmentAttachments[lightboxIndex].url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 hover:text-white transition-colors"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <ExternalLink className="h-3 w-3" />
+                  Open original
+                </a>
               </div>
             </div>
           )}

@@ -34,6 +34,7 @@ import ConsultationReferrals from "./ConsultationReferrals";
 import ConsultationDiagnoses from "./ConsultationDiagnoses";
 import { PatientAIInsightButton } from "@/components/v2/patients/PatientAIInsightButton";
 import AddCoCreatorDialog from "./AddCoCreatorDialog";
+import { MarkdownRenderer } from "@/components/markdown/MarkdownRenderer";
 
 type Detail = NonNullable<GetPatientConsultationDetail["data"]>;
 
@@ -258,10 +259,10 @@ export default function ConsultationWorkspace({
         )}
         {/* Pre-assessment */}
         {preAssessment?.assessment && (
-          <p className="mt-1 text-xs text-muted-foreground">
+          <div className="mt-1 text-xs text-muted-foreground">
             <span className="font-medium text-foreground/70">Pre-assessment: </span>
-            {preAssessment.assessment}
-          </p>
+            <MarkdownRenderer content={preAssessment.assessment} className="text-xs" />
+          </div>
         )}
         {/* AI Patient Insight */}
         {patient && myHPs.length > 0 && (

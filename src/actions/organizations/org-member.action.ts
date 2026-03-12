@@ -520,6 +520,57 @@ export const updateOrgMemberRoleAction = withErrorHandling(
   }
 );
 
+export const resetOrgMemberPermissionsAction = withErrorHandling(async (orgMemberId: number) => {
+  const session = await getCachedSession();
+  if (!session) throw new Error("User not authenticated.");
+
+  const userId = session.user.sub as string;
+
+  const membership = await prisma.organizationMember.findUnique({
+    where: { id: orgMemberId },
+    select: {
+      role: true,
+      Organization: { select: { orgUid: true, id: true } },
+    },
+  });
+
+  if (!membership) throw new Error("Membership not found.");
+
+  const [isSuperAdmin, hasPermission] = await Promise.all([
+    isSuperAdminAction(),
+    hasOrgPermissionAction({
+      userId,
+      orgUid: membership.Organization.orgUid,
+      permissionName: PERMISSIONS.ORGANIZATION["UPDATE:ORG:PERMISSIONS"].name,
+    }),
+  ]);
+
+  if (!isSuperAdmin && !hasPermission)
+    throw new Error("You do not have permission to reset member permissions.");
+
+  await prisma.$transaction(async (tx) => {
+    const initialPermissions = await tx.orgRoleInitialPermission.findMany({
+      where: {
+        orgId: membership.Organization.id,
+        orgRoleId: membership.role,
+        Permission: { isActive: true },
+      },
+      select: { permissionId: true },
+    });
+
+    await tx.orgMemberPermission.deleteMany({ where: { orgMemberId } });
+
+    if (initialPermissions.length > 0) {
+      await tx.orgMemberPermission.createMany({
+        skipDuplicates: true,
+        data: initialPermissions.map((p) => ({ orgMemberId, permissionId: p.permissionId })),
+      });
+    }
+  });
+
+  return { message: "Permissions have been restored to the role defaults.", data: null };
+});
+
 export const deleteMembershipAction = async (id: number) => {
   try {
     const session = await getCachedSession();

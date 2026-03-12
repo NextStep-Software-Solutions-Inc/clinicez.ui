@@ -700,6 +700,13 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
             }
           }
         }
+      },
+      AppointmentAttachments: {
+        select: {
+          id: true,
+          name: true,
+          url: true,
+        }
       }
     }
   });

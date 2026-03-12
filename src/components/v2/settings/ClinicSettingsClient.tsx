@@ -148,6 +148,7 @@ import { upsertClinicDocumentSettingAction } from "@/actions/clinics/clinic-docu
 import { useClinicPrescriptionConfig } from "@/hooks/useClinicPrescriptionConfig";
 import { useClinicDocumentSetting } from "@/hooks/useClinicDocumentSetting";
 import { useDocumentTemplates } from "@/hooks/useDocumentTemplate";
+import DocumentTemplates from "@/components/DocumentTemplates";
 
 import type { GetClinic } from "@/actions/clinics/clinic.action";
 import type { GetClinicSetting } from "@/actions/clinics/clinic-setting.action";
@@ -2929,6 +2930,41 @@ function DocumentsTab({ clinicUid }: { clinicUid: string }) {
 
   return (
     <div className="space-y-6">
+      {/* ── Template Library ───────────────────────────────── */}
+      <div>
+        <h2 className="text-base font-semibold mb-1">Template Library</h2>
+        <p className="text-sm text-muted-foreground mb-4">
+          Create and manage document templates for each type. Templates listed here can be selected as defaults below.
+        </p>
+        <Tabs defaultValue="prescription">
+          <TabsList className="w-full justify-start h-auto p-1 overflow-x-auto flex-nowrap [&::-webkit-scrollbar]:hidden">
+            <TabsTrigger value="prescription" className="gap-1.5 flex-shrink-0">Prescription</TabsTrigger>
+            <TabsTrigger value="medical_certificate" className="gap-1.5 flex-shrink-0">Medical Certificate</TabsTrigger>
+            <TabsTrigger value="laboratory" className="gap-1.5 flex-shrink-0">Laboratory</TabsTrigger>
+            <TabsTrigger value="imaging" className="gap-1.5 flex-shrink-0">Imaging</TabsTrigger>
+            <TabsTrigger value="heart_station" className="gap-1.5 flex-shrink-0">Heart Station</TabsTrigger>
+          </TabsList>
+          <TabsContent value="prescription" className="mt-4">
+            <DocumentTemplates documentType="prescription" label="Prescription" clinicUid={clinicUid} />
+          </TabsContent>
+          <TabsContent value="medical_certificate" className="mt-4">
+            <DocumentTemplates documentType="medical_certificate" label="Medical Certificate" clinicUid={clinicUid} />
+          </TabsContent>
+          <TabsContent value="laboratory" className="mt-4">
+            <DocumentTemplates documentType="laboratory" label="Laboratory" clinicUid={clinicUid} />
+          </TabsContent>
+          <TabsContent value="imaging" className="mt-4">
+            <DocumentTemplates documentType="imaging" label="Imaging" clinicUid={clinicUid} />
+          </TabsContent>
+          <TabsContent value="heart_station" className="mt-4">
+            <DocumentTemplates documentType="heart_station" label="Heart Station" clinicUid={clinicUid} />
+          </TabsContent>
+        </Tabs>
+      </div>
+
+      <Separator />
+
+      {/* ── Default Templates ──────────────────────────────── */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">

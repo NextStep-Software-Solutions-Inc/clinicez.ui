@@ -10,7 +10,6 @@ import { Textarea } from "@components/ui/textarea"
 import { toast } from "sonner"
 import { cn } from "@lib/utils"
 import { getActionErrorMessage } from "@/lib/action-error"
-import { MarkdownRenderer } from "@/components/markdown/MarkdownRenderer"
 
 interface GenericSectionProps {
   hpId: number;
@@ -103,22 +102,17 @@ export default function GenericSection({ hpId, name, label, consultationId, valu
               </AccordionTrigger>
               <AccordionContent className="p-1" asChild>
                 <FormControl>
-                  {readonly ? (
-                    <div className={cn("mb-2 rounded-md border border-border/50 bg-muted/10 p-3 min-h-[7.5rem]", { "blur-sm": shouldBlur })}>
-                      <MarkdownRenderer content={field.value} />
-                    </div>
-                  ) : (
-                    <Textarea
-                      rows={5}
-                      disabled={isPatientView}
-                      className={cn("mb-2", {
-                        "blur-sm": shouldBlur
-                      })}
-                      placeholder={`Write the ${label.toLocaleLowerCase()} here...`}
-                      value={field.value}
-                      onChange={field.onChange}
-                    />
-                  )}
+                  <Textarea
+                    rows={5}
+                    readOnly={readonly}
+                    disabled={readonly || isPatientView}
+                    className={cn("mb-2", {
+                      "blur-sm": shouldBlur
+                    })}
+                    placeholder={`Write the ${label.toLocaleLowerCase()} here...`}
+                    value={field.value}
+                    onChange={field.onChange}
+                  />
                 </FormControl>
                 <FormMessage />
               </AccordionContent>

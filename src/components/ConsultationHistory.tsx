@@ -19,7 +19,6 @@ import { Badge } from "./ui/badge";
 import { cn } from "@lib/utils";
 import { User, Pill, FileText, Camera, Stethoscope, Calendar, FileCheck, FileSignature } from "lucide-react";
 import { GetConsultationTickets } from "@actions/consultation/consultation-ticket.action";
-import { MarkdownRenderer } from "@/components/markdown/MarkdownRenderer";
 
 interface ConsultationHistoryProps {
   patientId: string
@@ -477,11 +476,7 @@ export const ConsultationHistorySummary = ({ consultationTicketId, clinicUid, is
             return (
               <div key={note.section} className="p-3 bg-gray-50 rounded-lg border border-gray-100">
                 <p className="capitalize font-medium text-sm text-gray-800 mb-1">{note.section}</p>
-                {shouldBlur ? (
-                  <p className="text-sm text-gray-600 blur-sm">{displayContent}</p>
-                ) : (
-                  <MarkdownRenderer content={displayContent} className="text-sm text-gray-600" />
-                )}
+                <p className={cn("text-sm text-gray-600", shouldBlur && "blur-sm")}>{displayContent}</p>
               </div>
             )
           }}

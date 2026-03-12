@@ -13,6 +13,7 @@ import {
   Tags,
   AlertTriangle,
   X,
+  Paperclip,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -93,6 +94,9 @@ export function AppointmentCard({
 
   // Tagged HP names
   const taggedHps = appointment.AppointmentTag ?? [];
+
+  // Attachment count
+  const attachmentCount = appointment.AppointmentAttachments?.length ?? 0;
 
   // ── Handlers (no stopPropagation needed — actions area is outside the click zone) ──
 
@@ -177,6 +181,12 @@ export function AppointmentCard({
               {appointment.AppointmentAttribute?.AppointmentType && (
                 <span className="text-xs text-muted-foreground/60 hidden sm:inline">
                   {appointment.AppointmentAttribute.AppointmentType.name}
+                </span>
+              )}
+              {attachmentCount > 0 && (
+                <span className="flex items-center gap-1 text-xs text-muted-foreground/70" title={`${attachmentCount} attachment${attachmentCount === 1 ? "" : "s"}`}>
+                  <Paperclip className="h-3 w-3" />
+                  {attachmentCount}
                 </span>
               )}
               <span className="flex items-center gap-1 text-xs text-muted-foreground/60">

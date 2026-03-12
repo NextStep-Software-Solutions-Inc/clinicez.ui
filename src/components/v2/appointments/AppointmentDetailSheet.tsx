@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { format, formatDistanceToNow, parse } from "date-fns";
 import {
   User,
@@ -27,6 +27,8 @@ import {
   Loader2,
   HeartPulse,
   Video,
+  Paperclip,
+  X as XIcon,
 } from "lucide-react";
 import {
   Sheet,
@@ -75,6 +77,7 @@ import { useDisabilities } from "@/hooks/useDisability";
 import { useHealthHistory } from "@/hooks/useHealthHistory";
 import { useUserVitalSigns } from "@/hooks/useUserVitalSign";
 import { calculateAge } from "@/lib/utils";
+import Image from "next/image";
 
 type Appointment = NonNullable<GetAppointments["data"]>[number];
 type SubPanel = "confirm" | "assign" | "preAssessment" | "tag" | "reschedule";
@@ -157,6 +160,29 @@ export function AppointmentDetailSheet({
   const { data: patientVitals, mutate: mutateVitals } = useUserVitalSigns(patientUserId);
   const [vitalsExpanded, setVitalsExpanded] = useState(false);
 
+  // Attachment lightbox state
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const lightboxRef = useRef<HTMLDivElement>(null);
+
+  // Keyboard navigation for lightbox
+  useEffect(() => {
+    if (lightboxIndex === null || !appointment?.AppointmentAttachments) return;
+    const totalAttachments = appointment.AppointmentAttachments.length;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setLightboxIndex(null);
+      } else if (e.key === "ArrowLeft" && lightboxIndex > 0) {
+        setLightboxIndex(lightboxIndex - 1);
+      } else if (e.key === "ArrowRight" && lightboxIndex < totalAttachments - 1) {
+        setLightboxIndex(lightboxIndex + 1);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    // Move focus to lightbox for accessibility
+    lightboxRef.current?.focus();
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [lightboxIndex, appointment?.AppointmentAttachments]);
+
   const refreshNotes = useCallback((appointmentId: number) => {
     getPreAssessmentNotesAction(appointmentId).then((result) => {
       if (result.status && result.data) {
@@ -205,6 +231,7 @@ export function AppointmentDetailSheet({
     setIsEditingSubjectComplaint(false);
     setEditSubject("");
     setEditComplaint("");
+    setLightboxIndex(null);
   }, [appointment]);
 
   if (!appointment) return null;
@@ -1098,6 +1125,114 @@ export function AppointmentDetailSheet({
                     </div>
                   );
                 })}
+              </div>
+            </div>
+          )}
+
+          {/* Attachments */}
+          {(appointment.AppointmentAttachments?.length ?? 0) > 0 && (
+            <div className="rounded-xl border bg-muted/30 p-4 space-y-3">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                <Paperclip className="h-3.5 w-3.5" />
+                Attachments
+                <Badge variant="outline" className="text-xs px-1.5 py-0 border-primary/30 text-primary ml-1">
+                  {appointment.AppointmentAttachments.length}
+                </Badge>
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {appointment.AppointmentAttachments.map((att, idx) => (
+                  <button
+                    key={att.id}
+                    type="button"
+                    className="relative w-20 h-20 rounded-lg overflow-hidden border border-border/40 bg-muted/40 hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-primary/40 shrink-0"
+                    onClick={() => setLightboxIndex(idx)}
+                    title={`View attachment ${idx + 1}`}
+                    aria-label={`View attachment ${idx + 1}`}
+                  >
+                    <Image
+                      src={att.url}
+                      alt={`Attachment ${idx + 1}`}
+                      fill
+                      className="object-cover"
+                      sizes="80px"
+                      unoptimized
+                    />
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Click an image to view full size.
+              </p>
+            </div>
+          )}
+
+          {/* Attachment Lightbox */}
+          {lightboxIndex !== null && appointment.AppointmentAttachments && (
+            <div
+              ref={lightboxRef}
+              role="dialog"
+              aria-modal="true"
+              aria-label={`Attachment viewer — ${lightboxIndex + 1} of ${appointment.AppointmentAttachments.length}`}
+              tabIndex={-1}
+              className="fixed inset-0 z-[200] flex items-center justify-center bg-black/90 outline-none"
+              onClick={() => setLightboxIndex(null)}
+            >
+              <button
+                type="button"
+                className="absolute top-4 right-4 text-white/80 hover:text-white"
+                onClick={() => setLightboxIndex(null)}
+                aria-label="Close viewer"
+              >
+                <XIcon className="h-7 w-7" />
+              </button>
+              <div
+                className="flex items-center gap-3 px-4"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {lightboxIndex > 0 && (
+                  <button
+                    type="button"
+                    className="text-white/80 hover:text-white p-2 rounded-full bg-black/40"
+                    onClick={() => setLightboxIndex((i) => (i !== null ? i - 1 : i))}
+                    aria-label="Previous attachment"
+                  >
+                    <ChevronDown className="h-6 w-6 rotate-90" />
+                  </button>
+                )}
+                <div className="relative max-h-[80vh] max-w-[80vw] min-w-[200px] min-h-[200px]">
+                  <Image
+                    src={appointment.AppointmentAttachments[lightboxIndex].url}
+                    alt={`Attachment ${lightboxIndex + 1}`}
+                    fill
+                    className="object-contain rounded-lg shadow-2xl"
+                    sizes="80vw"
+                    unoptimized
+                  />
+                </div>
+                {lightboxIndex < appointment.AppointmentAttachments.length - 1 && (
+                  <button
+                    type="button"
+                    className="text-white/80 hover:text-white p-2 rounded-full bg-black/40"
+                    onClick={() => setLightboxIndex((i) => (i !== null ? i + 1 : i))}
+                    aria-label="Next attachment"
+                  >
+                    <ChevronDown className="h-6 w-6 -rotate-90" />
+                  </button>
+                )}
+              </div>
+              <div className="absolute bottom-4 text-white/60 text-xs">
+                {lightboxIndex + 1} / {appointment.AppointmentAttachments.length}
+                {" · "}
+                <a
+                  href={appointment.AppointmentAttachments[lightboxIndex].url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 hover:text-white transition-colors"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <ExternalLink className="h-3 w-3" />
+                  Open original
+                </a>
               </div>
             </div>
           )}

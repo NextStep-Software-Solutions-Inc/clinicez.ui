@@ -1702,7 +1702,7 @@ model PreAssessmentNote {
   clinicId                   Int
   assessment                 String
   homeInstructions           String?
-  remarks                    String?
+  remarks                    String
   createdBy                  Int
   createdAt                  DateTime                    @default(now())
   updatedAt                  DateTime                    @updatedAt

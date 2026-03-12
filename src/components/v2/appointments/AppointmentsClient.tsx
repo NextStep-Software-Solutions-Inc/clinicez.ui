@@ -151,11 +151,11 @@ export function AppointmentsClient({
   } | null>(null);
 
   const handleOpenPreAssessmentEdit = useCallback(
-    (note: { assessment: string; homeInstructions?: string | null; remarks?: string | null }) => {
+    (note: { assessment: string; homeInstructions?: string | null; remarks: string }) => {
       setPreAssessmentEditData({
         assessment: note.assessment,
         homeInstructions: note.homeInstructions ?? "",
-        remarks: note.remarks ?? "",
+        remarks: note.remarks,
       });
       setActivePanel("preAssessment");
     },

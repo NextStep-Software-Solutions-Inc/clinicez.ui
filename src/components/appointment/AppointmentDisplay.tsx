@@ -304,7 +304,7 @@ export default function AppointmentDisplay() {
                   <div className="cursor-pointer">
                     <LabelValue className="flex items-center gap-2" label={preAssessmentNote.assessment} value="Pre-Assessment:" />
                     {preAssessmentNote.homeInstructions && <LabelValue className="flex items-center gap-2" label={preAssessmentNote.homeInstructions} value="Home Instruction:" />}
-                    {preAssessmentNote.remarks && <LabelValue className="flex items-center gap-2" label={preAssessmentNote.remarks} value="Remarks:" />}
+                    <LabelValue className="flex items-center gap-2" label={preAssessmentNote.remarks} value="Remarks:" />
                     {(() => {
                       const fullName = getFullName({
                         firstName: preAssessmentNote.CreatedBy?.firstName ?? "",

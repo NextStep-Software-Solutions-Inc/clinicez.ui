@@ -40,7 +40,9 @@ const preAssessmentNotesSchema = z.object({
     required_error: "Assessment is required",
   }),
   homeInstructions: z.string().optional(),
-  remarks: z.string().optional()
+  remarks: z.string({
+    required_error: "Remarks are required",
+  })
 })
 
 type PreConsultationNotes = z.infer<typeof preAssessmentNotesSchema>
@@ -50,7 +52,7 @@ interface PreAssessmentNoteSheetProps {
   preAssessmentNotes: {
     assessment: string
     homeInstructions?: string
-    remarks?: string | null
+    remarks: string
     appointmentId: number
     clinicUid: string
     CreatedBy?: {
@@ -64,7 +66,7 @@ export default function PreAssessmentNoteSheet({ children, disabled, preAssessme
   const [preAssessmentNote, setPreAssessmentNote] = useLocalStorage<Partial<PreConsultationNotes>>(preConSultKey, {
     assessment,
     homeInstructions,
-    remarks: remarks ?? undefined,
+    remarks,
     createNew: false
   })
 
@@ -88,7 +90,7 @@ export default function PreAssessmentNoteSheet({ children, disabled, preAssessme
       createNew: preAssessmentNote.createNew,
       assessment: preAssessmentNote.assessment,
       homeInstructions: preAssessmentNote.homeInstructions,
-      remarks: preAssessmentNote.remarks ?? undefined
+      remarks: preAssessmentNote.remarks
     },
   })
   const watch = form.watch
@@ -308,14 +310,13 @@ export default function PreAssessmentNoteSheet({ children, disabled, preAssessme
                   name="remarks"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Remarks (optional)</FormLabel>
+                      <FormLabel>Remarks</FormLabel>
                       <FormControl>
                         <Textarea
                           placeholder="Write remarks here"
                           className="resize-y min-h-[100px]"
                           disabled={isQuickGenerating}
                           {...field}
-                          value={field.value ?? ""}
                         />
                       </FormControl>
                       <FormDescription>

@@ -94,7 +94,7 @@ interface AppointmentDetailSheetProps {
   onClose: () => void;
   onRefresh: () => void;
   onOpenSubPanel: (panel: SubPanel) => void;
-  onEditPreAssessmentNote?: (note: { assessment: string; homeInstructions?: string | null; remarks?: string | null }) => void;
+  onEditPreAssessmentNote?: (note: { assessment: string; homeInstructions?: string | null; remarks: string }) => void;
 }
 
 export function AppointmentDetailSheet({

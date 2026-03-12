@@ -37,7 +37,7 @@ export function MarkdownEditor({
   value,
   onChange,
   placeholder = "Write in markdown...",
-  rows = 6,
+  rows = 10,
   className,
 }: MarkdownEditorProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -116,7 +116,7 @@ export function MarkdownEditor({
         </TabsContent>
 
         <TabsContent value="preview" className="mt-0">
-          <div className="min-h-[6rem] px-3 py-2">
+          <div className="min-h-[10rem] px-3 py-2">
             {value.trim() ? (
               <MarkdownRenderer content={value} className="text-sm" />
             ) : (

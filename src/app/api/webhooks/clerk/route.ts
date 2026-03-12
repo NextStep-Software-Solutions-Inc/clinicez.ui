@@ -145,6 +145,33 @@ export async function POST(request: NextRequest) {
             }
           }
 
+          // Secondary fallback: find by email for migrated users where external_id is not set.
+          // Update their userId to the new Clerk ID to avoid duplicate user creation.
+          if (!existingUser) {
+            const userByEmail = await tx.user.findUnique({
+              where: { email },
+            });
+
+            if (userByEmail) {
+              if (userByEmail.userId !== userId) {
+                await tx.user.update({
+                  where: { id: userByEmail.id },
+                  data: {
+                    userId,
+                    firstName,
+                    lastName,
+                    picture,
+                    updatedAt: new Date(),
+                  },
+                });
+                console.log(`Migrated user ${userByEmail.userId} -> ${userId} via email`);
+                return;
+              }
+              // User already has the correct Clerk userId — treat as existing
+              existingUser = userByEmail;
+            }
+          }
+
           if (existingUser) {
             // Update existing user
             await tx.user.update({

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { Webhook } from "svix";
+import { clerkClient } from "@clerk/nextjs/server";
 import prisma from "@lib/prisma";
 import { $Enums } from "@prisma/client";
 
@@ -301,16 +302,69 @@ async function assignUserPermissions(
  * to the AuditLog table.  If the user cannot be found in the database the
  * event is acknowledged (200) but not persisted – this prevents a 5xx retry
  * loop when a session fires before user.created is processed.
+ *
+ * User lookup follows the same multi-step strategy used by user events to
+ * handle accounts migrated from a previous auth provider:
+ *   1. Direct Clerk userId match
+ *   2. external_id match (old provider ID stored as userId in DB)
+ *   3. Primary email match
  */
 async function handleSessionEvent(evt: SessionWebhookEvent): Promise<void> {
   const { type, data } = evt;
   const { id: sessionId, user_id: clerkUserId } = data;
 
-  // Resolve the database user record from the Clerk userId
-  const user = await prisma.user.findUnique({
+  // Step 1: direct Clerk userId match
+  let user = await prisma.user.findUnique({
     where: { userId: clerkUserId },
     select: { id: true },
   });
+
+  // Steps 2 & 3: for migrated users the Clerk userId may not yet be in the DB
+  // (e.g. user.created webhook hasn't been processed, or migration hasn't run).
+  // Fetch the full Clerk user record to get external_id and primary email so we
+  // can apply the same fallback lookups the user-event handler uses.
+  if (!user) {
+    try {
+      const clerkApi = await clerkClient();
+      const clerkUser = await clerkApi.users.getUser(clerkUserId);
+
+      const externalId = clerkUser.externalId ?? null;
+      const primaryEmailObj = clerkUser.emailAddresses.find(
+        (e) => e.id === clerkUser.primaryEmailAddressId
+      );
+      const email = primaryEmailObj?.emailAddress ?? null;
+
+      // Step 2: old provider ID stored as userId in DB (migration path)
+      if (externalId) {
+        user = await prisma.user.findUnique({
+          where: { userId: externalId },
+          select: { id: true },
+        });
+        if (user) {
+          console.log(
+            `Session event "${type}": resolved migrated user ${clerkUserId} via external_id ${externalId}`
+          );
+        }
+      }
+
+      // Step 3: fallback to primary email
+      if (!user && email) {
+        user = await prisma.user.findUnique({
+          where: { email },
+          select: { id: true },
+        });
+        if (user) {
+          console.log(
+            `Session event "${type}": resolved migrated user ${clerkUserId} via email ${email}`
+          );
+        }
+      }
+    } catch (err) {
+      console.warn(
+        `Session event "${type}": failed to fetch Clerk user ${clerkUserId} for fallback lookup – ${err}`
+      );
+    }
+  }
 
   if (!user) {
     console.warn(

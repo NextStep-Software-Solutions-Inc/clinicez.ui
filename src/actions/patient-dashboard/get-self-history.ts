@@ -66,14 +66,24 @@ export const getPatientSelfHistoryAction = withErrorHandling(async () => {
           AppointmentType: { select: { name: true } },
           AppointmentMode: { select: { name: true } },
           Service: { select: { name: true } },
+          PreferredAppointee: {
+            select: {
+              id: true,
+              HPProfile: { select: { title: true, name: true, suffix: true } },
+              User: { select: { firstName: true, lastName: true } },
+              HPType: { select: { name: true } },
+            },
+          },
         },
       },
       AppointmentRouting: {
-        take: 1,
-        orderBy: { createdAt: 'desc' },
+        where: { status: 'ACCEPTED' },
+        orderBy: { createdAt: 'asc' },
         select: {
+          status: true,
           RoutedTo: {
             select: {
+              id: true,
               HPProfile: { select: { title: true, name: true, suffix: true } },
               User: { select: { firstName: true, lastName: true } },
               HPType: { select: { name: true } },
@@ -185,6 +195,29 @@ export const getPatientSelfHistoryAction = withErrorHandling(async () => {
               AppointmentType: { select: { name: true } },
               AppointmentMode: { select: { name: true } },
               Service: { select: { name: true } },
+              PreferredAppointee: {
+                select: {
+                  id: true,
+                  HPProfile: { select: { title: true, name: true, suffix: true } },
+                  User: { select: { firstName: true, lastName: true } },
+                  HPType: { select: { name: true } },
+                },
+              },
+            },
+          },
+          // Only include HPs that accepted the assignment
+          AppointmentRouting: {
+            where: { status: 'ACCEPTED' },
+            orderBy: { createdAt: 'asc' },
+            select: {
+              RoutedTo: {
+                select: {
+                  id: true,
+                  HPProfile: { select: { title: true, name: true, suffix: true } },
+                  User: { select: { firstName: true, lastName: true } },
+                  HPType: { select: { name: true } },
+                },
+              },
             },
           },
         },

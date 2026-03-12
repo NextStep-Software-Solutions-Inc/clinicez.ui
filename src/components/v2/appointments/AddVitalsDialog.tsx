@@ -269,10 +269,10 @@ export function AddVitalsDialog({ patientUserId, onSaved }: AddVitalsDialogProps
             <Label className="text-xs">Date Taken</Label>
             <Input
               type="datetime-local"
-              defaultValue={toDatetimeLocal(new Date())}
+              value={toDatetimeLocal(form.watch("dateTaken") || new Date())}
               onChange={(e) => {
                 const val = e.target.value;
-                form.setValue("dateTaken", val ? new Date(val) : new Date());
+                form.setValue("dateTaken", val ? new Date(val) : new Date(), { shouldDirty: true });
               }}
             />
             {form.formState.errors.dateTaken && (

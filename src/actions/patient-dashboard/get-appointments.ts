@@ -40,6 +40,33 @@ const APPOINTMENT_INCLUDE = {
       Service: true,
     },
   },
+  // Only include routings where the HP has accepted the assignment
+  AppointmentRouting: {
+    where: { status: 'ACCEPTED' },
+    take: 1,
+    orderBy: { createdAt: 'asc' as const },
+    include: {
+      RoutedTo: {
+        include: {
+          User: {
+            select: {
+              firstName: true,
+              lastName: true,
+              picture: true,
+            },
+          },
+          HPProfile: {
+            select: {
+              name: true,
+              title: true,
+              suffix: true,
+              specialties: true,
+            },
+          },
+        },
+      },
+    },
+  },
   Clinic: {
     select: {
       id: true,
@@ -54,16 +81,29 @@ type PrismaAppointmentWithIncludes = Awaited<ReturnType<typeof prisma.appointmen
 /** Map a Prisma appointment row to the DashboardAppointment shape. */
 function mapRowToDashboardAppointment(row: NonNullable<PrismaAppointmentWithIncludes>): DashboardAppointment {
   const attr = row.AppointmentAttribute!
-  const doctor = attr.PreferredAppointee
+
+  // Prioritize the first accepted assigned HP, then fall back to the preferred HP.
+  // Only show "Unassigned Doctor" when neither is available.
+  const acceptedRouting = row.AppointmentRouting?.[0]
+  const doctor = acceptedRouting?.RoutedTo
     ? {
-        id: attr.PreferredAppointee.id,
-        firstName: attr.PreferredAppointee.User?.firstName ?? null,
-        lastName: attr.PreferredAppointee.User?.lastName ?? null,
-        hpName: buildHpName(attr.PreferredAppointee.HPProfile),
-        specialization: attr.PreferredAppointee.HPProfile?.specialties?.[0] ?? null,
-        picture: attr.PreferredAppointee.User?.picture ?? null,
+        id: acceptedRouting.RoutedTo.id,
+        firstName: acceptedRouting.RoutedTo.User?.firstName ?? null,
+        lastName: acceptedRouting.RoutedTo.User?.lastName ?? null,
+        hpName: buildHpName(acceptedRouting.RoutedTo.HPProfile),
+        specialization: acceptedRouting.RoutedTo.HPProfile?.specialties?.[0] ?? null,
+        picture: acceptedRouting.RoutedTo.User?.picture ?? null,
       }
-    : { id: 0, firstName: 'Unassigned', lastName: 'Doctor', hpName: null, specialization: null, picture: null }
+    : attr.PreferredAppointee
+      ? {
+          id: attr.PreferredAppointee.id,
+          firstName: attr.PreferredAppointee.User?.firstName ?? null,
+          lastName: attr.PreferredAppointee.User?.lastName ?? null,
+          hpName: buildHpName(attr.PreferredAppointee.HPProfile),
+          specialization: attr.PreferredAppointee.HPProfile?.specialties?.[0] ?? null,
+          picture: attr.PreferredAppointee.User?.picture ?? null,
+        }
+      : { id: 0, firstName: null, lastName: null, hpName: null, specialization: null, picture: null }
 
   return {
     id: row.id,
@@ -246,41 +286,7 @@ export async function getUpcomingAppointments(
           date: { gte: new Date() },
         },
       },
-      include: {
-        AppointmentAttribute: {
-          include: {
-            PreferredAppointee: {
-              include: {
-                User: {
-                  select: {
-                    firstName: true,
-                    lastName: true,
-                    picture: true,
-                  },
-                },
-                HPProfile: {
-                  select: {
-                    name: true,
-                    title: true,
-                    suffix: true,
-                    specialties: true,
-                  },
-                },
-              },
-            },
-            AppointmentMode: true,
-            AppointmentType: true,
-            Service: true,
-          },
-        },
-        Clinic: {
-          select: {
-            id: true,
-            name: true,
-            clinicUid: true,
-          },
-        },
-      },
+      include: APPOINTMENT_INCLUDE,
       orderBy: {
         AppointmentAttribute: {
           date: 'asc',
@@ -304,57 +310,7 @@ export async function getUpcomingAppointments(
         return endDateTime >= now
       })
       .slice(0, limit)
-      .map((appointment: (typeof appointments)[0]) => {
-        const attr = appointment.AppointmentAttribute!
-        const doctor = attr.PreferredAppointee
-          ? {
-            id: attr.PreferredAppointee.id,
-            firstName: attr.PreferredAppointee.User?.firstName ?? null,
-            lastName: attr.PreferredAppointee.User?.lastName ?? null,
-            hpName: buildHpName(attr.PreferredAppointee.HPProfile),
-            specialization:
-              attr.PreferredAppointee.HPProfile?.specialties?.[0] ?? null,
-            picture: attr.PreferredAppointee.User?.picture ?? null,
-          }
-          : {
-            id: 0,
-            firstName: 'Unassigned',
-            lastName: 'Doctor',
-            hpName: null,
-            specialization: null,
-            picture: null,
-          }
-
-        return {
-          id: appointment.id,
-          caseNumber: appointment.caseNumber,
-          subject: appointment.subject,
-          complaint: appointment.complaint,
-          date: attr.date,
-          timeStart: attr.timeStart,
-          timeEnd: attr.timeEnd,
-          status: attr.status,
-          recurring: attr.recurring,
-          maxDuration: attr.maxDuration,
-          meetingUrl: attr.meetingUrl,
-          doctor,
-          clinic: {
-            id: appointment.Clinic.id,
-            name: appointment.Clinic.name,
-            uid: appointment.Clinic.clinicUid,
-          },
-          mode: {
-            id: attr.AppointmentMode?.id ?? 0,
-            name: attr.AppointmentMode?.name ?? 'Unknown',
-          },
-          service: {
-            id: attr.Service?.id ?? 0,
-            name: attr.Service?.name ?? 'General',
-          },
-          createdAt: appointment.createdAt,
-          updatedAt: appointment.updatedAt,
-        } as DashboardAppointment
-      })
+      .map((appointment) => mapRowToDashboardAppointment(appointment))
 
     return {
       appointments: result,

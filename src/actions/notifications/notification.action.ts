@@ -23,18 +23,25 @@ export type GetNotificationsResult = Awaited<ReturnType<typeof getNotificationsA
 /**
  * Internal server-side helper (not exported as a server action).
  * Call this from other server actions to persist a notification.
- * Skips delivery if the recipient has muted notifications.
+ * Skips delivery if the recipient has muted notifications or has not subscribed
+ * to this notification type (an empty subscription list means "all types").
  */
 export async function createNotification(
   payload: CreateNotificationPayload,
 ): Promise<void> {
   try {
-    // Skip if the user has muted notifications
     const pref = await prismaClient.userPreference.findUnique({
       where: { userId: payload.userId },
-      select: { muteNotifications: true },
+      select: { muteNotifications: true, subscribedNotificationTypes: true },
     });
     if (pref?.muteNotifications) return;
+    if (
+      pref &&
+      pref.subscribedNotificationTypes.length > 0 &&
+      !pref.subscribedNotificationTypes.includes(payload.type)
+    ) {
+      return;
+    }
 
     await prismaClient.notification.create({
       data: {
@@ -54,7 +61,9 @@ export async function createNotification(
 
 /**
  * Create notifications for multiple recipients in bulk.
- * Skips delivery for recipients who have muted notifications.
+ * Skips delivery for recipients who have muted notifications or have not
+ * subscribed to the given notification type. An empty
+ * `subscribedNotificationTypes` list means the user receives all types.
  * Ignores failures so callers are not disrupted.
  */
 export async function createNotifications(
@@ -62,15 +71,21 @@ export async function createNotifications(
 ): Promise<void> {
   if (!payloads.length) return;
   try {
-    // Filter out users who have muted notifications
     const userIds = [...new Set(payloads.map((p) => p.userId))];
-    const mutedPrefs = await prismaClient.userPreference.findMany({
-      where: { userId: { in: userIds }, muteNotifications: true },
-      select: { userId: true },
+    const prefs = await prismaClient.userPreference.findMany({
+      where: { userId: { in: userIds } },
+      select: { userId: true, muteNotifications: true, subscribedNotificationTypes: true },
     });
-    const mutedUserIds = new Set(mutedPrefs.map((p) => p.userId));
+    const prefMap = new Map(prefs.map((p) => [p.userId, p]));
 
-    const activePayloads = payloads.filter((p) => !mutedUserIds.has(p.userId));
+    const activePayloads = payloads.filter((p) => {
+      const pref = prefMap.get(p.userId);
+      if (pref?.muteNotifications) return false;
+      if (pref && pref.subscribedNotificationTypes.length > 0) {
+        return pref.subscribedNotificationTypes.includes(p.type);
+      }
+      return true; // no preference record or empty list → receive all
+    });
     if (!activePayloads.length) return;
 
     await prismaClient.notification.createMany({
@@ -268,3 +283,54 @@ export const getMuteNotificationsAction = withErrorHandling(async () => {
 
   return { message: "Mute preference fetched", data: pref?.muteNotifications ?? false };
 });
+
+/**
+ * Get the subscribed notification types for the current user.
+ * The DB default is all notification types, so this always returns a fully populated list.
+ */
+export const getNotificationSubscriptionsAction = withErrorHandling(async () => {
+  const session = await getCachedSession();
+  if (!session) throw new Error("User not authenticated.");
+
+  const user = await prismaClient.user.findUniqueOrThrow({
+    where: { userId: session.user.sub },
+    select: { id: true },
+  });
+
+  const pref = await prismaClient.userPreference.findUnique({
+    where: { userId: user.id },
+    select: { subscribedNotificationTypes: true },
+  });
+
+  return {
+    message: "Notification subscriptions fetched",
+    data: pref?.subscribedNotificationTypes ?? Object.values(NotificationType),
+  };
+});
+
+/**
+ * Update the subscribed notification types for the current user.
+ * Pass an empty array to subscribe to all notification types.
+ */
+export const updateNotificationSubscriptionsAction = withErrorHandling(
+  async (types: NotificationType[]) => {
+    const session = await getCachedSession();
+    if (!session) throw new Error("User not authenticated.");
+
+    const user = await prismaClient.user.findUniqueOrThrow({
+      where: { userId: session.user.sub },
+      select: { id: true },
+    });
+
+    await prismaClient.userPreference.upsert({
+      where: { userId: user.id },
+      create: { userId: user.id, subscribedNotificationTypes: types },
+      update: { subscribedNotificationTypes: types },
+    });
+
+    return {
+      message: "Notification subscriptions updated",
+      data: types,
+    };
+  },
+);

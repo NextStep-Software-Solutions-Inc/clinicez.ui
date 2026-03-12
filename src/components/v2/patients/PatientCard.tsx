@@ -5,10 +5,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Heart, AlertCircle, Pill, ChevronRight, User, CheckCircle2, Clock, XCircle } from "lucide-react";
+import { Heart, AlertCircle, Pill, ChevronRight, User, CheckCircle2, Clock, XCircle, UserPlus } from "lucide-react";
 import { calculateAge, formatBloodType } from "@/lib/utils";
 import type { ClinicPatientListItem } from "@/types/clinic-patients-v2.types";
 import { PatientAIInsightButton } from "./PatientAIInsightButton";
+import { formatDistanceToNow } from "date-fns";
 
 interface PatientCardProps {
   patient: ClinicPatientListItem;
@@ -18,28 +19,29 @@ interface PatientCardProps {
   isProvider?: boolean;
 }
 
-/** Maps ProfileCompletionStatus enum values to a visual badge */
+/** Maps ProfileCompletionStatus enum values to a visual badge.
+ *  Label text is hidden on mobile to conserve space. */
 function ProfileStatusBadge({ status }: { status: string }) {
   if (status === "COMPLETE") {
     return (
       <span className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-700 dark:text-emerald-400">
-        <CheckCircle2 className="h-3 w-3" />
-        Complete
+        <CheckCircle2 className="h-3 w-3 flex-shrink-0" />
+        <span className="hidden sm:inline">Complete</span>
       </span>
     );
   }
   if (status === "PARTIAL") {
     return (
       <span className="inline-flex items-center gap-1 text-[10px] font-medium text-amber-600 dark:text-amber-400">
-        <Clock className="h-3 w-3" />
-        Partial
+        <Clock className="h-3 w-3 flex-shrink-0" />
+        <span className="hidden sm:inline">Partial</span>
       </span>
     );
   }
   return (
     <span className="inline-flex items-center gap-1 text-[10px] font-medium text-muted-foreground">
-      <XCircle className="h-3 w-3" />
-      Incomplete
+      <XCircle className="h-3 w-3 flex-shrink-0" />
+      <span className="hidden sm:inline">Incomplete</span>
     </span>
   );
 }
@@ -52,6 +54,7 @@ export const PatientCard = memo(function PatientCard({
 }: PatientCardProps) {
   const {
     profileCompletionStatus,
+    createdAt,
     Clinic: { id: clinicId },
     Patient: {
       id: patientId,
@@ -66,7 +69,7 @@ export const PatientCard = memo(function PatientCard({
       picture,
       email,
     },
-    stats = { appointments: 0, conditions: 0, medications: 0 },
+    stats = { appointments: 0, conditions: 0, medications: 0, activeMedications: 0 },
   } = patient;
 
   const initials = `${firstName?.charAt(0) ?? ""}${lastName?.charAt(0) ?? ""}`;
@@ -77,6 +80,7 @@ export const PatientCard = memo(function PatientCard({
     : null;
 
   const profileHref = `/v2/clinic/${clinicUid}/patients/${patientId}`;
+  const joinedAgo = formatDistanceToNow(new Date(createdAt), { addSuffix: true });
 
   /* ── Grid View ─────────────────────────────────────────────────────────── */
   if (viewMode === "grid") {
@@ -142,11 +146,18 @@ export const PatientCard = memo(function PatientCard({
               label="Meds"
               value={stats.medications}
               colorClass="text-blue-500"
+              subLabel={`${stats.activeMedications} active`}
             />
           </div>
 
           <div className="flex items-center justify-between">
-            <ProfileStatusBadge status={profileCompletionStatus} />
+            <div className="flex items-center gap-2">
+              <ProfileStatusBadge status={profileCompletionStatus} />
+              <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                <UserPlus className="h-3 w-3 flex-shrink-0" />
+                Added {joinedAgo}
+              </span>
+            </div>
             <span className="text-xs text-muted-foreground group-hover:text-primary transition-colors flex items-center gap-0.5">
               View Profile
               <ChevronRight className="h-3.5 w-3.5" />
@@ -214,7 +225,13 @@ export const PatientCard = memo(function PatientCard({
                 {formatBloodType(bloodType)}
               </Badge>
             )}
+          </div>
+          <div className="flex items-center gap-2 mt-0.5">
             <ProfileStatusBadge status={profileCompletionStatus} />
+            <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+              <UserPlus className="h-3 w-3 flex-shrink-0" />
+              Added {joinedAgo}
+            </span>
           </div>
         </div>
 
@@ -237,6 +254,7 @@ export const PatientCard = memo(function PatientCard({
             label="Medications"
             value={stats.medications}
             colorClass="text-blue-500"
+            subLabel={`${stats.activeMedications} active`}
           />
         </div>
       </Link>
@@ -265,11 +283,13 @@ function StatBadge({
   label,
   value,
   colorClass,
+  subLabel,
 }: {
   icon: React.ReactNode;
   label: string;
   value: number;
   colorClass: string;
+  subLabel?: string;
 }) {
   return (
     <div className="text-center">
@@ -278,6 +298,9 @@ function StatBadge({
         <p className="text-xs text-muted-foreground">{label}</p>
       </div>
       <p className="font-bold text-base leading-none">{value}</p>
+      {subLabel && (
+        <p className="text-[10px] text-muted-foreground mt-0.5 leading-none">{subLabel}</p>
+      )}
     </div>
   );
 }

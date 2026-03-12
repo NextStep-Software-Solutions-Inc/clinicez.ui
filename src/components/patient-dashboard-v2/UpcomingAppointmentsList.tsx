@@ -152,7 +152,7 @@ export function UpcomingAppointmentsList({ appointments, isLoading }: UpcomingAp
                 <div className="flex items-center gap-2 mb-1">
                   <Stethoscope className="w-4 h-4 text-purple-400 flex-shrink-0" />
                   <p className="font-semibold dark:text-white text-slate-900 truncate">
-                    {doctorName || 'Unknown'}
+                    {doctorName || 'Unassigned Healthcare Provider'}
                   </p>
                 </div>
                 <p className="text-xs dark:text-slate-400 text-slate-600 mb-1.5 truncate">

@@ -133,13 +133,13 @@ export function VitalsGrid({ vitals, isLoading }: VitalsGridProps) {
     {
       label: 'Temperature',
       value: current.temp || '—',
-      unit: '°F',
+      unit: '°C',
       icon: <Thermometer className="w-5 h-5" />,
       color: 'text-orange-400',
       bgGradient: 'from-orange-600/20 to-orange-500/10',
-      status: ((current.temp ?? 0) < 98 || (current.temp ?? 0) > 99) ? 'warning' : 'normal',
+      status: current.temp != null && (current.temp < 36.1 || current.temp > 37.2) ? 'warning' : 'normal',
       trend: trends?.temp ?? undefined,
-      normalRange: '98.6',
+      normalRange: '36.1-37.2',
     },
     {
       label: 'SpO₂',

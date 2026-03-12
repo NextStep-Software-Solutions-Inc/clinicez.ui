@@ -51,7 +51,9 @@ import {
   returnAppointmentAction,
   saveAppointmentAISymptomAnalysisAction,
   getAppointmentAIAnalysisAction,
+  updateAppointmentSubjectComplaintAction,
 } from "@/actions/appointments/appointment-attribute.action";
+import { Input } from "@/components/ui/input";
 import {
   acceptAppointmentAction,
   declineAppointmentAction,
@@ -126,6 +128,12 @@ export function AppointmentDetailSheet({
   const [showReturnForm, setShowReturnForm] = useState(false);
   const [returnReason, setReturnReason] = useState("");
 
+  // Inline subject/complaint edit state
+  const [isEditingSubjectComplaint, setIsEditingSubjectComplaint] = useState(false);
+  const [editSubject, setEditSubject] = useState("");
+  const [editComplaint, setEditComplaint] = useState("");
+  const [isSavingSubjectComplaint, setIsSavingSubjectComplaint] = useState(false);
+
   // Pre-assessment notes state
   const [preAssessmentNotes, setPreAssessmentNotes] = useState<PreAssessmentNote[]>([]);
   const [notesExpanded, setNotesExpanded] = useState(false);
@@ -194,6 +202,9 @@ export function AppointmentDetailSheet({
     setReturnReason("");
     setAiPendingResult(null);
     setVitalsExpanded(false);
+    setIsEditingSubjectComplaint(false);
+    setEditSubject("");
+    setEditComplaint("");
   }, [appointment]);
 
   if (!appointment) return null;
@@ -282,6 +293,27 @@ export function AppointmentDetailSheet({
       toast.success("AI symptom analysis saved.");
       setAiPendingResult(null);
       setSavedAiAnalysis(markdown);
+    } else {
+      toast.error(result.message);
+    }
+  };
+
+  const handleSaveSubjectComplaint = async () => {
+    if (!editSubject.trim()) {
+      toast.error("Subject cannot be empty.");
+      return;
+    }
+    setIsSavingSubjectComplaint(true);
+    const result = await updateAppointmentSubjectComplaintAction({
+      appointmentId: appointment.id,
+      subject: editSubject,
+      complaint: editComplaint,
+    });
+    setIsSavingSubjectComplaint(false);
+    if (result.status) {
+      toast.success("Appointment details updated.");
+      setIsEditingSubjectComplaint(false);
+      onRefresh();
     } else {
       toast.error(result.message);
     }
@@ -587,21 +619,94 @@ export function AppointmentDetailSheet({
 
           {/* Appointment Info */}
           <div className="rounded-xl border bg-muted/30 p-4 space-y-3">
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-              Appointment Details
-            </h3>
-            <div className="space-y-2 text-sm">
-              {!isWalkIn && (
-                <div>
-                  <span className="text-muted-foreground text-xs">Subject</span>
-                  <p className="font-medium">{appointment.subject}</p>
-                </div>
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                Appointment Details
+              </h3>
+              {isReceiver && !isEditingSubjectComplaint && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditSubject(appointment.subject);
+                    setEditComplaint(appointment.complaint ?? "");
+                    setIsEditingSubjectComplaint(true);
+                  }}
+                  className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                >
+                  <Pencil className="h-3 w-3" />
+                  Edit
+                </button>
               )}
-              {appointment.complaint && (
-                <div>
-                  <span className="text-muted-foreground text-xs">Complaint</span>
-                  <p className="text-sm">{appointment.complaint}</p>
+            </div>
+            <div className="space-y-2 text-sm">
+              {isReceiver && isEditingSubjectComplaint ? (
+                <div className="space-y-3">
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Subject</Label>
+                    <Input
+                      className="mt-1 h-8 text-sm"
+                      value={editSubject}
+                      onChange={(e) => setEditSubject(e.target.value)}
+                      placeholder="Appointment subject"
+                      disabled={isSavingSubjectComplaint}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Chief Complaint</Label>
+                    <Textarea
+                      className="mt-1 text-sm min-h-[80px] resize-none"
+                      value={editComplaint}
+                      onChange={(e) => setEditComplaint(e.target.value)}
+                      placeholder="Describe the chief complaint..."
+                      disabled={isSavingSubjectComplaint}
+                    />
+                  </div>
+                  <div className="flex items-center gap-2 pt-1">
+                    <Button
+                      size="sm"
+                      className="h-7 text-xs px-3"
+                      onClick={handleSaveSubjectComplaint}
+                      disabled={
+                        isSavingSubjectComplaint ||
+                        !editSubject.trim() ||
+                        (editSubject.trim() === appointment.subject && editComplaint.trim() === (appointment.complaint ?? "").trim())
+                      }
+                    >
+                      {isSavingSubjectComplaint && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
+                      Save
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 text-xs px-3"
+                      onClick={() => setIsEditingSubjectComplaint(false)}
+                      disabled={isSavingSubjectComplaint}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
                 </div>
+              ) : (
+                <>
+                  {!isWalkIn && (
+                    <div>
+                      <span className="text-muted-foreground text-xs">Subject</span>
+                      <p className="font-medium">{appointment.subject}</p>
+                    </div>
+                  )}
+                  {appointment.complaint && (
+                    <div>
+                      <span className="text-muted-foreground text-xs">Complaint</span>
+                      <p className="text-sm">{appointment.complaint}</p>
+                    </div>
+                  )}
+                  {!appointment.complaint && isReceiver && (
+                    <div>
+                      <span className="text-muted-foreground text-xs">Complaint</span>
+                      <p className="text-sm text-muted-foreground italic">No chief complaint recorded.</p>
+                    </div>
+                  )}
+                </>
               )}
               {appointment.AppointmentAttribute?.AppointmentType && (
                 <div>

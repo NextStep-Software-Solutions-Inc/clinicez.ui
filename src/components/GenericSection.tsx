@@ -110,8 +110,7 @@ export default function GenericSection({ hpId, name, label, consultationId, valu
                   ) : (
                     <Textarea
                       rows={5}
-                      readOnly={readonly}
-                      disabled={readonly || isPatientView}
+                      disabled={isPatientView}
                       className={cn("mb-2", {
                         "blur-sm": shouldBlur
                       })}

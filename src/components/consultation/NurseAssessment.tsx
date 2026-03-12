@@ -75,6 +75,7 @@ export const PreConsultationNote = ({ note }: PreConsultationNoteProps) => {
               {note.homeInstructions}
             </CardContent>
           </Card>
+          {note.remarks && (
           <Card className="grow lg:basis-1/4">
             <CardHeader>
               <CardTitle className="text-lg">
@@ -85,6 +86,7 @@ export const PreConsultationNote = ({ note }: PreConsultationNoteProps) => {
               {note.remarks}
             </CardContent>
           </Card>
+          )}
         </div>
       </CardContent>
     </Card>

@@ -108,7 +108,7 @@ export function MarkdownEditor({
             onChange={(e) => onChange(e.target.value)}
             placeholder={placeholder}
             rows={rows}
-            className="resize-none rounded-none border-0 border-t-0 focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent text-sm font-mono"
+            className="resize-y rounded-none border-0 border-t-0 focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent text-sm font-mono"
           />
           <p className="px-3 pb-1.5 text-[10px] text-muted-foreground/50">
             Markdown supported: **bold**, _italic_, ## heading, - list, `code`

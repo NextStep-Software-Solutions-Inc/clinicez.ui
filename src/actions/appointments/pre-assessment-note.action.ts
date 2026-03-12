@@ -29,7 +29,7 @@ type UpsertPreAssessmentNotePayload = {
   appointmentId: number;
   assessment: string;
   homeInstructions?: string;
-  remarks: string;
+  remarks?: string;
   clinicUid: string;
 }
 

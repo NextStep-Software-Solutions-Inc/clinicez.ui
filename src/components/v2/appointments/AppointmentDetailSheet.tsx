@@ -1152,10 +1152,9 @@ export function AppointmentDetailSheet({
                     <Image
                       src={att.url}
                       alt={`Attachment ${idx + 1}`}
-                      fill
-                      className="object-cover"
-                      sizes="80px"
-                      unoptimized
+                      width={80}
+                      height={80}
+                      className="w-full h-full object-cover"
                     />
                   </button>
                 ))}
@@ -1203,10 +1202,9 @@ export function AppointmentDetailSheet({
                   <Image
                     src={appointment.AppointmentAttachments[lightboxIndex].url}
                     alt={`Attachment ${lightboxIndex + 1}`}
-                    fill
-                    className="object-contain rounded-lg shadow-2xl"
-                    sizes="80vw"
-                    unoptimized
+                    width={1920}
+                    height={1080}
+                    className="max-h-[80vh] max-w-[80vw] w-auto h-auto object-contain rounded-lg shadow-2xl"
                   />
                 </div>
                 {lightboxIndex < appointment.AppointmentAttachments.length - 1 && (

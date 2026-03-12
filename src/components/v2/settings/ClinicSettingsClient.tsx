@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useRef, useCallback } from "react";
+import { useState, useTransition, useRef, useCallback, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -36,6 +36,7 @@ import {
   KeyRound,
   Link2,
   AlertTriangle,
+  FileText,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -142,6 +143,11 @@ import {
   updateSystemAction,
   deleteSystemAction,
 } from "@/actions/system.action";
+import { upsertClinicPrescriptionConfigAction } from "@/actions/medications/prescription-config.action";
+import { upsertClinicDocumentSettingAction } from "@/actions/clinics/clinic-document-setting.action";
+import { useClinicPrescriptionConfig } from "@/hooks/useClinicPrescriptionConfig";
+import { useClinicDocumentSetting } from "@/hooks/useClinicDocumentSetting";
+import { useDocumentTemplates } from "@/hooks/useDocumentTemplate";
 
 import type { GetClinic } from "@/actions/clinics/clinic.action";
 import type { GetClinicSetting } from "@/actions/clinics/clinic-setting.action";
@@ -2810,6 +2816,177 @@ function AppointmentTabsTab({
   );
 }
 
+
+/* ─────────────────────────────────────────────────────────────────── */
+/*  Tab: Documents                                                     */
+/* ─────────────────────────────────────────────────────────────────── */
+
+function DocumentsTab({ clinicUid }: { clinicUid: string }) {
+  const [isPending, startTransition] = useTransition();
+
+  const { data: prescriptionConfigResult, mutate: mutatePrescription } = useClinicPrescriptionConfig(clinicUid);
+  const { data: documentSettingResult, mutate: mutateDocumentSetting } = useClinicDocumentSetting(clinicUid);
+
+  const prescriptionConfig = prescriptionConfigResult?.data ?? null;
+  const documentSetting = documentSettingResult?.data ?? null;
+
+  const { data: prescriptionTemplates } = useDocumentTemplates({ typeName: "prescription", clinicUid });
+  const { data: medCertTemplates } = useDocumentTemplates({ typeName: "medical_certificate", clinicUid });
+  const { data: labTemplates } = useDocumentTemplates({ typeName: "laboratory", clinicUid });
+  const { data: imagingTemplates } = useDocumentTemplates({ typeName: "imaging", clinicUid });
+  const { data: heartStationTemplates } = useDocumentTemplates({ typeName: "heart_station", clinicUid });
+
+  const [prescriptionTemplateId, setPrescriptionTemplateId] = useState<string>("");
+  const [medCertTemplateId, setMedCertTemplateId] = useState<string>("");
+  const [labTemplateId, setLabTemplateId] = useState<string>("");
+  const [imagingTemplateId, setImagingTemplateId] = useState<string>("");
+  const [heartStationTemplateId, setHeartStationTemplateId] = useState<string>("");
+
+  // Sync local state when remote data loads
+  useEffect(() => {
+    setPrescriptionTemplateId(prescriptionConfig?.prescriptionTemplateId?.toString() ?? "");
+  }, [prescriptionConfig?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    setMedCertTemplateId(documentSetting?.medCertTemplateId?.toString() ?? "");
+    setLabTemplateId(documentSetting?.labTemplateId?.toString() ?? "");
+    setImagingTemplateId(documentSetting?.imagingTemplateId?.toString() ?? "");
+    setHeartStationTemplateId(documentSetting?.heartStationTemplateId?.toString() ?? "");
+  }, [documentSetting?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleSave = () => {
+    startTransition(async () => {
+      const prescriptionResult = await upsertClinicPrescriptionConfigAction(
+        prescriptionConfig?.id ?? 0,
+        {
+          clinicUid,
+          prescriptionTemplateId: prescriptionTemplateId ? Number(prescriptionTemplateId) : undefined,
+        }
+      );
+
+      const documentResult = await upsertClinicDocumentSettingAction(
+        {
+          clinicUid,
+          medCertTemplateId: medCertTemplateId ? Number(medCertTemplateId) : null,
+          labTemplateId: labTemplateId ? Number(labTemplateId) : null,
+          imagingTemplateId: imagingTemplateId ? Number(imagingTemplateId) : null,
+          heartStationTemplateId: heartStationTemplateId ? Number(heartStationTemplateId) : null,
+        }
+      );
+
+      if (prescriptionResult.status && documentResult.status) {
+        mutatePrescription();
+        mutateDocumentSetting();
+        toast.success("Document settings saved successfully.");
+      } else {
+        toast.error(
+          prescriptionResult.message ?? documentResult.message ?? "Failed to save document settings."
+        );
+      }
+    });
+  };
+
+  type TemplateOption = { id: number; name: string };
+
+  const TemplateSelect = ({
+    label,
+    description,
+    value,
+    onChange,
+    templates,
+  }: {
+    label: string;
+    description: string;
+    value: string;
+    onChange: (v: string) => void;
+    templates: TemplateOption[] | undefined;
+  }) => (
+    <div className="rounded-lg border p-4 space-y-3">
+      <div>
+        <p className="text-sm font-medium">{label}</p>
+        <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
+      </div>
+      <Select value={value} onValueChange={onChange}>
+        <SelectTrigger className="w-full">
+          <SelectValue placeholder="No default (select a template)" />
+        </SelectTrigger>
+        <SelectContent>
+          {(templates ?? []).length === 0 ? (
+            <SelectItem value="__none__" disabled>
+              No templates available for this type
+            </SelectItem>
+          ) : (
+            (templates ?? []).map((t) => (
+              <SelectItem key={t.id} value={t.id.toString()}>
+                {t.name}
+              </SelectItem>
+            ))
+          )}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <FileText className="h-4 w-4 text-primary" />
+            Default Document Templates
+          </CardTitle>
+          <CardDescription>
+            Set the default template used when generating each document type for this clinic. Staff can still override the template per record.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <TemplateSelect
+              label="Prescription"
+              description="Default template for outpatient prescriptions."
+              value={prescriptionTemplateId}
+              onChange={setPrescriptionTemplateId}
+              templates={prescriptionTemplates?.data?.map((t) => ({ id: t.id, name: t.name }))}
+            />
+            <TemplateSelect
+              label="Medical Certificate"
+              description="Default template for medical certificates."
+              value={medCertTemplateId}
+              onChange={setMedCertTemplateId}
+              templates={medCertTemplates?.data?.map((t) => ({ id: t.id, name: t.name }))}
+            />
+            <TemplateSelect
+              label="Laboratory Request"
+              description="Default template for laboratory request forms."
+              value={labTemplateId}
+              onChange={setLabTemplateId}
+              templates={labTemplates?.data?.map((t) => ({ id: t.id, name: t.name }))}
+            />
+            <TemplateSelect
+              label="Imaging Request"
+              description="Default template for imaging / radiology request forms."
+              value={imagingTemplateId}
+              onChange={setImagingTemplateId}
+              templates={imagingTemplates?.data?.map((t) => ({ id: t.id, name: t.name }))}
+            />
+            <TemplateSelect
+              label="Heart Station Request"
+              description="Default template for heart station / ECG request forms."
+              value={heartStationTemplateId}
+              onChange={setHeartStationTemplateId}
+              templates={heartStationTemplates?.data?.map((t) => ({ id: t.id, name: t.name }))}
+            />
+          </div>
+          <Button onClick={handleSave} disabled={isPending} className="gap-1.5">
+            {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            Save Changes
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 /* ─────────────────────────────────────────────────────────────────── */
 /*  Root component                                                     */
 /* ─────────────────────────────────────────────────────────────────── */
@@ -2901,6 +3078,10 @@ export function ClinicSettingsClient({
             <Link2 className="h-3.5 w-3.5" />
             Integrations
           </TabsTrigger>
+          <TabsTrigger value="documents" className="gap-1.5 flex-shrink-0">
+            <FileText className="h-3.5 w-3.5" />
+            Documents
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="general" className="mt-6">
@@ -2967,6 +3148,10 @@ export function ClinicSettingsClient({
             </div>
             <GoogleCalendarIntegration connected={googleCalendarConnected} email={googleCalendarEmail} />
           </div>
+        </TabsContent>
+
+        <TabsContent value="documents" className="mt-6">
+          <DocumentsTab clinicUid={clinicUid} />
         </TabsContent>
       </Tabs>
     </div>

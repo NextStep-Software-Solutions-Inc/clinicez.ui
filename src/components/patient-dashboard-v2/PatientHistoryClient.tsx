@@ -26,6 +26,7 @@ import {
   Download,
 } from 'lucide-react'
 import type { GetPatientSelfHistory } from '@/actions/patient-dashboard/get-self-history'
+import { formatTime12Hr } from '@/lib/day-utils'
 import { ThemeToggle } from '@/components/patient-dashboard-v2/ThemeToggle'
 import DownloadPrescriptionAction from '@/components/clinic/clinical-records/prescription/DownloadPrescriptionAction'
 import DownloadMedicalCertificateAction from '@/components/medical-certificate/DownloadMedicalCertificateAction'
@@ -304,7 +305,7 @@ function ConsultationDetailPanel({ ticket, onBack }: { ticket: ConsultationTicke
                   year: 'numeric',
                 })}
                 {appointment?.AppointmentAttribute?.timeStart && (
-                  <span> · {appointment.AppointmentAttribute.timeStart}</span>
+                  <span> · {formatTime12Hr(appointment.AppointmentAttribute.timeStart)}</span>
                 )}
               </span>
             </div>
@@ -589,7 +590,7 @@ function AppointmentDetailPanel({ appointment, onBack }: { appointment: Appointm
                       year: 'numeric',
                     })}
                 {attr?.timeStart && (
-                  <span> · {attr.timeStart}</span>
+                  <span> · {formatTime12Hr(attr.timeStart)}</span>
                 )}
               </span>
             </div>
@@ -655,8 +656,8 @@ function AppointmentDetailPanel({ appointment, onBack }: { appointment: Appointm
                       })}
                       {attr.timeStart && (
                         <span className="dark:text-slate-300 text-slate-600">
-                          {' '}· {attr.timeStart}
-                          {attr.timeEnd && ` – ${attr.timeEnd}`}
+                          {' '}· {formatTime12Hr(attr.timeStart)}
+                          {attr.timeEnd && ` – ${formatTime12Hr(attr.timeEnd)}`}
                         </span>
                       )}
                     </p>
@@ -783,6 +784,9 @@ function ListItemRow({
                     day: 'numeric',
                     year: 'numeric',
                   })}
+              {ticket.Appointment?.AppointmentAttribute?.timeStart && (
+                <span> · {formatTime12Hr(ticket.Appointment.AppointmentAttribute.timeStart)}</span>
+              )}
             </span>
           </div>
           {(ticket.ConsultationNotes.length > 0 || ticket.Prescriptions.length > 0) && (
@@ -842,6 +846,9 @@ function ListItemRow({
                 day: 'numeric',
                 year: 'numeric',
               })}
+              {appt.AppointmentAttribute.timeStart && (
+                <span>· {formatTime12Hr(appt.AppointmentAttribute.timeStart)}</span>
+              )}
             </span>
           )}
         </div>

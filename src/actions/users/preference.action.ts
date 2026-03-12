@@ -7,7 +7,7 @@ import { getPermissionsAction } from "@actions/permission.action";
 import { PERMISSIONS } from "@lib/permissions";
 import { withErrorHandling } from "@/lib/with-error-handling";
 import { withRetry } from "@/lib/database-health";
-import { Prisma } from "@prisma/client";
+import { NotificationType, Prisma } from "@prisma/client";
 
 
 export type GetMyUserPreference = Awaited<ReturnType<typeof getMyUserPreferenceAction>>;
@@ -55,13 +55,14 @@ type UpsertUserPreferencePayload = {
   autoAssignAppointmentToSelf: boolean;
   defaultHpId?: number;
   muteNotifications: boolean;
+  subscribedNotificationTypes?: NotificationType[];
 }
 
 export const upsertMyUserPreference = withErrorHandling(async (payload: UpsertUserPreferencePayload) => {
   const session = await getCachedSession();
   if (!session) throw new Error("User not authenticated.");
 
-  const { defaultHpId, autoAssignAppointmentToSelf, autoAcceptAppointmentAssignment, muteNotifications } = payload;
+  const { defaultHpId, autoAssignAppointmentToSelf, autoAcceptAppointmentAssignment, muteNotifications, subscribedNotificationTypes } = payload;
 
   // Use retry mechanism to handle database conflicts
   const userPreference = await withRetry(async () => {
@@ -89,12 +90,14 @@ export const upsertMyUserPreference = withErrorHandling(async (payload: UpsertUs
           autoAcceptAppointmentAssignment,
           autoAssignAppointmentToSelf,
           muteNotifications,
+          subscribedNotificationTypes: subscribedNotificationTypes ?? [],
         },
         update: {
           ...(autoAssignAppointmentToSelf && defaultHpId ? { defaultHpId } : { defaultHpId: null }),
           autoAcceptAppointmentAssignment,
           autoAssignAppointmentToSelf,
           muteNotifications,
+          subscribedNotificationTypes: subscribedNotificationTypes ?? [],
         }
       });
     }, {

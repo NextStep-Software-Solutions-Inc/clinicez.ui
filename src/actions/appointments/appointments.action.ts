@@ -326,7 +326,7 @@ export const createAppointmentAction = withErrorHandling(async (payload: CreateA
     // non-critical
   }
 
-  // Notify clinic healthcare providers that a new appointment has arrived
+  // Notify clinic members with the receive:clinic:appointment permission that a new appointment has arrived
   try {
     const receivePermission = await prisma.permission.findFirst({
       where: { name: "receive:clinic:appointment" },

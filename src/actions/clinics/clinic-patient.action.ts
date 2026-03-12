@@ -85,8 +85,9 @@ export type GetClinicPatientFilters = {
 export interface GetClinicPatientsResult {
   message: string;
   data: Array<{
-    stats: { appointments: number; conditions: number; medications: number };
+    stats: { appointments: number; conditions: number; medications: number; activeMedications: number };
     id: number;
+    createdAt: Date;
     profileCompletionStatus: string;
     Clinic: {
       id: number;
@@ -138,6 +139,9 @@ function buildPatientSearchFilter(search: string) {
   };
 }
 
+const DEFAULT_MIN_AGE = 0;
+const DEFAULT_MAX_AGE = 120;
+
 export const getClinicPatientsAction = async (filters: GetClinicPatientFilters): Promise<GetClinicPatientsResult> => {
 
   const session = await getCachedSession()
@@ -151,7 +155,7 @@ export const getClinicPatientsAction = async (filters: GetClinicPatientFilters):
     "view patient list"
   );
 
-  const { search, cursor, pageSize = 50, distinct = [], clinicUid, userId, gender, minAge = 0, maxAge = 120 } = filters ?? {}
+  const { search, cursor, pageSize = 50, distinct = [], clinicUid, userId, gender, minAge = DEFAULT_MIN_AGE, maxAge = DEFAULT_MAX_AGE } = filters ?? {}
 
   // Calculate birth date range based on age
   // minAge (e.g., 20) = oldest person we want (born 20+ years ago, smaller date)
@@ -175,8 +179,10 @@ export const getClinicPatientsAction = async (filters: GetClinicPatientFilters):
         ...userId ? { userId } : {},
         ...(gender && gender !== 'all') ? { gender: gender as 'MALE' | 'FEMALE' } : {},
         AND: [
-          // Include patients with no DOB (treated as age 0) OR within the age range
-          ...(minAge !== undefined || maxAge !== undefined) ? [{
+          // Only apply the DOB filter when the age range has been explicitly changed from defaults.
+          // When both are at defaults (0–120), skip filtering so all patients (including those
+          // with extreme or erroneous DOB values) are included.
+          ...(minAge > DEFAULT_MIN_AGE || maxAge < DEFAULT_MAX_AGE) ? [{
             OR: [
               { dob: null },
               {
@@ -194,6 +200,7 @@ export const getClinicPatientsAction = async (filters: GetClinicPatientFilters):
     },
     select: {
       id: true,
+      createdAt: true,
       profileCompletionStatus: true,
       Clinic: {
         select: {
@@ -236,10 +243,11 @@ export const getClinicPatientsAction = async (filters: GetClinicPatientFilters):
 
   // Get all patient IDs
   const patientIds = data.map(cp => cp.Patient?.id).filter(Boolean) as number[];
+  const clinicPatientIds = data.map(cp => cp.id);
   const clinicId = data[0]?.Clinic?.id;
 
   // Batch queries for all stats at once
-  const [appointments, conditions, medications] = await Promise.all([
+  const [appointments, conditions, medications, activeMedications, prescriptionMedicines, activePrescriptionMedicines] = await Promise.all([
     prismaClient.appointmentRequester.findMany({
       where: {
         userId: { in: patientIds },
@@ -262,7 +270,50 @@ export const getClinicPatientsAction = async (filters: GetClinicPatientFilters):
       },
       select: { patientId: true },
     }),
+    // Legacy Medication model: count only active ones (completedAt = null means not yet completed).
+    prismaClient.medication.findMany({
+      where: {
+        patientId: { in: patientIds },
+        completedAt: null,
+      },
+      select: { patientId: true },
+    }),
+    // Count all medicines from the Prescription (Rx) system, keyed by ClinicPatient.id.
+    // Include consumed/inactive medicines so the count never decreases after a medicine is consumed.
+    prismaClient.medicine.findMany({
+      where: {
+        Prescription: {
+          patientId: { in: clinicPatientIds },
+        },
+      },
+      select: {
+        Prescription: {
+          select: { patientId: true },
+        },
+      },
+    }),
+    // Count only currently active medicines (isActive = true, not soft-deleted).
+    prismaClient.medicine.findMany({
+      where: {
+        isActive: true,
+        deletedAt: null,
+        Prescription: {
+          patientId: { in: clinicPatientIds },
+        },
+      },
+      select: {
+        Prescription: {
+          select: { patientId: true },
+        },
+      },
+    }),
   ]);
+
+  // Build a lookup: ClinicPatient.id → Patient (User) id
+  const clinicPatientToPatientId = data.reduce((acc, cp) => {
+    if (cp.Patient?.id) acc[cp.id] = cp.Patient.id;
+    return acc;
+  }, {} as Record<number, number>);
 
   // Aggregate counts by patient ID
   const appointmentCounts = appointments.reduce((acc, app) => {
@@ -275,8 +326,35 @@ export const getClinicPatientsAction = async (filters: GetClinicPatientFilters):
     return acc;
   }, {} as Record<number, number>);
 
+  // Old Medication model counts (patientId = User.id)
   const medicationCounts = medications.reduce((acc, med) => {
     acc[med.patientId] = (acc[med.patientId] || 0) + 1;
+    return acc;
+  }, {} as Record<number, number>);
+
+  // Active legacy Medication counts (completedAt = null)
+  const activeMedicationCounts = activeMedications.reduce((acc, med) => {
+    acc[med.patientId] = (acc[med.patientId] || 0) + 1;
+    return acc;
+  }, {} as Record<number, number>);
+
+  // New Prescription/Medicine counts (Prescription.patientId = ClinicPatient.id)
+  const prescriptionMedicineCounts = prescriptionMedicines.reduce((acc, med) => {
+    const clinicPatientId = med.Prescription?.patientId;
+    if (clinicPatientId !== undefined) {
+      const patientId = clinicPatientToPatientId[clinicPatientId];
+      if (patientId) acc[patientId] = (acc[patientId] || 0) + 1;
+    }
+    return acc;
+  }, {} as Record<number, number>);
+
+  // Active Prescription/Medicine counts (isActive = true, deletedAt = null)
+  const activePrescriptionMedicineCounts = activePrescriptionMedicines.reduce((acc, med) => {
+    const clinicPatientId = med.Prescription?.patientId;
+    if (clinicPatientId !== undefined) {
+      const patientId = clinicPatientToPatientId[clinicPatientId];
+      if (patientId) acc[patientId] = (acc[patientId] || 0) + 1;
+    }
     return acc;
   }, {} as Record<number, number>);
 
@@ -286,7 +364,8 @@ export const getClinicPatientsAction = async (filters: GetClinicPatientFilters):
     stats: {
       appointments: appointmentCounts[clinicPatient.Patient?.id] || 0,
       conditions: conditionCounts[clinicPatient.Patient?.id] || 0,
-      medications: medicationCounts[clinicPatient.Patient?.id] || 0,
+      medications: (medicationCounts[clinicPatient.Patient?.id] || 0) + (prescriptionMedicineCounts[clinicPatient.Patient?.id] || 0),
+      activeMedications: (activeMedicationCounts[clinicPatient.Patient?.id] || 0) + (activePrescriptionMedicineCounts[clinicPatient.Patient?.id] || 0),
     },
   }));
 
@@ -300,8 +379,10 @@ export const getClinicPatientsAction = async (filters: GetClinicPatientFilters):
         ...userId ? { userId } : {},
         ...(gender && gender !== 'all') ? { gender: gender as 'MALE' | 'FEMALE' } : {},
         AND: [
-          // Include patients with no DOB (treated as age 0) OR within the age range
-          ...(minAge !== undefined || maxAge !== undefined) ? [{
+          // Only apply the DOB filter when the age range has been explicitly changed from defaults.
+          // When both are at defaults (0–120), skip filtering so all patients (including those
+          // with extreme or erroneous DOB values) are included.
+          ...(minAge > DEFAULT_MIN_AGE || maxAge < DEFAULT_MAX_AGE) ? [{
             OR: [
               { dob: null },
               {

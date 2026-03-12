@@ -9,9 +9,11 @@ import { VerificationStatusBadge } from './VerificationStatusBadge'
 
 interface ProfileCardProps {
   patient: PatientBaseData
+  /** When true the verification badge is a clickable link to /v2/profile/verification */
+  isOwner?: boolean
 }
 
-export function ProfileCard({ patient }: ProfileCardProps) {
+export function ProfileCard({ patient, isOwner }: ProfileCardProps) {
   return (
     <div className="glassmorphic-card mb-6 md:mb-8">
       <div className="p-4 md:p-8">
@@ -38,9 +40,13 @@ export function ProfileCard({ patient }: ProfileCardProps) {
                 <h2 className="text-xl md:text-3xl font-bold text-slate-900 dark:text-white leading-tight">
                   {patient.fullName}{patient.suffix ? ` ${patient.suffix}` : ''}
                 </h2>
-                <Link href="/v2/profile/verification" className="hover:opacity-80 transition-opacity">
+                {isOwner ? (
+                  <Link href="/v2/profile/verification" className="hover:opacity-80 transition-opacity">
+                    <VerificationStatusBadge status={patient.verificationStatus} />
+                  </Link>
+                ) : (
                   <VerificationStatusBadge status={patient.verificationStatus} />
-                </Link>
+                )}
               </div>
               {patient.nickname && (
                 <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">"{patient.nickname}"</p>

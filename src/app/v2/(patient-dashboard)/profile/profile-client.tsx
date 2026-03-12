@@ -78,7 +78,7 @@ export default function ProfileClient({
       {headerSlot !== null && (headerSlot ?? <ProfileHeader />)}
 
       <div className="max-w-6xl mx-auto pb-32">
-        <ProfileCard patient={patient} />
+        <ProfileCard patient={patient} isOwner={!patientUserId} />
 
         <TabNav
           tabs={[...PROFILE_TABS]}

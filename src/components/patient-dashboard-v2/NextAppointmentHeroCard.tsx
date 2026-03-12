@@ -76,7 +76,7 @@ export function NextAppointmentHeroCard({ appointment, isLoading }: NextAppointm
       : null;
     const elapsedLabel = prevDateTime ? dayjs(prevDateTime).fromNow() : null;
     const isVirtualPrev = prev.mode.name === 'VIRTUAL' || prev.mode.name === 'virtual';
-    const doctorName = prev.doctor.hpName ?? `${prev.doctor.firstName ?? ''} ${prev.doctor.lastName ?? ''}`.trim();
+    const doctorName = (prev.doctor.hpName ?? `${prev.doctor.firstName ?? ''} ${prev.doctor.lastName ?? ''}`.trim()) || 'Unassigned Healthcare Provider';
 
     return (
       <div className="w-full dark:bg-slate-800/40 bg-white/60 rounded-xl px-6 py-5 border dark:border-white/10 border-slate-200/70 flex flex-wrap items-center gap-4">
@@ -88,9 +88,9 @@ export function NextAppointmentHeroCard({ appointment, isLoading }: NextAppointm
             <p className="text-sm dark:text-blue-300 text-blue-600 font-medium mb-0.5">Previous Appointment</p>
             <p
               className="font-semibold dark:text-white text-slate-900 text-base leading-tight truncate"
-              title={doctorName || 'Unknown'}
+              title={doctorName}
             >
-              {doctorName || 'Unknown'}
+              {doctorName}
             </p>
             <p className="text-xs dark:text-slate-400 text-slate-600 truncate">
               {prev.doctor.specialization || 'Healthcare Provider'}
@@ -180,9 +180,9 @@ export function NextAppointmentHeroCard({ appointment, isLoading }: NextAppointm
           </p>
           <p
             className="font-semibold dark:text-white text-slate-900 text-base leading-tight truncate"
-            title={apt.doctor.hpName ?? `${apt.doctor.firstName} ${apt.doctor.lastName}`}
+            title={(apt.doctor.hpName ?? `${apt.doctor.firstName ?? ''} ${apt.doctor.lastName ?? ''}`.trim()) || 'Unassigned Healthcare Provider'}
           >
-            {apt.doctor.hpName ?? `${apt.doctor.firstName} ${apt.doctor.lastName}`}
+            {(apt.doctor.hpName ?? `${apt.doctor.firstName ?? ''} ${apt.doctor.lastName ?? ''}`.trim()) || 'Unassigned Healthcare Provider'}
           </p>
           <p
             className="text-xs dark:text-slate-400 text-slate-600 truncate"

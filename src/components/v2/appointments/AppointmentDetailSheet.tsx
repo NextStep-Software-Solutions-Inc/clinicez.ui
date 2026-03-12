@@ -1146,12 +1146,12 @@ export function AppointmentDetailSheet({
                     type="button"
                     className="relative w-20 h-20 rounded-lg overflow-hidden border border-border/40 bg-muted/40 hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-primary/40 shrink-0"
                     onClick={() => setLightboxIndex(idx)}
-                    title={`View attachment ${idx + 1}`}
-                    aria-label={`View attachment ${idx + 1}`}
+                    title={att.name || `Attachment ${idx + 1}`}
+                    aria-label={`View ${att.name || `attachment ${idx + 1}`}`}
                   >
                     <Image
                       src={att.url}
-                      alt={`Attachment ${idx + 1}`}
+                      alt={att.name || `Attachment ${idx + 1}`}
                       width={80}
                       height={80}
                       className="w-full h-full object-cover"
@@ -1201,7 +1201,7 @@ export function AppointmentDetailSheet({
                 <div className="relative max-h-[80vh] max-w-[80vw] min-w-[200px] min-h-[200px]">
                   <Image
                     src={appointment.AppointmentAttachments[lightboxIndex].url}
-                    alt={`Attachment ${lightboxIndex + 1}`}
+                    alt={appointment.AppointmentAttachments[lightboxIndex].name || `Attachment ${lightboxIndex + 1}`}
                     width={1920}
                     height={1080}
                     className="max-h-[80vh] max-w-[80vw] w-auto h-auto object-contain rounded-lg shadow-2xl"

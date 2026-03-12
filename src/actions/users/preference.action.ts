@@ -90,7 +90,7 @@ export const upsertMyUserPreference = withErrorHandling(async (payload: UpsertUs
           autoAcceptAppointmentAssignment,
           autoAssignAppointmentToSelf,
           muteNotifications,
-          subscribedNotificationTypes: subscribedNotificationTypes ?? Object.values(NotificationType),
+          subscribedNotificationTypes: subscribedNotificationTypes ?? [],
         },
         update: {
           ...(autoAssignAppointmentToSelf && defaultHpId ? { defaultHpId } : { defaultHpId: null }),

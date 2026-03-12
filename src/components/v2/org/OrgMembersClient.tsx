@@ -28,6 +28,8 @@ import {
   AlertCircle,
   GraduationCap,
   Briefcase,
+  AlertTriangle,
+  ShieldX,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -63,11 +65,20 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   getOrgMembersAction,
   setMembershipRequestStatusAction,
   deleteMembershipAction,
   searchUsersForOrgAction,
   updateOrgMemberRoleAction,
+  resetOrgMemberPermissionsAction,
   type GetOrgMembers,
   type SearchUsersForOrg,
 } from "@/actions/organizations/org-member.action";
@@ -729,6 +740,77 @@ function ChangeRoleSheet({ member, roles, onClose, onSuccess }: ChangeRoleSheetP
 }
 
 /* ─────────────────────────────────────────────────────────── */
+/*  Restore Default Permissions Dialog (Org)                   */
+/* ─────────────────────────────────────────────────────────── */
+
+interface RestoreOrgDefaultPermissionsDialogProps {
+  member: OrgMember | null;
+  onClose: () => void;
+  onSuccess: () => void;
+}
+
+function RestoreOrgDefaultPermissionsDialog({ member, onClose, onSuccess }: RestoreOrgDefaultPermissionsDialogProps) {
+  const [isPending, startTransition] = useTransition();
+
+  const handleConfirm = () => {
+    if (!member) return;
+    startTransition(async () => {
+      const result = await resetOrgMemberPermissionsAction(member.id);
+      if (result.status) {
+        toast.success(result.message ?? "Permissions restored to defaults.");
+        onSuccess();
+        onClose();
+      } else {
+        toast.error(result.message ?? "Failed to restore permissions.");
+      }
+    });
+  };
+
+  if (!member) return null;
+  const fullName = getFullName(member.User.firstName, member.User.lastName, member.User.suffix);
+
+  return (
+    <Dialog open={!!member} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-amber-500" />
+            Restore Default Permissions
+          </DialogTitle>
+          <DialogDescription>
+            This will reset all permissions for{" "}
+            <span className="font-medium text-foreground">{fullName}</span>{" "}
+            back to the default permissions of their current role (
+            <span className="font-medium text-foreground">{member.OrganizationRole.name}</span>
+            ).
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-900/50 dark:bg-amber-950/30 p-3 text-sm text-amber-800 dark:text-amber-300 space-y-1">
+          <p className="font-medium flex items-center gap-1.5">
+            <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+            Warning
+          </p>
+          <p>
+            Any custom permission changes made to this member will be permanently lost and replaced with the role&apos;s default permissions. This action cannot be undone.
+          </p>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={isPending}>
+            Cancel
+          </Button>
+          <Button variant="destructive" onClick={handleConfirm} disabled={isPending}>
+            {isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+            Restore Defaults
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────── */
 /*  Main Component                                             */
 /* ─────────────────────────────────────────────────────────── */
 
@@ -767,6 +849,7 @@ export function OrgMembersClient({
   const [addSheetOpen, setAddSheetOpen] = useState(false);
   const [applicationMember, setApplicationMember] = useState<OrgMember | null>(null);
   const [changeRoleMember, setChangeRoleMember] = useState<OrgMember | null>(null);
+  const [restorePermissionsMember, setRestorePermissionsMember] = useState<OrgMember | null>(null);
 
   // ── Refs for scroll-based load more (always current values) ────────
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -1140,6 +1223,13 @@ export function OrgMembersClient({
                           <UserCog className="h-4 w-4" />
                           Change Role
                         </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => setRestorePermissionsMember(member)}
+                          className="gap-2"
+                        >
+                          <ShieldX className="h-4 w-4" />
+                          Restore Default Permissions
+                        </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                           onClick={() => handleRemove(member.id)}
@@ -1192,6 +1282,13 @@ export function OrgMembersClient({
         roles={roles}
         onClose={() => setChangeRoleMember(null)}
         onSuccess={handleChangeRoleSuccess}
+      />
+
+      {/* ── Restore Default Permissions Dialog ───────────────── */}
+      <RestoreOrgDefaultPermissionsDialog
+        member={restorePermissionsMember}
+        onClose={() => setRestorePermissionsMember(null)}
+        onSuccess={() => {}}
       />
     </div>
   );

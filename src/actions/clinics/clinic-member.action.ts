@@ -206,6 +206,61 @@ export const updateClinicMemberRoleAction = withErrorHandling(async (
   }
 })
 
+export const resetClinicMemberPermissionsAction = withErrorHandling(async (clinicMemberId: number) => {
+  const session = await getCachedSession();
+  if (!session) throw new Error("User not authenticated");
+
+  try {
+    const clinicMember = await prisma.clinicMember.findUnique({
+      where: { id: clinicMemberId },
+      select: {
+        clinicId: true,
+        roleId: true,
+        Role: { select: { name: true } },
+      },
+    });
+
+    if (!clinicMember) throw new Error("Clinic member not found.");
+    if (clinicMember.Role?.name?.toLowerCase() === "owner") throw new Error("Owner permissions cannot be reset.");
+
+    await prisma.$transaction(async (tx) => {
+      const initialPermissions = await tx.clinicRoleInitialPermission.findMany({
+        where: {
+          clinicId: clinicMember.clinicId,
+          clinicRoleId: clinicMember.roleId,
+          ClinicRole: { isActive: true },
+          Permission: { isActive: true },
+        },
+        select: { permissionId: true },
+      });
+
+      await tx.clinicMemberPermission.deleteMany({ where: { clinicMemberId } });
+
+      if (initialPermissions.length > 0) {
+        await tx.clinicMemberPermission.createMany({
+          skipDuplicates: true,
+          data: initialPermissions.map((p) => ({ clinicMemberId, permissionId: p.permissionId })),
+        });
+      }
+
+      return initialPermissions.map((p) => p.permissionId);
+    });
+
+    const restoredPermissions = await prisma.clinicMemberPermission.findMany({
+      where: { clinicMemberId },
+      select: { permissionId: true },
+    });
+
+    return {
+      message: "Permissions have been restored to the role defaults.",
+      data: restoredPermissions.map((p) => p.permissionId),
+    };
+  } catch (error) {
+    if (hasCodeProperty(error) && error.code === "P2025") throw new Error("Member not found.");
+    throw new Error("An error occurred while resetting the member permissions.");
+  }
+});
+
 type AddClinicMemberPayload = {
   clinicUid: string;
   userId: string;

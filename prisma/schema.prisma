@@ -2638,6 +2638,9 @@ enum AuditAction {
   JOIN
   LEAVE
   CLAIM
+  SESSION_LOGIN
+  SESSION_LOGOUT
+  SESSION_REVOKED
 }
 
 enum AuditEntityType {

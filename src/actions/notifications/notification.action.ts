@@ -286,7 +286,8 @@ export const getMuteNotificationsAction = withErrorHandling(async () => {
 
 /**
  * Get the subscribed notification types for the current user.
- * An empty array means the user receives all notification types.
+ * Returns all notification types when the user has no explicit subscription list,
+ * indicating they are subscribed to everything by default.
  */
 export const getNotificationSubscriptionsAction = withErrorHandling(async () => {
   const session = await getCachedSession();
@@ -302,9 +303,10 @@ export const getNotificationSubscriptionsAction = withErrorHandling(async () => 
     select: { subscribedNotificationTypes: true },
   });
 
+  const stored = pref?.subscribedNotificationTypes ?? [];
   return {
     message: "Notification subscriptions fetched",
-    data: pref?.subscribedNotificationTypes ?? [],
+    data: stored.length > 0 ? stored : Object.values(NotificationType),
   };
 });
 

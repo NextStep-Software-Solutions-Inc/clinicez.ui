@@ -92,7 +92,9 @@ export default function UserPreferences({ userPreference }: UserPreferenceFormPr
       autoAcceptAppointmentAssignment: userPreference?.autoAcceptAppointmentAssignment ?? false,
       autoAssignAppointmentToSelf: userPreference?.autoAssignAppointmentToSelf ?? false,
       muteNotifications: userPreference?.muteNotifications ?? false,
-      subscribedNotificationTypes: userPreference?.subscribedNotificationTypes ?? [],
+      subscribedNotificationTypes: userPreference?.subscribedNotificationTypes?.length
+        ? userPreference.subscribedNotificationTypes
+        : ALL_NOTIFICATION_TYPES,
       defaultHpId: userPreference?.HealthCareProvider?.id
     }
   })

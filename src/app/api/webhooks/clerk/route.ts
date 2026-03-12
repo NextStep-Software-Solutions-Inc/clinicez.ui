@@ -8,7 +8,7 @@ import { $Enums } from "@prisma/client";
 type PrismaTransaction = Parameters<Parameters<typeof prisma["$transaction"]>[0]>[0];
 
 // Webhook event types from Clerk
-type ClerkWebhookEvent = {
+type UserWebhookEvent = {
   type: "user.created" | "user.updated";
   data: {
     id: string;
@@ -25,16 +25,39 @@ type ClerkWebhookEvent = {
   };
 };
 
+type SessionWebhookEvent = {
+  type: "session.created" | "session.ended" | "session.removed" | "session.revoked";
+  data: {
+    id: string;
+    user_id: string;
+    status: string;
+    last_active_at: number;
+    expire_at: number;
+    abandon_at: number;
+    created_at: number;
+    updated_at: number;
+    client_id: string;
+  };
+};
+
+type ClerkWebhookEvent = UserWebhookEvent | SessionWebhookEvent;
+
 /**
  * Clerk Webhook Handler
- * 
- * This endpoint handles user.created and user.updated events from Clerk
- * to keep our database in sync with Clerk's user data.
- * 
+ *
+ * Handles the following Clerk webhook events to keep our database in sync:
+ *   - user.created   – create user record and assign default permissions
+ *   - user.updated   – sync profile changes (name, email, avatar)
+ *   - session.created  – audit-log user sign-in
+ *   - session.ended    – audit-log natural session expiry / sign-out
+ *   - session.removed  – audit-log explicit session deletion
+ *   - session.revoked  – audit-log session revocation (security action)
+ *
  * Setup Instructions:
  * 1. In Clerk Dashboard, go to Webhooks
  * 2. Add endpoint: https://your-domain.com/api/webhooks/clerk
- * 3. Subscribe to: user.created, user.updated
+ * 3. Subscribe to: user.created, user.updated,
+ *    session.created, session.ended, session.removed, session.revoked
  * 4. Copy the webhook secret to CLERK_WEBHOOK_SECRET env variable
  */
 export async function POST(request: NextRequest) {
@@ -88,31 +111,33 @@ export async function POST(request: NextRequest) {
     }
 
     // Handle the webhook
-    const { type, data } = evt;
-    const userId = data.id;
+    const { type } = evt;
 
-    // Get primary email
-    const primaryEmail = data.email_addresses.find(
-      (email) => email.id === data.primary_email_address_id
-    );
-
-    if (!primaryEmail) {
-      console.error(`No primary email found for user ${userId}`);
-      return NextResponse.json(
-        { error: "No primary email found" },
-        { status: 400 }
-      );
-    }
-
-    const email = primaryEmail.email_address;
-    const firstName = data.first_name || "";
-    const lastName = data.last_name || "";
-    // Prioritize profile_image_url (user's uploaded image) over image_url (social login image)
-    const picture = data.profile_image_url || data.image_url || null;
-    const externalId = data.external_id || null;
-
-    // Upsert user to database
+    // ── User events ──────────────────────────────────────────────────────────
     if (type === "user.created" || type === "user.updated") {
+      const data = (evt as UserWebhookEvent).data;
+      const userId = data.id;
+
+      // Get primary email
+      const primaryEmail = data.email_addresses.find(
+        (email) => email.id === data.primary_email_address_id
+      );
+
+      if (!primaryEmail) {
+        console.error(`No primary email found for user ${userId}`);
+        return NextResponse.json(
+          { error: "No primary email found" },
+          { status: 400 }
+        );
+      }
+
+      const email = primaryEmail.email_address;
+      const firstName = data.first_name || "";
+      const lastName = data.last_name || "";
+      // Prioritize profile_image_url (user's uploaded image) over image_url (social login image)
+      const picture = data.profile_image_url || data.image_url || null;
+      const externalId = data.external_id || null;
+
       await prisma.$transaction(
         async (tx) => {
           // Check if user exists by Clerk userId
@@ -216,6 +241,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // ── Session events ───────────────────────────────────────────────────────
+    if (
+      type === "session.created" ||
+      type === "session.ended" ||
+      type === "session.removed" ||
+      type === "session.revoked"
+    ) {
+      await handleSessionEvent(evt as SessionWebhookEvent);
+    }
+
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
     console.error("Error processing webhook:", error);
@@ -228,7 +263,7 @@ export async function POST(request: NextRequest) {
 
 /**
  * Assign default permissions to a new user
- * 
+ *
  * Queries permissions within the transaction to ensure consistency
  */
 async function assignUserPermissions(
@@ -257,4 +292,61 @@ async function assignUserPermissions(
       skipDuplicates: true,
     });
   }
+}
+
+/**
+ * Handle Clerk session webhook events.
+ *
+ * Maps each event type to a corresponding AuditAction and writes a record
+ * to the AuditLog table.  If the user cannot be found in the database the
+ * event is acknowledged (200) but not persisted – this prevents a 5xx retry
+ * loop when a session fires before user.created is processed.
+ */
+async function handleSessionEvent(evt: SessionWebhookEvent): Promise<void> {
+  const { type, data } = evt;
+  const { id: sessionId, user_id: clerkUserId } = data;
+
+  // Resolve the database user record from the Clerk userId
+  const user = await prisma.user.findUnique({
+    where: { userId: clerkUserId },
+    select: { id: true },
+  });
+
+  if (!user) {
+    console.warn(
+      `Session event "${type}" received for unknown Clerk user ${clerkUserId} – skipping audit log`
+    );
+    return;
+  }
+
+  const auditActionMap: Record<SessionWebhookEvent["type"], $Enums.AuditAction> = {
+    "session.created": $Enums.AuditAction.SESSION_LOGIN,
+    // Both session.ended (natural expiry / user sign-out) and session.removed
+    // (explicit backend deletion) represent the end of a session.  They are
+    // grouped under SESSION_LOGOUT because the outcome for audit purposes is
+    // the same; the raw event type is preserved in the metadata.sessionId for
+    // finer-grained queries if needed.
+    "session.ended": $Enums.AuditAction.SESSION_LOGOUT,
+    "session.removed": $Enums.AuditAction.SESSION_LOGOUT,
+    "session.revoked": $Enums.AuditAction.SESSION_REVOKED,
+  };
+
+  await prisma.auditLog.create({
+    data: {
+      entityType: $Enums.AuditEntityType.USER,
+      entityId: user.id,
+      action: auditActionMap[type],
+      performedBy: user.id,
+      metadata: {
+        event: type,
+        sessionId,
+        status: data.status,
+        lastActiveAt: data.last_active_at,
+        expireAt: data.expire_at,
+        clientId: data.client_id,
+      },
+    },
+  });
+
+  console.log(`Session event "${type}" logged for user ${clerkUserId} (session ${sessionId})`);
 }

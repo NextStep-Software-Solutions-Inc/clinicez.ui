@@ -1,29 +1,21 @@
 -- CreateTable
-CREATE TABLE "ClinicDocumentSetting" (
+CREATE TABLE "ClinicDocumentDefaultTemplate" (
     "id" SERIAL NOT NULL,
     "clinicId" INTEGER NOT NULL,
-    "medCertTemplateId" INTEGER,
-    "labTemplateId" INTEGER,
-    "imagingTemplateId" INTEGER,
-    "heartStationTemplateId" INTEGER,
+    "documentTypeId" INTEGER NOT NULL,
+    "templateId" INTEGER NOT NULL,
 
-    CONSTRAINT "ClinicDocumentSetting_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "ClinicDocumentDefaultTemplate_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "ClinicDocumentSetting_clinicId_key" ON "ClinicDocumentSetting"("clinicId");
+CREATE UNIQUE INDEX "ClinicDocumentDefaultTemplate_clinicId_documentTypeId_key" ON "ClinicDocumentDefaultTemplate"("clinicId", "documentTypeId");
 
 -- AddForeignKey
-ALTER TABLE "ClinicDocumentSetting" ADD CONSTRAINT "ClinicDocumentSetting_clinicId_fkey" FOREIGN KEY ("clinicId") REFERENCES "Clinic"("id") ON DELETE CASCADE ON UPDATE NO ACTION;
+ALTER TABLE "ClinicDocumentDefaultTemplate" ADD CONSTRAINT "ClinicDocumentDefaultTemplate_clinicId_fkey" FOREIGN KEY ("clinicId") REFERENCES "Clinic"("id") ON DELETE CASCADE ON UPDATE NO ACTION;
 
 -- AddForeignKey
-ALTER TABLE "ClinicDocumentSetting" ADD CONSTRAINT "ClinicDocumentSetting_medCertTemplateId_fkey" FOREIGN KEY ("medCertTemplateId") REFERENCES "DocumentTemplate"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+ALTER TABLE "ClinicDocumentDefaultTemplate" ADD CONSTRAINT "ClinicDocumentDefaultTemplate_documentTypeId_fkey" FOREIGN KEY ("documentTypeId") REFERENCES "DocumentTemplateType"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
 
 -- AddForeignKey
-ALTER TABLE "ClinicDocumentSetting" ADD CONSTRAINT "ClinicDocumentSetting_labTemplateId_fkey" FOREIGN KEY ("labTemplateId") REFERENCES "DocumentTemplate"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
-
--- AddForeignKey
-ALTER TABLE "ClinicDocumentSetting" ADD CONSTRAINT "ClinicDocumentSetting_imagingTemplateId_fkey" FOREIGN KEY ("imagingTemplateId") REFERENCES "DocumentTemplate"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
-
--- AddForeignKey
-ALTER TABLE "ClinicDocumentSetting" ADD CONSTRAINT "ClinicDocumentSetting_heartStationTemplateId_fkey" FOREIGN KEY ("heartStationTemplateId") REFERENCES "DocumentTemplate"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+ALTER TABLE "ClinicDocumentDefaultTemplate" ADD CONSTRAINT "ClinicDocumentDefaultTemplate_templateId_fkey" FOREIGN KEY ("templateId") REFERENCES "DocumentTemplate"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;

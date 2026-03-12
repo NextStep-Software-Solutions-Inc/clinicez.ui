@@ -1249,7 +1249,7 @@ model Clinic {
   ClinicMembers                   ClinicMember[]
   ClinicOrganizations             ClinicOrganization[]
   ClinicPatients                  ClinicPatient[]
-  ClinicDocumentSetting           ClinicDocumentSetting?
+  ClinicDocumentDefaultTemplates  ClinicDocumentDefaultTemplate[]
   ClinicPrescriptionSettings      ClinicPrescriptionSetting[]
   ClinicReferralSlips             ClinicReferralSlip[]
   ClinicRoleInitialPermissions    ClinicRoleInitialPermission[]
@@ -1865,10 +1865,7 @@ model DocumentTemplate {
   LaboratoryRequests                ClinicLaboratoryRequest[]
   ClinicMedicalCertificates         ClinicMedicalCertificate[]
   ClinicPrescriptionSettings        ClinicPrescriptionSetting[]        @relation("prescription")
-  ClinicDocumentSettingsMedCert     ClinicDocumentSetting[]            @relation("medCert")
-  ClinicDocumentSettingsLab         ClinicDocumentSetting[]            @relation("lab")
-  ClinicDocumentSettingsImaging     ClinicDocumentSetting[]            @relation("imaging")
-  ClinicDocumentSettingsHeartStation ClinicDocumentSetting[]           @relation("heartStation")
+  ClinicDocumentDefaultTemplates    ClinicDocumentDefaultTemplate[]
   ClinicReferralSlips               ClinicReferralSlip[]
   Clinic                            Clinic                             @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   DocumentTemplateType              DocumentTemplateType               @relation(fields: [type], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -1879,10 +1876,11 @@ model DocumentTemplate {
 }
 
 model DocumentTemplateType {
-  id                Int                @id @default(autoincrement())
-  name              String
-  description       String?
-  DocumentTemplates DocumentTemplate[]
+  id                             Int                            @id @default(autoincrement())
+  name                           String
+  description                    String?
+  DocumentTemplates              DocumentTemplate[]
+  ClinicDocumentDefaultTemplates ClinicDocumentDefaultTemplate[]
 }
 
 model ClinicPrescriptionSetting {
@@ -1893,18 +1891,16 @@ model ClinicPrescriptionSetting {
   PrescriptionTemplate   DocumentTemplate @relation("prescription", fields: [prescriptionTemplateId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
-model ClinicDocumentSetting {
-  id                       Int               @id @default(autoincrement())
-  clinicId                 Int               @unique
-  medCertTemplateId        Int?
-  labTemplateId            Int?
-  imagingTemplateId        Int?
-  heartStationTemplateId   Int?
-  Clinic                   Clinic            @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  MedCertTemplate          DocumentTemplate? @relation("medCert", fields: [medCertTemplateId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  LabTemplate              DocumentTemplate? @relation("lab", fields: [labTemplateId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  ImagingTemplate          DocumentTemplate? @relation("imaging", fields: [imagingTemplateId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  HeartStationTemplate     DocumentTemplate? @relation("heartStation", fields: [heartStationTemplateId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+model ClinicDocumentDefaultTemplate {
+  id             Int                  @id @default(autoincrement())
+  clinicId       Int
+  documentTypeId Int
+  templateId     Int
+  Clinic         Clinic               @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  DocumentType   DocumentTemplateType @relation(fields: [documentTypeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Template       DocumentTemplate     @relation(fields: [templateId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([clinicId, documentTypeId])
 }
 
 model ClinicMedicalCertificate {

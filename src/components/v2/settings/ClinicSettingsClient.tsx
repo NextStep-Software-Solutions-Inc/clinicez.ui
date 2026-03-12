@@ -144,10 +144,11 @@ import {
   deleteSystemAction,
 } from "@/actions/system.action";
 import { upsertClinicPrescriptionConfigAction } from "@/actions/medications/prescription-config.action";
-import { upsertClinicDocumentSettingAction } from "@/actions/clinics/clinic-document-setting.action";
+import { upsertClinicDocumentDefaultTemplatesAction } from "@/actions/clinics/clinic-document-setting.action";
 import { useClinicPrescriptionConfig } from "@/hooks/useClinicPrescriptionConfig";
 import { useClinicDocumentSetting } from "@/hooks/useClinicDocumentSetting";
 import { useDocumentTemplates } from "@/hooks/useDocumentTemplate";
+import { useDocumentTypes } from "@/hooks/useDocumentType";
 import DocumentTemplates from "@/components/DocumentTemplates";
 
 import type { GetClinic } from "@/actions/clinics/clinic.action";
@@ -2822,38 +2823,41 @@ function AppointmentTabsTab({
 /*  Tab: Documents                                                     */
 /* ─────────────────────────────────────────────────────────────────── */
 
+const formatDocumentTypeName = (name: string) =>
+  name.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+
 function DocumentsTab({ clinicUid }: { clinicUid: string }) {
   const [isPending, startTransition] = useTransition();
 
   const { data: prescriptionConfigResult, mutate: mutatePrescription } = useClinicPrescriptionConfig(clinicUid);
-  const { data: documentSettingResult, mutate: mutateDocumentSetting } = useClinicDocumentSetting(clinicUid);
+  const { data: documentDefaultsResult, mutate: mutateDocumentDefaults } = useClinicDocumentSetting(clinicUid);
+  const { data: documentTypesResult } = useDocumentTypes();
+  const { data: allTemplatesResult } = useDocumentTemplates({ clinicUid });
 
   const prescriptionConfig = prescriptionConfigResult?.data ?? null;
-  const documentSetting = documentSettingResult?.data ?? null;
-
-  const { data: prescriptionTemplates } = useDocumentTemplates({ typeName: "prescription", clinicUid });
-  const { data: medCertTemplates } = useDocumentTemplates({ typeName: "medical_certificate", clinicUid });
-  const { data: labTemplates } = useDocumentTemplates({ typeName: "laboratory", clinicUid });
-  const { data: imagingTemplates } = useDocumentTemplates({ typeName: "imaging", clinicUid });
-  const { data: heartStationTemplates } = useDocumentTemplates({ typeName: "heart_station", clinicUid });
+  const documentDefaults = documentDefaultsResult?.data ?? [];
+  const documentTypes = documentTypesResult?.data ?? [];
+  const allTemplates = allTemplatesResult?.data ?? [];
 
   const [prescriptionTemplateId, setPrescriptionTemplateId] = useState<string>("");
-  const [medCertTemplateId, setMedCertTemplateId] = useState<string>("");
-  const [labTemplateId, setLabTemplateId] = useState<string>("");
-  const [imagingTemplateId, setImagingTemplateId] = useState<string>("");
-  const [heartStationTemplateId, setHeartStationTemplateId] = useState<string>("");
+  const [defaultTemplateIds, setDefaultTemplateIds] = useState<Record<number, string>>({});
 
-  // Sync local state when remote data loads
+  // Sync prescription state when remote data loads
   useEffect(() => {
     setPrescriptionTemplateId(prescriptionConfig?.prescriptionTemplateId?.toString() ?? "");
   }, [prescriptionConfig?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Sync non-prescription defaults from the junction table
   useEffect(() => {
-    setMedCertTemplateId(documentSetting?.medCertTemplateId?.toString() ?? "");
-    setLabTemplateId(documentSetting?.labTemplateId?.toString() ?? "");
-    setImagingTemplateId(documentSetting?.imagingTemplateId?.toString() ?? "");
-    setHeartStationTemplateId(documentSetting?.heartStationTemplateId?.toString() ?? "");
-  }, [documentSetting?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+    const map: Record<number, string> = {};
+    for (const d of documentDefaults) {
+      map[d.documentTypeId] = d.templateId.toString();
+    }
+    setDefaultTemplateIds(map);
+  }, [documentDefaults]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const prescriptionType = documentTypes.find((t) => t.name === "prescription");
+  const nonPrescriptionTypes = documentTypes.filter((t) => t.name !== "prescription");
 
   const handleSave = () => {
     startTransition(async () => {
@@ -2865,19 +2869,16 @@ function DocumentsTab({ clinicUid }: { clinicUid: string }) {
         }
       );
 
-      const documentResult = await upsertClinicDocumentSettingAction(
-        {
-          clinicUid,
-          medCertTemplateId: medCertTemplateId ? Number(medCertTemplateId) : null,
-          labTemplateId: labTemplateId ? Number(labTemplateId) : null,
-          imagingTemplateId: imagingTemplateId ? Number(imagingTemplateId) : null,
-          heartStationTemplateId: heartStationTemplateId ? Number(heartStationTemplateId) : null,
-        }
-      );
+      const entries = nonPrescriptionTypes.map((type) => ({
+        documentTypeId: type.id,
+        templateId: defaultTemplateIds[type.id] ? Number(defaultTemplateIds[type.id]) : null,
+      }));
+
+      const documentResult = await upsertClinicDocumentDefaultTemplatesAction(clinicUid, entries);
 
       if (prescriptionResult.status && documentResult.status) {
         mutatePrescription();
-        mutateDocumentSetting();
+        mutateDocumentDefaults();
         toast.success("Document settings saved successfully.");
       } else {
         toast.error(
@@ -2936,30 +2937,24 @@ function DocumentsTab({ clinicUid }: { clinicUid: string }) {
         <p className="text-sm text-muted-foreground mb-4">
           Create and manage document templates for each type. Templates listed here can be selected as defaults below.
         </p>
-        <Tabs defaultValue="prescription">
-          <TabsList className="w-full justify-start h-auto p-1 overflow-x-auto flex-nowrap [&::-webkit-scrollbar]:hidden">
-            <TabsTrigger value="prescription" className="gap-1.5 flex-shrink-0">Prescription</TabsTrigger>
-            <TabsTrigger value="medical_certificate" className="gap-1.5 flex-shrink-0">Medical Certificate</TabsTrigger>
-            <TabsTrigger value="laboratory" className="gap-1.5 flex-shrink-0">Laboratory</TabsTrigger>
-            <TabsTrigger value="imaging" className="gap-1.5 flex-shrink-0">Imaging</TabsTrigger>
-            <TabsTrigger value="heart_station" className="gap-1.5 flex-shrink-0">Heart Station</TabsTrigger>
-          </TabsList>
-          <TabsContent value="prescription" className="mt-4">
-            <DocumentTemplates documentType="prescription" label="Prescription" clinicUid={clinicUid} />
-          </TabsContent>
-          <TabsContent value="medical_certificate" className="mt-4">
-            <DocumentTemplates documentType="medical_certificate" label="Medical Certificate" clinicUid={clinicUid} />
-          </TabsContent>
-          <TabsContent value="laboratory" className="mt-4">
-            <DocumentTemplates documentType="laboratory" label="Laboratory" clinicUid={clinicUid} />
-          </TabsContent>
-          <TabsContent value="imaging" className="mt-4">
-            <DocumentTemplates documentType="imaging" label="Imaging" clinicUid={clinicUid} />
-          </TabsContent>
-          <TabsContent value="heart_station" className="mt-4">
-            <DocumentTemplates documentType="heart_station" label="Heart Station" clinicUid={clinicUid} />
-          </TabsContent>
-        </Tabs>
+        {documentTypes.length > 0 ? (
+          <Tabs defaultValue={documentTypes[0]?.name}>
+            <TabsList className="w-full justify-start h-auto p-1 overflow-x-auto flex-nowrap [&::-webkit-scrollbar]:hidden">
+              {documentTypes.map((type) => (
+                <TabsTrigger key={type.id} value={type.name} className="gap-1.5 flex-shrink-0">
+                  {formatDocumentTypeName(type.name)}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+            {documentTypes.map((type) => (
+              <TabsContent key={type.id} value={type.name} className="mt-4">
+                <DocumentTemplates documentType={type.name} label={formatDocumentTypeName(type.name)} clinicUid={clinicUid} />
+              </TabsContent>
+            ))}
+          </Tabs>
+        ) : (
+          <p className="text-sm text-muted-foreground">No document types configured.</p>
+        )}
       </div>
 
       <Separator />
@@ -2977,41 +2972,35 @@ function DocumentsTab({ clinicUid }: { clinicUid: string }) {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <TemplateSelect
-              label="Prescription"
-              description="Default template for outpatient prescriptions."
-              value={prescriptionTemplateId}
-              onChange={setPrescriptionTemplateId}
-              templates={prescriptionTemplates?.data?.map((t) => ({ id: t.id, name: t.name }))}
-            />
-            <TemplateSelect
-              label="Medical Certificate"
-              description="Default template for medical certificates."
-              value={medCertTemplateId}
-              onChange={setMedCertTemplateId}
-              templates={medCertTemplates?.data?.map((t) => ({ id: t.id, name: t.name }))}
-            />
-            <TemplateSelect
-              label="Laboratory Request"
-              description="Default template for laboratory request forms."
-              value={labTemplateId}
-              onChange={setLabTemplateId}
-              templates={labTemplates?.data?.map((t) => ({ id: t.id, name: t.name }))}
-            />
-            <TemplateSelect
-              label="Imaging Request"
-              description="Default template for imaging / radiology request forms."
-              value={imagingTemplateId}
-              onChange={setImagingTemplateId}
-              templates={imagingTemplates?.data?.map((t) => ({ id: t.id, name: t.name }))}
-            />
-            <TemplateSelect
-              label="Heart Station Request"
-              description="Default template for heart station / ECG request forms."
-              value={heartStationTemplateId}
-              onChange={setHeartStationTemplateId}
-              templates={heartStationTemplates?.data?.map((t) => ({ id: t.id, name: t.name }))}
-            />
+            {/* Prescription — handled by ClinicPrescriptionSetting */}
+            {prescriptionType && (
+              <TemplateSelect
+                key={prescriptionType.id}
+                label={formatDocumentTypeName(prescriptionType.name)}
+                description={prescriptionType.description ?? `Default template for ${formatDocumentTypeName(prescriptionType.name).toLowerCase()}.`}
+                value={prescriptionTemplateId}
+                onChange={setPrescriptionTemplateId}
+                templates={allTemplates
+                  .filter((t) => t.DocumentTemplateType.id === prescriptionType.id)
+                  .map((t) => ({ id: t.id, name: t.name }))}
+              />
+            )}
+            {/* All other document types — driven by ClinicDocumentDefaultTemplate */}
+            {nonPrescriptionTypes.map((type) => {
+              const templates = allTemplates
+                .filter((t) => t.DocumentTemplateType.id === type.id)
+                .map((t) => ({ id: t.id, name: t.name }));
+              return (
+                <TemplateSelect
+                  key={type.id}
+                  label={formatDocumentTypeName(type.name)}
+                  description={type.description ?? `Default template for ${formatDocumentTypeName(type.name).toLowerCase()}.`}
+                  value={defaultTemplateIds[type.id] ?? ""}
+                  onChange={(v) => setDefaultTemplateIds((prev) => ({ ...prev, [type.id]: v }))}
+                  templates={templates}
+                />
+              );
+            })}
           </div>
           <Button onClick={handleSave} disabled={isPending} className="gap-1.5">
             {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}

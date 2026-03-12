@@ -3,7 +3,7 @@ import "server-only";
 
 import { withClerkAuth } from "@middlewares/withClerkAuth";
 import { NextRequest, NextResponse } from "next/server";
-import { getClinicDocumentSettingAction } from "@/actions/clinics/clinic-document-setting.action";
+import { getClinicDocumentDefaultTemplatesAction } from "@/actions/clinics/clinic-document-setting.action";
 
 export const GET = withClerkAuth(
   async (
@@ -11,7 +11,7 @@ export const GET = withClerkAuth(
     { params }: { params: Promise<{ clinicUid: string }> }
   ) => {
     const { clinicUid } = await params;
-    const result = await getClinicDocumentSettingAction(clinicUid);
+    const result = await getClinicDocumentDefaultTemplatesAction(clinicUid);
     return NextResponse.json(result, { status: 200 });
   }
 );

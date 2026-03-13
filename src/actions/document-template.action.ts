@@ -47,6 +47,29 @@ export const getDocumentTemplatesAction = withErrorHandling(async (filters: GetD
   return {message: "", data: documentTemplates}
 })
 
+export type GetDocumentTemplateById = Awaited<ReturnType<typeof getDocumentTemplateByIdAction>>
+export const getDocumentTemplateByIdAction = withErrorHandling(async (id: number) => {
+  const session = await getCachedSession()
+  if(!session) throw new Error("Unauthorized")
+
+  const documentTemplate = await prismaClient.documentTemplate.findFirst({
+    where: { id, isActive: true },
+    select: {
+      id: true,
+      name: true,
+      createdAt: true,
+      htmlContent: true,
+      DocumentTemplateType: {
+        select: { id: true, name: true }
+      },
+    }
+  })
+  if (!documentTemplate) throw new Error("Document template not found")
+  return { message: "", data: documentTemplate }
+}, async (error) => {
+  if(hasCodeProperty(error) && error.code === "P2025") return "Document template not found"
+});
+
 type CreateDocumentTemplatePayload = {
   name: string,
   typeId: number,

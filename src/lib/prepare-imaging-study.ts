@@ -1,5 +1,6 @@
 import dayjs from "@lib/day-utils";
 import { capitalize } from "./utils";
+import { renderLiquidTemplate } from "./liquid-template";
 
 type PrepareImagingStudyPayload = {
   template: string;
@@ -35,29 +36,49 @@ export const prepareImagingStudy = (payload: PrepareImagingStudyPayload): string
   const requestDate = dayjs(createdAt).format("MM/DD/YYYY");
   const createdDateTime = dayjs(createdAt).format("MM/DD/YYYY h:mm A");
 
-  const replacements = {
-    "@{name}": name,
-    "@{age}": age,
-    "@{gender}": capitalize(gender),
-    "@{address}": address,
-    "@{birthdate}": birthdate,
-    "@{requestDate}": requestDate,
-    "@{diagnostics}": diagnostics,
-    "@{history}": history || "No history provided.",
-    "@{impression}": impression || "No impression provided.",
-    "@{requestFor}": requestFor || "No request reason provided.",
-    "@{doctorName}": doctorName,
-    "@{licenseNo}": licenseNo,
-    "@{ptrNo}": ptrNo,
-    "@{doctorAddress}": doctorAddress,
-    "@{createdDateTime}": createdDateTime,
-    "@{eSignatureUrl}": eSignatureBase64 || "",
+  const variables = {
+    name,
+    age,
+    gender: capitalize(gender),
+    address,
+    birthdate,
+    requestDate,
+    diagnostics,
+    history: history || "No history provided.",
+    impression: impression || "No impression provided.",
+    requestFor: requestFor || "No request reason provided.",
+    doctorName,
+    licenseNo,
+    ptrNo,
+    doctorAddress,
+    createdDateTime,
+    eSignatureUrl: eSignatureBase64 || "",
   };
 
-  let outputTemplate = template;
-  Object.entries(replacements).forEach(([placeholder, value]) => {
-    outputTemplate = outputTemplate.replaceAll(placeholder, value);
-  });
+  return renderLiquidTemplate(template, variables);
+};
 
-  return outputTemplate;
+import type { TemplateVariableSchema } from "./document-template-schema";
+
+export const TEMPLATE_VARIABLE_SCHEMA: TemplateVariableSchema & { key: string } = {
+  key: "imaging",
+  description: "Variables available in Imaging Study Request templates",
+  variables: [
+    { variable: "name", description: "Patient's full name" },
+    { variable: "age", description: "Patient's age" },
+    { variable: "gender", description: "Patient's gender (capitalized)" },
+    { variable: "address", description: "Patient's home address" },
+    { variable: "birthdate", description: "Patient's date of birth" },
+    { variable: "requestDate", description: "Request date (MM/DD/YYYY)" },
+    { variable: "createdDateTime", description: "Full date and time (MM/DD/YYYY h:mm A)" },
+    { variable: "diagnostics", description: "Requested imaging procedures" },
+    { variable: "history", description: "Patient's relevant medical history" },
+    { variable: "impression", description: "Clinical impression / diagnosis" },
+    { variable: "requestFor", description: "Reason for the imaging request" },
+    { variable: "doctorName", description: "Requesting doctor's full name" },
+    { variable: "licenseNo", description: "Doctor's PRC license number" },
+    { variable: "ptrNo", description: "Doctor's PTR number" },
+    { variable: "doctorAddress", description: "Doctor's clinic or office address" },
+    { variable: "eSignatureUrl", description: "Doctor's e-signature (base64 image URL)" },
+  ],
 };

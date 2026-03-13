@@ -2,12 +2,55 @@
 // Template variable types and registry
 // ---------------------------------------------------------------------------
 
-export type TemplateVariableInfo = {
-  /** The Liquid variable name, e.g. `name` */
+export type TemplateVariableType =
+  | "string"
+  | "html"
+  | "number"
+  /** An array of plain strings, e.g. lab test names */
+  | "array-of-strings"
+  /** An array of objects — each item has typed `properties` */
+  | "array-of-objects";
+
+/** A single property on an array-of-objects item */
+export type TemplatePropertyInfo = {
+  /** Property name accessed as `<loopVar>.<variable>` inside a for loop */
   variable: string;
-  /** Human-readable description */
   description: string;
 };
+
+/** Scalar (string / html / number) variable */
+type ScalarVariableInfo = {
+  variable: string;
+  description: string;
+  type?: "string" | "html" | "number";
+  loopVar?: never;
+  properties?: never;
+};
+
+/** Array-of-strings variable (e.g. lab test categories) */
+type ArrayOfStringsVariableInfo = {
+  variable: string;
+  description: string;
+  type: "array-of-strings";
+  loopVar?: never;
+  properties?: never;
+};
+
+/** Array-of-objects variable — requires explicit loopVar and properties */
+export type ArrayOfObjectsVariableInfo = {
+  variable: string;
+  description: string;
+  type: "array-of-objects";
+  /** The loop alias, e.g. `"med"` for `{% for med in medicines %}` */
+  loopVar: string;
+  /** Typed properties of each item in the array */
+  properties: TemplatePropertyInfo[];
+};
+
+export type TemplateVariableInfo =
+  | ScalarVariableInfo
+  | ArrayOfStringsVariableInfo
+  | ArrayOfObjectsVariableInfo;
 
 export type TemplateVariableSchema = {
   /** Short description of this document type's template context */
@@ -31,13 +74,27 @@ export const DOCUMENT_TEMPLATE_VARIABLES: Record<string, TemplateVariableSchema>
       { variable: "address", description: "Patient's home address" },
       { variable: "requestDate", description: "Date the prescription was created (MM/DD/YYYY)" },
       { variable: "createdDateTime", description: "Full date and time (MMMM DD, YYYY h:mm A)" },
-      { variable: "medicines", description: "Array of medicine objects — iterate with {% for med in medicines %}. Each item has: med.index, med.name, med.dosage, med.unit, med.qty, med.sig, med.label" },
-      { variable: "medicine", description: "Legacy: pre-formatted HTML list of all medicines (for older templates)" },
+      {
+        variable: "medicines",
+        type: "array-of-objects",
+        loopVar: "med",
+        description: "Array of prescribed medicines — iterate with {% for med in medicines %}",
+        properties: [
+          { variable: "index", description: "Item number (1, 2, 3…)" },
+          { variable: "name", description: "Medicine name" },
+          { variable: "dosage", description: "Dosage amount (e.g. 500 mg)" },
+          { variable: "unit", description: "Unit (e.g. capsules, tablets)" },
+          { variable: "qty", description: "Quantity (number)" },
+          { variable: "sig", description: "Patient directions / sig instructions" },
+          { variable: "label", description: "Formatted: name + dosage + #qty" },
+        ],
+      },
+      { variable: "medicine", type: "html", description: "Legacy: pre-formatted HTML list of all medicines (for older templates)" },
       { variable: "doctorName", description: "Prescribing doctor's full name" },
       { variable: "licenseNo", description: "Doctor's PRC license number" },
       { variable: "ptrNo", description: "Doctor's PTR number" },
       { variable: "doctorAddress", description: "Doctor's clinic or office address" },
-      { variable: "eSignatureUrl", description: "Doctor's e-signature (rendered as an <img> tag, or raw base64 URL when used inside src=\"\")" },
+      { variable: "eSignatureUrl", type: "html", description: "Doctor's e-signature (<img> tag, or raw base64 URL when used inside src=\"\")" },
     ],
   },
 
@@ -120,19 +177,19 @@ export const DOCUMENT_TEMPLATE_VARIABLES: Record<string, TemplateVariableSchema>
       { variable: "licenseNo", description: "Doctor's PRC license number" },
       { variable: "ptrNo", description: "Doctor's PTR number" },
       { variable: "doctorAddress", description: "Doctor's clinic or office address" },
-      { variable: "eSignatureUrl", description: "Doctor's e-signature (base64 image URL)" },
-      { variable: "hematology", description: "Hematology tests as an array — use {{ hematology | join: \", \" }} or {% for test in hematology %}" },
-      { variable: "clinicalMicroscopy", description: "Clinical microscopy tests as an array" },
-      { variable: "bloodChemistry", description: "Blood chemistry tests as an array" },
-      { variable: "microbiology", description: "Microbiology tests as an array" },
-      { variable: "hormoneAssays", description: "Hormone assays tests as an array" },
-      { variable: "cardiacDiagnostics", description: "Cardiac diagnostics tests as an array" },
-      { variable: "hematologyTests", description: "Legacy: hematology tests as bold HTML string" },
-      { variable: "clinicalMicroscopyTests", description: "Legacy: clinical microscopy tests as bold HTML string" },
-      { variable: "bloodChemistryTests", description: "Legacy: blood chemistry tests as bold HTML string" },
-      { variable: "microbiologyTests", description: "Legacy: microbiology tests as bold HTML string" },
-      { variable: "hormoneAssaysTests", description: "Legacy: hormone assays tests as bold HTML string" },
-      { variable: "cardiacDiagnosticsTests", description: "Legacy: cardiac diagnostics tests as bold HTML string" },
+      { variable: "eSignatureUrl", type: "html", description: "Doctor's e-signature (base64 image URL)" },
+      { variable: "hematology", type: "array-of-strings", description: "Hematology test names" },
+      { variable: "clinicalMicroscopy", type: "array-of-strings", description: "Clinical microscopy test names" },
+      { variable: "bloodChemistry", type: "array-of-strings", description: "Blood chemistry test names" },
+      { variable: "microbiology", type: "array-of-strings", description: "Microbiology test names" },
+      { variable: "hormoneAssays", type: "array-of-strings", description: "Hormone assays test names" },
+      { variable: "cardiacDiagnostics", type: "array-of-strings", description: "Cardiac diagnostics test names" },
+      { variable: "hematologyTests", type: "html", description: "Legacy: hematology tests as bold HTML string" },
+      { variable: "clinicalMicroscopyTests", type: "html", description: "Legacy: clinical microscopy tests as bold HTML string" },
+      { variable: "bloodChemistryTests", type: "html", description: "Legacy: blood chemistry tests as bold HTML string" },
+      { variable: "microbiologyTests", type: "html", description: "Legacy: microbiology tests as bold HTML string" },
+      { variable: "hormoneAssaysTests", type: "html", description: "Legacy: hormone assays tests as bold HTML string" },
+      { variable: "cardiacDiagnosticsTests", type: "html", description: "Legacy: cardiac diagnostics tests as bold HTML string" },
     ],
   },
 

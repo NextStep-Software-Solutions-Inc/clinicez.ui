@@ -13,6 +13,8 @@ import {
 import {
   getTemplateVariableSchema,
   type TemplateVariableInfo,
+  type TemplatePropertyInfo,
+  type ArrayOfObjectsVariableInfo,
 } from "@/lib/document-template-schema";
 
 interface TemplateVariableReferenceProps {
@@ -20,12 +22,25 @@ interface TemplateVariableReferenceProps {
   documentTypeName: string | null | undefined;
 }
 
-function VariableChip({ info }: { info: TemplateVariableInfo }) {
+// ---------------------------------------------------------------------------
+// Reusable copy chip
+// ---------------------------------------------------------------------------
+
+function CopyChip({
+  label,
+  copyText,
+  tooltip,
+  className,
+}: {
+  label: string;
+  copyText: string;
+  tooltip: string;
+  className?: string;
+}) {
   const [copied, setCopied] = useState(false);
-  const syntax = `{{ ${info.variable} }}`;
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(syntax).then(() => {
+    navigator.clipboard.writeText(copyText).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     });
@@ -37,10 +52,10 @@ function VariableChip({ info }: { info: TemplateVariableInfo }) {
         <TooltipTrigger asChild>
           <Badge
             variant="secondary"
-            className="font-mono text-xs cursor-pointer select-text gap-1 hover:bg-secondary/80 transition-colors"
+            className={`font-mono text-xs cursor-pointer select-text gap-1 hover:bg-secondary/80 transition-colors ${className ?? ""}`}
             onClick={handleCopy}
           >
-            {syntax}
+            {label}
             {copied ? (
               <Check className="h-3 w-3 text-green-500 shrink-0" />
             ) : (
@@ -49,8 +64,7 @@ function VariableChip({ info }: { info: TemplateVariableInfo }) {
           </Badge>
         </TooltipTrigger>
         <TooltipContent side="top" className="max-w-xs text-left">
-          <p className="font-semibold mb-0.5">{info.variable}</p>
-          <p className="text-xs text-muted-foreground">{info.description}</p>
+          <p className="text-xs text-muted-foreground whitespace-pre-wrap">{tooltip}</p>
           <p className="text-xs text-muted-foreground italic mt-1">Click to copy</p>
         </TooltipContent>
       </Tooltip>
@@ -58,10 +72,126 @@ function VariableChip({ info }: { info: TemplateVariableInfo }) {
   );
 }
 
+// ---------------------------------------------------------------------------
+// Renderers per variable type
+// ---------------------------------------------------------------------------
+
+/** Scalar string / html / number / untyped variable */
+function ScalarVariableChip({ info }: { info: TemplateVariableInfo }) {
+  return (
+    <CopyChip
+      label={`{{ ${info.variable} }}`}
+      copyText={`{{ ${info.variable} }}`}
+      tooltip={`${info.variable}\n\n${info.description}`}
+    />
+  );
+}
+
+/** Array-of-strings variable: show join filter chip + for-loop chip */
+function ArrayOfStringsVariable({ info }: { info: TemplateVariableInfo }) {
+  const joinSnippet = `{{ ${info.variable} | join: ", " }}`;
+  const loopSnippet = `{% for item in ${info.variable} %}{{ item }}{% endfor %}`;
+
+  return (
+    <div className="rounded border border-border/40 bg-muted/30 px-2 py-1.5 space-y-1">
+      <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
+        {info.variable}
+        <span className="ml-1.5 font-normal normal-case opacity-60">string[ ]</span>
+      </p>
+      <p className="text-[10px] text-muted-foreground">{info.description}</p>
+      <div className="flex flex-wrap gap-1 pt-0.5">
+        <CopyChip
+          label={joinSnippet}
+          copyText={joinSnippet}
+          tooltip={`Joins all items with ", " — e.g. "CBC, Urinalysis, Fecalysis"`}
+        />
+        <CopyChip
+          label={`{% for item in ${info.variable} %}…{% endfor %}`}
+          copyText={loopSnippet}
+          tooltip={`For-loop over each item.\n\nPaste, then replace the body with your row HTML.`}
+        />
+      </div>
+    </div>
+  );
+}
+
+/** Property chip used inside array-of-objects rendering */
+function PropertyChip({
+  loopVar,
+  prop,
+}: {
+  loopVar: string;
+  prop: TemplatePropertyInfo;
+}) {
+  const expr = `{{ ${loopVar}.${prop.variable} }}`;
+  return (
+    <CopyChip
+      label={expr}
+      copyText={expr}
+      tooltip={`${loopVar}.${prop.variable}\n\n${prop.description}`}
+      className="text-[10px]"
+    />
+  );
+}
+
+/** Array-of-objects variable: show loop skeleton + property chips */
+function ArrayOfObjectsVariable({ info }: { info: ArrayOfObjectsVariableInfo }) {
+  const { variable, loopVar, properties, description } = info;
+
+  const firstProp = properties[0]?.variable;
+  const loopBody = firstProp
+    ? `  {{ ${loopVar}.${firstProp} }}`
+    : `  {# render item properties here #}`;
+
+  const loopSnippet = [
+    `{% for ${loopVar} in ${variable} %}`,
+    loopBody,
+    `{% endfor %}`,
+  ].join("\n");
+
+  return (
+    <div className="rounded border border-border/40 bg-muted/30 px-2 py-1.5 space-y-1.5">
+      <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
+        {variable}
+        <span className="ml-1.5 font-normal normal-case opacity-60">object[ ]</span>
+      </p>
+      <p className="text-[10px] text-muted-foreground">{description}</p>
+
+      {/* Loop skeleton chip */}
+      <CopyChip
+        label={`{% for ${loopVar} in ${variable} %}…{% endfor %}`}
+        copyText={loopSnippet}
+        tooltip={`For-loop over each item.\n\nCopies a starter snippet — replace the body with your row HTML.`}
+      />
+
+      {/* Property chips */}
+      {properties.length > 0 && (
+        <div className="pl-2 border-l border-border/40 space-y-1">
+          <p className="text-[10px] text-muted-foreground italic">
+            Inside the loop, use <code className="font-mono">{loopVar}.property</code>:
+          </p>
+          <div className="flex flex-wrap gap-1">
+            {properties.map((prop) => (
+              <PropertyChip key={prop.variable} loopVar={loopVar} prop={prop} />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Main component
+// ---------------------------------------------------------------------------
+
 /**
  * Collapsible panel that shows the available Liquid template variables
- * for a given document type. Each variable is a click-to-copy chip
- * with a tooltip description.
+ * for a given document type.
+ *
+ * Scalar variables render as click-to-copy `{{ variable }}` chips.
+ * Array-of-strings variables show join-filter and for-loop snippets.
+ * Array-of-objects variables show a loop skeleton and per-property chips.
  */
 export default function TemplateVariableReference({
   documentTypeName,
@@ -101,13 +231,40 @@ export default function TemplateVariableReference({
             <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">
               {"{{ variableName }}"}
             </code>{" "}
-            syntax in your HTML template. Click a variable to copy it.
+            syntax in your HTML template. Click a chip to copy it.
           </p>
-          <div className="flex flex-wrap gap-1.5 pt-1">
-            {schema.variables.map((v) => (
-              <VariableChip key={v.variable} info={v} />
-            ))}
-          </div>
+
+          {/* Scalar variables (non-array) as a flat chip row */}
+          {(() => {
+            const scalars = schema.variables.filter(
+              (v) => v.type !== "array-of-strings" && v.type !== "array-of-objects"
+            );
+            return scalars.length > 0 ? (
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {scalars.map((v) => (
+                  <ScalarVariableChip key={v.variable} info={v} />
+                ))}
+              </div>
+            ) : null;
+          })()}
+
+          {/* Array variables as grouped blocks */}
+          {(() => {
+            const arrays = schema.variables.filter(
+              (v) => v.type === "array-of-strings" || v.type === "array-of-objects"
+            );
+            return arrays.length > 0 ? (
+              <div className="space-y-2 pt-1">
+                {arrays.map((v) =>
+                  v.type === "array-of-objects" ? (
+                    <ArrayOfObjectsVariable key={v.variable} info={v} />
+                  ) : (
+                    <ArrayOfStringsVariable key={v.variable} info={v} />
+                  )
+                )}
+              </div>
+            ) : null;
+          })()}
         </div>
       )}
     </div>

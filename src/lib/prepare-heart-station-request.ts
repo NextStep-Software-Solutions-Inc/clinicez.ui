@@ -55,3 +55,27 @@ export const prepareHeartStationRequest = (payload: PrepareHeartStationRequestPa
 
   return renderLiquidTemplate(template, variables);
 };
+
+import type { TemplateVariableSchema } from "./document-template-schema";
+
+export const TEMPLATE_VARIABLE_SCHEMA: TemplateVariableSchema & { key: string } = {
+  key: "heart_station",
+  description: "Variables available in Heart Station Request templates",
+  variables: [
+    { variable: "name", description: "Patient's full name" },
+    { variable: "age", description: "Patient's age" },
+    { variable: "gender", description: "Patient's gender" },
+    { variable: "address", description: "Patient's home address" },
+    { variable: "birthdate", description: "Patient's date of birth" },
+    { variable: "requestDate", description: "Request date (MM/DD/YYYY)" },
+    { variable: "createdDateTime", description: "Full date and time (MM/DD/YYYY h:mm A)" },
+    { variable: "diagnostics", description: "Requested heart station procedures" },
+    { variable: "history", description: "Patient's relevant medical history" },
+    { variable: "impression", description: "Clinical impression / diagnosis" },
+    { variable: "requestFor", description: "Reason for the request" },
+    { variable: "doctorName", description: "Requesting doctor's full name" },
+    { variable: "licenseNo", description: "Doctor's PRC license number" },
+    { variable: "ptrNo", description: "Doctor's PTR number" },
+    { variable: "eSignatureUrl", description: "Doctor's e-signature (base64 image URL)" },
+  ],
+};

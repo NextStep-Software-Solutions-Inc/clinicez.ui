@@ -155,4 +155,44 @@ export const preparePrescription = (payload: PreparePrescriptionPayload): string
   };
 
   return renderLiquidTemplate(template, variables);
+};
+
+// ---------------------------------------------------------------------------
+// Variable schema — exported so document-template-schema.ts can build the
+// registry dynamically without duplicating the variable list here.
+// ---------------------------------------------------------------------------
+import type { TemplateVariableSchema } from "./document-template-schema";
+
+export const TEMPLATE_VARIABLE_SCHEMA: TemplateVariableSchema & { key: string } = {
+  key: "prescription",
+  description: "Variables available in Prescription templates",
+  variables: [
+    { variable: "name", description: "Patient's full name" },
+    { variable: "age", description: "Patient's age" },
+    { variable: "gender", description: "Patient's gender initial (M/F)" },
+    { variable: "address", description: "Patient's home address" },
+    { variable: "requestDate", description: "Date the prescription was created (MM/DD/YYYY)" },
+    { variable: "createdDateTime", description: "Full date and time (MMMM DD, YYYY h:mm A)" },
+    {
+      variable: "medicines",
+      type: "array-of-objects" as const,
+      loopVar: "med",
+      description: "Array of prescribed medicines — iterate with {% for med in medicines %}",
+      properties: [
+        { variable: "index", description: "Item number (1, 2, 3…)" },
+        { variable: "name", description: "Medicine name" },
+        { variable: "dosage", description: "Dosage amount (e.g. 500 mg)" },
+        { variable: "unit", description: "Unit (e.g. capsules, tablets)" },
+        { variable: "qty", description: "Quantity (number)" },
+        { variable: "sig", description: "Patient directions / sig instructions" },
+        { variable: "label", description: "Formatted: name + dosage + #qty" },
+      ],
+    },
+    { variable: "medicine", type: "html" as const, description: "Legacy: pre-formatted HTML list of all medicines (for older templates)" },
+    { variable: "doctorName", description: "Prescribing doctor's full name" },
+    { variable: "licenseNo", description: "Doctor's PRC license number" },
+    { variable: "ptrNo", description: "Doctor's PTR number" },
+    { variable: "doctorAddress", description: "Doctor's clinic or office address" },
+    { variable: "eSignatureUrl", type: "html" as const, description: "Doctor's e-signature (<img> tag, or raw base64 URL when used inside src=\"\")" },
+  ],
 }; 

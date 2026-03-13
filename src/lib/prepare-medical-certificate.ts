@@ -67,3 +67,28 @@ export const prepareMedicalCertificate = (payload: PrepareMedicalCertificatePayl
 
   return renderLiquidTemplate(template, variables);
 };
+
+import type { TemplateVariableSchema } from "./document-template-schema";
+
+export const TEMPLATE_VARIABLE_SCHEMA: TemplateVariableSchema & { key: string } = {
+  key: "medical_certificate",
+  description: "Variables available in Medical Certificate templates",
+  variables: [
+    { variable: "patientName", description: "Patient's full name" },
+    { variable: "age", description: "Patient's age" },
+    { variable: "gender", description: "Patient's gender" },
+    { variable: "address", description: "Patient's home address" },
+    { variable: "createdDate", description: "Date the certificate was issued (MM/DD/YYYY)" },
+    { variable: "createdDateTime", description: "Full date and time (MM/DD/YYYY h:mm A)" },
+    { variable: "doctorName", description: "Issuing doctor's full name" },
+    { variable: "licenseNo", description: "Doctor's PRC license number" },
+    { variable: "ptrNo", description: "Doctor's PTR number" },
+    { variable: "eSignatureUrl", description: "Doctor's e-signature (base64 image URL)" },
+    { variable: "selectedClassification", description: "Selected medical classification (blank when N/A)" },
+    { variable: "selectedClassificationDescription", description: "Description of the selected classification" },
+    { variable: "selectedReason", description: "Reason for the certificate" },
+    { variable: "selectedFinding", description: "Physical examination findings" },
+    { variable: "recommendations", description: "Doctor's recommendations" },
+    { variable: "impression", description: "Clinical impression / diagnosis" },
+  ],
+};

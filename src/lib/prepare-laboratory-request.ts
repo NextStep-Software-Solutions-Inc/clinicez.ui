@@ -95,3 +95,37 @@ export const prepareLaboratoryRequest = (payload: PrepareLaboratoryRequestPayloa
 
   return renderLiquidTemplate(template, variables);
 };
+
+import type { TemplateVariableSchema } from "./document-template-schema";
+
+export const TEMPLATE_VARIABLE_SCHEMA: TemplateVariableSchema & { key: string } = {
+  key: "laboratory",
+  description: "Variables available in Laboratory Request templates",
+  variables: [
+    { variable: "name", description: "Patient's full name" },
+    { variable: "age", description: "Patient's age" },
+    { variable: "gender", description: "Patient's gender" },
+    { variable: "address", description: "Patient's home address" },
+    { variable: "birthdate", description: "Patient's date of birth" },
+    { variable: "requestDate", description: "Request date (MM/DD/YYYY)" },
+    { variable: "createdDateTime", description: "Full date and time (MM/DD/YYYY h:mm A)" },
+    { variable: "impression", description: "Clinical impression / diagnosis" },
+    { variable: "doctorName", description: "Requesting doctor's full name" },
+    { variable: "licenseNo", description: "Doctor's PRC license number" },
+    { variable: "ptrNo", description: "Doctor's PTR number" },
+    { variable: "doctorAddress", description: "Doctor's clinic or office address" },
+    { variable: "eSignatureUrl", type: "html" as const, description: "Doctor's e-signature (base64 image URL)" },
+    { variable: "hematology", type: "array-of-strings" as const, description: "Hematology test names" },
+    { variable: "clinicalMicroscopy", type: "array-of-strings" as const, description: "Clinical microscopy test names" },
+    { variable: "bloodChemistry", type: "array-of-strings" as const, description: "Blood chemistry test names" },
+    { variable: "microbiology", type: "array-of-strings" as const, description: "Microbiology test names" },
+    { variable: "hormoneAssays", type: "array-of-strings" as const, description: "Hormone assays test names" },
+    { variable: "cardiacDiagnostics", type: "array-of-strings" as const, description: "Cardiac diagnostics test names" },
+    { variable: "hematologyTests", type: "html" as const, description: "Legacy: hematology tests as bold HTML string" },
+    { variable: "clinicalMicroscopyTests", type: "html" as const, description: "Legacy: clinical microscopy tests as bold HTML string" },
+    { variable: "bloodChemistryTests", type: "html" as const, description: "Legacy: blood chemistry tests as bold HTML string" },
+    { variable: "microbiologyTests", type: "html" as const, description: "Legacy: microbiology tests as bold HTML string" },
+    { variable: "hormoneAssaysTests", type: "html" as const, description: "Legacy: hormone assays tests as bold HTML string" },
+    { variable: "cardiacDiagnosticsTests", type: "html" as const, description: "Legacy: cardiac diagnostics tests as bold HTML string" },
+  ],
+};

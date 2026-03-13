@@ -81,7 +81,7 @@ interface DocumentTemplateItemActionProps {
 }
 const ModifyPrescriptionAction = ({ documentTemplate, onUpdated, label }: DocumentTemplateItemActionProps) => {
   return (
-    <UpdateDocumentTemplateModal onUpdated={onUpdated} documentTemplate={documentTemplate} label={label} />
+    <UpdateDocumentTemplateModal documentTemplate={documentTemplate} label={label} />
   )
 }
 

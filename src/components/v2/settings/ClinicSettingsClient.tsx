@@ -2862,13 +2862,15 @@ function DocumentsTab({ clinicUid }: { clinicUid: string }) {
 
   const handleSave = () => {
     startTransition(async () => {
-      const prescriptionResult = await upsertClinicPrescriptionConfigAction(
-        prescriptionConfig?.id ?? 0,
-        {
-          clinicUid,
-          prescriptionTemplateId: prescriptionTemplateId ? Number(prescriptionTemplateId) : undefined,
-        }
-      );
+      // Only upsert the prescription setting when the user has actually chosen a template.
+      // Calling the action with prescriptionTemplateId=undefined would fail on create (non-nullable
+      // field) or silently no-op on update — both produce confusing results.
+      const prescriptionResult = prescriptionTemplateId
+        ? await upsertClinicPrescriptionConfigAction(prescriptionConfig?.id ?? 0, {
+            clinicUid,
+            prescriptionTemplateId: Number(prescriptionTemplateId),
+          })
+        : { status: true as const, message: "", data: null };
 
       const entries = nonPrescriptionTypes.map((type) => ({
         documentTypeId: type.id,
@@ -2882,9 +2884,14 @@ function DocumentsTab({ clinicUid }: { clinicUid: string }) {
         mutateDocumentDefaults();
         toast.success("Document settings saved successfully.");
       } else {
-        toast.error(
-          prescriptionResult.message ?? documentResult.message ?? "Failed to save document settings."
-        );
+        // Use the message from whichever action actually failed; do NOT use a success message
+        // from a passing action (prescriptionResult.message is non-null even on success, so a
+        // plain `??` chain would surface it as the "error" when only documentResult failed).
+        const errorMsg =
+          (!prescriptionResult.status ? prescriptionResult.message : null) ??
+          (!documentResult.status ? documentResult.message : null) ??
+          "Failed to save document settings.";
+        toast.error(errorMsg);
       }
     });
   };

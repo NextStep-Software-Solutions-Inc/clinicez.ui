@@ -1,178 +1,63 @@
 "use client";
 
-import { updateDocumentTemplateAction } from "@/actions/document-template.action";
-import { Textarea } from "@/components/ui/textarea";
-import { promiseWrapper } from "@/lib/with-error-handling";
-import { updatePrescriptionActions } from "@actions/medications/prescription.action";
-import { useUser } from "@clerk/nextjs";
-import ActionButton from "@components/ActionButton";
-import CustomModalContent from "@components/CustomModalContent";
-import { Alert, AlertDescription, AlertTitle } from "@components/ui/alert";
 import { Button } from "@components/ui/button";
-import {
-  Dialog,
-  DialogClose,
-  DialogFooter,
-  DialogTrigger
-} from "@components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage
-} from "@components/ui/form";
-import { Input } from "@components/ui/input";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
-  TooltipTrigger
+  TooltipTrigger,
 } from "@components/ui/tooltip";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Pencil, Pill } from "lucide-react";
-import {  useRef } from "react";
-import { useForm } from "react-hook-form";
-import { toast } from "sonner";
-import { z } from "zod";
+import { Pencil } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
 
 interface UpdateDocumentTemplateModalProps {
-  onUpdated?: () => void;
   label?: string;
   documentTemplate: {
     id: number;
     name: string;
     htmlContent: string;
     DocumentTemplateType: {
-      id: number
+      id: number;
       name: string;
-    }
-  }
+    };
+  };
 }
 
-type UpdateDocumentForm = z.infer<typeof updateDocumentTemplateFormSchema>;
-const updateDocumentTemplateFormSchema = z.object({
-  name: z.string({
-    required_error: "Document name is required"
-  }).trim(),
-  htmlContent: z.string({
-    required_error: "Document content is required"
-  }).trim(),
-});
+/**
+ * Edit button that navigates to the full-page template editor route.
+ */
+export default function UpdateDocumentTemplateModal({
+  documentTemplate,
+  label,
+}: UpdateDocumentTemplateModalProps) {
+  const params = useParams<{ clinicUid?: string }>();
+  const router = useRouter();
 
-export default function UpdateDocumentTemplateModal({onUpdated,documentTemplate, label}: UpdateDocumentTemplateModalProps) {
-  const closeBtnRef = useRef<HTMLInputElement>(null);
-  
-  const form = useForm<UpdateDocumentForm>({
-    resolver: zodResolver(updateDocumentTemplateFormSchema),
-    defaultValues: {
-      name: documentTemplate.name,
-      htmlContent: documentTemplate.htmlContent
-    }
-  });
-
-  const action = async () => {
-    form.handleSubmit((data) => {
-     
-      toast.promise(promiseWrapper(updateDocumentTemplateAction)({...data, id: documentTemplate.id}), {
-        loading: `Updating ${label ?? "document"} template `,
-        success: (res) => {
-          onUpdated?.();
-          closeBtnRef.current?.click();
-          form.reset(data);
-          return res.message;
-        },
-        error: error => error
-      });
-    })();
+  const handleClick = () => {
+    const clinicUid = params?.clinicUid;
+    if (!clinicUid) return;
+    const searchParams = new URLSearchParams();
+    if (label) searchParams.set("label", label);
+    router.push(
+      `/v2/clinic/${clinicUid}/document-templates/${documentTemplate.id}/edit?${searchParams.toString()}`
+    );
   };
 
   return (
-    <Dialog>
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <DialogTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="invisible group-hover/item:visible"
-              >
-                <Pencil className="h-4 w-4  hover:scale-125 transition-all" />
-              </Button>
-            </DialogTrigger>
-          </TooltipTrigger>
-          <TooltipContent side="top">Modify</TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-      <CustomModalContent
-        className="sm:max-w-[625px] overflow-scroll max-h-[100vh] no-scrollbar"
-        label={`Update ${label ?? "Document"} Template`}
-        description={
-          <>
-            Update the document template by filling in the fields below.
-            <span className="italic font-semibold">{documentTemplate.id}</span>
-          </>
-        }
-      >
-        <Form {...form}>
-          <form
-            action={action}
-            className="space-y-6"
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="invisible group-hover/item:visible"
+            onClick={handleClick}
           >
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Name</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Give this document template a unique name"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    Unique name for the document template
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="htmlContent"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>HTML content</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="HTML content"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    Enter the HTML content of the document template
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <DialogFooter>
-              <DialogClose asChild>
-                <input
-                  ref={closeBtnRef}
-                  type="hidden"
-                  value="ok"
-                />
-              </DialogClose>
-              <ActionButton type="submit">Save changes</ActionButton>
-            </DialogFooter>
-          </form>
-        </Form>
-      </CustomModalContent>
-    </Dialog>
+            <Pencil className="h-4 w-4 hover:scale-125 transition-all" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="top">Modify</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }

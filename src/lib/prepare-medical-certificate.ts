@@ -1,4 +1,5 @@
 import dayjs from "@lib/day-utils";
+import { renderLiquidTemplate } from "./liquid-template";
 
 type PrepareMedicalCertificatePayload = {
   template: string;
@@ -45,29 +46,49 @@ export const prepareMedicalCertificate = (payload: PrepareMedicalCertificatePayl
   // Hide classification if it's "N/A"
   const shouldShowClassification = classification && classification.toUpperCase() !== "N/A";
 
-  const replacements = {
-    "@{createdDate}": createdDate,
-    "@{createdDateTime}": createdDateTime,
-    "@{patientName}": patientName,
-    "@{age}": age,
-    "@{gender}": gender,
-    "@{address}": address,
-    "@{doctorName}": doctorName,
-    "@{licenseNo}": licenseNo,
-    "@{ptrNo}": ptrNo,
-    "@{eSignatureUrl}": eSignatureBase64 || "",
-    "@{selectedClassification}": shouldShowClassification ? classification : "",
-    "@{selectedClassificationDescription}": shouldShowClassification ? classificationDescription : "",
-    "@{selectedReason}": reason,
-    "@{selectedFinding}": finding,
-    "@{recommendations}": recommendations || "No recommendations provided.",
-    "@{impression}": impression || "No impressions provided.",
+  const variables = {
+    createdDate,
+    createdDateTime,
+    patientName,
+    age,
+    gender,
+    address,
+    doctorName,
+    licenseNo,
+    ptrNo,
+    eSignatureUrl: eSignatureBase64 || "",
+    selectedClassification: shouldShowClassification ? classification : "",
+    selectedClassificationDescription: shouldShowClassification ? classificationDescription : "",
+    selectedReason: reason,
+    selectedFinding: finding,
+    recommendations: recommendations || "No recommendations provided.",
+    impression: impression || "No impressions provided.",
   };
 
-  let outputTemplate = template;
-  Object.entries(replacements).forEach(([placeholder, value]) => {
-    outputTemplate = outputTemplate.replaceAll(placeholder, value);
-  });
+  return renderLiquidTemplate(template, variables);
+};
 
-  return outputTemplate;
+import type { TemplateVariableSchema } from "./document-template-schema";
+
+export const TEMPLATE_VARIABLE_SCHEMA: TemplateVariableSchema & { key: string } = {
+  key: "medical_certificate",
+  description: "Variables available in Medical Certificate templates",
+  variables: [
+    { variable: "patientName", description: "Patient's full name" },
+    { variable: "age", description: "Patient's age" },
+    { variable: "gender", description: "Patient's gender" },
+    { variable: "address", description: "Patient's home address" },
+    { variable: "createdDate", description: "Date the certificate was issued (MM/DD/YYYY)" },
+    { variable: "createdDateTime", description: "Full date and time (MM/DD/YYYY h:mm A)" },
+    { variable: "doctorName", description: "Issuing doctor's full name" },
+    { variable: "licenseNo", description: "Doctor's PRC license number" },
+    { variable: "ptrNo", description: "Doctor's PTR number" },
+    { variable: "eSignatureUrl", description: "Doctor's e-signature (base64 image URL)" },
+    { variable: "selectedClassification", description: "Selected medical classification (blank when N/A)" },
+    { variable: "selectedClassificationDescription", description: "Description of the selected classification" },
+    { variable: "selectedReason", description: "Reason for the certificate" },
+    { variable: "selectedFinding", description: "Physical examination findings" },
+    { variable: "recommendations", description: "Doctor's recommendations" },
+    { variable: "impression", description: "Clinical impression / diagnosis" },
+  ],
 };

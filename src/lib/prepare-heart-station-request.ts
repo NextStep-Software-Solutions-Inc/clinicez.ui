@@ -1,4 +1,5 @@
 import dayjs from "@lib/day-utils";
+import { renderLiquidTemplate } from "./liquid-template";
 
 type PrepareHeartStationRequestPayload = {
   template: string;
@@ -34,27 +35,47 @@ export const prepareHeartStationRequest = (payload: PrepareHeartStationRequestPa
   const requestDate = dayjs(createdAt).format("MM/DD/YYYY");
   const createdDateTime = dayjs(createdAt).format("MM/DD/YYYY h:mm A");
 
-  const replacements: Record<string, string> = {
-    "@{name}": name,
-    "@{age}": age,
-    "@{gender}": gender,
-    "@{address}": address,
-    "@{birthdate}": birthdate ?? "",
-    "@{requestDate}": requestDate,
-    "@{diagnostics}": diagnostics,
-    "@{history}": history ?? "",
-    "@{impression}": impression ?? "",
-    "@{requestFor}": requestFor ?? "",
-    "@{doctorName}": doctorName,
-    "@{licenseNo}": licenseNo,
-    "@{ptrNo}": ptrNo,
-    "@{eSignatureUrl}": eSignatureBase64 ?? "",
-    "@{createdDateTime}": createdDateTime,
+  const variables = {
+    name,
+    age,
+    gender,
+    address,
+    birthdate: birthdate ?? "",
+    requestDate,
+    diagnostics,
+    history: history ?? "",
+    impression: impression ?? "",
+    requestFor: requestFor ?? "",
+    doctorName,
+    licenseNo,
+    ptrNo,
+    eSignatureUrl: eSignatureBase64 ?? "",
+    createdDateTime,
   };
 
-  let output = template;
-  Object.entries(replacements).forEach(([placeholder, value]) => {
-    output = output.replaceAll(placeholder, value);
-  });
-  return output;
+  return renderLiquidTemplate(template, variables);
+};
+
+import type { TemplateVariableSchema } from "./document-template-schema";
+
+export const TEMPLATE_VARIABLE_SCHEMA: TemplateVariableSchema & { key: string } = {
+  key: "heart_station",
+  description: "Variables available in Heart Station Request templates",
+  variables: [
+    { variable: "name", description: "Patient's full name" },
+    { variable: "age", description: "Patient's age" },
+    { variable: "gender", description: "Patient's gender" },
+    { variable: "address", description: "Patient's home address" },
+    { variable: "birthdate", description: "Patient's date of birth" },
+    { variable: "requestDate", description: "Request date (MM/DD/YYYY)" },
+    { variable: "createdDateTime", description: "Full date and time (MM/DD/YYYY h:mm A)" },
+    { variable: "diagnostics", description: "Requested heart station procedures" },
+    { variable: "history", description: "Patient's relevant medical history" },
+    { variable: "impression", description: "Clinical impression / diagnosis" },
+    { variable: "requestFor", description: "Reason for the request" },
+    { variable: "doctorName", description: "Requesting doctor's full name" },
+    { variable: "licenseNo", description: "Doctor's PRC license number" },
+    { variable: "ptrNo", description: "Doctor's PTR number" },
+    { variable: "eSignatureUrl", description: "Doctor's e-signature (base64 image URL)" },
+  ],
 };

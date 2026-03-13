@@ -4,8 +4,15 @@ import "server-only";
 import prismaClient from "@/lib/prisma";
 import { getCachedSession } from "@/actions/session.action";
 import { withErrorHandling } from "@/lib/with-error-handling";
+import { hasCodeProperty } from "@/lib/utils";
 
 export type GetClinicDocumentDefaultTemplates = Awaited<ReturnType<typeof getClinicDocumentDefaultTemplatesAction>>;
+
+const documentDefaultErrorHandler = (error: unknown) => {
+  if (hasCodeProperty(error) && error.code === "P2021") {
+    return "Document default templates are not yet configured. Please run database migrations.";
+  }
+};
 
 export const getClinicDocumentDefaultTemplatesAction = withErrorHandling(async (clinicUid: string) => {
   const session = await getCachedSession();
@@ -24,7 +31,7 @@ export const getClinicDocumentDefaultTemplatesAction = withErrorHandling(async (
     },
   });
   return { message: "Clinic document defaults fetched.", data: defaults };
-});
+}, documentDefaultErrorHandler);
 
 export type UpsertClinicDocumentDefaultTemplatesPayload = Array<{
   documentTypeId: number;
@@ -58,5 +65,6 @@ export const upsertClinicDocumentDefaultTemplatesAction = withErrorHandling(
     );
 
     return { message: "Document defaults updated successfully.", data: null };
-  }
+  },
+  documentDefaultErrorHandler
 );

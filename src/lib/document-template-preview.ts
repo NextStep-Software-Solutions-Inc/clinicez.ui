@@ -1,5 +1,6 @@
 import type { TemplateVariableSchema, ArrayOfObjectsVariableInfo } from "./document-template-schema";
 import { getTemplateVariableSchema } from "./document-template-schema";
+import { renderLiquidTemplate } from "./liquid-template";
 
 // ---------------------------------------------------------------------------
 // Meaningful sample values — the single source of truth for preview data.
@@ -77,8 +78,12 @@ const SAMPLE_VALUE_LOOKUP: Record<string, unknown> = {
   recommendation: "Refer for echocardiogram and treadmill stress test.",
   reasonForReferral: "Rule out ischemic heart disease",
 
-  // Diagnostics
-  diagnostics: ["12-lead ECG", "Chest X-ray"],
+  // `diagnostics` is intentionally absent from this shared lookup because the type differs
+  // per schema: heart station / imaging declare it as array-of-strings, laboratory as
+  // array-of-objects. buildSampleDataFromSchema generates the correct structure for each.
+  // `tests` is a nested property of laboratory's diagnostics objects — providing a realistic
+  // array here ensures inner {% for test in group.tests %} loops render correctly in the preview.
+  tests: ["CBC", "Platelet Count", "Urinalysis"],
   history: "Hypertension for 5 years. No previous cardiac workup.",
   requestFor: "R/O Ischemic Heart Disease",
 
@@ -152,26 +157,6 @@ export function buildSampleDataFromSchema(schema: TemplateVariableSchema): Recor
 // ---------------------------------------------------------------------------
 
 /**
- * Serialises a sample value to a string for simple regex-based preview
- * substitution. Arrays are flattened to readable text so scalar
- * `{{ variable }}` references produce output even when the author intended
- * a for-loop.
- */
-function sampleValueToString(value: unknown): string {
-  if (typeof value === "string") return value;
-  if (typeof value === "number" || typeof value === "boolean") return String(value);
-  if (Array.isArray(value)) {
-    if (value.length > 0 && typeof value[0] === "object" && value[0] !== null) {
-      return (value as Array<Record<string, unknown>>)
-        .map((item) => String(item.label ?? item.name ?? JSON.stringify(item)))
-        .join("; ");
-    }
-    return (value as unknown[]).map(String).join(", ");
-  }
-  return String(value ?? "");
-}
-
-/**
  * Renders a template with sample data for live preview purposes.
  *
  * The data context is **derived from the document type's schema** via
@@ -180,10 +165,8 @@ function sampleValueToString(value: unknown): string {
  * realistic values from `SAMPLE_VALUE_LOOKUP`; unknown ones get a labelled
  * placeholder.
  *
- * Uses simple regex substitution (no full Liquid engine) so it is safe to
- * call from client-side React components without bundling the server-side
- * Liquid dependency. Note: `{% for %}` blocks are not expanded — authors
- * should switch to the Preview Sheet to verify looping logic.
+ * Uses the LiquidJS engine so that `{% for %}` loops and all other Liquid
+ * tags are fully expanded, giving an accurate preview of the rendered output.
  */
 export function renderPreviewTemplate(
   template: string,
@@ -199,12 +182,5 @@ export function renderPreviewTemplate(
     ? buildSampleDataFromSchema(schema)
     : { ...SAMPLE_VALUE_LOOKUP };
 
-  // Replace {{ variable }}, {{- variable -}}, and legacy @{variable}
-  return template
-    .replace(/@\{(\w+)\}/g, (_, key: string) =>
-      key in context ? sampleValueToString(context[key]) : `[${key}]`
-    )
-    .replace(/\{\{-?\s*(\w+)\s*-?\}\}/g, (_, key: string) =>
-      key in context ? sampleValueToString(context[key]) : `[${key}]`
-    );
+  return renderLiquidTemplate(template, context);
 }

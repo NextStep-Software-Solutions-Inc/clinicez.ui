@@ -88,6 +88,12 @@ type PreparePrescriptionPayload = {
   };
 };
 
+// Maximum number of medicines rendered on a single prescription page.
+// When a prescription exceeds this limit the output is split into multiple
+// pages, each repeating the full template (header + footer), so that the
+// medicine list never overflows into the signature / doctor section.
+const MEDICINES_PER_PAGE = 7;
+
 export const preparePrescription = (payload: PreparePrescriptionPayload): string => {
   const { template, patient, prescription, doctor } = payload;
   const { name: patientName, age, gender, address } = patient;
@@ -95,10 +101,17 @@ export const preparePrescription = (payload: PreparePrescriptionPayload): string
   const { name: doctorName, licenseNo, ptrNo, address: doctorAddress, eSignatureBase64 } = doctor;
 
   const signaturePlaceholderUsedAsUrl = [
+    // Legacy @{} syntax inside src attributes / CSS url()
     /src\s*=\s*"@\{eSignatureUrl\}"/i,
     /src\s*=\s*'@\{eSignatureUrl\}'/i,
     /url\(\s*"@\{eSignatureUrl\}"\s*\)/i,
     /url\(\s*'@\{eSignatureUrl\}'\s*\)/i,
+    // Liquid {{ eSignatureUrl }} syntax inside src attributes / CSS url()
+    /src\s*=\s*"\{\{-?\s*eSignatureUrl\s*-?\}\}"/i,
+    /src\s*=\s*'\{\{-?\s*eSignatureUrl\s*-?\}\}'/i,
+    /url\(\s*"\{\{-?\s*eSignatureUrl\s*-?\}\}"\s*\)/i,
+    /url\(\s*'\{\{-?\s*eSignatureUrl\s*-?\}\}'\s*\)/i,
+    /url\(\s*\{\{-?\s*eSignatureUrl\s*-?\}\}\s*\)/i,
   ].some((pattern) => pattern.test(template));
 
   const signatureMarkup = eSignatureBase64
@@ -133,19 +146,13 @@ export const preparePrescription = (payload: PreparePrescriptionPayload): string
     };
   });
 
-  // Legacy HTML string kept for backward-compatible templates that use {{ medicine }}
-  const medicineLegacyHtml = medicinesArray
-    .map((med) => `${med.index}.) ${med.label}${med.sig ? `<br/>Sig: ${med.sig}` : ""}`)
-    .join("<br/><br/>");
-
-  const variables = {
+  // Shared scalar variables that are the same on every page
+  const baseVariables = {
     name: patientName,
     age,
     gender: genderInitial,
     address,
     requestDate,
-    medicines: medicinesArray,
-    medicine: medicines.length === 0 ? "" : medicineLegacyHtml,
     eSignatureUrl: signatureMarkup,
     doctorName,
     licenseNo: licenseNo || "N/A",
@@ -154,7 +161,33 @@ export const preparePrescription = (payload: PreparePrescriptionPayload): string
     createdDateTime,
   };
 
-  return renderLiquidTemplate(template, variables);
+  // Render one page of the template with the given medicines slice
+  const renderPage = (pageMedicines: typeof medicinesArray) => {
+    const medicineLegacyHtml = pageMedicines
+      .map((med) => `${med.index}.) ${med.label}${med.sig ? `<br/>Sig: ${med.sig}` : ""}`)
+      .join("<br/><br/>");
+
+    return renderLiquidTemplate(template, {
+      ...baseVariables,
+      medicines: pageMedicines,
+      medicine: pageMedicines.length === 0 ? "" : medicineLegacyHtml,
+    });
+  };
+
+  // Paginate: each page holds at most MEDICINES_PER_PAGE entries so that a long
+  // medicine list does not overflow the signature / doctor section at the bottom.
+  // Each page repeats the full template (header + footer) with its own subset.
+
+  if (medicinesArray.length <= MEDICINES_PER_PAGE) {
+    return renderPage(medicinesArray);
+  }
+
+  const pages: string[] = [];
+  for (let startIndex = 0; startIndex < medicinesArray.length; startIndex += MEDICINES_PER_PAGE) {
+    pages.push(renderPage(medicinesArray.slice(startIndex, startIndex + MEDICINES_PER_PAGE)));
+  }
+
+  return pages.join('<div style="break-before:page;page-break-before:always;"></div>');
 };
 
 // ---------------------------------------------------------------------------

@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ArrowLeft, Eye, Loader2 } from "lucide-react";
+import { ArrowLeft, Eye, Loader2, Printer } from "lucide-react";
 
 import { Button } from "@components/ui/button";
 import {
@@ -35,6 +35,7 @@ import {
 import Each from "@components/utils/Each";
 import HtmlTemplateEditor from "./HtmlTemplateEditor";
 import { renderPreviewTemplate } from "@/lib/document-template-preview";
+import { handlePrintHtmlToPDF } from "@/lib/print-pdf";
 import { promiseWrapper } from "@/lib/with-error-handling";
 import {
   createDocumentTemplateAction,
@@ -282,6 +283,16 @@ export default function TemplateEditorPage({
               <span className="ml-auto text-[10px] font-normal text-muted-foreground italic">
                 Sample data — real values used on generation
               </span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="gap-1.5 ml-2"
+                onClick={() => handlePrintHtmlToPDF(previewHtml)}
+              >
+                <Printer className="h-3.5 w-3.5" />
+                Print
+              </Button>
             </SheetTitle>
           </SheetHeader>
           {htmlContent?.trim() ? (

@@ -112,28 +112,31 @@ export const preparePrescription = (payload: PreparePrescriptionPayload): string
   // First letter of gender
   const genderInitial = (typeof gender === "string" && gender.length > 0) ? gender.charAt(0).toUpperCase() : "N/A";
 
-  const medicineList = medicines.map((medicine, i) => {
-    const parts = [medicine.name];
-
-    if (medicine.dosage) {
-      const unitLabel = formatUnitForQuantity(medicine.unit, medicine.qty ?? null);
-      if (unitLabel) {
-        parts.push(`${medicine.dosage} ${unitLabel}`);
-      } else {
-        parts.push(`${medicine.dosage}`);
-      }
+  // Build structured medicine objects for Liquid array rendering
+  const medicinesArray = medicines.map((med, i) => {
+    const dosageParts = [med.name];
+    if (med.dosage) {
+      const unitLabel = formatUnitForQuantity(med.unit, med.qty ?? null);
+      dosageParts.push(unitLabel ? `${med.dosage} ${unitLabel}` : med.dosage);
     }
-
-
-    if (medicine.qty) {
-      parts.push(`#${medicine.qty}`);
+    if (med.qty) {
+      dosageParts.push(`#${med.qty}`);
     }
+    return {
+      index: i + 1,
+      name: med.name,
+      dosage: med.dosage ?? "",
+      unit: med.unit ?? "",
+      qty: med.qty ?? 0,
+      sig: med.notes ?? "",
+      label: dosageParts.join(" "),
+    };
+  });
 
-    const medicineLine = parts.join(' ');
-    const sig = medicine.notes ? `<br/>Sig: ${medicine.notes}` : '';
-
-    return `${i + 1}.) ${medicineLine}${sig}`;
-  }).join('<br/><br/>');
+  // Legacy HTML string kept for backward-compatible templates that use {{ medicine }}
+  const medicineLegacyHtml = medicinesArray
+    .map((med) => `${med.index}.) ${med.label}${med.sig ? `<br/>Sig: ${med.sig}` : ""}`)
+    .join("<br/><br/>");
 
   const variables = {
     name: patientName,
@@ -141,7 +144,8 @@ export const preparePrescription = (payload: PreparePrescriptionPayload): string
     gender: genderInitial,
     address,
     requestDate,
-    medicine: medicines.length === 0 ? "" : medicineList,
+    medicines: medicinesArray,
+    medicine: medicines.length === 0 ? "" : medicineLegacyHtml,
     eSignatureUrl: signatureMarkup,
     doctorName,
     licenseNo: licenseNo || "N/A",

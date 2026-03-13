@@ -33,9 +33,13 @@ export const prepareLaboratoryRequest = (payload: PrepareLaboratoryRequestPayloa
   const requestDate = dayjs(createdAt).format("MM/DD/YYYY");
   const createdDateTime = dayjs(createdAt).format("MM/DD/YYYY h:mm A");
 
-  // Helper function to format category tests as comma-separated bold text
+  // Helper to get tests for a category as a string array
+  const getCategoryTests = (category: string): string[] =>
+    diagnosticsByCategory[category] ?? [];
+
+  // Helper to get tests as legacy bold HTML (backward compat for {{ hematologyTests }} etc.)
   const formatCategoryTests = (category: string): string => {
-    const tests = diagnosticsByCategory[category] || [];
+    const tests = getCategoryTests(category);
     return tests.length > 0 ? `<strong>${tests.join(", ")}</strong>` : "";
   };
 
@@ -53,12 +57,40 @@ export const prepareLaboratoryRequest = (payload: PrepareLaboratoryRequestPayloa
     doctorAddress,
     createdDateTime,
     eSignatureUrl: eSignatureBase64 || "",
+    // Array variables — use with {% for test in hematology %} in templates
+    hematology: getCategoryTests("HEMATOLOGY"),
+    clinicalMicroscopy: (() => {
+      const tests = getCategoryTests("CLINICAL MICROSCOPY");
+      return tests.length ? tests : getCategoryTests("MICROSCOPY");
+    })(),
+    bloodChemistry: (() => {
+      const tests = getCategoryTests("BLOOD CHEMISTRY");
+      return tests.length ? tests : getCategoryTests("CHEMISTRY");
+    })(),
+    microbiology: getCategoryTests("MICROBIOLOGY"),
+    hormoneAssays: (() => {
+      const tests = getCategoryTests("HORMONE ASSAYS");
+      return tests.length ? tests : getCategoryTests("HORMONES");
+    })(),
+    cardiacDiagnostics: (() => {
+      const cardiac = getCategoryTests("CARDIAC DIAGNOSTICS");
+      if (cardiac.length) return cardiac;
+      const cardiacShort = getCategoryTests("CARDIAC");
+      return cardiacShort.length ? cardiacShort : getCategoryTests("ECG");
+    })(),
+    // Legacy HTML-string variables — kept for backward-compatible templates
     hematologyTests: formatCategoryTests("HEMATOLOGY"),
-    clinicalMicroscopyTests: formatCategoryTests("CLINICAL MICROSCOPY") || formatCategoryTests("MICROSCOPY"),
-    bloodChemistryTests: formatCategoryTests("BLOOD CHEMISTRY") || formatCategoryTests("CHEMISTRY"),
+    clinicalMicroscopyTests:
+      formatCategoryTests("CLINICAL MICROSCOPY") || formatCategoryTests("MICROSCOPY"),
+    bloodChemistryTests:
+      formatCategoryTests("BLOOD CHEMISTRY") || formatCategoryTests("CHEMISTRY"),
     microbiologyTests: formatCategoryTests("MICROBIOLOGY"),
-    hormoneAssaysTests: formatCategoryTests("HORMONE ASSAYS") || formatCategoryTests("HORMONES"),
-    cardiacDiagnosticsTests: formatCategoryTests("CARDIAC DIAGNOSTICS") || formatCategoryTests("CARDIAC") || formatCategoryTests("ECG"),
+    hormoneAssaysTests:
+      formatCategoryTests("HORMONE ASSAYS") || formatCategoryTests("HORMONES"),
+    cardiacDiagnosticsTests:
+      formatCategoryTests("CARDIAC DIAGNOSTICS") ||
+      formatCategoryTests("CARDIAC") ||
+      formatCategoryTests("ECG"),
   };
 
   return renderLiquidTemplate(template, variables);

@@ -1,4 +1,5 @@
 import dayjs from "@lib/day-utils";
+import { renderLiquidTemplate } from "./liquid-template";
 
 type PrepareLaboratoryRequestPayload = {
   template: string;
@@ -38,33 +39,27 @@ export const prepareLaboratoryRequest = (payload: PrepareLaboratoryRequestPayloa
     return tests.length > 0 ? `<strong>${tests.join(", ")}</strong>` : "";
   };
 
-  const replacements = {
-    "@{name}": name,
-    "@{age}": age,
-    "@{gender}": gender,
-    "@{address}": address,
-    "@{birthdate}": birthdate,
-    "@{requestDate}": requestDate,
-    "@{impression}": impression || "No impression provided.",
-    "@{doctorName}": doctorName,
-    "@{licenseNo}": licenseNo,
-    "@{ptrNo}": ptrNo,
-    "@{doctorAddress}": doctorAddress,
-    "@{createdDateTime}": createdDateTime,
-    "@{eSignatureUrl}": eSignatureBase64 || "",
-
-    "@{hematologyTests}": formatCategoryTests("HEMATOLOGY"),
-    "@{clinicalMicroscopyTests}": formatCategoryTests("CLINICAL MICROSCOPY") || formatCategoryTests("MICROSCOPY"),
-    "@{bloodChemistryTests}": formatCategoryTests("BLOOD CHEMISTRY") || formatCategoryTests("CHEMISTRY"),
-    "@{microbiologyTests}": formatCategoryTests("MICROBIOLOGY"),
-    "@{hormoneAssaysTests}": formatCategoryTests("HORMONE ASSAYS") || formatCategoryTests("HORMONES"),
-    "@{cardiacDiagnosticsTests}": formatCategoryTests("CARDIAC DIAGNOSTICS") || formatCategoryTests("CARDIAC") || formatCategoryTests("ECG"),
+  const variables = {
+    name,
+    age,
+    gender,
+    address,
+    birthdate,
+    requestDate,
+    impression: impression || "No impression provided.",
+    doctorName,
+    licenseNo,
+    ptrNo,
+    doctorAddress,
+    createdDateTime,
+    eSignatureUrl: eSignatureBase64 || "",
+    hematologyTests: formatCategoryTests("HEMATOLOGY"),
+    clinicalMicroscopyTests: formatCategoryTests("CLINICAL MICROSCOPY") || formatCategoryTests("MICROSCOPY"),
+    bloodChemistryTests: formatCategoryTests("BLOOD CHEMISTRY") || formatCategoryTests("CHEMISTRY"),
+    microbiologyTests: formatCategoryTests("MICROBIOLOGY"),
+    hormoneAssaysTests: formatCategoryTests("HORMONE ASSAYS") || formatCategoryTests("HORMONES"),
+    cardiacDiagnosticsTests: formatCategoryTests("CARDIAC DIAGNOSTICS") || formatCategoryTests("CARDIAC") || formatCategoryTests("ECG"),
   };
 
-  let outputTemplate = template;
-  Object.entries(replacements).forEach(([placeholder, value]) => {
-    outputTemplate = outputTemplate.replaceAll(placeholder, value);
-  });
-
-  return outputTemplate;
+  return renderLiquidTemplate(template, variables);
 };

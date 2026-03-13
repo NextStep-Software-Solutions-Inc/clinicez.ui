@@ -1,4 +1,5 @@
 import dayjs, { formatDate } from "@lib/day-utils";
+import { renderLiquidTemplate } from "./liquid-template";
 
 const UNIT_SINGULAR_MAP: Record<string, string> = {
   tablets: "tablet",
@@ -54,27 +55,6 @@ const formatUnitForQuantity = (unit: string | null, quantity: number | null): st
   return trimmedUnit;
 };
 
-const PLACEHOLDER_KEYS = [
-  "@{name}",
-  "@{age}",
-  "@{gender}",
-  "@{address}",
-  "@{requestDate}",
-  "@{medicine}",
-  "@{sig}",
-  "@{doctorName}",
-  "@{licenseNo}",
-  "@{ptrNo}",
-  "@{doctorAddress}",
-  "@{createdDateTime}",
-  "@{eSignatureUrl}"
-] as const;
-
-const escapeRegex = (str: string) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-const PLACEHOLDER_REGEX = new RegExp(
-  PLACEHOLDER_KEYS.map(key => escapeRegex(key)).join('|'),
-  'g'
-);
 
 type Medicine = {
   name: string;
@@ -154,27 +134,21 @@ export const preparePrescription = (payload: PreparePrescriptionPayload): string
 
     return `${i + 1}.) ${medicineLine}${sig}`;
   }).join('<br/><br/>');
-  const replacements = {
-    "@{name}": patientName,
-    "@{age}": age,
-    "@{gender}": genderInitial,
-    "@{address}": address,
-    "@{requestDate}": requestDate,
-    "@{medicine}": medicines.length === 0 ? "" : medicineList, // return empty for formal purposes
-    "@{eSignatureUrl}": signatureMarkup,
-    "@{doctorName}": doctorName,
-    "@{licenseNo}": licenseNo || "N/A",
-    "@{ptrNo}": ptrNo || "N/A",
-    "@{doctorAddress}": doctorAddress || "N/A",
-    "@{createdDateTime}": createdDateTime,
-  } as const;
 
-  type ReplacementKeys = keyof typeof replacements;
+  const variables = {
+    name: patientName,
+    age,
+    gender: genderInitial,
+    address,
+    requestDate,
+    medicine: medicines.length === 0 ? "" : medicineList,
+    eSignatureUrl: signatureMarkup,
+    doctorName,
+    licenseNo: licenseNo || "N/A",
+    ptrNo: ptrNo || "N/A",
+    doctorAddress: doctorAddress || "N/A",
+    createdDateTime,
+  };
 
-  const outputTemplate = template.replace(
-    PLACEHOLDER_REGEX,
-    (match) => (match in replacements ? replacements[match as ReplacementKeys] : "Information not available")
-  );
-
-  return outputTemplate;
+  return renderLiquidTemplate(template, variables);
 }; 

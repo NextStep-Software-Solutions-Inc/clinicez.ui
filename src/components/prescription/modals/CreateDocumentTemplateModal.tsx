@@ -1,6 +1,7 @@
 "use client";
 
 import { createDocumentTemplateAction } from "@/actions/document-template.action";
+import TemplateVariableReference from "@/components/prescription/TemplateVariableReference";
 import { Textarea } from "@/components/ui/textarea";
 import { useDocumentTypes } from "@/hooks/useDocumentType";
 import { promiseWrapper } from "@/lib/with-error-handling";
@@ -41,7 +42,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useEffect, useRef } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -87,6 +88,16 @@ export default function CreateDocumentTemplateModal({
       htmlContent: "",
     }
   });
+
+  const selectedTypeId = useWatch({ control: form.control, name: "typeId" });
+  // When typeId is set, resolve the type name from fetched data.
+  // Fall back to the documentType prop when it is pre-selected (e.g. the
+  // modal is opened from a specific type's tab and typeId may not yet be
+  // reflected in the watch value during the initial render).
+  const selectedTypeName =
+    docTypes?.data?.find((t) => t.id === selectedTypeId)?.name ??
+    documentType ??
+    null;
 
   const action = async () => {
     form.handleSubmit((data) => {
@@ -201,6 +212,7 @@ export default function CreateDocumentTemplateModal({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>HTML content</FormLabel>
+                  <TemplateVariableReference documentTypeName={selectedTypeName} />
                   <FormControl>
                     <Textarea
                       placeholder="HTML content"

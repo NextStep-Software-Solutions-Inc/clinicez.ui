@@ -1,6 +1,7 @@
 "use client";
 
 import { updateDocumentTemplateAction } from "@/actions/document-template.action";
+import TemplateVariableReference from "@/components/prescription/TemplateVariableReference";
 import { Textarea } from "@/components/ui/textarea";
 import { promiseWrapper } from "@/lib/with-error-handling";
 import { updatePrescriptionActions } from "@actions/medications/prescription.action";
@@ -147,6 +148,9 @@ export default function UpdateDocumentTemplateModal({onUpdated,documentTemplate,
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>HTML content</FormLabel>
+                  <TemplateVariableReference
+                    documentTypeName={documentTemplate.DocumentTemplateType.name}
+                  />
                   <FormControl>
                     <Textarea
                       placeholder="HTML content"

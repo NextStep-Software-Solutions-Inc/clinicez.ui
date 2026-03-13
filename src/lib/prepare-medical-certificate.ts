@@ -1,4 +1,5 @@
 import dayjs from "@lib/day-utils";
+import { renderLiquidTemplate } from "./liquid-template";
 
 type PrepareMedicalCertificatePayload = {
   template: string;
@@ -45,29 +46,24 @@ export const prepareMedicalCertificate = (payload: PrepareMedicalCertificatePayl
   // Hide classification if it's "N/A"
   const shouldShowClassification = classification && classification.toUpperCase() !== "N/A";
 
-  const replacements = {
-    "@{createdDate}": createdDate,
-    "@{createdDateTime}": createdDateTime,
-    "@{patientName}": patientName,
-    "@{age}": age,
-    "@{gender}": gender,
-    "@{address}": address,
-    "@{doctorName}": doctorName,
-    "@{licenseNo}": licenseNo,
-    "@{ptrNo}": ptrNo,
-    "@{eSignatureUrl}": eSignatureBase64 || "",
-    "@{selectedClassification}": shouldShowClassification ? classification : "",
-    "@{selectedClassificationDescription}": shouldShowClassification ? classificationDescription : "",
-    "@{selectedReason}": reason,
-    "@{selectedFinding}": finding,
-    "@{recommendations}": recommendations || "No recommendations provided.",
-    "@{impression}": impression || "No impressions provided.",
+  const variables = {
+    createdDate,
+    createdDateTime,
+    patientName,
+    age,
+    gender,
+    address,
+    doctorName,
+    licenseNo,
+    ptrNo,
+    eSignatureUrl: eSignatureBase64 || "",
+    selectedClassification: shouldShowClassification ? classification : "",
+    selectedClassificationDescription: shouldShowClassification ? classificationDescription : "",
+    selectedReason: reason,
+    selectedFinding: finding,
+    recommendations: recommendations || "No recommendations provided.",
+    impression: impression || "No impressions provided.",
   };
 
-  let outputTemplate = template;
-  Object.entries(replacements).forEach(([placeholder, value]) => {
-    outputTemplate = outputTemplate.replaceAll(placeholder, value);
-  });
-
-  return outputTemplate;
+  return renderLiquidTemplate(template, variables);
 };

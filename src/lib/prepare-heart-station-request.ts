@@ -1,4 +1,5 @@
 import dayjs from "@lib/day-utils";
+import { renderLiquidTemplate } from "./liquid-template";
 
 type PrepareHeartStationRequestPayload = {
   template: string;
@@ -34,27 +35,23 @@ export const prepareHeartStationRequest = (payload: PrepareHeartStationRequestPa
   const requestDate = dayjs(createdAt).format("MM/DD/YYYY");
   const createdDateTime = dayjs(createdAt).format("MM/DD/YYYY h:mm A");
 
-  const replacements: Record<string, string> = {
-    "@{name}": name,
-    "@{age}": age,
-    "@{gender}": gender,
-    "@{address}": address,
-    "@{birthdate}": birthdate ?? "",
-    "@{requestDate}": requestDate,
-    "@{diagnostics}": diagnostics,
-    "@{history}": history ?? "",
-    "@{impression}": impression ?? "",
-    "@{requestFor}": requestFor ?? "",
-    "@{doctorName}": doctorName,
-    "@{licenseNo}": licenseNo,
-    "@{ptrNo}": ptrNo,
-    "@{eSignatureUrl}": eSignatureBase64 ?? "",
-    "@{createdDateTime}": createdDateTime,
+  const variables = {
+    name,
+    age,
+    gender,
+    address,
+    birthdate: birthdate ?? "",
+    requestDate,
+    diagnostics,
+    history: history ?? "",
+    impression: impression ?? "",
+    requestFor: requestFor ?? "",
+    doctorName,
+    licenseNo,
+    ptrNo,
+    eSignatureUrl: eSignatureBase64 ?? "",
+    createdDateTime,
   };
 
-  let output = template;
-  Object.entries(replacements).forEach(([placeholder, value]) => {
-    output = output.replaceAll(placeholder, value);
-  });
-  return output;
+  return renderLiquidTemplate(template, variables);
 };

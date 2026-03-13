@@ -44,6 +44,15 @@ import {
 import type { GetDocumentTypes } from "@/actions/document-type.action";
 
 // ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
+
+// Delay (ms) before opening the print overlay after closing the preview Sheet.
+// Radix UI's DismissableLayer needs a tick to tear down before DOM overlays
+// appended to <body> can receive pointer events correctly.
+const SHEET_DISMISSAL_DELAY_MS = 50;
+
+// ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
@@ -288,7 +297,15 @@ export default function TemplateEditorPage({
                 variant="outline"
                 size="sm"
                 className="gap-1.5 ml-2"
-                onClick={() => handlePrintHtmlToPDF(previewHtml)}
+                onClick={() => {
+                  // Close the Sheet first so Radix's DismissableLayer is removed
+                  // before the print overlay is appended to the DOM.
+                  // Without this, Radix intercepts pointer events on the overlay
+                  // making the Print button unclickable.
+                  const html = previewHtml;
+                  setPreviewOpen(false);
+                  setTimeout(() => handlePrintHtmlToPDF(html), SHEET_DISMISSAL_DELAY_MS);
+                }}
               >
                 <Printer className="h-3.5 w-3.5" />
                 Print

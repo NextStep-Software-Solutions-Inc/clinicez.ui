@@ -84,7 +84,7 @@ export const handlePrintHtmlToPDF = (html: string = "") => {
   };
 
   closeBtn.addEventListener("click", close, { once: true });
-  overlay.addEventListener("click", (e) => { if (e.target === overlay) close(); }, { once: true });
+  overlay.addEventListener("click", (e) => { if (e.target === overlay) close(); });
   printBtn.addEventListener("click", () => {
     iframe.contentWindow?.focus();
     iframe.contentWindow?.print();

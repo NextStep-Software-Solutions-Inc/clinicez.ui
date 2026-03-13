@@ -1,3 +1,31 @@
+// A4 @page rules injected into every printed document for correct paper sizing and margins.
+// Elements with the class `no-print` are hidden during printing (e.g. on-screen-only banners
+// or action buttons that should not appear on the printed page).
+const A4_PRINT_STYLES = `<style>
+@page { size: A4 portrait; margin: 15mm; }
+@media print {
+  html, body { margin: 0; padding: 0; }
+  .no-print { display: none !important; }
+}
+</style>`;
+
+/**
+ * Injects A4 @page styles into the HTML string.
+ * If the HTML already contains a <head> the style is appended to it;
+ * otherwise the style is prepended to the document.
+ * Only the first occurrence of </head> / <head> is targeted — a valid HTML
+ * document has exactly one head element, so a single replacement is correct.
+ */
+const injectPrintStyles = (html: string): string => {
+  if (/<\/head>/i.test(html)) {
+    return html.replace(/<\/head>/i, `${A4_PRINT_STYLES}</head>`);
+  }
+  if (/<head>/i.test(html)) {
+    return html.replace(/<head>/i, `<head>${A4_PRINT_STYLES}`);
+  }
+  return A4_PRINT_STYLES + html;
+};
+
 export const handlePrintHtmlToPDF = (html: string = "") => {
   // Create a full-screen overlay with an iframe for print preview
   const overlay = document.createElement("div");
@@ -41,7 +69,7 @@ export const handlePrintHtmlToPDF = (html: string = "") => {
     "flex:1", "border:none", "background:#fff",
     "width:100%",
   ].join(";");
-  iframe.srcdoc = html;
+  iframe.srcdoc = injectPrintStyles(html);
 
   overlay.appendChild(toolbar);
   overlay.appendChild(iframe);

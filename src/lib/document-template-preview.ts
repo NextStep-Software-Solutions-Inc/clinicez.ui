@@ -9,24 +9,26 @@ import { renderLiquidTemplate } from "./liquid-template";
 // ---------------------------------------------------------------------------
 
 const SAMPLE_MEDICINES = [
-  {
-    index: 1,
-    name: "Amoxicillin",
-    dosage: "500 mg",
-    unit: "capsules",
-    qty: 21,
-    sig: "Take 1 capsule 3x a day for 7 days",
-    label: "Amoxicillin 500 mg #21",
-  },
-  {
-    index: 2,
-    name: "Paracetamol",
-    dosage: "500 mg",
-    unit: "tablets",
-    qty: 10,
-    sig: "Take 1 tablet as needed for fever or pain",
-    label: "Paracetamol 500 mg #10",
-  },
+  { index: 1,  name: "Amoxicillin",        dosage: "500 mg",  unit: "capsules", qty: 21, sig: "Take 1 capsule 3x a day for 7 days",                   label: "Amoxicillin 500 mg #21" },
+  { index: 2,  name: "Paracetamol",        dosage: "500 mg",  unit: "tablets",  qty: 10, sig: "Take 1 tablet every 4-6 hours as needed for fever",     label: "Paracetamol 500 mg #10" },
+  { index: 3,  name: "Amlodipine",         dosage: "5 mg",    unit: "tablets",  qty: 30, sig: "Take 1 tablet once daily",                              label: "Amlodipine 5 mg #30" },
+  { index: 4,  name: "Metformin",          dosage: "500 mg",  unit: "tablets",  qty: 60, sig: "Take 1 tablet twice daily with meals",                  label: "Metformin 500 mg #60" },
+  { index: 5,  name: "Atorvastatin",       dosage: "20 mg",   unit: "tablets",  qty: 30, sig: "Take 1 tablet at bedtime",                              label: "Atorvastatin 20 mg #30" },
+  { index: 6,  name: "Losartan",           dosage: "50 mg",   unit: "tablets",  qty: 30, sig: "Take 1 tablet once daily",                              label: "Losartan 50 mg #30" },
+  { index: 7,  name: "Omeprazole",         dosage: "20 mg",   unit: "capsules", qty: 30, sig: "Take 1 capsule 30 minutes before breakfast",             label: "Omeprazole 20 mg #30" },
+  { index: 8,  name: "Salbutamol",         dosage: "2 mg",    unit: "tablets",  qty: 30, sig: "Take 1 tablet 3x a day as needed",                      label: "Salbutamol 2 mg #30" },
+  { index: 9,  name: "Cetirizine",         dosage: "10 mg",   unit: "tablets",  qty: 14, sig: "Take 1 tablet once daily at night",                     label: "Cetirizine 10 mg #14" },
+  { index: 10, name: "Ascorbic Acid",      dosage: "500 mg",  unit: "tablets",  qty: 30, sig: "Take 1 tablet once daily",                              label: "Ascorbic Acid 500 mg #30" },
+  { index: 11, name: "Ibuprofen",          dosage: "400 mg",  unit: "tablets",  qty: 15, sig: "Take 1 tablet 3x a day after meals",                    label: "Ibuprofen 400 mg #15" },
+  { index: 12, name: "Multivitamins",      dosage: "1 tablet", unit: "tablets", qty: 30, sig: "Take 1 tablet once daily",                              label: "Multivitamins #30" },
+  { index: 13, name: "Metoprolol",         dosage: "50 mg",   unit: "tablets",  qty: 30, sig: "Take 1 tablet twice daily",                             label: "Metoprolol 50 mg #30" },
+  { index: 14, name: "Furosemide",         dosage: "40 mg",   unit: "tablets",  qty: 30, sig: "Take 1 tablet once daily in the morning",               label: "Furosemide 40 mg #30" },
+  { index: 15, name: "Spironolactone",     dosage: "25 mg",   unit: "tablets",  qty: 30, sig: "Take 1 tablet once daily",                              label: "Spironolactone 25 mg #30" },
+  { index: 16, name: "Aspirin",            dosage: "80 mg",   unit: "tablets",  qty: 30, sig: "Take 1 tablet once daily after breakfast",              label: "Aspirin 80 mg #30" },
+  { index: 17, name: "Clopidogrel",        dosage: "75 mg",   unit: "tablets",  qty: 30, sig: "Take 1 tablet once daily",                              label: "Clopidogrel 75 mg #30" },
+  { index: 18, name: "Montelukast",        dosage: "10 mg",   unit: "tablets",  qty: 30, sig: "Take 1 tablet once daily at bedtime",                   label: "Montelukast 10 mg #30" },
+  { index: 19, name: "Domperidone",        dosage: "10 mg",   unit: "tablets",  qty: 30, sig: "Take 1 tablet 3x a day 30 minutes before meals",        label: "Domperidone 10 mg #30" },
+  { index: 20, name: "Vitamin D3",         dosage: "1000 IU", unit: "capsules", qty: 30, sig: "Take 1 capsule once daily with meals",                  label: "Vitamin D3 1000 IU #30" },
 ];
 
 /**

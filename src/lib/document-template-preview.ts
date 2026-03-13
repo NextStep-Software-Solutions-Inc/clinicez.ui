@@ -78,7 +78,7 @@ const SAMPLE_VALUE_LOOKUP: Record<string, unknown> = {
   reasonForReferral: "Rule out ischemic heart disease",
 
   // Diagnostics
-  diagnostics: "12-lead ECG, Chest X-ray",
+  diagnostics: ["12-lead ECG", "Chest X-ray"],
   history: "Hypertension for 5 years. No previous cardiac workup.",
   requestFor: "R/O Ischemic Heart Disease",
 

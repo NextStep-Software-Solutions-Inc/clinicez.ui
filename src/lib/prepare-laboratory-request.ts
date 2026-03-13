@@ -57,6 +57,8 @@ export const prepareLaboratoryRequest = (payload: PrepareLaboratoryRequestPayloa
     doctorAddress,
     createdDateTime,
     eSignatureUrl: eSignatureBase64 || "",
+    // Flat diagnostics array — all tests across all categories (use with {% for item in diagnostics %})
+    diagnostics: Object.values(diagnosticsByCategory).flat(),
     // Array variables — use with {% for test in hematology %} in templates
     hematology: getCategoryTests("HEMATOLOGY"),
     clinicalMicroscopy: (() => {
@@ -115,6 +117,7 @@ export const TEMPLATE_VARIABLE_SCHEMA: TemplateVariableSchema & { key: string } 
     { variable: "ptrNo", description: "Doctor's PTR number" },
     { variable: "doctorAddress", description: "Doctor's clinic or office address" },
     { variable: "eSignatureUrl", type: "html" as const, description: "Doctor's e-signature (base64 image URL)" },
+    { variable: "diagnostics", type: "array-of-strings" as const, description: "All requested tests across all categories" },
     { variable: "hematology", type: "array-of-strings" as const, description: "Hematology test names" },
     { variable: "clinicalMicroscopy", type: "array-of-strings" as const, description: "Clinical microscopy test names" },
     { variable: "bloodChemistry", type: "array-of-strings" as const, description: "Blood chemistry test names" },

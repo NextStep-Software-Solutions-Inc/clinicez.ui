@@ -1,8 +1,7 @@
 "use client";
 
 import { createDocumentTemplateAction } from "@/actions/document-template.action";
-import TemplateVariableReference from "@/components/prescription/TemplateVariableReference";
-import { Textarea } from "@/components/ui/textarea";
+import HtmlTemplateEditor from "@/components/prescription/HtmlTemplateEditor";
 import { useDocumentTypes } from "@/hooks/useDocumentType";
 import { promiseWrapper } from "@/lib/with-error-handling";
 import ActionButton from "@components/ActionButton";
@@ -141,7 +140,7 @@ export default function CreateDocumentTemplateModal({
         </Tooltip>
       </TooltipProvider>
       <CustomModalContent
-        className="sm:max-w-[625px] overflow-scroll max-h-[100vh] no-scrollbar"
+        className="sm:max-w-3xl overflow-scroll max-h-[100vh] no-scrollbar"
         label={`Create New ${label ?? "Document"} Template`}
         description={
           <>
@@ -212,16 +211,14 @@ export default function CreateDocumentTemplateModal({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>HTML content</FormLabel>
-                  <TemplateVariableReference documentTypeName={selectedTypeName} />
                   <FormControl>
-                    <Textarea
-                      placeholder="HTML content"
-                      {...field}
+                    <HtmlTemplateEditor
+                      value={field.value}
+                      onChange={field.onChange}
+                      documentTypeName={selectedTypeName}
+                      placeholder="Enter the HTML content of the document template…"
                     />
                   </FormControl>
-                  <FormDescription>
-                    Enter the HTML content of the document template
-                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

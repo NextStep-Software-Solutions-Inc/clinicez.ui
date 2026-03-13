@@ -1,14 +1,10 @@
 "use client";
 
 import { updateDocumentTemplateAction } from "@/actions/document-template.action";
-import TemplateVariableReference from "@/components/prescription/TemplateVariableReference";
-import { Textarea } from "@/components/ui/textarea";
+import HtmlTemplateEditor from "@/components/prescription/HtmlTemplateEditor";
 import { promiseWrapper } from "@/lib/with-error-handling";
-import { updatePrescriptionActions } from "@actions/medications/prescription.action";
-import { useUser } from "@clerk/nextjs";
 import ActionButton from "@components/ActionButton";
 import CustomModalContent from "@components/CustomModalContent";
-import { Alert, AlertDescription, AlertTitle } from "@components/ui/alert";
 import { Button } from "@components/ui/button";
 import {
   Dialog,
@@ -33,8 +29,8 @@ import {
   TooltipTrigger
 } from "@components/ui/tooltip";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Pencil, Pill } from "lucide-react";
-import {  useRef } from "react";
+import { Pencil } from "lucide-react";
+import { useRef } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -109,7 +105,7 @@ export default function UpdateDocumentTemplateModal({onUpdated,documentTemplate,
         </Tooltip>
       </TooltipProvider>
       <CustomModalContent
-        className="sm:max-w-[625px] overflow-scroll max-h-[100vh] no-scrollbar"
+        className="sm:max-w-3xl overflow-scroll max-h-[100vh] no-scrollbar"
         label={`Update ${label ?? "Document"} Template`}
         description={
           <>
@@ -148,18 +144,14 @@ export default function UpdateDocumentTemplateModal({onUpdated,documentTemplate,
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>HTML content</FormLabel>
-                  <TemplateVariableReference
-                    documentTypeName={documentTemplate.DocumentTemplateType.name}
-                  />
                   <FormControl>
-                    <Textarea
-                      placeholder="HTML content"
-                      {...field}
+                    <HtmlTemplateEditor
+                      value={field.value}
+                      onChange={field.onChange}
+                      documentTypeName={documentTemplate.DocumentTemplateType.name}
+                      placeholder="Enter the HTML content of the document template…"
                     />
                   </FormControl>
-                  <FormDescription>
-                    Enter the HTML content of the document template
-                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

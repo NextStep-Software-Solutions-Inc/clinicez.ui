@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Code2, Eye, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { renderPreviewTemplate } from "@/lib/liquid-template";
+import { renderPreviewTemplate } from "@/lib/document-template-preview";
 import TemplateVariableReference from "./TemplateVariableReference";
 
 interface HtmlTemplateEditorProps {

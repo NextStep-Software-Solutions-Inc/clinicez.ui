@@ -13,7 +13,7 @@ import {
 import {
   getTemplateVariableSchema,
   type TemplateVariableInfo,
-} from "@/lib/liquid-template";
+} from "@/lib/document-template-schema";
 
 interface TemplateVariableReferenceProps {
   /** Document type name as stored in DocumentTemplateType.name */

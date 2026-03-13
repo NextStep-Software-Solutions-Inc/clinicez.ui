@@ -94,6 +94,58 @@ type PreparePrescriptionPayload = {
 // medicine list never overflows into the signature / doctor section.
 const MEDICINES_PER_PAGE = 7;
 
+// ---------------------------------------------------------------------------
+// Per-page A4 layout styles
+// ---------------------------------------------------------------------------
+// Each rendered page is wrapped in <div class="rx-page">.  Template authors
+// should add these CSS classes to their HTML sections to get the correct
+// A4 print layout:
+//
+//   .rx-header    – clinic / doctor info at the top  (stays at the top)
+//   .rx-content   – medicines list area (expands to fill space; vertically
+//                   centres its children between header and signatory)
+//   .rx-signatory – doctor signature / credentials   (pinned above footer)
+//   .rx-footer    – footer text / serial number      (stays at the bottom)
+//
+// Without these classes the page still renders; elements just flow normally.
+// ---------------------------------------------------------------------------
+const PAGE_LAYOUT_STYLES = `<style>
+/*
+ * The @page margins (15 mm top + 15 mm bottom) are injected by
+ * injectPrintStyles() in src/lib/print-pdf.tsx.  The min-height here
+ * (267 mm) is derived from A4 height (297 mm) minus those margins.
+ */
+:root {
+  --rx-page-height: 267mm;
+}
+.rx-page {
+  display: flex;
+  flex-direction: column;
+  min-height: var(--rx-page-height);
+  box-sizing: border-box;
+}
+.rx-content {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.rx-signatory {
+  margin-top: auto;
+}
+@media print {
+  .rx-page {
+    min-height: var(--rx-page-height);
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+}
+</style>`;
+
+/** Wraps a single rendered prescription page in the A4 layout container. */
+const wrapInPageLayout = (renderedHtml: string): string =>
+  `<div class="rx-page">${renderedHtml}</div>`;
+
 export const preparePrescription = (payload: PreparePrescriptionPayload): string => {
   const { template, patient, prescription, doctor } = payload;
   const { name: patientName, age, gender, address } = patient;
@@ -177,17 +229,18 @@ export const preparePrescription = (payload: PreparePrescriptionPayload): string
   // Paginate: each page holds at most MEDICINES_PER_PAGE entries so that a long
   // medicine list does not overflow the signature / doctor section at the bottom.
   // Each page repeats the full template (header + footer) with its own subset.
+  // Every page is wrapped in .rx-page which enforces the A4 flex-column layout.
 
   if (medicinesArray.length <= MEDICINES_PER_PAGE) {
-    return renderPage(medicinesArray);
+    return PAGE_LAYOUT_STYLES + wrapInPageLayout(renderPage(medicinesArray));
   }
 
   const pages: string[] = [];
   for (let startIndex = 0; startIndex < medicinesArray.length; startIndex += MEDICINES_PER_PAGE) {
-    pages.push(renderPage(medicinesArray.slice(startIndex, startIndex + MEDICINES_PER_PAGE)));
+    pages.push(wrapInPageLayout(renderPage(medicinesArray.slice(startIndex, startIndex + MEDICINES_PER_PAGE))));
   }
 
-  return pages.join('<div style="break-before:page;page-break-before:always;"></div>');
+  return PAGE_LAYOUT_STYLES + pages.join('<div style="break-before:page;page-break-before:always;"></div>');
 };
 
 // ---------------------------------------------------------------------------

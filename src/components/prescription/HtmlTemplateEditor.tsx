@@ -41,7 +41,7 @@ export default function HtmlTemplateEditor({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="flex-1 min-h-64 resize-none text-sm bg-transparent border-0 rounded-none border-b border-border/40 focus-visible:ring-1 focus-visible:ring-primary font-mono"
+        className="flex-1 min-h-[480px] resize-y text-sm bg-transparent border-0 rounded-none border-b border-border/40 focus-visible:ring-1 focus-visible:ring-primary font-mono"
       />
 
       {/* Variable reference */}

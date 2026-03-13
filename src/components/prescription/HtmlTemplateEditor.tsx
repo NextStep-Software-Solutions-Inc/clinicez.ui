@@ -27,7 +27,7 @@ export default function HtmlTemplateEditor({
   placeholder = "Enter HTML content…",
 }: HtmlTemplateEditorProps) {
   return (
-    <div className="rounded-lg border border-border/50 bg-background overflow-hidden flex flex-col">
+    <div className="rounded-lg border border-border/50 bg-background flex flex-col min-w-0">
       {/* Header bar */}
       <div className="flex items-center px-3 py-1.5 border-b border-border/40 bg-muted/20 shrink-0">
         <span className="flex items-center gap-1.5 text-xs text-muted-foreground">

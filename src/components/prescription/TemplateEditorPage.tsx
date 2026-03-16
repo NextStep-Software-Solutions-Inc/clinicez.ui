@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ArrowLeft, Eye, Loader2 } from "lucide-react";
+import { ArrowLeft, Eye, Loader2, Printer } from "lucide-react";
 
 import { Button } from "@components/ui/button";
 import {
@@ -35,12 +35,22 @@ import {
 import Each from "@components/utils/Each";
 import HtmlTemplateEditor from "./HtmlTemplateEditor";
 import { renderPreviewTemplate } from "@/lib/document-template-preview";
+import { handlePrintHtmlToPDF } from "@/lib/print-pdf";
 import { promiseWrapper } from "@/lib/with-error-handling";
 import {
   createDocumentTemplateAction,
   updateDocumentTemplateAction,
 } from "@/actions/document-template.action";
 import type { GetDocumentTypes } from "@/actions/document-type.action";
+
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
+
+// Delay (ms) before opening the print overlay after closing the preview Sheet.
+// Radix UI's DismissableLayer needs a tick to tear down before DOM overlays
+// appended to <body> can receive pointer events correctly.
+const SHEET_DISMISSAL_DELAY_MS = 50;
 
 // ---------------------------------------------------------------------------
 // Types
@@ -147,7 +157,7 @@ export default function TemplateEditorPage({
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => router.push(backHref)}
+          onClick={() => router.back()}
           aria-label="Back"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -155,11 +165,13 @@ export default function TemplateEditorPage({
 
         <div className="flex-1 min-w-0">
           <h1 className="text-sm font-semibold truncate">
-            {isEdit ? "Edit" : "New"} {label ?? "Document"} Template
+            {isEdit ? "Edit" : "New"}{" "}
+            {(resolvedTypeName ?? label ?? "Document")
+              .split(" ")
+              .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+              .join(" ")}{" "}
+            Template
           </h1>
-          {resolvedTypeName && (
-            <p className="text-xs text-muted-foreground truncate">{resolvedTypeName}</p>
-          )}
         </div>
 
         <Button
@@ -282,6 +294,24 @@ export default function TemplateEditorPage({
               <span className="ml-auto text-[10px] font-normal text-muted-foreground italic">
                 Sample data — real values used on generation
               </span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="gap-1.5 ml-2"
+                onClick={() => {
+                  // Close the Sheet first so Radix's DismissableLayer is removed
+                  // before the print overlay is appended to the DOM.
+                  // Without this, Radix intercepts pointer events on the overlay
+                  // making the Print button unclickable.
+                  const html = previewHtml;
+                  setPreviewOpen(false);
+                  setTimeout(() => handlePrintHtmlToPDF(html), SHEET_DISMISSAL_DELAY_MS);
+                }}
+              >
+                <Printer className="h-3.5 w-3.5" />
+                Print
+              </Button>
             </SheetTitle>
           </SheetHeader>
           {htmlContent?.trim() ? (

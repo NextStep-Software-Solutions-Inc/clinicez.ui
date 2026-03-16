@@ -55,10 +55,9 @@ const DownloadImagingStudiesAction = React.forwardRef<
             if (masterName && clinicName && masterName !== clinicName) {
               return `${masterName} (${clinicName})`;
             }
-            return masterName || clinicName;
+            return masterName ?? clinicName;
           })
-          .filter(Boolean)
-          .join(", ") || "";
+          .filter((name): name is string => !!name) ?? [];
 
         const template = prepareImagingStudy({
           template: data.DocumentTemplate?.htmlContent ?? "",

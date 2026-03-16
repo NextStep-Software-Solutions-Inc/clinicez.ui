@@ -152,8 +152,7 @@ export async function buildImagingStudyHtml(id: number): Promise<string> {
         ? `${masterName} (${clinicName})`
         : masterName ?? clinicName;
     })
-      .filter(Boolean)
-      .join(", ") ?? "";
+      .filter((name): name is string => !!name) ?? [];
 
   return prepareImagingStudy({
     template: data.DocumentTemplate?.htmlContent ?? "",
@@ -195,8 +194,7 @@ export async function buildHeartStationHtml(id: number): Promise<string> {
 
   const diagnostics =
     data.HeartStationRequestProcedures?.map((item) => item.HeartStationProcedure?.name)
-      .filter(Boolean)
-      .join(", ") ?? "";
+      .filter((name): name is string => !!name) ?? [];
 
   return prepareHeartStationRequest({
     template: data.DocumentTemplate?.htmlContent ?? "",

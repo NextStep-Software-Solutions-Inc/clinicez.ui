@@ -43,9 +43,8 @@ const DownloadHeartStationRequestAction = React.forwardRef<
         const address = formatPatientAddress(patient)
 
         const diagnostics = data.HeartStationRequestProcedures
-          ?.map((item) => item.HeartStationProcedure?.name ?? "")
-          .filter(Boolean)
-          .join(", ") ?? ""
+          ?.map((item) => item.HeartStationProcedure?.name)
+          .filter((name): name is string => !!name) ?? []
 
         const template = prepareHeartStationRequest({
           template: data.DocumentTemplate?.htmlContent ?? "",

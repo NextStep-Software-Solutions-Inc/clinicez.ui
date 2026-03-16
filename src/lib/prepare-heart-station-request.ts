@@ -18,7 +18,7 @@ type PrepareHeartStationRequestPayload = {
     eSignatureBase64?: string;
   };
   request: {
-    diagnostics: string;
+    diagnostics: string[];
     history?: string;
     impression?: string;
     requestFor?: string;
@@ -69,7 +69,7 @@ export const TEMPLATE_VARIABLE_SCHEMA: TemplateVariableSchema & { key: string } 
     { variable: "birthdate", description: "Patient's date of birth" },
     { variable: "requestDate", description: "Request date (MM/DD/YYYY)" },
     { variable: "createdDateTime", description: "Full date and time (MM/DD/YYYY h:mm A)" },
-    { variable: "diagnostics", description: "Requested heart station procedures" },
+    { variable: "diagnostics", type: "array-of-strings" as const, description: "Requested heart station procedures" },
     { variable: "history", description: "Patient's relevant medical history" },
     { variable: "impression", description: "Clinical impression / diagnosis" },
     { variable: "requestFor", description: "Reason for the request" },

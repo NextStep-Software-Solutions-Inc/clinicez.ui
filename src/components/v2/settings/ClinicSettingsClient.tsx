@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition, useRef, useCallback, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -3042,7 +3043,15 @@ export function ClinicSettingsClient({
   googleCalendarEmail = null,
   initialSystems,
 }: ClinicSettingsClientProps) {
-  const [activeTab, setActiveTab] = useState("general");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const activeTab = searchParams.get("tab") ?? "general";
+
+  const handleTabChange = (tab: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("tab", tab);
+    router.replace(`?${params.toString()}`, { scroll: false });
+  };
 
   return (
     <div className="space-y-6 px-4 md:px-6">
@@ -3054,7 +3063,7 @@ export function ClinicSettingsClient({
         </p>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
+      <Tabs value={activeTab} onValueChange={handleTabChange}>
         {/* Horizontally scrollable, no wrapping */}
         <TabsList className="w-full justify-start h-auto p-1 overflow-x-auto flex-nowrap [&::-webkit-scrollbar]:hidden">
           <TabsTrigger value="general" className="gap-1.5 flex-shrink-0">

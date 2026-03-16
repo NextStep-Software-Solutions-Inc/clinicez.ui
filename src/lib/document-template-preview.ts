@@ -1,5 +1,6 @@
 import type { TemplateVariableSchema, ArrayOfObjectsVariableInfo } from "./document-template-schema";
 import { getTemplateVariableSchema } from "./document-template-schema";
+import { renderLiquidTemplate } from "./liquid-template";
 
 // ---------------------------------------------------------------------------
 // Meaningful sample values — the single source of truth for preview data.
@@ -8,24 +9,26 @@ import { getTemplateVariableSchema } from "./document-template-schema";
 // ---------------------------------------------------------------------------
 
 const SAMPLE_MEDICINES = [
-  {
-    index: 1,
-    name: "Amoxicillin",
-    dosage: "500 mg",
-    unit: "capsules",
-    qty: 21,
-    sig: "Take 1 capsule 3x a day for 7 days",
-    label: "Amoxicillin 500 mg #21",
-  },
-  {
-    index: 2,
-    name: "Paracetamol",
-    dosage: "500 mg",
-    unit: "tablets",
-    qty: 10,
-    sig: "Take 1 tablet as needed for fever or pain",
-    label: "Paracetamol 500 mg #10",
-  },
+  { index: 1,  name: "Amoxicillin",        dosage: "500 mg",  unit: "capsules", qty: 21, sig: "Take 1 capsule 3x a day for 7 days",                   label: "Amoxicillin 500 mg #21" },
+  { index: 2,  name: "Paracetamol",        dosage: "500 mg",  unit: "tablets",  qty: 10, sig: "Take 1 tablet every 4-6 hours as needed for fever",     label: "Paracetamol 500 mg #10" },
+  { index: 3,  name: "Amlodipine",         dosage: "5 mg",    unit: "tablets",  qty: 30, sig: "Take 1 tablet once daily",                              label: "Amlodipine 5 mg #30" },
+  { index: 4,  name: "Metformin",          dosage: "500 mg",  unit: "tablets",  qty: 60, sig: "Take 1 tablet twice daily with meals",                  label: "Metformin 500 mg #60" },
+  { index: 5,  name: "Atorvastatin",       dosage: "20 mg",   unit: "tablets",  qty: 30, sig: "Take 1 tablet at bedtime",                              label: "Atorvastatin 20 mg #30" },
+  { index: 6,  name: "Losartan",           dosage: "50 mg",   unit: "tablets",  qty: 30, sig: "Take 1 tablet once daily",                              label: "Losartan 50 mg #30" },
+  { index: 7,  name: "Omeprazole",         dosage: "20 mg",   unit: "capsules", qty: 30, sig: "Take 1 capsule 30 minutes before breakfast",             label: "Omeprazole 20 mg #30" },
+  { index: 8,  name: "Salbutamol",         dosage: "2 mg",    unit: "tablets",  qty: 30, sig: "Take 1 tablet 3x a day as needed",                      label: "Salbutamol 2 mg #30" },
+  { index: 9,  name: "Cetirizine",         dosage: "10 mg",   unit: "tablets",  qty: 14, sig: "Take 1 tablet once daily at night",                     label: "Cetirizine 10 mg #14" },
+  { index: 10, name: "Ascorbic Acid",      dosage: "500 mg",  unit: "tablets",  qty: 30, sig: "Take 1 tablet once daily",                              label: "Ascorbic Acid 500 mg #30" },
+  { index: 11, name: "Ibuprofen",          dosage: "400 mg",  unit: "tablets",  qty: 15, sig: "Take 1 tablet 3x a day after meals",                    label: "Ibuprofen 400 mg #15" },
+  { index: 12, name: "Multivitamins",      dosage: "1 tablet", unit: "tablets", qty: 30, sig: "Take 1 tablet once daily",                              label: "Multivitamins #30" },
+  { index: 13, name: "Metoprolol",         dosage: "50 mg",   unit: "tablets",  qty: 30, sig: "Take 1 tablet twice daily",                             label: "Metoprolol 50 mg #30" },
+  { index: 14, name: "Furosemide",         dosage: "40 mg",   unit: "tablets",  qty: 30, sig: "Take 1 tablet once daily in the morning",               label: "Furosemide 40 mg #30" },
+  { index: 15, name: "Spironolactone",     dosage: "25 mg",   unit: "tablets",  qty: 30, sig: "Take 1 tablet once daily",                              label: "Spironolactone 25 mg #30" },
+  { index: 16, name: "Aspirin",            dosage: "80 mg",   unit: "tablets",  qty: 30, sig: "Take 1 tablet once daily after breakfast",              label: "Aspirin 80 mg #30" },
+  { index: 17, name: "Clopidogrel",        dosage: "75 mg",   unit: "tablets",  qty: 30, sig: "Take 1 tablet once daily",                              label: "Clopidogrel 75 mg #30" },
+  { index: 18, name: "Montelukast",        dosage: "10 mg",   unit: "tablets",  qty: 30, sig: "Take 1 tablet once daily at bedtime",                   label: "Montelukast 10 mg #30" },
+  { index: 19, name: "Domperidone",        dosage: "10 mg",   unit: "tablets",  qty: 30, sig: "Take 1 tablet 3x a day 30 minutes before meals",        label: "Domperidone 10 mg #30" },
+  { index: 20, name: "Vitamin D3",         dosage: "1000 IU", unit: "capsules", qty: 30, sig: "Take 1 capsule once daily with meals",                  label: "Vitamin D3 1000 IU #30" },
 ];
 
 /**
@@ -77,8 +80,12 @@ const SAMPLE_VALUE_LOOKUP: Record<string, unknown> = {
   recommendation: "Refer for echocardiogram and treadmill stress test.",
   reasonForReferral: "Rule out ischemic heart disease",
 
-  // Diagnostics
-  diagnostics: "12-lead ECG, Chest X-ray",
+  // `diagnostics` is intentionally absent from this shared lookup because the type differs
+  // per schema: heart station / imaging declare it as array-of-strings, laboratory as
+  // array-of-objects. buildSampleDataFromSchema generates the correct structure for each.
+  // `tests` is a nested property of laboratory's diagnostics objects — providing a realistic
+  // array here ensures inner {% for test in group.tests %} loops render correctly in the preview.
+  tests: ["CBC", "Platelet Count", "Urinalysis"],
   history: "Hypertension for 5 years. No previous cardiac workup.",
   requestFor: "R/O Ischemic Heart Disease",
 
@@ -152,26 +159,6 @@ export function buildSampleDataFromSchema(schema: TemplateVariableSchema): Recor
 // ---------------------------------------------------------------------------
 
 /**
- * Serialises a sample value to a string for simple regex-based preview
- * substitution. Arrays are flattened to readable text so scalar
- * `{{ variable }}` references produce output even when the author intended
- * a for-loop.
- */
-function sampleValueToString(value: unknown): string {
-  if (typeof value === "string") return value;
-  if (typeof value === "number" || typeof value === "boolean") return String(value);
-  if (Array.isArray(value)) {
-    if (value.length > 0 && typeof value[0] === "object" && value[0] !== null) {
-      return (value as Array<Record<string, unknown>>)
-        .map((item) => String(item.label ?? item.name ?? JSON.stringify(item)))
-        .join("; ");
-    }
-    return (value as unknown[]).map(String).join(", ");
-  }
-  return String(value ?? "");
-}
-
-/**
  * Renders a template with sample data for live preview purposes.
  *
  * The data context is **derived from the document type's schema** via
@@ -180,10 +167,8 @@ function sampleValueToString(value: unknown): string {
  * realistic values from `SAMPLE_VALUE_LOOKUP`; unknown ones get a labelled
  * placeholder.
  *
- * Uses simple regex substitution (no full Liquid engine) so it is safe to
- * call from client-side React components without bundling the server-side
- * Liquid dependency. Note: `{% for %}` blocks are not expanded — authors
- * should switch to the Preview Sheet to verify looping logic.
+ * Uses the LiquidJS engine so that `{% for %}` loops and all other Liquid
+ * tags are fully expanded, giving an accurate preview of the rendered output.
  */
 export function renderPreviewTemplate(
   template: string,
@@ -199,12 +184,5 @@ export function renderPreviewTemplate(
     ? buildSampleDataFromSchema(schema)
     : { ...SAMPLE_VALUE_LOOKUP };
 
-  // Replace {{ variable }}, {{- variable -}}, and legacy @{variable}
-  return template
-    .replace(/@\{(\w+)\}/g, (_, key: string) =>
-      key in context ? sampleValueToString(context[key]) : `[${key}]`
-    )
-    .replace(/\{\{-?\s*(\w+)\s*-?\}\}/g, (_, key: string) =>
-      key in context ? sampleValueToString(context[key]) : `[${key}]`
-    );
+  return renderLiquidTemplate(template, context);
 }

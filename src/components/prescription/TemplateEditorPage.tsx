@@ -165,7 +165,12 @@ export default function TemplateEditorPage({
 
         <div className="flex-1 min-w-0">
           <h1 className="text-sm font-semibold truncate">
-            {isEdit ? "Edit" : "New"} {resolvedTypeName ?? label ?? "Document"} Template
+            {isEdit ? "Edit" : "New"}{" "}
+            {(resolvedTypeName ?? label ?? "Document")
+              .split(" ")
+              .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+              .join(" ")}{" "}
+            Template
           </h1>
         </div>
 

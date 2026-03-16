@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { getClinicAction } from "@/actions/clinics/clinic.action";
 import { getClinicSettingAction } from "@/actions/clinics/clinic-setting.action";
 import { getClinicAppointmentConfigAction } from "@/actions/appointments/appointment-config.action";
@@ -66,23 +67,25 @@ export default async function ClinicSettingsPage({ params }: ClinicSettingsPageP
   }
 
   return (
-    <ClinicSettingsClient
-      clinicUid={clinicUid}
-      clinic={clinicResult.data}
-      clinicSetting={clinicSettingResult.data ?? null}
-      appointmentConfig={appointmentConfig ?? null}
-      members={membersResult.data ?? []}
-      roles={roles ?? []}
-      rolesWithPermissions={rolesWithPermissions}
-      allClinicPermissions={allClinicPermissions}
-      appointmentModes={appointmentModes}
-      appointmentTypes={appointmentTypes}
-      serviceCategories={serviceCategories}
-      clinicAppointmentTabs={clinicAppointmentTabsResult.data ?? []}
-      allAppointmentTabs={allAppointmentTabs}
-      googleCalendarConnected={googleAccess.connected}
-      googleCalendarEmail={googleAccess.email}
-      initialSystems={initialSystems}
-    />
+    <Suspense>
+      <ClinicSettingsClient
+        clinicUid={clinicUid}
+        clinic={clinicResult.data}
+        clinicSetting={clinicSettingResult.data ?? null}
+        appointmentConfig={appointmentConfig ?? null}
+        members={membersResult.data ?? []}
+        roles={roles ?? []}
+        rolesWithPermissions={rolesWithPermissions}
+        allClinicPermissions={allClinicPermissions}
+        appointmentModes={appointmentModes}
+        appointmentTypes={appointmentTypes}
+        serviceCategories={serviceCategories}
+        clinicAppointmentTabs={clinicAppointmentTabsResult.data ?? []}
+        allAppointmentTabs={allAppointmentTabs}
+        googleCalendarConnected={googleAccess.connected}
+        googleCalendarEmail={googleAccess.email}
+        initialSystems={initialSystems}
+      />
+    </Suspense>
   );
 }

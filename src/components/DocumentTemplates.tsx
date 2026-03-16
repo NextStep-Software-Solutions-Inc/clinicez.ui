@@ -83,7 +83,6 @@ export default function DocumentTemplates({documentType, label, clinicUid}: Docu
           <div className="ml-auto flex flex-grow sm:flex-grow-0 items-center gap-2">
             <Suspend>
               <CreateDocumentTemplateModal
-                onCreated={mutate}
                 documentType={documentType}
                 clinicUid={resolvedClinicUid}
                 label={label}

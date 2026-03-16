@@ -143,6 +143,24 @@ const ACTION_CONFIG: Record<
     color: "text-indigo-600",
     bg: "bg-indigo-500/10 text-indigo-700 border-indigo-200",
   },
+  SESSION_LOGIN: {
+    label: "Signed In",
+    icon: <LogIn className="h-3.5 w-3.5" />,
+    color: "text-blue-600",
+    bg: "bg-blue-500/10 text-blue-700 border-blue-200",
+  },
+  SESSION_LOGOUT: {
+    label: "Signed Out",
+    icon: <LogOut className="h-3.5 w-3.5" />,
+    color: "text-slate-600",
+    bg: "bg-slate-500/10 text-slate-700 border-slate-200",
+  },
+  SESSION_REVOKED: {
+    label: "Session Revoked",
+    icon: <Shield className="h-3.5 w-3.5" />,
+    color: "text-red-600",
+    bg: "bg-red-500/10 text-red-700 border-red-200",
+  },
 };
 
 const ENTITY_CONFIG: Record<

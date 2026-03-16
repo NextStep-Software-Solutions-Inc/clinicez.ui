@@ -1,4 +1,5 @@
 import dayjs from "@lib/day-utils";
+import { renderLiquidTemplate } from "./liquid-template";
 
 type PrepareLaboratoryRequestPayload = {
   template: string;
@@ -32,39 +33,105 @@ export const prepareLaboratoryRequest = (payload: PrepareLaboratoryRequestPayloa
   const requestDate = dayjs(createdAt).format("MM/DD/YYYY");
   const createdDateTime = dayjs(createdAt).format("MM/DD/YYYY h:mm A");
 
-  // Helper function to format category tests as comma-separated bold text
+  // Helper to get tests for a category as a string array
+  const getCategoryTests = (category: string): string[] =>
+    diagnosticsByCategory[category] ?? [];
+
+  // Helper to get tests as legacy bold HTML (backward compat for {{ hematologyTests }} etc.)
   const formatCategoryTests = (category: string): string => {
-    const tests = diagnosticsByCategory[category] || [];
+    const tests = getCategoryTests(category);
     return tests.length > 0 ? `<strong>${tests.join(", ")}</strong>` : "";
   };
 
-  const replacements = {
-    "@{name}": name,
-    "@{age}": age,
-    "@{gender}": gender,
-    "@{address}": address,
-    "@{birthdate}": birthdate,
-    "@{requestDate}": requestDate,
-    "@{impression}": impression || "No impression provided.",
-    "@{doctorName}": doctorName,
-    "@{licenseNo}": licenseNo,
-    "@{ptrNo}": ptrNo,
-    "@{doctorAddress}": doctorAddress,
-    "@{createdDateTime}": createdDateTime,
-    "@{eSignatureUrl}": eSignatureBase64 || "",
-
-    "@{hematologyTests}": formatCategoryTests("HEMATOLOGY"),
-    "@{clinicalMicroscopyTests}": formatCategoryTests("CLINICAL MICROSCOPY") || formatCategoryTests("MICROSCOPY"),
-    "@{bloodChemistryTests}": formatCategoryTests("BLOOD CHEMISTRY") || formatCategoryTests("CHEMISTRY"),
-    "@{microbiologyTests}": formatCategoryTests("MICROBIOLOGY"),
-    "@{hormoneAssaysTests}": formatCategoryTests("HORMONE ASSAYS") || formatCategoryTests("HORMONES"),
-    "@{cardiacDiagnosticsTests}": formatCategoryTests("CARDIAC DIAGNOSTICS") || formatCategoryTests("CARDIAC") || formatCategoryTests("ECG"),
+  const variables = {
+    name,
+    age,
+    gender,
+    address,
+    birthdate,
+    requestDate,
+    impression: impression || "No impression provided.",
+    doctorName,
+    licenseNo,
+    ptrNo,
+    doctorAddress,
+    createdDateTime,
+    eSignatureUrl: eSignatureBase64 || "",
+    // Diagnostics grouped by category (use with {% for group in diagnostics %} in templates)
+    diagnostics: Object.entries(diagnosticsByCategory).map(([category, tests]) => ({ category, tests })),
+    // Array variables — use with {% for test in hematology %} in templates
+    hematology: getCategoryTests("HEMATOLOGY"),
+    clinicalMicroscopy: (() => {
+      const tests = getCategoryTests("CLINICAL MICROSCOPY");
+      return tests.length ? tests : getCategoryTests("MICROSCOPY");
+    })(),
+    bloodChemistry: (() => {
+      const tests = getCategoryTests("BLOOD CHEMISTRY");
+      return tests.length ? tests : getCategoryTests("CHEMISTRY");
+    })(),
+    microbiology: getCategoryTests("MICROBIOLOGY"),
+    hormoneAssays: (() => {
+      const tests = getCategoryTests("HORMONE ASSAYS");
+      return tests.length ? tests : getCategoryTests("HORMONES");
+    })(),
+    cardiacDiagnostics: (() => {
+      const cardiac = getCategoryTests("CARDIAC DIAGNOSTICS");
+      if (cardiac.length) return cardiac;
+      const cardiacShort = getCategoryTests("CARDIAC");
+      return cardiacShort.length ? cardiacShort : getCategoryTests("ECG");
+    })(),
+    // Legacy HTML-string variables — kept for backward-compatible templates
+    hematologyTests: formatCategoryTests("HEMATOLOGY"),
+    clinicalMicroscopyTests:
+      formatCategoryTests("CLINICAL MICROSCOPY") || formatCategoryTests("MICROSCOPY"),
+    bloodChemistryTests:
+      formatCategoryTests("BLOOD CHEMISTRY") || formatCategoryTests("CHEMISTRY"),
+    microbiologyTests: formatCategoryTests("MICROBIOLOGY"),
+    hormoneAssaysTests:
+      formatCategoryTests("HORMONE ASSAYS") || formatCategoryTests("HORMONES"),
+    cardiacDiagnosticsTests:
+      formatCategoryTests("CARDIAC DIAGNOSTICS") ||
+      formatCategoryTests("CARDIAC") ||
+      formatCategoryTests("ECG"),
   };
 
-  let outputTemplate = template;
-  Object.entries(replacements).forEach(([placeholder, value]) => {
-    outputTemplate = outputTemplate.replaceAll(placeholder, value);
-  });
+  return renderLiquidTemplate(template, variables);
+};
 
-  return outputTemplate;
+import type { TemplateVariableSchema } from "./document-template-schema";
+
+export const TEMPLATE_VARIABLE_SCHEMA: TemplateVariableSchema & { key: string } = {
+  key: "laboratory",
+  description: "Variables available in Laboratory Request templates",
+  variables: [
+    { variable: "name", description: "Patient's full name" },
+    { variable: "age", description: "Patient's age" },
+    { variable: "gender", description: "Patient's gender" },
+    { variable: "address", description: "Patient's home address" },
+    { variable: "birthdate", description: "Patient's date of birth" },
+    { variable: "requestDate", description: "Request date (MM/DD/YYYY)" },
+    { variable: "createdDateTime", description: "Full date and time (MM/DD/YYYY h:mm A)" },
+    { variable: "impression", description: "Clinical impression / diagnosis" },
+    { variable: "doctorName", description: "Requesting doctor's full name" },
+    { variable: "licenseNo", description: "Doctor's PRC license number" },
+    { variable: "ptrNo", description: "Doctor's PTR number" },
+    { variable: "doctorAddress", description: "Doctor's clinic or office address" },
+    { variable: "eSignatureUrl", type: "html" as const, description: "Doctor's e-signature (base64 image URL)" },
+    { variable: "diagnostics", type: "array-of-objects" as const, description: "Requested tests grouped by category", loopVar: "group", properties: [
+      { variable: "category", description: "Category name (e.g., HEMATOLOGY)" },
+      { variable: "tests", description: "Array of test names in this category" },
+    ] },
+    { variable: "hematology", type: "array-of-strings" as const, description: "Hematology test names" },
+    { variable: "clinicalMicroscopy", type: "array-of-strings" as const, description: "Clinical microscopy test names" },
+    { variable: "bloodChemistry", type: "array-of-strings" as const, description: "Blood chemistry test names" },
+    { variable: "microbiology", type: "array-of-strings" as const, description: "Microbiology test names" },
+    { variable: "hormoneAssays", type: "array-of-strings" as const, description: "Hormone assays test names" },
+    { variable: "cardiacDiagnostics", type: "array-of-strings" as const, description: "Cardiac diagnostics test names" },
+    { variable: "hematologyTests", type: "html" as const, description: "Legacy: hematology tests as bold HTML string" },
+    { variable: "clinicalMicroscopyTests", type: "html" as const, description: "Legacy: clinical microscopy tests as bold HTML string" },
+    { variable: "bloodChemistryTests", type: "html" as const, description: "Legacy: blood chemistry tests as bold HTML string" },
+    { variable: "microbiologyTests", type: "html" as const, description: "Legacy: microbiology tests as bold HTML string" },
+    { variable: "hormoneAssaysTests", type: "html" as const, description: "Legacy: hormone assays tests as bold HTML string" },
+    { variable: "cardiacDiagnosticsTests", type: "html" as const, description: "Legacy: cardiac diagnostics tests as bold HTML string" },
+  ],
 };

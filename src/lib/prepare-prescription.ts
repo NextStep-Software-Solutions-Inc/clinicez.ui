@@ -1,4 +1,5 @@
 import dayjs, { formatDate } from "@lib/day-utils";
+import { renderLiquidTemplate } from "./liquid-template";
 
 const UNIT_SINGULAR_MAP: Record<string, string> = {
   tablets: "tablet",
@@ -54,27 +55,6 @@ const formatUnitForQuantity = (unit: string | null, quantity: number | null): st
   return trimmedUnit;
 };
 
-const PLACEHOLDER_KEYS = [
-  "@{name}",
-  "@{age}",
-  "@{gender}",
-  "@{address}",
-  "@{requestDate}",
-  "@{medicine}",
-  "@{sig}",
-  "@{doctorName}",
-  "@{licenseNo}",
-  "@{ptrNo}",
-  "@{doctorAddress}",
-  "@{createdDateTime}",
-  "@{eSignatureUrl}"
-] as const;
-
-const escapeRegex = (str: string) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-const PLACEHOLDER_REGEX = new RegExp(
-  PLACEHOLDER_KEYS.map(key => escapeRegex(key)).join('|'),
-  'g'
-);
 
 type Medicine = {
   name: string;
@@ -108,6 +88,12 @@ type PreparePrescriptionPayload = {
   };
 };
 
+// Maximum number of medicines rendered on a single prescription page.
+// When a prescription exceeds this limit the output is split into multiple
+// pages, each repeating the full template (header + footer), so that the
+// medicine list never overflows into the signature / doctor section.
+const MEDICINES_PER_PAGE = 7;
+
 export const preparePrescription = (payload: PreparePrescriptionPayload): string => {
   const { template, patient, prescription, doctor } = payload;
   const { name: patientName, age, gender, address } = patient;
@@ -115,10 +101,17 @@ export const preparePrescription = (payload: PreparePrescriptionPayload): string
   const { name: doctorName, licenseNo, ptrNo, address: doctorAddress, eSignatureBase64 } = doctor;
 
   const signaturePlaceholderUsedAsUrl = [
+    // Legacy @{} syntax inside src attributes / CSS url()
     /src\s*=\s*"@\{eSignatureUrl\}"/i,
     /src\s*=\s*'@\{eSignatureUrl\}'/i,
     /url\(\s*"@\{eSignatureUrl\}"\s*\)/i,
     /url\(\s*'@\{eSignatureUrl\}'\s*\)/i,
+    // Liquid {{ eSignatureUrl }} syntax inside src attributes / CSS url()
+    /src\s*=\s*"\{\{-?\s*eSignatureUrl\s*-?\}\}"/i,
+    /src\s*=\s*'\{\{-?\s*eSignatureUrl\s*-?\}\}'/i,
+    /url\(\s*"\{\{-?\s*eSignatureUrl\s*-?\}\}"\s*\)/i,
+    /url\(\s*'\{\{-?\s*eSignatureUrl\s*-?\}\}'\s*\)/i,
+    /url\(\s*\{\{-?\s*eSignatureUrl\s*-?\}\}\s*\)/i,
   ].some((pattern) => pattern.test(template));
 
   const signatureMarkup = eSignatureBase64
@@ -132,49 +125,107 @@ export const preparePrescription = (payload: PreparePrescriptionPayload): string
   // First letter of gender
   const genderInitial = (typeof gender === "string" && gender.length > 0) ? gender.charAt(0).toUpperCase() : "N/A";
 
-  const medicineList = medicines.map((medicine, i) => {
-    const parts = [medicine.name];
-
-    if (medicine.dosage) {
-      const unitLabel = formatUnitForQuantity(medicine.unit, medicine.qty ?? null);
-      if (unitLabel) {
-        parts.push(`${medicine.dosage} ${unitLabel}`);
-      } else {
-        parts.push(`${medicine.dosage}`);
-      }
+  // Build structured medicine objects for Liquid array rendering
+  const medicinesArray = medicines.map((med, i) => {
+    const dosageParts = [med.name];
+    if (med.dosage) {
+      const unitLabel = formatUnitForQuantity(med.unit, med.qty ?? null);
+      dosageParts.push(unitLabel ? `${med.dosage} ${unitLabel}` : med.dosage);
     }
-
-
-    if (medicine.qty) {
-      parts.push(`#${medicine.qty}`);
+    if (med.qty) {
+      dosageParts.push(`#${med.qty}`);
     }
+    return {
+      index: i + 1,
+      name: med.name,
+      dosage: med.dosage ?? "",
+      unit: med.unit ?? "",
+      qty: med.qty ?? 0,
+      sig: med.notes ?? "",
+      label: dosageParts.join(" "),
+    };
+  });
 
-    const medicineLine = parts.join(' ');
-    const sig = medicine.notes ? `<br/>Sig: ${medicine.notes}` : '';
+  // Shared scalar variables that are the same on every page
+  const baseVariables = {
+    name: patientName,
+    age,
+    gender: genderInitial,
+    address,
+    requestDate,
+    eSignatureUrl: signatureMarkup,
+    doctorName,
+    licenseNo: licenseNo || "N/A",
+    ptrNo: ptrNo || "N/A",
+    doctorAddress: doctorAddress || "N/A",
+    createdDateTime,
+  };
 
-    return `${i + 1}.) ${medicineLine}${sig}`;
-  }).join('<br/><br/>');
-  const replacements = {
-    "@{name}": patientName,
-    "@{age}": age,
-    "@{gender}": genderInitial,
-    "@{address}": address,
-    "@{requestDate}": requestDate,
-    "@{medicine}": medicines.length === 0 ? "" : medicineList, // return empty for formal purposes
-    "@{eSignatureUrl}": signatureMarkup,
-    "@{doctorName}": doctorName,
-    "@{licenseNo}": licenseNo || "N/A",
-    "@{ptrNo}": ptrNo || "N/A",
-    "@{doctorAddress}": doctorAddress || "N/A",
-    "@{createdDateTime}": createdDateTime,
-  } as const;
+  // Render one page of the template with the given medicines slice
+  const renderPage = (pageMedicines: typeof medicinesArray) => {
+    const medicineLegacyHtml = pageMedicines
+      .map((med) => `${med.index}.) ${med.label}${med.sig ? `<br/>Sig: ${med.sig}` : ""}`)
+      .join("<br/><br/>");
 
-  type ReplacementKeys = keyof typeof replacements;
+    return renderLiquidTemplate(template, {
+      ...baseVariables,
+      medicines: pageMedicines,
+      medicine: pageMedicines.length === 0 ? "" : medicineLegacyHtml,
+    });
+  };
 
-  const outputTemplate = template.replace(
-    PLACEHOLDER_REGEX,
-    (match) => (match in replacements ? replacements[match as ReplacementKeys] : "Information not available")
-  );
+  // Paginate: each page holds at most MEDICINES_PER_PAGE entries so that a long
+  // medicine list does not overflow the signature / doctor section at the bottom.
+  // Each page repeats the full template (header + footer) with its own subset.
 
-  return outputTemplate;
+  if (medicinesArray.length <= MEDICINES_PER_PAGE) {
+    return renderPage(medicinesArray);
+  }
+
+  const pages: string[] = [];
+  for (let startIndex = 0; startIndex < medicinesArray.length; startIndex += MEDICINES_PER_PAGE) {
+    pages.push(renderPage(medicinesArray.slice(startIndex, startIndex + MEDICINES_PER_PAGE)));
+  }
+
+  return pages.join('<div style="break-before:page;page-break-before:always;"></div>');
+};
+
+// ---------------------------------------------------------------------------
+// Variable schema — exported so document-template-schema.ts can build the
+// registry dynamically without duplicating the variable list here.
+// ---------------------------------------------------------------------------
+import type { TemplateVariableSchema } from "./document-template-schema";
+
+export const TEMPLATE_VARIABLE_SCHEMA: TemplateVariableSchema & { key: string } = {
+  key: "prescription",
+  description: "Variables available in Prescription templates",
+  variables: [
+    { variable: "name", description: "Patient's full name" },
+    { variable: "age", description: "Patient's age" },
+    { variable: "gender", description: "Patient's gender initial (M/F)" },
+    { variable: "address", description: "Patient's home address" },
+    { variable: "requestDate", description: "Date the prescription was created (MM/DD/YYYY)" },
+    { variable: "createdDateTime", description: "Full date and time (MMMM DD, YYYY h:mm A)" },
+    {
+      variable: "medicines",
+      type: "array-of-objects" as const,
+      loopVar: "med",
+      description: "Array of prescribed medicines — iterate with {% for med in medicines %}",
+      properties: [
+        { variable: "index", description: "Item number (1, 2, 3…)" },
+        { variable: "name", description: "Medicine name" },
+        { variable: "dosage", description: "Dosage amount (e.g. 500 mg)" },
+        { variable: "unit", description: "Unit (e.g. capsules, tablets)" },
+        { variable: "qty", description: "Quantity (number)" },
+        { variable: "sig", description: "Patient directions / sig instructions" },
+        { variable: "label", description: "Formatted: name + dosage + #qty" },
+      ],
+    },
+    { variable: "medicine", type: "html" as const, description: "Legacy: pre-formatted HTML list of all medicines (for older templates)" },
+    { variable: "doctorName", description: "Prescribing doctor's full name" },
+    { variable: "licenseNo", description: "Doctor's PRC license number" },
+    { variable: "ptrNo", description: "Doctor's PTR number" },
+    { variable: "doctorAddress", description: "Doctor's clinic or office address" },
+    { variable: "eSignatureUrl", type: "html" as const, description: "Doctor's e-signature (<img> tag, or raw base64 URL when used inside src=\"\")" },
+  ],
 }; 

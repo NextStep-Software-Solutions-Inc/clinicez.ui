@@ -165,11 +165,8 @@ export default function TemplateEditorPage({
 
         <div className="flex-1 min-w-0">
           <h1 className="text-sm font-semibold truncate">
-            {isEdit ? "Edit" : "New"} {label ?? "Document"} Template
+            {isEdit ? "Edit" : "New"} {resolvedTypeName ?? label ?? "Document"} Template
           </h1>
-          {resolvedTypeName && (
-            <p className="text-xs text-muted-foreground truncate">{resolvedTypeName}</p>
-          )}
         </div>
 
         <Button

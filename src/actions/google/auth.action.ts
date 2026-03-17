@@ -276,6 +276,25 @@ async function fetchAppointmentForCalendar(appointmentId: number) {
   });
 }
 
+/**
+ * Maps Google OAuth / Calendar API errors to user-friendly messages.
+ * Returns undefined for unrecognised errors so withErrorHandling preserves the original message.
+ */
+function calendarErrorHandler(error: unknown): string | undefined {
+  if (!(error instanceof Error)) return undefined;
+  const msg = error.message;
+  if (msg === "invalid_client" || msg === "unauthorized_client") {
+    return "Google Calendar credentials are invalid. Please reconnect your Google account in Settings → Integrations.";
+  }
+  if (msg === "invalid_grant" || msg === "token_expired") {
+    return "Google Calendar access has expired. Please reconnect your Google account in Settings → Integrations.";
+  }
+  if (msg === "insufficient_scope" || msg === "insufficientPermissions") {
+    return "Google Calendar is not authorised with calendar permissions. Please reconnect your Google account in Settings → Integrations.";
+  }
+  return undefined;
+}
+
 export const insertToCalendar = withErrorHandling(async (appointmentId: number, createMeet = true) => {
   const session = await getCachedSession();
   if (!session) throw new Error("Session not found");
@@ -342,7 +361,7 @@ export const insertToCalendar = withErrorHandling(async (appointmentId: number, 
       meetingUrl: calendarEvent.hangoutLink ?? null,
     }
   };
-});
+}, calendarErrorHandler);
 
 /**
  * Update an existing Google Calendar event after a reschedule, or create one if none exists yet.
@@ -415,7 +434,7 @@ export const updateCalendarEvent = withErrorHandling(async (appointmentId: numbe
   });
 
   return { message: "Event added to Google Calendar", data: { touched: true } };
-});
+}, calendarErrorHandler);
 
 export type CalendarEventItem = {
   id: string;

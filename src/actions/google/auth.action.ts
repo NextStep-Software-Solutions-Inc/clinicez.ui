@@ -11,6 +11,10 @@ import { getPermissionsAction } from "../permission.action";
 import { PERMISSIONS } from "@/lib/permissions";
 
 const GOOGLE_CALENDAR_METADATA_KEY = "googleCalendarCredentials";
+/** Refresh the token when it expires within this many milliseconds. */
+const TOKEN_REFRESH_BUFFER_MS = 60_000;
+/** OAuth error codes that mean the stored credentials are permanently invalid. */
+const OAUTH_AUTH_ERROR_CODES = ["invalid_client", "invalid_grant", "unauthorized_client"];
 
 /**
  * Produce a proper RFC3339 datetime string in Asia/Manila timezone.
@@ -124,8 +128,14 @@ async function getAuthenticatedCalendarClient() {
       token_type: stored.token_type as string | undefined,
     });
 
-    // Refresh access token if expired
-    if (stored.refresh_token) {
+    // Only refresh the access token when it has actually expired (or will within 60 s).
+    // Refreshing on every request is wasteful and causes `invalid_client` errors when
+    // the stored refresh_token was issued with different OAuth credentials than those
+    // currently in the environment (e.g. staging vs production).
+    const expiryDate = stored.expiry_date as number | undefined;
+    const isExpiredOrExpiring = !expiryDate || Date.now() >= expiryDate - TOKEN_REFRESH_BUFFER_MS;
+
+    if (stored.refresh_token && isExpiredOrExpiring) {
       try {
         const { credentials } = await oauth2Client.refreshAccessToken();
         // Persist the refreshed access_token back
@@ -141,8 +151,17 @@ async function getAuthenticatedCalendarClient() {
           },
         });
         oauth2Client.setCredentials(credentials);
-      } catch {
-        // Refresh failed — try with existing access token
+      } catch (refreshError) {
+        // Re-throw auth errors immediately — the caller's error handler will convert
+        // them into an actionable "please reconnect" message.  Only swallow transient
+        // errors (network, rate limit, etc.) and fall back to the existing token.
+        // OAuth error codes may appear as the full message or as a prefix followed by
+        // a colon and description (e.g. "invalid_client: The OAuth client was not found").
+        const msg = refreshError instanceof Error ? refreshError.message : "";
+        if (OAUTH_AUTH_ERROR_CODES.some(code => msg === code || msg.startsWith(`${code}:`))) {
+          throw refreshError;
+        }
+        // Transient failure — try with the existing access token
       }
     }
     return oauth2Client;
@@ -279,17 +298,19 @@ async function fetchAppointmentForCalendar(appointmentId: number) {
 /**
  * Maps Google OAuth / Calendar API errors to user-friendly messages.
  * Returns undefined for unrecognised errors so withErrorHandling preserves the original message.
+ * Checks both exact error codes and "code: description" format returned by the Google client library.
  */
 function calendarErrorHandler(error: unknown): string | undefined {
   if (!(error instanceof Error)) return undefined;
   const msg = error.message;
-  if (msg === "invalid_client" || msg === "unauthorized_client") {
+  const matches = (code: string) => msg === code || msg.startsWith(`${code}:`);
+  if (matches("invalid_client") || matches("unauthorized_client")) {
     return "Google Calendar credentials are invalid. Please reconnect your Google account in Settings → Integrations.";
   }
-  if (msg === "invalid_grant" || msg === "token_expired") {
+  if (matches("invalid_grant") || matches("token_expired")) {
     return "Google Calendar access has expired. Please reconnect your Google account in Settings → Integrations.";
   }
-  if (msg === "insufficient_scope" || msg === "insufficientPermissions") {
+  if (matches("insufficient_scope") || matches("insufficientPermissions")) {
     return "Google Calendar is not authorised with calendar permissions. Please reconnect your Google account in Settings → Integrations.";
   }
   return undefined;

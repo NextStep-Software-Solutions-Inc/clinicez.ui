@@ -12,6 +12,7 @@ import {
   Filter,
   Loader2,
   ChevronLeft,
+  Ban,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -66,7 +67,7 @@ function buildPatientInfo(item: QueueItem): PatientInfo | null {
   };
 }
 
-type StatusFilter = "all" | "PROCESSING" | "RESOLVED";
+type StatusFilter = "all" | "PROCESSING" | "RESOLVED" | "DROPPED";
 
 interface ClinicConsultationsClientProps {
   clinicUid: string;
@@ -262,7 +263,9 @@ export default function ClinicConsultationsClient({
         item.id === id
           ? {
               ...item,
-              ConsultationTicketAttribute: { status: "RESOLVED" },
+              ConsultationTicketAttribute: item.ConsultationTicketAttribute
+                ? { ...item.ConsultationTicketAttribute, status: "RESOLVED" }
+                : { status: "RESOLVED", droppedAt: null, dropReason: null },
             }
           : item
       )
@@ -330,7 +333,7 @@ export default function ClinicConsultationsClient({
             <div className="flex items-center gap-1.5">
               <Filter className="h-3 w-3 text-muted-foreground shrink-0" />
               <div className="flex gap-1 flex-1">
-                {(["all", "PROCESSING", "RESOLVED"] as StatusFilter[]).map((s) => (
+                {(["all", "PROCESSING", "RESOLVED", "DROPPED"] as StatusFilter[]).map((s) => (
                   <button
                     key={s}
                     type="button"
@@ -341,7 +344,7 @@ export default function ClinicConsultationsClient({
                         : "bg-muted/60 text-muted-foreground hover:bg-muted"
                     }`}
                   >
-                    {s === "all" ? "All" : s === "PROCESSING" ? "Active" : "Resolved"}
+                    {s === "all" ? "All" : s === "PROCESSING" ? "Active" : s === "RESOLVED" ? "Resolved" : "Dropped"}
                   </button>
                 ))}
               </div>
@@ -539,15 +542,19 @@ function QueueListItem({
             className={`flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
               status === "RESOLVED"
                 ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                : status === "DROPPED"
+                ? "bg-gray-100 text-gray-600 dark:bg-gray-800/40 dark:text-gray-400"
                 : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
             }`}
           >
             {status === "RESOLVED" ? (
               <CheckCircle2 className="h-3 w-3" />
+            ) : status === "DROPPED" ? (
+              <Ban className="h-3 w-3" />
             ) : (
               <Clock className="h-3 w-3" />
             )}
-            {status === "RESOLVED" ? "Done" : "Active"}
+            {status === "RESOLVED" ? "Done" : status === "DROPPED" ? "Dropped" : "Active"}
           </div>
           {item.isArchived && <Archive className="h-3 w-3 text-muted-foreground/50" />}
         </div>

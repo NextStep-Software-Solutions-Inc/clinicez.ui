@@ -56,6 +56,10 @@ export const STATUS_CONFIG = {
     label: "Rejected",
     className: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
   },
+  DROPPED: {
+    label: "Dropped",
+    className: "bg-gray-100 text-gray-700 dark:bg-gray-800/40 dark:text-gray-400",
+  },
 } as const;
 
 interface AppointmentCardProps {
@@ -324,7 +328,7 @@ export function AppointmentCard({
               </Button>
             </>
           )}
-          {(status === "COMPLETED" || status === "REJECTED") && (
+          {(status === "COMPLETED" || status === "REJECTED" || status === "DROPPED") && (
             <Button
               size="sm"
               variant="ghost"

@@ -636,6 +636,8 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
           receivedBy: true,
           rejectedAt: true,
           rescheduledAt: true,
+          droppedAt: true,
+          dropReason: true,
           AppointmentType: {
             select: {
               name: true
@@ -659,6 +661,13 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
             }
           },
           ReceivedBy: {
+            select: {
+              userId: true,
+              firstName: true,
+              lastName: true,
+            }
+          },
+          DroppedBy: {
             select: {
               userId: true,
               firstName: true,
@@ -1073,6 +1082,18 @@ export const getAppointmentAction = withErrorHandling(cache(async (id: number, c
           },
           completedAt: true,
           CompletedBy: {
+            select: {
+              userId: true,
+              firstName: true,
+              middleName: true,
+              lastName: true,
+              suffix: true,
+              email: true,
+            }
+          },
+          droppedAt: true,
+          dropReason: true,
+          DroppedBy: {
             select: {
               userId: true,
               firstName: true,

@@ -48,6 +48,8 @@ function getConsultationStatusVariant(
       return "default";
     case "PROCESSING":
       return "secondary";
+    case "DROPPED":
+      return "outline";
     default:
       return "outline";
   }
@@ -61,6 +63,8 @@ function getConsultationStatusIcon(status?: string | null) {
       return <Clock className="h-3.5 w-3.5" />;
     case "ARCHIVED":
       return <Archive className="h-3.5 w-3.5" />;
+    case "DROPPED":
+      return <AlertCircle className="h-3.5 w-3.5" />;
     default:
       return <Stethoscope className="h-3.5 w-3.5" />;
   }
@@ -79,6 +83,7 @@ function getAppointmentStatusVariant(
       return "secondary";
     case "CANCELLED":
     case "DECLINED":
+    case "DROPPED":
       return "destructive";
     default:
       return "outline";

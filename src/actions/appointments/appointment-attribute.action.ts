@@ -318,6 +318,68 @@ export const rejectAppointmentAction = withErrorHandling(async (formData: FormDa
   }
 })
 
+/**
+ * Drop an appointment — marks it as DROPPED with a required reason.
+ * Only appointments that are NOT yet COMPLETED or DROPPED can be dropped.
+ */
+export const dropAppointmentAction = withErrorHandling(async (payload: { appointmentId: number; reason: string }) => {
+  const session = await getCachedSession();
+  if (!session) throw new Error("User not authenticated.");
+
+  const myPermissions = await getPermissionsAction({ userId: session.user.sub, type: "CLINIC" });
+  const dropPermissions = [
+    PERMISSIONS.CLINIC["DROP:CLINIC:APPOINTMENT"].name,
+    PERMISSIONS.CLINIC["CANCEL:CLINIC:APPOINTMENT"].name,
+  ];
+  const myPermissionArray = myPermissions.map(permission => permission.name);
+  const canDrop = dropPermissions.some(permission => myPermissionArray.includes(permission));
+
+  if (!canDrop) throw new Error("You do not have permission to drop this appointment.");
+
+  const { appointmentId, reason } = payload;
+
+  if (!reason.trim()) throw new Error("A reason is required to drop this appointment.");
+
+  await prismaClient.$transaction(async (tx) => {
+    const user = await tx.user.findUniqueOrThrow({
+      where: { userId: session.user.sub },
+      select: { id: true },
+    });
+
+    // Cancel any remaining PENDING or ACCEPTED routings before marking dropped
+    await tx.appointmentRouting.updateMany({
+      where: { appointmentId, status: { in: ["PENDING", "ACCEPTED"] } },
+      data: { status: "CANCELLED", amendedAt: new Date(), amendment: "Appointment dropped" },
+    });
+
+    await tx.appointmentAttribute.update({
+      where: {
+        appointmentId,
+        status: {
+          notIn: ["COMPLETED", "DROPPED"],
+        },
+      },
+      data: {
+        status: "DROPPED",
+        droppedAt: new Date(),
+        droppedBy: user.id,
+        dropReason: reason.trim(),
+      },
+    });
+  });
+
+  return { message: "Appointment dropped", data: undefined };
+}, async (error) => {
+  if (error instanceof Error) {
+    if (error.message.includes("No record was found") || error.message.includes("depends on one or more records")) {
+      return "This appointment has already been completed or dropped.";
+    }
+    return error.message;
+  }
+});
+
+
+
 export const cancelAppointmentAction = withErrorHandling(async (formData: FormData) => {
 
   const session = await getCachedSession();

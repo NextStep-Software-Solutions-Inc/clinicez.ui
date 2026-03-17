@@ -57,6 +57,7 @@ const STATUS_TABS = [
   { key: "ACCEPTED", label: "Accepted" },
   { key: "COMPLETED", label: "Completed" },
   { key: "REJECTED", label: "Rejected" },
+  { key: "DROPPED", label: "Dropped" },
 ] as const;
 
 type StatusTabKey = (typeof STATUS_TABS)[number]["key"];

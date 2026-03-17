@@ -16,16 +16,19 @@ import {
   GitFork,
   UserPlus,
   ClipboardList,
+  Ban,
 } from "lucide-react";
 import Link from "next/link";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import dayjs from "@/lib/day-utils";
 import type { GetPatientConsultationDetail } from "@/actions/consultation/patient-consultations.action";
 import type { GetHPsType } from "@/actions/hp.actions";
-import { resolveConsultationTicket } from "@/actions/consultation/consultation-ticket.action";
+import { resolveConsultationTicket, dropConsultationTicketAction } from "@/actions/consultation/consultation-ticket.action";
 import ConsultationNotesEditor from "./ConsultationNotesEditor";
 import ConsultationPrescriptions from "./ConsultationPrescriptions";
 import ConsultationMedCerts from "./ConsultationMedCerts";
@@ -74,14 +77,18 @@ export default function ConsultationWorkspace({
   const [activeTab, setActiveTab] = useState("notes");
   const [resolving, startResolveTransition] = useTransition();
   const [addCoCreatorOpen, setAddCoCreatorOpen] = useState(false);
+  const [showDropForm, setShowDropForm] = useState(false);
+  const [dropReason, setDropReason] = useState("");
+  const [dropping, startDropTransition] = useTransition();
 
   const status = consultation.ConsultationTicketAttribute?.status;
   const apt = consultation.Appointment;
   const preAssessment = apt?.PreAssessmentNotes?.[0];
   const hasPatient = patient !== null;
-  /** True when the consultation can still be resolved (not yet done). */
-  const canBeResolved = status !== "RESOLVED";
+  /** True when the consultation can still be resolved/dropped (not yet done). */
+  const canBeResolved = status !== "RESOLVED" && status !== "DROPPED";
   const isResolved = status === "RESOLVED";
+  const isDropped = status === "DROPPED";
 
   const handleResolve = () => {
     startResolveTransition(async () => {
@@ -92,6 +99,24 @@ export default function ConsultationWorkspace({
         onReloadDetail?.();
       } else {
         toast.error(result.message ?? "Failed to resolve consultation");
+      }
+    });
+  };
+
+  const handleDrop = () => {
+    if (!dropReason.trim()) {
+      toast.error("A reason is required to drop this consultation.");
+      return;
+    }
+    startDropTransition(async () => {
+      const result = await dropConsultationTicketAction({ consultationId: consultation.id, reason: dropReason.trim() });
+      if (result.status) {
+        toast.success("Consultation marked as dropped");
+        setShowDropForm(false);
+        setDropReason("");
+        onReloadDetail?.();
+      } else {
+        toast.error(result.message ?? "Failed to drop consultation");
       }
     });
   };
@@ -166,10 +191,12 @@ export default function ConsultationWorkspace({
             <div className={`shrink-0 flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${
               status === "RESOLVED"
                 ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                : isDropped
+                ? "bg-gray-100 text-gray-700 dark:bg-gray-800/40 dark:text-gray-400"
                 : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
             }`}>
-              {status === "RESOLVED" ? <CheckCircle2 className="h-3 w-3" /> : <AlertCircle className="h-3 w-3" />}
-              {status === "RESOLVED" ? "Resolved" : "In Progress"}
+              {status === "RESOLVED" ? <CheckCircle2 className="h-3 w-3" /> : isDropped ? <Ban className="h-3 w-3" /> : <AlertCircle className="h-3 w-3" />}
+              {status === "RESOLVED" ? "Resolved" : isDropped ? "Dropped" : "In Progress"}
             </div>
             {consultation.caseNumber && (
               <span className="shrink-0 text-xs text-muted-foreground font-mono">
@@ -178,16 +205,30 @@ export default function ConsultationWorkspace({
             )}
           </div>
           {canBeResolved && myHPs.length > 0 && (
-            <Button
-              size="sm"
-              variant="outline"
-              className="shrink-0 gap-1.5 h-8 text-xs border-emerald-300 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 dark:border-emerald-700 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
-              disabled={resolving}
-              onClick={handleResolve}
-            >
-              <CheckCircle2 className="h-3.5 w-3.5" />
-              {resolving ? "Resolving…" : "Resolve"}
-            </Button>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5 h-8 text-xs border-emerald-300 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 dark:border-emerald-700 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
+                disabled={resolving || dropping}
+                onClick={handleResolve}
+              >
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                {resolving ? "Resolving…" : "Resolve"}
+              </Button>
+              {!showDropForm && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-1.5 h-8 text-xs border-gray-300 text-gray-600 hover:bg-gray-100 hover:text-gray-800 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-800/30"
+                  disabled={resolving || dropping}
+                  onClick={() => setShowDropForm(true)}
+                >
+                  <Ban className="h-3.5 w-3.5" />
+                  Drop
+                </Button>
+              )}
+            </div>
           )}
         </div>
 
@@ -273,6 +314,62 @@ export default function ConsultationWorkspace({
               patientName={patient.fullName}
               size="sm"
             />
+          </div>
+        )}
+        {/* Drop form */}
+        {showDropForm && (
+          <div className="mt-3 rounded-xl border border-gray-400/30 bg-gray-50/50 dark:bg-gray-900/20 p-4 space-y-3">
+            <h4 className="text-xs font-semibold text-gray-700 dark:text-gray-400 uppercase tracking-wide flex items-center gap-1.5">
+              <Ban className="h-3.5 w-3.5" />
+              Drop Consultation
+            </h4>
+            <p className="text-xs text-muted-foreground">
+              Dropping a consultation marks it as no longer active. This is for organizing and tracking purposes.
+            </p>
+            <div className="space-y-1.5">
+              <Label className="text-xs">
+                Reason <span className="text-destructive">*</span>
+              </Label>
+              <Textarea
+                value={dropReason}
+                onChange={(e) => setDropReason(e.target.value)}
+                placeholder="Please provide a reason for dropping this consultation..."
+                rows={3}
+                className="resize-none text-sm"
+                disabled={dropping}
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                className="flex-1"
+                disabled={dropping}
+                onClick={() => { setShowDropForm(false); setDropReason(""); }}
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="flex-1 gap-1.5 border-gray-500 text-gray-700 hover:bg-gray-700 hover:text-white"
+                disabled={dropping || !dropReason.trim()}
+                onClick={handleDrop}
+              >
+                <Ban className="h-4 w-4" />
+                {dropping ? "Dropping..." : "Confirm Drop"}
+              </Button>
+            </div>
+          </div>
+        )}
+        {/* Dropped info banner */}
+        {isDropped && consultation.ConsultationTicketAttribute?.dropReason && (
+          <div className="mt-2 rounded-lg border border-gray-300/50 bg-gray-50/50 dark:bg-gray-900/20 px-4 py-2 flex items-start gap-2">
+            <Ban className="h-3.5 w-3.5 text-gray-500 mt-0.5 shrink-0" />
+            <div>
+              <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Drop reason: </span>
+              <span className="text-xs text-muted-foreground italic">{consultation.ConsultationTicketAttribute.dropReason}</span>
+            </div>
           </div>
         )}
       </div>

@@ -243,6 +243,16 @@ export const PERMISSIONS = {
       name: "cancel:clinic:appointment",
       description: "User can cancel an appointment within the clinic.",
     },
+    // --- Appointment Drop (mark as dropped with reason) ---
+    "DROP:CLINIC:APPOINTMENT": {
+      name: "drop:clinic:appointment",
+      description: "User can drop an appointment (mark as dropped) within the clinic.",
+    },
+    // --- Consultation Drop ---
+    "DROP:CLINIC:CONSULTATION_TICKET": {
+      name: "drop:clinic:consultation_ticket",
+      description: "User can drop a consultation ticket within the clinic.",
+    },
     // --- Clinic Settings & Configuration ---
     "READ:CLINIC:SETTINGS": {
       name: "read:clinic:settings",

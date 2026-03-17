@@ -29,6 +29,7 @@ import {
   Video,
   Paperclip,
   X as XIcon,
+  Ban,
 } from "lucide-react";
 import {
   Sheet,
@@ -54,6 +55,7 @@ import {
   saveAppointmentAISymptomAnalysisAction,
   getAppointmentAIAnalysisAction,
   updateAppointmentSubjectComplaintAction,
+  dropAppointmentAction,
 } from "@/actions/appointments/appointment-attribute.action";
 import { Input } from "@/components/ui/input";
 import {
@@ -130,6 +132,10 @@ export function AppointmentDetailSheet({
   // Inline return-to-queue form state
   const [showReturnForm, setShowReturnForm] = useState(false);
   const [returnReason, setReturnReason] = useState("");
+
+  // Inline drop form state
+  const [showDropForm, setShowDropForm] = useState(false);
+  const [dropReason, setDropReason] = useState("");
 
   // Inline subject/complaint edit state
   const [isEditingSubjectComplaint, setIsEditingSubjectComplaint] = useState(false);
@@ -226,6 +232,8 @@ export function AppointmentDetailSheet({
     setCancelRoutingReason("");
     setShowReturnForm(false);
     setReturnReason("");
+    setShowDropForm(false);
+    setDropReason("");
     setAiPendingResult(null);
     setVitalsExpanded(false);
     setIsEditingSubjectComplaint(false);
@@ -411,6 +419,25 @@ export function AppointmentDetailSheet({
     setIsPending(false);
     if (result.status) {
       toast.success(result.message);
+      onRefresh();
+      onClose();
+    } else {
+      toast.error(result.message);
+    }
+  };
+
+  const handleDropSubmit = async () => {
+    if (!dropReason.trim()) {
+      toast.error("A reason is required to drop this appointment.");
+      return;
+    }
+    setIsPending(true);
+    const result = await dropAppointmentAction({ appointmentId: appointment.id, reason: dropReason.trim() });
+    setIsPending(false);
+    if (result.status) {
+      toast.success(result.message);
+      setShowDropForm(false);
+      setDropReason("");
       onRefresh();
       onClose();
     } else {
@@ -778,9 +805,49 @@ export function AppointmentDetailSheet({
                 <span className="text-muted-foreground text-xs">Submitted</span>
                 <div className="flex items-center gap-2 mt-0.5">
                   <CalendarClock className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-medium">{formatDistanceToNow(new Date(appointment.createdAt), { addSuffix: true })}</span>
+                  <span className="font-medium">{format(new Date(appointment.createdAt), "MMMM d, yyyy h:mm a")}</span>
                 </div>
               </div>
+              {appointment.AppointmentAttribute?.receivedAt && (
+                <div>
+                  <span className="text-muted-foreground text-xs">Received</span>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <CalendarClock className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium">{format(new Date(appointment.AppointmentAttribute.receivedAt), "MMMM d, yyyy h:mm a")}</span>
+                    {appointment.AppointmentAttribute?.ReceivedBy && (
+                      <span className="text-xs text-muted-foreground">
+                        by {appointment.AppointmentAttribute.ReceivedBy.firstName} {appointment.AppointmentAttribute.ReceivedBy.lastName}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+              {appointment.AppointmentAttribute?.completedAt && (
+                <div>
+                  <span className="text-muted-foreground text-xs">Completed</span>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <CalendarClock className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium text-green-700 dark:text-green-400">{format(new Date(appointment.AppointmentAttribute.completedAt), "MMMM d, yyyy h:mm a")}</span>
+                  </div>
+                </div>
+              )}
+              {appointment.AppointmentAttribute?.droppedAt && (
+                <div>
+                  <span className="text-muted-foreground text-xs">Dropped</span>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <Ban className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium text-gray-600 dark:text-gray-400">{format(new Date(appointment.AppointmentAttribute.droppedAt), "MMMM d, yyyy h:mm a")}</span>
+                    {appointment.AppointmentAttribute.DroppedBy && (
+                      <span className="text-xs text-muted-foreground">
+                        by {appointment.AppointmentAttribute.DroppedBy.firstName} {appointment.AppointmentAttribute.DroppedBy.lastName}
+                      </span>
+                    )}
+                  </div>
+                  {appointment.AppointmentAttribute.dropReason && (
+                    <p className="text-xs text-muted-foreground mt-1 italic">&ldquo;{appointment.AppointmentAttribute.dropReason}&rdquo;</p>
+                  )}
+                </div>
+              )}
               {appointment.AppointmentAttribute?.meetingUrl && (
                 <div>
                   <span className="text-muted-foreground text-xs">Virtual Meeting</span>
@@ -1312,7 +1379,7 @@ export function AppointmentDetailSheet({
                     <CheckCircle className="h-4 w-4" />
                     Complete
                   </Button>
-                  {!showRejectForm && !showReturnForm && (
+                  {!showRejectForm && !showReturnForm && !showDropForm && (
                     <Button
                       size="sm"
                       variant="destructive"
@@ -1324,7 +1391,7 @@ export function AppointmentDetailSheet({
                       Cancel
                     </Button>
                   )}
-                  {!showRejectForm && !showReturnForm && (
+                  {!showRejectForm && !showReturnForm && !showDropForm && (
                     <Button
                       size="sm"
                       variant="outline"
@@ -1334,6 +1401,18 @@ export function AppointmentDetailSheet({
                     >
                       <Undo2 className="h-4 w-4" />
                       Return
+                    </Button>
+                  )}
+                  {!showRejectForm && !showReturnForm && !showDropForm && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="gap-1.5 border-gray-400/40 text-gray-600 hover:bg-gray-600 hover:text-white"
+                      disabled={isPending}
+                      onClick={() => setShowDropForm(true)}
+                    >
+                      <Ban className="h-4 w-4" />
+                      Drop
                     </Button>
                   )}
                 </>
@@ -1414,6 +1493,18 @@ export function AppointmentDetailSheet({
                     <CalendarClock className="h-4 w-4" />
                     Reschedule
                   </Button>
+                  {!showDropForm && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="gap-1.5 border-gray-400/40 text-gray-600 hover:bg-gray-600 hover:text-white"
+                      disabled={isPending}
+                      onClick={() => setShowDropForm(true)}
+                    >
+                      <Ban className="h-4 w-4" />
+                      Drop
+                    </Button>
+                  )}
                 </>
               )}
 
@@ -1439,6 +1530,18 @@ export function AppointmentDetailSheet({
                     <Tags className="h-4 w-4" />
                     Tag Providers
                   </Button>
+                  {!showDropForm && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="gap-1.5 border-gray-400/40 text-gray-600 hover:bg-gray-600 hover:text-white"
+                      disabled={isPending}
+                      onClick={() => setShowDropForm(true)}
+                    >
+                      <Ban className="h-4 w-4" />
+                      Drop
+                    </Button>
+                  )}
                 </>
               )}
 
@@ -1590,6 +1693,53 @@ export function AppointmentDetailSheet({
                   >
                     <Undo2 className="h-4 w-4" />
                     {isPending ? "Returning..." : "Confirm Return"}
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Inline drop appointment form */}
+            {showDropForm && (
+              <div className="rounded-xl border border-gray-400/30 bg-gray-50/50 dark:bg-gray-900/20 p-4 space-y-3">
+                <h4 className="text-xs font-semibold text-gray-700 dark:text-gray-400 uppercase tracking-wide flex items-center gap-1.5">
+                  <Ban className="h-3.5 w-3.5" />
+                  Drop Appointment
+                </h4>
+                <p className="text-xs text-muted-foreground">
+                  Dropping an appointment marks it as no longer active. This action cannot be undone.
+                </p>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">
+                    Reason <span className="text-destructive">*</span>
+                  </Label>
+                  <Textarea
+                    value={dropReason}
+                    onChange={(e) => setDropReason(e.target.value)}
+                    placeholder="Please provide a reason for dropping this appointment..."
+                    rows={3}
+                    className="resize-none text-sm"
+                    disabled={isPending}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="flex-1"
+                    disabled={isPending}
+                    onClick={() => { setShowDropForm(false); setDropReason(""); }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="flex-1 gap-1.5 border-gray-500 text-gray-700 hover:bg-gray-700 hover:text-white"
+                    disabled={isPending || !dropReason.trim()}
+                    onClick={handleDropSubmit}
+                  >
+                    <Ban className="h-4 w-4" />
+                    {isPending ? "Dropping..." : "Confirm Drop"}
                   </Button>
                 </div>
               </div>

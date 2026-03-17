@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition, useCallback, useEffect } from "react";
-import { ClipboardPlus, Stethoscope, Clock, CheckCircle2, Archive, ChevronLeft } from "lucide-react";
+import { ClipboardPlus, Stethoscope, Clock, CheckCircle2, Archive, ChevronLeft, Ban } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
@@ -37,6 +37,7 @@ function getStatusVariant(status?: string | null): "default" | "secondary" | "ou
   switch (status) {
     case "RESOLVED": return "default";
     case "PROCESSING": return "secondary";
+    case "DROPPED": return "outline";
     default: return "outline";
   }
 }
@@ -45,6 +46,7 @@ function getStatusIcon(status?: string | null) {
   switch (status) {
     case "RESOLVED": return <CheckCircle2 className="h-3.5 w-3.5" />;
     case "PROCESSING": return <Clock className="h-3.5 w-3.5" />;
+    case "DROPPED": return <Ban className="h-3.5 w-3.5" />;
     default: return <Stethoscope className="h-3.5 w-3.5" />;
   }
 }
@@ -280,10 +282,12 @@ function ConsultationListItem({
           <div className={`flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
             status === "RESOLVED"
               ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+              : status === "DROPPED"
+              ? "bg-gray-100 text-gray-600 dark:bg-gray-800/40 dark:text-gray-400"
               : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
           }`}>
             {getStatusIcon(status)}
-            {status === "RESOLVED" ? "Resolved" : "Active"}
+            {status === "RESOLVED" ? "Resolved" : status === "DROPPED" ? "Dropped" : "Active"}
           </div>
           {c.isArchived && (
             <Archive className="h-3 w-3 text-muted-foreground/50" />

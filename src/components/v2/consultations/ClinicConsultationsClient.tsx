@@ -42,27 +42,50 @@ interface PatientInfo {
   gender: string | null;
 }
 
-/** Extracts patient info from a queue item. Returns null for walk-in consultations. */
+/** Extracts patient info from a queue item. Returns null only when no patient can be derived. */
 function buildPatientInfo(item: QueueItem): PatientInfo | null {
+  // Prefer appointment requester (linked appointment flow)
   const requester = item.Appointment?.Requesters?.[0]?.User;
-  if (!requester) return null;
-  const clinicPatientId = requester.ClinicPatients?.[0]?.id;
-  if (!clinicPatientId) return null;
+  if (requester) {
+    const clinicPatientId = requester.ClinicPatients?.[0]?.id;
+    if (!clinicPatientId) return null;
+    const fullName = [
+      requester.firstName,
+      requester.middleName,
+      requester.lastName,
+      requester.suffix,
+    ]
+      .filter(Boolean)
+      .join(" ");
+    return {
+      id: requester.id,
+      clinicPatientId,
+      userId: requester.userId,
+      fullName: fullName || `Patient #${requester.id}`,
+      dob: requester.dob ? requester.dob.toISOString() : null,
+      gender: requester.gender,
+    };
+  }
+
+  // Fall back to direct ClinicPatient link (consultation created without an appointment)
+  const cp = item.ClinicPatient;
+  if (!cp?.Patient) return null;
+  const patient = cp.Patient;
   const fullName = [
-    requester.firstName,
-    requester.middleName,
-    requester.lastName,
-    requester.suffix,
+    patient.firstName,
+    patient.middleName,
+    patient.lastName,
+    patient.suffix,
   ]
     .filter(Boolean)
     .join(" ");
   return {
-    id: requester.id,
-    clinicPatientId,
-    userId: requester.userId,
-    fullName: fullName || `Patient #${requester.id}`,
-    dob: requester.dob ? requester.dob.toISOString() : null,
-    gender: requester.gender,
+    id: patient.id,
+    clinicPatientId: cp.id,
+    userId: patient.userId,
+    fullName: fullName || `Patient #${patient.id}`,
+    dob: patient.dob ? patient.dob.toISOString() : null,
+    gender: patient.gender,
   };
 }
 
@@ -284,7 +307,12 @@ export default function ClinicConsultationsClient({
     if (!search.trim()) return true;
     const q = search.toLowerCase();
     const u = item.Appointment?.Requesters?.[0]?.User;
-    const patientName = u ? `${u.firstName ?? ""} ${u.lastName ?? ""}`.toLowerCase() : "";
+    const cp = item.ClinicPatient?.Patient;
+    const patientName = u
+      ? `${u.firstName ?? ""} ${u.lastName ?? ""}`.toLowerCase()
+      : cp
+      ? `${cp.firstName ?? ""} ${cp.lastName ?? ""}`.toLowerCase()
+      : "";
     const subject = (item.subject ?? item.Appointment?.subject ?? "").toLowerCase();
     const caseNum = (item.caseNumber ?? "").toLowerCase();
     return patientName.includes(q) || subject.includes(q) || caseNum.includes(q);
@@ -482,8 +510,11 @@ function QueueListItem({
 }) {
   const status = item.ConsultationTicketAttribute?.status;
   const requester = item.Appointment?.Requesters?.[0]?.User;
+  const clinicPatient = item.ClinicPatient?.Patient;
   const patientName = requester
     ? `${requester.firstName ?? ""} ${requester.lastName ?? ""}`.trim()
+    : clinicPatient
+    ? `${clinicPatient.firstName ?? ""} ${clinicPatient.lastName ?? ""}`.trim()
     : null;
 
   const primaryHP = item.ConsultationTicketHPs[0]?.HealthCareProvider;

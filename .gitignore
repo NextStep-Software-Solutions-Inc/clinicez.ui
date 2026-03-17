@@ -47,3 +47,4 @@ next-env.d.ts
 /.clerk/
 .env
 .env.local
+tsc-output.txt

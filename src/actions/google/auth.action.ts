@@ -344,18 +344,21 @@ export const insertToCalendar = withErrorHandling(async (appointmentId: number, 
   };
 });
 
-/** Update an existing Google Calendar event after a reschedule. */
+/**
+ * Update an existing Google Calendar event after a reschedule, or create one if none exists yet.
+ * Acts as an upsert: patch when an eventId is stored, insert when it is not.
+ * Returns `data.touched = true` when the calendar was actually modified.
+ */
 export const updateCalendarEvent = withErrorHandling(async (appointmentId: number) => {
   const session = await getCachedSession();
   if (!session) throw new Error("Session not found");
 
   const authClient = await getAuthenticatedCalendarClient();
-  if (!authClient) return { message: "Google Calendar not connected — event not updated", data: null };
+  if (!authClient) return { message: "Google Calendar not connected — event not updated", data: { touched: false } };
 
   const appointment = await fetchAppointmentForCalendar(appointmentId);
   const attr = appointment.AppointmentAttribute;
-  if (!attr?.eventId) return { message: "No calendar event to update", data: null };
-  if (!attr.date || !attr.timeStart || !attr.timeEnd) return { message: "Schedule is incomplete", data: null };
+  if (!attr?.date || !attr.timeStart || !attr.timeEnd) return { message: "Schedule is incomplete", data: { touched: false } };
 
   const calendar = google.calendar({ version: "v3", auth: authClient });
   const attendees = [
@@ -363,21 +366,55 @@ export const updateCalendarEvent = withErrorHandling(async (appointmentId: numbe
     ...appointment.Requesters.map(p => ({ email: p.User.email })),
   ];
 
-  await calendar.events.patch({
+  if (attr.eventId) {
+    // Event already exists — patch it with the updated details
+    await calendar.events.patch({
+      calendarId: "primary",
+      eventId: attr.eventId,
+      sendUpdates: "all",
+      requestBody: {
+        summary: appointment.subject,
+        location: attr.AppointmentMode.name,
+        description: appointment.complaint ?? undefined,
+        start: { dateTime: toCalendarRFC3339(attr.date, attr.timeStart), timeZone: "Asia/Manila" },
+        end:   { dateTime: toCalendarRFC3339(attr.date, attr.timeEnd),   timeZone: "Asia/Manila" },
+        attendees,
+      },
+    });
+
+    return { message: "Google Calendar event updated", data: { touched: true } };
+  }
+
+  // No event yet — create one so attendees are notified of the new/updated schedule
+  const event = {
+    summary: appointment.subject,
+    location: attr.AppointmentMode.name,
+    description: appointment.complaint ?? undefined,
+    start: { dateTime: toCalendarRFC3339(attr.date, attr.timeStart), timeZone: "Asia/Manila" },
+    end:   { dateTime: toCalendarRFC3339(attr.date, attr.timeEnd),   timeZone: "Asia/Manila" },
+    attendees,
+  };
+
+  const { data: calendarEvent, status } = await calendar.events.insert({
     calendarId: "primary",
-    eventId: attr.eventId,
+    conferenceDataVersion: 0,
     sendUpdates: "all",
-    requestBody: {
-      summary: appointment.subject,
-      location: attr.AppointmentMode.name,
-      description: appointment.complaint ?? undefined,
-      start: { dateTime: toCalendarRFC3339(attr.date, attr.timeStart), timeZone: "Asia/Manila" },
-      end:   { dateTime: toCalendarRFC3339(attr.date, attr.timeEnd),   timeZone: "Asia/Manila" },
-      attendees,
+    sendNotifications: true,
+    requestBody: event,
+  });
+
+  if (![200, 201, 202].includes(status)) throw new Error(`Error inserting calendar event (HTTP ${status})`);
+  if (!calendarEvent.id) throw new Error("Calendar event was created but no event ID was returned");
+
+  await prisma.appointmentAttribute.update({
+    where: { id: attr.id },
+    data: {
+      eventId: calendarEvent.id,
+      meetingUrl: calendarEvent.hangoutLink ?? "",
     },
   });
 
-  return { message: "Google Calendar event updated", data: null };
+  return { message: "Event added to Google Calendar", data: { touched: true } };
 });
 
 export type CalendarEventItem = {

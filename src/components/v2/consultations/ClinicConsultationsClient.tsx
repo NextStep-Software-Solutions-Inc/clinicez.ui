@@ -264,7 +264,7 @@ export default function ClinicConsultationsClient({
           ? {
               ...item,
               ConsultationTicketAttribute: item.ConsultationTicketAttribute
-                ? { ...item.ConsultationTicketAttribute, status: "RESOLVED" }
+                ? { ...item.ConsultationTicketAttribute, status: "RESOLVED", droppedAt: null, dropReason: null }
                 : { status: "RESOLVED", droppedAt: null, dropReason: null },
             }
           : item

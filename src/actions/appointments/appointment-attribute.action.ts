@@ -327,12 +327,8 @@ export const dropAppointmentAction = withErrorHandling(async (payload: { appoint
   if (!session) throw new Error("User not authenticated.");
 
   const myPermissions = await getPermissionsAction({ userId: session.user.sub, type: "CLINIC" });
-  const dropPermissions = [
-    PERMISSIONS.CLINIC["DROP:CLINIC:APPOINTMENT"].name,
-    PERMISSIONS.CLINIC["CANCEL:CLINIC:APPOINTMENT"].name,
-  ];
   const myPermissionArray = myPermissions.map(permission => permission.name);
-  const canDrop = dropPermissions.some(permission => myPermissionArray.includes(permission));
+  const canDrop = myPermissionArray.includes(PERMISSIONS.CLINIC["DROP:CLINIC:APPOINTMENT"].name);
 
   if (!canDrop) throw new Error("You do not have permission to drop this appointment.");
 

@@ -10,7 +10,6 @@ import {
   Users,
   CalendarDays,
   Clock,
-  User,
   X,
   CheckCheck,
   Loader2,
@@ -704,24 +703,6 @@ export function ClinicCalendar({
                           )}
 
                           <Separator className="my-0" />
-
-                          {/* Patient */}
-                          {ev.patient && (
-                            <div className="flex items-center gap-2">
-                              <User className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                              <Avatar className="h-5 w-5 shrink-0">
-                                {ev.patient.picture && (
-                                  <AvatarImage src={ev.patient.picture} alt={ev.patient.name} />
-                                )}
-                                <AvatarFallback className="text-[10px] font-semibold">
-                                  {ev.patient.name.slice(0, 2).toUpperCase()}
-                                </AvatarFallback>
-                              </Avatar>
-                              <span className="text-xs text-foreground font-medium truncate">
-                                {ev.patient.name}
-                              </span>
-                            </div>
-                          )}
 
                           {/* Providers */}
                           {ev.providers.length > 0 && (

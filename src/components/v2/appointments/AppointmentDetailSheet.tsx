@@ -11,6 +11,7 @@ import {
   Mail,
   ClipboardList,
   CheckCircle,
+  CheckCircle2,
   XCircle,
   AlertTriangle,
   Tags,
@@ -268,11 +269,6 @@ export function AppointmentDetailSheet({
   // Accepted routing (HP already accepted the assignment)
   const acceptedRouting = routings.find((r) => r.status === "ACCEPTED");
 
-  const receivedBy = appointment.AppointmentAttribute?.ReceivedBy;
-  const receivedByName = receivedBy
-    ? `${receivedBy.firstName ?? ""} ${receivedBy.lastName ?? ""}`.trim()
-    : null;
-
   // Accept/Decline guard: only the assigned HP, and only when routing is PENDING
   const isAssignedToCurrentUser =
     !!pendingRouting && currentUserHpIds.includes(pendingRouting.RoutedTo.id);
@@ -518,22 +514,47 @@ export function AppointmentDetailSheet({
         </SheetHeader>
 
         <div className="space-y-5">
-          {/* Status + lock info */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <Badge className={`text-sm px-3 py-1 border-0 font-medium ${statusConfig.className}`}>
-              {statusConfig.label}
-            </Badge>
-            {isWalkIn && (
-              <Badge variant="outline" className="text-xs border-primary/30 text-primary gap-1">
-                <UserCheck className="h-3 w-3" />
-                Walk-In
+          {/* Status + audit trail */}
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2 flex-wrap">
+              <Badge className={`text-sm px-3 py-1 border-0 font-medium ${statusConfig.className}`}>
+                {statusConfig.label}
               </Badge>
+              {isWalkIn && (
+                <Badge variant="outline" className="text-xs border-primary/30 text-primary gap-1">
+                  <UserCheck className="h-3 w-3" />
+                  Walk-In
+                </Badge>
+              )}
+            </div>
+            {appointment.AppointmentAttribute?.receivedAt && (
+              <p className="flex items-center gap-1 text-xs text-muted-foreground">
+                <Lock className="h-3 w-3 shrink-0" />
+                Received on {format(new Date(appointment.AppointmentAttribute.receivedAt), "MMMM d, yyyy h:mm a")}
+                {appointment.AppointmentAttribute.ReceivedBy && (
+                  <> by {appointment.AppointmentAttribute.ReceivedBy.firstName} {appointment.AppointmentAttribute.ReceivedBy.lastName}</>
+                )}
+              </p>
             )}
-            {receivedByName && (
-              <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                <Lock className="h-3 w-3" />
-                Received by {receivedByName}
-              </span>
+            {appointment.AppointmentAttribute?.completedAt && (
+              <p className="flex items-center gap-1 text-xs text-green-700 dark:text-green-400">
+                <CheckCircle2 className="h-3 w-3 shrink-0" />
+                Completed on {format(new Date(appointment.AppointmentAttribute.completedAt), "MMMM d, yyyy h:mm a")}
+              </p>
+            )}
+            {appointment.AppointmentAttribute?.droppedAt && (
+              <div className="space-y-0.5">
+                <p className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <Ban className="h-3 w-3 shrink-0" />
+                  Dropped on {format(new Date(appointment.AppointmentAttribute.droppedAt), "MMMM d, yyyy h:mm a")}
+                  {appointment.AppointmentAttribute.DroppedBy && (
+                    <> by {appointment.AppointmentAttribute.DroppedBy.firstName} {appointment.AppointmentAttribute.DroppedBy.lastName}</>
+                  )}
+                </p>
+                {appointment.AppointmentAttribute.dropReason && (
+                  <p className="text-xs text-muted-foreground italic pl-4">&ldquo;{appointment.AppointmentAttribute.dropReason}&rdquo;</p>
+                )}
+              </div>
             )}
           </div>
 
@@ -808,46 +829,6 @@ export function AppointmentDetailSheet({
                   <span className="font-medium">{format(new Date(appointment.createdAt), "MMMM d, yyyy h:mm a")}</span>
                 </div>
               </div>
-              {appointment.AppointmentAttribute?.receivedAt && (
-                <div>
-                  <span className="text-muted-foreground text-xs">Received</span>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <CalendarClock className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">{format(new Date(appointment.AppointmentAttribute.receivedAt), "MMMM d, yyyy h:mm a")}</span>
-                    {appointment.AppointmentAttribute?.ReceivedBy && (
-                      <span className="text-xs text-muted-foreground">
-                        by {appointment.AppointmentAttribute.ReceivedBy.firstName} {appointment.AppointmentAttribute.ReceivedBy.lastName}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              )}
-              {appointment.AppointmentAttribute?.completedAt && (
-                <div>
-                  <span className="text-muted-foreground text-xs">Completed</span>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <CalendarClock className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium text-green-700 dark:text-green-400">{format(new Date(appointment.AppointmentAttribute.completedAt), "MMMM d, yyyy h:mm a")}</span>
-                  </div>
-                </div>
-              )}
-              {appointment.AppointmentAttribute?.droppedAt && (
-                <div>
-                  <span className="text-muted-foreground text-xs">Dropped</span>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <Ban className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium text-gray-600 dark:text-gray-400">{format(new Date(appointment.AppointmentAttribute.droppedAt), "MMMM d, yyyy h:mm a")}</span>
-                    {appointment.AppointmentAttribute.DroppedBy && (
-                      <span className="text-xs text-muted-foreground">
-                        by {appointment.AppointmentAttribute.DroppedBy.firstName} {appointment.AppointmentAttribute.DroppedBy.lastName}
-                      </span>
-                    )}
-                  </div>
-                  {appointment.AppointmentAttribute.dropReason && (
-                    <p className="text-xs text-muted-foreground mt-1 italic">&ldquo;{appointment.AppointmentAttribute.dropReason}&rdquo;</p>
-                  )}
-                </div>
-              )}
               {appointment.AppointmentAttribute?.meetingUrl && (
                 <div>
                   <span className="text-muted-foreground text-xs">Virtual Meeting</span>

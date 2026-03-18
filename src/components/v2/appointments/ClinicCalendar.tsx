@@ -680,6 +680,20 @@ export function ClinicCalendar({
                             </div>
                           )}
 
+                          {/* Subject */}
+                          <div className="space-y-0.5">
+                            <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Subject</p>
+                            <p className="text-xs text-foreground">{ev.subject}</p>
+                          </div>
+
+                          {/* Chief complaint */}
+                          {ev.complaint && (
+                            <div className="space-y-0.5">
+                              <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Chief Complaint</p>
+                              <p className="text-xs text-foreground whitespace-pre-wrap">{ev.complaint}</p>
+                            </div>
+                          )}
+
                           {/* Mode & type tags */}
                           {(ev.mode ?? ev.type) && (
                             <div className="flex flex-wrap gap-1">

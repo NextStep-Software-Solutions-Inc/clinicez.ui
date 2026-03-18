@@ -540,6 +540,23 @@ export const getClinicConsultationQueueAction = withErrorHandling(
               },
             },
           },
+          ClinicPatient: {
+            select: {
+              id: true,
+              Patient: {
+                select: {
+                  id: true,
+                  userId: true,
+                  firstName: true,
+                  middleName: true,
+                  lastName: true,
+                  suffix: true,
+                  dob: true,
+                  gender: true,
+                },
+              },
+            },
+          },
         },
       }),
     ]);

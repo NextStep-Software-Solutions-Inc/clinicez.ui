@@ -145,7 +145,7 @@ function EventPill({ event }: EventPillProps) {
       <span className={cn("h-1.5 w-1.5 rounded-full shrink-0", cfg.dot)} />
       <span className="truncate">
         {event.timeStart ? `${formatTime(event.timeStart)} ` : ""}
-        {event.subject}
+        {event.patient?.name ?? event.subject}
       </span>
     </div>
   );
@@ -653,10 +653,10 @@ export function ClinicCalendar({
                         )}
                       >
                         <div className="p-4 space-y-3">
-                          {/* Subject + status */}
+                          {/* Patient name + status */}
                           <div className="flex items-start justify-between gap-2">
                             <p className="text-sm font-semibold leading-snug text-foreground">
-                              {ev.subject}
+                              {ev.patient?.name ?? ev.subject}
                             </p>
                             <span
                               className={cn(

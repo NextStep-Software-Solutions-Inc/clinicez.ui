@@ -6,11 +6,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@components/ui/button";
 import { Input } from "@components/ui/input";
 import { Badge } from "@components/ui/badge";
-import { Search, Lock, ShieldCheck, ShieldAlert, ShieldQuestion, Shield } from "lucide-react";
+import { Search, Lock, ShieldCheck, ShieldAlert, ShieldQuestion, Shield, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { getActionErrorMessage } from "@/lib/action-error";
 import { formatDistance } from "date-fns";
 import { UserPermissionsDialog } from "./UserPermissionsDialog";
+import { EditUserDialog } from "./EditUserDialog";
 
 interface UsersTableProps {
   initialData: GetAllUsers;
@@ -21,12 +22,21 @@ interface SelectedUser {
   email: string;
 }
 
+interface EditableUser {
+  id: number;
+  firstName: string | null;
+  lastName: string | null;
+  email: string;
+}
+
 export default function UsersTable({ initialData }: UsersTableProps) {
   const [data, setData] = useState(initialData);
   const [search, setSearch] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [selectedUser, setSelectedUser] = useState<SelectedUser | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editUser, setEditUser] = useState<EditableUser | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   const getVerificationBadge = (status: string) => {
     switch (status) {
@@ -84,6 +94,11 @@ export default function UsersTable({ initialData }: UsersTableProps) {
   const handleManagePermissions = (userId: number, email: string) => {
     setSelectedUser({ id: userId, email });
     setDialogOpen(true);
+  };
+
+  const handleEditUser = (user: EditableUser) => {
+    setEditUser(user);
+    setEditDialogOpen(true);
   };
 
   return (
@@ -150,14 +165,29 @@ export default function UsersTable({ initialData }: UsersTableProps) {
                     {formatDistance(new Date(user.createdAt), new Date(), { addSuffix: true })}
                   </TableCell>
                   <TableCell>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handleManagePermissions(user.id, user.email)}
-                      title="Manage permissions for this user"
-                    >
-                      <Lock className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleEditUser({
+                          id: user.id,
+                          firstName: user.firstName,
+                          lastName: user.lastName,
+                          email: user.email,
+                        })}
+                        title="Edit user information"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleManagePermissions(user.id, user.email)}
+                        title="Manage permissions for this user"
+                      >
+                        <Lock className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
@@ -199,6 +229,15 @@ export default function UsersTable({ initialData }: UsersTableProps) {
           onOpenChange={setDialogOpen}
           userId={selectedUser.id}
           userEmail={selectedUser.email}
+        />
+      )}
+
+      {editUser && (
+        <EditUserDialog
+          open={editDialogOpen}
+          onOpenChange={setEditDialogOpen}
+          user={editUser}
+          onUpdated={() => loadData(data.pageNumber, search)}
         />
       )}
     </div>

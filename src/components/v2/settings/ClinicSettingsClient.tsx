@@ -164,6 +164,8 @@ import type { GetClinicServiceCategories } from "@/actions/clinics/clinic-servic
 import type { GetClinicAppointmentTabs } from "@/actions/clinics/clinic-appointment-tab..action";
 import type { GetAppointmentTabs } from "@/actions/appointment-tab.action";
 import { GoogleCalendarIntegration } from "@/components/v2/integrations/GoogleCalendarIntegration";
+import { CalendarEventsList } from "@/components/v2/integrations/CalendarEventsList";
+import type { CalendarEventItem } from "@/actions/google/auth.action";
 import type { GetSystems } from "@/actions/system.action";
 
 /* ─────────────────────────────────────────────────────────────────── */
@@ -201,6 +203,7 @@ interface ClinicSettingsClientProps {
   allAppointmentTabs: AllAppointmentTabsData;
   googleCalendarConnected?: boolean;
   googleCalendarEmail?: string | null;
+  googleCalendarEvents?: CalendarEventItem[];
   initialSystems: SystemsData;
 }
 
@@ -3041,6 +3044,7 @@ export function ClinicSettingsClient({
   allAppointmentTabs,
   googleCalendarConnected = false,
   googleCalendarEmail = null,
+  googleCalendarEvents = [],
   initialSystems,
 }: ClinicSettingsClientProps) {
   const router = useRouter();
@@ -3189,6 +3193,7 @@ export function ClinicSettingsClient({
               </p>
             </div>
             <GoogleCalendarIntegration connected={googleCalendarConnected} email={googleCalendarEmail} />
+            {googleCalendarConnected && <CalendarEventsList events={googleCalendarEvents} />}
           </div>
         </TabsContent>
 

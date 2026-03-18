@@ -11,6 +11,10 @@ import { getPermissionsAction } from "../permission.action";
 import { PERMISSIONS } from "@/lib/permissions";
 
 const GOOGLE_CALENDAR_METADATA_KEY = "googleCalendarCredentials";
+/** Refresh the token when it expires within this many milliseconds. */
+const TOKEN_REFRESH_BUFFER_MS = 60_000;
+/** OAuth error codes that mean the stored credentials are permanently invalid. */
+const OAUTH_AUTH_ERROR_CODES = ["invalid_client", "invalid_grant", "unauthorized_client"];
 
 /**
  * Produce a proper RFC3339 datetime string in Asia/Manila timezone.
@@ -124,8 +128,14 @@ async function getAuthenticatedCalendarClient() {
       token_type: stored.token_type as string | undefined,
     });
 
-    // Refresh access token if expired
-    if (stored.refresh_token) {
+    // Only refresh the access token when it has actually expired (or will within 60 s).
+    // Refreshing on every request is wasteful and causes `invalid_client` errors when
+    // the stored refresh_token was issued with different OAuth credentials than those
+    // currently in the environment (e.g. staging vs production).
+    const expiryDate = stored.expiry_date as number | undefined;
+    const isExpiredOrExpiring = !expiryDate || Date.now() >= expiryDate - TOKEN_REFRESH_BUFFER_MS;
+
+    if (stored.refresh_token && isExpiredOrExpiring) {
       try {
         const { credentials } = await oauth2Client.refreshAccessToken();
         // Persist the refreshed access_token back
@@ -141,8 +151,17 @@ async function getAuthenticatedCalendarClient() {
           },
         });
         oauth2Client.setCredentials(credentials);
-      } catch {
-        // Refresh failed — try with existing access token
+      } catch (refreshError) {
+        // Re-throw auth errors immediately — the caller's error handler will convert
+        // them into an actionable "please reconnect" message.  Only swallow transient
+        // errors (network, rate limit, etc.) and fall back to the existing token.
+        // OAuth error codes may appear as the full message or as a prefix followed by
+        // a colon and description (e.g. "invalid_client: The OAuth client was not found").
+        const msg = refreshError instanceof Error ? refreshError.message : "";
+        if (OAUTH_AUTH_ERROR_CODES.some(code => msg === code || msg.startsWith(`${code}:`))) {
+          throw refreshError;
+        }
+        // Transient failure — try with the existing access token
       }
     }
     return oauth2Client;
@@ -276,6 +295,27 @@ async function fetchAppointmentForCalendar(appointmentId: number) {
   });
 }
 
+/**
+ * Maps Google OAuth / Calendar API errors to user-friendly messages.
+ * Returns undefined for unrecognised errors so withErrorHandling preserves the original message.
+ * Checks both exact error codes and "code: description" format returned by the Google client library.
+ */
+function calendarErrorHandler(error: unknown): string | undefined {
+  if (!(error instanceof Error)) return undefined;
+  const msg = error.message;
+  const matches = (code: string) => msg === code || msg.startsWith(`${code}:`);
+  if (matches("invalid_client") || matches("unauthorized_client")) {
+    return "Google Calendar credentials are invalid. Please reconnect your Google account in Settings → Integrations.";
+  }
+  if (matches("invalid_grant") || matches("token_expired")) {
+    return "Google Calendar access has expired. Please reconnect your Google account in Settings → Integrations.";
+  }
+  if (matches("insufficient_scope") || matches("insufficientPermissions")) {
+    return "Google Calendar is not authorised with calendar permissions. Please reconnect your Google account in Settings → Integrations.";
+  }
+  return undefined;
+}
+
 export const insertToCalendar = withErrorHandling(async (appointmentId: number, createMeet = true) => {
   const session = await getCachedSession();
   if (!session) throw new Error("Session not found");
@@ -342,20 +382,23 @@ export const insertToCalendar = withErrorHandling(async (appointmentId: number, 
       meetingUrl: calendarEvent.hangoutLink ?? null,
     }
   };
-});
+}, calendarErrorHandler);
 
-/** Update an existing Google Calendar event after a reschedule. */
+/**
+ * Update an existing Google Calendar event after a reschedule, or create one if none exists yet.
+ * Acts as an upsert: patch when an eventId is stored, insert when it is not.
+ * Returns `data.touched = true` when the calendar was actually modified.
+ */
 export const updateCalendarEvent = withErrorHandling(async (appointmentId: number) => {
   const session = await getCachedSession();
   if (!session) throw new Error("Session not found");
 
   const authClient = await getAuthenticatedCalendarClient();
-  if (!authClient) return { message: "Google Calendar not connected — event not updated", data: null };
+  if (!authClient) return { message: "Google Calendar not connected — event not updated", data: { touched: false } };
 
   const appointment = await fetchAppointmentForCalendar(appointmentId);
   const attr = appointment.AppointmentAttribute;
-  if (!attr?.eventId) return { message: "No calendar event to update", data: null };
-  if (!attr.date || !attr.timeStart || !attr.timeEnd) return { message: "Schedule is incomplete", data: null };
+  if (!attr?.date || !attr.timeStart || !attr.timeEnd) return { message: "Schedule is incomplete", data: { touched: false } };
 
   const calendar = google.calendar({ version: "v3", auth: authClient });
   const attendees = [
@@ -363,22 +406,56 @@ export const updateCalendarEvent = withErrorHandling(async (appointmentId: numbe
     ...appointment.Requesters.map(p => ({ email: p.User.email })),
   ];
 
-  await calendar.events.patch({
+  if (attr.eventId) {
+    // Event already exists — patch it with the updated details
+    await calendar.events.patch({
+      calendarId: "primary",
+      eventId: attr.eventId,
+      sendUpdates: "all",
+      requestBody: {
+        summary: appointment.subject,
+        location: attr.AppointmentMode.name,
+        description: appointment.complaint ?? undefined,
+        start: { dateTime: toCalendarRFC3339(attr.date, attr.timeStart), timeZone: "Asia/Manila" },
+        end:   { dateTime: toCalendarRFC3339(attr.date, attr.timeEnd),   timeZone: "Asia/Manila" },
+        attendees,
+      },
+    });
+
+    return { message: "Google Calendar event updated", data: { touched: true } };
+  }
+
+  // No event yet — create one so attendees are notified of the new/updated schedule
+  const event = {
+    summary: appointment.subject,
+    location: attr.AppointmentMode.name,
+    description: appointment.complaint ?? undefined,
+    start: { dateTime: toCalendarRFC3339(attr.date, attr.timeStart), timeZone: "Asia/Manila" },
+    end:   { dateTime: toCalendarRFC3339(attr.date, attr.timeEnd),   timeZone: "Asia/Manila" },
+    attendees,
+  };
+
+  const { data: calendarEvent, status } = await calendar.events.insert({
     calendarId: "primary",
-    eventId: attr.eventId,
+    conferenceDataVersion: 0,
     sendUpdates: "all",
-    requestBody: {
-      summary: appointment.subject,
-      location: attr.AppointmentMode.name,
-      description: appointment.complaint ?? undefined,
-      start: { dateTime: toCalendarRFC3339(attr.date, attr.timeStart), timeZone: "Asia/Manila" },
-      end:   { dateTime: toCalendarRFC3339(attr.date, attr.timeEnd),   timeZone: "Asia/Manila" },
-      attendees,
+    sendNotifications: true,
+    requestBody: event,
+  });
+
+  if (![200, 201, 202].includes(status)) throw new Error(`Error inserting calendar event (HTTP ${status})`);
+  if (!calendarEvent.id) throw new Error("Calendar event was created but no event ID was returned");
+
+  await prisma.appointmentAttribute.update({
+    where: { id: attr.id },
+    data: {
+      eventId: calendarEvent.id,
+      meetingUrl: calendarEvent.hangoutLink ?? "",
     },
   });
 
-  return { message: "Google Calendar event updated", data: null };
-});
+  return { message: "Event added to Google Calendar", data: { touched: true } };
+}, calendarErrorHandler);
 
 export type CalendarEventItem = {
   id: string;

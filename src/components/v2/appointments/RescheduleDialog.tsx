@@ -84,16 +84,13 @@ export function RescheduleDialog({
       return;
     }
 
-    // Update Google Calendar event if one exists
-    const hasEvent = !!appointment.AppointmentAttribute?.eventId;
-    if (hasEvent) {
-      const calResult = await updateCalendarEvent(appointment.id);
-      if (!calResult.status) {
-        toast.success(result.message);
-        toast.warning("Appointment rescheduled but Google Calendar was not updated: " + calResult.message);
-      } else {
-        toast.success(`${result.message} — Google Calendar updated.`);
-      }
+    // Always attempt to update or create the Google Calendar event
+    const calResult = await updateCalendarEvent(appointment.id);
+    if (!calResult.status) {
+      toast.success(result.message);
+      toast.warning("Appointment rescheduled but Google Calendar was not updated: " + calResult.message);
+    } else if (calResult.data?.touched) {
+      toast.success(`${result.message} — ${calResult.message}`);
     } else {
       toast.success(result.message);
     }

@@ -653,11 +653,18 @@ export function ClinicCalendar({
                         )}
                       >
                         <div className="p-4 space-y-3">
-                          {/* Patient name + status */}
+                          {/* Subject + status */}
                           <div className="flex items-start justify-between gap-2">
-                            <p className="text-sm font-semibold leading-snug text-foreground">
-                              {ev.patient?.name ?? ev.subject}
-                            </p>
+                            <div className="min-w-0 space-y-1">
+                              <p className="text-sm font-semibold leading-snug text-foreground">
+                                {ev.subject}
+                              </p>
+                              {ev.complaint && (
+                                <p className="text-xs text-muted-foreground leading-snug">
+                                  {ev.complaint}
+                                </p>
+                              )}
+                            </div>
                             <span
                               className={cn(
                                 "shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold",
@@ -677,20 +684,6 @@ export function ClinicCalendar({
                                 {ev.timeStart ? formatTime(ev.timeStart) : "—"}
                                 {ev.timeEnd ? ` – ${formatTime(ev.timeEnd)}` : ""}
                               </span>
-                            </div>
-                          )}
-
-                          {/* Subject */}
-                          <div className="space-y-0.5">
-                            <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Subject</p>
-                            <p className="text-xs text-foreground">{ev.subject}</p>
-                          </div>
-
-                          {/* Chief complaint */}
-                          {ev.complaint && (
-                            <div className="space-y-0.5">
-                              <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Chief Complaint</p>
-                              <p className="text-xs text-foreground whitespace-pre-wrap">{ev.complaint}</p>
                             </div>
                           )}
 

@@ -38,7 +38,7 @@ export const getPatientConsultationsAction = withErrorHandling(
         isArchived: true,
         caseNumber: true,
         ConsultationTicketAttribute: {
-          select: { status: true },
+          select: { status: true, dropReason: true, droppedAt: true },
         },
         ConsultationTicketHPs: {
           select: {
@@ -129,6 +129,8 @@ export const getPatientConsultationDetailAction = withErrorHandling(
         ConsultationTicketAttribute: {
           select: {
             status: true,
+            dropReason: true,
+            droppedAt: true,
             NoteTemplate: {
               select: {
                 name: true,
@@ -472,7 +474,7 @@ export const getClinicConsultationQueueAction = withErrorHandling(
           updatedAt: true,
           isArchived: true,
           ConsultationTicketAttribute: {
-            select: { status: true },
+            select: { status: true, dropReason: true, droppedAt: true },
           },
           ConsultationTicketHPs: {
             select: {

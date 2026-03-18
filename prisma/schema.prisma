@@ -72,9 +72,11 @@ model User {
   profileCompletionStatus          ProfileCompletionStatus          @default(INCOMPLETE)
   ActivationCodes                  ActivationCode[]
   CompletedByAppointments          AppointmentAttribute[]           @relation("CompletedBy")
+  DroppedByAppointments            AppointmentAttribute[]           @relation("AppointmentDroppedBy")
   ReceivedByAppointments           AppointmentAttribute[]           @relation("ReceivedBy")
   RejectedByAppointments           AppointmentAttribute[]           @relation("RejectedBy")
   RescheduledByAppointments        AppointmentAttribute[]           @relation("RescheduledBy")
+  DroppedByConsultations           ConsultationTicketAttribute[]    @relation("ConsultationDroppedBy")
   AppointmentRequesters            AppointmentRequester[]
   AmendedAppointments              AppointmentRouting[]             @relation("AmendedBy")
   ReturnedAppointments             AppointmentRouting[]             @relation("ReturnedBy")
@@ -1483,8 +1485,12 @@ model AppointmentAttribute {
   meetingUrl         String?             @default("")
   aiSymptomAnalysis  String?
   systemId           Int?
+  droppedAt          DateTime?
+  droppedBy          Int?
+  dropReason         String?
   Appointment        Appointment         @relation(fields: [appointmentId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   CompletedBy        User?               @relation("CompletedBy", fields: [completedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  DroppedBy          User?               @relation("AppointmentDroppedBy", fields: [droppedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
   AppointmentMode    AppointmentMode     @relation(fields: [modeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   PreferredAppointee HealthcareProvider? @relation(fields: [preferredAppointee], references: [id], onDelete: NoAction, onUpdate: NoAction)
   ReceivedBy         User?               @relation("ReceivedBy", fields: [receivedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -1653,7 +1659,11 @@ model ConsultationTicketAttribute {
   allowOtherHPToAddVitals Boolean            @default(false)
   allowPatientToAddVitals Boolean            @default(false)
   whitelistEmails         String[]           @default([])
+  droppedAt               DateTime?
+  droppedBy               Int?
+  dropReason              String?
   ConsultationTicket      ConsultationTicket @relation(fields: [consultationTicketId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  DroppedBy               User?              @relation("ConsultationDroppedBy", fields: [droppedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
   NoteTemplate            NoteTemplate       @relation(fields: [noteTemplateId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 

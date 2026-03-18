@@ -164,6 +164,8 @@ import type { GetClinicServiceCategories } from "@/actions/clinics/clinic-servic
 import type { GetClinicAppointmentTabs } from "@/actions/clinics/clinic-appointment-tab..action";
 import type { GetAppointmentTabs } from "@/actions/appointment-tab.action";
 import { GoogleCalendarIntegration } from "@/components/v2/integrations/GoogleCalendarIntegration";
+import { CalendarEventsList } from "@/components/v2/integrations/CalendarEventsList";
+import type { CalendarEventItem } from "@/actions/google/auth.action";
 import type { GetSystems } from "@/actions/system.action";
 
 /* ─────────────────────────────────────────────────────────────────── */
@@ -201,6 +203,7 @@ interface ClinicSettingsClientProps {
   allAppointmentTabs: AllAppointmentTabsData;
   googleCalendarConnected?: boolean;
   googleCalendarEmail?: string | null;
+  googleCalendarEvents?: CalendarEventItem[];
   initialSystems: SystemsData;
 }
 
@@ -3041,6 +3044,7 @@ export function ClinicSettingsClient({
   allAppointmentTabs,
   googleCalendarConnected = false,
   googleCalendarEmail = null,
+  googleCalendarEvents = [],
   initialSystems,
 }: ClinicSettingsClientProps) {
   const router = useRouter();
@@ -3181,14 +3185,19 @@ export function ClinicSettingsClient({
         </TabsContent>
 
         <TabsContent value="integrations" className="mt-6">
-          <div className="max-w-2xl">
+          <div className="max-w-5xl">
             <div className="mb-6">
               <h2 className="text-base font-semibold">Integrations</h2>
               <p className="text-sm text-muted-foreground mt-1">
                 Connect third-party apps to enhance your clinic workflows.
               </p>
             </div>
-            <GoogleCalendarIntegration connected={googleCalendarConnected} email={googleCalendarEmail} />
+            <div className="flex flex-col md:flex-row gap-6">
+                <GoogleCalendarIntegration connected={googleCalendarConnected} email={googleCalendarEmail} />
+                <div className="w-full">
+                  {googleCalendarConnected && <CalendarEventsList events={googleCalendarEvents} />}
+                </div>
+            </div>
           </div>
         </TabsContent>
 

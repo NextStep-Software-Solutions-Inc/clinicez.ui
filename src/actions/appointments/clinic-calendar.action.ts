@@ -12,6 +12,7 @@ import dayjs from "@lib/day-utils";
 export type ClinicCalendarEvent = {
   id: number;
   subject: string;
+  complaint: string | null;
   date: string;       // YYYY-MM-DD formatted
   timeStart: string;  // e.g. "09:00"
   timeEnd: string;    // e.g. "09:30"
@@ -28,6 +29,7 @@ export type ClinicCalendarEvent = {
 type AppointmentRow = {
   id: number;
   subject: string;
+  complaint: string | null;
   AppointmentAttribute: {
     date: Date | null;
     timeStart: string | null;
@@ -143,6 +145,7 @@ export const getClinicCalendarEventsAction = withErrorHandling(
       select: {
         id: true,
         subject: true,
+        complaint: true,
         AppointmentAttribute: {
           select: {
             date: true,
@@ -221,6 +224,7 @@ export const getClinicCalendarEventsAction = withErrorHandling(
       return {
         id: row.id,
         subject: row.subject,
+        complaint: row.complaint ?? null,
         date: attr?.date ? dayjs(attr.date).format("YYYY-MM-DD") : "",
         timeStart: attr?.timeStart ?? "",
         timeEnd: attr?.timeEnd ?? "",

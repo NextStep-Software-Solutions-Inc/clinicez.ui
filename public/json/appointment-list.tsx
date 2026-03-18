@@ -1,2 +1,2 @@
-export type AppointmentStatus = "ALL" | "PENDING" | "RECEIVED" | "REJECTED" | "ROUTED" | "RESCHEDULED" | "ACCEPTED" | "COMPLETED";
+export type AppointmentStatus = "ALL" | "PENDING" | "RECEIVED" | "REJECTED" | "ROUTED" | "RESCHEDULED" | "ACCEPTED" | "COMPLETED" | "DROPPED";
 export type RoutedAptStatus = "PENDING" | "ACCEPTED" | "DECLINED";

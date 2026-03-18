@@ -12,6 +12,7 @@ import {
   Filter,
   Loader2,
   ChevronLeft,
+  Ban,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -42,31 +43,54 @@ interface PatientInfo {
   gender: string | null;
 }
 
-/** Extracts patient info from a queue item. Returns null for walk-in consultations. */
+/** Extracts patient info from a queue item. Returns null only when no patient can be derived. */
 function buildPatientInfo(item: QueueItem): PatientInfo | null {
+  // Prefer appointment requester (linked appointment flow)
   const requester = item.Appointment?.Requesters?.[0]?.User;
-  if (!requester) return null;
-  const clinicPatientId = requester.ClinicPatients?.[0]?.id;
-  if (!clinicPatientId) return null;
+  if (requester) {
+    const clinicPatientId = requester.ClinicPatients?.[0]?.id;
+    if (!clinicPatientId) return null;
+    const fullName = [
+      requester.firstName,
+      requester.middleName,
+      requester.lastName,
+      requester.suffix,
+    ]
+      .filter(Boolean)
+      .join(" ");
+    return {
+      id: requester.id,
+      clinicPatientId,
+      userId: requester.userId,
+      fullName: fullName || `Patient #${requester.id}`,
+      dob: requester.dob ? requester.dob.toISOString() : null,
+      gender: requester.gender,
+    };
+  }
+
+  // Fall back to direct ClinicPatient link (consultation created without an appointment)
+  const cp = item.ClinicPatient;
+  if (!cp?.Patient) return null;
+  const patient = cp.Patient;
   const fullName = [
-    requester.firstName,
-    requester.middleName,
-    requester.lastName,
-    requester.suffix,
+    patient.firstName,
+    patient.middleName,
+    patient.lastName,
+    patient.suffix,
   ]
     .filter(Boolean)
     .join(" ");
   return {
-    id: requester.id,
-    clinicPatientId,
-    userId: requester.userId,
-    fullName: fullName || `Patient #${requester.id}`,
-    dob: requester.dob ? requester.dob.toISOString() : null,
-    gender: requester.gender,
+    id: patient.id,
+    clinicPatientId: cp.id,
+    userId: patient.userId,
+    fullName: fullName || `Patient #${patient.id}`,
+    dob: patient.dob ? patient.dob.toISOString() : null,
+    gender: patient.gender,
   };
 }
 
-type StatusFilter = "all" | "PROCESSING" | "RESOLVED";
+type StatusFilter = "all" | "PROCESSING" | "RESOLVED" | "DROPPED";
 
 interface ClinicConsultationsClientProps {
   clinicUid: string;
@@ -262,7 +286,9 @@ export default function ClinicConsultationsClient({
         item.id === id
           ? {
               ...item,
-              ConsultationTicketAttribute: { status: "RESOLVED" },
+              ConsultationTicketAttribute: item.ConsultationTicketAttribute
+                ? { ...item.ConsultationTicketAttribute, status: "RESOLVED", droppedAt: null, dropReason: null }
+                : { status: "RESOLVED", droppedAt: null, dropReason: null },
             }
           : item
       )
@@ -284,7 +310,12 @@ export default function ClinicConsultationsClient({
     if (!search.trim()) return true;
     const q = search.toLowerCase();
     const u = item.Appointment?.Requesters?.[0]?.User;
-    const patientName = u ? `${u.firstName ?? ""} ${u.lastName ?? ""}`.toLowerCase() : "";
+    const cp = item.ClinicPatient?.Patient;
+    const patientName = u
+      ? `${u.firstName ?? ""} ${u.lastName ?? ""}`.toLowerCase()
+      : cp
+      ? `${cp.firstName ?? ""} ${cp.lastName ?? ""}`.toLowerCase()
+      : "";
     const subject = (item.subject ?? item.Appointment?.subject ?? "").toLowerCase();
     const caseNum = (item.caseNumber ?? "").toLowerCase();
     return patientName.includes(q) || subject.includes(q) || caseNum.includes(q);
@@ -330,7 +361,7 @@ export default function ClinicConsultationsClient({
             <div className="flex items-center gap-1.5">
               <Filter className="h-3 w-3 text-muted-foreground shrink-0" />
               <div className="flex gap-1 flex-1">
-                {(["all", "PROCESSING", "RESOLVED"] as StatusFilter[]).map((s) => (
+                {(["all", "PROCESSING", "RESOLVED", "DROPPED"] as StatusFilter[]).map((s) => (
                   <button
                     key={s}
                     type="button"
@@ -341,7 +372,7 @@ export default function ClinicConsultationsClient({
                         : "bg-muted/60 text-muted-foreground hover:bg-muted"
                     }`}
                   >
-                    {s === "all" ? "All" : s === "PROCESSING" ? "Active" : "Resolved"}
+                    {s === "all" ? "All" : s === "PROCESSING" ? "Active" : s === "RESOLVED" ? "Resolved" : "Dropped"}
                   </button>
                 ))}
               </div>
@@ -482,8 +513,11 @@ function QueueListItem({
 }) {
   const status = item.ConsultationTicketAttribute?.status;
   const requester = item.Appointment?.Requesters?.[0]?.User;
+  const clinicPatient = item.ClinicPatient?.Patient;
   const patientName = requester
     ? `${requester.firstName ?? ""} ${requester.lastName ?? ""}`.trim()
+    : clinicPatient
+    ? `${clinicPatient.firstName ?? ""} ${clinicPatient.lastName ?? ""}`.trim()
     : null;
 
   const primaryHP = item.ConsultationTicketHPs[0]?.HealthCareProvider;
@@ -539,15 +573,19 @@ function QueueListItem({
             className={`flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
               status === "RESOLVED"
                 ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                : status === "DROPPED"
+                ? "bg-gray-100 text-gray-600 dark:bg-gray-800/40 dark:text-gray-400"
                 : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
             }`}
           >
             {status === "RESOLVED" ? (
               <CheckCircle2 className="h-3 w-3" />
+            ) : status === "DROPPED" ? (
+              <Ban className="h-3 w-3" />
             ) : (
               <Clock className="h-3 w-3" />
             )}
-            {status === "RESOLVED" ? "Done" : "Active"}
+            {status === "RESOLVED" ? "Done" : status === "DROPPED" ? "Dropped" : "Active"}
           </div>
           {item.isArchived && <Archive className="h-3 w-3 text-muted-foreground/50" />}
         </div>

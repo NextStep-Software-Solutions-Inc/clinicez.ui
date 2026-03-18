@@ -923,6 +923,61 @@ export const toggleArchiveConsultationTicketAction = withErrorHandling(async (co
   if (hasCodeProperty(error) && error.code === 'P2025') return "Consultation record not found"
 })
 
+/**
+ * Drop a consultation ticket — marks it as DROPPED with a required reason.
+ * Only consultations that are NOT yet RESOLVED or DROPPED can be dropped.
+ */
+export const dropConsultationTicketAction = withErrorHandling(async ({
+  consultationId,
+  reason,
+}: {
+  consultationId: number;
+  reason: string;
+}) => {
+  const session = await getCachedSession();
+  if (!session) throw new Error("Session not found");
+
+  if (!reason.trim()) throw new Error("A reason is required to drop this consultation.");
+
+  const dropPermissions = [
+    PERMISSIONS.CLINIC["DROP:CLINIC:CONSULTATION_TICKET"].name,
+    PERMISSIONS.CLINIC["RESOLVE:CLINIC:CONSULTATION_TICKET:CREATED"].name,
+    PERMISSIONS.CLINIC["RESOLVE:CLINIC:CONSULTATION_TICKET:CO_CREATED"].name,
+  ];
+  const myPermissions = await getPermissionsAction({ userId: session.user.sub, type: "CLINIC" });
+  const userPermissionArray = myPermissions.map(p => p.name);
+  const canDrop = dropPermissions.some(p => userPermissionArray.includes(p));
+
+  if (!canDrop) throw new Error("You do not have permission to drop consultation tickets");
+
+  const user = await prismaClient.user.findUniqueOrThrow({
+    where: { userId: session.user.sub },
+    select: { id: true },
+  });
+
+  await prismaClient.consultationTicketAttribute.update({
+    where: {
+      consultationTicketId: consultationId,
+      status: {
+        notIn: ["RESOLVED", "DROPPED"],
+      },
+    },
+    data: {
+      status: "DROPPED",
+      droppedAt: new Date(),
+      droppedBy: user.id,
+      dropReason: reason.trim(),
+    },
+  });
+
+  return { message: "Consultation ticket dropped successfully", data: undefined };
+}, async (error) => {
+  if (hasCodeProperty(error) && error.code === 'P2025') return "Consultation record not found or already resolved/dropped";
+  if (error instanceof Error) return error.message;
+});
+
+
+
 export const resolveConsultationTicket = withErrorHandling(async (consultationId: number) => {
 
   const session = await getCachedSession()

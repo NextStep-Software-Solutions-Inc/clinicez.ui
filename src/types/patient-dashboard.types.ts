@@ -20,7 +20,7 @@
  * Appointment status as per AppointmentAttribute model
  * Controls the lifecycle of an appointment booking
  */
-export type AppointmentStatus = "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELLED" | "REJECTED" | "RESCHEDULED";
+export type AppointmentStatus = "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELLED" | "REJECTED" | "RESCHEDULED" | "DROPPED";
 
 /**
  * Appointment mode (in-person, telemedicine, etc.)

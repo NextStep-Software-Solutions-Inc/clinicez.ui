@@ -10,7 +10,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
-import { getAppointmentsAction, type GetAppointments } from "@/actions/appointments/appointments.action";
+import { getAppointmentsAction, getAppointmentCountsAction, type GetAppointments } from "@/actions/appointments/appointments.action";
 import { upsertAppointmentListPreferenceAction } from "@/actions/users/preference.action";
 import type { AppointmentStatus } from "@public/json/appointment-list";
 import type { GetAppointmentModes } from "@/actions/appointments/appointment-mode.action";
@@ -67,7 +67,7 @@ type StatusTabKey = (typeof STATUS_TABS)[number]["key"];
 interface AppointmentsClientProps {
   clinicUid: string;
   initialAppointments: Appointment[];
-  counts: Record<string, number>;
+  initialCounts: Record<string, number>;
   modes: GetAppointmentModes;
   types: GetAppointmentTypes;
   serviceCategories: GetClinicServiceCategories;
@@ -84,7 +84,7 @@ interface AppointmentsClientProps {
 export function AppointmentsClient({
   clinicUid,
   initialAppointments,
-  counts,
+  initialCounts,
   modes,
   types,
   serviceCategories,
@@ -134,6 +134,9 @@ export function AppointmentsClient({
   const [sortDirection, setSortDirection] = useState<AppointmentSortDirection>(
     initialPreference?.sortDirection ?? (initialPreference?.sortOrder === "schedule" ? "asc" : "desc")
   );
+
+  // Counts — kept as state so HP/tagged filter changes can update the badge numbers
+  const [counts, setCounts] = useState<Record<string, number>>(initialCounts);
 
   // Pagination: start with initial data; hasMore=true when initial page is full
   const [appointments, setAppointments] = useState<Appointment[]>(initialAppointments);
@@ -202,21 +205,39 @@ export function AppointmentsClient({
 
   // ── Server-side filter reload ───────────────────────────────────────────────
 
+  /** Re-fetch counts whenever the HP or tagged filter changes so badge numbers stay accurate */
+  const reloadCounts = useCallback(
+    async (opts: { hpIds: number[]; tagged: boolean }) => {
+      const countsResult = await getAppointmentCountsAction(clinicUid, {
+        ...(opts.hpIds.length > 0 ? { hpIds: opts.hpIds } : {}),
+        ...(opts.tagged ? { tagged: "true" } : {}),
+      });
+      if (countsResult.status && countsResult.data) {
+        setCounts(countsResult.data);
+      }
+    },
+    [clinicUid]
+  );
+
   const reloadWithFilters = useCallback(
     async (opts: { hpIds: number[]; tagged: boolean; search?: string; status?: StatusTabKey; sort?: AppointmentSortField; sortDirection?: AppointmentSortDirection }) => {
       setIsReloading(true);
       try {
         const effectiveSort = opts.sort ?? sort;
         const effectiveDirection = opts.sortDirection ?? sortDirection;
-        const result = await getAppointmentsAction({
-          clinicUid,
-          ...(opts.hpIds.length > 0 ? { hpIds: opts.hpIds } : {}),
-          ...(opts.tagged ? { tagged: "true" } : {}),
-          ...(opts.search ? { search: opts.search } : {}),
-          ...(opts.status && opts.status !== "ALL" ? { status: opts.status as AppointmentStatus } : {}),
-          ...(effectiveSort === "schedule" ? { sort: "schedule" as const } : {}),
-          sortDirection: effectiveDirection,
-        });
+        const [result] = await Promise.all([
+          getAppointmentsAction({
+            clinicUid,
+            ...(opts.hpIds.length > 0 ? { hpIds: opts.hpIds } : {}),
+            ...(opts.tagged ? { tagged: "true" } : {}),
+            ...(opts.search ? { search: opts.search } : {}),
+            ...(opts.status && opts.status !== "ALL" ? { status: opts.status as AppointmentStatus } : {}),
+            ...(effectiveSort === "schedule" ? { sort: "schedule" as const } : {}),
+            sortDirection: effectiveDirection,
+          }),
+          // Re-fetch counts when HP or tagged filter changed so badge numbers are accurate
+          reloadCounts({ hpIds: opts.hpIds, tagged: opts.tagged }),
+        ]);
         if (result.status && result.data) {
           setAppointments(result.data);
           setHasMore(result.data.length >= PAGE_SIZE);
@@ -228,7 +249,7 @@ export function AppointmentsClient({
         setIsReloading(false);
       }
     },
-    [clinicUid, sort, sortDirection]
+    [clinicUid, sort, sortDirection, reloadCounts]
   );
 
   const handleHpFilterToggle = useCallback(
@@ -326,6 +347,11 @@ export function AppointmentsClient({
     setAppointments(initialAppointments);
     setHasMore(initialAppointments.length >= PAGE_SIZE);
   }, [initialAppointments]);
+
+  // Sync counts when parent server component re-renders (router.refresh)
+  useEffect(() => {
+    setCounts(initialCounts);
+  }, [initialCounts]);
 
   // Auto-sync the detail sheet: when the appointments list updates (after refresh),
   // update selectedAppointment so the detail sheet shows the latest data.

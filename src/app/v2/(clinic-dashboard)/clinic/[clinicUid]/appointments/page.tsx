@@ -47,7 +47,10 @@ export default async function AppointmentsPage({ params }: AppointmentsPageProps
       // Apply persisted sort direction
       ...(preference?.sortDirection ? { sortDirection: preference.sortDirection } : {}),
     }),
-    getAppointmentCountsAction(clinicUid),
+    // Apply the same provider filter to counts so badge numbers match the filtered list
+    getAppointmentCountsAction(clinicUid, {
+      ...(preference?.providerIds?.length ? { hpIds: preference.providerIds } : {}),
+    }),
     getAppointmentModesAction(clinicUid),
     getAppointmentTypesAction(clinicUid),
     getHPsAction({ clinicUid }),
@@ -75,7 +78,7 @@ export default async function AppointmentsPage({ params }: AppointmentsPageProps
         <AppointmentsClient
           clinicUid={clinicUid}
           initialAppointments={appointmentsResult.data ?? []}
-          counts={countsResult.data ?? {}}
+          initialCounts={countsResult.data ?? {}}
           modes={modes}
           types={types}
           serviceCategories={serviceCategories}

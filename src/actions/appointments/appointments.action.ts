@@ -1275,7 +1275,7 @@ export const getAppointmentAction = withErrorHandling(cache(async (id: number, c
 }));
 
 export type GetAppointmentCounts = Awaited<ReturnType<typeof getAppointmentCountsAction>>;
-export const getAppointmentCountsAction = withErrorHandling(cache(async (clinicUid: string) => {
+export const getAppointmentCountsAction = withErrorHandling(cache(async (clinicUid: string, filter?: { hpIds?: number[]; tagged?: string }) => {
 
   const session = await getCachedSession();
   if (!session) throw new Error("Unauthorized");
@@ -1296,32 +1296,58 @@ export const getAppointmentCountsAction = withErrorHandling(cache(async (clinicU
   const canReadAssignedOrgAppointment = readAssignedOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
 
   const myHpIds = myHps.map((hp) => hp.id);
+  const { hpIds, tagged } = filter ?? {};
   const appointments = await prisma.appointment.findMany({
     where: {
       Clinic: {
         clinicUid
       },
       isActive: true,
-      OR: [
-        { ...(canReadAllOrgAppointment ? { Clinic: { clinicUid } } : {}) },
-        { ...(canReadAOwnOrgAppointment ? { Requesters: { every: { User: { userId: session.user.sub } } } } : {}) },
-        {
-          ...(canReadAssignedOrgAppointment ? {
-            AppointmentRouting: {
-              some: {
-                OR: [
-                  {
-                    routedTo: {
-                      in: myHpIds
-                    }
-                  },
-                  { RoutedBy: { userId: session.user.sub } }
-                ]
+      // "My Tagged" filter — only count appointments where the current user is tagged as an HP
+      ...(tagged === "true"
+        ? {
+          AppointmentTag: {
+            some: {
+              healthcareProviderId: {
+                in: myHpIds
               }
             }
-          } : {})
-        },
-      ]
+          }
+        }
+        : {}),
+      // Provider filter — count only appointments assigned/tagged to the selected providers
+      ...(hpIds && hpIds.length > 0
+        ? {
+          OR: [
+            { AppointmentRouting: { some: { routedTo: { in: hpIds } } } },
+            { AppointmentTag: { some: { healthcareProviderId: { in: hpIds } } } },
+          ]
+        }
+        : {}),
+      AND: [
+        {
+          OR: [
+            { ...(canReadAllOrgAppointment ? { Clinic: { clinicUid } } : {}) },
+            { ...(canReadAOwnOrgAppointment ? { Requesters: { every: { User: { userId: session.user.sub } } } } : {}) },
+            {
+              ...(canReadAssignedOrgAppointment ? {
+                AppointmentRouting: {
+                  some: {
+                    OR: [
+                      {
+                        routedTo: {
+                          in: myHpIds
+                        }
+                      },
+                      { RoutedBy: { userId: session.user.sub } }
+                    ]
+                  }
+                }
+              } : {})
+            },
+          ]
+        }
+      ],
     },
     select: {
       AppointmentAttribute: {

@@ -367,7 +367,7 @@ export function AppointmentsClient({
             currentPreference={{ sortOrder }}
             onSave={(pref) => {
               setSortOrder(pref.sortOrder);
-              void reloadWithFilters({ hpIds: hpFilters, tagged: taggedOnly, search: activeSearch, status: activeTab, sortOrder: pref.sortOrder });
+              reloadWithFilters({ hpIds: hpFilters, tagged: taggedOnly, search: activeSearch, status: activeTab, sortOrder: pref.sortOrder }).catch(console.error);
             }}
           />
         </div>

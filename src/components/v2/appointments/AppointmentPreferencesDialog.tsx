@@ -39,7 +39,7 @@ const SORT_ORDER_OPTIONS: { value: AppointmentSortOrder; label: string; descript
   {
     value: "PROVIDER",
     label: "By Provider",
-    description: "Group appointments by assigned healthcare provider.",
+    description: "Prioritizes appointments with more routing activity. Useful for tracking actively routed cases.",
   },
 ];
 

@@ -38,6 +38,7 @@ import {
   Link2,
   AlertTriangle,
   FileText,
+  HelpCircle,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -96,6 +97,12 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 import { updateClinicAction } from "@/actions/clinics/clinic.action";
 import { updatePhilHealthSettingsAction } from "@/actions/clinics/clinic-setting.action";
@@ -2699,6 +2706,18 @@ function RolesTab({
                         >
                           Own appointments only
                         </label>
+                        <TooltipProvider delayDuration={200}>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <HelpCircle className="h-3.5 w-3.5 text-muted-foreground/60 hover:text-muted-foreground cursor-help flex-shrink-0" />
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="max-w-64 text-xs">
+                              When enabled, members with this role will only see appointments
+                              they are assigned to or have involvement in (tagged or routed).
+                              Useful for restricting doctors to only view their own patients&apos; appointments.
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       </div>
                     )}
                   {!owner && editingId !== role.id && (

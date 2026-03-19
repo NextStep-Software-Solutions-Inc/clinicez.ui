@@ -1331,6 +1331,7 @@ model ClinicRole {
   deletedAt                    DateTime?
   isActive                     Boolean                       @default(true)
   canAccessDashboard           Boolean                       @default(false)
+  restrictToOwnAppointments    Boolean                       @default(false)
   ClinicMembers                ClinicMember[]
   ClinicRoleAppointmentTabs    ClinicRoleAppointmentTab[]
   ClinicRoleInitialPermissions ClinicRoleInitialPermission[]

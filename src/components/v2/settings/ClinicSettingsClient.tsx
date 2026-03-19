@@ -133,6 +133,7 @@ import {
   updateClinicRoleAction,
   deleteClinicRoleAction,
   setClinicRoleDashboardAccessAction,
+  setClinicRoleRestrictToOwnAppointmentsAction,
 } from "@/actions/clinics/clinic-role.action";
 import { setClinicRoleInitialPermissionsAction } from "@/actions/clinic-role-initial-permission.action";
 import {
@@ -205,6 +206,7 @@ interface ClinicSettingsClientProps {
   googleCalendarEmail?: string | null;
   googleCalendarEvents?: CalendarEventItem[];
   initialSystems: SystemsData;
+  canUpdateSettings?: boolean;
 }
 
 /* ─────────────────────────────────────────────────────────────────── */
@@ -2479,11 +2481,13 @@ function RolesTab({
   initialRoles,
   allPermissions,
   clinicAppointmentTabs,
+  canUpdateSettings,
 }: {
   clinicUid: string;
   initialRoles: RolesWithPermissionsData;
   allPermissions: PermissionsData;
   clinicAppointmentTabs: ClinicAppointmentTabsData;
+  canUpdateSettings: boolean;
 }) {
   const [roles, setRoles] = useState(initialRoles);
   const [showCreate, setShowCreate] = useState(false);
@@ -2504,6 +2508,7 @@ function RolesTab({
             id: result.data!.id,
             name: result.data!.name,
             canAccessDashboard: result.data!.canAccessDashboard,
+            restrictToOwnAppointments: result.data!.restrictToOwnAppointments,
             ClinicMembers: [],
             ClinicRoleInitialPermissions: [],
             ClinicRoleAppointmentTabs: [],
@@ -2558,6 +2563,20 @@ function RolesTab({
         );
       } else {
         toast.error(result.message ?? "Failed to update dashboard access.");
+      }
+    });
+  };
+
+  const handleToggleRestrictToOwnAppointments = (roleId: number, restrictToOwnAppointments: boolean) => {
+    startTransition(async () => {
+      const result = await setClinicRoleRestrictToOwnAppointmentsAction(roleId, restrictToOwnAppointments);
+      if (result.status) {
+        toast.success(result.message);
+        setRoles((prev) =>
+          prev.map((r) => (r.id === roleId ? { ...r, restrictToOwnAppointments } : r))
+        );
+      } else {
+        toast.error(result.message ?? "Failed to update appointment restriction.");
       }
     });
   };
@@ -2663,6 +2682,25 @@ function RolesTab({
                         Dashboard access
                       </label>
                     </div>
+                    {canUpdateSettings && (
+                      <div className="flex items-center gap-1.5">
+                        <Switch
+                          id={`restrict-own-appointments-${role.id}`}
+                          checked={role.restrictToOwnAppointments}
+                          disabled={isPending}
+                          onCheckedChange={(checked) =>
+                            handleToggleRestrictToOwnAppointments(role.id, checked)
+                          }
+                          className="scale-75 origin-right"
+                        />
+                        <label
+                          htmlFor={`restrict-own-appointments-${role.id}`}
+                          className="text-xs text-muted-foreground cursor-pointer select-none whitespace-nowrap"
+                        >
+                          Own appointments only
+                        </label>
+                      </div>
+                    )}
                   {!owner && editingId !== role.id && (
                     <div className="flex gap-1">
                       <Button
@@ -3046,6 +3084,7 @@ export function ClinicSettingsClient({
   googleCalendarEmail = null,
   googleCalendarEvents = [],
   initialSystems,
+  canUpdateSettings = false,
 }: ClinicSettingsClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -3168,6 +3207,7 @@ export function ClinicSettingsClient({
             initialRoles={rolesWithPermissions}
             allPermissions={allClinicPermissions}
             clinicAppointmentTabs={clinicAppointmentTabs}
+            canUpdateSettings={canUpdateSettings}
           />
         </TabsContent>
 

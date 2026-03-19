@@ -393,12 +393,24 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
   const session = await getCachedSession();
   if (!session) throw new Error("Unauthorized");
 
-  const [permissions, myHps] = await Promise.all([
-    getPermissionsAction({ userId: session.user.sub }),
-    getHPsAction({ userId: session.user.sub })
-  ])
-
   const { clinicUid, userId, status, routedAptStatus, tagged, sort, sortDirection, cursor, limit, hpIds, search } = filter || {};
+
+  const [permissions, myHps, userClinicMember] = await Promise.all([
+    getPermissionsAction({ userId: session.user.sub }),
+    getHPsAction({ userId: session.user.sub }),
+    clinicUid ? prisma.clinicMember.findFirst({
+      where: {
+        User: { userId: session.user.sub },
+        Clinic: { clinicUid },
+        isActive: true,
+        status: "ACTIVE",
+      },
+      select: {
+        Role: { select: { restrictToOwnAppointments: true } }
+      }
+    }) : Promise.resolve(null),
+  ]);
+
   const PAGE_SIZE = limit ?? 20;
   const searchTerm = search?.trim() || "";
 
@@ -412,6 +424,7 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
   const canReadAOwnOrgAppointment = readAOwnOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
   const canReadAssignedOrgAppointment = readAssignedOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
 
+  const isRestrictedToOwnAppointments = userClinicMember?.Role?.restrictToOwnAppointments ?? false;
 
   const myHpIds = myHps.map((hp) => hp.id);
   const appointments = await prisma.appointment.findMany({
@@ -481,6 +494,27 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
             },
           ]
         },
+        // Role-level restriction: if the user's role restricts them to their own appointments,
+        // only return appointments where they are assigned (routing) or tagged (involvement).
+        ...(isRestrictedToOwnAppointments ? [{
+          OR: [
+            {
+              AppointmentRouting: {
+                some: {
+                  OR: [
+                    { routedTo: { in: myHpIds } },
+                    { RoutedBy: { userId: session.user.sub } },
+                  ]
+                }
+              }
+            },
+            {
+              AppointmentTag: {
+                some: { healthcareProviderId: { in: myHpIds } }
+              }
+            },
+          ]
+        }] : []),
         // Server-side search filter (patient name, subject, or complaint)
         ...(searchTerm
           ? [{

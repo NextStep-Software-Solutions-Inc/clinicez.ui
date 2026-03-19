@@ -25,6 +25,8 @@ import { AssignDoctorDialog } from "./AssignDoctorDialog";
 import { PreAssessmentNoteDialog } from "./PreAssessmentNoteDialog";
 import { TagHPDialog } from "./TagHPDialog";
 import { RescheduleDialog } from "./RescheduleDialog";
+import { AppointmentPreferencesDialog } from "./AppointmentPreferencesDialog";
+import type { AppointmentListPreference, AppointmentSortOrder } from "@/types/appointment-preference";
 import { cn } from "@/lib/utils";
 
 type Appointment = NonNullable<GetAppointments["data"]>[number];
@@ -75,6 +77,8 @@ interface AppointmentsClientProps {
   currentUserSub: string;
   /** Tab names (uppercased) visible to the current user's role. null = show all. */
   visibleTabNames: string[] | null;
+  /** Initial appointment list preference for the current user */
+  initialPreference?: AppointmentListPreference | null;
 }
 
 export function AppointmentsClient({
@@ -89,6 +93,7 @@ export function AppointmentsClient({
   currentUserHpIds,
   currentUserSub,
   visibleTabNames,
+  initialPreference,
 }: AppointmentsClientProps) {
   const router = useRouter();
 
@@ -112,6 +117,9 @@ export function AppointmentsClient({
   // Server-side filters — when changed, reset pagination and re-fetch
   const [hpFilters, setHpFilters] = useState<number[]>([]);
   const [taggedOnly, setTaggedOnly] = useState(false);
+  const [sortOrder, setSortOrder] = useState<AppointmentSortOrder>(
+    initialPreference?.sortOrder ?? "FIFO"
+  );
 
   // Pagination: start with initial data; hasMore=true when initial page is full
   const [appointments, setAppointments] = useState<Appointment[]>(initialAppointments);
@@ -166,7 +174,7 @@ export function AppointmentsClient({
   // ── Server-side filter reload ───────────────────────────────────────────────
 
   const reloadWithFilters = useCallback(
-    async (opts: { hpIds: number[]; tagged: boolean; search?: string; status?: StatusTabKey }) => {
+    async (opts: { hpIds: number[]; tagged: boolean; search?: string; status?: StatusTabKey; sortOrder?: AppointmentSortOrder }) => {
       setIsReloading(true);
       try {
         const result = await getAppointmentsAction({
@@ -175,6 +183,7 @@ export function AppointmentsClient({
           ...(opts.tagged ? { tagged: "true" } : {}),
           ...(opts.search ? { search: opts.search } : {}),
           ...(opts.status && opts.status !== "ALL" ? { status: opts.status as AppointmentStatus } : {}),
+          sortOrder: opts.sortOrder ?? sortOrder,
         });
         if (result.status && result.data) {
           setAppointments(result.data);
@@ -187,7 +196,7 @@ export function AppointmentsClient({
         setIsReloading(false);
       }
     },
-    [clinicUid]
+    [clinicUid, sortOrder]
   );
 
   const handleHpFilterToggle = useCallback(
@@ -289,6 +298,7 @@ export function AppointmentsClient({
         ...(taggedOnly ? { tagged: "true" } : {}),
         ...(activeSearch ? { search: activeSearch } : {}),
         ...(activeTab !== "ALL" ? { status: activeTab as AppointmentStatus } : {}),
+        sortOrder,
       });
       if (result.status && result.data) {
         const newItems = result.data;
@@ -305,7 +315,7 @@ export function AppointmentsClient({
     } finally {
       setIsLoadingMore(false);
     }
-  }, [clinicUid, appointments, hasMore, isLoadingMore, hpFilters, taggedOnly, activeSearch, activeTab]);
+  }, [clinicUid, appointments, hasMore, isLoadingMore, hpFilters, taggedOnly, activeSearch, activeTab, sortOrder]);
 
   // IntersectionObserver for scroll-to-load-more
   useEffect(() => {
@@ -353,6 +363,13 @@ export function AppointmentsClient({
             <UserPlus className="h-3.5 w-3.5" />
             Walk-In
           </Button>
+          <AppointmentPreferencesDialog
+            currentPreference={{ sortOrder }}
+            onSave={(pref) => {
+              setSortOrder(pref.sortOrder);
+              void reloadWithFilters({ hpIds: hpFilters, tagged: taggedOnly, search: activeSearch, status: activeTab, sortOrder: pref.sortOrder });
+            }}
+          />
         </div>
 
         {/* Row 1.5: Search */}

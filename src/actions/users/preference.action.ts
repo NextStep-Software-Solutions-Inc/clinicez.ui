@@ -8,6 +8,7 @@ import { PERMISSIONS } from "@lib/permissions";
 import { withErrorHandling } from "@/lib/with-error-handling";
 import { withRetry } from "@/lib/database-health";
 import { NotificationType, Prisma } from "@prisma/client";
+import type { AppointmentListPreference } from "@/types/appointment-preference";
 
 
 export type GetMyUserPreference = Awaited<ReturnType<typeof getMyUserPreferenceAction>>;
@@ -111,4 +112,38 @@ export const upsertMyUserPreference = withErrorHandling(async (payload: UpsertUs
 }, async (error) => {
   console.error(`Error upserting user preference: ${error}`);
   if (error instanceof Error) return error.message;
+});
+export type GetAppointmentListPreference = Awaited<ReturnType<typeof getAppointmentListPreferenceAction>>;
+export const getAppointmentListPreferenceAction = withErrorHandling(async () => {
+  const session = await getCachedSession();
+  if (!session) throw new Error("User not authenticated.");
+
+  const userPreference = await withRetry(async () => {
+    return await prisma.userPreference.findFirst({
+      where: { User: { userId: session.user.sub } },
+      select: { appointmentListPreference: true }
+    });
+  }, 3, 200);
+
+  return { 
+    message: "Preference fetched.", 
+    data: userPreference?.appointmentListPreference as AppointmentListPreference | null 
+  };
+});
+
+export const upsertAppointmentListPreferenceAction = withErrorHandling(async (preference: AppointmentListPreference) => {
+  const session = await getCachedSession();
+  if (!session) throw new Error("User not authenticated.");
+
+  const user = await prisma.user.findUniqueOrThrow({ where: { userId: session.user.sub }, select: { id: true } });
+  
+  await withRetry(async () => {
+    return await prisma.userPreference.upsert({
+      where: { userId: user.id },
+      create: { userId: user.id, appointmentListPreference: preference },
+      update: { appointmentListPreference: preference },
+    });
+  }, 3, 200);
+
+  return { message: "Appointment list preference saved.", data: preference };
 });

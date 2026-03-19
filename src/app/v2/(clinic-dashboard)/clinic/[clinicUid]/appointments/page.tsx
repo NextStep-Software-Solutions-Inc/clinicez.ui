@@ -10,6 +10,8 @@ import { AppointmentsClient } from "@/components/v2/appointments/AppointmentsCli
 import { Skeleton } from "@/components/ui/skeleton";
 import { getCachedSession } from "@/actions/session.action";
 import { getCurrentMemberVisibleTabsAction } from "@/actions/clinics/clinic-member.action";
+import { getAppointmentListPreferenceAction } from "@/actions/users/preference.action";
+import { DEFAULT_APPOINTMENT_LIST_PREFERENCE } from "@/types/appointment-preference";
 
 export const dynamic = "force-dynamic";
 
@@ -27,8 +29,12 @@ export default async function AppointmentsPage({ params }: AppointmentsPageProps
 
   const session = await getCachedSession();
 
+  // Fetch preference first so we can pass sortOrder to the appointments query
+  const preferenceResult = await getAppointmentListPreferenceAction();
+  const preference = preferenceResult.data ?? DEFAULT_APPOINTMENT_LIST_PREFERENCE;
+
   const [appointmentsResult, countsResult, modes, types, hps, serviceCategories, systems, myHps, visibleTabNames] = await Promise.all([
-    getAppointmentsAction({ clinicUid }),
+    getAppointmentsAction({ clinicUid, sortOrder: preference.sortOrder }),
     getAppointmentCountsAction(clinicUid),
     getAppointmentModesAction(clinicUid),
     getAppointmentTypesAction(clinicUid),
@@ -66,6 +72,7 @@ export default async function AppointmentsPage({ params }: AppointmentsPageProps
           currentUserHpIds={currentUserHpIds}
           currentUserSub={currentUserSub}
           visibleTabNames={visibleTabNames}
+          initialPreference={preference}
         />
       </Suspense>
     </div>

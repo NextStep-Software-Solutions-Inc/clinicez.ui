@@ -6,12 +6,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@components/ui/button";
 import { Input } from "@components/ui/input";
 import { Badge } from "@components/ui/badge";
-import { Search, Lock, ShieldCheck, ShieldAlert, ShieldQuestion, Shield, Pencil } from "lucide-react";
+import { Search, Lock, ShieldCheck, ShieldAlert, ShieldQuestion, Shield, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { getActionErrorMessage } from "@/lib/action-error";
 import { formatDistance } from "date-fns";
 import { UserPermissionsDialog } from "./UserPermissionsDialog";
 import { EditUserDialog } from "./EditUserDialog";
+import { DeleteUserDialog } from "./DeleteUserDialog";
 
 interface UsersTableProps {
   initialData: GetAllUsers;
@@ -37,6 +38,8 @@ export default function UsersTable({ initialData }: UsersTableProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editUser, setEditUser] = useState<EditableUser | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteUser, setDeleteUser] = useState<EditableUser | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const getVerificationBadge = (status: string) => {
     switch (status) {
@@ -99,6 +102,11 @@ export default function UsersTable({ initialData }: UsersTableProps) {
   const handleEditUser = (user: EditableUser) => {
     setEditUser(user);
     setEditDialogOpen(true);
+  };
+
+  const handleDeleteUser = (user: EditableUser) => {
+    setDeleteUser(user);
+    setDeleteDialogOpen(true);
   };
 
   return (
@@ -187,6 +195,20 @@ export default function UsersTable({ initialData }: UsersTableProps) {
                       >
                         <Lock className="h-4 w-4" />
                       </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => handleDeleteUser({
+                          id: user.id,
+                          firstName: user.firstName,
+                          lastName: user.lastName,
+                          email: user.email,
+                        })}
+                        title="Delete this user"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -238,6 +260,15 @@ export default function UsersTable({ initialData }: UsersTableProps) {
           onOpenChange={setEditDialogOpen}
           user={editUser}
           onUpdated={() => loadData(data.pageNumber, search)}
+        />
+      )}
+
+      {deleteUser && (
+        <DeleteUserDialog
+          open={deleteDialogOpen}
+          onOpenChange={setDeleteDialogOpen}
+          user={deleteUser}
+          onDeleted={() => loadData(data.pageNumber, search)}
         />
       )}
     </div>

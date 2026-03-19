@@ -113,6 +113,18 @@ export const upsertMyUserPreference = withErrorHandling(async (payload: UpsertUs
   console.error(`Error upserting user preference: ${error}`);
   if (error instanceof Error) return error.message;
 });
+
+const VALID_SORT_ORDERS: AppointmentListPreference["sortOrder"][] = ["FIFO", "STATUS", "PROVIDER"];
+
+function isAppointmentListPreference(value: unknown): value is AppointmentListPreference {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "sortOrder" in value &&
+    VALID_SORT_ORDERS.includes((value as { sortOrder: unknown }).sortOrder as AppointmentListPreference["sortOrder"])
+  );
+}
+
 export type GetAppointmentListPreference = Awaited<ReturnType<typeof getAppointmentListPreferenceAction>>;
 export const getAppointmentListPreferenceAction = withErrorHandling(async () => {
   const session = await getCachedSession();
@@ -125,9 +137,12 @@ export const getAppointmentListPreferenceAction = withErrorHandling(async () => 
     });
   }, 3, 200);
 
+  const raw = userPreference?.appointmentListPreference;
+  const data: AppointmentListPreference | null = isAppointmentListPreference(raw) ? raw : null;
+
   return { 
     message: "Preference fetched.", 
-    data: userPreference?.appointmentListPreference as AppointmentListPreference | null 
+    data,
   };
 });
 

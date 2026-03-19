@@ -53,19 +53,17 @@ export function AppointmentPreferencesDialog({ currentPreference, onSave }: Appo
   const handleSave = async () => {
     setIsSaving(true);
     const newPreference: AppointmentListPreference = { sortOrder };
-    toast.promise(
-      promiseWrapper(upsertAppointmentListPreferenceAction)(newPreference),
-      {
-        loading: "Saving preferences...",
-        success: (res) => {
-          onSave(newPreference);
-          setOpen(false);
-          return res.message;
-        },
-        error: (err) => String(err),
-        finally: () => setIsSaving(false),
-      }
-    );
+    const promise = promiseWrapper(upsertAppointmentListPreferenceAction)(newPreference);
+    promise.finally(() => setIsSaving(false));
+    toast.promise(promise, {
+      loading: "Saving preferences...",
+      success: (res) => {
+        onSave(newPreference);
+        setOpen(false);
+        return res.message;
+      },
+      error: (err) => String(err),
+    });
   };
 
   return (

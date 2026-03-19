@@ -422,7 +422,7 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
       ? [{ createdAt: "asc" as const }]
       : sortOrder === "PROVIDER"
       ? [
-          { _count: { AppointmentRouting: "desc" as const } },
+          { AppointmentRouting: { _count: "desc" as const } },
           { createdAt: "desc" as const },
         ]
       : [{ createdAt: "desc" as const }],

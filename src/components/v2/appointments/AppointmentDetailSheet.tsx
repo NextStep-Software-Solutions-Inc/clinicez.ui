@@ -599,6 +599,15 @@ export function AppointmentDetailSheet({
                   <ExternalLink className="h-3.5 w-3.5" />
                   View Patient Profile
                 </a>
+                <a
+                  href={`/v2/clinic/${clinicUid}/patients/${requester.id}/consultations`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
+                >
+                  <Stethoscope className="h-3.5 w-3.5" />
+                  Consultation Workspace
+                </a>
                 {currentUserHpIds.length > 0 && (
                   <PatientAIInsightButton
                     patientId={requester.id}

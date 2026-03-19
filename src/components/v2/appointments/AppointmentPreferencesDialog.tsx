@@ -29,7 +29,7 @@ const SORT_ORDER_OPTIONS: { value: AppointmentSortOrder; label: string; descript
   {
     value: "FIFO",
     label: "FIFO (Queue Order)",
-    description: "Oldest arrivals shown first. Pending at top, then received, routed — completed at bottom.",
+    description: "Oldest arrivals shown first regardless of status — first in, first out.",
   },
   {
     value: "STATUS",

@@ -117,12 +117,9 @@ export const upsertMyUserPreference = withErrorHandling(async (payload: UpsertUs
 const VALID_SORT_ORDERS: AppointmentListPreference["sortOrder"][] = ["FIFO", "STATUS", "PROVIDER"];
 
 function isAppointmentListPreference(value: unknown): value is AppointmentListPreference {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    "sortOrder" in value &&
-    VALID_SORT_ORDERS.includes((value as { sortOrder: unknown }).sortOrder as AppointmentListPreference["sortOrder"])
-  );
+  if (typeof value !== "object" || value === null || !("sortOrder" in value)) return false;
+  const sortOrder = (value as { sortOrder: unknown }).sortOrder;
+  return typeof sortOrder === "string" && VALID_SORT_ORDERS.includes(sortOrder as AppointmentListPreference["sortOrder"]);
 }
 
 export type GetAppointmentListPreference = Awaited<ReturnType<typeof getAppointmentListPreferenceAction>>;

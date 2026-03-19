@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import { getAppointmentsAction, type GetAppointments } from "@/actions/appointments/appointments.action";
+import { toast } from "sonner";
 import type { AppointmentStatus } from "@public/json/appointment-list";
 import type { GetAppointmentModes } from "@/actions/appointments/appointment-mode.action";
 import type { GetAppointmentTypes } from "@/actions/appointments/appointment-type.action";
@@ -367,7 +368,10 @@ export function AppointmentsClient({
             currentPreference={{ sortOrder }}
             onSave={(pref) => {
               setSortOrder(pref.sortOrder);
-              reloadWithFilters({ hpIds: hpFilters, tagged: taggedOnly, search: activeSearch, status: activeTab, sortOrder: pref.sortOrder }).catch(console.error);
+              reloadWithFilters({ hpIds: hpFilters, tagged: taggedOnly, search: activeSearch, status: activeTab, sortOrder: pref.sortOrder }).catch((err) => {
+                toast.error("Failed to reload appointments with new preference.");
+                console.error(err);
+              });
             }}
           />
         </div>

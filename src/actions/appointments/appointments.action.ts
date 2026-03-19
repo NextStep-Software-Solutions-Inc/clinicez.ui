@@ -376,7 +376,6 @@ export type GetAppointmentFilter = {
   tagged?: string;
   appointmentId?: number;
   sort?: "request" | "schedule";
-  sortOrder?: "FIFO" | "STATUS" | "PROVIDER";
   /** Filter by one or more healthcare providers involved (assigned or tagged) */
   hpIds?: number[];
   /** Cursor-based pagination: ID of the last item from the previous page */
@@ -397,7 +396,7 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
     getHPsAction({ userId: session.user.sub })
   ])
 
-  const { clinicUid, userId, status, routedAptStatus, tagged, sort, sortOrder, cursor, limit, hpIds, search } = filter || {};
+  const { clinicUid, userId, status, routedAptStatus, tagged, sort, cursor, limit, hpIds, search } = filter || {};
   const PAGE_SIZE = limit ?? 20;
   const searchTerm = search?.trim() || "";
 
@@ -418,14 +417,6 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
     ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     orderBy: sort === "schedule"
       ? [{ AppointmentAttribute: { date: "asc" as const } }]
-      : sortOrder === "FIFO"
-      ? [{ createdAt: "asc" as const }]
-      : sortOrder === "PROVIDER"
-      ? [
-          // Sort by number of routing entries (most actively routed appointments first)
-          { AppointmentRouting: { _count: "desc" as const } },
-          { createdAt: "desc" as const },
-        ]
       : [{ createdAt: "desc" as const }],
     where: {
       Clinic: {

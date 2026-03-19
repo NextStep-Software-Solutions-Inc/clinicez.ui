@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect, startTransition } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarDays, Clock, UserPlus, Loader2, Tag, ChevronDown, Check, Search } from "lucide-react";
+import { CalendarDays, Clock, UserPlus, Loader2, Tag, ChevronDown, Check, Search, ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import { getAppointmentsAction, type GetAppointments } from "@/actions/appointments/appointments.action";
-import { toast } from "sonner";
+import { upsertAppointmentListPreferenceAction } from "@/actions/users/preference.action";
 import type { AppointmentStatus } from "@public/json/appointment-list";
 import type { GetAppointmentModes } from "@/actions/appointments/appointment-mode.action";
 import type { GetAppointmentTypes } from "@/actions/appointments/appointment-type.action";
@@ -26,7 +26,6 @@ import { AssignDoctorDialog } from "./AssignDoctorDialog";
 import { PreAssessmentNoteDialog } from "./PreAssessmentNoteDialog";
 import { TagHPDialog } from "./TagHPDialog";
 import { RescheduleDialog } from "./RescheduleDialog";
-import { AppointmentPreferencesDialog } from "./AppointmentPreferencesDialog";
 import type { AppointmentListPreference, AppointmentSortOrder } from "@/types/appointment-preference";
 import { cn } from "@/lib/utils";
 
@@ -106,8 +105,12 @@ export function AppointmentsClient({
       )
     : STATUS_TABS;
 
-  // Status tab filter (client-side on loaded items)
-  const [activeTab, setActiveTab] = useState<StatusTabKey>("ALL");
+  // Status tab — initialize from persisted preference (only if it's a tab the user can see)
+  const [activeTab, setActiveTab] = useState<StatusTabKey>(() => {
+    if (!initialPreference?.statusFilter) return "ALL";
+    const tab = initialPreference.statusFilter as StatusTabKey;
+    return allowedStatusTabs.some((t) => t.key === tab) ? tab : "ALL";
+  });
 
   // Client-side search input value (debounced before sending to server)
   const [search, setSearch] = useState("");
@@ -116,10 +119,16 @@ export function AppointmentsClient({
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Server-side filters — when changed, reset pagination and re-fetch
-  const [hpFilters, setHpFilters] = useState<number[]>([]);
+  // HP filter — initialize from persisted preference (filter out any stale IDs not in current clinic)
+  const [hpFilters, setHpFilters] = useState<number[]>(() => {
+    if (!initialPreference?.providerIds?.length) return [];
+    const validHpIds = new Set(hps.map((h) => h.id));
+    return initialPreference.providerIds.filter((id) => validHpIds.has(id));
+  });
   const [taggedOnly, setTaggedOnly] = useState(false);
-  const [sortOrder, setSortOrder] = useState<AppointmentSortOrder>(
-    initialPreference?.sortOrder ?? "FIFO"
+  // Sort order — initialize from persisted preference ("schedule" = by scheduled date, "createdAt" = newest first)
+  const [sort, setSort] = useState<AppointmentSortOrder>(
+    initialPreference?.sortOrder ?? "createdAt"
   );
 
   // Pagination: start with initial data; hasMore=true when initial page is full
@@ -172,19 +181,34 @@ export function AppointmentsClient({
     []
   );
 
+  // ── Persist filter preferences (fire-and-forget) ──────────────────────────
+
+  const savePreference = useCallback(
+    (patch: Partial<AppointmentListPreference>) => {
+      void upsertAppointmentListPreferenceAction({
+        statusFilter: activeTab,
+        providerIds: hpFilters,
+        sortOrder: sort,
+        ...patch,
+      });
+    },
+    [activeTab, hpFilters, sort]
+  );
+
   // ── Server-side filter reload ───────────────────────────────────────────────
 
   const reloadWithFilters = useCallback(
-    async (opts: { hpIds: number[]; tagged: boolean; search?: string; status?: StatusTabKey; sortOrder?: AppointmentSortOrder }) => {
+    async (opts: { hpIds: number[]; tagged: boolean; search?: string; status?: StatusTabKey; sort?: AppointmentSortOrder }) => {
       setIsReloading(true);
       try {
+        const effectiveSort = opts.sort ?? sort;
         const result = await getAppointmentsAction({
           clinicUid,
           ...(opts.hpIds.length > 0 ? { hpIds: opts.hpIds } : {}),
           ...(opts.tagged ? { tagged: "true" } : {}),
           ...(opts.search ? { search: opts.search } : {}),
           ...(opts.status && opts.status !== "ALL" ? { status: opts.status as AppointmentStatus } : {}),
-          sortOrder: opts.sortOrder ?? sortOrder,
+          ...(effectiveSort === "schedule" ? { sort: "schedule" as const } : {}),
         });
         if (result.status && result.data) {
           setAppointments(result.data);
@@ -197,7 +221,7 @@ export function AppointmentsClient({
         setIsReloading(false);
       }
     },
-    [clinicUid, sortOrder]
+    [clinicUid, sort]
   );
 
   const handleHpFilterToggle = useCallback(
@@ -208,15 +232,17 @@ export function AppointmentsClient({
       setHpFilters(next);
       setActiveTab("ALL");
       void reloadWithFilters({ hpIds: next, tagged: taggedOnly, search: activeSearch, status: "ALL" });
+      savePreference({ statusFilter: "ALL", providerIds: next });
     },
-    [hpFilters, taggedOnly, activeSearch, reloadWithFilters]
+    [hpFilters, taggedOnly, activeSearch, reloadWithFilters, savePreference]
   );
 
   const handleClearHpFilters = useCallback(() => {
     setHpFilters([]);
     setActiveTab("ALL");
     void reloadWithFilters({ hpIds: [], tagged: taggedOnly, search: activeSearch, status: "ALL" });
-  }, [taggedOnly, activeSearch, reloadWithFilters]);
+    savePreference({ statusFilter: "ALL", providerIds: [] });
+  }, [taggedOnly, activeSearch, reloadWithFilters, savePreference]);
 
   const handleTaggedToggle = useCallback(() => {
     const next = !taggedOnly;
@@ -255,9 +281,19 @@ export function AppointmentsClient({
     (tab: StatusTabKey) => {
       setActiveTab(tab);
       void reloadWithFilters({ hpIds: hpFilters, tagged: taggedOnly, search: activeSearch, status: tab });
+      savePreference({ statusFilter: tab });
     },
-    [hpFilters, taggedOnly, activeSearch, reloadWithFilters]
+    [hpFilters, taggedOnly, activeSearch, reloadWithFilters, savePreference]
   );
+
+  // ── Sort toggle ────────────────────────────────────────────────────────────
+
+  const handleSortToggle = useCallback(() => {
+    const next: AppointmentSortOrder = sort === "schedule" ? "createdAt" : "schedule";
+    setSort(next);
+    void reloadWithFilters({ hpIds: hpFilters, tagged: taggedOnly, search: activeSearch, status: activeTab, sort: next });
+    savePreference({ sortOrder: next });
+  }, [sort, hpFilters, taggedOnly, activeSearch, activeTab, reloadWithFilters, savePreference]);
 
   // ── Refresh ────────────────────────────────────────────────────────────────
 
@@ -299,7 +335,7 @@ export function AppointmentsClient({
         ...(taggedOnly ? { tagged: "true" } : {}),
         ...(activeSearch ? { search: activeSearch } : {}),
         ...(activeTab !== "ALL" ? { status: activeTab as AppointmentStatus } : {}),
-        sortOrder,
+        ...(sort === "schedule" ? { sort: "schedule" as const } : {}),
       });
       if (result.status && result.data) {
         const newItems = result.data;
@@ -316,7 +352,7 @@ export function AppointmentsClient({
     } finally {
       setIsLoadingMore(false);
     }
-  }, [clinicUid, appointments, hasMore, isLoadingMore, hpFilters, taggedOnly, activeSearch, activeTab, sortOrder]);
+  }, [clinicUid, appointments, hasMore, isLoadingMore, hpFilters, taggedOnly, activeSearch, activeTab, sort]);
 
   // IntersectionObserver for scroll-to-load-more
   useEffect(() => {
@@ -364,16 +400,6 @@ export function AppointmentsClient({
             <UserPlus className="h-3.5 w-3.5" />
             Walk-In
           </Button>
-          <AppointmentPreferencesDialog
-            currentPreference={{ sortOrder }}
-            onSave={(pref) => {
-              setSortOrder(pref.sortOrder);
-              reloadWithFilters({ hpIds: hpFilters, tagged: taggedOnly, search: activeSearch, status: activeTab, sortOrder: pref.sortOrder }).catch((err) => {
-                toast.error("Failed to reload appointments with new preference.");
-                console.error(err);
-              });
-            }}
-          />
         </div>
 
         {/* Row 1.5: Search */}
@@ -500,6 +526,22 @@ export function AppointmentsClient({
             >
               <Tag className="h-3 w-3" />
               My Tagged
+            </button>
+
+            {/* Sort order toggle */}
+            <button
+              onClick={handleSortToggle}
+              disabled={isReloading}
+              className={cn(
+                "flex items-center gap-1.5 h-7 px-2.5 text-xs rounded-md border transition-all duration-150 font-medium",
+                sort === "schedule"
+                  ? "bg-primary/10 text-primary border-primary/40 shadow-sm"
+                  : "bg-background/60 border-border/50 text-muted-foreground hover:border-primary/40 hover:text-foreground"
+              )}
+              title={sort === "schedule" ? "Sorted by schedule date — click to sort by date created" : "Sorted by date created — click to sort by schedule date"}
+            >
+              <ArrowUpDown className="h-3 w-3" />
+              {sort === "schedule" ? "By Schedule" : "By Created"}
             </button>
           </div>
         </div>

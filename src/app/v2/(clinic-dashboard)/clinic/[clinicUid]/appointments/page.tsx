@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { getAppointmentsAction, getAppointmentCountsAction } from "@/actions/appointments/appointments.action";
+import type { AppointmentStatus } from "@public/json/appointment-list";
 import { getAppointmentModesAction } from "@/actions/appointments/appointment-mode.action";
 import { getAppointmentTypesAction } from "@/actions/appointments/appointment-type.action";
 import { getClinicServiceCategoriesAction } from "@/actions/clinics/clinic-service-category.action";
@@ -11,7 +12,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { getCachedSession } from "@/actions/session.action";
 import { getCurrentMemberVisibleTabsAction } from "@/actions/clinics/clinic-member.action";
 import { getAppointmentListPreferenceAction } from "@/actions/users/preference.action";
-import { DEFAULT_APPOINTMENT_LIST_PREFERENCE } from "@/types/appointment-preference";
 
 export const dynamic = "force-dynamic";
 
@@ -29,12 +29,22 @@ export default async function AppointmentsPage({ params }: AppointmentsPageProps
 
   const session = await getCachedSession();
 
-  // Fetch preference first so we can pass sortOrder to the appointments query
+  // Fetch user preference first so the initial appointments query respects it
   const preferenceResult = await getAppointmentListPreferenceAction();
-  const preference = preferenceResult.data ?? DEFAULT_APPOINTMENT_LIST_PREFERENCE;
+  const preference = preferenceResult.data;
 
   const [appointmentsResult, countsResult, modes, types, hps, serviceCategories, systems, myHps, visibleTabNames] = await Promise.all([
-    getAppointmentsAction({ clinicUid, sortOrder: preference.sortOrder }),
+    getAppointmentsAction({
+      clinicUid,
+      // Apply persisted status filter
+      ...(preference?.statusFilter && preference.statusFilter !== "ALL"
+        ? { status: preference.statusFilter as AppointmentStatus }
+        : {}),
+      // Apply persisted provider filter
+      ...(preference?.providerIds?.length ? { hpIds: preference.providerIds } : {}),
+      // Apply persisted sort order
+      ...(preference?.sortOrder === "schedule" ? { sort: "schedule" as const } : {}),
+    }),
     getAppointmentCountsAction(clinicUid),
     getAppointmentModesAction(clinicUid),
     getAppointmentTypesAction(clinicUid),

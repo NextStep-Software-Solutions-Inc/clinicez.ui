@@ -8,7 +8,7 @@ import { PERMISSIONS } from "@lib/permissions";
 import { withErrorHandling } from "@/lib/with-error-handling";
 import { withRetry } from "@/lib/database-health";
 import { NotificationType, Prisma } from "@prisma/client";
-import type { AppointmentListPreference } from "@/types/appointment-preference";
+import type { AppointmentListPreference, UserPreferences } from "@/types/appointment-preference";
 
 
 export type GetMyUserPreference = Awaited<ReturnType<typeof getMyUserPreferenceAction>>;
@@ -122,6 +122,11 @@ function isAppointmentListPreference(value: unknown): value is AppointmentListPr
   return typeof sortOrder === "string" && VALID_SORT_ORDERS.includes(sortOrder as AppointmentListPreference["sortOrder"]);
 }
 
+function parseUserPreferences(raw: unknown): UserPreferences {
+  if (typeof raw !== "object" || raw === null) return {};
+  return raw as UserPreferences;
+}
+
 export type GetAppointmentListPreference = Awaited<ReturnType<typeof getAppointmentListPreferenceAction>>;
 export const getAppointmentListPreferenceAction = withErrorHandling(async () => {
   const session = await getCachedSession();
@@ -130,11 +135,12 @@ export const getAppointmentListPreferenceAction = withErrorHandling(async () => 
   const userPreference = await withRetry(async () => {
     return await prisma.userPreference.findFirst({
       where: { User: { userId: session.user.sub } },
-      select: { appointmentListPreference: true }
+      select: { preferences: true }
     });
   }, 3, 200);
 
-  const raw = userPreference?.appointmentListPreference;
+  const prefs = parseUserPreferences(userPreference?.preferences);
+  const raw = prefs.appointmentList;
   const data: AppointmentListPreference | null = isAppointmentListPreference(raw) ? raw : null;
 
   return { 
@@ -150,10 +156,20 @@ export const upsertAppointmentListPreferenceAction = withErrorHandling(async (pr
   const user = await prisma.user.findUniqueOrThrow({ where: { userId: session.user.sub }, select: { id: true } });
   
   await withRetry(async () => {
+    // Read existing preferences to merge, then update only the appointmentList key
+    const existing = await prisma.userPreference.findUnique({
+      where: { userId: user.id },
+      select: { preferences: true },
+    });
+    const merged: UserPreferences = {
+      ...parseUserPreferences(existing?.preferences),
+      appointmentList: preference,
+    };
+
     return await prisma.userPreference.upsert({
       where: { userId: user.id },
-      create: { userId: user.id, appointmentListPreference: preference },
-      update: { appointmentListPreference: preference },
+      create: { userId: user.id, preferences: merged },
+      update: { preferences: merged },
     });
   }, 3, 200);
 

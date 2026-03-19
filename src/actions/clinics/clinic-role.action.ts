@@ -4,6 +4,8 @@ import "server-only";
 import prisma from "@lib/prisma";
 import { cache } from "react";
 import { getCachedSession } from "@actions/session.action";
+import { getPermissionsAction } from "@actions/permission.action";
+import { PERMISSIONS } from "@lib/permissions";
 import { ClinicMemberStatus } from "@/types";
 
 type CreateClinicRolePayload = {
@@ -131,6 +133,7 @@ export const getClinicRolesWithPermissionsAction = async (clinicUid: string) => 
       id: true,
       name: true,
       canAccessDashboard: true,
+      restrictToOwnAppointments: true,
       ClinicMembers: {
         where: { isActive: true, Clinic: { clinicUid } },
         select: { id: true },
@@ -172,6 +175,30 @@ export const setClinicRoleDashboardAccessAction = async (clinicRoleId: number, c
   } catch (error) {
     console.error(`Error while updating clinic role dashboard access: ${error}`);
     message = "Error while updating role dashboard access";
+    if (error instanceof Error) message = error.message;
+    return { status: false, message, data: null };
+  }
+};
+
+export const setClinicRoleRestrictToOwnAppointmentsAction = async (clinicRoleId: number, restrictToOwnAppointments: boolean) => {
+  let message = "Role appointment restriction updated successfully";
+  try {
+    const session = await getCachedSession();
+    if (!session) throw new Error("Session not found");
+
+    const myPermissions = await getPermissionsAction({ userId: session.user.sub, type: "CLINIC" });
+    const myPermissionArray = myPermissions.map(p => p.name);
+    const canUpdateSettings = myPermissionArray.includes(PERMISSIONS.CLINIC["UPDATE:CLINIC:SETTINGS"].name);
+    if (!canUpdateSettings) throw new Error("You do not have permission to update this setting.");
+
+    await prisma.clinicRole.update({
+      where: { isActive: true, id: clinicRoleId },
+      data: { restrictToOwnAppointments }
+    });
+    return { status: true, message, data: null };
+  } catch (error) {
+    console.error(`Error while updating clinic role appointment restriction: ${error}`);
+    message = "Error while updating role appointment restriction";
     if (error instanceof Error) message = error.message;
     return { status: false, message, data: null };
   }

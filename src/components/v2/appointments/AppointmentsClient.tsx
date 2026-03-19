@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect, startTransition } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarDays, Clock, UserPlus, Loader2, Tag, ChevronDown, Check, Search, ArrowUpDown } from "lucide-react";
+import { CalendarDays, Clock, UserPlus, Loader2, Tag, ChevronDown, Check, Search, ArrowUp, ArrowDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -26,7 +26,7 @@ import { AssignDoctorDialog } from "./AssignDoctorDialog";
 import { PreAssessmentNoteDialog } from "./PreAssessmentNoteDialog";
 import { TagHPDialog } from "./TagHPDialog";
 import { RescheduleDialog } from "./RescheduleDialog";
-import type { AppointmentListPreference, AppointmentSortOrder } from "@/types/appointment-preference";
+import type { AppointmentListPreference, AppointmentSortField, AppointmentSortDirection } from "@/types/appointment-preference";
 import { cn } from "@/lib/utils";
 
 type Appointment = NonNullable<GetAppointments["data"]>[number];
@@ -126,9 +126,13 @@ export function AppointmentsClient({
     return initialPreference.providerIds.filter((id) => validHpIds.has(id));
   });
   const [taggedOnly, setTaggedOnly] = useState(false);
-  // Sort order — initialize from persisted preference ("schedule" = by scheduled date, "createdAt" = newest first)
-  const [sort, setSort] = useState<AppointmentSortOrder>(
+  // Sort field — "schedule" = by scheduled date, "createdAt" = by creation date
+  const [sort, setSort] = useState<AppointmentSortField>(
     initialPreference?.sortOrder ?? "createdAt"
+  );
+  // Sort direction — persisted independently of field
+  const [sortDirection, setSortDirection] = useState<AppointmentSortDirection>(
+    initialPreference?.sortDirection ?? (initialPreference?.sortOrder === "schedule" ? "asc" : "desc")
   );
 
   // Pagination: start with initial data; hasMore=true when initial page is full
@@ -189,19 +193,21 @@ export function AppointmentsClient({
         statusFilter: activeTab,
         providerIds: hpFilters,
         sortOrder: sort,
+        sortDirection,
         ...patch,
       });
     },
-    [activeTab, hpFilters, sort]
+    [activeTab, hpFilters, sort, sortDirection]
   );
 
   // ── Server-side filter reload ───────────────────────────────────────────────
 
   const reloadWithFilters = useCallback(
-    async (opts: { hpIds: number[]; tagged: boolean; search?: string; status?: StatusTabKey; sort?: AppointmentSortOrder }) => {
+    async (opts: { hpIds: number[]; tagged: boolean; search?: string; status?: StatusTabKey; sort?: AppointmentSortField; sortDirection?: AppointmentSortDirection }) => {
       setIsReloading(true);
       try {
         const effectiveSort = opts.sort ?? sort;
+        const effectiveDirection = opts.sortDirection ?? sortDirection;
         const result = await getAppointmentsAction({
           clinicUid,
           ...(opts.hpIds.length > 0 ? { hpIds: opts.hpIds } : {}),
@@ -209,6 +215,7 @@ export function AppointmentsClient({
           ...(opts.search ? { search: opts.search } : {}),
           ...(opts.status && opts.status !== "ALL" ? { status: opts.status as AppointmentStatus } : {}),
           ...(effectiveSort === "schedule" ? { sort: "schedule" as const } : {}),
+          sortDirection: effectiveDirection,
         });
         if (result.status && result.data) {
           setAppointments(result.data);
@@ -221,7 +228,7 @@ export function AppointmentsClient({
         setIsReloading(false);
       }
     },
-    [clinicUid, sort]
+    [clinicUid, sort, sortDirection]
   );
 
   const handleHpFilterToggle = useCallback(
@@ -286,14 +293,25 @@ export function AppointmentsClient({
     [hpFilters, taggedOnly, activeSearch, reloadWithFilters, savePreference]
   );
 
-  // ── Sort toggle ────────────────────────────────────────────────────────────
+  // ── Sort controls ──────────────────────────────────────────────────────────
 
+  /** Toggles sort field; resets direction to the natural default for that field. */
   const handleSortToggle = useCallback(() => {
-    const next: AppointmentSortOrder = sort === "schedule" ? "createdAt" : "schedule";
-    setSort(next);
-    void reloadWithFilters({ hpIds: hpFilters, tagged: taggedOnly, search: activeSearch, status: activeTab, sort: next });
-    savePreference({ sortOrder: next });
+    const nextField: AppointmentSortField = sort === "schedule" ? "createdAt" : "schedule";
+    const nextDir: AppointmentSortDirection = nextField === "schedule" ? "asc" : "desc";
+    setSort(nextField);
+    setSortDirection(nextDir);
+    void reloadWithFilters({ hpIds: hpFilters, tagged: taggedOnly, search: activeSearch, status: activeTab, sort: nextField, sortDirection: nextDir });
+    savePreference({ sortOrder: nextField, sortDirection: nextDir });
   }, [sort, hpFilters, taggedOnly, activeSearch, activeTab, reloadWithFilters, savePreference]);
+
+  /** Toggles direction for the current sort field. */
+  const handleDirectionToggle = useCallback(() => {
+    const nextDir: AppointmentSortDirection = sortDirection === "asc" ? "desc" : "asc";
+    setSortDirection(nextDir);
+    void reloadWithFilters({ hpIds: hpFilters, tagged: taggedOnly, search: activeSearch, status: activeTab, sortDirection: nextDir });
+    savePreference({ sortDirection: nextDir });
+  }, [sortDirection, hpFilters, taggedOnly, activeSearch, activeTab, reloadWithFilters, savePreference]);
 
   // ── Refresh ────────────────────────────────────────────────────────────────
 
@@ -336,6 +354,7 @@ export function AppointmentsClient({
         ...(activeSearch ? { search: activeSearch } : {}),
         ...(activeTab !== "ALL" ? { status: activeTab as AppointmentStatus } : {}),
         ...(sort === "schedule" ? { sort: "schedule" as const } : {}),
+        sortDirection,
       });
       if (result.status && result.data) {
         const newItems = result.data;
@@ -352,7 +371,7 @@ export function AppointmentsClient({
     } finally {
       setIsLoadingMore(false);
     }
-  }, [clinicUid, appointments, hasMore, isLoadingMore, hpFilters, taggedOnly, activeSearch, activeTab, sort]);
+  }, [clinicUid, appointments, hasMore, isLoadingMore, hpFilters, taggedOnly, activeSearch, activeTab, sort, sortDirection]);
 
   // IntersectionObserver for scroll-to-load-more
   useEffect(() => {
@@ -528,21 +547,37 @@ export function AppointmentsClient({
               My Tagged
             </button>
 
-            {/* Sort order toggle */}
-            <button
-              onClick={handleSortToggle}
-              disabled={isReloading}
-              className={cn(
-                "flex items-center gap-1.5 h-7 px-2.5 text-xs rounded-md border transition-all duration-150 font-medium",
-                sort === "schedule"
-                  ? "bg-primary/10 text-primary border-primary/40 shadow-sm"
-                  : "bg-background/60 border-border/50 text-muted-foreground hover:border-primary/40 hover:text-foreground"
-              )}
-              title={sort === "schedule" ? "Sorted by schedule date — click to sort by date created" : "Sorted by date created — click to sort by schedule date"}
-            >
-              <ArrowUpDown className="h-3 w-3" />
-              {sort === "schedule" ? "By Schedule" : "By Created"}
-            </button>
+            {/* Sort field + direction — two adjacent buttons styled as a group */}
+            <div className="flex items-center rounded-md border overflow-hidden">
+              {/* Field toggle */}
+              <button
+                onClick={handleSortToggle}
+                disabled={isReloading}
+                className={cn(
+                  "flex items-center gap-1 h-7 px-2.5 text-xs transition-all duration-150 font-medium border-r",
+                  sort === "schedule"
+                    ? "bg-primary/10 text-primary"
+                    : "bg-background/60 text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                )}
+                title={sort === "schedule" ? "Sort by schedule date — click to sort by date created" : "Sort by date created — click to sort by schedule date"}
+              >
+                {sort === "schedule" ? "By Schedule" : "By Created"}
+              </button>
+              {/* Direction toggle */}
+              <button
+                onClick={handleDirectionToggle}
+                disabled={isReloading}
+                className={cn(
+                  "flex items-center justify-center h-7 w-7 text-xs transition-all duration-150",
+                  sortDirection === (sort === "schedule" ? "desc" : "asc")
+                    ? "bg-primary/10 text-primary"
+                    : "bg-background/60 text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                )}
+                title={sortDirection === "asc" ? "Ascending — click for descending" : "Descending — click for ascending"}
+              >
+                {sortDirection === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
+              </button>
+            </div>
           </div>
         </div>
       </div>

@@ -376,6 +376,8 @@ export type GetAppointmentFilter = {
   tagged?: string;
   appointmentId?: number;
   sort?: "request" | "schedule";
+  /** Direction for the chosen sort field. Defaults to "asc" for schedule, "desc" for createdAt. */
+  sortDirection?: "asc" | "desc";
   /** Filter by one or more healthcare providers involved (assigned or tagged) */
   hpIds?: number[];
   /** Cursor-based pagination: ID of the last item from the previous page */
@@ -396,7 +398,7 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
     getHPsAction({ userId: session.user.sub })
   ])
 
-  const { clinicUid, userId, status, routedAptStatus, tagged, sort, cursor, limit, hpIds, search } = filter || {};
+  const { clinicUid, userId, status, routedAptStatus, tagged, sort, sortDirection, cursor, limit, hpIds, search } = filter || {};
   const PAGE_SIZE = limit ?? 20;
   const searchTerm = search?.trim() || "";
 
@@ -416,8 +418,8 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
     take: PAGE_SIZE + 1, // fetch one extra to determine if there's a next page
     ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     orderBy: sort === "schedule"
-      ? [{ AppointmentAttribute: { date: "asc" as const } }]
-      : [{ createdAt: "desc" as const }],
+      ? [{ AppointmentAttribute: { date: (sortDirection ?? "asc") as const } }]
+      : [{ createdAt: (sortDirection ?? "desc") as const }],
     where: {
       Clinic: {
         clinicUid

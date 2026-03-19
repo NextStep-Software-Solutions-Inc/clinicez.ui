@@ -115,11 +115,13 @@ export const upsertMyUserPreference = withErrorHandling(async (payload: UpsertUs
 });
 
 const VALID_SORT_ORDERS: AppointmentListPreference["sortOrder"][] = ["schedule", "createdAt"];
+const VALID_SORT_DIRECTIONS: AppointmentListPreference["sortDirection"][] = ["asc", "desc"];
 
 function isAppointmentListPreference(value: unknown): value is AppointmentListPreference {
   if (typeof value !== "object" || value === null) return false;
   const v = value as Record<string, unknown>;
   if ("sortOrder" in v && v.sortOrder !== undefined && !VALID_SORT_ORDERS.includes(v.sortOrder as AppointmentListPreference["sortOrder"])) return false;
+  if ("sortDirection" in v && v.sortDirection !== undefined && !VALID_SORT_DIRECTIONS.includes(v.sortDirection as AppointmentListPreference["sortDirection"])) return false;
   if ("statusFilter" in v && v.statusFilter !== undefined && typeof v.statusFilter !== "string") return false;
   if ("providerIds" in v && v.providerIds !== undefined && !Array.isArray(v.providerIds)) return false;
   return true;

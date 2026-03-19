@@ -44,6 +44,8 @@ export default async function AppointmentsPage({ params }: AppointmentsPageProps
       ...(preference?.providerIds?.length ? { hpIds: preference.providerIds } : {}),
       // Apply persisted sort order
       ...(preference?.sortOrder === "schedule" ? { sort: "schedule" as const } : {}),
+      // Apply persisted sort direction
+      ...(preference?.sortDirection ? { sortDirection: preference.sortDirection } : {}),
     }),
     getAppointmentCountsAction(clinicUid),
     getAppointmentModesAction(clinicUid),

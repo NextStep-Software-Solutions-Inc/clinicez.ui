@@ -418,8 +418,8 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
     take: PAGE_SIZE + 1, // fetch one extra to determine if there's a next page
     ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     orderBy: sort === "schedule"
-      ? [{ AppointmentAttribute: { date: (sortDirection ?? "asc") as const } }]
-      : [{ createdAt: (sortDirection ?? "desc") as const }],
+      ? [{ AppointmentAttribute: { date: (sortDirection ?? "asc") as "asc" | "desc" } }]
+      : [{ createdAt: (sortDirection ?? "desc") as "asc" | "desc" }],
     where: {
       Clinic: {
         clinicUid

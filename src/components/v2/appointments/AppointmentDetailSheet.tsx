@@ -560,9 +560,19 @@ export function AppointmentDetailSheet({
 
           {/* Patient Info */}
           <div className="rounded-xl border bg-muted/30 p-4 space-y-3">
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-              Patient Information
-            </h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                Patient Information
+              </h3>
+              {!isWalkIn && requester?.id && currentUserHpIds.length > 0 && (
+                <PatientAIInsightButton
+                  patientId={requester.id}
+                  clinicId={appointment.clinicId}
+                  patientName={fullName}
+                  size="sm"
+                />
+              )}
+            </div>
             <div className="flex items-center gap-3">
               <Avatar className="h-12 w-12 rounded-full border border-border/50">
                 {requester?.picture && (
@@ -599,14 +609,15 @@ export function AppointmentDetailSheet({
                   <ExternalLink className="h-3.5 w-3.5" />
                   View Patient Profile
                 </a>
-                {currentUserHpIds.length > 0 && (
-                  <PatientAIInsightButton
-                    patientId={requester.id}
-                    clinicId={appointment.clinicId}
-                    patientName={fullName}
-                    size="sm"
-                  />
-                )}
+                <a
+                  href={`/v2/clinic/${clinicUid}/patients/${requester.id}/consultations`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
+                >
+                  <Stethoscope className="h-3.5 w-3.5" />
+                  Consultation Workspace
+                </a>
               </div>
             )}
           </div>

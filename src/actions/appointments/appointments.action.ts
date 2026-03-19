@@ -376,6 +376,8 @@ export type GetAppointmentFilter = {
   tagged?: string;
   appointmentId?: number;
   sort?: "request" | "schedule";
+  /** Direction for the chosen sort field. Defaults to "asc" for schedule, "desc" for createdAt. */
+  sortDirection?: "asc" | "desc";
   /** Filter by one or more healthcare providers involved (assigned or tagged) */
   hpIds?: number[];
   /** Cursor-based pagination: ID of the last item from the previous page */
@@ -391,12 +393,24 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
   const session = await getCachedSession();
   if (!session) throw new Error("Unauthorized");
 
-  const [permissions, myHps] = await Promise.all([
-    getPermissionsAction({ userId: session.user.sub }),
-    getHPsAction({ userId: session.user.sub })
-  ])
+  const { clinicUid, userId, status, routedAptStatus, tagged, sort, sortDirection, cursor, limit, hpIds, search } = filter || {};
 
-  const { clinicUid, userId, status, routedAptStatus, tagged, sort, cursor, limit, hpIds, search } = filter || {};
+  const [permissions, myHps, userClinicMember] = await Promise.all([
+    getPermissionsAction({ userId: session.user.sub }),
+    getHPsAction({ userId: session.user.sub }),
+    clinicUid ? prisma.clinicMember.findFirst({
+      where: {
+        User: { userId: session.user.sub },
+        Clinic: { clinicUid },
+        isActive: true,
+        status: "ACTIVE",
+      },
+      select: {
+        Role: { select: { restrictToOwnAppointments: true } }
+      }
+    }) : Promise.resolve(null),
+  ]);
+
   const PAGE_SIZE = limit ?? 20;
   const searchTerm = search?.trim() || "";
 
@@ -410,20 +424,15 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
   const canReadAOwnOrgAppointment = readAOwnOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
   const canReadAssignedOrgAppointment = readAssignedOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
 
+  const isRestrictedToOwnAppointments = userClinicMember?.Role?.restrictToOwnAppointments ?? false;
 
   const myHpIds = myHps.map((hp) => hp.id);
   const appointments = await prisma.appointment.findMany({
     take: PAGE_SIZE + 1, // fetch one extra to determine if there's a next page
     ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
-    orderBy: {
-      ...(sort === "schedule"
-        ? {
-          AppointmentAttribute: {
-            date: "asc",
-          }
-        }
-        : { createdAt: "desc" })
-    },
+    orderBy: sort === "schedule"
+      ? [{ AppointmentAttribute: { date: (sortDirection ?? "asc") as "asc" | "desc" } }]
+      : [{ createdAt: (sortDirection ?? "desc") as "asc" | "desc" }],
     where: {
       Clinic: {
         clinicUid
@@ -485,6 +494,27 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
             },
           ]
         },
+        // Role-level restriction: if the user's role restricts them to their own appointments,
+        // only return appointments where they are assigned (routing) or tagged (involvement).
+        ...(isRestrictedToOwnAppointments ? [{
+          OR: [
+            {
+              AppointmentRouting: {
+                some: {
+                  OR: [
+                    { routedTo: { in: myHpIds } },
+                    { RoutedBy: { userId: session.user.sub } },
+                  ]
+                }
+              }
+            },
+            {
+              AppointmentTag: {
+                some: { healthcareProviderId: { in: myHpIds } }
+              }
+            },
+          ]
+        }] : []),
         // Server-side search filter (patient name, subject, or complaint)
         ...(searchTerm
           ? [{
@@ -1279,14 +1309,25 @@ export const getAppointmentAction = withErrorHandling(cache(async (id: number, c
 }));
 
 export type GetAppointmentCounts = Awaited<ReturnType<typeof getAppointmentCountsAction>>;
-export const getAppointmentCountsAction = withErrorHandling(cache(async (clinicUid: string) => {
+export const getAppointmentCountsAction = withErrorHandling(cache(async (clinicUid: string, filter?: { hpIds?: number[]; tagged?: string }) => {
 
   const session = await getCachedSession();
   if (!session) throw new Error("Unauthorized");
 
-  const [permissions, myHps] = await Promise.all([
+  const [permissions, myHps, userClinicMember] = await Promise.all([
     getPermissionsAction({ userId: session.user.sub }),
-    getHPsAction({ userId: session.user.sub })
+    getHPsAction({ userId: session.user.sub }),
+    prisma.clinicMember.findFirst({
+      where: {
+        User: { userId: session.user.sub },
+        Clinic: { clinicUid },
+        isActive: true,
+        status: "ACTIVE",
+      },
+      select: {
+        Role: { select: { restrictToOwnAppointments: true } }
+      }
+    }),
   ])
 
   const userPermissionArray = permissions.map(p => p.name);
@@ -1299,33 +1340,81 @@ export const getAppointmentCountsAction = withErrorHandling(cache(async (clinicU
   const canReadAOwnOrgAppointment = readAOwnOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
   const canReadAssignedOrgAppointment = readAssignedOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
 
+  const isRestrictedToOwnAppointments = userClinicMember?.Role?.restrictToOwnAppointments ?? false;
+
   const myHpIds = myHps.map((hp) => hp.id);
+  const { hpIds, tagged } = filter ?? {};
   const appointments = await prisma.appointment.findMany({
     where: {
       Clinic: {
         clinicUid
       },
       isActive: true,
-      OR: [
-        { ...(canReadAllOrgAppointment ? { Clinic: { clinicUid } } : {}) },
-        { ...(canReadAOwnOrgAppointment ? { Requesters: { every: { User: { userId: session.user.sub } } } } : {}) },
-        {
-          ...(canReadAssignedOrgAppointment ? {
-            AppointmentRouting: {
-              some: {
-                OR: [
-                  {
-                    routedTo: {
-                      in: myHpIds
-                    }
-                  },
-                  { RoutedBy: { userId: session.user.sub } }
-                ]
+      // "My Tagged" filter — only count appointments where the current user is tagged as an HP
+      ...(tagged === "true"
+        ? {
+          AppointmentTag: {
+            some: {
+              healthcareProviderId: {
+                in: myHpIds
               }
             }
-          } : {})
+          }
+        }
+        : {}),
+      // Provider filter — count only appointments assigned/tagged to the selected providers
+      ...(hpIds && hpIds.length > 0
+        ? {
+          OR: [
+            { AppointmentRouting: { some: { routedTo: { in: hpIds } } } },
+            { AppointmentTag: { some: { healthcareProviderId: { in: hpIds } } } },
+          ]
+        }
+        : {}),
+      AND: [
+        {
+          OR: [
+            { ...(canReadAllOrgAppointment ? { Clinic: { clinicUid } } : {}) },
+            { ...(canReadAOwnOrgAppointment ? { Requesters: { every: { User: { userId: session.user.sub } } } } : {}) },
+            {
+              ...(canReadAssignedOrgAppointment ? {
+                AppointmentRouting: {
+                  some: {
+                    OR: [
+                      {
+                        routedTo: {
+                          in: myHpIds
+                        }
+                      },
+                      { RoutedBy: { userId: session.user.sub } }
+                    ]
+                  }
+                }
+              } : {})
+            },
+          ]
         },
-      ]
+        // Role-level restriction: when enabled, only count appointments where the user is involved.
+        ...(isRestrictedToOwnAppointments ? [{
+          OR: [
+            {
+              AppointmentRouting: {
+                some: {
+                  OR: [
+                    { routedTo: { in: myHpIds } },
+                    { RoutedBy: { userId: session.user.sub } },
+                  ]
+                }
+              }
+            },
+            {
+              AppointmentTag: {
+                some: { healthcareProviderId: { in: myHpIds } }
+              }
+            },
+          ]
+        }] : []),
+      ],
     },
     select: {
       AppointmentAttribute: {
@@ -1393,9 +1482,20 @@ export const getRoutedAppointmentCountsAction = withErrorHandling(cache(async (c
   const session = await getCachedSession();
   if (!session) throw new Error("Unauthorized");
 
-  const [permissions, myHps] = await Promise.all([
+  const [permissions, myHps, userClinicMember] = await Promise.all([
     getPermissionsAction({ userId: session.user.sub }),
-    getHPsAction({ userId: session.user.sub })
+    getHPsAction({ userId: session.user.sub }),
+    prisma.clinicMember.findFirst({
+      where: {
+        User: { userId: session.user.sub },
+        Clinic: { clinicUid },
+        isActive: true,
+        status: "ACTIVE",
+      },
+      select: {
+        Role: { select: { restrictToOwnAppointments: true } }
+      }
+    }),
   ])
   const userPermissionArray = permissions.map(p => p.name);
 
@@ -1406,6 +1506,8 @@ export const getRoutedAppointmentCountsAction = withErrorHandling(cache(async (c
   const canReadAllOrgAppointment = readAllOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
   const canReadAOwnOrgAppointment = readAOwnOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
   const canReadAssignedOrgAppointment = readAssignedOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
+
+  const isRestrictedToOwnAppointments = userClinicMember?.Role?.restrictToOwnAppointments ?? false;
 
   const myHpIds = myHps.map((hp) => hp.id);
   const routedAppointments = await prisma.appointmentRouting.findMany({
@@ -1421,26 +1523,50 @@ export const getRoutedAppointmentCountsAction = withErrorHandling(cache(async (c
             in: ["ROUTED"]
           }
         },
-        OR: [
-          { ...(canReadAllOrgAppointment ? { Clinic: { clinicUid } } : {}) },
-          { ...(canReadAOwnOrgAppointment ? { Requesters: { every: { User: { userId: session.user.sub } } } } : {}) },
+        AND: [
           {
-            ...(canReadAssignedOrgAppointment ? {
-              AppointmentRouting: {
-                some: {
-                  OR: [
-                    {
-                      routedTo: {
-                        in: myHpIds
-                      }
-                    },
-                    { RoutedBy: { userId: session.user.sub } }
-                  ]
-                }
-              }
-            } : {})
+            OR: [
+              { ...(canReadAllOrgAppointment ? { Clinic: { clinicUid } } : {}) },
+              { ...(canReadAOwnOrgAppointment ? { Requesters: { every: { User: { userId: session.user.sub } } } } : {}) },
+              {
+                ...(canReadAssignedOrgAppointment ? {
+                  AppointmentRouting: {
+                    some: {
+                      OR: [
+                        {
+                          routedTo: {
+                            in: myHpIds
+                          }
+                        },
+                        { RoutedBy: { userId: session.user.sub } }
+                      ]
+                    }
+                  }
+                } : {})
+              },
+            ]
           },
-        ]
+          // Role-level restriction: when enabled, only count appointments where the user is involved.
+          ...(isRestrictedToOwnAppointments ? [{
+            OR: [
+              {
+                AppointmentRouting: {
+                  some: {
+                    OR: [
+                      { routedTo: { in: myHpIds } },
+                      { RoutedBy: { userId: session.user.sub } },
+                    ]
+                  }
+                }
+              },
+              {
+                AppointmentTag: {
+                  some: { healthcareProviderId: { in: myHpIds } }
+                }
+              },
+            ]
+          }] : []),
+        ],
       }
     },
     select: {

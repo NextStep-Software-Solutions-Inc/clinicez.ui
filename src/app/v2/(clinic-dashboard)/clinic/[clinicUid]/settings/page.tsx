@@ -15,6 +15,8 @@ import { checkGoogleCalendarAccess, getCalendarEvents } from "@/actions/google/a
 import { getSystemsAction } from "@/actions/system.action";
 import { ClinicSettingsClient } from "@/components/v2/settings/ClinicSettingsClient";
 import { notFound } from "next/navigation";
+import { getCachedSession } from "@/actions/session.action";
+import { PERMISSIONS } from "@/lib/permissions";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +31,8 @@ interface ClinicSettingsPageProps {
 
 export default async function ClinicSettingsPage({ params }: ClinicSettingsPageProps) {
   const { clinicUid } = await params;
+
+  const session = await getCachedSession();
 
   const [
     clinicResult,
@@ -45,6 +49,7 @@ export default async function ClinicSettingsPage({ params }: ClinicSettingsPageP
     allAppointmentTabs,
     googleAccess,
     initialSystems,
+    myPermissions,
   ] = await Promise.all([
     getClinicAction(clinicUid),
     getClinicSettingAction(clinicUid),
@@ -60,11 +65,15 @@ export default async function ClinicSettingsPage({ params }: ClinicSettingsPageP
     getAppointmentTabsAction(),
     checkGoogleCalendarAccess(),
     getSystemsAction(clinicUid),
+    session ? getPermissionsAction({ userId: session.user.sub, type: "CLINIC" }) : Promise.resolve([]),
   ]);
 
   if (!clinicResult.status || !clinicResult.data) {
     notFound();
   }
+
+  const myPermissionSet = new Set(myPermissions.map(p => p.name));
+  const canUpdateSettings = myPermissionSet.has(PERMISSIONS.CLINIC["UPDATE:CLINIC:SETTINGS"].name);
 
   const googleCalendarEvents = googleAccess.connected
     ? await getCalendarEvents(20).catch(() => [])
@@ -90,6 +99,7 @@ export default async function ClinicSettingsPage({ params }: ClinicSettingsPageP
         googleCalendarEmail={googleAccess.email}
         googleCalendarEvents={googleCalendarEvents}
         initialSystems={initialSystems}
+        canUpdateSettings={canUpdateSettings}
       />
     </Suspense>
   );

@@ -221,3 +221,85 @@ export async function updateUserByAdminAction(
 
   return { success: true, message: "User updated successfully." };
 }
+
+export async function deleteUserAction(
+  userDbId: number
+): Promise<{ success: boolean; message: string }> {
+  const isSuperAdmin = await isSuperAdminAction();
+  if (!isSuperAdmin) {
+    return { success: false, message: "Unauthorized: Only super admins can delete users." };
+  }
+
+  // Fetch current user data
+  const currentUser = await prisma.user.findUnique({
+    where: { id: userDbId },
+    select: { id: true, userId: true, email: true, isActive: true, deletedAt: true },
+  });
+
+  if (!currentUser) {
+    return { success: false, message: "User not found." };
+  }
+
+  if (!currentUser.isActive || currentUser.deletedAt) {
+    return { success: false, message: "User is already deleted." };
+  }
+
+  // Build the deleted email: localPart+DELETED@domain.com
+  const atIndex = currentUser.email.lastIndexOf("@");
+  if (atIndex === -1) {
+    return { success: false, message: "User has an invalid email address format." };
+  }
+  const localPart = currentUser.email.substring(0, atIndex);
+  const domain = currentUser.email.substring(atIndex + 1);
+  const deletedEmail = `${localPart}+DELETED@${domain}`;
+
+  // Update the database record (soft delete)
+  await prisma.user.update({
+    where: { id: userDbId },
+    data: {
+      isActive: false,
+      deletedAt: new Date(),
+      email: deletedEmail,
+      updatedAt: new Date(),
+    },
+  });
+
+  // Sync changes to Clerk
+  if (currentUser.userId) {
+    try {
+      const clerk = await clerkClient();
+
+      // Capture the old primary email address ID before creating the new one
+      const clerkUser = await clerk.users.getUser(currentUser.userId);
+      const oldPrimaryEmailAddressId = clerkUser.primaryEmailAddressId;
+
+      // Add the deleted email address to Clerk and make it primary
+      const newEmailAddress = await clerk.emailAddresses.createEmailAddress({
+        userId: currentUser.userId,
+        emailAddress: deletedEmail,
+        verified: true,
+        primary: true,
+      });
+      await clerk.users.updateUser(currentUser.userId, {
+        primaryEmailAddressID: newEmailAddress.id,
+      });
+
+      // Remove the old email address from Clerk
+      if (oldPrimaryEmailAddressId) {
+        try {
+          await clerk.emailAddresses.deleteEmailAddress(oldPrimaryEmailAddressId);
+        } catch (deleteError) {
+          console.error("[CLERK_SYNC_ERROR] Failed to delete old email address from Clerk:", deleteError);
+        }
+      }
+
+      // Ban the user in Clerk to prevent login
+      await clerk.users.banUser(currentUser.userId);
+    } catch (clerkError) {
+      console.error("[CLERK_SYNC_ERROR] Failed to sync user deletion to Clerk:", clerkError);
+      // Database update succeeded; log but don't fail the action
+    }
+  }
+
+  return { success: true, message: "User deleted successfully." };
+}

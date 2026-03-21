@@ -9,7 +9,7 @@ import { PatientsContainer } from "@components/patient/PatientsContainer";
 import PatientsHeader from "@components/patient/PatientsHeader";
 import UnauthorizedWarning from "@/components/UnauthorizedWarning";
 
-export const maxDuration = 30;
+export const maxDuration = 20;
 export const revalidate = 60;
 export const metadata: Metadata = {
   title: "Patients List",

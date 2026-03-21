@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 }
 
 export const dynamic = 'force-dynamic'
-export const maxDuration = 30
+export const maxDuration = 20
 
 interface ClinicPHRPrintPageProps {
   params: Promise<{ clinicUid: string; patientId: string }>

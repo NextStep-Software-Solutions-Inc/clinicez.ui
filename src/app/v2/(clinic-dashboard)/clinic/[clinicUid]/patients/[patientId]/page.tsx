@@ -58,7 +58,7 @@ export const metadata: Metadata = {
   description: "View full patient health record",
 };
 
-export const maxDuration = 1200;
+export const maxDuration = 20;
 
 export const dynamic = "force-dynamic";
 

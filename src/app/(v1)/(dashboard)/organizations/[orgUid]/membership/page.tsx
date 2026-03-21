@@ -9,7 +9,7 @@ import { AppRouterPageRouteOpts } from "@/types";
 import UnauthorizedPage from "@app/(v1)/unauthorized/page";
 import UnauthorizedWarning from "@/components/UnauthorizedWarning";
 
-export const maxDuration = 1200; // page timeout: 20 minutes (1200 seconds)
+export const maxDuration = 20; // page timeout: 20 seconds
 export const revalidate = 120; // revalidation interval in seconds
 
 export const metadata: Metadata = {

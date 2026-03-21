@@ -9,7 +9,7 @@ import "@styles/globals.css";
 
 const plusJakartaSans = Plus_Jakarta_Sans({ subsets: ["latin"] });
 
-export const maxDuration = 1200;
+export const maxDuration = 20;
 
 export const dynamic = "force-dynamic";
 

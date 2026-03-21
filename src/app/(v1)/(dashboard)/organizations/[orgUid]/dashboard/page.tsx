@@ -13,7 +13,7 @@ import { OrgMembershipAnalytics } from "@/components/organization/OrgMembershipA
 import { OrganizationReports } from "@/components/organization/dashboard/reports/OrganizationReports"
 import { filterNavList } from "../nav"
 
-export const maxDuration = 30; // page timeout in seconds
+export const maxDuration = 1200; // page timeout: 20 minutes (1200 seconds)
 export const revalidate = 60; // revalidation interval in seconds
 export const metadata: Metadata = {
   title: "Organization Dashboard",

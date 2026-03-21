@@ -7,7 +7,7 @@ import { PHRPdfDocument, PHR_SECTIONS, type PHRSectionId, type PHRTheme } from '
 import type { SerializedPatientHealthRecordsResponse } from '@/types/patient-profile'
 
 export const dynamic = 'force-dynamic'
-export const maxDuration = 30
+export const maxDuration = 1200
 
 interface RouteParams {
   params: Promise<{ clinicUid: string; patientId: string }>

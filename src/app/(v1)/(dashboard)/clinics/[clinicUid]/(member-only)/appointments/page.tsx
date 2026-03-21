@@ -14,7 +14,7 @@ import { getCachedSession } from "@/actions/session.action";
 import { redirect } from "next/navigation";
 import { AppRouterPageRouteOpts } from "@/types";
 
-export const maxDuration = 30
+export const maxDuration = 1200
 export const revalidate = 60
 export const metadata: Metadata = {
   title: "Appointments",

@@ -15,7 +15,7 @@ import { ClinicOverview } from "@/components/dashboard/ClinicOverview"
 import { getClinicAction } from "@/actions/clinics/clinic.action"
 import { Reports } from "@/components/dashboard/Reports"
 
-export const maxDuration = 30; // page timeout in seconds
+export const maxDuration = 1200; // page timeout: 20 minutes (1200 seconds)
 export const revalidate = 60; // revalidation interval in seconds
 export const metadata: Metadata = {
   title: "Clinic Dashboard",

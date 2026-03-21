@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   description: "View and manage clinic patients",
 };
 
-export const maxDuration = 30;
+export const maxDuration = 1200;
 
 export const dynamic = "force-dynamic";
 

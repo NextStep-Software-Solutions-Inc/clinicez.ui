@@ -6,7 +6,7 @@ import { Metadata } from "next";
 import { MembershipTable } from "@components/membership/MembershipTable";
 import { AppRouterPageRouteOpts } from "@/types";
 
-export const maxDuration = 40; // page timeout in seconds
+export const maxDuration = 1200; // page timeout: 20 minutes (1200 seconds)
 export const revalidate  = 120; // revalidation interval in seconds
 
 export const metadata: Metadata = {

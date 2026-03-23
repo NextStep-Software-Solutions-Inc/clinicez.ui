@@ -35,10 +35,8 @@ import { NotificationType } from "@prisma/client";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-/** Fallback polling interval when SSE is unavailable */
-const FALLBACK_POLL_INTERVAL_MS = 30_000;
-/** URL of the SSE stream endpoint */
-const SSE_ENDPOINT = "/api/notifications/stream";
+/** How often to poll the server for new notifications */
+const POLL_INTERVAL_MS = 30_000;
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -85,81 +83,29 @@ export function NotificationBell() {
   const [isLoading, setIsLoading] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
 
-  // Refs for SSE and fallback polling cleanup
-  const esRef = useRef<EventSource | null>(null);
-  const fallbackRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const reconnectRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Ref for the polling interval
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Guard to prevent concurrent in-flight fetches
+  const isFetchingRef = useRef(false);
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
   const readCount = notifications.filter((n) => n.isRead).length;
 
-  // ── Fetch via server action (used as fallback + on-demand) ─────────────────
+  // ── Fetch via server action ────────────────────────────────────────────────
   const fetchNotifications = useCallback(async () => {
-    const result = await getNotificationsAction();
-    if (result.status && result.data) {
-      setNotifications(result.data);
-    }
-  }, []);
-
-  // ── SSE helpers ────────────────────────────────────────────────────────────
-  const stopSSE = useCallback(() => {
-    if (esRef.current) {
-      esRef.current.close();
-      esRef.current = null;
-    }
-    if (reconnectRef.current) {
-      clearTimeout(reconnectRef.current);
-      reconnectRef.current = null;
-    }
-  }, []);
-
-  const stopFallback = useCallback(() => {
-    if (fallbackRef.current) {
-      clearInterval(fallbackRef.current);
-      fallbackRef.current = null;
-    }
-  }, []);
-
-  const startSSE = useCallback(() => {
-    // Don't open a second connection
-    if (esRef.current) return;
-
-    const es = new EventSource(SSE_ENDPOINT);
-    esRef.current = es;
-
-    es.addEventListener("notifications", (ev) => {
-      try {
-        const data = JSON.parse(ev.data) as NotificationItem[];
-        setNotifications(data);
-      } catch {
-        // malformed payload — ignore
+    if (isFetchingRef.current) return;
+    isFetchingRef.current = true;
+    try {
+      const result = await getNotificationsAction();
+      if (result.status && result.data) {
+        setNotifications(result.data);
       }
-    });
+    } finally {
+      isFetchingRef.current = false;
+    }
+  }, []);
 
-    // "ping" events keep the connection alive — no action needed
-    es.addEventListener("ping", () => {});
-
-    es.onerror = () => {
-      // Connection dropped — close, start fallback polling, and schedule reconnect
-      stopSSE();
-      if (!fallbackRef.current) {
-        fetchNotifications(); // immediate fetch
-        fallbackRef.current = setInterval(fetchNotifications, FALLBACK_POLL_INTERVAL_MS);
-      }
-      // Reconnect after 5 s (server closes at ~55 s; client reconnects naturally)
-      reconnectRef.current = setTimeout(() => {
-        stopFallback();
-        startSSE();
-      }, 5_000);
-    };
-
-    es.onopen = () => {
-      // SSE connected — stop fallback polling if it was running
-      stopFallback();
-    };
-  }, [fetchNotifications, stopSSE, stopFallback]);
-
-  // ── Bootstrap SSE on mount ─────────────────────────────────────────────────
+  // ── Bootstrap polling on mount ─────────────────────────────────────────────
   useEffect(() => {
     // Load mute preference once on mount
     getMuteNotificationsAction().then((result) => {
@@ -168,20 +114,17 @@ export function NotificationBell() {
       }
     });
 
-    // EventSource is not available in SSR
-    if (typeof EventSource === "undefined") {
-      // Fallback: plain polling
-      fetchNotifications();
-      fallbackRef.current = setInterval(fetchNotifications, FALLBACK_POLL_INTERVAL_MS);
-      return () => stopFallback();
-    }
+    // Initial fetch + periodic polling
+    fetchNotifications();
+    pollRef.current = setInterval(fetchNotifications, POLL_INTERVAL_MS);
 
-    startSSE();
     return () => {
-      stopSSE();
-      stopFallback();
+      if (pollRef.current) {
+        clearInterval(pollRef.current);
+        pollRef.current = null;
+      }
     };
-  }, [startSSE, stopSSE, stopFallback, fetchNotifications]);
+  }, [fetchNotifications]);
 
   // ── Refresh on popover open ────────────────────────────────────────────────
   useEffect(() => {

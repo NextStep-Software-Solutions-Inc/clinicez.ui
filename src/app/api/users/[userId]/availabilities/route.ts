@@ -3,7 +3,7 @@ import { getUserTimeSlotsAction } from "@actions/schedule/time-slot.actions";
 import { withClerkAuth } from "@middlewares/withClerkAuth";
 import { NextRequest, NextResponse } from "next/server";
 
-export const maxDuration = 40;
+export const maxDuration = 20;
 export const GET = withClerkAuth(async (req: NextRequest, { params }: {
   params: Promise<{
     userId: string;

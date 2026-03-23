@@ -6,7 +6,7 @@ import { PHRPdfDocument, PHR_SECTIONS, type PHRSectionId, type PHRTheme } from '
 import type { SerializedPatientHealthRecordsResponse } from '@/types/patient-profile'
 
 export const dynamic = 'force-dynamic'
-export const maxDuration = 30
+export const maxDuration = 20
 
 export async function GET(request: NextRequest) {
   const patient = await getPatientHealthRecords()

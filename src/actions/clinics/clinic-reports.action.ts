@@ -82,6 +82,7 @@ export const getClinicReportsAction = withErrorHandling(
             select: {
               status: true,
               date: true,
+              isWalkIn: true,
               AppointmentMode: { select: { name: true } },
               AppointmentType: { select: { name: true } },
               Service: {
@@ -299,7 +300,7 @@ export const getClinicReportsAction = withErrorHandling(
       const day = apt.createdAt.toISOString().slice(0, 10);
       appointmentsByDay[day] = (appointmentsByDay[day] ?? 0) + 1;
 
-      if (apt.subject.startsWith("Walk-in:")) {
+      if (apt.AppointmentAttribute?.isWalkIn === true || apt.subject.startsWith("Walk-in:")) {
         walkInCount++;
       } else {
         scheduledCount++;

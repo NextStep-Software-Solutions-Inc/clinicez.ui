@@ -43,7 +43,6 @@ export default function V2HPPhoto({ profile, hpId }: V2HPPhotoProps) {
     ]);
 
     const mappedData = {
-      title: profile.title ?? null,
       name: profile.name,
       picture: pictureUrl,
       cover: coverUrl,

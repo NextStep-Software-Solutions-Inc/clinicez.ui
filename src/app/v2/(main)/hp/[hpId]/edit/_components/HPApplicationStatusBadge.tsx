@@ -48,23 +48,13 @@ export default function HPApplicationStatusBadge({ hpId, status, hasProfile }: A
   const router = useRouter();
   const config = STATUS_CONFIG[status];
 
-  const handleSubmit = async () => {
+  const handleApply = async (successMessage: string) => {
     const result = await applyHPForApprovalAction(hpId);
     if (result.status) {
-      toast.success("Application submitted successfully! The admin will review your profile.");
+      toast.success(successMessage);
       router.refresh();
     } else {
       toast.error(result.message ?? "Failed to submit application.");
-    }
-  };
-
-  const handleResubmit = async () => {
-    const result = await applyHPForApprovalAction(hpId);
-    if (result.status) {
-      toast.success("Application resubmitted for review.");
-      router.refresh();
-    } else {
-      toast.error(result.message ?? "Failed to resubmit application.");
     }
   };
 
@@ -79,14 +69,14 @@ export default function HPApplicationStatusBadge({ hpId, status, hasProfile }: A
         <Button
           size="sm"
           disabled={!hasProfile}
-          onClick={handleSubmit}
+          onClick={() => handleApply("Application submitted successfully! The admin will review your profile.")}
           title={!hasProfile ? "Complete your profile before submitting" : undefined}
         >
           Submit for Approval
         </Button>
       )}
       {status === "REJECTED" && (
-        <Button size="sm" variant="outline" onClick={handleResubmit}>
+        <Button size="sm" variant="outline" onClick={() => handleApply("Application resubmitted for review.")}>
           Resubmit
         </Button>
       )}

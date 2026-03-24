@@ -85,7 +85,7 @@ export default function V2HPProfileForm({ profile, hpId }: V2HPProfileFormProps)
       }
 
       const mappedData = {
-        title: values.title || null,
+        title: values.title || undefined,
         name: values.name,
         suffix: values.suffix,
         workEmail: values.workEmail,

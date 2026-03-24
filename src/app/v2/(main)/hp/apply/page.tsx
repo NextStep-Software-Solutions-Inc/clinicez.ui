@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import V2HPApplyForm from "./_components/V2HPApplyForm";
 import { Stethoscope, CheckCircle, UserCircle, ShieldCheck } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Apply as Healthcare Provider | ClinicEZ",
   description: "Register as a healthcare provider on the ClinicEZ platform.",

@@ -7,6 +7,7 @@ import { withErrorHandling } from "@/lib/with-error-handling";
 import { getCachedSession } from "@actions/session.action";
 import { getPermissionsAction } from "@actions/permission.action";
 import { PERMISSIONS } from "@lib/permissions";
+import dayjs from "@/lib/day-utils";
 
 /**
  * Fetch comprehensive clinic dashboard data
@@ -42,6 +43,10 @@ export const getClinicDashboardDataAction = withErrorHandling(
         today.setHours(0, 0, 0, 0);
         const tomorrow = new Date(today);
         tomorrow.setDate(tomorrow.getDate() + 1);
+
+        // PHT (Asia/Manila, UTC+8) day boundaries for DateTime fields such as completedAt
+        const todayPHT = dayjs().tz("Asia/Manila").startOf("day").toDate();
+        const tomorrowPHT = dayjs().tz("Asia/Manila").add(1, "day").startOf("day").toDate();
 
         // Fetch all metrics in parallel (10+ concurrent queries for performance)
         const [
@@ -296,7 +301,7 @@ export const getClinicDashboardDataAction = withErrorHandling(
                 take: 8,
             }),
 
-            // KPI: Completed appointments today
+            // KPI: Completed appointments today (filtered by actual completion time in PHT)
             prisma.appointmentAttribute.count({
                 where: {
                     Appointment: {
@@ -304,11 +309,10 @@ export const getClinicDashboardDataAction = withErrorHandling(
                         isActive: true,
                         deletedAt: null,
                     },
-                    date: {
-                        gte: today,
-                        lt: tomorrow,
+                    completedAt: {
+                        gte: todayPHT,
+                        lt: tomorrowPHT,
                     },
-                    status: "COMPLETED",
                 },
             }),
         ]);

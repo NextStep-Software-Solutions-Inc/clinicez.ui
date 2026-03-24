@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { Save, ChevronDown, ChevronUp, Eye, EyeOff } from "lucide-react";
+import { useState, useTransition, useRef, useEffect } from "react";
+import { Save, ChevronDown, ChevronUp, Eye, EyeOff, Loader2, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import {
@@ -15,6 +15,10 @@ import { MedicalNoteSummarizer } from "@/components/ai";
 import { sortNoteSectionsSOAP } from "@/utils/soap-ordering";
 
 type Detail = NonNullable<GetPatientConsultationDetail["data"]>;
+
+type SectionSaveStatus = "idle" | "saving" | "saved" | "error";
+
+const AUTOSAVE_DELAY_MS = 400;
 
 interface ConsultationNotesEditorProps {
   clinicUid: string;
@@ -63,12 +67,98 @@ export default function ConsultationNotesEditor({
 
   const [noteValues, setNoteValues] = useState<Record<string, string>>(initialNoteMap);
   const [showOnPatient, setShowOnPatient] = useState<Record<string, boolean>>(initialShowMap);
-  const [savingSection, setSavingSection] = useState<string | null>(null);
+  const [sectionSaveStatus, setSectionSaveStatus] = useState<Record<string, SectionSaveStatus>>({});
   const [isTogglingPrivacy, startToggleTransition] = useTransition();
   const [expanded, setExpanded] = useState<Record<string, boolean>>(
     Object.fromEntries(sections.map((s) => [s.name, true]))
   );
 
+  // Debounce timers per section — cleared on unmount
+  const debounceTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+
+  // Stable refs so debounce callbacks always read the latest values
+  const showOnPatientRef = useRef<Record<string, boolean>>(initialShowMap);
+  showOnPatientRef.current = showOnPatient;
+
+  const myActiveHpRef = useRef(myActiveHp);
+  myActiveHpRef.current = myActiveHp;
+
+  const consultationRef = useRef(consultation);
+  consultationRef.current = consultation;
+
+  const onPatchDetailRef = useRef(onPatchDetail);
+  onPatchDetailRef.current = onPatchDetail;
+
+  // Cleanup all pending timers when the component unmounts
+  useEffect(() => {
+    return () => {
+      Object.values(debounceTimers.current).forEach(clearTimeout);
+    };
+  }, []);
+
+  // Core save — used by both auto-save and the manual Save button
+  const doSave = async (sectionName: string, content: string) => {
+    const hp = myActiveHpRef.current;
+    if (!hp) return;
+
+    setSectionSaveStatus((prev) => ({ ...prev, [sectionName]: "saving" }));
+
+    try {
+      const result = await upsertConsultationNotesAction({
+        consultationTicketId: consultationRef.current.id,
+        section: sectionName,
+        content,
+        hpId: hp.id,
+        showOnPatient: showOnPatientRef.current[sectionName] ?? false,
+      });
+
+      if (result.status && result.data) {
+        setSectionSaveStatus((prev) => ({ ...prev, [sectionName]: "saved" }));
+        toast.success(result.message ?? "Note saved");
+        // Patch only the notes array — no full reload needed
+        const saved = result.data;
+        const existing = consultationRef.current.ConsultationNotes;
+        const idx = existing.findIndex((n) => n.section === saved.section && n.hpId === saved.hpId);
+        const patch = {
+          id: saved.id,
+          section: saved.section,
+          content: saved.content,
+          hpId: saved.hpId,
+          showOnPatient: saved.showOnPatient,
+        } satisfies (typeof existing)[number];
+        onPatchDetailRef.current({
+          ConsultationNotes: idx >= 0
+            ? existing.map((n, i) => (i === idx ? patch : n))
+            : [...existing, patch],
+        });
+      } else {
+        setSectionSaveStatus((prev) => ({ ...prev, [sectionName]: "error" }));
+        toast.error(result.message ?? "Failed to save note");
+      }
+    } catch {
+      setSectionSaveStatus((prev) => ({ ...prev, [sectionName]: "error" }));
+      toast.error("Failed to save note");
+    }
+  };
+
+  // Called by MarkdownEditor's onChange — updates state then schedules auto-save
+  const handleNoteChange = (sectionName: string, value: string) => {
+    setNoteValues((prev) => ({ ...prev, [sectionName]: value }));
+
+    if (isResolved || !myActiveHpRef.current) return;
+
+    // Clear any previously scheduled save for this section
+    if (debounceTimers.current[sectionName]) {
+      clearTimeout(debounceTimers.current[sectionName]);
+    }
+
+    // Schedule auto-save after the user pauses typing
+    debounceTimers.current[sectionName] = setTimeout(() => {
+      void doSave(sectionName, value);
+    }, AUTOSAVE_DELAY_MS);
+  };
+
+  // Manual save — cancels any pending auto-save and saves immediately
   const saveSection = async (sectionName: string) => {
     if (isResolved) {
       toast.error("Cannot edit notes on a resolved consultation.");
@@ -78,36 +168,10 @@ export default function ConsultationNotesEditor({
       toast.error("You must have an HP profile to add notes");
       return;
     }
-    setSavingSection(sectionName);
-    const result = await upsertConsultationNotesAction({
-      consultationTicketId: consultation.id,
-      section: sectionName,
-      content: noteValues[sectionName] ?? "",
-      hpId: myActiveHp.id,
-      showOnPatient: showOnPatient[sectionName] ?? false,
-    });
-    setSavingSection(null);
-    if (result.status && result.data) {
-      toast.success(result.message ?? "Note saved");
-      // Patch only the notes array — no full reload needed
-      const saved = result.data;
-      const existing = consultation.ConsultationNotes;
-      const idx = existing.findIndex((n) => n.section === saved.section && n.hpId === saved.hpId);
-      const patch = {
-        id: saved.id,
-        section: saved.section,
-        content: saved.content,
-        hpId: saved.hpId,
-        showOnPatient: saved.showOnPatient,
-      } satisfies (typeof existing)[number];
-      onPatchDetail({
-        ConsultationNotes: idx >= 0
-          ? existing.map((n, i) => (i === idx ? patch : n))
-          : [...existing, patch],
-      });
-    } else {
-      toast.error(result.message ?? "Failed to save note");
+    if (debounceTimers.current[sectionName]) {
+      clearTimeout(debounceTimers.current[sectionName]);
     }
+    await doSave(sectionName, noteValues[sectionName] ?? "");
   };
 
   const toggleShowOnPatient = (sectionName: string) => {
@@ -229,9 +293,7 @@ export default function ConsultationNotesEditor({
             <div className="px-4 pb-4 space-y-2">
               <MarkdownEditor
                 value={noteValues[section.name] ?? ""}
-                onChange={(v) =>
-                  setNoteValues((prev) => ({ ...prev, [section.name]: v }))
-                }
+                onChange={(v) => handleNoteChange(section.name, v)}
                 placeholder={`Enter ${section.label || section.name} notes… (supports **bold**, _italic_, ### headings, - lists)`}
                 disabled={isResolved}
               />
@@ -255,16 +317,27 @@ export default function ConsultationNotesEditor({
                   {showOnPatient[section.name] ? "Visible to patient" : "Hidden from patient"}
                 </button>
                 {!isResolved && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="gap-1.5 h-7 text-xs"
-                    disabled={savingSection === section.name}
-                    onClick={() => saveSection(section.name)}
-                  >
-                    <Save className="h-3.5 w-3.5" />
-                    {savingSection === section.name ? "Saving…" : "Save"}
-                  </Button>
+                  <div className="flex items-center gap-1.5">
+                    {sectionSaveStatus[section.name] === "saving" && (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                    )}
+                    {sectionSaveStatus[section.name] === "saved" && (
+                      <Check className="h-3.5 w-3.5 text-emerald-500" />
+                    )}
+                    {sectionSaveStatus[section.name] === "error" && (
+                      <X className="h-3.5 w-3.5 text-destructive" />
+                    )}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="gap-1.5 h-7 text-xs"
+                      disabled={sectionSaveStatus[section.name] === "saving"}
+                      onClick={() => saveSection(section.name)}
+                    >
+                      <Save className="h-3.5 w-3.5" />
+                      Save
+                    </Button>
+                  </div>
                 )}
               </div>
             </div>

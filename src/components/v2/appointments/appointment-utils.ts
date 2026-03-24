@@ -4,8 +4,11 @@ type Appointment = NonNullable<GetAppointments["data"]>[number];
 
 const WALK_IN_PREFIX = /^Walk-in:\s*/i;
 
-/** Returns true when the appointment has no registered requester and was created as a walk-in. */
+/** Returns true when the appointment was created as a walk-in by clinic staff (not self-booked by the patient). */
 export function isWalkInAppointment(appointment: Appointment): boolean {
+  // Explicit DB flag set when clinic staff creates a walk-in (covers both registered and unregistered patients)
+  if (appointment.AppointmentAttribute?.isWalkIn === true) return true;
+  // Legacy fallback: unregistered walk-ins had a "Walk-in:" prefix added to the subject before the isWalkIn flag existed
   return !appointment.Requesters?.[0]?.User && WALK_IN_PREFIX.test(appointment.subject);
 }
 

@@ -709,6 +709,7 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
           isWalkIn: true,
         }
       },
+      AppointmentTag: {
         select: {
           id: true,
           HealthcareProvider: {
@@ -1161,6 +1162,7 @@ export const getAppointmentAction = withErrorHandling(cache(async (id: number, c
           isWalkIn: true,
         }
       },
+      AppointmentRouting: {
         orderBy: { id: "asc" },
         select: {
           id: true,

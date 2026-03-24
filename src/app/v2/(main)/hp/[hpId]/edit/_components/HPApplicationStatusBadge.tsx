@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { applyHPForApprovalAction } from "@/actions/hp.actions";
 import { useRouter } from "next/navigation";
-import { CheckCircle, Clock, XCircle, AlertCircle } from "lucide-react";
+import { CheckCircle2, Clock, XCircle, AlertTriangle, Send, RotateCcw } from "lucide-react";
 
 type ApplicationStatus = "PENDING_PROFILE" | "PENDING_APPROVAL" | "APPROVED" | "REJECTED";
 
@@ -16,37 +16,67 @@ interface ApplicationStatusBadgeProps {
 
 const STATUS_CONFIG: Record<
   ApplicationStatus,
-  { icon: React.ReactNode; label: string; description: string; className: string }
+  {
+    icon: React.ElementType;
+    label: string;
+    description: string;
+    containerClass: string;
+    iconContainerClass: string;
+    iconClass: string;
+    labelClass: string;
+    descClass: string;
+  }
 > = {
   PENDING_PROFILE: {
-    icon: <AlertCircle size={20} />,
+    icon: AlertTriangle,
     label: "Profile Incomplete",
-    description: "Complete your profile below, then submit it for admin review.",
-    className: "bg-amber-50 border-amber-200 text-amber-800",
+    description:
+      "Complete your profile below, then submit it for admin review.",
+    containerClass: "border-amber-200 bg-amber-50/80",
+    iconContainerClass: "bg-amber-100",
+    iconClass: "text-amber-600",
+    labelClass: "text-amber-800",
+    descClass: "text-amber-700",
   },
   PENDING_APPROVAL: {
-    icon: <Clock size={20} />,
+    icon: Clock,
     label: "Pending Approval",
-    description: "Your application is under review by the ClinicEZ system admin. We will notify you once a decision is made.",
-    className: "bg-blue-50 border-blue-200 text-blue-800",
+    description:
+      "Your application is under review by the ClinicEZ system admin. We will notify you once a decision is made.",
+    containerClass: "border-blue-200 bg-blue-50/80",
+    iconContainerClass: "bg-blue-100",
+    iconClass: "text-blue-600",
+    labelClass: "text-blue-800",
+    descClass: "text-blue-700",
   },
   APPROVED: {
-    icon: <CheckCircle size={20} />,
+    icon: CheckCircle2,
     label: "Approved",
-    description: "Your Healthcare Provider application has been approved! You are now part of the ClinicEZ network.",
-    className: "bg-green-50 border-green-200 text-green-800",
+    description:
+      "Your Healthcare Provider application has been approved! You are now part of the ClinicEZ network.",
+    containerClass: "border-green-200 bg-green-50/80",
+    iconContainerClass: "bg-green-100",
+    iconClass: "text-green-600",
+    labelClass: "text-green-800",
+    descClass: "text-green-700",
   },
   REJECTED: {
-    icon: <XCircle size={20} />,
-    label: "Rejected",
-    description: "Your application was not approved. Please update your profile and resubmit, or contact support for assistance.",
-    className: "bg-red-50 border-red-200 text-red-800",
+    icon: XCircle,
+    label: "Not Approved",
+    description:
+      "Your application was not approved. Please update your profile and resubmit, or contact support for assistance.",
+    containerClass: "border-red-200 bg-red-50/80",
+    iconContainerClass: "bg-red-100",
+    iconClass: "text-red-600",
+    labelClass: "text-red-800",
+    descClass: "text-red-700",
   },
 };
 
 export default function HPApplicationStatusBadge({ hpId, status, hasProfile }: ApplicationStatusBadgeProps) {
   const router = useRouter();
   const config = STATUS_CONFIG[status];
+  const Icon = config.icon;
 
   const handleApply = async (successMessage: string) => {
     const result = await applyHPForApprovalAction(hpId);
@@ -59,11 +89,13 @@ export default function HPApplicationStatusBadge({ hpId, status, hasProfile }: A
   };
 
   return (
-    <div className={`flex items-start gap-3 rounded-lg border p-4 ${config.className}`}>
-      <div className="mt-0.5 shrink-0">{config.icon}</div>
-      <div className="flex-1 space-y-1">
-        <p className="font-semibold">{config.label}</p>
-        <p className="text-sm">{config.description}</p>
+    <div className={`flex items-center gap-4 rounded-xl border-2 p-4 ${config.containerClass}`}>
+      <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${config.iconContainerClass}`}>
+        <Icon size={22} className={config.iconClass} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className={`font-semibold text-sm ${config.labelClass}`}>{config.label}</p>
+        <p className={`text-xs mt-0.5 ${config.descClass}`}>{config.description}</p>
       </div>
       {status === "PENDING_PROFILE" && (
         <Button
@@ -71,12 +103,20 @@ export default function HPApplicationStatusBadge({ hpId, status, hasProfile }: A
           disabled={!hasProfile}
           onClick={() => handleApply("Application submitted successfully! The admin will review your profile.")}
           title={!hasProfile ? "Complete your profile before submitting" : undefined}
+          className="shrink-0 gap-1.5"
         >
-          Submit for Approval
+          <Send size={14} />
+          Submit
         </Button>
       )}
       {status === "REJECTED" && (
-        <Button size="sm" variant="outline" onClick={() => handleApply("Application resubmitted for review.")}>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => handleApply("Application resubmitted for review.")}
+          className="shrink-0 gap-1.5 border-red-300 text-red-700 hover:bg-red-100"
+        >
+          <RotateCcw size={14} />
           Resubmit
         </Button>
       )}

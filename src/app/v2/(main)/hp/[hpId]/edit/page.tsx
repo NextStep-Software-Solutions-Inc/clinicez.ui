@@ -1,16 +1,18 @@
 import { notFound, redirect } from "next/navigation";
 import { getCachedSession } from "@/actions/session.action";
-import { getHPAction, getHPsAction, getProfessionalDetailsAction } from "@/actions/hp.actions";
+import { getHPAction, getHPsAction } from "@/actions/hp.actions";
 import Suspend from "@/components/Suspend";
-import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ExternalLink } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ExternalLink, Stethoscope, Camera } from "lucide-react";
 import V2HPProfileForm from "./_components/V2HPProfileForm";
 import V2HPPhoto from "./_components/V2HPPhoto";
 import HPApplicationStatusBadge from "./_components/HPApplicationStatusBadge";
 import { type V2HPProfileType } from "./hp-v2-form.schema";
 import { type Metadata } from "next";
+import HeroBackground from "@/components/HeroBackground";
+import HeaderTitle from "@/components/HeaderTitle";
 
 export const dynamic = "force-dynamic";
 
@@ -63,22 +65,26 @@ export default async function EditHPPage({ params }: EditHPPageProps) {
 
   const applicationStatus = hp.applicationStatus ?? "PENDING_PROFILE";
   const hasProfile = !!hp.HPProfile?.name;
+  const hpTypeName = hp.HPType.name.replaceAll("_", " ");
 
   return (
-    <div className="space-y-8">
+    <div className="container mx-auto px-8 py-8 space-y-8 max-w-4xl">
+      <HeroBackground imagePath="/assets/hero-v2-1.png" opacity={0.2} />
+
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-start gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-end gap-4">
         <div className="flex-1">
-          <h1 className="text-2xl font-bold capitalize">
-            {hp.HPType.name.toLowerCase()} Profile
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Keep your profile up to date so patients can find and learn about you.
-          </p>
+          <HeaderTitle
+            header={[
+              { text: `${hpTypeName} `, className: "capitalize" },
+              { text: "Profile Editor", className: "text-primary-v2" },
+            ]}
+            description="Keep your profile up to date so patients can find and learn about you."
+          />
         </div>
-        <Link href={`/hp/${hpId}`} target="_blank">
-          <Button variant="outline" size="sm">
-            <ExternalLink size={16} className="mr-2" />
+        <Link href={`/hp/${hpId}`} target="_blank" className="shrink-0">
+          <Button variant="outline" size="sm" className="gap-2">
+            <ExternalLink size={15} />
             View Public Profile
           </Button>
         </Link>
@@ -89,25 +95,49 @@ export default async function EditHPPage({ params }: EditHPPageProps) {
         <HPApplicationStatusBadge hpId={hpId} status={applicationStatus} hasProfile={hasProfile} />
       </Suspend>
 
-      <Separator />
-
       {/* Photo Section */}
-      <section className="space-y-4">
-        <h2 className="text-lg font-semibold">Profile Photos</h2>
-        <Suspend>
-          <V2HPPhoto profile={mappedProfile} hpId={hpId} />
-        </Suspend>
-      </section>
-
-      <Separator />
+      <Card className="shadow-sm">
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <Camera size={20} />
+            </div>
+            <div>
+              <CardTitle>Profile Photos</CardTitle>
+              <CardDescription>
+                Upload a profile picture and cover photo for your public profile.
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Suspend>
+            <V2HPPhoto profile={mappedProfile} hpId={hpId} />
+          </Suspend>
+        </CardContent>
+      </Card>
 
       {/* Profile Form */}
-      <section className="space-y-4">
-        <h2 className="text-lg font-semibold">Profile Information</h2>
-        <Suspend>
-          <V2HPProfileForm profile={mappedProfile} hpId={hpId} />
-        </Suspend>
-      </section>
+      <Card className="shadow-sm">
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <Stethoscope size={20} />
+            </div>
+            <div>
+              <CardTitle>Profile Information</CardTitle>
+              <CardDescription>
+                Fill in your professional details, qualifications, and background.
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Suspend>
+            <V2HPProfileForm profile={mappedProfile} hpId={hpId} />
+          </Suspend>
+        </CardContent>
+      </Card>
     </div>
   );
 }

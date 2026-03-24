@@ -4,6 +4,8 @@ import prisma from "@lib/prisma";
 
 import { Prisma } from "@prisma/client";
 import { cache } from "react";
+import { sessionCheck } from "@/lib/auth";
+import { withErrorHandling } from "@/lib/with-error-handling";
 
 // Get total healthcare provider job titles
 export const getHPTypeCounts = async () => {
@@ -349,6 +351,33 @@ export const createHpAction = async (hp: Prisma.HealthcareProviderCreateArgs["da
   return newHp;
 }
 
+export const registerHPV2Action = withErrorHandling(async ({ hpTypeId }: { hpTypeId: number }) => {
+  const session = await sessionCheck();
+
+  const currentUser = await prisma.user.findUniqueOrThrow({
+    where: { userId: session.user.sub, isActive: true },
+    select: { id: true },
+  });
+
+  const existingHP = await prisma.healthcareProvider.findFirst({
+    where: { userId: currentUser.id, isActive: true },
+  });
+
+  if (existingHP) {
+    throw new Error("You already have a Healthcare Provider profile. Only one HP profile is allowed per user.");
+  }
+
+  const hp = await prisma.healthcareProvider.create({
+    data: {
+      userId: currentUser.id,
+      hpTypeId,
+      applicationStatus: "PENDING_PROFILE",
+    },
+  });
+
+  return { message: "Healthcare Provider profile created successfully.", data: hp };
+});
+
 export const getProfessionalDetailsAction = async (hpId: number) => {
   const hp = await prisma.professionalDetails.findFirst({
     where: {
@@ -376,6 +405,14 @@ export const setIsPublishAction = async (hpId: number, isPublished: boolean) => 
   })
   return hp;
 }
+
+export const applyHPForApprovalAction = withErrorHandling(async (hpId: number) => {
+  const hp = await prisma.healthcareProvider.update({
+    where: { id: hpId },
+    data: { applicationStatus: "PENDING_APPROVAL" },
+  });
+  return { message: "Application submitted for approval.", data: hp };
+});
 
 export type GetHpsByIds = Awaited<ReturnType<typeof getHpsByIdsAction>>
 export const getHpsByIdsAction = async (ids: number[]) => {

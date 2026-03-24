@@ -12,7 +12,7 @@ export interface DashboardLink {
 export interface HPOption {
   id: number;
   name: string;
-  title: string;
+  title: string | null;
   href: string;
 }
 

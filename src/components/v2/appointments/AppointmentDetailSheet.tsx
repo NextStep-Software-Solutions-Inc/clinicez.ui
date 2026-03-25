@@ -564,7 +564,7 @@ export function AppointmentDetailSheet({
               <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                 Patient Information
               </h3>
-              {!isWalkIn && requester?.id && currentUserHpIds.length > 0 && (
+              {requester?.id && currentUserHpIds.length > 0 && (
                 <PatientAIInsightButton
                   patientId={requester.id}
                   clinicId={appointment.clinicId}
@@ -598,7 +598,7 @@ export function AppointmentDetailSheet({
                 )}
               </div>
             </div>
-            {!isWalkIn && requester?.id && (
+            {requester?.id && (
               <div className="flex items-center gap-3 flex-wrap">
                 <a
                   href={`/v2/clinic/${clinicUid}/patients/${requester.id}`}
@@ -623,7 +623,7 @@ export function AppointmentDetailSheet({
           </div>
 
           {/* Recent Vitals */}
-          {!isWalkIn && requester?.userId && (
+          {requester?.userId && (
             <div className="rounded-xl border bg-muted/30 p-4 space-y-2">
               <div className="flex items-center justify-between">
                 <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">

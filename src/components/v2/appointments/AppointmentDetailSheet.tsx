@@ -774,7 +774,7 @@ export function AppointmentDetailSheet({
                 </div>
               ) : (
                 <>
-                  {!isWalkIn && (
+                  {appointment.subject && (
                     <div>
                       <span className="text-muted-foreground text-xs">Subject</span>
                       <p className="font-medium">{appointment.subject}</p>

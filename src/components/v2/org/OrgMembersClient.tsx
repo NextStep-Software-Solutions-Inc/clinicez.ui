@@ -620,6 +620,14 @@ function AdminStudentRecordSubform({ orgUid, onValidChange }: AdminStudentRecord
       onValidChange(null);
     }
   }, [formState.isValid, studentId, lrn, levelId, yearLevelId, programId, isCollege, collegeId, departmentId, onValidChange, form]);
+
+  return (
+    <Form {...form}>
+      <div className="space-y-3">
+        <div className="grid grid-cols-2 gap-3">
+          <FormField
+            control={form.control}
+            name="studentId"
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-xs">Student ID *</FormLabel>
@@ -819,6 +827,14 @@ function AdminEmployeeRecordSubform({ orgUid, onValidChange }: AdminEmployeeReco
       onValidChange(null);
     }
   }, [formState.isValid, employeeId, position, designation, officeId, departmentId, isCollege, collegeId, onValidChange, form]);
+
+  return (
+    <Form {...form}>
+      <div className="space-y-3">
+        <div className="grid grid-cols-2 gap-3">
+          <FormField
+            control={form.control}
+            name="employeeId"
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-xs">Employee ID *</FormLabel>

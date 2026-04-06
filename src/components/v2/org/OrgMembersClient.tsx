@@ -619,8 +619,7 @@ function AdminStudentRecordSubform({ orgUid, onValidChange }: AdminStudentRecord
     } else {
       onValidChange(null);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formState.isValid, studentId, lrn, levelId, yearLevelId, programId, isCollege, collegeId, departmentId]);
+  }, [formState.isValid, studentId, lrn, levelId, yearLevelId, programId, isCollege, collegeId, departmentId, onValidChange, form]);
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-xs">Student ID *</FormLabel>
@@ -819,8 +818,7 @@ function AdminEmployeeRecordSubform({ orgUid, onValidChange }: AdminEmployeeReco
     } else {
       onValidChange(null);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formState.isValid, employeeId, position, designation, officeId, departmentId, isCollege, collegeId]);
+  }, [formState.isValid, employeeId, position, designation, officeId, departmentId, isCollege, collegeId, onValidChange, form]);
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-xs">Employee ID *</FormLabel>

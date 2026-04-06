@@ -609,26 +609,18 @@ function AdminStudentRecordSubform({ orgUid, onValidChange }: AdminStudentRecord
   });
 
   const { watch, formState } = form;
-  const values = watch();
   const isCollege = watch("isCollege");
-  const serialized = JSON.stringify(values);
+  const [studentId, lrn, levelId, yearLevelId, programId, collegeId, departmentId] =
+    watch(["studentId", "lrn", "levelId", "yearLevelId", "programId", "collegeId", "departmentId"]);
 
   useEffect(() => {
     if (formState.isValid) {
-      onValidChange(values);
+      onValidChange(form.getValues());
     } else {
       onValidChange(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formState.isValid, serialized]);
-
-  return (
-    <Form {...form}>
-      <div className="space-y-3">
-        <div className="grid grid-cols-2 gap-3">
-          <FormField
-            control={form.control}
-            name="studentId"
+  }, [formState.isValid, studentId, lrn, levelId, yearLevelId, programId, isCollege, collegeId, departmentId]);
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-xs">Student ID *</FormLabel>
@@ -817,26 +809,18 @@ function AdminEmployeeRecordSubform({ orgUid, onValidChange }: AdminEmployeeReco
   });
 
   const { watch, formState } = form;
-  const values = watch();
   const isCollege = watch("isCollege");
-  const serialized = JSON.stringify(values);
+  const [employeeId, position, designation, officeId, departmentId, collegeId] =
+    watch(["employeeId", "position", "designation", "officeId", "departmentId", "collegeId"]);
 
   useEffect(() => {
     if (formState.isValid) {
-      onValidChange(values);
+      onValidChange(form.getValues());
     } else {
       onValidChange(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formState.isValid, serialized]);
-
-  return (
-    <Form {...form}>
-      <div className="space-y-3">
-        <div className="grid grid-cols-2 gap-3">
-          <FormField
-            control={form.control}
-            name="employeeId"
+  }, [formState.isValid, employeeId, position, designation, officeId, departmentId, isCollege, collegeId]);
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-xs">Employee ID *</FormLabel>

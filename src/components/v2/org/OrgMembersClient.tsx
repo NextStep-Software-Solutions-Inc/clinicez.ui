@@ -86,6 +86,26 @@ import { joinOrganizationAction } from "@/actions/organizations/join-organizatio
 import type { GetOrganizationRoles } from "@/actions/organizations/organization-role.action";
 import type { OrganizationMemberStatus } from "@/types";
 import { toast } from "sonner";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Checkbox } from "@/components/ui/checkbox";
+import { upsertStudentRecordAction } from "@/actions/student-record.action";
+import { upsertEmploymentRecordAction } from "@/actions/employee-record.action";
+import { useOrgYearLevels } from "@/hooks/useOrgYearLevel";
+import { useStudentLevels } from "@/hooks/useStudentLevel";
+import { useOrgPrograms } from "@/hooks/useOrgProgram";
+import { useOrgColleges } from "@/hooks/useOrgCollege";
+import { useOrgDepartments } from "@/hooks/useOrgDepartment";
+import { useOrgOffices } from "@/hooks/useOrgOffice";
 
 /* ─────────────────────────────────────────────────────────── */
 /*  Types                                                       */
@@ -163,6 +183,33 @@ function formatRequirementLabel(req: string): string {
     req.split("_").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")
   );
 }
+
+/* ─────────────────────────────────────────────────────────── */
+/*  Admin requirement sub-form schemas                         */
+/* ─────────────────────────────────────────────────────────── */
+
+const adminStudentRecordSchema = z.object({
+  studentId: z.string().min(1, "Student ID is required"),
+  lrn: z.string().optional(),
+  levelId: z.coerce.number({ required_error: "School level is required" }),
+  yearLevelId: z.coerce.number({ required_error: "Year level is required" }),
+  programId: z.coerce.number({ required_error: "Program is required" }),
+  isCollege: z.boolean().default(false),
+  collegeId: z.coerce.number().optional(),
+  departmentId: z.coerce.number().optional(),
+});
+type AdminStudentRecordValues = z.infer<typeof adminStudentRecordSchema>;
+
+const adminEmployeeRecordSchema = z.object({
+  employeeId: z.string().min(1, "Employee ID is required"),
+  position: z.string().min(1, "Position is required"),
+  designation: z.string().optional(),
+  officeId: z.coerce.number({ required_error: "Office is required" }),
+  departmentId: z.coerce.number().optional(),
+  isCollege: z.boolean().default(false),
+  collegeId: z.coerce.number().optional(),
+});
+type AdminEmployeeRecordValues = z.infer<typeof adminEmployeeRecordSchema>;
 
 /* ─────────────────────────────────────────────────────────── */
 /*  Member Application Sheet (view filled requirements)        */
@@ -384,6 +431,393 @@ function MemberApplicationSheet({ member, onClose }: MemberApplicationSheetProps
 }
 
 /* ─────────────────────────────────────────────────────────── */
+/*  Admin Student Record Sub-form                              */
+/* ─────────────────────────────────────────────────────────── */
+
+interface AdminStudentRecordSubformProps {
+  orgUid: string;
+  onValidChange: (data: AdminStudentRecordValues | null) => void;
+}
+
+function AdminStudentRecordSubform({ orgUid, onValidChange }: AdminStudentRecordSubformProps) {
+  const { data: studentLevels } = useStudentLevels();
+  const { data: orgYearLevels } = useOrgYearLevels(orgUid);
+  const { data: orgPrograms } = useOrgPrograms(orgUid);
+  const { data: orgColleges } = useOrgColleges(orgUid);
+  const { data: orgDepartments } = useOrgDepartments(orgUid);
+
+  const form = useForm<AdminStudentRecordValues>({
+    resolver: zodResolver(adminStudentRecordSchema),
+    mode: "onChange",
+    defaultValues: { studentId: "", lrn: "", isCollege: false },
+  });
+
+  const { watch, formState } = form;
+  const values = watch();
+  const isCollege = watch("isCollege");
+  const serialized = JSON.stringify(values);
+
+  useEffect(() => {
+    if (formState.isValid) {
+      onValidChange(values);
+    } else {
+      onValidChange(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formState.isValid, serialized]);
+
+  return (
+    <Form {...form}>
+      <div className="space-y-3">
+        <div className="grid grid-cols-2 gap-3">
+          <FormField
+            control={form.control}
+            name="studentId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-xs">Student ID *</FormLabel>
+                <FormControl>
+                  <input
+                    className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    placeholder="e.g. 2024-00001"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage className="text-xs" />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="lrn"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-xs">LRN (optional)</FormLabel>
+                <FormControl>
+                  <input
+                    className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    placeholder="Learner Ref. No."
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage className="text-xs" />
+              </FormItem>
+            )}
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <FormField
+            control={form.control}
+            name="levelId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-xs">Student Level *</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value?.toString()}>
+                  <FormControl>
+                    <SelectTrigger className="h-8 text-sm">
+                      <SelectValue placeholder="Select level" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {(studentLevels ?? []).map((l) => (
+                      <SelectItem key={l.id} value={l.id.toString()}>{l.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage className="text-xs" />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="yearLevelId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-xs">Year / Grade *</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value?.toString()}>
+                  <FormControl>
+                    <SelectTrigger className="h-8 text-sm">
+                      <SelectValue placeholder="Select year/grade" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {(orgYearLevels ?? []).map((l) => (
+                      <SelectItem key={l.id} value={l.id.toString()}>{l.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage className="text-xs" />
+              </FormItem>
+            )}
+          />
+        </div>
+        <FormField
+          control={form.control}
+          name="programId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-xs">Program / Strand *</FormLabel>
+              <Select onValueChange={field.onChange} value={field.value?.toString()}>
+                <FormControl>
+                  <SelectTrigger className="h-8 text-sm">
+                    <SelectValue placeholder="Select program" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {(orgPrograms ?? []).map((p) => (
+                    <SelectItem key={p.id} value={p.id.toString()}>{p.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage className="text-xs" />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="isCollege"
+          render={({ field }) => (
+            <FormItem className="flex items-center gap-2 space-y-0">
+              <FormControl>
+                <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+              </FormControl>
+              <FormLabel className="text-xs font-normal cursor-pointer">
+                College student
+              </FormLabel>
+            </FormItem>
+          )}
+        />
+        {isCollege && (
+          <div className="grid grid-cols-2 gap-3">
+            <FormField
+              control={form.control}
+              name="collegeId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-xs">College</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value?.toString()}>
+                    <FormControl>
+                      <SelectTrigger className="h-8 text-sm">
+                        <SelectValue placeholder="Select college" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {(orgColleges ?? []).map((c) => (
+                        <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage className="text-xs" />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="departmentId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-xs">Department</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value?.toString()}>
+                    <FormControl>
+                      <SelectTrigger className="h-8 text-sm">
+                        <SelectValue placeholder="Select dept." />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {(orgDepartments ?? []).map((d) => (
+                        <SelectItem key={d.id} value={d.id.toString()}>{d.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage className="text-xs" />
+                </FormItem>
+              )}
+            />
+          </div>
+        )}
+      </div>
+    </Form>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────── */
+/*  Admin Employee Record Sub-form                             */
+/* ─────────────────────────────────────────────────────────── */
+
+interface AdminEmployeeRecordSubformProps {
+  orgUid: string;
+  onValidChange: (data: AdminEmployeeRecordValues | null) => void;
+}
+
+function AdminEmployeeRecordSubform({ orgUid, onValidChange }: AdminEmployeeRecordSubformProps) {
+  const { data: orgOffices } = useOrgOffices(orgUid);
+  const { data: orgDepartments } = useOrgDepartments(orgUid);
+  const { data: orgColleges } = useOrgColleges(orgUid);
+
+  const form = useForm<AdminEmployeeRecordValues>({
+    resolver: zodResolver(adminEmployeeRecordSchema),
+    mode: "onChange",
+    defaultValues: { employeeId: "", position: "", designation: "", isCollege: false },
+  });
+
+  const { watch, formState } = form;
+  const values = watch();
+  const isCollege = watch("isCollege");
+  const serialized = JSON.stringify(values);
+
+  useEffect(() => {
+    if (formState.isValid) {
+      onValidChange(values);
+    } else {
+      onValidChange(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formState.isValid, serialized]);
+
+  return (
+    <Form {...form}>
+      <div className="space-y-3">
+        <div className="grid grid-cols-2 gap-3">
+          <FormField
+            control={form.control}
+            name="employeeId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-xs">Employee ID *</FormLabel>
+                <FormControl>
+                  <input
+                    className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    placeholder="e.g. EMP-001"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage className="text-xs" />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="position"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-xs">Position *</FormLabel>
+                <FormControl>
+                  <input
+                    className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    placeholder="e.g. Nurse"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage className="text-xs" />
+              </FormItem>
+            )}
+          />
+        </div>
+        <FormField
+          control={form.control}
+          name="designation"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-xs">Designation (optional)</FormLabel>
+              <FormControl>
+                <input
+                  className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  placeholder="e.g. Head Nurse"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage className="text-xs" />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="officeId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-xs">Office *</FormLabel>
+              <Select onValueChange={field.onChange} value={field.value?.toString()}>
+                <FormControl>
+                  <SelectTrigger className="h-8 text-sm">
+                    <SelectValue placeholder="Select office" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {(orgOffices ?? []).map((o) => (
+                    <SelectItem key={o.id} value={o.id.toString()}>{o.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage className="text-xs" />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="departmentId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-xs">Department (optional)</FormLabel>
+              <Select onValueChange={field.onChange} value={field.value?.toString()}>
+                <FormControl>
+                  <SelectTrigger className="h-8 text-sm">
+                    <SelectValue placeholder="Select dept." />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {(orgDepartments ?? []).map((d) => (
+                    <SelectItem key={d.id} value={d.id.toString()}>{d.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage className="text-xs" />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="isCollege"
+          render={({ field }) => (
+            <FormItem className="flex items-center gap-2 space-y-0">
+              <FormControl>
+                <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+              </FormControl>
+              <FormLabel className="text-xs font-normal cursor-pointer">
+                Works in a college / university
+              </FormLabel>
+            </FormItem>
+          )}
+        />
+        {isCollege && (
+          <FormField
+            control={form.control}
+            name="collegeId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-xs">College</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value?.toString()}>
+                  <FormControl>
+                    <SelectTrigger className="h-8 text-sm">
+                      <SelectValue placeholder="Select college" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {(orgColleges ?? []).map((c) => (
+                      <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage className="text-xs" />
+              </FormItem>
+            )}
+          />
+        )}
+      </div>
+    </Form>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────── */
 /*  Add Member Sheet                                            */
 /* ─────────────────────────────────────────────────────────── */
 
@@ -403,10 +837,18 @@ function AddMemberSheet({ open, orgUid, roles, onClose, onSuccess }: AddMemberSh
   const [selectedRoleId, setSelectedRoleId] = useState<number | null>(null);
   const [isAdding, setIsAdding] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [studentRecordData, setStudentRecordData] = useState<AdminStudentRecordValues | null>(null);
+  const [employeeRecordData, setEmployeeRecordData] = useState<AdminEmployeeRecordValues | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const selectedRole = roles.find((r) => r.id === selectedRoleId);
   const requirements: string[] = selectedRole?.requirements ?? [];
+
+  const requirementsFulfilled = requirements.every((req) => {
+    if (req === REQUIREMENT_STUDENT_RECORD) return studentRecordData !== null;
+    if (req === REQUIREMENT_EMPLOYEE_RECORD) return employeeRecordData !== null;
+    return true;
+  });
 
   const resetState = () => {
     setQuery("");
@@ -414,6 +856,8 @@ function AddMemberSheet({ open, orgUid, roles, onClose, onSuccess }: AddMemberSh
     setSelectedUser(null);
     setSelectedRoleId(null);
     setShowDropdown(false);
+    setStudentRecordData(null);
+    setEmployeeRecordData(null);
   };
 
   const handleClose = () => {

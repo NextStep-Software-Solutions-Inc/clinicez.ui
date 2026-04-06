@@ -19,6 +19,8 @@ import { promiseWrapper } from "@/lib/with-error-handling";
 
 interface ConfirmationAndReviewStepProps {
   orgUid: string
+  termsAndConditionsUrl?: string | null;
+  privacyPolicyUrl?: string | null;
   isLastStep?: boolean;
   isComplete?: boolean;
   isFirstStep?: boolean;
@@ -40,7 +42,7 @@ export const confirmationFormSchema = z.object({
   })
 })
 
-export default function ConfirmationAndReviewStep({ orgUid, isComplete, isFirstStep, isLastStep, nextStep, prevStep, startOver, setComplete }:ConfirmationAndReviewStepProps) {
+export default function ConfirmationAndReviewStep({ orgUid, termsAndConditionsUrl, privacyPolicyUrl, isComplete, isFirstStep, isLastStep, nextStep, prevStep, startOver, setComplete }:ConfirmationAndReviewStepProps) {
   const [orgApplication, setOrgApplication] = useAtom(joinOrgApplicationAtom);
   const [playSuccess] = useSound("/audio/success-1.mp3", {
     interrupt: true,
@@ -135,7 +137,7 @@ export default function ConfirmationAndReviewStep({ orgUid, isComplete, isFirstS
                   Terms and Conditions
                   </FormLabel>
                   <FormDescription>
-                 I agree to the <Link href="https://www.healthcare.gov.au/sites/default/files/2021-04/Terms%20and%20Conditions%20for%20Healthcare%20Providers%20and%20Healthcare%20Organisations.pdf" target="_blank">Terms and Conditions</Link> for Healthcare Providers and Healthcare Organizations.
+                 I agree to the <Link href={termsAndConditionsUrl ?? "/terms"} target="_blank">Terms and Conditions</Link> of this organization.
                   </FormDescription>
                   <FormMessage/>
                 </div>
@@ -159,7 +161,7 @@ export default function ConfirmationAndReviewStep({ orgUid, isComplete, isFirstS
                   Privacy Policy
                   </FormLabel>
                   <FormDescription>
-                  I agree to the <Link href="https://www.healthcare.gov.au/sites/default/files/2021-04/Privacy%20Policy%20for%20Healthcare%20Providers%20and%20Healthcare%20Organisations.pdf" target="_blank">Privacy Policy</Link> for Healthcare Providers and Healthcare Organisations.
+                  I agree to the <Link href={privacyPolicyUrl ?? "/privacy"} target="_blank">Privacy Policy</Link> of this organization.
                   </FormDescription>
                   <FormMessage/>
                 </div>

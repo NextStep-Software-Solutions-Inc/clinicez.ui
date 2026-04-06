@@ -8,6 +8,7 @@ import {
   useEffect,
 } from "react";
 import { format } from "date-fns";
+import Link from "next/link";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import {
   Search,
@@ -30,6 +31,12 @@ import {
   Briefcase,
   AlertTriangle,
   ShieldX,
+  Mail,
+  Phone,
+  Calendar,
+  Info,
+  ExternalLink,
+  ShieldCheck,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -184,6 +191,17 @@ function formatRequirementLabel(req: string): string {
   );
 }
 
+function formatBloodType(bt: string): string {
+  return bt
+    .replace("_POSITIVE", "+")
+    .replace("_NEGATIVE", "-")
+    .replace("RH", "Rh");
+}
+
+function formatCivilStatus(cs: string): string {
+  return cs.charAt(0) + cs.slice(1).toLowerCase();
+}
+
 /* ─────────────────────────────────────────────────────────── */
 /*  Admin requirement sub-form schemas                         */
 /* ─────────────────────────────────────────────────────────── */
@@ -228,8 +246,8 @@ function MemberApplicationSheet({ member, onClose }: MemberApplicationSheetProps
   const employment = member.User.UserEmployments?.[0];
   const fullName = getFullName(member.User.firstName, member.User.lastName, member.User.suffix);
   const initials = getInitials(member.User.firstName, member.User.lastName);
+  const status = member.status as OrganizationMemberStatus;
 
-  /** Returns whether a requirement key has been fulfilled */
   function isFulfilled(req: string): boolean {
     if (req === REQUIREMENT_STUDENT_RECORD) return studentRecord !== undefined;
     if (req === REQUIREMENT_EMPLOYEE_RECORD) return employment !== undefined;
@@ -242,22 +260,22 @@ function MemberApplicationSheet({ member, onClose }: MemberApplicationSheetProps
         <SheetHeader className="p-6 pb-4 border-b">
           <SheetTitle className="flex items-center gap-2">
             <ClipboardList className="h-5 w-5 text-primary" />
-            Membership Application
+            Member Details
           </SheetTitle>
           <SheetDescription>
-            Requirements review for <span className="font-medium text-foreground">{fullName}</span>
+            Application review for <span className="font-medium text-foreground">{fullName}</span>
           </SheetDescription>
         </SheetHeader>
 
         <div className="flex-1 p-6 space-y-6">
-          {/* Applicant overview */}
+          {/* ── Applicant overview ── */}
           <div className="flex items-center gap-3">
             <Avatar className="h-12 w-12 flex-shrink-0">
               <AvatarImage src={member.User.picture ?? undefined} alt={fullName} />
               <AvatarFallback className="text-sm font-semibold">{initials}</AvatarFallback>
             </Avatar>
-            <div>
-              <p className="font-medium">{fullName}</p>
+            <div className="min-w-0">
+              <p className="font-medium truncate">{fullName}</p>
               <p className="text-sm text-muted-foreground">{member.OrganizationRole.name}</p>
               <p className="text-xs text-muted-foreground">
                 Applied {format(new Date(member.createdAt), "MMM d, yyyy")}
@@ -267,7 +285,75 @@ function MemberApplicationSheet({ member, onClose }: MemberApplicationSheetProps
 
           <Separator />
 
-          {/* Role description */}
+          {/* ── Personal Information ── */}
+          <div className="space-y-3">
+            <p className="text-sm font-medium flex items-center gap-2">
+              <Info className="h-4 w-4 text-primary" />
+              Personal Information
+            </p>
+            <div className="space-y-1.5">
+              {member.User.email && (
+                <div className="flex items-center gap-2 text-sm">
+                  <Mail className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                  <span className="text-muted-foreground min-w-[90px]">Email</span>
+                  <span className="font-medium truncate">{member.User.email}</span>
+                </div>
+              )}
+              {member.User.dob && (
+                <div className="flex items-center gap-2 text-sm">
+                  <Calendar className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                  <span className="text-muted-foreground min-w-[90px]">Date of Birth</span>
+                  <span className="font-medium">{format(new Date(member.User.dob), "MMM d, yyyy")}</span>
+                </div>
+              )}
+              {member.User.gender && (
+                <div className="flex items-center gap-2 text-sm">
+                  <Info className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                  <span className="text-muted-foreground min-w-[90px]">Gender</span>
+                  <span className="font-medium capitalize">{member.User.gender.toLowerCase()}</span>
+                </div>
+              )}
+              {member.User.civilStatus && (
+                <div className="flex items-center gap-2 text-sm">
+                  <Info className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                  <span className="text-muted-foreground min-w-[90px]">Civil Status</span>
+                  <span className="font-medium">{formatCivilStatus(member.User.civilStatus)}</span>
+                </div>
+              )}
+              {member.User.bloodType && (
+                <div className="flex items-center gap-2 text-sm">
+                  <Info className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                  <span className="text-muted-foreground min-w-[90px]">Blood Type</span>
+                  <span className="font-medium">{formatBloodType(member.User.bloodType)}</span>
+                </div>
+              )}
+              {member.User.nationality && (
+                <div className="flex items-center gap-2 text-sm">
+                  <Info className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                  <span className="text-muted-foreground min-w-[90px]">Nationality</span>
+                  <span className="font-medium">{member.User.nationality}</span>
+                </div>
+              )}
+              {member.User.placeOfBirth && (
+                <div className="flex items-center gap-2 text-sm">
+                  <Info className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                  <span className="text-muted-foreground min-w-[90px]">Place of Birth</span>
+                  <span className="font-medium">{member.User.placeOfBirth}</span>
+                </div>
+              )}
+              {(member.User.mobile || member.User.telephone) && (
+                <div className="flex items-center gap-2 text-sm">
+                  <Phone className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                  <span className="text-muted-foreground min-w-[90px]">Contact</span>
+                  <span className="font-medium">{member.User.mobile ?? member.User.telephone}</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* ── Role description ── */}
           {member.OrganizationRole.description && (
             <div className="space-y-1">
               <p className="text-sm font-medium">Role Description</p>
@@ -275,18 +361,15 @@ function MemberApplicationSheet({ member, onClose }: MemberApplicationSheetProps
             </div>
           )}
 
-          {/* Requirements checklist */}
+          {/* ── Requirements checklist ── */}
           <div className="space-y-3">
             <p className="text-sm font-medium flex items-center gap-2">
               <ClipboardList className="h-4 w-4 text-primary" />
               Joining Requirements
             </p>
-
             {requirements.length === 0 ? (
               <div className="rounded-lg border border-dashed p-4 text-center">
-                <p className="text-sm text-muted-foreground">
-                  No requirements for this role.
-                </p>
+                <p className="text-sm text-muted-foreground">No requirements for this role.</p>
               </div>
             ) : (
               <div className="space-y-2">
@@ -319,7 +402,7 @@ function MemberApplicationSheet({ member, onClose }: MemberApplicationSheetProps
             )}
           </div>
 
-          {/* Student record details */}
+          {/* ── Student record details ── */}
           {studentRecord && (
             <Card>
               <CardHeader className="pb-2 pt-4 px-4">
@@ -375,7 +458,7 @@ function MemberApplicationSheet({ member, onClose }: MemberApplicationSheetProps
             </Card>
           )}
 
-          {/* Employment record details */}
+          {/* ── Employment record details ── */}
           {employment && (
             <Card>
               <CardHeader className="pb-2 pt-4 px-4">
@@ -423,6 +506,79 @@ function MemberApplicationSheet({ member, onClose }: MemberApplicationSheetProps
                 )}
               </CardContent>
             </Card>
+          )}
+
+          {/* ── Terms & Privacy Policy Acceptance ── */}
+          <div className="rounded-lg border p-4 space-y-2.5">
+            <p className="text-sm font-medium flex items-center gap-2">
+              <ShieldCheck className="h-4 w-4 text-primary" />
+              Terms &amp; Privacy Policy
+            </p>
+            <p className="text-xs text-muted-foreground">
+              By submitting this application, the member has agreed to the organization&apos;s
+              Terms &amp; Conditions and Privacy Policy.
+            </p>
+            <div className="flex flex-wrap gap-3 pt-1">
+              {member.Organization.termsAndConditionsUrl ? (
+                <Link
+                  href={member.Organization.termsAndConditionsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                  Terms &amp; Conditions
+                </Link>
+              ) : (
+                <Link
+                  href="/terms"
+                  target="_blank"
+                  className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                  Terms &amp; Conditions
+                </Link>
+              )}
+              {member.Organization.privacyPolicyUrl ? (
+                <Link
+                  href={member.Organization.privacyPolicyUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                  Privacy Policy
+                </Link>
+              ) : (
+                <Link
+                  href="/privacy"
+                  target="_blank"
+                  className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                  Privacy Policy
+                </Link>
+              )}
+            </div>
+          </div>
+
+          {/* ── Approval details (ACTIVE members) ── */}
+          {status === "ACTIVE" && member.AcceptedBy && (
+            <div className="rounded-lg border border-green-200 bg-green-50 dark:border-green-900/40 dark:bg-green-950/20 p-4 space-y-1">
+              <p className="text-sm font-medium flex items-center gap-2 text-green-800 dark:text-green-300">
+                <CheckCircle2 className="h-4 w-4" />
+                Approved
+              </p>
+              <p className="text-xs text-green-700 dark:text-green-400">
+                Approved by{" "}
+                <span className="font-medium">
+                  {getFullName(member.AcceptedBy.firstName, member.AcceptedBy.lastName)}
+                </span>
+                {member.acceptedAt && (
+                  <> on {format(new Date(member.acceptedAt), "MMM d, yyyy")}</>
+                )}
+              </p>
+            </div>
           )}
         </div>
       </SheetContent>
@@ -889,25 +1045,39 @@ function AddMemberSheet({ open, orgUid, roles, onClose, onSuccess }: AddMemberSh
     setSelectedUser(user);
     setQuery(`${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || user.email);
     setShowDropdown(false);
+    setStudentRecordData(null);
+    setEmployeeRecordData(null);
   };
 
   const handleAdd = async () => {
     if (!selectedUser) { toast.error("Please select a user."); return; }
     if (!selectedRoleId) { toast.error("Please select a role."); return; }
+    if (!requirementsFulfilled) { toast.error("Please fill in all required information."); return; }
     setIsAdding(true);
-    const result = await joinOrganizationAction({
-      userId: selectedUser.userId,
-      orgUid,
-      orgRoleId: selectedRoleId,
-    });
-    setIsAdding(false);
-    if (result.status) {
-      toast.success("Membership request sent successfully.");
-      resetState();
-      onSuccess();
-      onClose();
-    } else {
-      toast.error(result.message ?? "Failed to add member.");
+    try {
+      if (requirements.includes(REQUIREMENT_STUDENT_RECORD) && studentRecordData) {
+        const res = await upsertStudentRecordAction({ ...studentRecordData, orgUid, userId: selectedUser.userId });
+        if (!res.status) { toast.error(res.message ?? "Failed to save student record."); return; }
+      }
+      if (requirements.includes(REQUIREMENT_EMPLOYEE_RECORD) && employeeRecordData) {
+        const res = await upsertEmploymentRecordAction({ ...employeeRecordData, orgUid, userId: selectedUser.userId });
+        if (!res.status) { toast.error(res.message ?? "Failed to save employee record."); return; }
+      }
+      const result = await joinOrganizationAction({
+        userId: selectedUser.userId,
+        orgUid,
+        orgRoleId: selectedRoleId,
+      });
+      if (result.status) {
+        toast.success("Member added successfully.");
+        resetState();
+        onSuccess();
+        onClose();
+      } else {
+        toast.error(result.message ?? "Failed to add member.");
+      }
+    } finally {
+      setIsAdding(false);
     }
   };
 
@@ -976,7 +1146,11 @@ function AddMemberSheet({ open, orgUid, roles, onClose, onSuccess }: AddMemberSh
             <label className="text-sm font-medium">Role</label>
             <Select
               value={selectedRoleId?.toString() ?? ""}
-              onValueChange={(v) => setSelectedRoleId(Number(v))}
+              onValueChange={(v) => {
+                setSelectedRoleId(Number(v));
+                setStudentRecordData(null);
+                setEmployeeRecordData(null);
+              }}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select a role…" />
@@ -992,7 +1166,7 @@ function AddMemberSheet({ open, orgUid, roles, onClose, onSuccess }: AddMemberSh
           </div>
 
           {/* Role requirements */}
-          {selectedRole && (
+          {selectedRole && selectedUser && (
             <div className="space-y-3 rounded-lg border bg-muted/30 p-4">
               <div className="flex items-center gap-2 text-sm font-medium">
                 <ClipboardList className="h-4 w-4 text-primary" />
@@ -1003,15 +1177,72 @@ function AddMemberSheet({ open, orgUid, roles, onClose, onSuccess }: AddMemberSh
                   No additional requirements for this role.
                 </p>
               ) : (
-                <ul className="space-y-1">
-                  {requirements.map((req) => (
-                    <li key={req} className="flex items-start gap-2 text-sm">
-                      <span className="text-primary mt-0.5">•</span>
-                      <span className="capitalize">{req.replaceAll("_", " ")}</span>
-                    </li>
-                  ))}
-                </ul>
+                <div className="space-y-5">
+                  {requirements.includes(REQUIREMENT_STUDENT_RECORD) && (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                        <GraduationCap className="h-3.5 w-3.5" />
+                        Student Record
+                        {studentRecordData
+                          ? <CheckCircle2 className="h-3.5 w-3.5 text-green-600 ml-auto" />
+                          : <AlertCircle className="h-3.5 w-3.5 text-amber-500 ml-auto" />
+                        }
+                      </div>
+                      <AdminStudentRecordSubform
+                        key={`student-${selectedUser.userId}-${selectedRoleId}`}
+                        orgUid={orgUid}
+                        onValidChange={setStudentRecordData}
+                      />
+                    </div>
+                  )}
+                  {requirements.includes(REQUIREMENT_EMPLOYEE_RECORD) && (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                        <Briefcase className="h-3.5 w-3.5" />
+                        Employee Record
+                        {employeeRecordData
+                          ? <CheckCircle2 className="h-3.5 w-3.5 text-green-600 ml-auto" />
+                          : <AlertCircle className="h-3.5 w-3.5 text-amber-500 ml-auto" />
+                        }
+                      </div>
+                      <AdminEmployeeRecordSubform
+                        key={`employee-${selectedUser.userId}-${selectedRoleId}`}
+                        orgUid={orgUid}
+                        onValidChange={setEmployeeRecordData}
+                      />
+                    </div>
+                  )}
+                  {requirements
+                    .filter((r) => r !== REQUIREMENT_STUDENT_RECORD && r !== REQUIREMENT_EMPLOYEE_RECORD)
+                    .map((req) => (
+                      <div key={req} className="flex items-start gap-2 text-sm">
+                        <span className="text-primary mt-0.5">•</span>
+                        <span className="capitalize">{req.replaceAll("_", " ")}</span>
+                      </div>
+                    ))}
+                </div>
               )}
+              {selectedRole.description && (
+                <p className="text-xs text-muted-foreground border-t pt-3 mt-2">
+                  {selectedRole.description}
+                </p>
+              )}
+            </div>
+          )}
+          {selectedRole && !selectedUser && requirements.length > 0 && (
+            <div className="rounded-lg border bg-muted/30 p-4 space-y-2">
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <ClipboardList className="h-4 w-4 text-primary" />
+                Requirements for <span className="text-primary">{selectedRole.name}</span>
+              </div>
+              <ul className="space-y-1">
+                {requirements.map((req) => (
+                  <li key={req} className="flex items-start gap-2 text-sm">
+                    <span className="text-primary mt-0.5">•</span>
+                    <span className="capitalize">{req.replaceAll("_", " ")}</span>
+                  </li>
+                ))}
+              </ul>
               {selectedRole.description && (
                 <p className="text-xs text-muted-foreground border-t pt-3 mt-2">
                   {selectedRole.description}
@@ -1029,7 +1260,7 @@ function AddMemberSheet({ open, orgUid, roles, onClose, onSuccess }: AddMemberSh
             <Button
               className="flex-1 gap-1.5"
               onClick={handleAdd}
-              disabled={isAdding || !selectedUser || !selectedRoleId}
+              disabled={isAdding || !selectedUser || !selectedRoleId || !requirementsFulfilled}
             >
               {isAdding ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
               Add Member
@@ -1626,6 +1857,14 @@ export function OrgMembersClient({
                         {status === "ACTIVE" && (
                           <>
                             <DropdownMenuItem
+                              onClick={() => setApplicationMember(member)}
+                              className="gap-2"
+                            >
+                              <Eye className="h-4 w-4" />
+                              View Details
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
                               onClick={() => handleStatusUpdate(member.id, "SUSPENDED")}
                               className="gap-2"
                             >
@@ -1642,22 +1881,42 @@ export function OrgMembersClient({
                           </>
                         )}
                         {status === "SUSPENDED" && (
-                          <DropdownMenuItem
-                            onClick={() => handleStatusUpdate(member.id, "ACTIVE")}
-                            className="gap-2 text-green-600 focus:text-green-600"
-                          >
-                            <Play className="h-4 w-4" />
-                            Activate
-                          </DropdownMenuItem>
+                          <>
+                            <DropdownMenuItem
+                              onClick={() => setApplicationMember(member)}
+                              className="gap-2"
+                            >
+                              <Eye className="h-4 w-4" />
+                              View Details
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => handleStatusUpdate(member.id, "ACTIVE")}
+                              className="gap-2 text-green-600 focus:text-green-600"
+                            >
+                              <Play className="h-4 w-4" />
+                              Activate
+                            </DropdownMenuItem>
+                          </>
                         )}
                         {status === "INACTIVE" && (
-                          <DropdownMenuItem
-                            onClick={() => handleStatusUpdate(member.id, "ACTIVE")}
-                            className="gap-2 text-green-600 focus:text-green-600"
-                          >
-                            <Play className="h-4 w-4" />
-                            Re-activate
-                          </DropdownMenuItem>
+                          <>
+                            <DropdownMenuItem
+                              onClick={() => setApplicationMember(member)}
+                              className="gap-2"
+                            >
+                              <Eye className="h-4 w-4" />
+                              View Details
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => handleStatusUpdate(member.id, "ACTIVE")}
+                              className="gap-2 text-green-600 focus:text-green-600"
+                            >
+                              <Play className="h-4 w-4" />
+                              Re-activate
+                            </DropdownMenuItem>
+                          </>
                         )}
                         <DropdownMenuSeparator />
                         <DropdownMenuItem

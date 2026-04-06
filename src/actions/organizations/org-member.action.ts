@@ -147,11 +147,19 @@ export const getOrgMembersAction = withErrorHandling(
                 id: true,
                 picture: true,
                 userId: true,
+                email: true,
                 firstName: true,
                 lastName: true,
+                middleName: true,
                 suffix: true,
                 gender: true,
                 dob: true,
+                civilStatus: true,
+                bloodType: true,
+                nationality: true,
+                placeOfBirth: true,
+                mobile: true,
+                telephone: true,
                 StudentRecords: {
                   where: {
                     isActive: true,
@@ -228,6 +236,7 @@ export const getOrgMembersAction = withErrorHandling(
               }
             },
             status: true,
+            acceptedAt: true,
             role: true,
             OrganizationRole: {
               select: {
@@ -241,7 +250,9 @@ export const getOrgMembersAction = withErrorHandling(
               select: {
                 name: true,
                 orgUid: true,
-                id: true
+                id: true,
+                termsAndConditionsUrl: true,
+                privacyPolicyUrl: true,
               }
             }
           }

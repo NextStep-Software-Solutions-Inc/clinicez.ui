@@ -5,19 +5,17 @@ import { uploadFile } from "@/services/azure-blob";
 import { getCachedSession } from "@/actions/session.action";
 import { withErrorHandling } from "@/lib/with-error-handling";
 import prisma from "@/lib/prisma";
+import {
+  FILE_UPLOAD_REQUIREMENT_TYPES,
+  type FileUploadRequirementType,
+  isFileUploadRequirement,
+} from "@/lib/requirement-types";
 
-/** Requirement types that require file uploads (not structured records) */
-export const FILE_UPLOAD_REQUIREMENT_TYPES = [
-  "medical_certificate",
-  "xray_result",
-  "other",
-] as const;
-
-export type FileUploadRequirementType = (typeof FILE_UPLOAD_REQUIREMENT_TYPES)[number];
-
-export function isFileUploadRequirement(req: string): req is FileUploadRequirementType {
-  return (FILE_UPLOAD_REQUIREMENT_TYPES as readonly string[]).includes(req);
-}
+export {
+  FILE_UPLOAD_REQUIREMENT_TYPES,
+  type FileUploadRequirementType,
+  isFileUploadRequirement,
+};
 
 export type StagedRequirementFile = {
   requirementType: string;

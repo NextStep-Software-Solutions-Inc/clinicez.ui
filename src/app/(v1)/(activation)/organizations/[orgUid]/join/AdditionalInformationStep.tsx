@@ -8,7 +8,7 @@ import FileRequirementForm from "./FileRequirementForm";
 import { atom, useAtomValue } from "jotai";
 import Each from "@components/utils/Each";
 import { joinOrgApplicationAtom } from "@state/join-org-application";
-import { isFileUploadRequirement } from "@/actions/organizations/org-member-requirement-file.action";
+import { isFileUploadRequirement } from "@/lib/requirement-types";
 
 interface OrganizationStepProps {
   orgUid: string;

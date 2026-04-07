@@ -157,7 +157,9 @@ export const stageRequirementFileUploadAction = withErrorHandling(
         select: { id: true, FolderSetting: { select: { id: true } } },
       });
     }
-    const folderSettingId = folder!.FolderSetting!.id;
+    const resolvedFolder = folder;
+    const folderSettingId = resolvedFolder?.FolderSetting?.id;
+    if (!resolvedFolder || !folderSettingId) throw new Error("Failed to create or resolve org requirements folder");
 
     // Share the folder with any partner clinics not already sharing
     if (partnerClinicIds.length > 0) {
@@ -184,14 +186,14 @@ export const stageRequirementFileUploadAction = withErrorHandling(
     const filepath = `org-requirements/${orgUid}/${targetUser.id}/${requirementType}/${Date.now()}-${sanitizedName}`;
     const buffer = await file.arrayBuffer();
     const { url } = await uploadFile(filepath, buffer, file.type);
-    const uniqueDisplayName = generateTimestampedName(file.name);
+    const timestampedFileName = generateTimestampedName(file.name);
 
     // Create the File record, shared with all partner clinics
     const createdFile = await prisma.file.create({
       data: {
-        folderId: folder!.id,
+        folderId: resolvedFolder.id,
         fileTypeId: fileType.id,
-        name: uniqueDisplayName,
+        name: timestampedFileName,
         size: file.size,
         url,
         mimeType: file.type || null,

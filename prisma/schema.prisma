@@ -380,21 +380,37 @@ model Permission {
 }
 
 model OrganizationMember {
-  id                   Int                   @id @default(autoincrement())
-  userId               Int
-  organizationId       Int
-  acceptedAt           DateTime?             @db.Date
-  acceptedBy           Int?
-  createdAt            DateTime              @default(now())
-  status               String                @default("PENDING")
-  role                 Int
-  OrgMemberPermissions OrgMemberPermission[]
-  AcceptedBy           User?                 @relation("AcceptedBy", fields: [acceptedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  Organization         Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  OrganizationRole     OrganizationRole      @relation(fields: [role], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  User                 User                  @relation("User", fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id                           Int                           @id @default(autoincrement())
+  userId                       Int
+  organizationId               Int
+  acceptedAt                   DateTime?                     @db.Date
+  acceptedBy                   Int?
+  createdAt                    DateTime                      @default(now())
+  status                       String                        @default("PENDING")
+  role                         Int
+  OrgMemberPermissions         OrgMemberPermission[]
+  OrgMemberRequirementFiles    OrgMemberRequirementFile[]
+  AcceptedBy                   User?                         @relation("AcceptedBy", fields: [acceptedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Organization                 Organization                  @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  OrganizationRole             OrganizationRole              @relation(fields: [role], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  User                         User                          @relation("User", fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([userId, organizationId, role], name: "unique_user_organization_role")
+}
+
+model OrgMemberRequirementFile {
+  id                 Int                @id @default(autoincrement())
+  orgMemberId        Int
+  requirementType    String
+  fileName           String
+  fileSize           Int
+  mimeType           String?
+  url                String
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  OrganizationMember OrganizationMember @relation(fields: [orgMemberId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([orgMemberId, requirementType])
 }
 
 model OrganizationRole {

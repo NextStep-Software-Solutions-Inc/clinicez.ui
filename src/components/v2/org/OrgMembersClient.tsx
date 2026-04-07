@@ -1,6 +1,6 @@
 "use client";
 
-import {
+import React, {
   useCallback,
   useState,
   useTransition,
@@ -37,6 +37,9 @@ import {
   Info,
   ExternalLink,
   ShieldCheck,
+  FileUp,
+  FileText,
+  X,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -113,6 +116,12 @@ import { useOrgPrograms } from "@/hooks/useOrgProgram";
 import { useOrgColleges } from "@/hooks/useOrgCollege";
 import { useOrgDepartments } from "@/hooks/useOrgDepartment";
 import { useOrgOffices } from "@/hooks/useOrgOffice";
+import {
+  stageRequirementFileUploadAction,
+  linkRequirementFilesAction,
+  isFileUploadRequirement,
+  type StagedRequirementFile,
+} from "@/actions/organizations/org-member-requirement-file.action";
 
 /* ─────────────────────────────────────────────────────────── */
 /*  Types                                                       */
@@ -177,11 +186,17 @@ function getFullName(
 
 const REQUIREMENT_STUDENT_RECORD = "student_record";
 const REQUIREMENT_EMPLOYEE_RECORD = "employee_record";
+const REQUIREMENT_MEDICAL_CERTIFICATE = "medical_certificate";
+const REQUIREMENT_XRAY_RESULT = "xray_result";
+const REQUIREMENT_OTHER = "other";
 
 /** Human-readable labels for known requirement keys */
 const REQUIREMENT_LABEL_MAP: Record<string, string> = {
   [REQUIREMENT_STUDENT_RECORD]: "Student Record",
   [REQUIREMENT_EMPLOYEE_RECORD]: "Employee Record",
+  [REQUIREMENT_MEDICAL_CERTIFICATE]: "Medical Certificate",
+  [REQUIREMENT_XRAY_RESULT]: "X-Ray Result",
+  [REQUIREMENT_OTHER]: "Supporting Document",
 };
 
 function formatRequirementLabel(req: string): string {
@@ -248,9 +263,14 @@ function MemberApplicationSheet({ member, onClose }: MemberApplicationSheetProps
   const initials = getInitials(member.User.firstName, member.User.lastName);
   const status = member.status as OrganizationMemberStatus;
 
+  const requirementFiles = member.OrgMemberRequirementFiles ?? [];
+
   function isFulfilled(req: string): boolean {
     if (req === REQUIREMENT_STUDENT_RECORD) return studentRecord !== undefined;
     if (req === REQUIREMENT_EMPLOYEE_RECORD) return employment !== undefined;
+    if (isFileUploadRequirement(req)) {
+      return requirementFiles.some((f) => f.requirementType === req);
+    }
     return false;
   }
 
@@ -508,6 +528,43 @@ function MemberApplicationSheet({ member, onClose }: MemberApplicationSheetProps
             </Card>
           )}
 
+          {/* ── Uploaded requirement files ── */}
+          {requirementFiles.length > 0 && (
+            <Card>
+              <CardHeader className="pb-2 pt-4 px-4">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-primary" />
+                  Uploaded Requirement Files
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-4 space-y-2">
+                {requirementFiles.map((f) => (
+                  <div key={f.id} className="flex items-center gap-3 rounded-md border p-2.5">
+                    <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium text-muted-foreground capitalize">
+                        {formatRequirementLabel(f.requirementType)}
+                      </p>
+                      <p className="text-sm font-medium truncate">{f.fileName}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {(f.fileSize / 1024).toFixed(1)} KB ·{" "}
+                        {format(new Date(f.createdAt), "MMM d, yyyy")}
+                      </p>
+                    </div>
+                    <Link
+                      href={f.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline text-xs flex-shrink-0"
+                    >
+                      View
+                    </Link>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+
           {/* ── Terms & Privacy Policy Acceptance ── */}
           <div className="rounded-lg border p-4 space-y-2.5">
             <p className="text-sm font-medium flex items-center gap-2">
@@ -519,46 +576,24 @@ function MemberApplicationSheet({ member, onClose }: MemberApplicationSheetProps
               Terms &amp; Conditions and Privacy Policy.
             </p>
             <div className="flex flex-wrap gap-3 pt-1">
-              {member.Organization.termsAndConditionsUrl ? (
-                <Link
-                  href={member.Organization.termsAndConditionsUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
-                >
-                  <ExternalLink className="h-3 w-3" />
-                  Terms &amp; Conditions
-                </Link>
-              ) : (
-                <Link
-                  href="/terms"
-                  target="_blank"
-                  className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
-                >
-                  <ExternalLink className="h-3 w-3" />
-                  Terms &amp; Conditions
-                </Link>
-              )}
-              {member.Organization.privacyPolicyUrl ? (
-                <Link
-                  href={member.Organization.privacyPolicyUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
-                >
-                  <ExternalLink className="h-3 w-3" />
-                  Privacy Policy
-                </Link>
-              ) : (
-                <Link
-                  href="/privacy"
-                  target="_blank"
-                  className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
-                >
-                  <ExternalLink className="h-3 w-3" />
-                  Privacy Policy
-                </Link>
-              )}
+              <Link
+                href={member.Organization.termsAndConditionsUrl ?? "/terms"}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+              >
+                <ExternalLink className="h-3 w-3" />
+                Terms &amp; Conditions
+              </Link>
+              <Link
+                href={member.Organization.privacyPolicyUrl ?? "/privacy"}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+              >
+                <ExternalLink className="h-3 w-3" />
+                Privacy Policy
+              </Link>
             </div>
           </div>
 
@@ -972,6 +1007,100 @@ function AdminEmployeeRecordSubform({ orgUid, onValidChange }: AdminEmployeeReco
 }
 
 /* ─────────────────────────────────────────────────────────── */
+/*  Admin File Upload Sub-form                                  */
+/* ─────────────────────────────────────────────────────────── */
+
+interface AdminFileUploadSubformProps {
+  requirementType: string;
+  onValidChange: (file: StagedRequirementFile | null) => void;
+}
+
+function AdminFileUploadSubform({ requirementType, onValidChange }: AdminFileUploadSubformProps) {
+  const [stagedFile, setStagedFile] = useState<StagedRequirementFile | null>(null);
+  const [isUploading, startUploadTransition] = useTransition();
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const sizeMB = file.size / 1024 / 1024;
+    if (sizeMB > 25) {
+      toast.error("File size must not exceed 25 MB");
+      return;
+    }
+
+    startUploadTransition(async () => {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("requirementType", requirementType);
+      const result = await stageRequirementFileUploadAction(fd);
+      if (result.status && result.data) {
+        setStagedFile(result.data);
+        onValidChange(result.data);
+      } else {
+        toast.error(result.message ?? "Upload failed. Please try again.");
+      }
+    });
+  };
+
+  const handleRemove = () => {
+    setStagedFile(null);
+    onValidChange(null);
+    if (inputRef.current) inputRef.current.value = "";
+  };
+
+  if (stagedFile) {
+    return (
+      <div className="flex items-center gap-2 rounded-md border border-green-200 bg-green-50 dark:border-green-900/40 dark:bg-green-950/20 p-2.5">
+        <FileText className="h-4 w-4 text-green-600 flex-shrink-0" />
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium truncate">{stagedFile.fileName}</p>
+          <p className="text-xs text-muted-foreground">
+            {(stagedFile.fileSize / 1024).toFixed(1)} KB
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={handleRemove}
+          className="text-muted-foreground hover:text-destructive transition-colors"
+          aria-label="Remove file"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <label
+      className={`flex items-center justify-center gap-2 rounded-md border-2 border-dashed p-4 cursor-pointer transition-colors text-sm ${
+        isUploading
+          ? "border-primary/40 bg-primary/5 cursor-not-allowed"
+          : "border-muted-foreground/30 hover:border-primary hover:bg-primary/5"
+      }`}
+    >
+      <input
+        ref={inputRef}
+        type="file"
+        className="sr-only"
+        onChange={handleFileChange}
+        disabled={isUploading}
+        accept="image/*,.pdf,.doc,.docx"
+      />
+      {isUploading ? (
+        <Loader2 className="h-4 w-4 animate-spin text-primary" />
+      ) : (
+        <FileUp className="h-4 w-4 text-muted-foreground" />
+      )}
+      <span className="text-muted-foreground">
+        {isUploading ? "Uploading…" : "Click to upload file"}
+      </span>
+    </label>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────── */
 /*  Add Member Sheet                                            */
 /* ─────────────────────────────────────────────────────────── */
 
@@ -993,6 +1122,7 @@ function AddMemberSheet({ open, orgUid, roles, onClose, onSuccess }: AddMemberSh
   const [showDropdown, setShowDropdown] = useState(false);
   const [studentRecordData, setStudentRecordData] = useState<AdminStudentRecordValues | null>(null);
   const [employeeRecordData, setEmployeeRecordData] = useState<AdminEmployeeRecordValues | null>(null);
+  const [fileRequirementData, setFileRequirementData] = useState<Record<string, StagedRequirementFile | null>>({});
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const selectedRole = roles.find((r) => r.id === selectedRoleId);
@@ -1001,6 +1131,7 @@ function AddMemberSheet({ open, orgUid, roles, onClose, onSuccess }: AddMemberSh
   const requirementsFulfilled = requirements.every((req) => {
     if (req === REQUIREMENT_STUDENT_RECORD) return studentRecordData !== null;
     if (req === REQUIREMENT_EMPLOYEE_RECORD) return employeeRecordData !== null;
+    if (isFileUploadRequirement(req)) return fileRequirementData[req] != null;
     return true;
   });
 
@@ -1012,6 +1143,7 @@ function AddMemberSheet({ open, orgUid, roles, onClose, onSuccess }: AddMemberSh
     setShowDropdown(false);
     setStudentRecordData(null);
     setEmployeeRecordData(null);
+    setFileRequirementData({});
   };
 
   const handleClose = () => {
@@ -1045,6 +1177,7 @@ function AddMemberSheet({ open, orgUid, roles, onClose, onSuccess }: AddMemberSh
     setShowDropdown(false);
     setStudentRecordData(null);
     setEmployeeRecordData(null);
+    setFileRequirementData({});
   };
 
   const handleAdd = async () => {
@@ -1067,6 +1200,16 @@ function AddMemberSheet({ open, orgUid, roles, onClose, onSuccess }: AddMemberSh
         orgRoleId: selectedRoleId,
       });
       if (result.status) {
+        // Link any staged requirement files to the new org member
+        const stagedFiles = Object.values(fileRequirementData).filter(
+          (f): f is StagedRequirementFile => f !== null
+        );
+        if (result.data?.id && stagedFiles.length > 0) {
+          await linkRequirementFilesAction({
+            orgMemberId: result.data.id,
+            files: stagedFiles,
+          });
+        }
         toast.success("Member added successfully.");
         resetState();
         onSuccess();
@@ -1148,6 +1291,7 @@ function AddMemberSheet({ open, orgUid, roles, onClose, onSuccess }: AddMemberSh
                 setSelectedRoleId(Number(v));
                 setStudentRecordData(null);
                 setEmployeeRecordData(null);
+                setFileRequirementData({});
               }}
             >
               <SelectTrigger>
@@ -1212,12 +1356,36 @@ function AddMemberSheet({ open, orgUid, roles, onClose, onSuccess }: AddMemberSh
                   )}
                   {requirements
                     .filter((r) => r !== REQUIREMENT_STUDENT_RECORD && r !== REQUIREMENT_EMPLOYEE_RECORD)
-                    .map((req) => (
-                      <div key={req} className="flex items-start gap-2 text-sm">
-                        <span className="text-primary mt-0.5">•</span>
-                        <span className="capitalize">{req.replaceAll("_", " ")}</span>
-                      </div>
-                    ))}
+                    .map((req) => {
+                      if (isFileUploadRequirement(req)) {
+                        const staged = fileRequirementData[req] ?? null;
+                        return (
+                          <div key={req} className="space-y-2">
+                            <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                              <FileText className="h-3.5 w-3.5" />
+                              {formatRequirementLabel(req)}
+                              {staged
+                                ? <CheckCircle2 className="h-3.5 w-3.5 text-green-600 ml-auto" />
+                                : <AlertCircle className="h-3.5 w-3.5 text-amber-500 ml-auto" />
+                              }
+                            </div>
+                            <AdminFileUploadSubform
+                              key={`file-${req}-${selectedUser.userId}-${selectedRoleId}`}
+                              requirementType={req}
+                              onValidChange={(f) =>
+                                setFileRequirementData((prev) => ({ ...prev, [req]: f }))
+                              }
+                            />
+                          </div>
+                        );
+                      }
+                      return (
+                        <div key={req} className="flex items-start gap-2 text-sm">
+                          <span className="text-primary mt-0.5">•</span>
+                          <span className="capitalize">{req.replaceAll("_", " ")}</span>
+                        </div>
+                      );
+                    })}
                 </div>
               )}
               {selectedRole.description && (

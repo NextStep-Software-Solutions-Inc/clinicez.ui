@@ -16,6 +16,7 @@ import { useAtom } from "jotai";
 import { joinOrgApplicationAtom } from "@state/join-org-application";
 import { Button } from "@components/ui/button";
 import { promiseWrapper } from "@/lib/with-error-handling";
+import { linkRequirementFilesAction } from "@/actions/organizations/org-member-requirement-file.action";
 
 interface ConfirmationAndReviewStepProps {
   orgUid: string
@@ -63,7 +64,7 @@ export default function ConfirmationAndReviewStep({ orgUid, termsAndConditionsUr
   const action = async () => {
     form.handleSubmit(async () => {
 
-      const {roleId, userId, orgUid} = orgApplication;
+      const {roleId, userId, orgUid, stagedRequirementFiles} = orgApplication;
       if(!roleId  || !userId  || !orgUid) {
         toast.error("Role or User ID or Org ID is missing!")
         return;
@@ -75,6 +76,13 @@ export default function ConfirmationAndReviewStep({ orgUid, termsAndConditionsUr
         loading: "Submitting application...",
         success: async (res) => {
           playError()
+          // Link any staged requirement files to the newly created org member
+          if (res.data?.id && stagedRequirementFiles?.length) {
+            await linkRequirementFilesAction({
+              orgMemberId: res.data.id,
+              files: stagedRequirementFiles,
+            });
+          }
           setOrgApplication(pres => ({...pres,  complete: true}))
           setComplete?.(true);
           playSuccess()

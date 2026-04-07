@@ -12,7 +12,7 @@ interface OrganizationStepsProps {
 }
 
 export default async function OrganizationSteps({ orgUid, userId }: OrganizationStepsProps) {
-  const org = await getOrganizationAction(orgUid);
+  const org = await getOrganizationAction(orgUid).catch(() => null);
   return (
     <OrganizationApplication currentStep={1}>
       <SelectOrgRoleStep userId={userId} orgUid={orgUid} />

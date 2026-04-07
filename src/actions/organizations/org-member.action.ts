@@ -238,6 +238,18 @@ export const getOrgMembersAction = withErrorHandling(
             status: true,
             acceptedAt: true,
             role: true,
+            OrgMemberRequirementFiles: {
+              select: {
+                id: true,
+                requirementType: true,
+                fileName: true,
+                fileSize: true,
+                mimeType: true,
+                url: true,
+                createdAt: true,
+              },
+              orderBy: { createdAt: "asc" },
+            },
             OrganizationRole: {
               select: {
                 id: true,

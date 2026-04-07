@@ -486,6 +486,7 @@ model HealthcareProvider {
   deletedAt             DateTime?
   isActive              Boolean                     @default(true)
   isPublished           Boolean                     @default(false)
+  applicationStatus     HPApplicationStatus         @default(PENDING_PROFILE)
   AppointmentAttributes AppointmentAttribute[]
   AppointmentRoutings   AppointmentRouting[]        @relation("RoutedTo")
   AppointmentTag        AppointmentTag[]
@@ -512,7 +513,7 @@ model HealthcareProvider {
 model HPProfile {
   id                   Int                @id @default(autoincrement())
   healthcareProviderId Int                @unique
-  title                String
+  title                String?
   name                 String
   suffix               String?
   picture              String?
@@ -2850,4 +2851,13 @@ model VerificationDocument {
   updatedAt             DateTime            @updatedAt
   VerificationRequest   VerificationRequest @relation(fields: [verificationRequestId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   ValidIDType           ValidIDType         @relation(fields: [validIdTypeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// Application status for healthcare provider onboarding
+enum HPApplicationStatus {
+  PENDING_PROFILE
+  PROFILE_COMPLETE
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
 }

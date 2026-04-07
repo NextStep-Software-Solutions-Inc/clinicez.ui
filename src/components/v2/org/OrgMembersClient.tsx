@@ -255,6 +255,12 @@ interface MemberApplicationSheetProps {
 }
 
 function MemberApplicationSheet({ member, onClose }: MemberApplicationSheetProps) {
+  const [previewFile, setPreviewFile] = useState<{
+    url: string;
+    name: string;
+    mimeType: string | null;
+  } | null>(null);
+
   if (!member) return null;
 
   const requirements: string[] = member.OrganizationRole.requirements ?? [];
@@ -278,6 +284,7 @@ function MemberApplicationSheet({ member, onClose }: MemberApplicationSheetProps
   }
 
   return (
+    <>
     <Sheet open={!!member} onOpenChange={(o) => !o && onClose()}>
       <SheetContent className="w-[40%] flex flex-col gap-0 p-0 overflow-y-auto">
         <SheetHeader className="p-6 pb-4 border-b">
@@ -635,14 +642,17 @@ function MemberApplicationSheet({ member, onClose }: MemberApplicationSheetProps
                         {format(new Date(f.createdAt), "MMM d, yyyy")}
                       </p>
                     </div>
-                    <Link
-                      href={f.File.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <button
+                      type="button"
+                      onClick={() => setPreviewFile({
+                        url: f.File.url,
+                        name: f.File.name,
+                        mimeType: f.File.mimeType,
+                      })}
                       className="text-primary hover:underline text-xs flex-shrink-0"
                     >
                       View
-                    </Link>
+                    </button>
                   </div>
                 ))}
               </CardContent>
@@ -702,6 +712,45 @@ function MemberApplicationSheet({ member, onClose }: MemberApplicationSheetProps
         </div>
       </SheetContent>
     </Sheet>
+
+    {/* ── File Preview Dialog ── */}
+    <Dialog open={previewFile !== null} onOpenChange={(open) => { if (!open) setPreviewFile(null); }}>
+      <DialogContent className="max-w-3xl w-full">
+        <DialogHeader>
+          <DialogTitle className="text-sm truncate">{previewFile?.name}</DialogTitle>
+        </DialogHeader>
+        <div className="flex items-center justify-center overflow-auto min-h-[200px]">
+          {previewFile?.mimeType?.startsWith("image/") ? (
+            <img
+              src={previewFile.url}
+              alt={previewFile.name}
+              className="max-w-full max-h-[70vh] object-contain rounded"
+            />
+          ) : previewFile?.mimeType === "application/pdf" ? (
+            <iframe
+              src={previewFile.url}
+              className="w-full h-[70vh] rounded border"
+              title={previewFile.name}
+            />
+          ) : (
+            <div className="text-center py-8 space-y-3">
+              <FileText className="h-12 w-12 text-muted-foreground mx-auto" />
+              <p className="text-sm text-muted-foreground">Preview not available for this file type.</p>
+              <Link
+                href={previewFile?.url ?? "#"}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+              >
+                <ExternalLink className="h-3 w-3" />
+                Open file
+              </Link>
+            </div>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }
 

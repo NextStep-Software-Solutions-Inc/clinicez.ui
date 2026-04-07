@@ -40,6 +40,8 @@ import {
   FileUp,
   FileText,
   X,
+  MapPin,
+  HeartPulse,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -258,6 +260,8 @@ function MemberApplicationSheet({ member, onClose }: MemberApplicationSheetProps
   const requirements: string[] = member.OrganizationRole.requirements ?? [];
   const studentRecord = member.User.StudentRecords?.[0];
   const employment = member.User.UserEmployments?.[0];
+  const addresses = member.User.UserAddresses ?? [];
+  const emergencyContacts = member.User.UserEmergencyContacts ?? [];
   const fullName = getFullName(member.User.firstName, member.User.lastName, member.User.suffix);
   const initials = getInitials(member.User.firstName, member.User.lastName);
   const status = member.status as OrganizationMemberStatus;
@@ -369,6 +373,87 @@ function MemberApplicationSheet({ member, onClose }: MemberApplicationSheetProps
               )}
             </div>
           </div>
+
+          <Separator />
+
+          {/* ── Addresses ── */}
+          {addresses.length > 0 && (
+            <div className="space-y-3">
+              <p className="text-sm font-medium flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-primary" />
+                Addresses
+              </p>
+              <div className="space-y-2">
+                {addresses.map((addr, idx) => {
+                  const parts = [
+                    addr.apartmentUnit,
+                    addr.bldgName,
+                    addr.addressLine,
+                    addr.street,
+                    addr.subdivision,
+                    addr.barangay,
+                    addr.city,
+                    addr.state,
+                    addr.zipCode,
+                    addr.country,
+                  ].filter(Boolean);
+                  const formatted = parts.length > 0 ? parts.join(", ") : addr.address;
+                  return (
+                    <div
+                      key={addr.id ?? idx}
+                      className="rounded-lg border p-3 space-y-0.5"
+                    >
+                      {addr.isPrimary && (
+                        <span className="text-xs font-medium text-primary">Primary</span>
+                      )}
+                      <p className="text-sm">{formatted}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* ── Emergency Contacts ── */}
+          {emergencyContacts.length > 0 && (
+            <div className="space-y-3">
+              <p className="text-sm font-medium flex items-center gap-2">
+                <HeartPulse className="h-4 w-4 text-primary" />
+                Emergency Contacts
+              </p>
+              <div className="space-y-2">
+                {emergencyContacts.map((ec, idx) => {
+                  const contactName = [ec.firstName, ec.lastName, ec.suffix]
+                    .filter(Boolean)
+                    .join(" ");
+                  return (
+                    <div
+                      key={ec.id ?? idx}
+                      className="rounded-lg border p-3 space-y-1"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-sm font-medium">{contactName}</p>
+                        {ec.isPrimary && (
+                          <span className="text-xs font-medium text-primary">Primary</span>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground capitalize">{ec.relationship}</p>
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <Phone className="h-3 w-3 flex-shrink-0" />
+                        <span>{ec.phone}</span>
+                      </div>
+                      {ec.address && (
+                        <div className="flex items-start gap-1.5 text-xs text-muted-foreground">
+                          <MapPin className="h-3 w-3 flex-shrink-0 mt-0.5" />
+                          <span>{ec.address}</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           <Separator />
 

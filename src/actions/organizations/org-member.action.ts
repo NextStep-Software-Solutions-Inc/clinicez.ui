@@ -224,7 +224,40 @@ export const getOrgMembersAction = withErrorHandling(
                       }
                     }
                   }
-                }
+                },
+                UserAddresses: {
+                  where: { isActive: true, deletedAt: null },
+                  select: {
+                    id: true,
+                    isPrimary: true,
+                    address: true,
+                    apartmentUnit: true,
+                    bldgName: true,
+                    addressLine: true,
+                    street: true,
+                    subdivision: true,
+                    barangay: true,
+                    city: true,
+                    state: true,
+                    zipCode: true,
+                    country: true,
+                  },
+                  orderBy: [{ isPrimary: "desc" }, { id: "asc" }],
+                },
+                UserEmergencyContacts: {
+                  where: { isActive: true, deletedAt: null },
+                  select: {
+                    id: true,
+                    isPrimary: true,
+                    firstName: true,
+                    lastName: true,
+                    suffix: true,
+                    relationship: true,
+                    phone: true,
+                    address: true,
+                  },
+                  orderBy: [{ isPrimary: "desc" }, { id: "asc" }],
+                },
               }
             },
             AcceptedBy: {

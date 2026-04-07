@@ -402,13 +402,10 @@ model OrgMemberRequirementFile {
   id                 Int                @id @default(autoincrement())
   orgMemberId        Int
   requirementType    String
-  fileName           String
-  fileSize           Int
-  mimeType           String?
-  url                String
+  fileId             Int
   createdAt          DateTime           @default(now())
-  updatedAt          DateTime           @updatedAt
   OrganizationMember OrganizationMember @relation(fields: [orgMemberId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  File               File               @relation(fields: [fileId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([orgMemberId, requirementType])
 }
@@ -720,6 +717,7 @@ model File {
   Folder          Folder       @relation(fields: [folderId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   CreatedByUser   User?        @relation("FileCreatedBy", fields: [createdByUserId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   FileSetting     FileSetting?
+  OrgMemberRequirementFiles OrgMemberRequirementFile[]
 
   @@unique([folderId, name], name: "unique_folder_file")
 }

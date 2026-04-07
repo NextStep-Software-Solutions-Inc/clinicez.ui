@@ -57,7 +57,7 @@ export default function AdditionalInformationStep({ orgUid, isLastStep, isFirstS
                   />
                 </ConditionalRender>
                 <ConditionalRender condition={isFileUploadRequirement(requirement)}>
-                  <FileRequirementForm requirementType={requirement} />
+                  <FileRequirementForm requirementType={requirement} orgUid={orgUid} />
                 </ConditionalRender>
               </>
             )

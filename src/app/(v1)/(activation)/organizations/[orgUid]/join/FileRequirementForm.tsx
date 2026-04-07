@@ -19,9 +19,10 @@ const REQUIREMENT_LABELS: Record<string, string> = {
 
 interface FileRequirementFormProps {
   requirementType: string;
+  orgUid: string;
 }
 
-export default function FileRequirementForm({ requirementType }: FileRequirementFormProps) {
+export default function FileRequirementForm({ requirementType, orgUid }: FileRequirementFormProps) {
   const [, setAdditionalInfoValid] = useAtom(additionalInfoValidAtom);
   const [, setOrgApplication] = useAtom(joinOrgApplicationAtom);
   const [stagedFile, setStagedFile] = useState<StagedRequirementFile | null>(null);
@@ -44,10 +45,12 @@ export default function FileRequirementForm({ requirementType }: FileRequirement
       const fd = new FormData();
       fd.append("file", file);
       fd.append("requirementType", requirementType);
+      fd.append("orgUid", orgUid);
 
       const result = await stageRequirementFileUploadAction(fd);
-      if (result.status && result.data) {
-        setStagedFile(result.data);
+      const staged = result.data;
+      if (result.status && staged) {
+        setStagedFile(staged);
         setAdditionalInfoValid((prev) => ({ ...prev, [requirementType]: true }));
         setOrgApplication((prev) => ({
           ...prev,
@@ -55,7 +58,7 @@ export default function FileRequirementForm({ requirementType }: FileRequirement
             ...(prev.stagedRequirementFiles ?? []).filter(
               (f) => f.requirementType !== requirementType
             ),
-            result.data,
+            staged,
           ],
         }));
       } else {
@@ -85,7 +88,7 @@ export default function FileRequirementForm({ requirementType }: FileRequirement
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium truncate">{stagedFile.fileName}</p>
             <p className="text-xs text-muted-foreground">
-              {(stagedFile.fileSize / 1024).toFixed(1)} KB · Uploaded
+              {(stagedFile.fileSize / 1024).toFixed(1)} KB · Saved to your files
             </p>
           </div>
           <button

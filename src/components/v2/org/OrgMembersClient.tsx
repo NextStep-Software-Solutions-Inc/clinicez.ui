@@ -545,14 +545,14 @@ function MemberApplicationSheet({ member, onClose }: MemberApplicationSheetProps
                       <p className="text-xs font-medium text-muted-foreground capitalize">
                         {formatRequirementLabel(f.requirementType)}
                       </p>
-                      <p className="text-sm font-medium truncate">{f.fileName}</p>
+                      <p className="text-sm font-medium truncate">{f.File.name}</p>
                       <p className="text-xs text-muted-foreground">
-                        {(f.fileSize / 1024).toFixed(1)} KB ·{" "}
+                        {(f.File.size / 1024).toFixed(1)} KB ·{" "}
                         {format(new Date(f.createdAt), "MMM d, yyyy")}
                       </p>
                     </div>
                     <Link
-                      href={f.url}
+                      href={f.File.url}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-primary hover:underline text-xs flex-shrink-0"
@@ -1012,10 +1012,12 @@ function AdminEmployeeRecordSubform({ orgUid, onValidChange }: AdminEmployeeReco
 
 interface AdminFileUploadSubformProps {
   requirementType: string;
+  orgUid: string;
+  targetUserId: string;
   onValidChange: (file: StagedRequirementFile | null) => void;
 }
 
-function AdminFileUploadSubform({ requirementType, onValidChange }: AdminFileUploadSubformProps) {
+function AdminFileUploadSubform({ requirementType, orgUid, targetUserId, onValidChange }: AdminFileUploadSubformProps) {
   const [stagedFile, setStagedFile] = useState<StagedRequirementFile | null>(null);
   const [isUploading, startUploadTransition] = useTransition();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -1034,6 +1036,8 @@ function AdminFileUploadSubform({ requirementType, onValidChange }: AdminFileUpl
       const fd = new FormData();
       fd.append("file", file);
       fd.append("requirementType", requirementType);
+      fd.append("orgUid", orgUid);
+      fd.append("targetUserId", targetUserId);
       const result = await stageRequirementFileUploadAction(fd);
       if (result.status && result.data) {
         setStagedFile(result.data);
@@ -1372,6 +1376,8 @@ function AddMemberSheet({ open, orgUid, roles, onClose, onSuccess }: AddMemberSh
                             <AdminFileUploadSubform
                               key={`file-${req}-${selectedUser.userId}-${selectedRoleId}`}
                               requirementType={req}
+                              orgUid={orgUid}
+                              targetUserId={selectedUser.userId}
                               onValidChange={(f) =>
                                 setFileRequirementData((prev) => ({ ...prev, [req]: f }))
                               }

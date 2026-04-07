@@ -242,11 +242,18 @@ export const getOrgMembersAction = withErrorHandling(
               select: {
                 id: true,
                 requirementType: true,
-                fileName: true,
-                fileSize: true,
-                mimeType: true,
-                url: true,
                 createdAt: true,
+                File: {
+                  select: {
+                    id: true,
+                    name: true,
+                    size: true,
+                    url: true,
+                    mimeType: true,
+                    createdAt: true,
+                    FileType: { select: { name: true } },
+                  },
+                },
               },
               orderBy: { createdAt: "asc" },
             },

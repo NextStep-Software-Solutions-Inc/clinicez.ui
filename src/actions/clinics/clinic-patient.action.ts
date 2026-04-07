@@ -715,7 +715,7 @@ export const selfEnrollAsClinicPatientAction = withErrorHandling(
 
     if (!isPublicClinic && !linkedMembership) {
       throw new Error(
-        "You must be an active member of an organization linked to this clinic to enroll as a patient."
+        "You must either be an active member of an organization linked to this clinic, or the clinic must be publicly accessible."
       );
     }
 

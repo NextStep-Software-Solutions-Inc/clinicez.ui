@@ -670,9 +670,11 @@ export async function checkIsClinicPatientAction(clinicUid: string): Promise<boo
 
 /**
  * Allows the currently authenticated user to self-enroll as a patient at a
- * clinic, provided they are an active member of an organization that is
- * linked to that clinic.  Does NOT require the staff-level
- * CREATE:CLINIC:PATIENT permission – org membership is the gate instead.
+ * clinic.  Enrollment is permitted when EITHER of the following is true:
+ *   1. The user is an active member of an organization linked to this clinic.
+ *   2. The clinic is publicly accessible (ClinicSetting.isPublic = true).
+ *
+ * Does NOT require the staff-level CREATE:CLINIC:PATIENT permission.
  */
 export const selfEnrollAsClinicPatientAction = withErrorHandling(
   async ({ clinicUid }: { clinicUid: string }) => {
@@ -681,25 +683,37 @@ export const selfEnrollAsClinicPatientAction = withErrorHandling(
 
     const userId = session.user.sub;
 
-    // Verify the user is an active org member of an org linked to this clinic
-    const linkedMembership = await prismaClient.organizationMember.findFirst({
-      where: {
-        User: { userId },
-        status: "ACTIVE",
-        Organization: {
-          ClinicOrganizations: {
-            some: {
-              isActive: true,
-              deletedAt: null,
-              Clinic: { clinicUid },
+    // Check if the clinic is public or if the user is an active org member of a linked org
+    const [clinic, linkedMembership] = await Promise.all([
+      prismaClient.clinic.findFirst({
+        where: { clinicUid, isActive: true },
+        select: { ClinicSetting: { select: { isPublic: true } } },
+      }),
+      prismaClient.organizationMember.findFirst({
+        where: {
+          User: { userId },
+          status: "ACTIVE",
+          Organization: {
+            ClinicOrganizations: {
+              some: {
+                isActive: true,
+                deletedAt: null,
+                Clinic: { clinicUid },
+              },
             },
           },
         },
-      },
-      select: { id: true },
-    });
+        select: { id: true },
+      }),
+    ]);
 
-    if (!linkedMembership) {
+    if (!clinic) {
+      throw new Error("Clinic not found.");
+    }
+
+    const isPublicClinic = clinic.ClinicSetting?.isPublic === true;
+
+    if (!isPublicClinic && !linkedMembership) {
       throw new Error(
         "You must be an active member of an organization linked to this clinic to enroll as a patient."
       );

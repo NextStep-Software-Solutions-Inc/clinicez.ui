@@ -76,11 +76,17 @@ export default function ConfirmationAndReviewStep({ orgUid, termsAndConditionsUr
         loading: "Submitting application...",
         success: async (res) => {
           playError()
-          // Link any staged requirement files to the newly created org member
-          if (res.data?.id && stagedRequirementFiles?.length) {
+          // Link any staged requirement files to the newly created org member.
+          // Filter to only files that match the current role's requirements
+          // to avoid linking leftover staged files from a previous role selection.
+          const roleRequirements = orgApplication.roleRequirements ?? [];
+          const relevantFiles = (stagedRequirementFiles ?? []).filter((f) =>
+            roleRequirements.includes(f.requirementType)
+          );
+          if (res.data?.id && relevantFiles.length > 0) {
             await linkRequirementFilesAction({
               orgMemberId: res.data.id,
-              files: stagedRequirementFiles,
+              files: relevantFiles,
             });
           }
           setOrgApplication(pres => ({...pres,  complete: true}))

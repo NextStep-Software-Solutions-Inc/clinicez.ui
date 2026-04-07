@@ -120,7 +120,7 @@ export const linkRequirementFilesAction = withErrorHandling(
             requirementType: f.requirementType,
             fileName: f.fileName,
             fileSize: f.fileSize,
-            mimeType: f.mimeType || null,
+            mimeType: f.mimeType ?? null,
             url: f.url,
           },
           select: {

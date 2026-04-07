@@ -1,6 +1,6 @@
 "use client";
 
-import { addClinicPatientAction } from "@/actions/clinics/clinic-patient.action";
+import { selfEnrollAsClinicPatientAction } from "@/actions/clinics/clinic-patient.action";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -66,9 +66,8 @@ export function JoinAsPatientDialog() {
     }
     const searchParams = new URLSearchParams(window.location.search);
 
-    toast.promise(promiseWrapper(addClinicPatientAction)({
+    toast.promise(promiseWrapper(selfEnrollAsClinicPatientAction)({
       clinicUid,
-      userId: user?.id
     }), {
       loading: "Loading...",
       success: res => {

@@ -33,7 +33,7 @@ export type StagedRequirementFile = {
  * Used in the self-service join flow where the orgMemberId is not yet known.
  */
 export const stageRequirementFileUploadAction = withErrorHandling(
-  async (formData: FormData): Promise<StagedRequirementFile> => {
+  async (formData: FormData) => {
     const session = await getCachedSession();
     if (!session?.user?.sub) throw new Error("Unauthorized");
 
@@ -52,13 +52,15 @@ export const stageRequirementFileUploadAction = withErrorHandling(
     const buffer = await file.arrayBuffer();
     const { url } = await uploadFile(filepath, buffer, file.type);
 
-    return {
+    const stagedFile: StagedRequirementFile = {
       requirementType,
       fileName: file.name,
       fileSize: file.size,
       mimeType: file.type || "",
       url,
     };
+
+    return { message: "File staged successfully", data: stagedFile };
   }
 );
 

@@ -276,7 +276,7 @@ function MemberApplicationSheet({ member, onClose }: MemberApplicationSheetProps
 
   return (
     <Sheet open={!!member} onOpenChange={(o) => !o && onClose()}>
-      <SheetContent className="w-full sm:max-w-lg flex flex-col gap-0 p-0 overflow-y-auto">
+      <SheetContent className="w-[40%] flex flex-col gap-0 p-0 overflow-y-auto">
         <SheetHeader className="p-6 pb-4 border-b">
           <SheetTitle className="flex items-center gap-2">
             <ClipboardList className="h-5 w-5 text-primary" />

@@ -5,24 +5,7 @@ import { uploadFile } from "@/services/azure-blob";
 import { getCachedSession } from "@/actions/session.action";
 import { withErrorHandling } from "@/lib/with-error-handling";
 import prisma from "@/lib/prisma";
-import {
-  FILE_UPLOAD_REQUIREMENT_TYPES,
-  type FileUploadRequirementType,
-  isFileUploadRequirement,
-} from "@/lib/requirement-types";
-
-export {
-  FILE_UPLOAD_REQUIREMENT_TYPES,
-  type FileUploadRequirementType,
-  isFileUploadRequirement,
-};
-
-export type StagedRequirementFile = {
-  requirementType: string;
-  fileId: number;
-  fileName: string;
-  fileSize: number;
-};
+import { isFileUploadRequirement, type StagedRequirementFile } from "@/lib/requirement-types";
 
 // Human-readable FileType name per requirement type
 const FILE_TYPE_NAMES: Record<string, string> = {

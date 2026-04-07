@@ -6,10 +6,8 @@ import { toast } from "sonner";
 import { CheckCircle2, FileUp, Loader2, X } from "lucide-react";
 import { additionalInfoValidAtom } from "./AdditionalInformationStep";
 import { joinOrgApplicationAtom } from "@state/join-org-application";
-import {
-  stageRequirementFileUploadAction,
-  type StagedRequirementFile,
-} from "@/actions/organizations/org-member-requirement-file.action";
+import { stageRequirementFileUploadAction } from "@/actions/organizations/org-member-requirement-file.action";
+import { type StagedRequirementFile } from "@/lib/requirement-types";
 
 const REQUIREMENT_LABELS: Record<string, string> = {
   medical_certificate: "Medical Certificate",

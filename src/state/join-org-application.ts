@@ -1,6 +1,6 @@
 import { atom } from "jotai"
 import type { EmployeeRecordType, StudentRecordType } from "@app/(v1)/(activation)/organizations/[orgUid]/join";
-import type { StagedRequirementFile } from "@/actions/organizations/org-member-requirement-file.action";
+import type { StagedRequirementFile } from "@/lib/requirement-types";
 
 export type JoinOrgApplicationForm = Partial<{
   orgUid: string

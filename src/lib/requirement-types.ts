@@ -18,3 +18,11 @@ export type FileUploadRequirementType = (typeof FILE_UPLOAD_REQUIREMENT_TYPES)[n
 export function isFileUploadRequirement(req: string): req is FileUploadRequirementType {
     return (FILE_UPLOAD_REQUIREMENT_TYPES as readonly string[]).includes(req);
 }
+
+/** Staged requirement file metadata for upload */
+export type StagedRequirementFile = {
+    requirementType: string;
+    fileId: number;
+    fileName: string;
+    fileSize: number;
+};

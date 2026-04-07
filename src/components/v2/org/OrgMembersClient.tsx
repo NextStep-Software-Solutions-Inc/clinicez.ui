@@ -119,9 +119,8 @@ import { useOrgOffices } from "@/hooks/useOrgOffice";
 import {
   stageRequirementFileUploadAction,
   linkRequirementFilesAction,
-  type StagedRequirementFile,
 } from "@/actions/organizations/org-member-requirement-file.action";
-import { isFileUploadRequirement } from "@/lib/requirement-types";
+import { isFileUploadRequirement, type StagedRequirementFile } from "@/lib/requirement-types";
 
 /* ─────────────────────────────────────────────────────────── */
 /*  Types                                                       */

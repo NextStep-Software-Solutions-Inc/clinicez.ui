@@ -83,7 +83,7 @@ export default function SelectDashboardClient({
       cards.push({
         key: `hp-${hp.id}`,
         icon: <Stethoscope className="h-6 w-6" />,
-        title: `${hp.title} ${hp.name}`,
+        title: `${hp.title ? hp.title + " " : ""}${hp.name}`,
         description:
           "Access your healthcare provider profile, manage consultations, and view patient assignments.",
         badge: "Healthcare Provider",

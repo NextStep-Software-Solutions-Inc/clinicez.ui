@@ -97,10 +97,10 @@ export function V2UserButton() {
             {/* Dynamic HP Profiles */}
             {hpProfiles && hpProfiles.length > 0 && (
               <UserButton.Action
-                label="My Healthcare Profile"
+                label="My HP Profile"
                 labelIcon={<Stethoscope size={16} />}
                 onClick={() => {
-                  router.push(`/hp/${hpProfiles[0].id}`);
+                  router.push(`/v2/hp/${hpProfiles[0].id}/edit`);
                 }}
               />
             )}

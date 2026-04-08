@@ -66,6 +66,11 @@ import {
   setOrgRoleDashboardAccessAction,
 } from "@/actions/organizations/organization-role.action";
 import {
+  parseRequirementSettings,
+  isRequirementRequired,
+  type RequirementSettings,
+} from "@/lib/requirement-types";
+import {
   createOrgCollegeAction,
   updateOrgCollegeAction,
   deleteOrgCollegeAction,
@@ -736,7 +741,7 @@ function RolesTab({
   const [permRole, setPermRole] = useState<RoleWithPerms | null>(null);
   const [newReq, setNewReq] = useState("");
   const [localReqs, setLocalReqs] = useState<string[]>([]);
-  const [localReqSettings, setLocalReqSettings] = useState<Record<string, { isRequired: boolean }>>({});
+  const [localReqSettings, setLocalReqSettings] = useState<RequirementSettings>({});
   const [isPending, startTransition] = useTransition();
 
   const createForm = useForm<{ name: string; description: string }>({
@@ -817,14 +822,7 @@ function RolesTab({
   function openReqDialog(role: RolesWithPermissionsData[number]) {
     setReqRole(role);
     setLocalReqs([...role.requirements]);
-    const rawSettings = role.requirementSettings;
-    const settings =
-      rawSettings !== null &&
-      typeof rawSettings === "object" &&
-      !Array.isArray(rawSettings)
-        ? (rawSettings as Record<string, { isRequired: boolean }>)
-        : {};
-    setLocalReqSettings(settings);
+    setLocalReqSettings(parseRequirementSettings(role.requirementSettings));
     setNewReq("");
   }
 
@@ -1114,7 +1112,7 @@ function RolesTab({
             {localReqs.length > 0 ? (
               <div className="space-y-1">
                 {localReqs.map((req, idx) => {
-                  const isRequired = localReqSettings[req]?.isRequired !== false;
+                  const reqIsRequired = isRequirementRequired(req, localReqSettings);
                   return (
                     <div
                       key={idx}
@@ -1123,10 +1121,10 @@ function RolesTab({
                       <span className="flex-1 truncate">{req}</span>
                       <div className="flex items-center gap-2 shrink-0">
                         <span className="text-xs text-muted-foreground">
-                          {isRequired ? "Required" : "Optional"}
+                          {reqIsRequired ? "Required" : "Optional"}
                         </span>
                         <Switch
-                          checked={isRequired}
+                          checked={reqIsRequired}
                           onCheckedChange={(checked) =>
                             setLocalReqSettings((prev) => ({
                               ...prev,

@@ -122,7 +122,7 @@ import {
   stageRequirementFileUploadAction,
   linkRequirementFilesAction,
 } from "@/actions/organizations/org-member-requirement-file.action";
-import { isFileUploadRequirement, type StagedRequirementFile } from "@/lib/requirement-types";
+import { isFileUploadRequirement, parseRequirementSettings, isRequirementRequired, type StagedRequirementFile } from "@/lib/requirement-types";
 
 /* ─────────────────────────────────────────────────────────── */
 /*  Types                                                       */
@@ -264,19 +264,8 @@ function MemberApplicationSheet({ member, onClose }: MemberApplicationSheetProps
   if (!member) return null;
 
   const requirements: string[] = member.OrganizationRole.requirements ?? [];
-  const rawReqSettings = member.OrganizationRole.requirementSettings;
-  const requirementSettings: Record<string, { isRequired: boolean }> =
-    rawReqSettings !== null &&
-    typeof rawReqSettings === "object" &&
-    !Array.isArray(rawReqSettings)
-      ? (rawReqSettings as Record<string, { isRequired: boolean }>)
-      : {};
+  const requirementSettings = parseRequirementSettings(member.OrganizationRole.requirementSettings);
 
-  const isRequirementRequired = (req: string): boolean => {
-    const setting = requirementSettings[req];
-    if (setting === undefined) return true;
-    return setting.isRequired;
-  };
   const studentRecord = member.User.StudentRecords?.[0];
   const employment = member.User.UserEmployments?.[0];
   const addresses = member.User.UserAddresses ?? [];
@@ -499,7 +488,7 @@ function MemberApplicationSheet({ member, onClose }: MemberApplicationSheetProps
               <div className="space-y-2">
                 {requirements.map((req) => {
                   const fulfilled = isFulfilled(req);
-                  const optional = !isRequirementRequired(req);
+                  const optional = !isRequirementRequired(req, requirementSettings);
                   return (
                     <div
                       key={req}

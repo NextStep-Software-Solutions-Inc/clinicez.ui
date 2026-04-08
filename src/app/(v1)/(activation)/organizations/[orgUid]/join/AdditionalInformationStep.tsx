@@ -8,8 +8,13 @@ import FileRequirementForm from "./FileRequirementForm";
 import { atom, useAtomValue } from "jotai";
 import Each from "@components/utils/Each";
 import { joinOrgApplicationAtom } from "@state/join-org-application";
-import { isFileUploadRequirement } from "@/lib/requirement-types";
+import {
+  isFileUploadRequirement,
+  isRequirementRequired,
+  parseRequirementSettings,
+} from "@/lib/requirement-types";
 import { Badge } from "@/components/ui/badge";
+import type { ReactNode } from "react";
 
 interface OrganizationStepProps {
   orgUid: string;
@@ -24,21 +29,31 @@ export const additionalInfoValidAtom = atom<Record<string, boolean>>({
   student_record: false,
 })
 
+function RequirementFormItem({
+  optional,
+  children,
+}: {
+  optional: boolean;
+  children: ReactNode;
+}) {
+  if (!optional) return <>{children}</>;
+  return (
+    <div className="space-y-2">
+      <Badge variant="secondary" className="text-xs">Optional</Badge>
+      {children}
+    </div>
+  );
+}
+
 export default function AdditionalInformationStep({ orgUid, isLastStep, isFirstStep, nextStep, prevStep }: OrganizationStepProps) {
 
   const additionalInfoValidValue = useAtomValue(additionalInfoValidAtom)
   const orgApplication = useAtomValue(joinOrgApplicationAtom)
   const requirements = [... new Set(orgApplication.roleRequirements ?? [])];
-  const requirementSettings = orgApplication.roleRequirementSettings ?? {};
-
-  const isRequirementRequired = (req: string): boolean => {
-    const setting = requirementSettings[req];
-    if (setting === undefined) return true;
-    return setting.isRequired;
-  };
+  const requirementSettings = parseRequirementSettings(orgApplication.roleRequirementSettings);
 
   const isValid = requirements.every(requirement => {
-    if (!isRequirementRequired(requirement)) return true;
+    if (!isRequirementRequired(requirement, requirementSettings)) return true;
     return additionalInfoValidValue[requirement] ?? false;
   });
 
@@ -54,38 +69,29 @@ export default function AdditionalInformationStep({ orgUid, isLastStep, isFirstS
             </div>
           )}
           render={(requirement) => {
-            const optional = !isRequirementRequired(requirement);
+            const optional = !isRequirementRequired(requirement, requirementSettings);
             return (
               <>
                 <ConditionalRender condition={requirement === "employee_record"}>
-                  <div className="space-y-2">
-                    {optional && (
-                      <Badge variant="secondary" className="text-xs">Optional</Badge>
-                    )}
+                  <RequirementFormItem optional={optional}>
                     <EmployeeRecordForm
                       orgUid={orgUid}
                       userId={orgApplication.userId ?? ""}
                     />
-                  </div>
+                  </RequirementFormItem>
                 </ConditionalRender>
                 <ConditionalRender condition={requirement === "student_record"}>
-                  <div className="space-y-2">
-                    {optional && (
-                      <Badge variant="secondary" className="text-xs">Optional</Badge>
-                    )}
+                  <RequirementFormItem optional={optional}>
                     <StudentRecordForm
                       orgUid={orgUid}
                       userId={orgApplication.userId ?? ""}
                     />
-                  </div>
+                  </RequirementFormItem>
                 </ConditionalRender>
                 <ConditionalRender condition={isFileUploadRequirement(requirement)}>
-                  <div className="space-y-2">
-                    {optional && (
-                      <Badge variant="secondary" className="text-xs">Optional</Badge>
-                    )}
+                  <RequirementFormItem optional={optional}>
                     <FileRequirementForm requirementType={requirement} orgUid={orgUid} />
-                  </div>
+                  </RequirementFormItem>
                 </ConditionalRender>
               </>
             )

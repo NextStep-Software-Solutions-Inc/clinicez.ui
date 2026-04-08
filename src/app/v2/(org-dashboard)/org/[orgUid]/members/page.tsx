@@ -13,20 +13,39 @@ export const dynamic = "force-dynamic";
 
 interface OrgMembersPageProps {
   params: Promise<{ orgUid: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
 const PAGE_SIZE = 20;
 
-export default async function OrgMembersPage({ params }: OrgMembersPageProps) {
+const VALID_STATUSES = ["ACTIVE", "SUSPENDED", "PENDING", "INACTIVE"] as const;
+type ValidStatus = (typeof VALID_STATUSES)[number];
+
+export default async function OrgMembersPage({ params, searchParams }: OrgMembersPageProps) {
   const { orgUid } = await params;
+  const sp = await searchParams;
 
   const session = await getCachedSession();
   if (!session?.user?.sub) {
     throw new Error("User not authenticated");
   }
 
+  const statusParam = typeof sp.status === "string" ? sp.status : undefined;
+  const statusFilter: ValidStatus | undefined = VALID_STATUSES.includes(statusParam as ValidStatus)
+    ? (statusParam as ValidStatus)
+    : undefined;
+  const searchKey = typeof sp.q === "string" && sp.q ? sp.q : undefined;
+  const roleFilter = typeof sp.role === "string" && sp.role !== "ALL" ? sp.role : undefined;
+
   const [membersResult, rolesResult] = await Promise.all([
-    getOrgMembersAction({ orgUid, pageSize: PAGE_SIZE, pageNumber: 1 }),
+    getOrgMembersAction({
+      orgUid,
+      pageSize: PAGE_SIZE,
+      pageNumber: 1,
+      ...(statusFilter ? { status: [statusFilter] } : {}),
+      ...(searchKey ? { searchKey } : {}),
+      ...(roleFilter ? { role: [roleFilter] } : {}),
+    }),
     getOrganizationRolesAction({ orgUid }),
   ]);
 

@@ -46,12 +46,21 @@ export const SelectOrgForm = ({existingRoles, orgRoles, orgUid, userId, nextStep
 
   const handleNext = () => {
     form.handleSubmit(async (values) => {
+      const selectedRole = orgRoles.data?.find(role => role.id === values.roleId);
+      const rawSettings = selectedRole?.requirementSettings;
+      const requirementSettings =
+        rawSettings !== null &&
+        typeof rawSettings === "object" &&
+        !Array.isArray(rawSettings)
+          ? (rawSettings as Record<string, { isRequired: boolean }>)
+          : {};
       setOrgApplication(prev => ({
         ...prev,
         orgUid,
         userId,
-        roleId: values.roleId, 
-        roleRequirements: orgRoles.data?.find(role => role.id === values.roleId)?.requirements ?? []
+        roleId: values.roleId,
+        roleRequirements: selectedRole?.requirements ?? [],
+        roleRequirementSettings: requirementSettings,
       }));
       nextStep?.();
     })();

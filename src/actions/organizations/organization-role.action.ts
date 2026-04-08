@@ -93,6 +93,7 @@ export const getOrganizationRolesAction = withErrorHandling(cache(async (filters
       name: true,
       description: true,
       requirements: true,
+      requirementSettings: true,
       UserDefaultOrganizationRoles: {
         where: userId ? {
           User: {
@@ -112,7 +113,7 @@ export const getOrganizationRolesAction = withErrorHandling(cache(async (filters
 }))
 
 
-export const setOrganizationRoleRequirementsAction = withErrorHandling(async (orgRoleId: number, requirements: string[]) => {
+export const setOrganizationRoleRequirementsAction = withErrorHandling(async (orgRoleId: number, requirements: string[], requirementSettings: Record<string, { isRequired: boolean }>) => {
 
   const session = await sessionCheck();
   const userId = session.user.sub as string;
@@ -144,7 +145,7 @@ export const setOrganizationRoleRequirementsAction = withErrorHandling(async (or
       isActive: true,
       id: orgRoleId
     },
-    data: { requirements }
+    data: { requirements, requirementSettings }
   })
   return { message: "Role requirements updated successfully", data: null }
 
@@ -240,6 +241,7 @@ export async function getOrganizationRolesWithPermissionsAction(orgUid: string) 
       name: true,
       description: true,
       requirements: true,
+      requirementSettings: true,
       canAccessDashboard: true,
       OrgRoleInitialPermissions: {
         where: { Organization: { orgUid } },

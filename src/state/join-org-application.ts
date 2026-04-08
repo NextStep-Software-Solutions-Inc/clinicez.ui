@@ -7,6 +7,7 @@ export type JoinOrgApplicationForm = Partial<{
   roleId: number
   userId: string
   roleRequirements: string[]
+  roleRequirementSettings: Record<string, { isRequired: boolean }>
   employee_record: EmployeeRecordType
   student_record: StudentRecordType
   stagedRequirementFiles: StagedRequirementFile[]

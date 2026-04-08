@@ -417,6 +417,7 @@ model OrganizationRole {
   description                  String?
   isActive                     Boolean                       @default(true)
   requirements                 String[]                      @default([])
+  requirementSettings          Json                          @default("{}")
   canAccessDashboard           Boolean                       @default(false)
   OrgRoleInitialPermissions    OrgRoleInitialPermission[]
   OrganizationMembers          OrganizationMember[]

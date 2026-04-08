@@ -9,6 +9,7 @@ import { atom, useAtomValue } from "jotai";
 import Each from "@components/utils/Each";
 import { joinOrgApplicationAtom } from "@state/join-org-application";
 import { isFileUploadRequirement } from "@/lib/requirement-types";
+import { Badge } from "@/components/ui/badge";
 
 interface OrganizationStepProps {
   orgUid: string;
@@ -28,7 +29,18 @@ export default function AdditionalInformationStep({ orgUid, isLastStep, isFirstS
   const additionalInfoValidValue = useAtomValue(additionalInfoValidAtom)
   const orgApplication = useAtomValue(joinOrgApplicationAtom)
   const requirements = [... new Set(orgApplication.roleRequirements ?? [])];
-  const isValid = requirements.every(requirement => additionalInfoValidValue[requirement] ?? false)
+  const requirementSettings = orgApplication.roleRequirementSettings ?? {};
+
+  const isRequirementRequired = (req: string): boolean => {
+    const setting = requirementSettings[req];
+    if (setting === undefined) return true;
+    return setting.isRequired;
+  };
+
+  const isValid = requirements.every(requirement => {
+    if (!isRequirementRequired(requirement)) return true;
+    return additionalInfoValidValue[requirement] ?? false;
+  });
 
   return (
     <div className="shadow-2xl p-10 rounded-sm">
@@ -42,22 +54,38 @@ export default function AdditionalInformationStep({ orgUid, isLastStep, isFirstS
             </div>
           )}
           render={(requirement) => {
+            const optional = !isRequirementRequired(requirement);
             return (
               <>
                 <ConditionalRender condition={requirement === "employee_record"}>
-                  <EmployeeRecordForm
-                    orgUid={orgUid}
-                    userId={orgApplication.userId ?? ""}
-                  />
+                  <div className="space-y-2">
+                    {optional && (
+                      <Badge variant="secondary" className="text-xs">Optional</Badge>
+                    )}
+                    <EmployeeRecordForm
+                      orgUid={orgUid}
+                      userId={orgApplication.userId ?? ""}
+                    />
+                  </div>
                 </ConditionalRender>
                 <ConditionalRender condition={requirement === "student_record"}>
-                  <StudentRecordForm
-                    orgUid={orgUid}
-                    userId={orgApplication.userId ?? ""}
-                  />
+                  <div className="space-y-2">
+                    {optional && (
+                      <Badge variant="secondary" className="text-xs">Optional</Badge>
+                    )}
+                    <StudentRecordForm
+                      orgUid={orgUid}
+                      userId={orgApplication.userId ?? ""}
+                    />
+                  </div>
                 </ConditionalRender>
                 <ConditionalRender condition={isFileUploadRequirement(requirement)}>
-                  <FileRequirementForm requirementType={requirement} orgUid={orgUid} />
+                  <div className="space-y-2">
+                    {optional && (
+                      <Badge variant="secondary" className="text-xs">Optional</Badge>
+                    )}
+                    <FileRequirementForm requirementType={requirement} orgUid={orgUid} />
+                  </div>
                 </ConditionalRender>
               </>
             )

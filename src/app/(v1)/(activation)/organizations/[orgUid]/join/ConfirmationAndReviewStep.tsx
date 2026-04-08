@@ -16,9 +16,12 @@ import { useAtom } from "jotai";
 import { joinOrgApplicationAtom } from "@state/join-org-application";
 import { Button } from "@components/ui/button";
 import { promiseWrapper } from "@/lib/with-error-handling";
+import { linkRequirementFilesAction } from "@/actions/organizations/org-member-requirement-file.action";
 
 interface ConfirmationAndReviewStepProps {
   orgUid: string
+  termsAndConditionsUrl?: string | null;
+  privacyPolicyUrl?: string | null;
   isLastStep?: boolean;
   isComplete?: boolean;
   isFirstStep?: boolean;
@@ -40,7 +43,7 @@ export const confirmationFormSchema = z.object({
   })
 })
 
-export default function ConfirmationAndReviewStep({ orgUid, isComplete, isFirstStep, isLastStep, nextStep, prevStep, startOver, setComplete }:ConfirmationAndReviewStepProps) {
+export default function ConfirmationAndReviewStep({ orgUid, termsAndConditionsUrl, privacyPolicyUrl, isComplete, isFirstStep, isLastStep, nextStep, prevStep, startOver, setComplete }:ConfirmationAndReviewStepProps) {
   const [orgApplication, setOrgApplication] = useAtom(joinOrgApplicationAtom);
   const [playSuccess] = useSound("/audio/success-1.mp3", {
     interrupt: true,
@@ -61,7 +64,7 @@ export default function ConfirmationAndReviewStep({ orgUid, isComplete, isFirstS
   const action = async () => {
     form.handleSubmit(async () => {
 
-      const {roleId, userId, orgUid} = orgApplication;
+      const {roleId, userId, orgUid, stagedRequirementFiles} = orgApplication;
       if(!roleId  || !userId  || !orgUid) {
         toast.error("Role or User ID or Org ID is missing!")
         return;
@@ -73,6 +76,19 @@ export default function ConfirmationAndReviewStep({ orgUid, isComplete, isFirstS
         loading: "Submitting application...",
         success: async (res) => {
           playError()
+          // Link any staged requirement files to the newly created org member.
+          // Filter to only files that match the current role's requirements
+          // to avoid linking leftover staged files from a previous role selection.
+          const roleRequirements = orgApplication.roleRequirements ?? [];
+          const relevantFiles = (stagedRequirementFiles ?? []).filter((f) =>
+            roleRequirements.includes(f.requirementType)
+          );
+          if (res.data?.id && relevantFiles.length > 0) {
+            await linkRequirementFilesAction({
+              orgMemberId: res.data.id,
+              files: relevantFiles,
+            });
+          }
           setOrgApplication(pres => ({...pres,  complete: true}))
           setComplete?.(true);
           playSuccess()
@@ -135,7 +151,7 @@ export default function ConfirmationAndReviewStep({ orgUid, isComplete, isFirstS
                   Terms and Conditions
                   </FormLabel>
                   <FormDescription>
-                 I agree to the <Link href="https://www.healthcare.gov.au/sites/default/files/2021-04/Terms%20and%20Conditions%20for%20Healthcare%20Providers%20and%20Healthcare%20Organisations.pdf" target="_blank">Terms and Conditions</Link> for Healthcare Providers and Healthcare Organizations.
+                 I agree to the <Link href={termsAndConditionsUrl ?? "/terms"} target="_blank">Terms and Conditions</Link> of this organization.
                   </FormDescription>
                   <FormMessage/>
                 </div>
@@ -159,7 +175,7 @@ export default function ConfirmationAndReviewStep({ orgUid, isComplete, isFirstS
                   Privacy Policy
                   </FormLabel>
                   <FormDescription>
-                  I agree to the <Link href="https://www.healthcare.gov.au/sites/default/files/2021-04/Privacy%20Policy%20for%20Healthcare%20Providers%20and%20Healthcare%20Organisations.pdf" target="_blank">Privacy Policy</Link> for Healthcare Providers and Healthcare Organisations.
+                  I agree to the <Link href={privacyPolicyUrl ?? "/privacy"} target="_blank">Privacy Policy</Link> of this organization.
                   </FormDescription>
                   <FormMessage/>
                 </div>

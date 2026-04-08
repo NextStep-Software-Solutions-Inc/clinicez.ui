@@ -147,11 +147,19 @@ export const getOrgMembersAction = withErrorHandling(
                 id: true,
                 picture: true,
                 userId: true,
+                email: true,
                 firstName: true,
                 lastName: true,
+                middleName: true,
                 suffix: true,
                 gender: true,
                 dob: true,
+                civilStatus: true,
+                bloodType: true,
+                nationality: true,
+                placeOfBirth: true,
+                mobile: true,
+                telephone: true,
                 StudentRecords: {
                   where: {
                     isActive: true,
@@ -216,7 +224,40 @@ export const getOrgMembersAction = withErrorHandling(
                       }
                     }
                   }
-                }
+                },
+                UserAddresses: {
+                  where: { isActive: true, deletedAt: null },
+                  select: {
+                    id: true,
+                    isPrimary: true,
+                    address: true,
+                    apartmentUnit: true,
+                    bldgName: true,
+                    addressLine: true,
+                    street: true,
+                    subdivision: true,
+                    barangay: true,
+                    city: true,
+                    state: true,
+                    zipCode: true,
+                    country: true,
+                  },
+                  orderBy: [{ isPrimary: "desc" }, { id: "asc" }],
+                },
+                UserEmergencyContacts: {
+                  where: { isActive: true, deletedAt: null },
+                  select: {
+                    id: true,
+                    isPrimary: true,
+                    firstName: true,
+                    lastName: true,
+                    suffix: true,
+                    relationship: true,
+                    phone: true,
+                    address: true,
+                  },
+                  orderBy: [{ isPrimary: "desc" }, { id: "asc" }],
+                },
               }
             },
             AcceptedBy: {
@@ -228,7 +269,27 @@ export const getOrgMembersAction = withErrorHandling(
               }
             },
             status: true,
+            acceptedAt: true,
             role: true,
+            OrgMemberRequirementFiles: {
+              select: {
+                id: true,
+                requirementType: true,
+                createdAt: true,
+                File: {
+                  select: {
+                    id: true,
+                    name: true,
+                    size: true,
+                    url: true,
+                    mimeType: true,
+                    createdAt: true,
+                    FileType: { select: { name: true } },
+                  },
+                },
+              },
+              orderBy: { createdAt: "asc" },
+            },
             OrganizationRole: {
               select: {
                 id: true,
@@ -241,7 +302,9 @@ export const getOrgMembersAction = withErrorHandling(
               select: {
                 name: true,
                 orgUid: true,
-                id: true
+                id: true,
+                termsAndConditionsUrl: true,
+                privacyPolicyUrl: true,
               }
             }
           }

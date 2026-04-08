@@ -380,21 +380,34 @@ model Permission {
 }
 
 model OrganizationMember {
-  id                   Int                   @id @default(autoincrement())
-  userId               Int
-  organizationId       Int
-  acceptedAt           DateTime?             @db.Date
-  acceptedBy           Int?
-  createdAt            DateTime              @default(now())
-  status               String                @default("PENDING")
-  role                 Int
-  OrgMemberPermissions OrgMemberPermission[]
-  AcceptedBy           User?                 @relation("AcceptedBy", fields: [acceptedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  Organization         Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  OrganizationRole     OrganizationRole      @relation(fields: [role], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  User                 User                  @relation("User", fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id                           Int                           @id @default(autoincrement())
+  userId                       Int
+  organizationId               Int
+  acceptedAt                   DateTime?                     @db.Date
+  acceptedBy                   Int?
+  createdAt                    DateTime                      @default(now())
+  status                       String                        @default("PENDING")
+  role                         Int
+  OrgMemberPermissions         OrgMemberPermission[]
+  OrgMemberRequirementFiles    OrgMemberRequirementFile[]
+  AcceptedBy                   User?                         @relation("AcceptedBy", fields: [acceptedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Organization                 Organization                  @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  OrganizationRole             OrganizationRole              @relation(fields: [role], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  User                         User                          @relation("User", fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([userId, organizationId, role], name: "unique_user_organization_role")
+}
+
+model OrgMemberRequirementFile {
+  id                 Int                @id @default(autoincrement())
+  orgMemberId        Int
+  requirementType    String
+  fileId             Int
+  createdAt          DateTime           @default(now())
+  OrganizationMember OrganizationMember @relation(fields: [orgMemberId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  File               File               @relation(fields: [fileId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([orgMemberId, requirementType])
 }
 
 model OrganizationRole {
@@ -473,6 +486,7 @@ model HealthcareProvider {
   deletedAt             DateTime?
   isActive              Boolean                     @default(true)
   isPublished           Boolean                     @default(false)
+  applicationStatus     HPApplicationStatus         @default(PENDING_PROFILE)
   AppointmentAttributes AppointmentAttribute[]
   AppointmentRoutings   AppointmentRouting[]        @relation("RoutedTo")
   AppointmentTag        AppointmentTag[]
@@ -499,7 +513,7 @@ model HealthcareProvider {
 model HPProfile {
   id                   Int                @id @default(autoincrement())
   healthcareProviderId Int                @unique
-  title                String
+  title                String?
   name                 String
   suffix               String?
   picture              String?
@@ -704,6 +718,7 @@ model File {
   Folder          Folder       @relation(fields: [folderId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   CreatedByUser   User?        @relation("FileCreatedBy", fields: [createdByUserId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   FileSetting     FileSetting?
+  OrgMemberRequirementFiles OrgMemberRequirementFile[]
 
   @@unique([folderId, name], name: "unique_folder_file")
 }
@@ -2836,4 +2851,13 @@ model VerificationDocument {
   updatedAt             DateTime            @updatedAt
   VerificationRequest   VerificationRequest @relation(fields: [verificationRequestId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   ValidIDType           ValidIDType         @relation(fields: [validIdTypeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// Application status for healthcare provider onboarding
+enum HPApplicationStatus {
+  PENDING_PROFILE
+  PROFILE_COMPLETE
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
 }

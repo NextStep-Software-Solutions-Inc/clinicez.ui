@@ -1,13 +1,14 @@
 "use client";
 
 import BackSubmitAndNext from "@components/SubmitAndNext";
-import React from "react";
 import EmployeeRecordForm from "./EmployeeRecordForm";
 import ConditionalRender from "@components/utils/ConditionalRender";
 import StudentRecordForm from "./StudentRecordForm";
+import FileRequirementForm from "./FileRequirementForm";
 import { atom, useAtomValue } from "jotai";
 import Each from "@components/utils/Each";
 import { joinOrgApplicationAtom } from "@state/join-org-application";
+import { isFileUploadRequirement } from "@/lib/requirement-types";
 
 interface OrganizationStepProps {
   orgUid: string;
@@ -17,7 +18,7 @@ interface OrganizationStepProps {
   prevStep?: () => void;
 }
 
-export const additionalInfoValidAtom = atom({
+export const additionalInfoValidAtom = atom<Record<string, boolean>>({
   employee_record: false,
   student_record: false,
 })
@@ -27,7 +28,7 @@ export default function AdditionalInformationStep({ orgUid, isLastStep, isFirstS
   const additionalInfoValidValue = useAtomValue(additionalInfoValidAtom)
   const orgApplication = useAtomValue(joinOrgApplicationAtom)
   const requirements = [... new Set(orgApplication.roleRequirements ?? [])];
-  const isValid = requirements.every(requirement => additionalInfoValidValue[requirement as keyof typeof additionalInfoValidValue])
+  const isValid = requirements.every(requirement => additionalInfoValidValue[requirement] ?? false)
 
   return (
     <div className="shadow-2xl p-10 rounded-sm">
@@ -54,6 +55,9 @@ export default function AdditionalInformationStep({ orgUid, isLastStep, isFirstS
                     orgUid={orgUid}
                     userId={orgApplication.userId ?? ""}
                   />
+                </ConditionalRender>
+                <ConditionalRender condition={isFileUploadRequirement(requirement)}>
+                  <FileRequirementForm requirementType={requirement} orgUid={orgUid} />
                 </ConditionalRender>
               </>
             )

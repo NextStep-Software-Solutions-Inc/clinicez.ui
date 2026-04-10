@@ -31,7 +31,7 @@ const studentRecordSchema = z.object({
   }),
   lrn: z.string({
     message: "Learner Ref. Number must be a string"
-  }).optional(),
+  }).optional().transform(val => (val === undefined || val === "") ? undefined : val),
   levelId: z.number({
     coerce: true,
     required_error: "School level is required"

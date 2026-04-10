@@ -224,7 +224,7 @@ function formatCivilStatus(cs: string): string {
 
 const adminStudentRecordSchema = z.object({
   studentId: z.string().min(1, "Student ID is required"),
-  lrn: z.string().optional(),
+  lrn: z.string().optional().transform(val => (val === undefined || val === "") ? undefined : val),
   levelId: z.coerce.number({ required_error: "School level is required" }),
   yearLevelId: z.coerce.number({ required_error: "Year level is required" }),
   programId: z.coerce.number({ required_error: "Program is required" }),

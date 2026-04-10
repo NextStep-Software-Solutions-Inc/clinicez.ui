@@ -35,7 +35,7 @@ export default function OrgRoleRequirements({orgRoleId, currentRequirements}:Org
   
   const action = async () => {
     form.handleSubmit(async (data) => {
-      toast.promise(promiseWrapper(setOrganizationRoleRequirementsAction)(orgRoleId, data.requirements), {
+      toast.promise(promiseWrapper(setOrganizationRoleRequirementsAction)(orgRoleId, data.requirements, {}), {
         loading: "Saving changes...",
         success: res => {
           form.reset(data)

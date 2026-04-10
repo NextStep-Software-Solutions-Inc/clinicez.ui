@@ -4,6 +4,8 @@ import { GetOrganizationsV2 } from "@/actions/organizations/organization.action"
 import SearchPaginatedList from "../SearchPaginatedList";
 import OrganizationCard from "./OrganizationCard";
 
+type OrgListItem = GetOrganizationsV2[number];
+
 interface Props {
   data: GetOrganizationsV2;
   membershipStatusMap?: Record<string, string>;
@@ -11,7 +13,7 @@ interface Props {
 
 export default function OrganizationListShell({ data, membershipStatusMap = {} }: Props) {
   return (
-    <SearchPaginatedList
+    <SearchPaginatedList<OrgListItem>
       data={data}
       searchBy={(item, term) =>
         item.name.toLowerCase().includes(term) ||

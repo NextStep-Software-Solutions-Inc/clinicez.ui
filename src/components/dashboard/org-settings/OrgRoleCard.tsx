@@ -10,6 +10,7 @@ import ActionButton from "@components/ActionButton";
 import { Trash } from "lucide-react";
 import { GetOrganizationRoles, deleteOrganizationRoleAction } from "@/actions/organizations/organization-role.action";
 import { promiseWrapper } from "@/lib/with-error-handling";
+import { parseRequirementSettings } from "@/lib/requirement-types";
 
 interface OrgRoleCardProps {
     role: NonNullable<GetOrganizationRoles["data"]>[number]
@@ -50,6 +51,7 @@ export const OrgRoleCard = ({role, onDeleteRole}:OrgRoleCardProps) => {
         <OrgRoleRequirements 
           orgRoleId={role.id}
           currentRequirements={activeRoleRequirements}
+          currentRequirementSettings={parseRequirementSettings(role.requirementSettings)}
         />
         <Separator/>
         <OrgRoleInitialPermissions orgRoleId={role.id} />

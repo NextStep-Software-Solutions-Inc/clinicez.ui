@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import Each from "@components/utils/Each";
 import { setOrganizationRoleRequirementsAction } from "@actions/organizations/organization-role.action";
 import { promiseWrapper } from "@/lib/with-error-handling";
+import { RequirementSettings } from "@/lib/requirement-types";
 
 export const requirements = ["student_record", "employee_record"]
 
@@ -23,9 +24,10 @@ const FormSchema = z.object({
 interface OrgRoleRequirementsProps {
   orgRoleId: number
   currentRequirements: typeof requirements
+  currentRequirementSettings: RequirementSettings
 }
 
-export default function OrgRoleRequirements({orgRoleId, currentRequirements}:OrgRoleRequirementsProps ) {
+export default function OrgRoleRequirements({orgRoleId, currentRequirements, currentRequirementSettings}:OrgRoleRequirementsProps ) {
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     values: {
@@ -35,7 +37,7 @@ export default function OrgRoleRequirements({orgRoleId, currentRequirements}:Org
   
   const action = async () => {
     form.handleSubmit(async (data) => {
-      toast.promise(promiseWrapper(setOrganizationRoleRequirementsAction)(orgRoleId, data.requirements, {}), {
+      toast.promise(promiseWrapper(setOrganizationRoleRequirementsAction)(orgRoleId, data.requirements, currentRequirementSettings), {
         loading: "Saving changes...",
         success: res => {
           form.reset(data)

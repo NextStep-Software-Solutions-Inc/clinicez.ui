@@ -8,7 +8,13 @@ import FileRequirementForm from "./FileRequirementForm";
 import { atom, useAtomValue } from "jotai";
 import Each from "@components/utils/Each";
 import { joinOrgApplicationAtom } from "@state/join-org-application";
-import { isFileUploadRequirement } from "@/lib/requirement-types";
+import {
+  isFileUploadRequirement,
+  isRequirementRequired,
+  parseRequirementSettings,
+} from "@/lib/requirement-types";
+import { Badge } from "@/components/ui/badge";
+import type { ReactNode } from "react";
 
 interface OrganizationStepProps {
   orgUid: string;
@@ -23,12 +29,33 @@ export const additionalInfoValidAtom = atom<Record<string, boolean>>({
   student_record: false,
 })
 
+function RequirementFormItem({
+  optional,
+  children,
+}: {
+  optional: boolean;
+  children: ReactNode;
+}) {
+  if (!optional) return <>{children}</>;
+  return (
+    <div className="space-y-2">
+      <Badge variant="secondary" className="text-xs">Optional</Badge>
+      {children}
+    </div>
+  );
+}
+
 export default function AdditionalInformationStep({ orgUid, isLastStep, isFirstStep, nextStep, prevStep }: OrganizationStepProps) {
 
   const additionalInfoValidValue = useAtomValue(additionalInfoValidAtom)
   const orgApplication = useAtomValue(joinOrgApplicationAtom)
   const requirements = [... new Set(orgApplication.roleRequirements ?? [])];
-  const isValid = requirements.every(requirement => additionalInfoValidValue[requirement] ?? false)
+  const requirementSettings = parseRequirementSettings(orgApplication.roleRequirementSettings);
+
+  const isValid = requirements.every(requirement => {
+    if (!isRequirementRequired(requirement, requirementSettings)) return true;
+    return additionalInfoValidValue[requirement] ?? false;
+  });
 
   return (
     <div className="shadow-2xl p-10 rounded-sm">
@@ -42,22 +69,29 @@ export default function AdditionalInformationStep({ orgUid, isLastStep, isFirstS
             </div>
           )}
           render={(requirement) => {
+            const optional = !isRequirementRequired(requirement, requirementSettings);
             return (
               <>
                 <ConditionalRender condition={requirement === "employee_record"}>
-                  <EmployeeRecordForm
-                    orgUid={orgUid}
-                    userId={orgApplication.userId ?? ""}
-                  />
+                  <RequirementFormItem optional={optional}>
+                    <EmployeeRecordForm
+                      orgUid={orgUid}
+                      userId={orgApplication.userId ?? ""}
+                    />
+                  </RequirementFormItem>
                 </ConditionalRender>
                 <ConditionalRender condition={requirement === "student_record"}>
-                  <StudentRecordForm
-                    orgUid={orgUid}
-                    userId={orgApplication.userId ?? ""}
-                  />
+                  <RequirementFormItem optional={optional}>
+                    <StudentRecordForm
+                      orgUid={orgUid}
+                      userId={orgApplication.userId ?? ""}
+                    />
+                  </RequirementFormItem>
                 </ConditionalRender>
                 <ConditionalRender condition={isFileUploadRequirement(requirement)}>
-                  <FileRequirementForm requirementType={requirement} orgUid={orgUid} />
+                  <RequirementFormItem optional={optional}>
+                    <FileRequirementForm requirementType={requirement} orgUid={orgUid} />
+                  </RequirementFormItem>
                 </ConditionalRender>
               </>
             )

@@ -11,6 +11,7 @@ import { z } from "zod";
 import { GetOrganizationRoles } from "@actions/organizations/organization-role.action";
 import { useAtom } from "jotai";
 import { joinOrgApplicationAtom } from "@state/join-org-application";
+import { parseRequirementSettings } from "@/lib/requirement-types";
 
 interface SelectOrgFormProps {
   userId: string
@@ -46,12 +47,14 @@ export const SelectOrgForm = ({existingRoles, orgRoles, orgUid, userId, nextStep
 
   const handleNext = () => {
     form.handleSubmit(async (values) => {
+      const selectedRole = orgRoles.data?.find(role => role.id === values.roleId);
       setOrgApplication(prev => ({
         ...prev,
         orgUid,
         userId,
-        roleId: values.roleId, 
-        roleRequirements: orgRoles.data?.find(role => role.id === values.roleId)?.requirements ?? []
+        roleId: values.roleId,
+        roleRequirements: selectedRole?.requirements ?? [],
+        roleRequirementSettings: parseRequirementSettings(selectedRole?.requirementSettings),
       }));
       nextStep?.();
     })();

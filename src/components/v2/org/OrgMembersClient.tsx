@@ -122,7 +122,7 @@ import {
   stageRequirementFileUploadAction,
   linkRequirementFilesAction,
 } from "@/actions/organizations/org-member-requirement-file.action";
-import { isFileUploadRequirement, type StagedRequirementFile } from "@/lib/requirement-types";
+import { isFileUploadRequirement, parseRequirementSettings, isRequirementRequired, type StagedRequirementFile } from "@/lib/requirement-types";
 
 /* ─────────────────────────────────────────────────────────── */
 /*  Types                                                       */
@@ -264,6 +264,8 @@ function MemberApplicationSheet({ member, onClose }: MemberApplicationSheetProps
   if (!member) return null;
 
   const requirements: string[] = member.OrganizationRole.requirements ?? [];
+  const requirementSettings = parseRequirementSettings(member.OrganizationRole.requirementSettings);
+
   const studentRecord = member.User.StudentRecords?.[0];
   const employment = member.User.UserEmployments?.[0];
   const addresses = member.User.UserAddresses ?? [];
@@ -486,6 +488,7 @@ function MemberApplicationSheet({ member, onClose }: MemberApplicationSheetProps
               <div className="space-y-2">
                 {requirements.map((req) => {
                   const fulfilled = isFulfilled(req);
+                  const optional = !isRequirementRequired(req, requirementSettings);
                   return (
                     <div
                       key={req}
@@ -501,7 +504,12 @@ function MemberApplicationSheet({ member, onClose }: MemberApplicationSheetProps
                         <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-500 mt-0.5 flex-shrink-0" />
                       )}
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium">{formatRequirementLabel(req)}</p>
+                        <p className="text-sm font-medium flex items-center gap-1.5">
+                          {formatRequirementLabel(req)}
+                          {optional && (
+                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">Optional</Badge>
+                          )}
+                        </p>
                         <p className={`text-xs mt-0.5 ${fulfilled ? "text-green-700 dark:text-green-400" : "text-amber-700 dark:text-amber-400"}`}>
                           {fulfilled ? "Submitted" : "Not yet submitted"}
                         </p>

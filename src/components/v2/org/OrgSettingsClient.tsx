@@ -66,6 +66,11 @@ import {
   setOrgRoleDashboardAccessAction,
 } from "@/actions/organizations/organization-role.action";
 import {
+  parseRequirementSettings,
+  isRequirementRequired,
+  type RequirementSettings,
+} from "@/lib/requirement-types";
+import {
   createOrgCollegeAction,
   updateOrgCollegeAction,
   deleteOrgCollegeAction,
@@ -736,6 +741,7 @@ function RolesTab({
   const [permRole, setPermRole] = useState<RoleWithPerms | null>(null);
   const [newReq, setNewReq] = useState("");
   const [localReqs, setLocalReqs] = useState<string[]>([]);
+  const [localReqSettings, setLocalReqSettings] = useState<RequirementSettings>({});
   const [isPending, startTransition] = useTransition();
 
   const createForm = useForm<{ name: string; description: string }>({
@@ -764,6 +770,7 @@ function RolesTab({
               name: createdRole.name,
               description: createdRole.description,
               requirements: createdRole.requirements,
+              requirementSettings: createdRole.requirementSettings,
               canAccessDashboard: createdRole.canAccessDashboard,
               OrgRoleInitialPermissions: [],
             },
@@ -816,17 +823,22 @@ function RolesTab({
   function openReqDialog(role: RolesWithPermissionsData[number]) {
     setReqRole(role);
     setLocalReqs([...role.requirements]);
+    setLocalReqSettings(parseRequirementSettings(role.requirementSettings));
     setNewReq("");
   }
 
   function handleSaveRequirements() {
     if (!reqRole) return;
     startTransition(async () => {
-      const result = await setOrganizationRoleRequirementsAction(reqRole.id, localReqs);
+      const result = await setOrganizationRoleRequirementsAction(reqRole.id, localReqs, localReqSettings);
       if (result.status) {
         toast.success(result.message);
         setLocalRoles((prev) =>
-          prev.map((r) => (r.id === reqRole.id ? { ...r, requirements: localReqs } : r))
+          prev.map((r) =>
+            r.id === reqRole.id
+              ? { ...r, requirements: localReqs, requirementSettings: localReqSettings }
+              : r
+          )
         );
         setReqRole(null);
       } else {
@@ -1100,24 +1112,46 @@ function RolesTab({
             </div>
             {localReqs.length > 0 ? (
               <div className="space-y-1">
-                {localReqs.map((req, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-center justify-between p-2 rounded-md border text-sm"
-                  >
-                    <span>{req}</span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6 text-destructive hover:text-destructive"
-                      onClick={() =>
-                        setLocalReqs((prev) => prev.filter((_, i) => i !== idx))
-                      }
+                {localReqs.map((req, idx) => {
+                  const reqIsRequired = isRequirementRequired(req, localReqSettings);
+                  return (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between p-2 rounded-md border text-sm gap-2"
                     >
-                      <XCircle className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-                ))}
+                      <span className="flex-1 truncate">{req}</span>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-xs text-muted-foreground">
+                          {reqIsRequired ? "Required" : "Optional"}
+                        </span>
+                        <Switch
+                          checked={reqIsRequired}
+                          onCheckedChange={(checked) =>
+                            setLocalReqSettings((prev) => ({
+                              ...prev,
+                              [req]: { isRequired: checked },
+                            }))
+                          }
+                        />
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 text-destructive hover:text-destructive"
+                          onClick={() => {
+                            setLocalReqs((prev) => prev.filter((_, i) => i !== idx));
+                            setLocalReqSettings((prev) => {
+                              const next = { ...prev };
+                              delete next[req];
+                              return next;
+                            });
+                          }}
+                        >
+                          <XCircle className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             ) : (
               <p className="text-xs text-muted-foreground text-center py-2">

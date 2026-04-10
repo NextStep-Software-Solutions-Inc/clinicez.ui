@@ -295,7 +295,8 @@ export const getOrgMembersAction = withErrorHandling(
                 id: true,
                 name: true,
                 description: true,
-                requirements: true
+                requirements: true,
+                requirementSettings: true,
               }
             },
             Organization: {

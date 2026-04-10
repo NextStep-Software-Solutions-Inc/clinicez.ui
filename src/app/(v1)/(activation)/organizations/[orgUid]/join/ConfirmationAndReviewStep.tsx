@@ -110,7 +110,7 @@ export default function ConfirmationAndReviewStep({ orgUid, termsAndConditionsUr
         <p className="mt-2">
           Please review the information you have entered and certify that it is accurate
         </p>
-        <form action={action} className="mt-4 flex flex-col gap-2 ">
+        <form onSubmit={(e) => { e.preventDefault(); action(); }} className="mt-4 flex flex-col gap-2 ">
           <FormField
             control={form.control}
             name="certify"

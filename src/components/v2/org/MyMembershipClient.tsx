@@ -182,6 +182,7 @@ export default function MyMembershipClient({ membership, orgUid }: MyMembershipC
     mimeType: string | null;
   } | null>(null);
   const [, startTransition] = useTransition();
+  const tempIdCounter = React.useRef(-1);
 
   // Keep localFiles in sync when membership prop changes (e.g., after page refresh)
   useEffect(() => {
@@ -219,8 +220,9 @@ export default function MyMembershipClient({ membership, orgUid }: MyMembershipC
       });
       if (result.status) {
         // Optimistically add to local state
+        const tempId = --tempIdCounter.current;
         const optimistic: RequirementFile = {
-          id: -Date.now(),
+          id: tempId,
           requirementType: staged.requirementType,
           createdAt: new Date(),
           File: {

@@ -271,6 +271,7 @@ function MemberApplicationSheet({ member, orgUid, onClose, onFilesChanged }: Mem
   const [localFiles, setLocalFiles] = useState<OrgMember["OrgMemberRequirementFiles"]>([]);
   const [isDeletingFileId, setIsDeletingFileId] = useState<number | null>(null);
   const [, startTransition] = useTransition();
+  const tempIdCounter = useRef(-1);
 
   // Sync localFiles whenever the member prop changes
   useEffect(() => {
@@ -303,8 +304,9 @@ function MemberApplicationSheet({ member, orgUid, onClose, onFilesChanged }: Mem
 
   function handleFileAdded(staged: StagedRequirementFile) {
     // Optimistically add to localFiles (create a minimal display record)
+    const tempId = --tempIdCounter.current;
     const optimisticFile: OrgMember["OrgMemberRequirementFiles"][number] = {
-      id: -Date.now(), // temporary negative id
+      id: tempId, // temporary counter-based id
       requirementType: staged.requirementType,
       createdAt: new Date(),
       File: {

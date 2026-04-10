@@ -770,6 +770,7 @@ function RolesTab({
               name: createdRole.name,
               description: createdRole.description,
               requirements: createdRole.requirements,
+              requirementSettings: createdRole.requirementSettings,
               canAccessDashboard: createdRole.canAccessDashboard,
               OrgRoleInitialPermissions: [],
             },

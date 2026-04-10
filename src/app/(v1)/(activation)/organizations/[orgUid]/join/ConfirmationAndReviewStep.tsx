@@ -1,6 +1,6 @@
 "use client";
 
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@components/ui/form";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel } from "@components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -126,10 +126,9 @@ export default function ConfirmationAndReviewStep({ orgUid, termsAndConditionsUr
                   <FormLabel>
                   Certify that all information is accurate
                   </FormLabel>
-                  <FormDescription>
+                   <FormDescription>
                   I hereby certify that all information provided in this application is true and accurate to the best of my knowledge.
                   </FormDescription>
-                  <FormMessage/>
                 </div>
               </FormItem>
             )}
@@ -152,7 +151,6 @@ export default function ConfirmationAndReviewStep({ orgUid, termsAndConditionsUr
                   <FormDescription>
                   I agree to the <Link href={termsAndConditionsUrl ?? "/terms"} target="_blank" className="underline font-medium text-foreground hover:text-primary">Terms and Conditions</Link> of this organization.
                   </FormDescription>
-                  <FormMessage/>
                 </div>
               </FormItem>
             )}
@@ -176,7 +174,6 @@ export default function ConfirmationAndReviewStep({ orgUid, termsAndConditionsUr
                   <FormDescription>
                   I agree to the <Link href={privacyPolicyUrl ?? "/privacy"} target="_blank" className="underline font-medium text-foreground hover:text-primary">Privacy Policy</Link> of this organization.
                   </FormDescription>
-                  <FormMessage/>
                 </div>
               </FormItem>
             )}

@@ -3,7 +3,8 @@
 import prismaClient from "@lib/prisma";
 import { getCachedSession } from "@actions/session.action";
 import { withErrorHandling } from "@/lib/with-error-handling";
-import { NotificationType, Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
+import { type NotificationType, ALL_NOTIFICATION_TYPES } from "@/lib/notification-types";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -304,7 +305,7 @@ export const getNotificationSubscriptionsAction = withErrorHandling(async () => 
 
   return {
     message: "Notification subscriptions fetched",
-    data: pref?.subscribedNotificationTypes ?? Object.values(NotificationType),
+    data: pref?.subscribedNotificationTypes ?? ALL_NOTIFICATION_TYPES,
   };
 });
 

@@ -322,7 +322,7 @@ function MemberApplicationSheet({ member, orgUid, onClose, onFilesChanged }: Mem
     setLocalFiles((prev) => [...prev, optimisticFile]);
     setEditingReq(null);
     // Tell parent to refresh this member's data
-    onFilesChanged?.(member.id);
+    onFilesChanged?.(member!.id);
   }
 
   function handleFileDeleted(recordId: number) {
@@ -332,7 +332,7 @@ function MemberApplicationSheet({ member, orgUid, onClose, onFilesChanged }: Mem
       if (result.status) {
         setLocalFiles((prev) => prev.filter((f) => f.id !== recordId));
         toast.success("Requirement file removed.");
-        onFilesChanged?.(member.id);
+        onFilesChanged?.(member!.id);
       } else {
         toast.error(result.message ?? "Failed to remove file.");
       }

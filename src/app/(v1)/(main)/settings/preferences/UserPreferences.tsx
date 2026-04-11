@@ -24,44 +24,43 @@ import { useHPs } from "@hooks/useHP"
 // import { useUser } from "@clerk/nextjs" // Commented out for Clerk migration
 import { useUser } from "@clerk/nextjs"
 import { promiseWrapper } from "@/lib/with-error-handling"
-import { NotificationType } from "@prisma/client"
+import { type NotificationType, NOTIFICATION_TYPE, ALL_NOTIFICATION_TYPES } from "@/lib/notification-types"
 import { Separator } from "@components/ui/separator"
 
 
 const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
-  APPOINTMENT_CREATED: "Appointment submitted",
-  APPOINTMENT_CONFIRMED: "Appointment confirmed",
-  APPOINTMENT_CANCELLED: "Appointment cancelled",
-  APPOINTMENT_REJECTED: "Appointment rejected",
-  APPOINTMENT_COMPLETED: "Appointment completed",
-  APPOINTMENT_RESCHEDULED: "Appointment rescheduled",
-  APPOINTMENT_RECEIVED: "New appointment received at your clinic",
-  CONSULTATION_STARTED: "Consultation started",
-  CONSULTATION_COMPLETED: "Consultation completed",
-  DIAGNOSTIC_ISSUED: "Diagnostic result issued",
-  PRESCRIPTION_ISSUED: "Prescription issued",
-  MEDICAL_CERTIFICATE_ISSUED: "Medical certificate issued",
-  REFERRAL_ISSUED: "Referral issued",
-  ORG_MEMBERSHIP_APPLIED: "Organization membership applied",
-  ORG_MEMBERSHIP_APPROVED: "Organization membership approved",
-  ORG_MEMBERSHIP_REJECTED: "Organization membership rejected",
-  ORG_MEMBERSHIP_SUSPENDED: "Organization membership suspended",
-  ORG_MEMBERSHIP_DEACTIVATED: "Organization membership deactivated",
-  FILE_SHARED: "File shared with you",
-  VERIFICATION_SUBMITTED: "Verification request submitted",
-  VERIFICATION_APPROVED: "Verification approved",
-  VERIFICATION_REJECTED: "Verification rejected",
-  VERIFICATION_RESET: "Verification reset",
+  [NOTIFICATION_TYPE.APPOINTMENT_CREATED]: "Appointment submitted",
+  [NOTIFICATION_TYPE.APPOINTMENT_CONFIRMED]: "Appointment confirmed",
+  [NOTIFICATION_TYPE.APPOINTMENT_CANCELLED]: "Appointment cancelled",
+  [NOTIFICATION_TYPE.APPOINTMENT_REJECTED]: "Appointment rejected",
+  [NOTIFICATION_TYPE.APPOINTMENT_COMPLETED]: "Appointment completed",
+  [NOTIFICATION_TYPE.APPOINTMENT_RESCHEDULED]: "Appointment rescheduled",
+  [NOTIFICATION_TYPE.APPOINTMENT_RECEIVED]: "New appointment received at your clinic",
+  [NOTIFICATION_TYPE.CONSULTATION_STARTED]: "Consultation started",
+  [NOTIFICATION_TYPE.CONSULTATION_COMPLETED]: "Consultation completed",
+  [NOTIFICATION_TYPE.DIAGNOSTIC_ISSUED]: "Diagnostic result issued",
+  [NOTIFICATION_TYPE.PRESCRIPTION_ISSUED]: "Prescription issued",
+  [NOTIFICATION_TYPE.MEDICAL_CERTIFICATE_ISSUED]: "Medical certificate issued",
+  [NOTIFICATION_TYPE.REFERRAL_ISSUED]: "Referral issued",
+  [NOTIFICATION_TYPE.ORG_MEMBERSHIP_APPLIED]: "Organization membership applied",
+  [NOTIFICATION_TYPE.ORG_MEMBERSHIP_APPROVED]: "Organization membership approved",
+  [NOTIFICATION_TYPE.ORG_MEMBERSHIP_REJECTED]: "Organization membership rejected",
+  [NOTIFICATION_TYPE.ORG_MEMBERSHIP_SUSPENDED]: "Organization membership suspended",
+  [NOTIFICATION_TYPE.ORG_MEMBERSHIP_DEACTIVATED]: "Organization membership deactivated",
+  [NOTIFICATION_TYPE.ORG_MEMBERSHIP_COMPLY_REQUESTED]: "Membership requirements update requested",
+  [NOTIFICATION_TYPE.FILE_SHARED]: "File shared with you",
+  [NOTIFICATION_TYPE.VERIFICATION_SUBMITTED]: "Verification request submitted",
+  [NOTIFICATION_TYPE.VERIFICATION_APPROVED]: "Verification approved",
+  [NOTIFICATION_TYPE.VERIFICATION_REJECTED]: "Verification rejected",
+  [NOTIFICATION_TYPE.VERIFICATION_RESET]: "Verification reset",
 }
-
-const ALL_NOTIFICATION_TYPES = Object.keys(NOTIFICATION_TYPE_LABELS) as NotificationType[]
 
 const UserPreferenceFormSchema = z.object({
   userPreferenceId: z.number().optional(),
   autoAcceptAppointmentAssignment: z.boolean().default(false),
   autoAssignAppointmentToSelf: z.boolean().default(false),
   muteNotifications: z.boolean().default(false),
-  subscribedNotificationTypes: z.array(z.nativeEnum(NotificationType)).default([]),
+  subscribedNotificationTypes: z.array(z.string()).default([]),
   defaultHpId: z.number({
     coerce: true,
     message: "Please select a default health care provider."

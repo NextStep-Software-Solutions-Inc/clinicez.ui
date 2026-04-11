@@ -88,6 +88,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   getOrgMembersAction,
   setMembershipRequestStatusAction,
   deleteMembershipAction,
@@ -1973,6 +1983,7 @@ export function OrgMembersClient({
   const [applicationMember, setApplicationMember] = useState<OrgMember | null>(null);
   const [changeRoleMember, setChangeRoleMember] = useState<OrgMember | null>(null);
   const [restorePermissionsMember, setRestorePermissionsMember] = useState<OrgMember | null>(null);
+  const [requestComplyMemberId, setRequestComplyMemberId] = useState<number | null>(null);
 
   // ── Refs for scroll-based load more (always current values) ────────
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -2397,7 +2408,7 @@ export function OrgMembersClient({
                           Restore Default Permissions
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => handleRequestComply(member.id)}
+                          onClick={() => setRequestComplyMemberId(member.id)}
                           className="gap-2"
                         >
                           <BellRing className="h-4 w-4" />
@@ -2465,6 +2476,35 @@ export function OrgMembersClient({
         onClose={() => setRestorePermissionsMember(null)}
         onSuccess={() => {}}
       />
+
+      {/* ── Request Requirement Update Confirmation ───────────── */}
+      <AlertDialog
+        open={requestComplyMemberId !== null}
+        onOpenChange={(open) => { if (!open) setRequestComplyMemberId(null); }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Send Requirement Update Request?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will notify the member by email and in-app to update or complete their
+              submitted membership requirements. Continue?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (requestComplyMemberId !== null) {
+                  handleRequestComply(requestComplyMemberId);
+                  setRequestComplyMemberId(null);
+                }
+              }}
+            >
+              Send Request
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

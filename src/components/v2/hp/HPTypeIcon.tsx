@@ -10,6 +10,7 @@ import {
   Thermometer,
   Wind,
   User,
+  Users,
   type LucideIcon,
 } from "lucide-react";
 
@@ -19,7 +20,7 @@ const HP_TYPE_ICON_MAP: { keywords: string[]; Icon: LucideIcon; color: string }[
   { keywords: ["neuro", "brain", "psych", "mental"], Icon: Brain, color: "bg-pink-100 text-pink-600" },
   { keywords: ["ortho", "bone", "joint", "spine", "musculo"], Icon: Activity, color: "bg-orange-100 text-orange-600" },
   { keywords: ["cardio", "heart", "cardiac"], Icon: Heart, color: "bg-red-100 text-red-600" },
-  { keywords: ["pediatr", "child", "infant", "newborn"], Icon: Heart, color: "bg-yellow-100 text-yellow-600" },
+  { keywords: ["pediatr", "child", "infant", "newborn"], Icon: Users, color: "bg-yellow-100 text-yellow-600" },
   { keywords: ["lab", "pathol", "micro", "biochem"], Icon: Beaker, color: "bg-green-100 text-green-600" },
   { keywords: ["oncol", "cancer", "tumor", "chemo"], Icon: Beaker, color: "bg-emerald-100 text-emerald-600" },
   { keywords: ["pharmac", "drug", "medicine", "clinical"], Icon: Pill, color: "bg-teal-100 text-teal-600" },

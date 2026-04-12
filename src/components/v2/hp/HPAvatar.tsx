@@ -24,6 +24,7 @@ export function HPAvatar({ imageUrl, description }: HPAvatarProps) {
           alt={description ?? "Image of a healthcare provider"}
           width={96}
           height={96}
+          sizes="(max-width: 640px) 64px, 96px"
           className="h-full w-full object-cover"
           onError={() => setHasError(true)}
         />

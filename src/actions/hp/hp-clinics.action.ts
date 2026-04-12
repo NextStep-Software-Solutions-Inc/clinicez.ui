@@ -12,6 +12,8 @@ export type HPClinic = {
 
 export type GetHPClinicsResult = Awaited<ReturnType<typeof getHPClinicsAction>>;
 
+const ACTIVE_ORG_MEMBER_STATUSES = ["ACCEPTED", "APPROVED", "ACTIVE"] as const;
+
 /**
  * Returns the list of clinics associated with a given healthcare provider
  * that are accessible to the current user.
@@ -72,7 +74,7 @@ export async function getHPClinicsAction(hpId: number): Promise<HPClinic[]> {
       select: {
         OrganizationMembers: {
           where: {
-            status: { in: ["ACCEPTED", "APPROVED", "ACTIVE"] },
+            status: { in: [...ACTIVE_ORG_MEMBER_STATUSES] },
           },
           select: { organizationId: true },
         },

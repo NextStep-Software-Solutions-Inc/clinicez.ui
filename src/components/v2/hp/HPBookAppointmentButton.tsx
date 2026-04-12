@@ -27,7 +27,11 @@ export function HPBookAppointmentButton({ hpId, hpName, className }: HPBookAppoi
 
   const { data: clinics, isLoading, error } = useSWR<HPClinic[]>(
     hpId ? `/api/hps/${hpId}/clinics` : null,
-    (url: string) => self.get<HPClinic[]>(url),
+    (url: string) =>
+      self.get<HPClinic[]>(url).then((data) => {
+        if (!Array.isArray(data)) throw new Error("Failed to fetch clinics");
+        return data;
+      }),
     { revalidateOnFocus: false }
   );
 

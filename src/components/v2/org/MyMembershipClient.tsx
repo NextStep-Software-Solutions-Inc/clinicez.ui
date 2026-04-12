@@ -451,24 +451,6 @@ export default function MyMembershipClient({ membership, orgUid }: MyMembershipC
                         </Button>
                       )}
                     </div>
-
-                    {/* Task 5: Edit button for fulfilled profile requirements */}
-                    {fulfilled && isProfileReq && (
-                      <button
-                        type="button"
-                        title="Edit"
-                        onClick={() =>
-                          openProfileDialog(
-                            req as
-                              | typeof REQUIREMENT_STUDENT_RECORD
-                              | typeof REQUIREMENT_EMPLOYEE_RECORD
-                          )
-                        }
-                        className="text-muted-foreground hover:text-foreground ml-auto flex-shrink-0 mt-0.5"
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                      </button>
-                    )}
                   </div>
                 );
               })}
@@ -593,6 +575,14 @@ export default function MyMembershipClient({ membership, orgUid }: MyMembershipC
               <CardTitle className="text-sm flex items-center gap-2">
                 <GraduationCap className="h-4 w-4 text-primary" />
                 Student Record
+                <button
+                  type="button"
+                  title="Edit student record"
+                  onClick={() => openProfileDialog(REQUIREMENT_STUDENT_RECORD)}
+                  className="ml-auto text-muted-foreground hover:text-foreground"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                </button>
               </CardTitle>
             </CardHeader>
             <CardContent className="px-4 pb-4 space-y-1.5">
@@ -611,6 +601,14 @@ export default function MyMembershipClient({ membership, orgUid }: MyMembershipC
               <CardTitle className="text-sm flex items-center gap-2">
                 <Briefcase className="h-4 w-4 text-primary" />
                 Employment Record
+                <button
+                  type="button"
+                  title="Edit employment record"
+                  onClick={() => openProfileDialog(REQUIREMENT_EMPLOYEE_RECORD)}
+                  className="ml-auto text-muted-foreground hover:text-foreground"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                </button>
               </CardTitle>
             </CardHeader>
             <CardContent className="px-4 pb-4 space-y-1.5">

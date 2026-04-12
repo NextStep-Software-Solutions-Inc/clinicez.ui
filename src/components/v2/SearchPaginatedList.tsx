@@ -2,7 +2,7 @@
 
 import type { ChangeEvent, ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ArrowUpDown, Filter, Search as SearchIcon, X as ClearIcon } from "lucide-react";
 
 import SearchBar from "@/components/dashboard/SearchBar";
@@ -97,8 +97,20 @@ function LocalSearchPaginatedList<T>(props: LocalSearchPaginatedListProps<T>) {
     loadingSlot: _loadingSlot,
   } = props;
 
+  const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const search = searchParams.get("search")?.toLowerCase().trim() ?? "";
+
+  const handleSearch = (value: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value) {
+      params.set("search", value);
+    } else {
+      params.delete("search");
+    }
+    router.push(`${pathname}?${params.toString()}`);
+  };
 
   const filtered = useMemo(() => {
     if (!search) return data;
@@ -125,6 +137,8 @@ function LocalSearchPaginatedList<T>(props: LocalSearchPaginatedListProps<T>) {
           <SearchBar
             placeholder={searchPlaceholder}
             className="flex-1"
+            value={searchParams.get("search") ?? ""}
+            onSearch={handleSearch}
           />
           <FilterSortButtons filterSlot={filterSlot} sortSlot={sortSlot} />
         </div>

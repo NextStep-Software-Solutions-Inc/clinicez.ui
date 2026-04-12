@@ -2,7 +2,6 @@ import { notFound } from "next/navigation";
 import { getMyOrgMembershipAction } from "@/actions/organizations/org-member.action";
 import MyMembershipClient from "@/components/v2/org/MyMembershipClient";
 import HeroBackground from "@/components/HeroBackground";
-import HeaderTitle from "@/components/HeaderTitle";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Building2 } from "lucide-react";
@@ -34,14 +33,15 @@ export default async function MembershipPage({ params }: MembershipPageProps) {
           </Link>
         </Button>
         <div className="flex items-center gap-2">
-          <Building2 className="h-5 w-5 text-primary" />
-          <HeaderTitle
-            header={[
-              { text: membership.Organization.name, className: "text-primary" },
-            ]}
-            description="View and manage your submitted membership requirements."
-            className="text-left"
-          />
+          <Building2 className="h-7 w-7 shrink-0 text-primary" />
+          <div>
+            <h1 className="text-xl font-semibold text-primary leading-tight capitalize">
+              {membership.Organization.name}
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              View and manage your submitted membership requirements.
+            </p>
+          </div>
         </div>
       </div>
 

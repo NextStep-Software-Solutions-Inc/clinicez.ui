@@ -11,11 +11,11 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic'
 
 interface PageProps {
-  searchParams: Promise<{ clinic?: string }>
+  searchParams: Promise<{ clinic?: string; hp?: string }>
 }
 
 export default async function BookAppointmentPage({ searchParams }: PageProps) {
-  const { clinic: clinicUid } = await searchParams
+  const { clinic: clinicUid, hp: hpParam } = await searchParams
 
   if (!clinicUid) {
     redirect('/v2/patient')
@@ -28,6 +28,8 @@ export default async function BookAppointmentPage({ searchParams }: PageProps) {
   }
 
   const { clinicName, termsUrl, privacyUrl } = result.data
+  const parsedHpId = hpParam ? Number.parseInt(hpParam, 10) : NaN
+  const preferredHpId = Number.isFinite(parsedHpId) && parsedHpId > 0 ? parsedHpId : undefined
 
   return (
     <BookAppointmentWizard
@@ -35,6 +37,7 @@ export default async function BookAppointmentPage({ searchParams }: PageProps) {
       clinicName={clinicName}
       termsUrl={termsUrl}
       privacyUrl={privacyUrl}
+      preferredHpId={preferredHpId}
     />
   )
 }

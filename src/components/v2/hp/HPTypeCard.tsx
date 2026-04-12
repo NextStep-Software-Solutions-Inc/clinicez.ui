@@ -2,8 +2,8 @@
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import Image from "next/image";
 import Link from "next/link";
+import HPTypeIcon from "./HPTypeIcon";
 
 interface Props {
   id: number;
@@ -20,14 +20,10 @@ export default function HPTypeCard({ id, name, description, count }: Props) {
   return (
     <Card className="flex flex-col border-none shadow-none bg-transparent">
       <CardHeader className="pb-4">
-        <div className="aspect-square relative mb-4 overflow-hidden rounded-lg w-full">
-          {/* src is temporary -- need images */}
-          <Image
-            src={"/placeholder.svg"}
-            alt={"Unknown Image"}
-            fill
-            className="object-cover"
-          />
+        <div className="mb-4 flex items-start">
+          <div className="w-full overflow-hidden rounded-xl flex-shrink-0">
+            <HPTypeIcon name={sanitizedName} />
+          </div>
         </div>
         <CardTitle className="text-xl capitalize">{name || "Unknown Title"}</CardTitle>
         <CardDescription className="text-sm line-clamp-1">

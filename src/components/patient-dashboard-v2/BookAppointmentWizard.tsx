@@ -79,6 +79,7 @@ interface BookAppointmentWizardProps {
   clinicName: string
   termsUrl: string | null
   privacyUrl: string | null
+  preferredHpId?: number
 }
 
 const DEFAULT_TERMS_URL =
@@ -1105,6 +1106,7 @@ export default function BookAppointmentWizard({
   clinicName,
   termsUrl,
   privacyUrl,
+  preferredHpId,
 }: BookAppointmentWizardProps) {
   const router = useRouter()
   const [form, setForm] = useAtom(bookAppointmentAtom)
@@ -1126,7 +1128,8 @@ export default function BookAppointmentWizard({
             clinicUid,
             appointmentTypeId: d.appointmentTypeId,
             serviceId: d.serviceId,
-            hpId: d.hpId,
+            // Prefer the URL-passed hpId over the draft if provided
+            hpId: preferredHpId ?? d.hpId,
             hpUserId: d.hpUserId,
             modeId: d.modeId,
             preferredDate: d.preferredDate ? new Date(d.preferredDate) : undefined,
@@ -1148,7 +1151,7 @@ export default function BookAppointmentWizard({
         clearDraftFromStorage()
       }
     }
-    setForm((prev) => ({ ...prev, clinicUid }))
+    setForm((prev) => ({ ...prev, clinicUid, ...(preferredHpId ? { hpId: preferredHpId } : {}) }))
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

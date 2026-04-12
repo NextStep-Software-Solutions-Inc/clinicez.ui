@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
@@ -15,19 +18,23 @@ export default function ClinicCard({
   clinicUid,
   name,
   description,
-  memberCount
+  memberCount,
+  logo,
 }: Props) {
   const desc = description?.trim() ? description : "No description";
+  const [imgError, setImgError] = useState(false);
+  const imgSrc = !imgError && logo ? logo : "/placeholder.svg";
 
   return (
     <Card className="flex flex-col border-none shadow-none bg-transparent">
       <CardHeader className="pb-4">
         <div className="aspect-square relative mb-4 overflow-hidden rounded-lg w-full">
           <Image
-            src={"/placeholder.svg"}
+            src={imgSrc}
             alt={name || "Clinic Image"}
             fill
             className="object-cover"
+            onError={() => setImgError(true)}
           />
         </div>
         <CardTitle className="text-xl capitalize">{name}</CardTitle>

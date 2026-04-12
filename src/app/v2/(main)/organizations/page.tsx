@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 export default async function OrganizationsPage() {
   const [orgs, membershipsResult] = await Promise.all([
-    getOrganizationsV2Action(),
+    getOrganizationsV2Action({ isPublic: true }),
     getMyOrgMembershipsAction(),
   ]);
 

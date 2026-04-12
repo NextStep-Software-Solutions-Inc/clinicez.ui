@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +25,7 @@ export default function OrganizationCard({
   membershipStatus,
 }: Props) {
   const safeDescription = description?.trim() ? description : "No description";
+  const [imgError, setImgError] = useState(false);
 
   const membershipBadge: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
     ACTIVE: { label: "Active Member", variant: "default" },
@@ -32,16 +36,18 @@ export default function OrganizationCard({
 
   const hasMembership = !!membershipStatus;
   const badge = membershipStatus ? membershipBadge[membershipStatus] : null;
+  const imgSrc = !imgError && logo ? logo : "/placeholder.svg";
 
   return (
     <Card className="flex flex-col border-none shadow-none bg-transparent">
       <CardHeader className="pb-4">
         <div className="aspect-square relative mb-4 overflow-hidden rounded-lg w-full">
           <Image
-            src={logo || "/placeholder.svg"}
+            src={imgSrc}
             alt={name || "Organization Image"}
             fill
             className="object-cover"
+            onError={() => setImgError(true)}
           />
         </div>
         <CardTitle className="text-xl capitalize">{name}</CardTitle>

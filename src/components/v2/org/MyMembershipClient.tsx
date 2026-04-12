@@ -15,20 +15,33 @@ import {
   ShieldCheck,
   ExternalLink,
   Upload,
-  Info,
+  Pencil,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import Link from "next/link";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+import { useUser } from "@clerk/nextjs";
 import type { GetMyOrgMembership } from "@/actions/organizations/org-member.action";
 import {
   stageRequirementFileUploadAction,
@@ -44,6 +57,9 @@ import {
   formatRequirementLabel,
   type StagedRequirementFile,
 } from "@/lib/requirement-types";
+import { upsertStudentRecordAction } from "@/actions/student-record.action";
+import { upsertEmploymentRecordAction } from "@/actions/employee-record.action";
+import { useStudentLevels } from "@/hooks/useStudentLevel";
 
 /* ─────────────────────────────────────────────────────────── */
 /*  Types                                                       */
@@ -156,6 +172,10 @@ interface MyMembershipClientProps {
 }
 
 export default function MyMembershipClient({ membership, orgUid }: MyMembershipClientProps) {
+  const router = useRouter();
+  const { user: clerkUser } = useUser();
+  const { data: studentLevels } = useStudentLevels();
+
   const [localFiles, setLocalFiles] = useState<RequirementFile[]>(
     membership.OrgMemberRequirementFiles
   );
@@ -169,10 +189,92 @@ export default function MyMembershipClient({ membership, orgUid }: MyMembershipC
   const [, startTransition] = useTransition();
   const tempIdCounter = React.useRef(-1);
 
+  // Profile dialog state (Tasks 3, 5)
+  const [profileDialogReq, setProfileDialogReq] = useState<
+    typeof REQUIREMENT_STUDENT_RECORD | typeof REQUIREMENT_EMPLOYEE_RECORD | null
+  >(null);
+  const [studentIdInput, setStudentIdInput] = useState("");
+  const [levelIdInput, setLevelIdInput] = useState<string>("");
+  const [employeeIdInput, setEmployeeIdInput] = useState("");
+  const [positionInput, setPositionInput] = useState("");
+  const [isSubmittingProfile, startProfileSubmit] = useTransition();
+
   // Keep localFiles in sync when membership prop changes (e.g., after page refresh)
   useEffect(() => {
     setLocalFiles(membership.OrgMemberRequirementFiles);
   }, [membership]);
+
+  // Pre-fill dialog fields when opening
+  function openProfileDialog(req: typeof REQUIREMENT_STUDENT_RECORD | typeof REQUIREMENT_EMPLOYEE_RECORD) {
+    if (req === REQUIREMENT_STUDENT_RECORD) {
+      setStudentIdInput(membership.User.StudentRecords?.[0]?.studentId ?? "");
+      setLevelIdInput("");
+    } else {
+      setEmployeeIdInput(membership.User.UserEmployments?.[0]?.employeeId ?? "");
+      setPositionInput("");
+    }
+    setProfileDialogReq(req);
+  }
+
+  function closeProfileDialog() {
+    setProfileDialogReq(null);
+  }
+
+  function handleProfileFormSubmit() {
+    const userId = clerkUser?.id;
+    if (!userId) {
+      toast.error("User not authenticated.");
+      return;
+    }
+
+    startProfileSubmit(async () => {
+      if (profileDialogReq === REQUIREMENT_STUDENT_RECORD) {
+        if (!studentIdInput.trim()) {
+          toast.error("Student ID is required.");
+          return;
+        }
+        if (!levelIdInput) {
+          toast.error("Student level is required.");
+          return;
+        }
+        const result = await upsertStudentRecordAction({
+          userId,
+          orgUid,
+          studentId: studentIdInput.trim(),
+          levelId: Number(levelIdInput),
+        });
+        if (result?.status) {
+          toast.success("Student record updated successfully.");
+          closeProfileDialog();
+          router.refresh();
+        } else {
+          toast.error(result?.message ?? "Failed to update student record.");
+        }
+      } else if (profileDialogReq === REQUIREMENT_EMPLOYEE_RECORD) {
+        if (!employeeIdInput.trim()) {
+          toast.error("Employee ID is required.");
+          return;
+        }
+        if (!positionInput.trim()) {
+          toast.error("Position is required.");
+          return;
+        }
+        const result = await upsertEmploymentRecordAction({
+          userId,
+          orgUid,
+          employeeId: employeeIdInput.trim(),
+          position: positionInput.trim(),
+        });
+        if (result?.status) {
+          toast.success("Employment record updated successfully.");
+          closeProfileDialog();
+          router.refresh();
+        } else {
+          toast.error(result?.message ?? "Failed to update employment record.");
+        }
+      }
+    });
+  }
 
   const requirements: string[] = membership.OrganizationRole.requirements ?? [];
   const requirementSettings = parseRequirementSettings(
@@ -291,6 +393,8 @@ export default function MyMembershipClient({ membership, orgUid }: MyMembershipC
               {requirements.map((req) => {
                 const fulfilled = isFulfilled(req);
                 const optional = !isRequirementRequired(req, requirementSettings);
+                const isProfileReq =
+                  req === REQUIREMENT_STUDENT_RECORD || req === REQUIREMENT_EMPLOYEE_RECORD;
                 return (
                   <div
                     key={req}
@@ -306,7 +410,8 @@ export default function MyMembershipClient({ membership, orgUid }: MyMembershipC
                       <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-500 mt-0.5 flex-shrink-0" />
                     )}
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium flex items-center gap-1.5">
+                      {/* Requirement label — visually distinct heading */}
+                      <p className="text-sm font-semibold leading-tight flex items-center gap-1.5">
                         {formatRequirementLabel(req)}
                         {optional && (
                           <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
@@ -314,8 +419,9 @@ export default function MyMembershipClient({ membership, orgUid }: MyMembershipC
                           </Badge>
                         )}
                       </p>
+                      {/* Status line — muted, smaller */}
                       <p
-                        className={`text-xs mt-0.5 ${
+                        className={`text-xs mt-1 font-normal ${
                           fulfilled
                             ? "text-green-700 dark:text-green-400"
                             : "text-amber-700 dark:text-amber-400"
@@ -323,22 +429,46 @@ export default function MyMembershipClient({ membership, orgUid }: MyMembershipC
                       >
                         {fulfilled ? "Submitted" : "Not yet submitted"}
                       </p>
-                      {/* For student/employee record, show a hint about where to update */}
-                      {!fulfilled &&
-                        (req === REQUIREMENT_STUDENT_RECORD ||
-                          req === REQUIREMENT_EMPLOYEE_RECORD) && (
-                          <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                            <Info className="h-3 w-3 flex-shrink-0" />
-                            Update via your{" "}
-                            <Link
-                              href="/v2/profile/edit"
-                              className="text-primary hover:underline"
-                            >
-                              profile settings
-                            </Link>
-                          </p>
-                        )}
+
+                      {/* Task 3: Not-fulfilled profile requirements — open inline dialog instead of link */}
+                      {!fulfilled && isProfileReq && (
+                        <Button
+                          variant="link"
+                          size="sm"
+                          className="h-auto p-0 text-xs text-primary mt-1"
+                          onClick={() =>
+                            openProfileDialog(
+                              req as
+                                | typeof REQUIREMENT_STUDENT_RECORD
+                                | typeof REQUIREMENT_EMPLOYEE_RECORD
+                            )
+                          }
+                        >
+                          Fill in{" "}
+                          {req === REQUIREMENT_STUDENT_RECORD
+                            ? "your Student ID"
+                            : "your Employee details"}
+                        </Button>
+                      )}
                     </div>
+
+                    {/* Task 5: Edit button for fulfilled profile requirements */}
+                    {fulfilled && isProfileReq && (
+                      <button
+                        type="button"
+                        title="Edit"
+                        onClick={() =>
+                          openProfileDialog(
+                            req as
+                              | typeof REQUIREMENT_STUDENT_RECORD
+                              | typeof REQUIREMENT_EMPLOYEE_RECORD
+                          )
+                        }
+                        className="text-muted-foreground hover:text-foreground ml-auto flex-shrink-0 mt-0.5"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                    )}
                   </div>
                 );
               })}
@@ -413,7 +543,9 @@ export default function MyMembershipClient({ membership, orgUid }: MyMembershipC
             ))}
 
             {/* ── Upload new file ── */}
-            {requirements.filter(isFileUploadRequirement).length > 0 && (
+            {requirements.filter(isFileUploadRequirement).some(
+              (req) => !localFiles.some((f) => f.requirementType === req)
+            ) && (
               <div className="pt-2 border-t space-y-2">
                 {uploadingReq === null ? (
                   <div className="space-y-1.5">
@@ -422,18 +554,23 @@ export default function MyMembershipClient({ membership, orgUid }: MyMembershipC
                       Upload a requirement file
                     </p>
                     <div className="flex flex-wrap gap-2">
-                      {requirements.filter(isFileUploadRequirement).map((req) => (
-                        <Button
-                          key={req}
-                          variant="outline"
-                          size="sm"
-                          className="h-7 text-xs gap-1"
-                          onClick={() => setUploadingReq(req)}
-                        >
-                          <FileUp className="h-3 w-3" />
-                          {formatRequirementLabel(req)}
-                        </Button>
-                      ))}
+                      {requirements
+                        .filter(isFileUploadRequirement)
+                        .filter(
+                          (req) => !localFiles.some((f) => f.requirementType === req)
+                        )
+                        .map((req) => (
+                          <Button
+                            key={req}
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs gap-1"
+                            onClick={() => setUploadingReq(req)}
+                          >
+                            <FileUp className="h-3 w-3" />
+                            {formatRequirementLabel(req)}
+                          </Button>
+                        ))}
                     </div>
                   </div>
                 ) : (
@@ -562,6 +699,92 @@ export default function MyMembershipClient({ membership, orgUid }: MyMembershipC
               )}
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Profile Data Dialog (Tasks 3 & 5) ── */}
+      <Dialog open={profileDialogReq !== null} onOpenChange={(open) => { if (!open) closeProfileDialog(); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {profileDialogReq === REQUIREMENT_STUDENT_RECORD
+                ? "Student Record"
+                : "Employment Record"}
+            </DialogTitle>
+            <DialogDescription>
+              {profileDialogReq === REQUIREMENT_STUDENT_RECORD
+                ? "Enter your student details to fulfill this requirement."
+                : "Enter your employment details to fulfill this requirement."}
+            </DialogDescription>
+          </DialogHeader>
+
+          {profileDialogReq === REQUIREMENT_STUDENT_RECORD && (
+            <div className="space-y-4 py-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="student-id">Student ID <span className="text-destructive">*</span></Label>
+                <Input
+                  id="student-id"
+                  placeholder="e.g. 2024-00001"
+                  value={studentIdInput}
+                  onChange={(e) => setStudentIdInput(e.target.value)}
+                  disabled={isSubmittingProfile}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="student-level">Level <span className="text-destructive">*</span></Label>
+                <Select value={levelIdInput} onValueChange={setLevelIdInput} disabled={isSubmittingProfile}>
+                  <SelectTrigger id="student-level">
+                    <SelectValue placeholder="Select a level" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(studentLevels ?? []).map((level) => (
+                      <SelectItem key={level.id} value={String(level.id)}>
+                        {level.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+
+          {profileDialogReq === REQUIREMENT_EMPLOYEE_RECORD && (
+            <div className="space-y-4 py-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="employee-id">Employee ID <span className="text-destructive">*</span></Label>
+                <Input
+                  id="employee-id"
+                  placeholder="e.g. EMP-00001"
+                  value={employeeIdInput}
+                  onChange={(e) => setEmployeeIdInput(e.target.value)}
+                  disabled={isSubmittingProfile}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="position">Position <span className="text-destructive">*</span></Label>
+                <Input
+                  id="position"
+                  placeholder="e.g. Nurse, Doctor, Staff"
+                  value={positionInput}
+                  onChange={(e) => setPositionInput(e.target.value)}
+                  disabled={isSubmittingProfile}
+                />
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={closeProfileDialog} disabled={isSubmittingProfile}>
+              Cancel
+            </Button>
+            <Button onClick={handleProfileFormSubmit} disabled={isSubmittingProfile}>
+              {isSubmittingProfile ? (
+                <><Loader2 className="h-4 w-4 animate-spin mr-2" />Saving…</>
+              ) : (
+                "Save"
+              )}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>

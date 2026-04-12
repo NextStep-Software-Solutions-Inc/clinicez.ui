@@ -49,6 +49,14 @@ export const navLinks: NavLinkType[] = [
   { name: "Contact Us", href: "/contact-us", icon: "contact" },
 ]
 
+export const navLinksV2: NavLinkType[] = [
+  { name: "Healthcare Providers", href: "/v2/hp", icon: "users" },
+  { name: "Clinics", href: "/v2/clinics", icon: "building" },
+  { name: "Organizations", href: "/v2/organizations", icon: "building" },
+  { name: "Pricing", href: "/v2/pricing", icon: "coins" },
+  { name: "Contact Us", href: "/v2/contact-us", icon: "contact" },
+]
+
 export default function Navigation({ version = "v1" }) {
   const versionedNavLinks: NavLinkType[] = React.useMemo(() => {
     if (version === "v2") {

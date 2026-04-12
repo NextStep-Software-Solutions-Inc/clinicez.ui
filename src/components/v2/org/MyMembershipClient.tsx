@@ -208,10 +208,10 @@ export default function MyMembershipClient({ membership, orgUid }: MyMembershipC
   function openProfileDialog(req: typeof REQUIREMENT_STUDENT_RECORD | typeof REQUIREMENT_EMPLOYEE_RECORD) {
     if (req === REQUIREMENT_STUDENT_RECORD) {
       setStudentIdInput(membership.User.StudentRecords?.[0]?.studentId ?? "");
-      setLevelIdInput("");
+      setLevelIdInput(String(membership.User.StudentRecords?.[0]?.level ?? ""));
     } else {
       setEmployeeIdInput(membership.User.UserEmployments?.[0]?.employeeId ?? "");
-      setPositionInput("");
+      setPositionInput(membership.User.UserEmployments?.[0]?.position ?? "");
     }
     setProfileDialogReq(req);
   }
@@ -703,7 +703,7 @@ export default function MyMembershipClient({ membership, orgUid }: MyMembershipC
       </Dialog>
 
       {/* ── Profile Data Dialog (Tasks 3 & 5) ── */}
-      <Dialog open={profileDialogReq !== null} onOpenChange={(open) => { if (!open) closeProfileDialog(); }}>
+      <Dialog open={profileDialogReq !== null} onOpenChange={(open) => !open && closeProfileDialog()}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>

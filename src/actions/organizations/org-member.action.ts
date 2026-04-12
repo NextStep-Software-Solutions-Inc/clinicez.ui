@@ -1005,11 +1005,11 @@ export const getMyOrgMembershipAction = withErrorHandling(
           select: {
             StudentRecords: {
               where: { isActive: true, Organization: { orgUid } },
-              select: { studentId: true },
+              select: { studentId: true, level: true },
             },
             UserEmployments: {
               where: { isActive: true, Organization: { orgUid } },
-              select: { employeeId: true },
+              select: { employeeId: true, position: true },
             },
           },
         },

@@ -1,5 +1,6 @@
 import HeaderTitle from "@/components/HeaderTitle"
-import { getHPTypeCounts, getAllHPByTypeAction, parseHPSortOption, type HPSortOption } from "@/actions/hp.actions"
+import { getHPTypeCounts, getAllHPByTypeAction } from "@/actions/hp.actions"
+import { parseHPSortOption, type HPSortOption } from "@/lib/hp-utils"
 import HPTypeListShell from "@/components/v2/hp/HPTypeListShell"
 import Suspend from "@/components/Suspend"
 import HeroBackground from "@/components/HeroBackground"

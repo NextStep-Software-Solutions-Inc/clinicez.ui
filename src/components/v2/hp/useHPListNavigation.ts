@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo, useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { VALID_HP_SORT_OPTIONS, parseHPSortOption, type HPSortOption } from "@/actions/hp.actions";
+import { VALID_HP_SORT_OPTIONS, parseHPSortOption, type HPSortOption } from "@/lib/hp-utils";
 
 
 interface UseHPListNavigationParams {

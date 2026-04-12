@@ -1,4 +1,14 @@
 
+export type HPSortOption = "name-asc" | "name-desc" | "experience-asc" | "experience-desc";
+export const VALID_HP_SORT_OPTIONS: readonly HPSortOption[] = ["name-asc", "name-desc", "experience-asc", "experience-desc"];
+
+export function parseHPSortOption(raw: string | null | undefined): HPSortOption {
+  if (raw && (VALID_HP_SORT_OPTIONS as readonly string[]).includes(raw)) {
+    return raw as HPSortOption;
+  }
+  return "name-asc";
+}
+
 export function extractExperienceYears(experience: string | undefined): string {
   if (!experience) return "0";
   const match = experience.match(/(\d+)/);

@@ -4,6 +4,7 @@ import prisma from "@lib/prisma";
 
 import { Prisma } from "@prisma/client";
 import { cache } from "react";
+import type { HPSortOption } from "@/lib/hp-utils";
 
 // Get total healthcare provider job titles
 export const getHPTypeCounts = async () => {
@@ -35,15 +36,7 @@ export type GetHPTypeCountsType = Awaited<ReturnType<typeof getHPTypeCounts>>;
 
 const DEFAULT_HP_PAGE_SIZE = 9;
 
-export type HPSortOption = "name-asc" | "name-desc" | "experience-asc" | "experience-desc";
-export const VALID_HP_SORT_OPTIONS: readonly HPSortOption[] = ["name-asc", "name-desc", "experience-asc", "experience-desc"];
-
-export function parseHPSortOption(raw: string | null | undefined): HPSortOption {
-  if (raw && (VALID_HP_SORT_OPTIONS as readonly string[]).includes(raw)) {
-    return raw as HPSortOption;
-  }
-  return "name-asc";
-}
+export type { HPSortOption };
 
 export type GetAllHPByType = Awaited<ReturnType<typeof getAllHPByTypeAction>>;
 export const getAllHPByTypeAction = cache(async (

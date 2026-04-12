@@ -1,7 +1,8 @@
 "use client";
 
 import { ArrowUpDown } from "lucide-react";
-import type { GetAllHPByType, HPSortOption } from "@/actions/hp.actions";
+import type { GetAllHPByType } from "@/actions/hp.actions";
+import type { HPSortOption } from "@/lib/hp-utils";
 import SearchPaginatedList from "@/components/v2/SearchPaginatedList";
 import {
   DropdownMenu,

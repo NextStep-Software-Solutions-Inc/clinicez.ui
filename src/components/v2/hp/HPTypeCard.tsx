@@ -20,8 +20,10 @@ export default function HPTypeCard({ id, name, description, count }: Props) {
   return (
     <Card className="flex flex-col border-none shadow-none bg-transparent">
       <CardHeader className="pb-4">
-        <div className="aspect-square relative mb-4 overflow-hidden rounded-lg w-full">
-          <HPTypeIcon name={sanitizedName} />
+        <div className="mb-4 flex items-start">
+          <div className="h-14 w-14 overflow-hidden rounded-xl flex-shrink-0">
+            <HPTypeIcon name={sanitizedName} />
+          </div>
         </div>
         <CardTitle className="text-xl capitalize">{name || "Unknown Title"}</CardTitle>
         <CardDescription className="text-sm line-clamp-1">

@@ -96,7 +96,6 @@ export const getAllHPByTypeAction = cache(async (
   const whereClause: Prisma.HealthcareProviderWhereInput = {
     isActive: true,
     isPublished: true,
-    applicationStatus: "APPROVED",
     hpTypeId: hpType.id,
   };
 

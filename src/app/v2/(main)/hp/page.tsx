@@ -1,5 +1,5 @@
 import HeaderTitle from "@/components/HeaderTitle"
-import { getHPTypeCounts, getAllHPByTypeAction, type HPSortOption } from "@/actions/hp.actions"
+import { getHPTypeCounts, getAllHPByTypeAction, VALID_HP_SORT_OPTIONS, type HPSortOption } from "@/actions/hp.actions"
 import HPTypeListShell from "@/components/v2/hp/HPTypeListShell"
 import Suspend from "@/components/Suspend"
 import HeroBackground from "@/components/HeroBackground"
@@ -16,8 +16,6 @@ const header = {
 
 type HealthcareProvidersSearchParams = Record<string, string | string[] | undefined>;
 
-const VALID_SORT_OPTIONS: HPSortOption[] = ["name-asc", "name-desc", "experience-asc", "experience-desc"];
-
 function extractParamValue(params: HealthcareProvidersSearchParams, key: string) {
   const rawValue = params[key];
 
@@ -29,7 +27,7 @@ function extractParamValue(params: HealthcareProvidersSearchParams, key: string)
 }
 
 function parseSortOption(raw: string | undefined): HPSortOption {
-  if (raw && (VALID_SORT_OPTIONS as string[]).includes(raw)) {
+  if (raw && (VALID_HP_SORT_OPTIONS as readonly string[]).includes(raw)) {
     return raw as HPSortOption;
   }
   return "name-asc";

@@ -25,7 +25,9 @@ const ACTIVE_ORG_MEMBER_STATUSES = ["ACCEPTED", "APPROVED", "ACTIVE"] as const;
  *      affiliated with that clinic (via ClinicOrganization).
  */
 export async function getHPClinicsAction(hpId: number): Promise<HPClinic[]> {
-  if (!hpId || !Number.isFinite(hpId)) return [];
+  if (!hpId || !Number.isFinite(hpId) || hpId <= 0) {
+    throw new Error(`Invalid HP ID: ${hpId}`);
+  }
 
   // Fetch the HP with their clinic memberships and org affiliations
   const hp = await prisma.healthcareProvider.findFirst({

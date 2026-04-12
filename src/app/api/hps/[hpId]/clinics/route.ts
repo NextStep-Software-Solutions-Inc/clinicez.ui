@@ -9,7 +9,7 @@ export const GET = withClerkAuth(async (_req: NextRequest, { params }: { params:
   const { hpId } = await params;
   const id = Number(hpId);
   if (!Number.isFinite(id) || id <= 0) {
-    return NextResponse.json([], { status: 200 });
+    return NextResponse.json({ error: "Invalid HP ID" }, { status: 400 });
   }
   const clinics = await getHPClinicsAction(id);
   return NextResponse.json(clinics, { status: 200 });

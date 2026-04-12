@@ -2,12 +2,10 @@
 
 import { useCallback, useMemo, useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import type { HPSortOption } from "@/actions/hp.actions";
-
-const VALID_SORT_OPTIONS: HPSortOption[] = ["name-asc", "name-desc", "experience-asc", "experience-desc"];
+import { VALID_HP_SORT_OPTIONS, type HPSortOption } from "@/actions/hp.actions";
 
 function parseSortOption(raw: string | null | undefined): HPSortOption {
-  if (raw && (VALID_SORT_OPTIONS as string[]).includes(raw)) {
+  if (raw && (VALID_HP_SORT_OPTIONS as readonly string[]).includes(raw)) {
     return raw as HPSortOption;
   }
   return "name-asc";

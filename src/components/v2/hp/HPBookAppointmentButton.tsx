@@ -29,7 +29,7 @@ export function HPBookAppointmentButton({ hpId, hpName, className }: HPBookAppoi
     hpId ? `/api/hps/${hpId}/clinics` : null,
     (url: string) =>
       self.get<HPClinic[]>(url).then((data) => {
-        if (!Array.isArray(data)) throw new Error("Failed to fetch clinics");
+        if (!Array.isArray(data)) throw new Error(`Failed to fetch clinics for HP #${hpId}`);
         return data;
       }),
     { revalidateOnFocus: false }

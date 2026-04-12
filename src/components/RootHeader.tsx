@@ -32,7 +32,7 @@ export default function RootHeader({ className = "", version = "v1", ...rest }: 
               <AnimatedLogo />
             </a>
           </div>
-          <RootDrawer>
+          <RootDrawer version={version}>
             <Button variant="ghost" className="inline-flex p-2 text-black transition-all duration-200 rounded-md md:hidden focus:bg-gray-100 hover:bg-gray-100">
               {/* <!-- Menu open: "hidden", Menu closed: "block" --> */}
               <svg className="block w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">

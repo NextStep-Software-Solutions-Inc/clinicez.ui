@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { Suspense, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 
 import HPListByTypeFallback from "@/components/v2/hp/HPListByTypeFallback";
@@ -11,7 +11,7 @@ const header = {
     "Our Healthcare Providers are equipped with the latest technology to provide you with the best care possible.",
 };
 
-export default function Loading() {
+function LoadingContent() {
   const searchParams = useSearchParams();
 
   const { hpTypeName, search } = useMemo(() => {
@@ -24,6 +24,22 @@ export default function Loading() {
     };
   }, [searchParams]);
 
+  return (
+    <>
+      {hpTypeName ? (
+        <HPListByTypeFallback hpTypeName={hpTypeName} initialSearch={search} />
+      ) : (
+        <div className="flex justify-center py-16">
+          <p className="text-sm text-muted-foreground sm:text-base">
+            Loading healthcare provider types...
+          </p>
+        </div>
+      )}
+    </>
+  );
+}
+
+export default function Loading() {
   return (
     <div className="container mx-auto py-8 space-y-8">
       <div
@@ -43,15 +59,15 @@ export default function Loading() {
         </p>
       </div>
 
-      {hpTypeName ? (
-        <HPListByTypeFallback hpTypeName={hpTypeName} initialSearch={search} />
-      ) : (
+      <Suspense fallback={
         <div className="flex justify-center py-16">
           <p className="text-sm text-muted-foreground sm:text-base">
             Loading healthcare provider types...
           </p>
         </div>
-      )}
+      }>
+        <LoadingContent />
+      </Suspense>
     </div>
   );
 }

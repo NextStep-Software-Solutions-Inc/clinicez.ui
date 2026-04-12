@@ -7,7 +7,7 @@ import HeroBackground from "@/components/HeroBackground";
 export const dynamic = "force-dynamic";
 
 export default async function ClinicsPage() {
-  const clinics = await getClinicsV2Action();
+  const clinics = await getClinicsV2Action({ isPublic: true });
 
   return (
     <div className="container mx-auto px-8 py-8 max-w-7xl space-y-8">

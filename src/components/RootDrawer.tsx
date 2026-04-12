@@ -12,13 +12,15 @@ import {
 } from "@components/ui/sheet"
 
 import { DialogProps } from "@radix-ui/react-dialog"
-import { navLinks } from "./Navigation";
+import { navLinks, navLinksV2 } from "./Navigation";
 import DrawerNav from "./dashboard/DrawerNav";
 interface RootDrawerProps extends DialogProps {
   children?: React.ReactNode;
+  version?: string;
 }
-export default function RootDrawer({ children, ...res }: RootDrawerProps) {
- 
+export default function RootDrawer({ children, version, ...res }: RootDrawerProps) {
+  const activeNavLinks = version === "v2" ? navLinksV2 : navLinks;
+
   return (
     <Sheet {...res}>
       <SheetTrigger asChild>{children}</SheetTrigger>
@@ -26,7 +28,7 @@ export default function RootDrawer({ children, ...res }: RootDrawerProps) {
         <SheetHeader>
           <SheetTitle>Navigation Drawer</SheetTitle>
         </SheetHeader>
-        <DrawerNav navItems={navLinks}/>
+        <DrawerNav navItems={activeNavLinks}/>
         
         <SheetFooter className="mt-auto">
           <SheetClose asChild>

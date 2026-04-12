@@ -31,7 +31,7 @@ import {
   toggleMuteNotificationsAction,
 } from "@/actions/notifications/notification.action";
 import type { GetNotificationsResult } from "@/actions/notifications/notification.action";
-import { NotificationType } from "@prisma/client";
+import { type NotificationType, NOTIFICATION_TYPE } from "@/lib/notification-types";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -47,29 +47,30 @@ type NotificationItem = NonNullable<
 // ── Icon map ──────────────────────────────────────────────────────────────────
 
 const NOTIFICATION_ICONS: Record<NotificationType, string> = {
-  APPOINTMENT_CREATED: "📅",
-  APPOINTMENT_CONFIRMED: "✅",
-  APPOINTMENT_CANCELLED: "❌",
-  APPOINTMENT_REJECTED: "🚫",
-  APPOINTMENT_COMPLETED: "🏁",
-  APPOINTMENT_RESCHEDULED: "🔄",
-  APPOINTMENT_RECEIVED: "📋",
-  CONSULTATION_STARTED: "🩺",
-  CONSULTATION_COMPLETED: "✔️",
-  DIAGNOSTIC_ISSUED: "🔬",
-  PRESCRIPTION_ISSUED: "💊",
-  MEDICAL_CERTIFICATE_ISSUED: "📄",
-  REFERRAL_ISSUED: "🏥",
-  ORG_MEMBERSHIP_APPLIED: "📝",
-  ORG_MEMBERSHIP_APPROVED: "🎉",
-  ORG_MEMBERSHIP_REJECTED: "⛔",
-  ORG_MEMBERSHIP_SUSPENDED: "⏸️",
-  ORG_MEMBERSHIP_DEACTIVATED: "🔒",
-  FILE_SHARED: "📁",
-  VERIFICATION_SUBMITTED: "🆔",
-  VERIFICATION_APPROVED: "✅",
-  VERIFICATION_REJECTED: "🚫",
-  VERIFICATION_RESET: "🔄",
+  [NOTIFICATION_TYPE.APPOINTMENT_CREATED]: "📅",
+  [NOTIFICATION_TYPE.APPOINTMENT_CONFIRMED]: "✅",
+  [NOTIFICATION_TYPE.APPOINTMENT_CANCELLED]: "❌",
+  [NOTIFICATION_TYPE.APPOINTMENT_REJECTED]: "🚫",
+  [NOTIFICATION_TYPE.APPOINTMENT_COMPLETED]: "🏁",
+  [NOTIFICATION_TYPE.APPOINTMENT_RESCHEDULED]: "🔄",
+  [NOTIFICATION_TYPE.APPOINTMENT_RECEIVED]: "📋",
+  [NOTIFICATION_TYPE.CONSULTATION_STARTED]: "🩺",
+  [NOTIFICATION_TYPE.CONSULTATION_COMPLETED]: "✔️",
+  [NOTIFICATION_TYPE.DIAGNOSTIC_ISSUED]: "🔬",
+  [NOTIFICATION_TYPE.PRESCRIPTION_ISSUED]: "💊",
+  [NOTIFICATION_TYPE.MEDICAL_CERTIFICATE_ISSUED]: "📄",
+  [NOTIFICATION_TYPE.REFERRAL_ISSUED]: "🏥",
+  [NOTIFICATION_TYPE.ORG_MEMBERSHIP_APPLIED]: "📝",
+  [NOTIFICATION_TYPE.ORG_MEMBERSHIP_APPROVED]: "🎉",
+  [NOTIFICATION_TYPE.ORG_MEMBERSHIP_REJECTED]: "⛔",
+  [NOTIFICATION_TYPE.ORG_MEMBERSHIP_SUSPENDED]: "⏸️",
+  [NOTIFICATION_TYPE.ORG_MEMBERSHIP_DEACTIVATED]: "🔒",
+  [NOTIFICATION_TYPE.ORG_MEMBERSHIP_COMPLY_REQUESTED]: "📋",
+  [NOTIFICATION_TYPE.FILE_SHARED]: "📁",
+  [NOTIFICATION_TYPE.VERIFICATION_SUBMITTED]: "🆔",
+  [NOTIFICATION_TYPE.VERIFICATION_APPROVED]: "✅",
+  [NOTIFICATION_TYPE.VERIFICATION_REJECTED]: "🚫",
+  [NOTIFICATION_TYPE.VERIFICATION_RESET]: "🔄",
 };
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -243,7 +244,7 @@ export function NotificationBell() {
                   className="mt-0.5 shrink-0 text-lg leading-none"
                   aria-hidden
                 >
-                  {NOTIFICATION_ICONS[notification.type] ?? "🔔"}
+                  {NOTIFICATION_ICONS[notification.type as NotificationType] ?? "🔔"}
                 </span>
 
                 {/* Content */}

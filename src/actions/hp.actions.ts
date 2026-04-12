@@ -35,12 +35,15 @@ export type GetHPTypeCountsType = Awaited<ReturnType<typeof getHPTypeCounts>>;
 
 const DEFAULT_HP_PAGE_SIZE = 9;
 
+export type HPSortOption = "name-asc" | "name-desc" | "experience-asc" | "experience-desc";
+
 export type GetAllHPByType = Awaited<ReturnType<typeof getAllHPByTypeAction>>;
 export const getAllHPByTypeAction = cache(async (
   hpTypeName: string,
   page = 1,
   pageSize?: number,
   search = "",
+  sort: HPSortOption = "name-asc",
 ) => {
   const safePage = Number.isFinite(page) && page > 0 ? Math.floor(page) : 1;
   const computedPageSize = Number.isFinite(pageSize) && pageSize && pageSize > 0 ? Math.min(Math.floor(pageSize), 50) : DEFAULT_HP_PAGE_SIZE;
@@ -56,6 +59,7 @@ export const getAllHPByTypeAction = cache(async (
       totalPages: 1,
     },
     search: normalizedSearch,
+    sort,
     hpType: null as null,
   });
 
@@ -84,6 +88,7 @@ export const getAllHPByTypeAction = cache(async (
   const whereClause: Prisma.HealthcareProviderWhereInput = {
     isActive: true,
     isPublished: true,
+    applicationStatus: "APPROVED",
     hpTypeId: hpType.id,
   };
 
@@ -138,9 +143,19 @@ export const getAllHPByTypeAction = cache(async (
     ];
   }
 
+  const orderBy: Prisma.HealthcareProviderOrderByWithRelationInput =
+    sort === "name-desc"
+      ? { HPProfile: { name: "desc" } }
+      : sort === "experience-asc"
+        ? { HPProfile: { experience: { sort: "asc", nulls: "last" } } }
+        : sort === "experience-desc"
+          ? { HPProfile: { experience: { sort: "desc", nulls: "last" } } }
+          : { HPProfile: { name: "asc" } };
+
   const [items, totalCount] = await prisma.$transaction([
     prisma.healthcareProvider.findMany({
       where: whereClause,
+      orderBy,
       skip: (safePage - 1) * computedPageSize,
       take: computedPageSize,
       select: {
@@ -197,6 +212,7 @@ export const getAllHPByTypeAction = cache(async (
       totalPages,
     },
     search: normalizedSearch,
+    sort,
     hpType,
   };
 });

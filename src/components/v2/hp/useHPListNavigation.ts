@@ -2,6 +2,16 @@
 
 import { useCallback, useMemo, useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import type { HPSortOption } from "@/actions/hp.actions";
+
+const VALID_SORT_OPTIONS: HPSortOption[] = ["name-asc", "name-desc", "experience-asc", "experience-desc"];
+
+function parseSortOption(raw: string | null | undefined): HPSortOption {
+  if (raw && (VALID_SORT_OPTIONS as string[]).includes(raw)) {
+    return raw as HPSortOption;
+  }
+  return "name-asc";
+}
 
 interface UseHPListNavigationParams {
   hpTypeName: string;
@@ -20,6 +30,7 @@ export function useHPListNavigation({
   const safeTypeName = canonicalTypeName.length ? canonicalTypeName : hpTypeName;
 
   const searchParamValue = searchParams?.get("search") ?? undefined;
+  const sortParamValue = searchParams?.get("sort") ?? undefined;
 
   const activeSearch = useMemo(() => {
     if (typeof searchParamValue === "string") {
@@ -27,6 +38,8 @@ export function useHPListNavigation({
     }
     return initialSearch;
   }, [initialSearch, searchParamValue]);
+
+  const activeSort = useMemo<HPSortOption>(() => parseSortOption(sortParamValue), [sortParamValue]);
 
   const normalizedActiveSearch = activeSearch.trim();
 
@@ -48,80 +61,75 @@ export function useHPListNavigation({
     [pathname, router, searchParams],
   );
 
-  const handleSearchChange = useCallback(
-    (nextValue: string) => {
-      if (!safeTypeName) {
-        return;
-      }
-      const trimmedValue = nextValue.trim();
+  const buildParams = useCallback(
+    (overrides: { search?: string; page?: number; sort?: HPSortOption }) => {
       const params = new URLSearchParams(searchParams?.toString() ?? "");
-
       params.set("type", safeTypeName);
 
-      if (trimmedValue) {
-        params.set("search", trimmedValue);
+      const nextSearch = overrides.search !== undefined ? overrides.search : normalizedActiveSearch;
+      if (nextSearch) {
+        params.set("search", nextSearch);
       } else {
         params.delete("search");
       }
 
-      params.set("page", "1");
+      const nextSort = overrides.sort ?? activeSort;
+      if (nextSort && nextSort !== "name-asc") {
+        params.set("sort", nextSort);
+      } else {
+        params.delete("sort");
+      }
 
-      pushWithParams(params);
+      const nextPage = overrides.page ?? 1;
+      params.set("page", nextPage.toString());
+
+      return params;
     },
-    [pushWithParams, safeTypeName, searchParams],
+    [searchParams, safeTypeName, normalizedActiveSearch, activeSort],
+  );
+
+  const handleSearchChange = useCallback(
+    (nextValue: string) => {
+      if (!safeTypeName) return;
+      pushWithParams(buildParams({ search: nextValue.trim(), page: 1 }));
+    },
+    [buildParams, pushWithParams, safeTypeName],
   );
 
   const handlePageChange = useCallback(
     (pageNumber: number) => {
-      if (!safeTypeName) {
-        return;
-      }
-
+      if (!safeTypeName) return;
       const targetPage = Number.isFinite(pageNumber) ? Math.max(1, Math.floor(pageNumber)) : 1;
-      const params = new URLSearchParams(searchParams?.toString() ?? "");
-
-      params.set("type", safeTypeName);
-
-      if (normalizedActiveSearch) {
-        params.set("search", normalizedActiveSearch);
-      } else {
-        params.delete("search");
-      }
-
-      params.set("page", targetPage.toString());
-
-      pushWithParams(params);
+      pushWithParams(buildParams({ page: targetPage }));
     },
-    [normalizedActiveSearch, pushWithParams, safeTypeName, searchParams],
+    [buildParams, pushWithParams, safeTypeName],
+  );
+
+  const handleSortChange = useCallback(
+    (nextSort: HPSortOption) => {
+      if (!safeTypeName) return;
+      pushWithParams(buildParams({ sort: nextSort, page: 1 }));
+    },
+    [buildParams, pushWithParams, safeTypeName],
   );
 
   const createHref = useCallback(
     (pageNumber: number) => {
-      if (!safeTypeName) {
-        return pathname;
-      }
-      const params = new URLSearchParams(searchParams?.toString() ?? "");
-      params.set("type", safeTypeName);
-
-      if (normalizedActiveSearch) {
-        params.set("search", normalizedActiveSearch);
-      } else {
-        params.delete("search");
-      }
-
-      params.set("page", pageNumber.toString());
-
+      if (!safeTypeName) return pathname;
+      const params = buildParams({ page: pageNumber });
       const query = params.toString();
       return query ? `${pathname}?${query}` : pathname;
     },
-    [normalizedActiveSearch, pathname, safeTypeName, searchParams],
+    [buildParams, pathname, safeTypeName],
   );
 
   return {
     activeSearch,
     normalizedActiveSearch,
+    activeSort,
     handleSearchChange,
     handlePageChange,
+    handleSortChange,
     createHref,
     isPending,
   };

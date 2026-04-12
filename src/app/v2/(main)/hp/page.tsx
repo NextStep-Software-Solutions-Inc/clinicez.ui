@@ -1,5 +1,5 @@
 import HeaderTitle from "@/components/HeaderTitle"
-import { getHPTypeCounts, getAllHPByTypeAction } from "@/actions/hp.actions"
+import { getHPTypeCounts, getAllHPByTypeAction, type HPSortOption } from "@/actions/hp.actions"
 import HPTypeListShell from "@/components/v2/hp/HPTypeListShell"
 import Suspend from "@/components/Suspend"
 import HeroBackground from "@/components/HeroBackground"
@@ -16,6 +16,8 @@ const header = {
 
 type HealthcareProvidersSearchParams = Record<string, string | string[] | undefined>;
 
+const VALID_SORT_OPTIONS: HPSortOption[] = ["name-asc", "name-desc", "experience-asc", "experience-desc"];
+
 function extractParamValue(params: HealthcareProvidersSearchParams, key: string) {
   const rawValue = params[key];
 
@@ -24,6 +26,13 @@ function extractParamValue(params: HealthcareProvidersSearchParams, key: string)
   }
 
   return rawValue;
+}
+
+function parseSortOption(raw: string | undefined): HPSortOption {
+  if (raw && (VALID_SORT_OPTIONS as string[]).includes(raw)) {
+    return raw as HPSortOption;
+  }
+  return "name-asc";
 }
 
 export default async function HealthcareProvidersPage({
@@ -35,6 +44,7 @@ export default async function HealthcareProvidersPage({
   const type = extractParamValue(resolvedSearchParams, "type");
   const pageParam = extractParamValue(resolvedSearchParams, "page");
   const searchParam = extractParamValue(resolvedSearchParams, "search") ?? "";
+  const sortParam = extractParamValue(resolvedSearchParams, "sort");
 
   const normalizedType = type?.trim();
 
@@ -42,12 +52,13 @@ export default async function HealthcareProvidersPage({
     const parsedPage = pageParam ? Number.parseInt(pageParam, 10) : NaN;
     const page = Number.isFinite(parsedPage) && parsedPage > 0 ? parsedPage : 1;
     const normalizedSearch = searchParam.trim();
+    const sort = parseSortOption(sortParam);
     return (
       <div className="container mx-auto py-8 space-y-8">
         <HeroBackground imagePath="/assets/hero-v2-1.png" opacity={0.2} />
         <HeaderTitle header={header.title} description={header.description} className="text-center" />
         <Suspend loadingFallback={<HPListByTypeFallback hpTypeName={normalizedType} initialSearch={normalizedSearch} />}>
-          <HPListByTypeSection hpTypeName={normalizedType} page={page} search={normalizedSearch} />
+          <HPListByTypeSection hpTypeName={normalizedType} page={page} search={normalizedSearch} sort={sort} />
         </Suspend>
       </div>
     );
@@ -63,10 +74,6 @@ export default async function HealthcareProvidersPage({
         <Suspend>
           <HPTypeListShell data={hpFields} />
         </Suspend>
-        {/* <div className="grid gap-8 md:grid-cols-1 xl:grid-cols-3">
-          <HPCard />
-          <HPCard />
-        </div> */}
       </div>
     </div>
   );
@@ -76,12 +83,14 @@ async function HPListByTypeSection({
   hpTypeName,
   page,
   search,
+  sort,
 }: {
   hpTypeName: string;
   page: number;
   search: string;
+  sort: HPSortOption;
 }) {
-  const hps = await getAllHPByTypeAction(hpTypeName, page, undefined, search);
+  const hps = await getAllHPByTypeAction(hpTypeName, page, undefined, search, sort);
   const resolvedTypeName = hps.hpType?.name ?? hpTypeName;
   const canonicalTypeName = resolvedTypeName.trim();
   const hasResultsOrType = Boolean(hps.hpType);

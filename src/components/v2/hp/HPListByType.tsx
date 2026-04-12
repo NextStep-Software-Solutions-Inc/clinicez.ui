@@ -1,7 +1,15 @@
 "use client";
 
-import type { GetAllHPByType } from "@/actions/hp.actions";
+import { ArrowUpDown } from "lucide-react";
+import type { GetAllHPByType, HPSortOption } from "@/actions/hp.actions";
 import SearchPaginatedList from "@/components/v2/SearchPaginatedList";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 import { HPCard } from "./HPCard";
 import HPListSkeleton from "./HPListSkeleton";
 import { useHPListNavigation } from "./useHPListNavigation";
@@ -12,6 +20,13 @@ interface HPListByTypeProps {
   initialSearch?: string;
 }
 
+const SORT_LABELS: Record<HPSortOption, string> = {
+  "name-asc": "Name A–Z",
+  "name-desc": "Name Z–A",
+  "experience-asc": "Least Experienced",
+  "experience-desc": "Most Experienced",
+};
+
 export default function HPListByType({ data, hpTypeName, initialSearch = "" }: HPListByTypeProps) {
   const { items, pagination, search: normalizedSearch } = data;
   const resolvedTypeName = data.hpType?.name ?? hpTypeName;
@@ -19,7 +34,7 @@ export default function HPListByType({ data, hpTypeName, initialSearch = "" }: H
   const fallbackTypeName = hpTypeName.trim();
   const effectiveTypeName = canonicalTypeName.length ? canonicalTypeName : fallbackTypeName;
 
-  const { activeSearch, handleSearchChange, handlePageChange, createHref, isPending } = useHPListNavigation({
+  const { activeSearch, activeSort, handleSearchChange, handlePageChange, handleSortChange, createHref, isPending } = useHPListNavigation({
     hpTypeName: effectiveTypeName || fallbackTypeName || "unknown",
     initialSearch: normalizedSearch || initialSearch,
   });
@@ -36,6 +51,28 @@ export default function HPListByType({ data, hpTypeName, initialSearch = "" }: H
 
   const skeletonCount = pagination.pageSize ?? Math.max(items.length, 6);
 
+  const sortSlot = (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" size="default" className="flex items-center gap-2 bg-transparent">
+          <ArrowUpDown className="h-4 w-4" />
+          {SORT_LABELS[activeSort]}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        {(Object.keys(SORT_LABELS) as HPSortOption[]).map((option) => (
+          <DropdownMenuItem
+            key={option}
+            onClick={() => handleSortChange(option)}
+            className={activeSort === option ? "font-semibold" : ""}
+          >
+            {SORT_LABELS[option]}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+
   return (
     <SearchPaginatedList
       mode="remote"
@@ -43,6 +80,7 @@ export default function HPListByType({ data, hpTypeName, initialSearch = "" }: H
       render={(hp) => (
         <HPCard
           key={hp.id}
+          hpId={hp.id}
           hp={{
             id: hp.HPProfile?.id,
             imageUrl: hp.HPProfile?.picture || undefined,
@@ -74,6 +112,7 @@ export default function HPListByType({ data, hpTypeName, initialSearch = "" }: H
       searchPlaceholder="Search healthcare providers..."
       itemsWrapperClassName="grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-3"
       emptyMessage="No healthcare providers found for this type yet."
+      sortSlot={sortSlot}
       pagination={{
         page: pagination.page,
         totalPages: pagination.totalPages,

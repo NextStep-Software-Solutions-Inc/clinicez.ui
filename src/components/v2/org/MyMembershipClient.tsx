@@ -57,9 +57,15 @@ import {
   formatRequirementLabel,
   type StagedRequirementFile,
 } from "@/lib/requirement-types";
+import { Checkbox } from "@/components/ui/checkbox";
 import { upsertStudentRecordAction } from "@/actions/student-record.action";
 import { upsertEmploymentRecordAction } from "@/actions/employee-record.action";
 import { useStudentLevels } from "@/hooks/useStudentLevel";
+import { useOrgYearLevels } from "@/hooks/useOrgYearLevel";
+import { useOrgPrograms } from "@/hooks/useOrgProgram";
+import { useOrgColleges } from "@/hooks/useOrgCollege";
+import { useOrgDepartments } from "@/hooks/useOrgDepartment";
+import { useOrgOffices } from "@/hooks/useOrgOffice";
 
 /* ─────────────────────────────────────────────────────────── */
 /*  Types                                                       */
@@ -175,6 +181,11 @@ export default function MyMembershipClient({ membership, orgUid }: MyMembershipC
   const router = useRouter();
   const { user: clerkUser } = useUser();
   const { data: studentLevels } = useStudentLevels();
+  const { data: orgYearLevels } = useOrgYearLevels(orgUid);
+  const { data: orgPrograms } = useOrgPrograms(orgUid);
+  const { data: orgColleges } = useOrgColleges(orgUid);
+  const { data: orgDepartments } = useOrgDepartments(orgUid);
+  const { data: orgOffices } = useOrgOffices(orgUid);
 
   const [localFiles, setLocalFiles] = useState<RequirementFile[]>(
     membership.OrgMemberRequirementFiles
@@ -189,14 +200,28 @@ export default function MyMembershipClient({ membership, orgUid }: MyMembershipC
   const [, startTransition] = useTransition();
   const tempIdCounter = React.useRef(-1);
 
-  // Profile dialog state (Tasks 3, 5)
+  // Profile dialog state
   const [profileDialogReq, setProfileDialogReq] = useState<
     typeof REQUIREMENT_STUDENT_RECORD | typeof REQUIREMENT_EMPLOYEE_RECORD | null
   >(null);
+  // Student record fields
   const [studentIdInput, setStudentIdInput] = useState("");
+  const [lrnInput, setLrnInput] = useState("");
   const [levelIdInput, setLevelIdInput] = useState<string>("");
+  const [yearLevelIdInput, setYearLevelIdInput] = useState<string>("");
+  const [programIdInput, setProgramIdInput] = useState<string>("");
+  const [isStudentCollege, setIsStudentCollege] = useState(false);
+  const [studentCollegeIdInput, setStudentCollegeIdInput] = useState<string>("");
+  const [studentDepartmentIdInput, setStudentDepartmentIdInput] = useState<string>("");
+  // Employee record fields
   const [employeeIdInput, setEmployeeIdInput] = useState("");
   const [positionInput, setPositionInput] = useState("");
+  const [designationInput, setDesignationInput] = useState("");
+  const [officeIdInput, setOfficeIdInput] = useState<string>("");
+  const [employeeDepartmentIdInput, setEmployeeDepartmentIdInput] = useState<string>("");
+  const [isEmployeeCollege, setIsEmployeeCollege] = useState(false);
+  const [employeeCollegeIdInput, setEmployeeCollegeIdInput] = useState<string>("");
+
   const [isSubmittingProfile, startProfileSubmit] = useTransition();
 
   // Keep localFiles in sync when membership prop changes (e.g., after page refresh)
@@ -207,11 +232,24 @@ export default function MyMembershipClient({ membership, orgUid }: MyMembershipC
   // Pre-fill dialog fields when opening
   function openProfileDialog(req: typeof REQUIREMENT_STUDENT_RECORD | typeof REQUIREMENT_EMPLOYEE_RECORD) {
     if (req === REQUIREMENT_STUDENT_RECORD) {
-      setStudentIdInput(membership.User.StudentRecords?.[0]?.studentId ?? "");
-      setLevelIdInput(String(membership.User.StudentRecords?.[0]?.level ?? ""));
+      const sr = membership.User.StudentRecords?.[0];
+      setStudentIdInput(sr?.studentId ?? "");
+      setLrnInput(sr?.lrn ?? "");
+      setLevelIdInput(String(sr?.level ?? ""));
+      setYearLevelIdInput(String(sr?.yearLevel ?? ""));
+      setProgramIdInput(String(sr?.programId ?? ""));
+      setIsStudentCollege(!!sr?.collegeId);
+      setStudentCollegeIdInput(String(sr?.collegeId ?? ""));
+      setStudentDepartmentIdInput(String(sr?.departmentId ?? ""));
     } else {
-      setEmployeeIdInput(membership.User.UserEmployments?.[0]?.employeeId ?? "");
-      setPositionInput(membership.User.UserEmployments?.[0]?.position ?? "");
+      const emp = membership.User.UserEmployments?.[0];
+      setEmployeeIdInput(emp?.employeeId ?? "");
+      setPositionInput(emp?.position ?? "");
+      setDesignationInput(emp?.designation ?? "");
+      setOfficeIdInput(String(emp?.officeId ?? ""));
+      setEmployeeDepartmentIdInput(String(emp?.departmentId ?? ""));
+      setIsEmployeeCollege(!!emp?.collegeId);
+      setEmployeeCollegeIdInput(String(emp?.collegeId ?? ""));
     }
     setProfileDialogReq(req);
   }
@@ -242,6 +280,11 @@ export default function MyMembershipClient({ membership, orgUid }: MyMembershipC
           orgUid,
           studentId: studentIdInput.trim(),
           levelId: Number(levelIdInput),
+          lrn: lrnInput.trim() || undefined,
+          yearLevelId: yearLevelIdInput ? Number(yearLevelIdInput) : undefined,
+          programId: programIdInput ? Number(programIdInput) : undefined,
+          collegeId: isStudentCollege && studentCollegeIdInput ? Number(studentCollegeIdInput) : undefined,
+          departmentId: isStudentCollege && studentDepartmentIdInput ? Number(studentDepartmentIdInput) : undefined,
         });
         if (result?.status) {
           toast.success("Student record updated successfully.");
@@ -264,6 +307,10 @@ export default function MyMembershipClient({ membership, orgUid }: MyMembershipC
           orgUid,
           employeeId: employeeIdInput.trim(),
           position: positionInput.trim(),
+          designation: designationInput.trim() || undefined,
+          officeId: officeIdInput ? Number(officeIdInput) : undefined,
+          departmentId: employeeDepartmentIdInput ? Number(employeeDepartmentIdInput) : undefined,
+          collegeId: isEmployeeCollege && employeeCollegeIdInput ? Number(employeeCollegeIdInput) : undefined,
         });
         if (result?.status) {
           toast.success("Employment record updated successfully.");
@@ -590,10 +637,40 @@ export default function MyMembershipClient({ membership, orgUid }: MyMembershipC
                 <span className="text-muted-foreground">Student ID</span>
                 <span className="font-medium">{studentRecord.studentId}</span>
               </div>
+              {studentRecord.lrn && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Learner Ref. No.</span>
+                  <span className="font-medium">{studentRecord.lrn}</span>
+                </div>
+              )}
               {studentRecord.Level && (
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Level</span>
                   <span className="font-medium">{studentRecord.Level.name}</span>
+                </div>
+              )}
+              {studentRecord.OrganizationYearLevel && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Year/Grade Level</span>
+                  <span className="font-medium">{studentRecord.OrganizationYearLevel.name}</span>
+                </div>
+              )}
+              {studentRecord.Program && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Program</span>
+                  <span className="font-medium">{studentRecord.Program.name}</span>
+                </div>
+              )}
+              {studentRecord.College && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">College</span>
+                  <span className="font-medium">{studentRecord.College.name}</span>
+                </div>
+              )}
+              {studentRecord.Department && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Department</span>
+                  <span className="font-medium">{studentRecord.Department.name}</span>
                 </div>
               )}
             </CardContent>
@@ -622,10 +699,32 @@ export default function MyMembershipClient({ membership, orgUid }: MyMembershipC
                 <span className="text-muted-foreground">Employee ID</span>
                 <span className="font-medium">{employment.employeeId}</span>
               </div>
-              {employment.position && (
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Position</span>
+                <span className="font-medium">{employment.position}</span>
+              </div>
+              {employment.designation && (
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Position</span>
-                  <span className="font-medium">{employment.position}</span>
+                  <span className="text-muted-foreground">Designation</span>
+                  <span className="font-medium">{employment.designation}</span>
+                </div>
+              )}
+              {employment.Office && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Office</span>
+                  <span className="font-medium">{employment.Office.name}</span>
+                </div>
+              )}
+              {employment.Department && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Department</span>
+                  <span className="font-medium">{employment.Department.name}</span>
+                </div>
+              )}
+              {employment.College && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">College</span>
+                  <span className="font-medium">{employment.College.name}</span>
                 </div>
               )}
             </CardContent>
@@ -712,9 +811,9 @@ export default function MyMembershipClient({ membership, orgUid }: MyMembershipC
         </DialogContent>
       </Dialog>
 
-      {/* ── Profile Data Dialog (Tasks 3 & 5) ── */}
+      {/* ── Profile Data Dialog ── */}
       <Dialog open={profileDialogReq !== null} onOpenChange={(open) => !open && closeProfileDialog()}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {profileDialogReq === REQUIREMENT_STUDENT_RECORD
@@ -730,18 +829,30 @@ export default function MyMembershipClient({ membership, orgUid }: MyMembershipC
 
           {profileDialogReq === REQUIREMENT_STUDENT_RECORD && (
             <div className="space-y-4 py-2">
-              <div className="space-y-1.5">
-                <Label htmlFor="student-id">Student ID <span className="text-destructive">*</span></Label>
-                <Input
-                  id="student-id"
-                  placeholder="e.g. 2024-00001"
-                  value={studentIdInput}
-                  onChange={(e) => setStudentIdInput(e.target.value)}
-                  disabled={isSubmittingProfile}
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="student-id">Student ID <span className="text-destructive">*</span></Label>
+                  <Input
+                    id="student-id"
+                    placeholder="e.g. 2024-00001"
+                    value={studentIdInput}
+                    onChange={(e) => setStudentIdInput(e.target.value)}
+                    disabled={isSubmittingProfile}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="student-lrn">Learner Ref. Number <span className="text-muted-foreground text-xs">(if applicable)</span></Label>
+                  <Input
+                    id="student-lrn"
+                    placeholder="e.g. 123456789012"
+                    value={lrnInput}
+                    onChange={(e) => setLrnInput(e.target.value)}
+                    disabled={isSubmittingProfile}
+                  />
+                </div>
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="student-level">Level <span className="text-destructive">*</span></Label>
+                <Label htmlFor="student-level">Student Level <span className="text-destructive">*</span></Label>
                 <Select value={levelIdInput} onValueChange={setLevelIdInput} disabled={isSubmittingProfile}>
                   <SelectTrigger id="student-level">
                     <SelectValue placeholder="Select a level" />
@@ -755,31 +866,176 @@ export default function MyMembershipClient({ membership, orgUid }: MyMembershipC
                   </SelectContent>
                 </Select>
               </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="year-level">Year/Grade Level</Label>
+                  <Select value={yearLevelIdInput} onValueChange={setYearLevelIdInput} disabled={isSubmittingProfile}>
+                    <SelectTrigger id="year-level">
+                      <SelectValue placeholder="Select a year/grade level" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(orgYearLevels ?? []).map((yl) => (
+                        <SelectItem key={yl.id} value={String(yl.id)}>
+                          {yl.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="program">Program</Label>
+                  <Select value={programIdInput} onValueChange={setProgramIdInput} disabled={isSubmittingProfile}>
+                    <SelectTrigger id="program">
+                      <SelectValue placeholder="Select a program" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(orgPrograms ?? []).map((p) => (
+                        <SelectItem key={p.id} value={String(p.id)}>
+                          {p.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="is-college-student"
+                  checked={isStudentCollege}
+                  onCheckedChange={(checked) => setIsStudentCollege(!!checked)}
+                  disabled={isSubmittingProfile}
+                />
+                <Label htmlFor="is-college-student" className="cursor-pointer">I am a college student.</Label>
+              </div>
+              {isStudentCollege && (
+                <>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="student-college">College <span className="text-muted-foreground text-xs">(if applicable)</span></Label>
+                    <Select value={studentCollegeIdInput} onValueChange={setStudentCollegeIdInput} disabled={isSubmittingProfile}>
+                      <SelectTrigger id="student-college">
+                        <SelectValue placeholder="Select a college" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(orgColleges ?? []).map((c) => (
+                          <SelectItem key={c.id} value={String(c.id)}>
+                            {c.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="student-department">Department</Label>
+                    <Select value={studentDepartmentIdInput} onValueChange={setStudentDepartmentIdInput} disabled={isSubmittingProfile}>
+                      <SelectTrigger id="student-department">
+                        <SelectValue placeholder="Select a department" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(orgDepartments ?? []).map((d) => (
+                          <SelectItem key={d.id} value={String(d.id)}>
+                            {d.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </>
+              )}
             </div>
           )}
 
           {profileDialogReq === REQUIREMENT_EMPLOYEE_RECORD && (
             <div className="space-y-4 py-2">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="employee-id">Employee ID <span className="text-destructive">*</span></Label>
+                  <Input
+                    id="employee-id"
+                    placeholder="e.g. EMP-00001"
+                    value={employeeIdInput}
+                    onChange={(e) => setEmployeeIdInput(e.target.value)}
+                    disabled={isSubmittingProfile}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="position">Position <span className="text-destructive">*</span></Label>
+                  <Input
+                    id="position"
+                    placeholder="e.g. Nurse, Doctor, Staff"
+                    value={positionInput}
+                    onChange={(e) => setPositionInput(e.target.value)}
+                    disabled={isSubmittingProfile}
+                  />
+                </div>
+              </div>
               <div className="space-y-1.5">
-                <Label htmlFor="employee-id">Employee ID <span className="text-destructive">*</span></Label>
+                <Label htmlFor="designation">Designation <span className="text-muted-foreground text-xs">(optional)</span></Label>
                 <Input
-                  id="employee-id"
-                  placeholder="e.g. EMP-00001"
-                  value={employeeIdInput}
-                  onChange={(e) => setEmployeeIdInput(e.target.value)}
+                  id="designation"
+                  placeholder="e.g. Senior Staff"
+                  value={designationInput}
+                  onChange={(e) => setDesignationInput(e.target.value)}
                   disabled={isSubmittingProfile}
                 />
               </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="position">Position <span className="text-destructive">*</span></Label>
-                <Input
-                  id="position"
-                  placeholder="e.g. Nurse, Doctor, Staff"
-                  value={positionInput}
-                  onChange={(e) => setPositionInput(e.target.value)}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="office">Office</Label>
+                  <Select value={officeIdInput} onValueChange={setOfficeIdInput} disabled={isSubmittingProfile}>
+                    <SelectTrigger id="office">
+                      <SelectValue placeholder="Select an office" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(orgOffices ?? []).map((o) => (
+                        <SelectItem key={o.id} value={String(o.id)}>
+                          {o.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="emp-department">Department <span className="text-muted-foreground text-xs">(if applicable)</span></Label>
+                  <Select value={employeeDepartmentIdInput} onValueChange={setEmployeeDepartmentIdInput} disabled={isSubmittingProfile}>
+                    <SelectTrigger id="emp-department">
+                      <SelectValue placeholder="Select a department" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(orgDepartments ?? []).map((d) => (
+                        <SelectItem key={d.id} value={String(d.id)}>
+                          {d.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="is-college-employee"
+                  checked={isEmployeeCollege}
+                  onCheckedChange={(checked) => setIsEmployeeCollege(!!checked)}
                   disabled={isSubmittingProfile}
                 />
+                <Label htmlFor="is-college-employee" className="cursor-pointer">I work in a College/University institution.</Label>
               </div>
+              {isEmployeeCollege && (
+                <div className="space-y-1.5">
+                  <Label htmlFor="emp-college">College <span className="text-muted-foreground text-xs">(if applicable)</span></Label>
+                  <Select value={employeeCollegeIdInput} onValueChange={setEmployeeCollegeIdInput} disabled={isSubmittingProfile}>
+                    <SelectTrigger id="emp-college">
+                      <SelectValue placeholder="Select a college" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(orgColleges ?? []).map((c) => (
+                        <SelectItem key={c.id} value={String(c.id)}>
+                          {c.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
           )}
 

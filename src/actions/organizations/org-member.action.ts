@@ -170,28 +170,38 @@ export const getOrgMembersAction = withErrorHandling(
                   select: {
                     studentId: true,
                     lrn: true,
+                    level: true,
+                    yearLevel: true,
+                    programId: true,
+                    departmentId: true,
+                    collegeId: true,
                     Level: {
                       select: {
+                        id: true,
                         name: true
                       }
                     },
                     OrganizationYearLevel: {
                       select: {
+                        id: true,
                         name: true
                       }
                     },
                     Program: {
                       select: {
+                        id: true,
                         name: true
                       }
                     },
                     Department: {
                       select: {
+                        id: true,
                         name: true
                       }
                     },
                     College: {
                       select: {
+                        id: true,
                         name: true
                       }
                     }
@@ -208,18 +218,24 @@ export const getOrgMembersAction = withErrorHandling(
                     employeeId: true,
                     position: true,
                     designation: true,
+                    officeId: true,
+                    departmentId: true,
+                    collegeId: true,
                     Office: {
                       select: {
+                        id: true,
                         name: true
                       }
                     },
                     Department: {
                       select: {
+                        id: true,
                         name: true
                       }
                     },
                     College: {
                       select: {
+                        id: true,
                         name: true
                       }
                     }

@@ -1,6 +1,7 @@
 "use server";
 import "server-only";
 
+import { revalidatePath } from "next/cache";
 import { uploadFile } from "@/services/azure-blob";
 import { getCachedSession } from "@/actions/session.action";
 import { withErrorHandling } from "@/lib/with-error-handling";
@@ -250,6 +251,8 @@ export const deleteOrgMemberRequirementFileAction = withErrorHandling(
     }
 
     await prisma.orgMemberRequirementFile.delete({ where: { id } });
+
+    revalidatePath(`/v2/organizations/${record.OrganizationMember.Organization.orgUid}/membership`);
 
     return { message: "Requirement file removed", data: null };
   }

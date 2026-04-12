@@ -39,6 +39,9 @@ import {
   isFileUploadRequirement,
   parseRequirementSettings,
   isRequirementRequired,
+  REQUIREMENT_STUDENT_RECORD,
+  REQUIREMENT_EMPLOYEE_RECORD,
+  formatRequirementLabel,
   type StagedRequirementFile,
 } from "@/lib/requirement-types";
 
@@ -52,24 +55,6 @@ type RequirementFile = MembershipData["OrgMemberRequirementFiles"][number];
 /* ─────────────────────────────────────────────────────────── */
 /*  Constants / helpers                                         */
 /* ─────────────────────────────────────────────────────────── */
-
-const REQUIREMENT_STUDENT_RECORD = "student_record";
-const REQUIREMENT_EMPLOYEE_RECORD = "employee_record";
-
-const REQUIREMENT_LABEL_MAP: Record<string, string> = {
-  student_record: "Student Record",
-  employee_record: "Employee Record",
-  medical_certificate: "Medical Certificate",
-  xray_result: "X-Ray Result",
-  other: "Supporting Document",
-};
-
-function formatRequirementLabel(req: string): string {
-  return (
-    REQUIREMENT_LABEL_MAP[req] ??
-    req.split("_").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")
-  );
-}
 
 const STATUS_BADGE_CONFIG: Record<
   string,

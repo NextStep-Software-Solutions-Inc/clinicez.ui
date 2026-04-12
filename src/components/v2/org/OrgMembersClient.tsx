@@ -137,7 +137,15 @@ import {
   linkRequirementFilesAction,
   deleteOrgMemberRequirementFileAction,
 } from "@/actions/organizations/org-member-requirement-file.action";
-import { isFileUploadRequirement, parseRequirementSettings, isRequirementRequired, type StagedRequirementFile } from "@/lib/requirement-types";
+import {
+  isFileUploadRequirement,
+  parseRequirementSettings,
+  isRequirementRequired,
+  REQUIREMENT_STUDENT_RECORD,
+  REQUIREMENT_EMPLOYEE_RECORD,
+  formatRequirementLabel,
+  type StagedRequirementFile,
+} from "@/lib/requirement-types";
 
 /* ─────────────────────────────────────────────────────────── */
 /*  Types                                                       */
@@ -199,28 +207,6 @@ function getFullName(
 /* ─────────────────────────────────────────────────────────── */
 /*  Requirement constants + helpers                             */
 /* ─────────────────────────────────────────────────────────── */
-
-const REQUIREMENT_STUDENT_RECORD = "student_record";
-const REQUIREMENT_EMPLOYEE_RECORD = "employee_record";
-const REQUIREMENT_MEDICAL_CERTIFICATE = "medical_certificate";
-const REQUIREMENT_XRAY_RESULT = "xray_result";
-const REQUIREMENT_OTHER = "other";
-
-/** Human-readable labels for known requirement keys */
-const REQUIREMENT_LABEL_MAP: Record<string, string> = {
-  [REQUIREMENT_STUDENT_RECORD]: "Student Record",
-  [REQUIREMENT_EMPLOYEE_RECORD]: "Employee Record",
-  [REQUIREMENT_MEDICAL_CERTIFICATE]: "Medical Certificate",
-  [REQUIREMENT_XRAY_RESULT]: "X-Ray Result",
-  [REQUIREMENT_OTHER]: "Supporting Document",
-};
-
-function formatRequirementLabel(req: string): string {
-  return (
-    REQUIREMENT_LABEL_MAP[req] ??
-    req.split("_").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")
-  );
-}
 
 function formatBloodType(bt: string): string {
   return bt

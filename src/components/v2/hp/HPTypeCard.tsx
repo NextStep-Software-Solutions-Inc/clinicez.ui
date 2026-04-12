@@ -21,7 +21,7 @@ export default function HPTypeCard({ id, name, description, count }: Props) {
     <Card className="flex flex-col border-none shadow-none bg-transparent">
       <CardHeader className="pb-4">
         <div className="mb-4 flex items-start">
-          <div className="h-14 w-14 overflow-hidden rounded-xl flex-shrink-0">
+          <div className="h-11 w-11 overflow-hidden rounded-xl flex-shrink-0">
             <HPTypeIcon name={sanitizedName} />
           </div>
         </div>

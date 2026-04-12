@@ -590,6 +590,12 @@ export default function MyMembershipClient({ membership, orgUid }: MyMembershipC
                 <span className="text-muted-foreground">Student ID</span>
                 <span className="font-medium">{studentRecord.studentId}</span>
               </div>
+              {studentRecord.Level && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Level</span>
+                  <span className="font-medium">{studentRecord.Level.name}</span>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
@@ -616,6 +622,12 @@ export default function MyMembershipClient({ membership, orgUid }: MyMembershipC
                 <span className="text-muted-foreground">Employee ID</span>
                 <span className="font-medium">{employment.employeeId}</span>
               </div>
+              {employment.position && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Position</span>
+                  <span className="font-medium">{employment.position}</span>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}

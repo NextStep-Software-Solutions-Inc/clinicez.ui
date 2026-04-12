@@ -36,8 +36,6 @@ export type GetHPTypeCountsType = Awaited<ReturnType<typeof getHPTypeCounts>>;
 
 const DEFAULT_HP_PAGE_SIZE = 9;
 
-export type { HPSortOption };
-
 export type GetAllHPByType = Awaited<ReturnType<typeof getAllHPByTypeAction>>;
 export const getAllHPByTypeAction = cache(async (
   hpTypeName: string,

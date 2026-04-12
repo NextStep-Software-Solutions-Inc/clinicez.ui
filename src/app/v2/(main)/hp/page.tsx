@@ -1,5 +1,5 @@
 import HeaderTitle from "@/components/HeaderTitle"
-import { getHPTypeCounts, getAllHPByTypeAction, VALID_HP_SORT_OPTIONS, type HPSortOption } from "@/actions/hp.actions"
+import { getHPTypeCounts, getAllHPByTypeAction, parseHPSortOption, type HPSortOption } from "@/actions/hp.actions"
 import HPTypeListShell from "@/components/v2/hp/HPTypeListShell"
 import Suspend from "@/components/Suspend"
 import HeroBackground from "@/components/HeroBackground"
@@ -26,13 +26,6 @@ function extractParamValue(params: HealthcareProvidersSearchParams, key: string)
   return rawValue;
 }
 
-function parseSortOption(raw: string | undefined): HPSortOption {
-  if (raw && (VALID_HP_SORT_OPTIONS as readonly string[]).includes(raw)) {
-    return raw as HPSortOption;
-  }
-  return "name-asc";
-}
-
 export default async function HealthcareProvidersPage({
   searchParams,
 }: {
@@ -50,7 +43,7 @@ export default async function HealthcareProvidersPage({
     const parsedPage = pageParam ? Number.parseInt(pageParam, 10) : NaN;
     const page = Number.isFinite(parsedPage) && parsedPage > 0 ? parsedPage : 1;
     const normalizedSearch = searchParam.trim();
-    const sort = parseSortOption(sortParam);
+    const sort = parseHPSortOption(sortParam);
     return (
       <div className="container mx-auto py-8 space-y-8">
         <HeroBackground imagePath="/assets/hero-v2-1.png" opacity={0.2} />

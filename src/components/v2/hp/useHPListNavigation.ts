@@ -2,14 +2,8 @@
 
 import { useCallback, useMemo, useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { VALID_HP_SORT_OPTIONS, type HPSortOption } from "@/actions/hp.actions";
+import { VALID_HP_SORT_OPTIONS, parseHPSortOption, type HPSortOption } from "@/actions/hp.actions";
 
-function parseSortOption(raw: string | null | undefined): HPSortOption {
-  if (raw && (VALID_HP_SORT_OPTIONS as readonly string[]).includes(raw)) {
-    return raw as HPSortOption;
-  }
-  return "name-asc";
-}
 
 interface UseHPListNavigationParams {
   hpTypeName: string;
@@ -37,7 +31,7 @@ export function useHPListNavigation({
     return initialSearch;
   }, [initialSearch, searchParamValue]);
 
-  const activeSort = useMemo<HPSortOption>(() => parseSortOption(sortParamValue), [sortParamValue]);
+  const activeSort = useMemo<HPSortOption>(() => parseHPSortOption(sortParamValue), [sortParamValue]);
 
   const normalizedActiveSearch = activeSearch.trim();
 

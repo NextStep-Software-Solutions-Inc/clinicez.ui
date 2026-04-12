@@ -38,6 +38,13 @@ const DEFAULT_HP_PAGE_SIZE = 9;
 export type HPSortOption = "name-asc" | "name-desc" | "experience-asc" | "experience-desc";
 export const VALID_HP_SORT_OPTIONS: readonly HPSortOption[] = ["name-asc", "name-desc", "experience-asc", "experience-desc"];
 
+export function parseHPSortOption(raw: string | null | undefined): HPSortOption {
+  if (raw && (VALID_HP_SORT_OPTIONS as readonly string[]).includes(raw)) {
+    return raw as HPSortOption;
+  }
+  return "name-asc";
+}
+
 export type GetAllHPByType = Awaited<ReturnType<typeof getAllHPByTypeAction>>;
 export const getAllHPByTypeAction = cache(async (
   hpTypeName: string,

@@ -26,7 +26,7 @@ const ACTIVE_ORG_MEMBER_STATUSES = ["ACCEPTED", "APPROVED", "ACTIVE"] as const;
  */
 export async function getHPClinicsAction(hpId: number): Promise<HPClinic[]> {
   if (!hpId || !Number.isFinite(hpId) || hpId <= 0) {
-    throw new Error(`Invalid HP ID: ${hpId}`);
+    throw new Error("Invalid healthcare provider identifier");
   }
 
   // Fetch the HP with their clinic memberships and org affiliations

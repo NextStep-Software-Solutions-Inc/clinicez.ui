@@ -2,17 +2,17 @@
 
 import { BlobServiceClient, ContainerClient, StorageSharedKeyCredential, BlobDownloadResponseModel } from '@azure/storage-blob';
 
-let _containerClient: ContainerClient | null = null;
+let cachedContainerClient: ContainerClient | null = null;
 
 function getContainerClient() {
-  if (_containerClient) return _containerClient;
+  if (cachedContainerClient) return cachedContainerClient;
   const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
   const containerName = process.env.AZURE_STORAGE_CONTAINER_NAME;
   if (!connectionString) throw new Error('AZURE_STORAGE_CONNECTION_STRING is not configured');
   if (!containerName) throw new Error('AZURE_STORAGE_CONTAINER_NAME is not configured');
   const blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
-  _containerClient = blobServiceClient.getContainerClient(containerName);
-  return _containerClient;
+  cachedContainerClient = blobServiceClient.getContainerClient(containerName);
+  return cachedContainerClient;
 }
 
 // async function listBlobs(): Promise<string[]> {

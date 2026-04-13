@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   HeartPulse,
   KeyRound,
@@ -10,6 +11,7 @@ import {
   ArrowRight,
   Lock,
   LogOut,
+  Home,
 } from "lucide-react";
 import { Button } from "@components/ui/button";
 import { useClerk } from "@clerk/nextjs";
@@ -142,22 +144,35 @@ export default function SelectDashboardClient({
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-teal-50/30 flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-white/80 backdrop-blur-sm">
-        <div className="flex items-center gap-2">
+        <Link href="/v2" className="flex items-center gap-2 group">
           <img
             src="/assets/clinic-ez_logo.svg"
             alt="ClinicEZ"
-            className="h-8 object-contain"
+            className="h-8 object-contain transition-opacity duration-200 group-hover:opacity-80"
           />
+        </Link>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-slate-500 hover:text-slate-700 gap-2"
+            asChild
+          >
+            <Link href="/v2">
+              <Home className="h-4 w-4" />
+              Home
+            </Link>
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-slate-500 hover:text-slate-700 gap-2"
+            onClick={() => signOut({ redirectUrl: "/" })}
+          >
+            <LogOut className="h-4 w-4" />
+            Sign out
+          </Button>
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-slate-500 hover:text-slate-700 gap-2"
-          onClick={() => signOut({ redirectUrl: "/" })}
-        >
-          <LogOut className="h-4 w-4" />
-          Sign out
-        </Button>
       </div>
 
       {/* Main content */}

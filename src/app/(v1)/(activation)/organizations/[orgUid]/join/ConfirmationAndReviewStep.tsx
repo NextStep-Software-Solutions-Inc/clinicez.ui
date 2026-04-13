@@ -1,6 +1,6 @@
 "use client";
 
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@components/ui/form";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel } from "@components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -75,7 +75,6 @@ export default function ConfirmationAndReviewStep({ orgUid, termsAndConditionsUr
       toast.promise(promiseWrapper(joinOrganizationAction)(payload), {
         loading: "Submitting application...",
         success: async (res) => {
-          playError()
           // Link any staged requirement files to the newly created org member.
           // Filter to only files that match the current role's requirements
           // to avoid linking leftover staged files from a previous role selection.
@@ -111,7 +110,7 @@ export default function ConfirmationAndReviewStep({ orgUid, termsAndConditionsUr
         <p className="mt-2">
           Please review the information you have entered and certify that it is accurate
         </p>
-        <form action={action} className="mt-4 flex flex-col gap-2 ">
+        <form onSubmit={(e) => { e.preventDefault(); action(); }} className="mt-4 flex flex-col gap-2 ">
           <FormField
             control={form.control}
             name="certify"
@@ -127,10 +126,9 @@ export default function ConfirmationAndReviewStep({ orgUid, termsAndConditionsUr
                   <FormLabel>
                   Certify that all information is accurate
                   </FormLabel>
-                  <FormDescription>
+                   <FormDescription>
                   I hereby certify that all information provided in this application is true and accurate to the best of my knowledge.
                   </FormDescription>
-                  <FormMessage/>
                 </div>
               </FormItem>
             )}
@@ -151,9 +149,8 @@ export default function ConfirmationAndReviewStep({ orgUid, termsAndConditionsUr
                   Terms and Conditions
                   </FormLabel>
                   <FormDescription>
-                 I agree to the <Link href={termsAndConditionsUrl ?? "/terms"} target="_blank">Terms and Conditions</Link> of this organization.
+                  I agree to the <Link href={termsAndConditionsUrl ?? "/terms"} target="_blank" className="underline font-medium text-foreground hover:text-primary">Terms and Conditions</Link> of this organization.
                   </FormDescription>
-                  <FormMessage/>
                 </div>
               </FormItem>
             )}
@@ -175,9 +172,8 @@ export default function ConfirmationAndReviewStep({ orgUid, termsAndConditionsUr
                   Privacy Policy
                   </FormLabel>
                   <FormDescription>
-                  I agree to the <Link href={privacyPolicyUrl ?? "/privacy"} target="_blank">Privacy Policy</Link> of this organization.
+                  I agree to the <Link href={privacyPolicyUrl ?? "/privacy"} target="_blank" className="underline font-medium text-foreground hover:text-primary">Privacy Policy</Link> of this organization.
                   </FormDescription>
-                  <FormMessage/>
                 </div>
               </FormItem>
             )}
@@ -194,7 +190,7 @@ export default function ConfirmationAndReviewStep({ orgUid, termsAndConditionsUr
                 submit: "Submit",
               }}
               disabled={{
-                submit:!form.formState.isValid || isComplete,
+                submit:!agreeAllConditions || isComplete,
                 previous: isFirstStep || isComplete,
                 next: true
               }}

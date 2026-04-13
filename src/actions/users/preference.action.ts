@@ -7,7 +7,7 @@ import { getPermissionsAction } from "@actions/permission.action";
 import { PERMISSIONS } from "@lib/permissions";
 import { withErrorHandling } from "@/lib/with-error-handling";
 import { withRetry } from "@/lib/database-health";
-import { NotificationType, Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import type { AppointmentListPreference, UserPreferences } from "@/types/appointment-preference";
 
 
@@ -56,7 +56,7 @@ type UpsertUserPreferencePayload = {
   autoAssignAppointmentToSelf: boolean;
   defaultHpId?: number;
   muteNotifications: boolean;
-  subscribedNotificationTypes?: NotificationType[];
+  subscribedNotificationTypes?: string[];
 }
 
 export const upsertMyUserPreference = withErrorHandling(async (payload: UpsertUserPreferencePayload) => {

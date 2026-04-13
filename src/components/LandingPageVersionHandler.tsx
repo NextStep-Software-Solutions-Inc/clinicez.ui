@@ -17,41 +17,23 @@ export default function LandingPageContent({ authenticated, onboardingStatus, is
   const router = useRouter()
 
   useEffect(() => {
-    if (!authenticated || !isPostSignIn || version !== "v2") return
+    if (version !== "v2") return
 
-    const isIncomplete =
-      !onboardingStatus || onboardingStatus === "NOT_STARTED" || onboardingStatus === "IN_PROGRESS"
-    if (isIncomplete) {
-      router.replace("/onboarding")
-    } else {
-      router.replace("/v2/select-dashboard")
+    if (isPostSignIn && authenticated) {
+      const isIncomplete =
+        !onboardingStatus || onboardingStatus === "NOT_STARTED" || onboardingStatus === "IN_PROGRESS"
+      if (isIncomplete) {
+        router.replace("/onboarding")
+      } else {
+        router.replace("/v2/select-dashboard")
+      }
+    } else if (!isPostSignIn) {
+      router.replace("/v2")
     }
   }, [authenticated, isPostSignIn, version, onboardingStatus, router])
 
-  // While redirecting authenticated v2 users after sign-in, render nothing to avoid a flash
-  if (authenticated && isPostSignIn && version === "v2") return null
-
-  if (version === "v2") {
-    return (
-      <main>
-        {/* Hero Section */}
-        <section className="relative h-[calc(100vh-8rem)] flex items-center justify-center">
-          <HeroBackground opacity={0.2} />
-          <div className="relative z-10 container mx-auto">
-            <div className="mx-auto sm:px-6 lg:px-8">
-              <div className="grid items-center justify-center text-center">
-                <HeroTitle version="v2" authenticated={authenticated} />
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="relative z-20 overflow-hidden">
-          <FeatureItems version="v2" />
-        </section>
-      </main>
-    )
-  }
+  // While redirecting v2 users, render nothing to avoid a flash
+  if (version === "v2") return null
 
   return (
     <main className="flex flex-col">

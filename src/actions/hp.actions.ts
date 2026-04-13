@@ -4,6 +4,7 @@ import prisma from "@lib/prisma";
 
 import { Prisma } from "@prisma/client";
 import { cache } from "react";
+import type { HPSortOption } from "@/lib/hp-utils";
 
 // Get total healthcare provider job titles
 export const getHPTypeCounts = async () => {
@@ -41,6 +42,7 @@ export const getAllHPByTypeAction = cache(async (
   page = 1,
   pageSize?: number,
   search = "",
+  sort: HPSortOption = "name-asc",
 ) => {
   const safePage = Number.isFinite(page) && page > 0 ? Math.floor(page) : 1;
   const computedPageSize = Number.isFinite(pageSize) && pageSize && pageSize > 0 ? Math.min(Math.floor(pageSize), 50) : DEFAULT_HP_PAGE_SIZE;
@@ -56,6 +58,7 @@ export const getAllHPByTypeAction = cache(async (
       totalPages: 1,
     },
     search: normalizedSearch,
+    sort,
     hpType: null as null,
   });
 
@@ -138,9 +141,19 @@ export const getAllHPByTypeAction = cache(async (
     ];
   }
 
+  const orderBy: Prisma.HealthcareProviderOrderByWithRelationInput =
+    sort === "name-desc"
+      ? { HPProfile: { name: "desc" } }
+      : sort === "experience-asc"
+        ? { HPProfile: { experience: { sort: "asc", nulls: "last" } } }
+        : sort === "experience-desc"
+          ? { HPProfile: { experience: { sort: "desc", nulls: "last" } } }
+          : { HPProfile: { name: "asc" } };
+
   const [items, totalCount] = await prisma.$transaction([
     prisma.healthcareProvider.findMany({
       where: whereClause,
+      orderBy,
       skip: (safePage - 1) * computedPageSize,
       take: computedPageSize,
       select: {
@@ -197,6 +210,7 @@ export const getAllHPByTypeAction = cache(async (
       totalPages,
     },
     search: normalizedSearch,
+    sort,
     hpType,
   };
 });

@@ -42,6 +42,9 @@ import {
   X,
   MapPin,
   HeartPulse,
+  BellRing,
+  Upload,
+  Pencil,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -85,12 +88,23 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   getOrgMembersAction,
   setMembershipRequestStatusAction,
   deleteMembershipAction,
   searchUsersForOrgAction,
   updateOrgMemberRoleAction,
   resetOrgMemberPermissionsAction,
+  requestMembershipAdditionalInfo,
   type GetOrgMembers,
   type SearchUsersForOrg,
 } from "@/actions/organizations/org-member.action";
@@ -121,8 +135,17 @@ import { useOrgOffices } from "@/hooks/useOrgOffice";
 import {
   stageRequirementFileUploadAction,
   linkRequirementFilesAction,
+  deleteOrgMemberRequirementFileAction,
 } from "@/actions/organizations/org-member-requirement-file.action";
-import { isFileUploadRequirement, type StagedRequirementFile } from "@/lib/requirement-types";
+import {
+  isFileUploadRequirement,
+  parseRequirementSettings,
+  isRequirementRequired,
+  REQUIREMENT_STUDENT_RECORD,
+  REQUIREMENT_EMPLOYEE_RECORD,
+  formatRequirementLabel,
+  type StagedRequirementFile,
+} from "@/lib/requirement-types";
 
 /* ─────────────────────────────────────────────────────────── */
 /*  Types                                                       */
@@ -185,28 +208,6 @@ function getFullName(
 /*  Requirement constants + helpers                             */
 /* ─────────────────────────────────────────────────────────── */
 
-const REQUIREMENT_STUDENT_RECORD = "student_record";
-const REQUIREMENT_EMPLOYEE_RECORD = "employee_record";
-const REQUIREMENT_MEDICAL_CERTIFICATE = "medical_certificate";
-const REQUIREMENT_XRAY_RESULT = "xray_result";
-const REQUIREMENT_OTHER = "other";
-
-/** Human-readable labels for known requirement keys */
-const REQUIREMENT_LABEL_MAP: Record<string, string> = {
-  [REQUIREMENT_STUDENT_RECORD]: "Student Record",
-  [REQUIREMENT_EMPLOYEE_RECORD]: "Employee Record",
-  [REQUIREMENT_MEDICAL_CERTIFICATE]: "Medical Certificate",
-  [REQUIREMENT_XRAY_RESULT]: "X-Ray Result",
-  [REQUIREMENT_OTHER]: "Supporting Document",
-};
-
-function formatRequirementLabel(req: string): string {
-  return (
-    REQUIREMENT_LABEL_MAP[req] ??
-    req.split("_").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")
-  );
-}
-
 function formatBloodType(bt: string): string {
   return bt
     .replace("_POSITIVE", "+")
@@ -224,7 +225,7 @@ function formatCivilStatus(cs: string): string {
 
 const adminStudentRecordSchema = z.object({
   studentId: z.string().min(1, "Student ID is required"),
-  lrn: z.string().optional(),
+  lrn: z.string().optional().transform(val => (val === undefined || val === "") ? undefined : val),
   levelId: z.coerce.number({ required_error: "School level is required" }),
   yearLevelId: z.coerce.number({ required_error: "Year level is required" }),
   programId: z.coerce.number({ required_error: "Program is required" }),
@@ -251,19 +252,33 @@ type AdminEmployeeRecordValues = z.infer<typeof adminEmployeeRecordSchema>;
 
 interface MemberApplicationSheetProps {
   member: OrgMember | null;
+  orgUid: string;
   onClose: () => void;
+  onFilesChanged?: (memberId: number) => void;
 }
 
-function MemberApplicationSheet({ member, onClose }: MemberApplicationSheetProps) {
+function MemberApplicationSheet({ member, orgUid, onClose, onFilesChanged }: MemberApplicationSheetProps) {
   const [previewFile, setPreviewFile] = useState<{
     url: string;
     name: string;
     mimeType: string | null;
   } | null>(null);
+  const [editingReq, setEditingReq] = useState<string | null>(null);
+  const [localFiles, setLocalFiles] = useState<OrgMember["OrgMemberRequirementFiles"]>([]);
+  const [isDeletingFileId, setIsDeletingFileId] = useState<number | null>(null);
+  const [, startTransition] = useTransition();
+  const tempIdCounter = useRef(-1);
+
+  // Sync localFiles whenever the member prop changes
+  useEffect(() => {
+    setLocalFiles(member?.OrgMemberRequirementFiles ?? []);
+  }, [member]);
 
   if (!member) return null;
 
   const requirements: string[] = member.OrganizationRole.requirements ?? [];
+  const requirementSettings = parseRequirementSettings(member.OrganizationRole.requirementSettings);
+
   const studentRecord = member.User.StudentRecords?.[0];
   const employment = member.User.UserEmployments?.[0];
   const addresses = member.User.UserAddresses ?? [];
@@ -272,7 +287,7 @@ function MemberApplicationSheet({ member, onClose }: MemberApplicationSheetProps
   const initials = getInitials(member.User.firstName, member.User.lastName);
   const status = member.status as OrganizationMemberStatus;
 
-  const requirementFiles = member.OrgMemberRequirementFiles ?? [];
+  const requirementFiles = localFiles;
 
   function isFulfilled(req: string): boolean {
     if (req === REQUIREMENT_STUDENT_RECORD) return studentRecord !== undefined;
@@ -281,6 +296,44 @@ function MemberApplicationSheet({ member, onClose }: MemberApplicationSheetProps
       return requirementFiles.some((f) => f.requirementType === req);
     }
     return false;
+  }
+
+  function handleFileAdded(staged: StagedRequirementFile) {
+    // Optimistically add to localFiles (create a minimal display record)
+    const tempId = --tempIdCounter.current;
+    const optimisticFile: OrgMember["OrgMemberRequirementFiles"][number] = {
+      id: tempId, // temporary counter-based id
+      requirementType: staged.requirementType,
+      createdAt: new Date(),
+      File: {
+        id: staged.fileId,
+        name: staged.fileName,
+        size: staged.fileSize,
+        url: "",
+        mimeType: null,
+        createdAt: new Date(),
+        FileType: { name: "" },
+      },
+    };
+    setLocalFiles((prev) => [...prev, optimisticFile]);
+    setEditingReq(null);
+    // Tell parent to refresh this member's data
+    onFilesChanged?.(member!.id);
+  }
+
+  function handleFileDeleted(recordId: number) {
+    setIsDeletingFileId(recordId);
+    startTransition(async () => {
+      const result = await deleteOrgMemberRequirementFileAction(recordId);
+      if (result.status) {
+        setLocalFiles((prev) => prev.filter((f) => f.id !== recordId));
+        toast.success("Requirement file removed.");
+        onFilesChanged?.(member!.id);
+      } else {
+        toast.error(result.message ?? "Failed to remove file.");
+      }
+      setIsDeletingFileId(null);
+    });
   }
 
   return (
@@ -486,6 +539,7 @@ function MemberApplicationSheet({ member, onClose }: MemberApplicationSheetProps
               <div className="space-y-2">
                 {requirements.map((req) => {
                   const fulfilled = isFulfilled(req);
+                  const optional = !isRequirementRequired(req, requirementSettings);
                   return (
                     <div
                       key={req}
@@ -501,7 +555,12 @@ function MemberApplicationSheet({ member, onClose }: MemberApplicationSheetProps
                         <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-500 mt-0.5 flex-shrink-0" />
                       )}
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium">{formatRequirementLabel(req)}</p>
+                        <p className="text-sm font-medium flex items-center gap-1.5">
+                          {formatRequirementLabel(req)}
+                          {optional && (
+                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">Optional</Badge>
+                          )}
+                        </p>
                         <p className={`text-xs mt-0.5 ${fulfilled ? "text-green-700 dark:text-green-400" : "text-amber-700 dark:text-amber-400"}`}>
                           {fulfilled ? "Submitted" : "Not yet submitted"}
                         </p>
@@ -620,44 +679,124 @@ function MemberApplicationSheet({ member, onClose }: MemberApplicationSheetProps
           )}
 
           {/* ── Uploaded requirement files ── */}
-          {requirementFiles.length > 0 && (
-            <Card>
-              <CardHeader className="pb-2 pt-4 px-4">
+          <Card>
+            <CardHeader className="pb-2 pt-4 px-4">
+              <div className="flex items-center justify-between">
                 <CardTitle className="text-sm flex items-center gap-2">
                   <FileText className="h-4 w-4 text-primary" />
-                  Uploaded Requirement Files
+                  Requirement Files
                 </CardTitle>
-              </CardHeader>
-              <CardContent className="px-4 pb-4 space-y-2">
-                {requirementFiles.map((f) => (
-                  <div key={f.id} className="flex items-center gap-3 rounded-md border p-2.5">
-                    <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-muted-foreground capitalize">
-                        {formatRequirementLabel(f.requirementType)}
-                      </p>
-                      <p className="text-sm font-medium truncate">{f.File.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {(f.File.size / 1024).toFixed(1)} KB ·{" "}
-                        {format(new Date(f.createdAt), "MMM d, yyyy")}
-                      </p>
-                    </div>
+              </div>
+            </CardHeader>
+            <CardContent className="px-4 pb-4 space-y-2">
+              {requirementFiles.length === 0 && (
+                <p className="text-xs text-muted-foreground text-center py-2">No files uploaded yet.</p>
+              )}
+              {requirementFiles.map((f) => (
+                <div key={f.id} className="flex items-center gap-3 rounded-md border p-2.5">
+                  <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-muted-foreground capitalize">
+                      {formatRequirementLabel(f.requirementType)}
+                    </p>
+                    <p className="text-sm font-medium truncate">{f.File.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {(f.File.size / 1024).toFixed(1)} KB ·{" "}
+                      {format(new Date(f.createdAt), "MMM d, yyyy")}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    {f.File.url && (
+                      <button
+                        type="button"
+                        onClick={() => setPreviewFile({
+                          url: f.File.url,
+                          name: f.File.name,
+                          mimeType: f.File.mimeType,
+                        })}
+                        className="text-primary hover:underline text-xs"
+                      >
+                        View
+                      </button>
+                    )}
                     <button
                       type="button"
-                      onClick={() => setPreviewFile({
-                        url: f.File.url,
-                        name: f.File.name,
-                        mimeType: f.File.mimeType,
-                      })}
-                      className="text-primary hover:underline text-xs flex-shrink-0"
+                      onClick={() => handleFileDeleted(f.id)}
+                      disabled={isDeletingFileId === f.id}
+                      className="ml-2 text-destructive hover:text-destructive/80 disabled:opacity-50"
+                      title="Remove file"
                     >
-                      View
+                      {isDeletingFileId === f.id ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <X className="h-3.5 w-3.5" />
+                      )}
                     </button>
                   </div>
-                ))}
-              </CardContent>
-            </Card>
-          )}
+                </div>
+              ))}
+
+              {/* ── Upload new file for a requirement ── */}
+              {requirements.filter(isFileUploadRequirement).length > 0 && (
+                <div className="pt-2 border-t space-y-2">
+                  <p className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                    <Upload className="h-3 w-3" />
+                    Upload Requirement File
+                  </p>
+                  {editingReq === null ? (
+                    <div className="flex flex-wrap gap-2">
+                      {requirements.filter(isFileUploadRequirement).map((req) => (
+                        <Button
+                          key={req}
+                          variant="outline"
+                          size="sm"
+                          className="h-7 text-xs gap-1"
+                          onClick={() => setEditingReq(req)}
+                        >
+                          <Pencil className="h-3 w-3" />
+                          {formatRequirementLabel(req)}
+                        </Button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs font-medium">{formatRequirementLabel(editingReq)}</p>
+                        <button
+                          type="button"
+                          onClick={() => setEditingReq(null)}
+                          className="text-muted-foreground hover:text-foreground"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                      <AdminFileUploadSubform
+                        requirementType={editingReq}
+                        orgUid={orgUid}
+                        targetUserId={member.User.userId}
+                        onValidChange={(staged) => {
+                          if (staged) {
+                            startTransition(async () => {
+                              const result = await linkRequirementFilesAction({
+                                orgMemberId: member.id,
+                                files: [staged],
+                              });
+                              if (result.status) {
+                                handleFileAdded(staged);
+                                toast.success("Requirement file uploaded.");
+                              } else {
+                                toast.error(result.message ?? "Failed to link file.");
+                              }
+                            });
+                          }
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           {/* ── Terms & Privacy Policy Acceptance ── */}
           <div className="rounded-lg border p-4 space-y-2.5">
@@ -1830,6 +1969,7 @@ export function OrgMembersClient({
   const [applicationMember, setApplicationMember] = useState<OrgMember | null>(null);
   const [changeRoleMember, setChangeRoleMember] = useState<OrgMember | null>(null);
   const [restorePermissionsMember, setRestorePermissionsMember] = useState<OrgMember | null>(null);
+  const [requestComplyMemberId, setRequestComplyMemberId] = useState<number | null>(null);
 
   // ── Refs for scroll-based load more (always current values) ────────
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -1984,6 +2124,21 @@ export function OrgMembersClient({
       )
     );
   }, []);
+
+  const handleRequestComply = useCallback(async (memberId: number) => {
+    setActioningId(memberId);
+    const result = await requestMembershipAdditionalInfo(memberId);
+    setActioningId(null);
+    if (result.status) {
+      toast.success("Requirement update request sent to member.");
+    } else {
+      toast.error(result.message ?? "Failed to send request.");
+    }
+  }, []);
+
+  const handleMemberFilesChanged = useCallback(() => {
+    fetchFresh(search, statusFilter, roleFilter);
+  }, [fetchFresh, search, statusFilter, roleFilter]);
 
   /* ── Render ──────────────────────────────────────────────────────── */
   return (
@@ -2238,6 +2393,13 @@ export function OrgMembersClient({
                           <ShieldX className="h-4 w-4" />
                           Restore Default Permissions
                         </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => setRequestComplyMemberId(member.id)}
+                          className="gap-2"
+                        >
+                          <BellRing className="h-4 w-4" />
+                          Request Requirement Update
+                        </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                           onClick={() => handleRemove(member.id)}
@@ -2281,7 +2443,9 @@ export function OrgMembersClient({
       {/* ── Member Application Sheet ─────────────────────────── */}
       <MemberApplicationSheet
         member={applicationMember}
+        orgUid={orgUid}
         onClose={() => setApplicationMember(null)}
+        onFilesChanged={handleMemberFilesChanged}
       />
 
       {/* ── Change Role Sheet ─────────────────────────────────── */}
@@ -2298,6 +2462,35 @@ export function OrgMembersClient({
         onClose={() => setRestorePermissionsMember(null)}
         onSuccess={() => {}}
       />
+
+      {/* ── Request Requirement Update Confirmation ───────────── */}
+      <AlertDialog
+        open={requestComplyMemberId !== null}
+        onOpenChange={(open) => { if (!open) setRequestComplyMemberId(null); }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Send Requirement Update Request?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will notify the member by email and in-app to update or complete their
+              submitted membership requirements. Continue?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (requestComplyMemberId !== null) {
+                  handleRequestComply(requestComplyMemberId);
+                  setRequestComplyMemberId(null);
+                }
+              }}
+            >
+              Send Request
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

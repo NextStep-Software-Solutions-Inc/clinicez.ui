@@ -170,28 +170,38 @@ export const getOrgMembersAction = withErrorHandling(
                   select: {
                     studentId: true,
                     lrn: true,
+                    level: true,
+                    yearLevel: true,
+                    programId: true,
+                    departmentId: true,
+                    collegeId: true,
                     Level: {
                       select: {
+                        id: true,
                         name: true
                       }
                     },
                     OrganizationYearLevel: {
                       select: {
+                        id: true,
                         name: true
                       }
                     },
                     Program: {
                       select: {
+                        id: true,
                         name: true
                       }
                     },
                     Department: {
                       select: {
+                        id: true,
                         name: true
                       }
                     },
                     College: {
                       select: {
+                        id: true,
                         name: true
                       }
                     }
@@ -208,18 +218,24 @@ export const getOrgMembersAction = withErrorHandling(
                     employeeId: true,
                     position: true,
                     designation: true,
+                    officeId: true,
+                    departmentId: true,
+                    collegeId: true,
                     Office: {
                       select: {
+                        id: true,
                         name: true
                       }
                     },
                     Department: {
                       select: {
+                        id: true,
                         name: true
                       }
                     },
                     College: {
                       select: {
+                        id: true,
                         name: true
                       }
                     }
@@ -295,7 +311,8 @@ export const getOrgMembersAction = withErrorHandling(
                 id: true,
                 name: true,
                 description: true,
-                requirements: true
+                requirements: true,
+                requirementSettings: true,
               }
             },
             Organization: {
@@ -747,6 +764,7 @@ export const requestMembershipAdditionalInfo = withErrorHandling(
       select: {
         User: {
           select: {
+            id: true,
             email: true,
             firstName: true,
             lastName: true
@@ -755,7 +773,8 @@ export const requestMembershipAdditionalInfo = withErrorHandling(
         Organization: {
           select: {
             name: true,
-            email: true
+            email: true,
+            orgUid: true,
           }
         },
         OrganizationRole: {
@@ -770,6 +789,13 @@ export const requestMembershipAdditionalInfo = withErrorHandling(
       email: userOrganization.User.email,
       organization: userOrganization.Organization.name,
       orgMail: userOrganization.Organization.email ?? ""
+    });
+    await createNotification({
+      userId: userOrganization.User.id,
+      type: "ORG_MEMBERSHIP_COMPLY_REQUESTED",
+      title: "Action Required: Update Your Membership Requirements",
+      message: `${userOrganization.Organization.name} is requesting you to update or complete your submitted membership requirements. Please log in and review your membership profile.`,
+      link: `/v2/organizations/${userOrganization.Organization.orgUid}/membership`,
     });
     return { message: "Additional information request sent", data: null };
   }
@@ -929,3 +955,144 @@ const sendMembershipAdditionalInfo = async ({
     return false;
   }
 };
+
+/* ─────────────────────────────────────────────────────────── */
+/*  Member-facing membership queries                           */
+/* ─────────────────────────────────────────────────────────── */
+
+/**
+ * Returns the current user's membership for a specific organization,
+ * including their submitted requirement files and role requirements.
+ * Returns null if the user has no membership for this org.
+ */
+export type GetMyOrgMembership = Awaited<ReturnType<typeof getMyOrgMembershipAction>>;
+export const getMyOrgMembershipAction = withErrorHandling(
+  async (orgUid: string) => {
+    const session = await getCachedSession();
+    if (!session?.user?.sub) throw new Error("User not authenticated.");
+
+    const membership = await prisma.organizationMember.findFirst({
+      where: {
+        User: { userId: session.user.sub, isActive: true },
+        Organization: { orgUid, isActive: true },
+      },
+      select: {
+        id: true,
+        status: true,
+        createdAt: true,
+        acceptedAt: true,
+        Organization: {
+          select: {
+            id: true,
+            name: true,
+            orgUid: true,
+            termsAndConditionsUrl: true,
+            privacyPolicyUrl: true,
+          },
+        },
+        OrganizationRole: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            requirements: true,
+            requirementSettings: true,
+          },
+        },
+        OrgMemberRequirementFiles: {
+          select: {
+            id: true,
+            requirementType: true,
+            createdAt: true,
+            File: {
+              select: {
+                id: true,
+                name: true,
+                size: true,
+                url: true,
+                mimeType: true,
+                createdAt: true,
+              },
+            },
+          },
+          orderBy: { createdAt: "asc" },
+        },
+        User: {
+          select: {
+            StudentRecords: {
+              where: { isActive: true, Organization: { orgUid } },
+              select: {
+                studentId: true,
+                lrn: true,
+                level: true,
+                yearLevel: true,
+                programId: true,
+                departmentId: true,
+                collegeId: true,
+                Level: { select: { id: true, name: true } },
+                OrganizationYearLevel: { select: { id: true, name: true } },
+                Program: { select: { id: true, name: true } },
+                Department: { select: { id: true, name: true } },
+                College: { select: { id: true, name: true } },
+              },
+            },
+            UserEmployments: {
+              where: { isActive: true, Organization: { orgUid } },
+              select: {
+                employeeId: true,
+                position: true,
+                designation: true,
+                officeId: true,
+                departmentId: true,
+                collegeId: true,
+                Office: { select: { id: true, name: true } },
+                Department: { select: { id: true, name: true } },
+                College: { select: { id: true, name: true } },
+              },
+            },
+          },
+        },
+        AcceptedBy: {
+          select: {
+            firstName: true,
+            lastName: true,
+          },
+        },
+      },
+    });
+
+    return { message: "Membership fetched", data: membership };
+  }
+);
+
+/**
+ * Returns a lightweight list of the current user's org memberships
+ * (orgUid + status) so that the organisations listing page can display
+ * context-aware action buttons (Join / View Membership).
+ */
+export type GetMyOrgMemberships = Awaited<ReturnType<typeof getMyOrgMembershipsAction>>;
+export const getMyOrgMembershipsAction = withErrorHandling(
+  cache(async () => {
+    const session = await getCachedSession();
+    if (!session?.user?.sub) return { message: "Not authenticated", data: [] as { orgUid: string; status: string }[] };
+
+    const memberships = await prisma.organizationMember.findMany({
+      where: {
+        User: { userId: session.user.sub, isActive: true },
+        Organization: { isActive: true },
+      },
+      select: {
+        Organization: { select: { orgUid: true } },
+        status: true,
+      },
+    });
+
+    return {
+      message: "Memberships fetched",
+      data: memberships.map((m) => ({
+        orgUid: m.Organization.orgUid,
+        status: m.status,
+      })),
+    };
+  })
+);

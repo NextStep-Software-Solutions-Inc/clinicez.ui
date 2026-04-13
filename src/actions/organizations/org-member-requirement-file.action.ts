@@ -1,6 +1,7 @@
 "use server";
 import "server-only";
 
+import { revalidatePath } from "next/cache";
 import { uploadFile } from "@/services/azure-blob";
 import { getCachedSession } from "@/actions/session.action";
 import { withErrorHandling } from "@/lib/with-error-handling";
@@ -203,6 +204,57 @@ export const stageRequirementFileUploadAction = withErrorHandling(
         fileSize: createdFile.size,
       } satisfies StagedRequirementFile,
     };
+  }
+);
+
+/**
+ * Deletes an OrgMemberRequirementFile record by id.
+ * The caller must be either the org member themselves or an active org admin.
+ * This only removes the link record — the underlying File record is kept.
+ */
+export const deleteOrgMemberRequirementFileAction = withErrorHandling(
+  async (id: number) => {
+    const session = await getCachedSession();
+    if (!session?.user?.sub) throw new Error("Unauthorized");
+
+    const record = await prisma.orgMemberRequirementFile.findFirst({
+      where: { id },
+      select: {
+        id: true,
+        OrganizationMember: {
+          select: {
+            User: { select: { userId: true } },
+            Organization: { select: { orgUid: true } },
+          },
+        },
+      },
+    });
+    if (!record) throw new Error("Requirement file not found");
+
+    const isOwn = record.OrganizationMember.User.userId === session.user.sub;
+    if (!isOwn) {
+      const callerUser = await prisma.user.findUnique({
+        where: { userId: session.user.sub, isActive: true },
+        select: { id: true },
+      });
+      if (!callerUser) throw new Error("Unauthorized");
+      const isAdmin = await prisma.organizationMember.findFirst({
+        where: {
+          userId: callerUser.id,
+          Organization: { orgUid: record.OrganizationMember.Organization.orgUid },
+          status: "ACTIVE",
+          OrganizationRole: { name: { equals: "ADMIN", mode: "insensitive" } },
+        },
+        select: { id: true },
+      });
+      if (!isAdmin) throw new Error("Unauthorized");
+    }
+
+    await prisma.orgMemberRequirementFile.delete({ where: { id } });
+
+    revalidatePath(`/v2/organizations/${record.OrganizationMember.Organization.orgUid}/membership`);
+
+    return { message: "Requirement file removed", data: null };
   }
 );
 

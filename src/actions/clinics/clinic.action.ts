@@ -73,6 +73,7 @@ export const getClinicsV2Action = withErrorHandling(
         clinicUid: true,
         name: true,
         description: true,
+        logo: true,
         ClinicMembers: {
           where: { isActive: true },
           select: { id: true },
@@ -87,6 +88,7 @@ export const getClinicsV2Action = withErrorHandling(
         clinicUid: clinic.clinicUid,
         name: clinic.name,
         description: clinic.description,
+        logo: clinic.logo,
         memberCount: clinic.ClinicMembers.length,
       })),
     };

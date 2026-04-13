@@ -3,7 +3,8 @@
 import prismaClient from "@lib/prisma";
 import { getCachedSession } from "@actions/session.action";
 import { withErrorHandling } from "@/lib/with-error-handling";
-import { NotificationType, Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
+import { type NotificationType, ALL_NOTIFICATION_TYPES } from "@/lib/notification-types";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -253,7 +254,7 @@ export const toggleMuteNotificationsAction = withErrorHandling(
 
     await prismaClient.userPreference.upsert({
       where: { userId: user.id },
-      create: { userId: user.id, muteNotifications: mute },
+      create: { userId: user.id, muteNotifications: mute, subscribedNotificationTypes: ALL_NOTIFICATION_TYPES },
       update: { muteNotifications: mute },
     });
 
@@ -286,7 +287,9 @@ export const getMuteNotificationsAction = withErrorHandling(async () => {
 
 /**
  * Get the subscribed notification types for the current user.
- * The DB default is all notification types, so this always returns a fully populated list.
+ * Falls back to all notification types when no preference row exists or
+ * when the stored list is empty (e.g. a row was auto-created without an
+ * explicit subscribedNotificationTypes value).
  */
 export const getNotificationSubscriptionsAction = withErrorHandling(async () => {
   const session = await getCachedSession();
@@ -304,7 +307,10 @@ export const getNotificationSubscriptionsAction = withErrorHandling(async () => 
 
   return {
     message: "Notification subscriptions fetched",
-    data: pref?.subscribedNotificationTypes ?? Object.values(NotificationType),
+    data:
+      (pref?.subscribedNotificationTypes?.length ?? 0) > 0
+        ? pref!.subscribedNotificationTypes
+        : ALL_NOTIFICATION_TYPES,
   };
 });
 

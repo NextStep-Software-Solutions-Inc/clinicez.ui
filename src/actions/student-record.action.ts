@@ -31,7 +31,7 @@ export const createStudentRecordAction = withErrorHandling(async (payload: Creat
 
   const studentRecord = await prisma.userStudentRecord.create({
     data: {
-      lrn,
+      lrn: lrn?.trim() ? lrn.trim() : null,
       studentId,
       Level: { connect: { id: levelId } },
       User: { connect: { id: currentUser.id } },
@@ -69,7 +69,7 @@ export const upsertStudentRecordAction = withErrorHandling(async (payload: Creat
       userId: user.id,
       organizationId: organization.id,
       level: levelId,
-      lrn,
+      lrn: lrn?.trim() ? lrn.trim() : null,
       departmentId,
       programId,
       collegeId,
@@ -78,7 +78,7 @@ export const upsertStudentRecordAction = withErrorHandling(async (payload: Creat
     update: {
       studentId,
       level: levelId,
-      lrn,
+      lrn: lrn?.trim() ? lrn.trim() : null,
       departmentId,
       programId,
       collegeId,

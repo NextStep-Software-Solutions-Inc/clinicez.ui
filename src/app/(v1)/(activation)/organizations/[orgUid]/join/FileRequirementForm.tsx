@@ -40,27 +40,32 @@ export default function FileRequirementForm({ requirementType, orgUid }: FileReq
     }
 
     startTransition(async () => {
-      const fd = new FormData();
-      fd.append("file", file);
-      fd.append("requirementType", requirementType);
-      fd.append("orgUid", orgUid);
+      try {
+        const fd = new FormData();
+        fd.append("file", file);
+        fd.append("requirementType", requirementType);
+        fd.append("orgUid", orgUid);
 
-      const result = await stageRequirementFileUploadAction(fd);
-      const staged = result.data;
-      if (result.status && staged) {
-        setStagedFile(staged);
-        setAdditionalInfoValid((prev) => ({ ...prev, [requirementType]: true }));
-        setOrgApplication((prev) => ({
-          ...prev,
-          stagedRequirementFiles: [
-            ...(prev.stagedRequirementFiles ?? []).filter(
-              (f) => f.requirementType !== requirementType
-            ),
-            staged,
-          ],
-        }));
-      } else {
-        toast.error(result.message ?? "Upload failed. Please try again.");
+        const result = await stageRequirementFileUploadAction(fd);
+        const staged = result.data;
+        if (result.status && staged) {
+          setStagedFile(staged);
+          setAdditionalInfoValid((prev) => ({ ...prev, [requirementType]: true }));
+          setOrgApplication((prev) => ({
+            ...prev,
+            stagedRequirementFiles: [
+              ...(prev.stagedRequirementFiles ?? []).filter(
+                (f) => f.requirementType !== requirementType
+              ),
+              staged,
+            ],
+          }));
+        } else {
+          toast.error(result.message ?? "Upload failed. Please try again.");
+        }
+      } catch (err) {
+        console.error("[FileRequirementForm] Upload error:", err);
+        toast.error("Upload failed. Please try again.");
       }
     });
   };

@@ -1,13 +1,19 @@
 "use server";
 
-import { BlobServiceClient, StorageSharedKeyCredential, BlobDownloadResponseModel } from '@azure/storage-blob';
+import { BlobServiceClient, ContainerClient, StorageSharedKeyCredential, BlobDownloadResponseModel } from '@azure/storage-blob';
 
-const AZURE_STORAGE_CONNECTION_STRING = process.env.AZURE_STORAGE_CONNECTION_STRING!;
-const CONTAINER_NAME = process.env.AZURE_STORAGE_CONTAINER_NAME!;
+let _containerClient: ContainerClient | null = null;
 
-const blobServiceClient = BlobServiceClient.fromConnectionString(AZURE_STORAGE_CONNECTION_STRING);
-
-const containerClient = blobServiceClient.getContainerClient(CONTAINER_NAME);
+function getContainerClient() {
+  if (_containerClient) return _containerClient;
+  const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
+  const containerName = process.env.AZURE_STORAGE_CONTAINER_NAME;
+  if (!connectionString) throw new Error('AZURE_STORAGE_CONNECTION_STRING is not configured');
+  if (!containerName) throw new Error('AZURE_STORAGE_CONTAINER_NAME is not configured');
+  const blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
+  _containerClient = blobServiceClient.getContainerClient(containerName);
+  return _containerClient;
+}
 
 // async function listBlobs(): Promise<string[]> {
 //   let blobs: string[] = [];
@@ -26,7 +32,7 @@ const containerClient = blobServiceClient.getContainerClient(CONTAINER_NAME);
 // }
 
 async function getFile(blobName: string): Promise<Buffer | null> {
-  const blobClient = containerClient.getBlobClient(blobName);
+  const blobClient = getContainerClient().getBlobClient(blobName);
 
   try {
     const downloadResponse: BlobDownloadResponseModel = await blobClient.download();
@@ -39,7 +45,7 @@ async function getFile(blobName: string): Promise<Buffer | null> {
 }
 
 async function uploadFile(blobName: string, data: ArrayBuffer, fileType?: string): Promise<{ url: string }> {
-  const blobClient = containerClient.getBlockBlobClient(blobName);
+  const blobClient = getContainerClient().getBlockBlobClient(blobName);
 
   try {
     await blobClient.uploadData(data, {
@@ -55,7 +61,7 @@ async function uploadFile(blobName: string, data: ArrayBuffer, fileType?: string
 }
 
 async function deleteFile(blobName: string): Promise<boolean> {
-  const blobClient = containerClient.getBlobClient(blobName);
+  const blobClient = getContainerClient().getBlobClient(blobName);
 
   try {
     await blobClient.delete();

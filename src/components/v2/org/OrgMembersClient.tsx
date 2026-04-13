@@ -324,13 +324,18 @@ function MemberApplicationSheet({ member, orgUid, onClose, onFilesChanged }: Mem
   function handleFileDeleted(recordId: number) {
     setIsDeletingFileId(recordId);
     startTransition(async () => {
-      const result = await deleteOrgMemberRequirementFileAction(recordId);
-      if (result.status) {
-        setLocalFiles((prev) => prev.filter((f) => f.id !== recordId));
-        toast.success("Requirement file removed.");
-        onFilesChanged?.(member!.id);
-      } else {
-        toast.error(result.message ?? "Failed to remove file.");
+      try {
+        const result = await deleteOrgMemberRequirementFileAction(recordId);
+        if (result.status) {
+          setLocalFiles((prev) => prev.filter((f) => f.id !== recordId));
+          toast.success("Requirement file removed.");
+          onFilesChanged?.(member!.id);
+        } else {
+          toast.error(result.message ?? "Failed to remove file.");
+        }
+      } catch (err) {
+        console.error("[OrgMembers] Delete file error:", err);
+        toast.error("Failed to remove file. Please try again.");
       }
       setIsDeletingFileId(null);
     });
@@ -777,15 +782,20 @@ function MemberApplicationSheet({ member, orgUid, onClose, onFilesChanged }: Mem
                         onValidChange={(staged) => {
                           if (staged) {
                             startTransition(async () => {
-                              const result = await linkRequirementFilesAction({
-                                orgMemberId: member.id,
-                                files: [staged],
-                              });
-                              if (result.status) {
-                                handleFileAdded(staged);
-                                toast.success("Requirement file uploaded.");
-                              } else {
-                                toast.error(result.message ?? "Failed to link file.");
+                              try {
+                                const result = await linkRequirementFilesAction({
+                                  orgMemberId: member.id,
+                                  files: [staged],
+                                });
+                                if (result.status) {
+                                  handleFileAdded(staged);
+                                  toast.success("Requirement file uploaded.");
+                                } else {
+                                  toast.error(result.message ?? "Failed to link file.");
+                                }
+                              } catch (err) {
+                                console.error("[OrgMembers] Link file error:", err);
+                                toast.error("Failed to link file. Please try again.");
                               }
                             });
                           }
@@ -1305,25 +1315,24 @@ function AdminFileUploadSubform({ requirementType, orgUid, targetUserId, onValid
     }
 
     startUploadTransition(async () => {
-      const fd = new FormData();
-      fd.append("file", file);
-      fd.append("requirementType", requirementType);
-      fd.append("orgUid", orgUid);
-      fd.append("targetUserId", targetUserId);
-      const result = await stageRequirementFileUploadAction(fd);
-      if (result.status && result.data) {
-        setStagedFile(result.data);
-        onValidChange(result.data);
-      } else {
-        toast.error(result.message ?? "Upload failed. Please try again.");
+      try {
+        const fd = new FormData();
+        fd.append("file", file);
+        fd.append("requirementType", requirementType);
+        fd.append("orgUid", orgUid);
+        fd.append("targetUserId", targetUserId);
+        const result = await stageRequirementFileUploadAction(fd);
+        if (result.status && result.data) {
+          setStagedFile(result.data);
+          onValidChange(result.data);
+        } else {
+          toast.error(result.message ?? "Upload failed. Please try again.");
+        }
+      } catch (err) {
+        console.error("[AdminFileUpload] Stage upload error:", err);
+        toast.error("Upload failed. Please try again.");
       }
     });
-  };
-
-  const handleRemove = () => {
-    setStagedFile(null);
-    onValidChange(null);
-    if (inputRef.current) inputRef.current.value = "";
   };
 
   if (stagedFile) {
@@ -1874,13 +1883,18 @@ function RestoreOrgDefaultPermissionsDialog({ member, onClose, onSuccess }: Rest
   const handleConfirm = () => {
     if (!member) return;
     startTransition(async () => {
-      const result = await resetOrgMemberPermissionsAction(member.id);
-      if (result.status) {
-        toast.success(result.message ?? "Permissions restored to defaults.");
-        onSuccess();
-        onClose();
-      } else {
-        toast.error(result.message ?? "Failed to restore permissions.");
+      try {
+        const result = await resetOrgMemberPermissionsAction(member.id);
+        if (result.status) {
+          toast.success(result.message ?? "Permissions restored to defaults.");
+          onSuccess();
+          onClose();
+        } else {
+          toast.error(result.message ?? "Failed to restore permissions.");
+        }
+      } catch (err) {
+        console.error("[OrgMembers] Restore permissions error:", err);
+        toast.error("Failed to restore permissions. Please try again.");
       }
     });
   };

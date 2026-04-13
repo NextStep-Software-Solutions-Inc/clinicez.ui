@@ -113,15 +113,20 @@ function FileUploadSubform({ requirementType, orgUid, onUploaded, onCancel }: Fi
     }
 
     startUpload(async () => {
-      const fd = new FormData();
-      fd.append("file", file);
-      fd.append("requirementType", requirementType);
-      fd.append("orgUid", orgUid);
-      const result = await stageRequirementFileUploadAction(fd);
-      if (result.status && result.data) {
-        onUploaded(result.data);
-      } else {
-        toast.error(result.message ?? "Upload failed. Please try again.");
+      try {
+        const fd = new FormData();
+        fd.append("file", file);
+        fd.append("requirementType", requirementType);
+        fd.append("orgUid", orgUid);
+        const result = await stageRequirementFileUploadAction(fd);
+        if (result.status && result.data) {
+          onUploaded(result.data);
+        } else {
+          toast.error(result.message ?? "Upload failed. Please try again.");
+        }
+      } catch (err) {
+        console.error("[MyMembership] Stage upload error:", err);
+        toast.error("Upload failed. Please try again.");
       }
     });
   };
@@ -348,46 +353,51 @@ export default function MyMembershipClient({ membership, orgUid }: MyMembershipC
 
   function handleFileUploaded(staged: StagedRequirementFile) {
     startTransition(async () => {
-      const result = await linkRequirementFilesAction({
-        orgMemberId: membership.id,
-        files: [staged],
-      });
-      if (result.status) {
-        // Optimistically add to local state
-        const tempId = --tempIdCounter.current;
-        const optimistic: RequirementFile = {
-          id: tempId,
-          requirementType: staged.requirementType,
-          createdAt: new Date(),
-          File: {
-            id: staged.fileId,
-            name: staged.fileName,
-            size: staged.fileSize,
-            url: "",
-            mimeType: null,
+      try {
+        const result = await linkRequirementFilesAction({
+          orgMemberId: membership.id,
+          files: [staged],
+        });
+        if (result.status) {
+          // Optimistically add to local state
+          const tempId = --tempIdCounter.current;
+          const optimistic: RequirementFile = {
+            id: tempId,
+            requirementType: staged.requirementType,
             createdAt: new Date(),
-          },
-        };
-        setLocalFiles((prev) => [...prev, optimistic]);
-        setUploadingReq(null);
-        toast.success("Requirement file uploaded successfully.");
-      } else {
-        toast.error(result.message ?? "Failed to link file.");
-      }
-    });
-  }
-
-  function handleDeleteFile(fileRecordId: number) {
+            File: {
+              id: staged.fileId,
+              name: staged.fileName,
+              size: staged.fileSize,
+              url: "",
+              mimeType: null,
+              createdAt: new Date(),
+            },
+          };
+          setLocalFiles((prev) => [...prev, optimistic]);
+          setUploadingReq(null);
+          toast.success("Requirement file uploaded successfully.");
+        } else {
+          toast.error(result.message ?? "Failed to link file.");
+        }
+      } catch (err) {
+        console.error("[MyMembership] Link file error:", err);
+        toast.error("Failed to link file. Please try again.");
+      }(fileRecordId: number) {
     setIsDeletingId(fileRecordId);
     startTransition(async () => {
-      const result = await deleteOrgMemberRequirementFileAction(fileRecordId);
-      if (result.status) {
-        setLocalFiles((prev) => prev.filter((f) => f.id !== fileRecordId));
-        toast.success("Requirement file removed.");
-      } else {
-        toast.error(result.message ?? "Failed to remove file.");
+      try {
+        const result = await deleteOrgMemberRequirementFileAction(fileRecordId);
+        if (result.status) {
+          setLocalFiles((prev) => prev.filter((f) => f.id !== fileRecordId));
+          toast.success("Requirement file removed.");
+        } else {
+          toast.error(result.message ?? "Failed to remove file.");
+        }
+      } catch (err) {
+        console.error("[MyMembership] Delete file error:", err);
+        toast.error("Failed to remove file. Please try again.");
       }
-      setIsDeletingId(null);
     });
   }
 

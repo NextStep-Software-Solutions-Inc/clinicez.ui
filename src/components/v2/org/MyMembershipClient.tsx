@@ -383,7 +383,11 @@ export default function MyMembershipClient({ membership, orgUid }: MyMembershipC
       } catch (err) {
         console.error("[MyMembership] Link file error:", err);
         toast.error("Failed to link file. Please try again.");
-      }(fileRecordId: number) {
+      }
+    });
+  }
+
+  function handleDeleteFile(fileRecordId: number) {
     setIsDeletingId(fileRecordId);
     startTransition(async () => {
       try {
@@ -398,6 +402,7 @@ export default function MyMembershipClient({ membership, orgUid }: MyMembershipC
         console.error("[MyMembership] Delete file error:", err);
         toast.error("Failed to remove file. Please try again.");
       }
+      setIsDeletingId(null);
     });
   }
 

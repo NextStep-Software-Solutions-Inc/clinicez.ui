@@ -1401,6 +1401,12 @@ function AdminFileUploadSubform({ requirementType, orgUid, targetUserId, onValid
     });
   };
 
+  const handleRemove = () => {
+    setStagedFile(null);
+    onValidChange(null);
+    if (inputRef.current) inputRef.current.value = "";
+  };
+
   if (stagedFile) {
     return (
       <div className="flex items-center gap-2 rounded-md border border-green-200 bg-green-50 dark:border-green-900/40 dark:bg-green-950/20 p-2.5">

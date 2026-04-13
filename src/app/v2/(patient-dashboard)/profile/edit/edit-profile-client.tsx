@@ -146,6 +146,10 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
   const disabilitiesRef = useRef<HTMLDivElement>(null)
   const surgicalRef = useRef<HTMLDivElement>(null)
 
+  // Ref for the sticky section nav strip — used to calculate scroll offset in
+  // DashboardShell contexts where overflow-y-auto is the scroll container.
+  const sectionNavRef = useRef<HTMLDivElement>(null)
+
   // Save refs for batch-save forms (forms with a single "Save Changes" button)
   const demographicsSaveRef = useRef<SaveRefHandle | null>(null)
   const vitalSignsSaveRef = useRef<SaveRefHandle | null>(null)
@@ -279,15 +283,41 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
   const scrollToSection = useCallback(
     (sectionId: string) => {
       const section = sections.find((s) => s.id === sectionId)
-      if (section?.ref.current) {
-        // Mark section as loaded immediately when tab is clicked
-        setLoadedSections((prev) => ({
-          ...prev,
-          [sectionId]: true,
-        }))
-        // Set active section immediately when tab is clicked
-        setActiveSection(sectionId)
-        section.ref.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      if (!section?.ref.current) return
+
+      // Mark section as loaded immediately when tab is clicked
+      setLoadedSections((prev) => ({
+        ...prev,
+        [sectionId]: true,
+      }))
+      // Set active section immediately when tab is clicked
+      setActiveSection(sectionId)
+
+      const el = section.ref.current
+
+      // When rendered inside a DashboardShell (e.g. clinic staff editing a patient),
+      // the scroll container is an overflow-y-auto div (data-scroll-root), not the window.
+      // In that context, CSS scroll-margin-top (scroll-mt-32) may not fully account for
+      // the stacked sticky headers (nav bar + breadcrumb + section nav strip), causing
+      // the section heading to be hidden behind the nav after scrollIntoView.
+      // Fix: measure the section nav strip's actual bottom edge and scroll manually.
+      const scrollRoot = el.closest<HTMLElement>('[data-scroll-root]')
+      if (scrollRoot) {
+        const rootRect = scrollRoot.getBoundingClientRect()
+        const elTop = el.getBoundingClientRect().top - rootRect.top
+        // Use the bottom of the section nav strip as the sticky header boundary.
+        // Fall back to scroll-mt-32 equivalent (128px) if the ref is not yet attached.
+        const stickyOffset = sectionNavRef.current
+          ? sectionNavRef.current.getBoundingClientRect().bottom - rootRect.top
+          : 128
+        const MARGIN = 8
+        scrollRoot.scrollTo({
+          top: Math.max(0, scrollRoot.scrollTop + elTop - stickyOffset - MARGIN),
+          behavior: 'smooth',
+        })
+      } else {
+        // Standard window scroll — the CSS scroll-mt-32 on sections handles the offset.
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' })
       }
     },
     [sections],
@@ -416,7 +446,7 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
   //   'top-12' when headerSlot=null (just below DashboardShell horizontal nav)
   //   'top-24' when a custom headerSlot is provided (below nav + breadcrumb)
   const makeSectionNav = (topClass: string) => (
-    <div className={`sticky ${topClass} z-40 backdrop-blur-sm bg-white/20 dark:bg-slate-950/20 border-b border-slate-200/20 dark:border-slate-800/20 mb-6 md:mb-8 -mx-4 md:-mx-8 px-4 md:px-8 py-2 md:py-3`}>
+    <div ref={sectionNavRef} className={`sticky ${topClass} z-40 backdrop-blur-sm bg-white/20 dark:bg-slate-950/20 border-b border-slate-200/20 dark:border-slate-800/20 mb-6 md:mb-8 -mx-4 md:-mx-8 px-4 md:px-8 py-2 md:py-3`}>
       <div className="max-w-6xl mx-auto">
         <div className="relative">
           <div className="flex gap-2 overflow-x-auto scroll-smooth pb-1" style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(100,116,139,0.4) transparent' }}>

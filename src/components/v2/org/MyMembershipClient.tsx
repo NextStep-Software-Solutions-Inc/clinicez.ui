@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useTransition, useEffect } from "react";
+import React, { useState, useTransition, useEffect, useRef } from "react";
 import { format } from "date-fns";
 import {
   CheckCircle2,
@@ -101,6 +101,7 @@ interface FileUploadSubformProps {
 
 function FileUploadSubform({ requirementType, orgUid, onUploaded, onCancel }: FileUploadSubformProps) {
   const [isUploading, startUpload] = useTransition();
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -108,7 +109,8 @@ function FileUploadSubform({ requirementType, orgUid, onUploaded, onCancel }: Fi
 
     const sizeMB = file.size / 1024 / 1024;
     if (sizeMB > 25) {
-      toast.error("File size must not exceed 25 MB");
+      toast.error(`File too large (${sizeMB.toFixed(1)} MB). Maximum allowed size is 25 MB.`);
+      if (inputRef.current) inputRef.current.value = "";
       return;
     }
 
@@ -154,6 +156,7 @@ function FileUploadSubform({ requirementType, orgUid, onUploaded, onCancel }: Fi
         }`}
       >
         <input
+          ref={inputRef}
           type="file"
           className="sr-only"
           onChange={handleFileChange}

@@ -35,7 +35,8 @@ export default function FileRequirementForm({ requirementType, orgUid }: FileReq
 
     const sizeMB = file.size / 1024 / 1024;
     if (sizeMB > 25) {
-      toast.error("File size must not exceed 25 MB");
+      toast.error(`File too large (${sizeMB.toFixed(1)} MB). Maximum allowed size is 25 MB.`);
+      if (inputRef.current) inputRef.current.value = "";
       return;
     }
 

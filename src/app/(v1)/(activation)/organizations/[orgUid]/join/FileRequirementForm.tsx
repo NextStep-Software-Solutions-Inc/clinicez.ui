@@ -12,6 +12,8 @@ import {
   confirmStagedUploadAction,
 } from "@/actions/organizations/org-member-requirement-file.action";
 import { type StagedRequirementFile } from "@/lib/requirement-types";
+import { compressImageAsync } from "@/lib/image-compression";
+import { heic2Jpeg } from "@/lib/file-manipulation";
 
 const REQUIREMENT_LABELS: Record<string, string> = {
   medical_certificate: "Medical Certificate",
@@ -50,14 +52,23 @@ export default function FileRequirementForm({ requirementType, orgUid }: FileReq
 
     startTransition(async () => {
       try {
+        // Convert HEIC/HEIF to JPEG then compress images before uploading
+        let uploadFile: File = file;
+        if (uploadFile.type === "image/heic" || uploadFile.type === "image/heif") {
+          uploadFile = await heic2Jpeg(uploadFile);
+        }
+        if (uploadFile.type.startsWith("image/")) {
+          uploadFile = await compressImageAsync(uploadFile);
+        }
+
         let staged: StagedRequirementFile | null = null;
 
-        if (file.size > DIRECT_UPLOAD_THRESHOLD) {
+        if (uploadFile.size > DIRECT_UPLOAD_THRESHOLD) {
           // Client-side direct upload via SAS URL (> 4 MB)
           const sasResult = await getStagingUploadSasAction({
-            fileName: file.name,
-            mimeType: file.type,
-            fileSize: file.size,
+            fileName: uploadFile.name,
+            mimeType: uploadFile.type,
+            fileSize: uploadFile.size,
             requirementType,
             orgUid,
           });
@@ -70,9 +81,9 @@ export default function FileRequirementForm({ requirementType, orgUid }: FileReq
             method: "PUT",
             headers: {
               "x-ms-blob-type": "BlockBlob",
-              "Content-Type": file.type || "application/octet-stream",
+              "Content-Type": uploadFile.type || "application/octet-stream",
             },
-            body: file,
+            body: uploadFile,
           });
           if (!uploadResp.ok) {
             toast.error(`Upload failed (HTTP ${uploadResp.status}). Please try again.`);
@@ -80,9 +91,9 @@ export default function FileRequirementForm({ requirementType, orgUid }: FileReq
           }
           const confirmResult = await confirmStagedUploadAction({
             blobUrl,
-            fileName: file.name,
-            fileSize: file.size,
-            mimeType: file.type,
+            fileName: uploadFile.name,
+            fileSize: uploadFile.size,
+            mimeType: uploadFile.type,
             requirementType,
             orgUid,
           });
@@ -94,7 +105,7 @@ export default function FileRequirementForm({ requirementType, orgUid }: FileReq
         } else {
           // Server-side upload (≤ 4 MB)
           const fd = new FormData();
-          fd.append("file", file);
+          fd.append("file", uploadFile);
           fd.append("requirementType", requirementType);
           fd.append("orgUid", orgUid);
           const result = await stageRequirementFileUploadAction(fd);

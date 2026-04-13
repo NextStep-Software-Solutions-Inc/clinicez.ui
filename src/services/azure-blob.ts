@@ -1,13 +1,19 @@
 "use server";
 
-import { BlobServiceClient, StorageSharedKeyCredential, BlobDownloadResponseModel } from '@azure/storage-blob';
+import { BlobServiceClient, ContainerClient, StorageSharedKeyCredential, BlobDownloadResponseModel, BlobSASPermissions } from '@azure/storage-blob';
 
-const AZURE_STORAGE_CONNECTION_STRING = process.env.AZURE_STORAGE_CONNECTION_STRING!;
-const CONTAINER_NAME = process.env.AZURE_STORAGE_CONTAINER_NAME!;
+let cachedContainerClient: ContainerClient | null = null;
 
-const blobServiceClient = BlobServiceClient.fromConnectionString(AZURE_STORAGE_CONNECTION_STRING);
-
-const containerClient = blobServiceClient.getContainerClient(CONTAINER_NAME);
+function getContainerClient() {
+  if (cachedContainerClient) return cachedContainerClient;
+  const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
+  const containerName = process.env.AZURE_STORAGE_CONTAINER_NAME;
+  if (!connectionString) throw new Error('AZURE_STORAGE_CONNECTION_STRING is not configured');
+  if (!containerName) throw new Error('AZURE_STORAGE_CONTAINER_NAME is not configured');
+  const blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
+  cachedContainerClient = blobServiceClient.getContainerClient(containerName);
+  return cachedContainerClient;
+}
 
 // async function listBlobs(): Promise<string[]> {
 //   let blobs: string[] = [];
@@ -26,7 +32,7 @@ const containerClient = blobServiceClient.getContainerClient(CONTAINER_NAME);
 // }
 
 async function getFile(blobName: string): Promise<Buffer | null> {
-  const blobClient = containerClient.getBlobClient(blobName);
+  const blobClient = getContainerClient().getBlobClient(blobName);
 
   try {
     const downloadResponse: BlobDownloadResponseModel = await blobClient.download();
@@ -39,7 +45,7 @@ async function getFile(blobName: string): Promise<Buffer | null> {
 }
 
 async function uploadFile(blobName: string, data: ArrayBuffer, fileType?: string): Promise<{ url: string }> {
-  const blobClient = containerClient.getBlockBlobClient(blobName);
+  const blobClient = getContainerClient().getBlockBlobClient(blobName);
 
   try {
     await blobClient.uploadData(data, {
@@ -55,7 +61,7 @@ async function uploadFile(blobName: string, data: ArrayBuffer, fileType?: string
 }
 
 async function deleteFile(blobName: string): Promise<boolean> {
-  const blobClient = containerClient.getBlobClient(blobName);
+  const blobClient = getContainerClient().getBlobClient(blobName);
 
   try {
     await blobClient.delete();
@@ -78,9 +84,47 @@ async function streamToBuffer(readableStream: NodeJS.ReadableStream): Promise<Bu
   });
 }
 
+/**
+ * Generates a short-lived write-only SAS URL for a blob path, enabling the
+ * browser to PUT the file directly to Azure Blob Storage (bypassing the
+ * Vercel serverless function body-size limit).
+ *
+ * @param blobPath   - Full blob name including any virtual-directory prefix
+ * @param mimeType   - MIME type of the file (used as Content-Type constraint in SAS)
+ * @param expiryMins - Lifetime of the SAS token in minutes (default 15)
+ * @returns          - `sasUrl`  – URL the browser must PUT to (includes SAS query params)
+ *                   - `blobUrl` – Clean URL without SAS (stored in the File DB record)
+ */
+async function generateUploadSasUrl(
+  blobPath: string,
+  mimeType: string,
+  expiryMins = 15
+): Promise<{ sasUrl: string; blobUrl: string }> {
+  const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
+  const containerName = process.env.AZURE_STORAGE_CONTAINER_NAME;
+  if (!connectionString) throw new Error('AZURE_STORAGE_CONNECTION_STRING is not configured');
+  if (!containerName) throw new Error('AZURE_STORAGE_CONTAINER_NAME is not configured');
+
+  const blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
+  const blockBlobClient = blobServiceClient
+    .getContainerClient(containerName)
+    .getBlockBlobClient(blobPath);
+
+  const expiresOn = new Date(Date.now() + expiryMins * 60 * 1000);
+
+  const sasUrl = await blockBlobClient.generateSasUrl({
+    permissions: BlobSASPermissions.parse('cw'), // create + write
+    expiresOn,
+    contentType: mimeType || undefined,
+  });
+
+  return { sasUrl, blobUrl: blockBlobClient.url };
+}
+
 export {
   // listBlobs, 
   getFile,
   uploadFile,
-  deleteFile
+  deleteFile,
+  generateUploadSasUrl,
 };

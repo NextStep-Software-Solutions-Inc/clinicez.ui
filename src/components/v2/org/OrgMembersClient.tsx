@@ -136,6 +136,8 @@ import {
   stageRequirementFileUploadAction,
   linkRequirementFilesAction,
   deleteOrgMemberRequirementFileAction,
+  getStagingUploadSasAction,
+  confirmStagedUploadAction,
 } from "@/actions/organizations/org-member-requirement-file.action";
 import {
   isFileUploadRequirement,
@@ -146,6 +148,8 @@ import {
   formatRequirementLabel,
   type StagedRequirementFile,
 } from "@/lib/requirement-types";
+import { compressImageAsync } from "@/lib/image-compression";
+import { heic2Jpeg } from "@/lib/file-manipulation";
 
 /* ─────────────────────────────────────────────────────────── */
 /*  Types                                                       */
@@ -186,6 +190,10 @@ const STATUS_BADGE: Record<
   SUSPENDED: { label: "Suspended", variant: "destructive" },
   INACTIVE: { label: "Inactive", variant: "outline" },
 };
+
+/** Files larger than this are uploaded directly from the browser via a SAS URL
+ *  to bypass Vercel's 4.5 MB serverless function body-size limit. */
+const DIRECT_UPLOAD_THRESHOLD = 4 * 1024 * 1024; // 4 MB
 
 /* ─────────────────────────────────────────────────────────── */
 /*  Helpers                                                     */
@@ -324,13 +332,18 @@ function MemberApplicationSheet({ member, orgUid, onClose, onFilesChanged }: Mem
   function handleFileDeleted(recordId: number) {
     setIsDeletingFileId(recordId);
     startTransition(async () => {
-      const result = await deleteOrgMemberRequirementFileAction(recordId);
-      if (result.status) {
-        setLocalFiles((prev) => prev.filter((f) => f.id !== recordId));
-        toast.success("Requirement file removed.");
-        onFilesChanged?.(member!.id);
-      } else {
-        toast.error(result.message ?? "Failed to remove file.");
+      try {
+        const result = await deleteOrgMemberRequirementFileAction(recordId);
+        if (result.status) {
+          setLocalFiles((prev) => prev.filter((f) => f.id !== recordId));
+          toast.success("Requirement file removed.");
+          onFilesChanged?.(member!.id);
+        } else {
+          toast.error(result.message ?? "Failed to remove file.");
+        }
+      } catch (err) {
+        console.error("[OrgMembers] Delete file error:", err);
+        toast.error("Failed to remove file. Please try again.");
       }
       setIsDeletingFileId(null);
     });
@@ -777,15 +790,20 @@ function MemberApplicationSheet({ member, orgUid, onClose, onFilesChanged }: Mem
                         onValidChange={(staged) => {
                           if (staged) {
                             startTransition(async () => {
-                              const result = await linkRequirementFilesAction({
-                                orgMemberId: member.id,
-                                files: [staged],
-                              });
-                              if (result.status) {
-                                handleFileAdded(staged);
-                                toast.success("Requirement file uploaded.");
-                              } else {
-                                toast.error(result.message ?? "Failed to link file.");
+                              try {
+                                const result = await linkRequirementFilesAction({
+                                  orgMemberId: member.id,
+                                  files: [staged],
+                                });
+                                if (result.status) {
+                                  handleFileAdded(staged);
+                                  toast.success("Requirement file uploaded.");
+                                } else {
+                                  toast.error(result.message ?? "Failed to link file.");
+                                }
+                              } catch (err) {
+                                console.error("[OrgMembers] Link file error:", err);
+                                toast.error("Failed to link file. Please try again.");
                               }
                             });
                           }
@@ -1300,22 +1318,85 @@ function AdminFileUploadSubform({ requirementType, orgUid, targetUserId, onValid
 
     const sizeMB = file.size / 1024 / 1024;
     if (sizeMB > 25) {
-      toast.error("File size must not exceed 25 MB");
+      toast.error(`File too large (${sizeMB.toFixed(1)} MB). Maximum allowed size is 25 MB.`);
+      if (inputRef.current) inputRef.current.value = "";
       return;
     }
 
     startUploadTransition(async () => {
-      const fd = new FormData();
-      fd.append("file", file);
-      fd.append("requirementType", requirementType);
-      fd.append("orgUid", orgUid);
-      fd.append("targetUserId", targetUserId);
-      const result = await stageRequirementFileUploadAction(fd);
-      if (result.status && result.data) {
-        setStagedFile(result.data);
-        onValidChange(result.data);
-      } else {
-        toast.error(result.message ?? "Upload failed. Please try again.");
+      try {
+        // Convert HEIC/HEIF to JPEG then compress images before uploading
+        let uploadFile: File = file;
+        if (uploadFile.type === "image/heic" || uploadFile.type === "image/heif") {
+          uploadFile = await heic2Jpeg(uploadFile);
+        }
+        if (uploadFile.type.startsWith("image/")) {
+          uploadFile = await compressImageAsync(uploadFile);
+        }
+
+        let staged: StagedRequirementFile | null = null;
+
+        if (uploadFile.size > DIRECT_UPLOAD_THRESHOLD) {
+          // Client-side direct upload via SAS URL (> 4 MB)
+          const sasResult = await getStagingUploadSasAction({
+            fileName: uploadFile.name,
+            mimeType: uploadFile.type,
+            fileSize: uploadFile.size,
+            requirementType,
+            orgUid,
+            targetUserId,
+          });
+          if (!sasResult.status || !sasResult.data) {
+            toast.error(sasResult.message ?? "Upload failed. Please try again.");
+            return;
+          }
+          const { sasUrl, blobUrl } = sasResult.data;
+          const uploadResp = await fetch(sasUrl, {
+            method: "PUT",
+            headers: {
+              "x-ms-blob-type": "BlockBlob",
+              "Content-Type": uploadFile.type || "application/octet-stream",
+            },
+            body: uploadFile,
+          });
+          if (!uploadResp.ok) {
+            toast.error(`Upload failed (HTTP ${uploadResp.status}). Please try again.`);
+            return;
+          }
+          const confirmResult = await confirmStagedUploadAction({
+            blobUrl,
+            fileName: uploadFile.name,
+            fileSize: uploadFile.size,
+            mimeType: uploadFile.type,
+            requirementType,
+            orgUid,
+            targetUserId,
+          });
+          if (!confirmResult.status || !confirmResult.data) {
+            toast.error(confirmResult.message ?? "Upload failed. Please try again.");
+            return;
+          }
+          staged = confirmResult.data;
+        } else {
+          // Server-side upload (≤ 4 MB)
+          const fd = new FormData();
+          fd.append("file", uploadFile);
+          fd.append("requirementType", requirementType);
+          fd.append("orgUid", orgUid);
+          fd.append("targetUserId", targetUserId);
+          const result = await stageRequirementFileUploadAction(fd);
+          if (!result.status || !result.data) {
+            toast.error(result.message ?? "Upload failed. Please try again.");
+            return;
+          }
+          staged = result.data;
+        }
+
+        setStagedFile(staged);
+        onValidChange(staged);
+      } catch (err) {
+        console.error("[AdminFileUpload] Stage upload error:", err);
+        toast.error("Upload failed. Please try again.");
       }
     });
   };
@@ -1874,13 +1955,18 @@ function RestoreOrgDefaultPermissionsDialog({ member, onClose, onSuccess }: Rest
   const handleConfirm = () => {
     if (!member) return;
     startTransition(async () => {
-      const result = await resetOrgMemberPermissionsAction(member.id);
-      if (result.status) {
-        toast.success(result.message ?? "Permissions restored to defaults.");
-        onSuccess();
-        onClose();
-      } else {
-        toast.error(result.message ?? "Failed to restore permissions.");
+      try {
+        const result = await resetOrgMemberPermissionsAction(member.id);
+        if (result.status) {
+          toast.success(result.message ?? "Permissions restored to defaults.");
+          onSuccess();
+          onClose();
+        } else {
+          toast.error(result.message ?? "Failed to restore permissions.");
+        }
+      } catch (err) {
+        console.error("[OrgMembers] Restore permissions error:", err);
+        toast.error("Failed to restore permissions. Please try again.");
       }
     });
   };

@@ -6,7 +6,11 @@ import { toast } from "sonner";
 import { CheckCircle2, FileUp, Loader2, X } from "lucide-react";
 import { additionalInfoValidAtom } from "./AdditionalInformationStep";
 import { joinOrgApplicationAtom } from "@state/join-org-application";
-import { stageRequirementFileUploadAction } from "@/actions/organizations/org-member-requirement-file.action";
+import {
+  stageRequirementFileUploadAction,
+  getStagingUploadSasAction,
+  confirmStagedUploadAction,
+} from "@/actions/organizations/org-member-requirement-file.action";
 import { type StagedRequirementFile } from "@/lib/requirement-types";
 
 const REQUIREMENT_LABELS: Record<string, string> = {
@@ -14,6 +18,10 @@ const REQUIREMENT_LABELS: Record<string, string> = {
   xray_result: "X-Ray Result",
   other: "Supporting Document",
 };
+
+/** Files larger than this are uploaded directly from the browser via a SAS URL
+ *  to bypass Vercel's 4.5 MB serverless function body-size limit. */
+const DIRECT_UPLOAD_THRESHOLD = 4 * 1024 * 1024; // 4 MB
 
 interface FileRequirementFormProps {
   requirementType: string;
@@ -42,28 +50,77 @@ export default function FileRequirementForm({ requirementType, orgUid }: FileReq
 
     startTransition(async () => {
       try {
-        const fd = new FormData();
-        fd.append("file", file);
-        fd.append("requirementType", requirementType);
-        fd.append("orgUid", orgUid);
+        let staged: StagedRequirementFile | null = null;
 
-        const result = await stageRequirementFileUploadAction(fd);
-        const staged = result.data;
-        if (result.status && staged) {
-          setStagedFile(staged);
-          setAdditionalInfoValid((prev) => ({ ...prev, [requirementType]: true }));
-          setOrgApplication((prev) => ({
-            ...prev,
-            stagedRequirementFiles: [
-              ...(prev.stagedRequirementFiles ?? []).filter(
-                (f) => f.requirementType !== requirementType
-              ),
-              staged,
-            ],
-          }));
+        if (file.size > DIRECT_UPLOAD_THRESHOLD) {
+          // Client-side direct upload via SAS URL (> 4 MB)
+          const sasResult = await getStagingUploadSasAction({
+            fileName: file.name,
+            mimeType: file.type,
+            fileSize: file.size,
+            requirementType,
+            orgUid,
+          });
+          if (!sasResult.status || !sasResult.data) {
+            toast.error(sasResult.message ?? "Upload failed. Please try again.");
+            return;
+          }
+          const { sasUrl, blobUrl } = sasResult.data;
+          const uploadResp = await fetch(sasUrl, {
+            method: "PUT",
+            headers: {
+              "x-ms-blob-type": "BlockBlob",
+              "Content-Type": file.type || "application/octet-stream",
+            },
+            body: file,
+          });
+          if (!uploadResp.ok) {
+            toast.error(`Upload failed (HTTP ${uploadResp.status}). Please try again.`);
+            return;
+          }
+          const confirmResult = await confirmStagedUploadAction({
+            blobUrl,
+            fileName: file.name,
+            fileSize: file.size,
+            mimeType: file.type,
+            requirementType,
+            orgUid,
+          });
+          if (!confirmResult.status || !confirmResult.data) {
+            toast.error(confirmResult.message ?? "Upload failed. Please try again.");
+            return;
+          }
+          staged = confirmResult.data;
         } else {
-          toast.error(result.message ?? "Upload failed. Please try again.");
+          // Server-side upload (≤ 4 MB)
+          const fd = new FormData();
+          fd.append("file", file);
+          fd.append("requirementType", requirementType);
+          fd.append("orgUid", orgUid);
+          const result = await stageRequirementFileUploadAction(fd);
+          if (!result.status || !result.data) {
+            toast.error(result.message ?? "Upload failed. Please try again.");
+            return;
+          }
+          staged = result.data;
         }
+
+        if (!staged) {
+          toast.error("Upload failed. Please try again.");
+          return;
+        }
+
+        setStagedFile(staged);
+        setAdditionalInfoValid((prev) => ({ ...prev, [requirementType]: true }));
+        setOrgApplication((prev) => ({
+          ...prev,
+          stagedRequirementFiles: [
+            ...(prev.stagedRequirementFiles ?? []).filter(
+              (f) => f.requirementType !== requirementType
+            ),
+            staged,
+          ],
+        }));
       } catch (err) {
         console.error("[FileRequirementForm] Upload error:", err);
         toast.error("Upload failed. Please try again.");

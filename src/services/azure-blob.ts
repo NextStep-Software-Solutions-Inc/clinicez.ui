@@ -1,6 +1,6 @@
 "use server";
 
-import { BlobServiceClient, ContainerClient, StorageSharedKeyCredential, BlobDownloadResponseModel } from '@azure/storage-blob';
+import { BlobServiceClient, ContainerClient, StorageSharedKeyCredential, BlobDownloadResponseModel, BlobSASPermissions } from '@azure/storage-blob';
 
 let cachedContainerClient: ContainerClient | null = null;
 
@@ -84,9 +84,47 @@ async function streamToBuffer(readableStream: NodeJS.ReadableStream): Promise<Bu
   });
 }
 
+/**
+ * Generates a short-lived write-only SAS URL for a blob path, enabling the
+ * browser to PUT the file directly to Azure Blob Storage (bypassing the
+ * Vercel serverless function body-size limit).
+ *
+ * @param blobPath   - Full blob name including any virtual-directory prefix
+ * @param mimeType   - MIME type of the file (used as Content-Type constraint in SAS)
+ * @param expiryMins - Lifetime of the SAS token in minutes (default 15)
+ * @returns          - `sasUrl`  – URL the browser must PUT to (includes SAS query params)
+ *                   - `blobUrl` – Clean URL without SAS (stored in the File DB record)
+ */
+async function generateUploadSasUrl(
+  blobPath: string,
+  mimeType: string,
+  expiryMins = 15
+): Promise<{ sasUrl: string; blobUrl: string }> {
+  const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
+  const containerName = process.env.AZURE_STORAGE_CONTAINER_NAME;
+  if (!connectionString) throw new Error('AZURE_STORAGE_CONNECTION_STRING is not configured');
+  if (!containerName) throw new Error('AZURE_STORAGE_CONTAINER_NAME is not configured');
+
+  const blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
+  const blockBlobClient = blobServiceClient
+    .getContainerClient(containerName)
+    .getBlockBlobClient(blobPath);
+
+  const expiresOn = new Date(Date.now() + expiryMins * 60 * 1000);
+
+  const sasUrl = await blockBlobClient.generateSasUrl({
+    permissions: BlobSASPermissions.parse('cw'), // create + write
+    expiresOn,
+    contentType: mimeType || undefined,
+  });
+
+  return { sasUrl, blobUrl: blockBlobClient.url };
+}
+
 export {
   // listBlobs, 
   getFile,
   uploadFile,
-  deleteFile
+  deleteFile,
+  generateUploadSasUrl,
 };

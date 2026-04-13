@@ -6,14 +6,24 @@ import { toast } from "sonner";
 import { CheckCircle2, FileUp, Loader2, X } from "lucide-react";
 import { additionalInfoValidAtom } from "./AdditionalInformationStep";
 import { joinOrgApplicationAtom } from "@state/join-org-application";
-import { stageRequirementFileUploadAction } from "@/actions/organizations/org-member-requirement-file.action";
+import {
+  stageRequirementFileUploadAction,
+  getStagingUploadSasAction,
+  confirmStagedUploadAction,
+} from "@/actions/organizations/org-member-requirement-file.action";
 import { type StagedRequirementFile } from "@/lib/requirement-types";
+import { compressImageAsync } from "@/lib/image-compression";
+import { heic2Jpeg } from "@/lib/file-manipulation";
 
 const REQUIREMENT_LABELS: Record<string, string> = {
   medical_certificate: "Medical Certificate",
   xray_result: "X-Ray Result",
   other: "Supporting Document",
 };
+
+/** Files larger than this are uploaded directly from the browser via a SAS URL
+ *  to bypass Vercel's 4.5 MB serverless function body-size limit. */
+const DIRECT_UPLOAD_THRESHOLD = 4 * 1024 * 1024; // 4 MB
 
 interface FileRequirementFormProps {
   requirementType: string;
@@ -35,19 +45,82 @@ export default function FileRequirementForm({ requirementType, orgUid }: FileReq
 
     const sizeMB = file.size / 1024 / 1024;
     if (sizeMB > 25) {
-      toast.error("File size must not exceed 25 MB");
+      toast.error(`File too large (${sizeMB.toFixed(1)} MB). Maximum allowed size is 25 MB.`);
+      if (inputRef.current) inputRef.current.value = "";
       return;
     }
 
     startTransition(async () => {
-      const fd = new FormData();
-      fd.append("file", file);
-      fd.append("requirementType", requirementType);
-      fd.append("orgUid", orgUid);
+      try {
+        // Convert HEIC/HEIF to JPEG then compress images before uploading
+        let uploadFile: File = file;
+        if (uploadFile.type === "image/heic" || uploadFile.type === "image/heif") {
+          uploadFile = await heic2Jpeg(uploadFile);
+        }
+        if (uploadFile.type.startsWith("image/")) {
+          uploadFile = await compressImageAsync(uploadFile);
+        }
 
-      const result = await stageRequirementFileUploadAction(fd);
-      const staged = result.data;
-      if (result.status && staged) {
+        let staged: StagedRequirementFile | null = null;
+
+        if (uploadFile.size > DIRECT_UPLOAD_THRESHOLD) {
+          // Client-side direct upload via SAS URL (> 4 MB)
+          const sasResult = await getStagingUploadSasAction({
+            fileName: uploadFile.name,
+            mimeType: uploadFile.type,
+            fileSize: uploadFile.size,
+            requirementType,
+            orgUid,
+          });
+          if (!sasResult.status || !sasResult.data) {
+            toast.error(sasResult.message ?? "Upload failed. Please try again.");
+            return;
+          }
+          const { sasUrl, blobUrl } = sasResult.data;
+          const uploadResp = await fetch(sasUrl, {
+            method: "PUT",
+            headers: {
+              "x-ms-blob-type": "BlockBlob",
+              "Content-Type": uploadFile.type || "application/octet-stream",
+            },
+            body: uploadFile,
+          });
+          if (!uploadResp.ok) {
+            toast.error(`Upload failed (HTTP ${uploadResp.status}). Please try again.`);
+            return;
+          }
+          const confirmResult = await confirmStagedUploadAction({
+            blobUrl,
+            fileName: uploadFile.name,
+            fileSize: uploadFile.size,
+            mimeType: uploadFile.type,
+            requirementType,
+            orgUid,
+          });
+          if (!confirmResult.status || !confirmResult.data) {
+            toast.error(confirmResult.message ?? "Upload failed. Please try again.");
+            return;
+          }
+          staged = confirmResult.data;
+        } else {
+          // Server-side upload (≤ 4 MB)
+          const fd = new FormData();
+          fd.append("file", uploadFile);
+          fd.append("requirementType", requirementType);
+          fd.append("orgUid", orgUid);
+          const result = await stageRequirementFileUploadAction(fd);
+          if (!result.status || !result.data) {
+            toast.error(result.message ?? "Upload failed. Please try again.");
+            return;
+          }
+          staged = result.data;
+        }
+
+        if (!staged) {
+          toast.error("Upload failed. Please try again.");
+          return;
+        }
+
         setStagedFile(staged);
         setAdditionalInfoValid((prev) => ({ ...prev, [requirementType]: true }));
         setOrgApplication((prev) => ({
@@ -59,8 +132,9 @@ export default function FileRequirementForm({ requirementType, orgUid }: FileReq
             staged,
           ],
         }));
-      } else {
-        toast.error(result.message ?? "Upload failed. Please try again.");
+      } catch (err) {
+        console.error("[FileRequirementForm] Upload error:", err);
+        toast.error("Upload failed. Please try again.");
       }
     });
   };

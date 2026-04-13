@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useTransition, useEffect } from "react";
+import React, { useState, useTransition, useEffect, useRef } from "react";
 import { format } from "date-fns";
 import {
   CheckCircle2,
@@ -47,6 +47,8 @@ import {
   stageRequirementFileUploadAction,
   linkRequirementFilesAction,
   deleteOrgMemberRequirementFileAction,
+  getStagingUploadSasAction,
+  confirmStagedUploadAction,
 } from "@/actions/organizations/org-member-requirement-file.action";
 import {
   isFileUploadRequirement,
@@ -57,6 +59,8 @@ import {
   formatRequirementLabel,
   type StagedRequirementFile,
 } from "@/lib/requirement-types";
+import { compressImageAsync } from "@/lib/image-compression";
+import { heic2Jpeg } from "@/lib/file-manipulation";
 import { Checkbox } from "@/components/ui/checkbox";
 import { upsertStudentRecordAction } from "@/actions/student-record.action";
 import { upsertEmploymentRecordAction } from "@/actions/employee-record.action";
@@ -88,6 +92,10 @@ const STATUS_BADGE_CONFIG: Record<
   INACTIVE: { label: "Inactive", variant: "outline" },
 };
 
+/** Files larger than this are uploaded directly from the browser via a SAS URL
+ *  to bypass Vercel's 4.5 MB serverless function body-size limit. */
+const DIRECT_UPLOAD_THRESHOLD = 4 * 1024 * 1024; // 4 MB
+
 /* ─────────────────────────────────────────────────────────── */
 /*  File Upload Subform                                         */
 /* ─────────────────────────────────────────────────────────── */
@@ -101,6 +109,7 @@ interface FileUploadSubformProps {
 
 function FileUploadSubform({ requirementType, orgUid, onUploaded, onCancel }: FileUploadSubformProps) {
   const [isUploading, startUpload] = useTransition();
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -108,20 +117,86 @@ function FileUploadSubform({ requirementType, orgUid, onUploaded, onCancel }: Fi
 
     const sizeMB = file.size / 1024 / 1024;
     if (sizeMB > 25) {
-      toast.error("File size must not exceed 25 MB");
+      toast.error(`File too large (${sizeMB.toFixed(1)} MB). Maximum allowed size is 25 MB.`);
+      if (inputRef.current) inputRef.current.value = "";
       return;
     }
 
     startUpload(async () => {
-      const fd = new FormData();
-      fd.append("file", file);
-      fd.append("requirementType", requirementType);
-      fd.append("orgUid", orgUid);
-      const result = await stageRequirementFileUploadAction(fd);
-      if (result.status && result.data) {
-        onUploaded(result.data);
-      } else {
-        toast.error(result.message ?? "Upload failed. Please try again.");
+      try {
+        // Convert HEIC/HEIF to JPEG then compress images before uploading
+        let uploadFile: File = file;
+        if (uploadFile.type === "image/heic" || uploadFile.type === "image/heif") {
+          uploadFile = await heic2Jpeg(uploadFile);
+        }
+        if (uploadFile.type.startsWith("image/")) {
+          uploadFile = await compressImageAsync(uploadFile);
+        }
+
+        let staged: StagedRequirementFile | null = null;
+
+        if (uploadFile.size > DIRECT_UPLOAD_THRESHOLD) {
+          // Client-side direct upload via SAS URL (> 4 MB)
+          const sasResult = await getStagingUploadSasAction({
+            fileName: uploadFile.name,
+            mimeType: uploadFile.type,
+            fileSize: uploadFile.size,
+            requirementType,
+            orgUid,
+          });
+          if (!sasResult.status || !sasResult.data) {
+            toast.error(sasResult.message ?? "Upload failed. Please try again.");
+            return;
+          }
+          const { sasUrl, blobUrl } = sasResult.data;
+          const uploadResp = await fetch(sasUrl, {
+            method: "PUT",
+            headers: {
+              "x-ms-blob-type": "BlockBlob",
+              "Content-Type": uploadFile.type || "application/octet-stream",
+            },
+            body: uploadFile,
+          });
+          if (!uploadResp.ok) {
+            toast.error(`Upload failed (HTTP ${uploadResp.status}). Please try again.`);
+            return;
+          }
+          const confirmResult = await confirmStagedUploadAction({
+            blobUrl,
+            fileName: uploadFile.name,
+            fileSize: uploadFile.size,
+            mimeType: uploadFile.type,
+            requirementType,
+            orgUid,
+          });
+          if (!confirmResult.status || !confirmResult.data) {
+            toast.error(confirmResult.message ?? "Upload failed. Please try again.");
+            return;
+          }
+          staged = confirmResult.data;
+        } else {
+          // Server-side upload (≤ 4 MB)
+          const fd = new FormData();
+          fd.append("file", uploadFile);
+          fd.append("requirementType", requirementType);
+          fd.append("orgUid", orgUid);
+          const result = await stageRequirementFileUploadAction(fd);
+          if (!result.status || !result.data) {
+            toast.error(result.message ?? "Upload failed. Please try again.");
+            return;
+          }
+          staged = result.data;
+        }
+
+        if (!staged) {
+          toast.error("Upload failed. Please try again.");
+          return;
+        }
+
+        onUploaded(staged);
+      } catch (err) {
+        console.error("[MyMembership] Stage upload error:", err);
+        toast.error("Upload failed. Please try again.");
       }
     });
   };
@@ -149,6 +224,7 @@ function FileUploadSubform({ requirementType, orgUid, onUploaded, onCancel }: Fi
         }`}
       >
         <input
+          ref={inputRef}
           type="file"
           className="sr-only"
           onChange={handleFileChange}
@@ -348,31 +424,36 @@ export default function MyMembershipClient({ membership, orgUid }: MyMembershipC
 
   function handleFileUploaded(staged: StagedRequirementFile) {
     startTransition(async () => {
-      const result = await linkRequirementFilesAction({
-        orgMemberId: membership.id,
-        files: [staged],
-      });
-      if (result.status) {
-        // Optimistically add to local state
-        const tempId = --tempIdCounter.current;
-        const optimistic: RequirementFile = {
-          id: tempId,
-          requirementType: staged.requirementType,
-          createdAt: new Date(),
-          File: {
-            id: staged.fileId,
-            name: staged.fileName,
-            size: staged.fileSize,
-            url: "",
-            mimeType: null,
+      try {
+        const result = await linkRequirementFilesAction({
+          orgMemberId: membership.id,
+          files: [staged],
+        });
+        if (result.status) {
+          // Optimistically add to local state
+          const tempId = --tempIdCounter.current;
+          const optimistic: RequirementFile = {
+            id: tempId,
+            requirementType: staged.requirementType,
             createdAt: new Date(),
-          },
-        };
-        setLocalFiles((prev) => [...prev, optimistic]);
-        setUploadingReq(null);
-        toast.success("Requirement file uploaded successfully.");
-      } else {
-        toast.error(result.message ?? "Failed to link file.");
+            File: {
+              id: staged.fileId,
+              name: staged.fileName,
+              size: staged.fileSize,
+              url: "",
+              mimeType: null,
+              createdAt: new Date(),
+            },
+          };
+          setLocalFiles((prev) => [...prev, optimistic]);
+          setUploadingReq(null);
+          toast.success("Requirement file uploaded successfully.");
+        } else {
+          toast.error(result.message ?? "Failed to link file.");
+        }
+      } catch (err) {
+        console.error("[MyMembership] Link file error:", err);
+        toast.error("Failed to link file. Please try again.");
       }
     });
   }
@@ -380,12 +461,17 @@ export default function MyMembershipClient({ membership, orgUid }: MyMembershipC
   function handleDeleteFile(fileRecordId: number) {
     setIsDeletingId(fileRecordId);
     startTransition(async () => {
-      const result = await deleteOrgMemberRequirementFileAction(fileRecordId);
-      if (result.status) {
-        setLocalFiles((prev) => prev.filter((f) => f.id !== fileRecordId));
-        toast.success("Requirement file removed.");
-      } else {
-        toast.error(result.message ?? "Failed to remove file.");
+      try {
+        const result = await deleteOrgMemberRequirementFileAction(fileRecordId);
+        if (result.status) {
+          setLocalFiles((prev) => prev.filter((f) => f.id !== fileRecordId));
+          toast.success("Requirement file removed.");
+        } else {
+          toast.error(result.message ?? "Failed to remove file.");
+        }
+      } catch (err) {
+        console.error("[MyMembership] Delete file error:", err);
+        toast.error("Failed to remove file. Please try again.");
       }
       setIsDeletingId(null);
     });

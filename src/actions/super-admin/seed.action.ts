@@ -409,7 +409,31 @@ export async function seedVaccinesAction(): Promise<SeedResult> {
 }
 
 // ──────────────────────────────────────────────────────────────
-// 5. Seed All
+// 5. Seed Philippine Locations (Regions, Provinces, Municipalities, Barangays)
+// ──────────────────────────────────────────────────────────────
+export async function seedLocationsAction(): Promise<SeedResult> {
+  try {
+    await requireSuperAdmin();
+
+    const { seedLocationsFromJsonAction } = await import("./locations.action");
+    const result = await seedLocationsFromJsonAction();
+
+    const total = result.regions + result.provinces + result.municipalities + result.barangays;
+
+    return {
+      status: true,
+      message: `Philippine locations seeded: ${result.regions} regions, ${result.provinces} provinces, ${result.municipalities} municipalities, ${result.barangays} barangays.`,
+      data: { created: total, skipped: 0, total },
+    };
+  } catch (error) {
+    console.error("seedLocationsAction error:", error);
+    const message = error instanceof Error ? error.message : "Failed to seed Philippine locations";
+    return { status: false, message, data: null };
+  }
+}
+
+// ──────────────────────────────────────────────────────────────
+// 6. Seed All
 // ──────────────────────────────────────────────────────────────
 export async function seedAllAction(): Promise<SeedResult> {
   try {

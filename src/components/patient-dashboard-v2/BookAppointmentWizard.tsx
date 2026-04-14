@@ -142,7 +142,7 @@ function TextArea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
 /** Sticky bottom action bar — mobile-app navigation pattern */
 function BottomBar({ children }: { children: React.ReactNode }) {
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-30 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-t border-slate-200/80 dark:border-white/10 px-4 pb-[env(safe-area-inset-bottom)] pt-3 pb-4">
+    <div className="fixed bottom-16 left-0 right-0 z-[45] bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-t border-slate-200/80 dark:border-white/10 px-4 pt-3 pb-4">
       <div className="max-w-lg mx-auto flex gap-3">
         {children}
       </div>
@@ -342,7 +342,7 @@ function Step1Complaint({
             {files.map((file, i) => (
               <FileUploaderItem key={i} index={i} className="rounded-xl">
                 <Paperclip className="h-4 w-4 shrink-0 text-teal-600 dark:text-teal-400" />
-                <span className="text-sm truncate">{file.name}</span>
+                <span className="text-sm truncate text-slate-800 dark:text-slate-200">{file.name}</span>
               </FileUploaderItem>
             ))}
           </FileUploaderContent>

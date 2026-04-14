@@ -450,7 +450,7 @@ export function PatientFilesClient({
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-6 w-6"
+                              className="h-6 w-6 text-slate-500 dark:text-slate-400"
                             >
                               <MoreVertical className="w-3 h-3" />
                             </Button>
@@ -650,7 +650,7 @@ export function PatientFilesClient({
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-6 w-6"
+                              className="h-6 w-6 text-slate-500 dark:text-slate-400"
                             >
                               <MoreVertical className="w-3 h-3" />
                             </Button>

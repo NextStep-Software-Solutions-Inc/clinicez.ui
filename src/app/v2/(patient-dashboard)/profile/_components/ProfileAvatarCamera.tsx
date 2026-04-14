@@ -1,7 +1,7 @@
 'use client'
 
 import { useRef, useState } from 'react'
-import { Camera, Loader2 } from 'lucide-react'
+import { Camera, Loader2, ZoomIn, ZoomOut } from 'lucide-react'
 import { toast } from 'sonner'
 import { uploadMediaAction } from '@/actions/blob.action'
 import { updateClerkProfileImageAction } from '@/actions/users/update-profile-image.action'
@@ -17,6 +17,9 @@ interface ProfileAvatarCameraProps {
 
 const CROP_SIZE = 260 // display crop window (px, square)
 const OUTPUT_SIZE = 512 // output image size
+const MIN_ZOOM = 1.0
+const MAX_ZOOM = 4.0
+const ZOOM_STEP = 0.05
 
 interface CropModalProps {
   objectUrl: string
@@ -27,28 +30,42 @@ interface CropModalProps {
 function ImageCropModal({ objectUrl, onConfirm, onCancel }: CropModalProps) {
   const imgRef = useRef<HTMLImageElement>(null)
   const [offset, setOffset] = useState({ x: 0, y: 0 })
-  const [displaySize, setDisplaySize] = useState({ w: 0, h: 0 })
+  const [zoom, setZoom] = useState(1.0)
   const [naturalSize, setNaturalSize] = useState({ w: 0, h: 0 })
+  const [baseScale, setBaseScale] = useState(1)
   const drag = useRef<{ sx: number; sy: number; ox: number; oy: number } | null>(null)
+
+  // Compute display size from natural size × base scale × zoom
+  const displaySize = naturalSize.w
+    ? { w: naturalSize.w * baseScale * zoom, h: naturalSize.h * baseScale * zoom }
+    : { w: 0, h: 0 }
+
+  const clampOffset = (ox: number, oy: number, dw: number, dh: number) => ({
+    x: Math.min(0, Math.max(CROP_SIZE - dw, ox)),
+    y: Math.min(0, Math.max(CROP_SIZE - dh, oy)),
+  })
 
   const handleImgLoad = () => {
     const img = imgRef.current
     if (!img) return
     const { naturalWidth: nw, naturalHeight: nh } = img
     setNaturalSize({ w: nw, h: nh })
-    // Scale image to cover the crop window
+    // Scale image to cover the crop window at zoom=1
     const scale = Math.max(CROP_SIZE / nw, CROP_SIZE / nh)
+    setBaseScale(scale)
     const dw = nw * scale
     const dh = nh * scale
-    setDisplaySize({ w: dw, h: dh })
     // Center the image
     setOffset({ x: -(dw - CROP_SIZE) / 2, y: -(dh - CROP_SIZE) / 2 })
   }
 
-  const clampOffset = (ox: number, oy: number, dw: number, dh: number) => ({
-    x: Math.min(0, Math.max(CROP_SIZE - dw, ox)),
-    y: Math.min(0, Math.max(CROP_SIZE - dh, oy)),
-  })
+  const applyZoom = (newZoom: number) => {
+    const clamped = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, newZoom))
+    const newDw = naturalSize.w * baseScale * clamped
+    const newDh = naturalSize.h * baseScale * clamped
+    setOffset(prev => clampOffset(prev.x, prev.y, newDw, newDh))
+    setZoom(clamped)
+  }
 
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     e.preventDefault()
@@ -93,11 +110,13 @@ function ImageCropModal({ objectUrl, onConfirm, onCancel }: CropModalProps) {
     )
   }
 
+  const zoomPercent = Math.round(zoom * 100)
+
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 p-4">
       <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 w-full max-w-xs shadow-2xl">
         <h3 className="text-base font-bold text-slate-900 dark:text-white mb-1">Crop Photo</h3>
-        <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">Drag to reposition your photo</p>
+        <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">Drag to reposition · pinch or use slider to zoom</p>
 
         {/* Circular crop preview */}
         <div
@@ -128,7 +147,40 @@ function ImageCropModal({ objectUrl, onConfirm, onCancel }: CropModalProps) {
           />
         </div>
 
-        <div className="flex gap-3 mt-5">
+        {/* Zoom controls */}
+        <div className="flex items-center gap-2 mt-4">
+          <button
+            type="button"
+            aria-label="Zoom out"
+            onClick={() => applyZoom(zoom - ZOOM_STEP * 4)}
+            className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors shrink-0"
+          >
+            <ZoomOut className="w-4 h-4" />
+          </button>
+          <input
+            type="range"
+            min={MIN_ZOOM}
+            max={MAX_ZOOM}
+            step={ZOOM_STEP}
+            value={zoom}
+            onChange={(e) => applyZoom(parseFloat(e.target.value))}
+            className="flex-1 accent-teal-500"
+            aria-label="Zoom level"
+          />
+          <button
+            type="button"
+            aria-label="Zoom in"
+            onClick={() => applyZoom(zoom + ZOOM_STEP * 4)}
+            className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors shrink-0"
+          >
+            <ZoomIn className="w-4 h-4" />
+          </button>
+          <span className="text-xs font-medium text-slate-500 dark:text-slate-400 w-10 text-right shrink-0">
+            {zoomPercent}%
+          </span>
+        </div>
+
+        <div className="flex gap-3 mt-4">
           <button
             type="button"
             onClick={onCancel}

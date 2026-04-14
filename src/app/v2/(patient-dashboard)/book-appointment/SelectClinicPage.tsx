@@ -6,7 +6,7 @@ import { Building2, Loader2, ChevronRight, CalendarPlus, Globe } from 'lucide-re
 import { getOrgAssociatedClinicOptionsAction } from '@/actions/dashboard/clinic-org-select.action'
 import { getClinicsV2Action } from '@/actions/clinics/clinic.action'
 
-type OrgClinic = { clinicUid: string; name: string }
+type OrgClinic = { clinicUid: string; name: string; logo: string | null }
 type PublicClinic = { clinicUid: string; name: string; description: string | null; logo: string | null; memberCount: number }
 
 function ClinicCard({
@@ -37,7 +37,9 @@ function ClinicCard({
           // eslint-disable-next-line @next/next/no-img-element
           <img src={logo} alt={name} className="w-full h-full object-cover" />
         ) : (
-          <span className="text-white font-extrabold text-xl">{name.charAt(0).toUpperCase()}</span>
+          <span className="text-white font-extrabold text-xl">
+            {name.split(' ').filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('')}
+          </span>
         )}
       </div>
       <div className="flex-1 min-w-0">
@@ -121,7 +123,7 @@ export default function SelectClinicPage() {
                     key={clinic.clinicUid}
                     clinicUid={clinic.clinicUid}
                     name={clinic.name}
-                    logo={null}
+                    logo={clinic.logo}
                     subtitle="Book Now →"
                     onSelect={handleSelectClinic}
                   />

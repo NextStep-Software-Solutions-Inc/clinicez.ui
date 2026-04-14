@@ -359,16 +359,32 @@ export function PatientFilesClient({
 
   return (
     <div className="w-full">
-      {/* Breadcrumb when inside a folder */}
-      {currentFolder && (
-        <div className="flex items-center gap-1 text-sm text-slate-500 dark:text-slate-400 mb-4">
-          <button onClick={() => setSelectedFolder(null)} className="hover:text-teal-600 dark:hover:text-teal-400">
-            All Files
-          </button>
-          <span> › </span>
-          <span className="text-slate-900 dark:text-white font-medium truncate">{currentFolder.name}</span>
-        </div>
-      )}
+      {/* Sticky section header with inline action button */}
+      <div className="sticky top-14 z-20 -mx-4 px-4 py-2.5 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-b border-slate-100 dark:border-slate-800 mb-4 flex items-center justify-between">
+        {currentFolder ? (
+          <div className="flex items-center gap-1 text-sm text-slate-500 dark:text-slate-400 min-w-0">
+            <button
+              onClick={() => setSelectedFolder(null)}
+              className="hover:text-teal-600 dark:hover:text-teal-400 shrink-0"
+            >
+              All Files
+            </button>
+            <span className="shrink-0"> › </span>
+            <span className="text-slate-900 dark:text-white font-medium truncate">{currentFolder.name}</span>
+          </div>
+        ) : (
+          <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">My Files</span>
+        )}
+        <button
+          type="button"
+          onClick={() => currentFolder ? setShowUpload(true) : setShowCreateFolder(true)}
+          className="shrink-0 ml-2 h-8 px-3 rounded-xl bg-teal-50 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400 text-xs font-semibold border border-teal-200 dark:border-teal-800 hover:bg-teal-100 dark:hover:bg-teal-900/50 transition-colors flex items-center gap-1.5 active:scale-95"
+          aria-label={currentFolder ? 'Upload file' : 'New folder'}
+        >
+          <Plus className="w-3.5 h-3.5" />
+          {currentFolder ? 'Upload' : 'New Folder'}
+        </button>
+      </div>
 
       {/* Folder View */}
       {!currentFolder ? (
@@ -720,16 +736,6 @@ export function PatientFilesClient({
           )}
         </div>
       )}
-
-      {/* FAB */}
-      <button
-        type="button"
-        onClick={() => currentFolder ? setShowUpload(true) : setShowCreateFolder(true)}
-        className="fixed bottom-24 right-4 z-40 w-14 h-14 rounded-full bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-xl shadow-teal-500/30 flex items-center justify-center hover:shadow-2xl hover:shadow-teal-500/40 transition-all active:scale-95 ring-4 ring-white/20 dark:ring-slate-900/40"
-        aria-label={currentFolder ? 'Upload file' : 'New folder'}
-      >
-        <Plus className="w-6 h-6" />
-      </button>
 
       {/* Create Folder Dialog */}
       <Dialog open={showCreateFolder} onOpenChange={setShowCreateFolder}>

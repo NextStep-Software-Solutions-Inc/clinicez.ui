@@ -40,7 +40,7 @@ export function MobileHeader() {
   const title = getPageTitle(pathname)
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 h-14 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-700/50">
+    <header className="sm:hidden fixed top-0 left-0 right-0 z-50 h-14 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-700/50">
       <div className="max-w-screen-sm mx-auto h-full flex items-center justify-between px-4">
         {/* Left: Logo on home, back button on other pages */}
         <div className="flex items-center gap-2 min-w-[44px]">

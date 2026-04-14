@@ -33,7 +33,7 @@ export default function PatientDashboardLayout({
 
       {/* Main content */}
       <main className="relative w-full z-10 bg-white/70 dark:bg-slate-800/70">
-        <div className="max-w-screen-sm mx-auto px-4 pt-14 pb-20">
+        <div className="max-w-screen-sm mx-auto px-4 pt-14 sm:pt-4 pb-20 sm:pb-4">
           {children}
         </div>
       </main>

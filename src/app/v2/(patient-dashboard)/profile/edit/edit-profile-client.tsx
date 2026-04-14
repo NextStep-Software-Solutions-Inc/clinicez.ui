@@ -411,27 +411,27 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
   //   'top-14' when headerSlot=null (below MobileHeader)
   //   'top-28' when a custom headerSlot is provided (below nav + breadcrumb)
   const makeSectionNav = (topClass: string) => (
-    <div className={`sticky ${topClass} z-40 backdrop-blur-sm bg-white/20 dark:bg-slate-950/20 border-b border-slate-200/20 dark:border-slate-800/20 mb-6 md:mb-8 -mx-4 md:-mx-8 px-4 md:px-8 py-2 md:py-3`}>
+    <div className={`sticky ${topClass} z-40 backdrop-blur-sm bg-white/80 dark:bg-slate-950/80 border-b border-slate-200/30 dark:border-slate-800/30 mb-6 md:mb-8 -mx-4 md:-mx-8 px-4 md:px-8 py-2 md:py-3`}>
       <div className="max-w-6xl mx-auto">
         <div className="relative">
-          <div className="flex gap-2 overflow-x-auto scroll-smooth pb-1" style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(100,116,139,0.4) transparent' }}>
+          <div className="flex gap-1.5 overflow-x-auto scroll-smooth pb-1 scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
             {sections.map((section) => (
               <button
                 key={section.id}
                 data-tab-id={section.id}
                 onClick={() => scrollToSection(section.id)}
-                className={`whitespace-nowrap px-3 md:px-4 py-1.5 md:py-2 rounded-lg font-medium text-xs md:text-sm transition-all ${
+                className={`whitespace-nowrap px-3 md:px-4 py-1.5 md:py-2 rounded-2xl font-medium text-xs md:text-sm transition-all shrink-0 ${
                   activeSection === section.id
-                    ? 'bg-teal-500 text-white shadow-lg shadow-teal-500/30'
+                    ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-md shadow-teal-500/25'
                     : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
                 }`}
               >
-                <span className="mr-1 md:mr-2">{section.icon}</span>
+                <span className="mr-1 md:mr-1.5">{section.icon}</span>
                 {section.label}
               </button>
             ))}
           </div>
-          <div className="absolute right-0 top-0 bottom-0 w-8 md:w-12 bg-gradient-to-l from-white/30 dark:from-slate-950/30 to-transparent pointer-events-none rounded-r-lg"></div>
+          <div className="absolute right-0 top-0 bottom-0 w-8 md:w-12 bg-gradient-to-l from-white/80 dark:from-slate-950/80 to-transparent pointer-events-none"></div>
         </div>
       </div>
     </div>
@@ -843,15 +843,16 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
 
       {/* Sticky Save All Changes bar — only visible when there are unsaved changes */}
       {hasPendingChanges && (
-        <div className="fixed bottom-20 left-0 right-0 z-50 backdrop-blur-md bg-white/80 dark:bg-slate-900/80 border-t border-slate-200/60 dark:border-slate-700/60 px-4 py-3 shadow-lg flex items-center">
-          <div className="max-w-6xl mx-auto w-full flex items-center justify-center">
+        <div className="fixed bottom-20 left-0 right-0 z-50 backdrop-blur-md bg-white/90 dark:bg-slate-900/90 border-t border-slate-200/60 dark:border-slate-700/60 px-4 py-3 shadow-xl flex items-center">
+          <div className="max-w-screen-sm mx-auto w-full flex items-center justify-between gap-3">
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">You have unsaved changes</p>
             <button
               onClick={() => void handleSaveAll()}
               disabled={isSavingAll}
-              className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-xl font-medium text-sm shadow-lg shadow-blue-500/30 hover:from-blue-600 hover:to-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-teal-500 to-cyan-500 text-white rounded-2xl font-semibold text-sm shadow-md shadow-teal-500/25 hover:shadow-lg hover:from-teal-600 hover:to-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98]"
             >
               <Save className="w-4 h-4" />
-              Save All Changes
+              Save All
             </button>
           </div>
         </div>

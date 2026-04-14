@@ -96,7 +96,14 @@ const PRIVACY_LABELS: Record<FilePrivacy, string> = {
 const PRIVACY_COLORS: Record<FilePrivacy, string> = {
   PRIVATE: "bg-slate-100/70 text-slate-700 dark:bg-slate-800/70 dark:text-slate-300",
   CLINIC: "bg-blue-100/70 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300",
-  PUBLIC: "bg-green-100/70 text-green-700 dark:bg-green-900/50 dark:text-green-300",
+  PUBLIC: "bg-emerald-100/70 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300",
+};
+
+/** Colored folder icon per privacy level */
+const PRIVACY_FOLDER_COLOR: Record<FilePrivacy, string> = {
+  PRIVATE: "text-amber-500",
+  CLINIC:  "text-blue-500",
+  PUBLIC:  "text-emerald-500",
 };
 
 function formatBytes(bytes: number): string {
@@ -367,19 +374,20 @@ export function PatientFilesClient({
       {!currentFolder ? (
         <div>
           {folders.length === 0 ? (
-            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-dashed border-slate-200 dark:border-slate-700 p-16 flex flex-col items-center justify-center text-center">
-              <Folder className="w-16 h-16 text-slate-300 dark:text-slate-500 mb-4" />
-              <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-2">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-dashed border-slate-200 dark:border-slate-700 p-16 flex flex-col items-center justify-center text-center">
+              <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-amber-100 to-amber-200 dark:from-amber-900/20 dark:to-amber-800/20 flex items-center justify-center mb-5">
+                <Folder className="w-10 h-10 text-amber-500" />
+              </div>
+              <h3 className="text-base font-bold text-slate-700 dark:text-slate-200 mb-1.5">
                 No folders yet
               </h3>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mb-6 max-w-sm">
-                Create folders to organize your medical records, lab results,
-                and other health documents.
+              <p className="text-sm text-slate-500 dark:text-slate-400 mb-6 max-w-sm leading-relaxed">
+                Create folders to organize your medical records, lab results, and other health documents.
               </p>
               <Button
                 onClick={() => setShowCreateFolder(true)}
                 size="sm"
-                className="bg-gradient-to-r from-yellow-500 to-amber-500 text-white border-0"
+                className="bg-gradient-to-r from-amber-500 to-yellow-500 text-white border-0 shadow-md shadow-amber-500/20 rounded-xl h-10 px-5"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Create your first folder
@@ -410,7 +418,7 @@ export function PatientFilesClient({
                   >
                     <div className="flex items-start justify-between mb-3">
                       <div className="relative">
-                        <FolderOpen className="w-8 h-8 text-yellow-500 flex-shrink-0" />
+                        <FolderOpen className={`w-8 h-8 flex-shrink-0 ${PRIVACY_FOLDER_COLOR[privacy]}`} />
                         {creatorName && (
                           <div
                             title={`${creatorClinic ? `Created by ${creatorClinic}` : "Provider created"} · ${creatorName}`}
@@ -546,19 +554,20 @@ export function PatientFilesClient({
         /* File View */
         <div>
           {currentFolder.Files.length === 0 ? (
-            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-dashed border-slate-200 dark:border-slate-700 p-16 flex flex-col items-center justify-center text-center">
-              <File className="w-16 h-16 text-slate-300 dark:text-slate-500 mb-4" />
-              <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-2">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-dashed border-slate-200 dark:border-slate-700 p-16 flex flex-col items-center justify-center text-center">
+              <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900/20 dark:to-blue-800/20 flex items-center justify-center mb-5">
+                <File className="w-10 h-10 text-blue-500" />
+              </div>
+              <h3 className="text-base font-bold text-slate-700 dark:text-slate-200 mb-1.5">
                 No files in this folder
               </h3>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mb-6 max-w-sm">
-                Upload your medical documents, lab results, or any
-                health-related files.
+              <p className="text-sm text-slate-500 dark:text-slate-400 mb-6 max-w-sm leading-relaxed">
+                Upload your medical documents, lab results, or any health-related files here.
               </p>
               <Button
                 onClick={() => setShowUpload(true)}
                 size="sm"
-                className="bg-gradient-to-r from-blue-600 to-blue-500 text-white border-0"
+                className="bg-gradient-to-r from-blue-600 to-blue-500 text-white border-0 shadow-md shadow-blue-500/20 rounded-xl h-10 px-5"
               >
                 <Upload className="w-4 h-4 mr-2" />
                 Upload a file
@@ -716,7 +725,7 @@ export function PatientFilesClient({
       <button
         type="button"
         onClick={() => currentFolder ? setShowUpload(true) : setShowCreateFolder(true)}
-        className="fixed bottom-24 right-4 z-40 w-14 h-14 rounded-full bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-lg flex items-center justify-center hover:shadow-xl transition-all active:scale-95"
+        className="fixed bottom-24 right-4 z-40 w-14 h-14 rounded-full bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-xl shadow-teal-500/30 flex items-center justify-center hover:shadow-2xl hover:shadow-teal-500/40 transition-all active:scale-95 ring-4 ring-white/20 dark:ring-slate-900/40"
         aria-label={currentFolder ? 'Upload file' : 'New folder'}
       >
         <Plus className="w-6 h-6" />

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Building2, Loader2, ChevronRight } from 'lucide-react'
+import { Building2, Loader2, ChevronRight, CalendarPlus } from 'lucide-react'
 import { getPatientClinicsAction } from '@/actions/patient/patient-files.action'
 
 type PatientClinic = { id: number; clinicUid: string; name: string; logo: string | null }
@@ -27,24 +27,41 @@ export default function SelectClinicPage() {
   }
 
   return (
-    <div className="px-4 py-4">
-      {/* Section header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Choose a Clinic</h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Select the clinic you want to book at</p>
+    <div className="space-y-5">
+      {/* Hero gradient card */}
+      <div className="bg-gradient-to-br from-indigo-600 via-teal-600 to-cyan-500 rounded-2xl p-5 text-white">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-11 h-11 rounded-2xl bg-white/20 flex items-center justify-center shrink-0">
+            <CalendarPlus className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h1 className="text-lg font-extrabold leading-tight">Book an Appointment</h1>
+            <p className="text-sm text-white/80 mt-0.5">Select a clinic to get started</p>
+          </div>
+        </div>
+        <p className="text-xs text-white/70 leading-relaxed">
+          Choose from your registered clinics below. The clinic team will confirm your request shortly.
+        </p>
       </div>
+
+      {/* Section label */}
+      <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-widest px-1">
+        Your Clinics
+      </p>
 
       {isLoading ? (
         <div className="flex items-center justify-center py-16">
           <Loader2 className="w-8 h-8 animate-spin text-teal-500" />
         </div>
       ) : clinics.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-4">
-            <Building2 className="w-8 h-8 text-slate-400" />
+        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col items-center justify-center py-16 text-center px-6">
+          <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 flex items-center justify-center mb-5">
+            <Building2 className="w-10 h-10 text-slate-400" />
           </div>
-          <p className="text-slate-600 dark:text-slate-400 font-medium">No clinics found</p>
-          <p className="text-sm text-slate-500 dark:text-slate-500 mt-1">You are not registered at any clinic yet.</p>
+          <p className="text-base font-bold text-slate-700 dark:text-slate-200">No clinics found</p>
+          <p className="text-sm text-slate-400 dark:text-slate-500 mt-1.5 max-w-[200px] leading-relaxed">
+            You are not registered as a patient at any clinic yet.
+          </p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -53,24 +70,26 @@ export default function SelectClinicPage() {
               key={clinic.clinicUid}
               type="button"
               onClick={() => handleSelectClinic(clinic.clinicUid)}
-              className="w-full bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-4 flex items-center gap-4 text-left hover:border-teal-300 dark:hover:border-teal-700 transition-colors active:scale-[0.99]"
+              className="w-full bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 p-4 flex items-center gap-4 text-left hover:border-teal-300 dark:hover:border-teal-700 hover:shadow-md transition-all active:scale-[0.99] group"
             >
-              {/* Logo or initials badge */}
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center shrink-0 overflow-hidden">
+              {/* Logo or gradient initials badge */}
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center shrink-0 overflow-hidden shadow-md shadow-teal-500/20">
                 {clinic.logo ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={clinic.logo} alt={clinic.name} className="w-full h-full object-cover" />
                 ) : (
-                  <span className="text-white font-bold text-lg">
+                  <span className="text-white font-extrabold text-xl">
                     {clinic.name.charAt(0).toUpperCase()}
                   </span>
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-slate-900 dark:text-white truncate">{clinic.name}</p>
-                <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Tap to book an appointment</p>
+                <p className="font-bold text-slate-900 dark:text-white truncate text-base">{clinic.name}</p>
+                <p className="text-sm text-teal-600 dark:text-teal-400 mt-0.5 font-medium">Book Now →</p>
               </div>
-              <ChevronRight className="w-5 h-5 text-slate-400 shrink-0" />
+              <div className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 group-hover:bg-teal-50 dark:group-hover:bg-teal-900/20 flex items-center justify-center transition-colors shrink-0">
+                <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-teal-500 transition-colors" />
+              </div>
             </button>
           ))}
         </div>

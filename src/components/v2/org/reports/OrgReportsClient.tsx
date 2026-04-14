@@ -299,7 +299,7 @@ function DailyTrendChart({ trend }: { trend: { date: string; count: number }[] }
       {tooltip && (
         <div
           className="pointer-events-none absolute z-50 rounded-md border bg-popover px-3 py-1.5 text-xs font-medium text-popover-foreground shadow-md space-y-0.5"
-          style={{ left: tooltip.x + 12, top: tooltip.y - 52 }}
+          style={{ left: tooltip.x + 12, top: Math.max(4, tooltip.y - 52) }}
         >
           <p>Date: {tooltip.date}</p>
           <p>Value: {tooltip.count}</p>

@@ -378,7 +378,7 @@ export function NotificationBell() {
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetTrigger asChild>{bellButton}</SheetTrigger>
         <SheetContent side="bottom" className="p-0 rounded-t-2xl max-h-[85vh] flex flex-col">
-          <SheetHeader className="flex-row items-center justify-between border-b px-4 py-3 space-y-0">
+          <SheetHeader className="flex-row items-center justify-between border-b px-4 py-3 pr-12 space-y-0">
             <div className="flex items-center gap-2">
               <Bell className="h-4 w-4 text-muted-foreground" />
               <SheetTitle className="text-sm font-semibold">Notifications</SheetTitle>

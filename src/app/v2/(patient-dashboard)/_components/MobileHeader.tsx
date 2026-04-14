@@ -6,6 +6,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { ThemeToggle } from '@/components/patient-dashboard-v2/ThemeToggle'
 import { NotificationBell } from '@/components/v2/notifications/NotificationBell'
+import { useHeaderTitle } from './HeaderTitleContext'
 
 const PAGE_TITLE_MAP: Record<string, string> = {
   '/v2/patient': '',
@@ -39,6 +40,10 @@ export function MobileHeader() {
   const router = useRouter()
   const isHome = pathname === HOME_PATH
   const title = getPageTitle(pathname)
+  const { overrideTitle, overrideBack } = useHeaderTitle()
+
+  const displayTitle = overrideTitle ?? title
+  const handleBack = overrideBack ? overrideBack.fn : () => router.back()
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 h-14 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-700/50">
@@ -62,15 +67,15 @@ export function MobileHeader() {
           ) : (
             <>
               <button
-                onClick={() => router.back()}
+                onClick={handleBack}
                 className="w-9 h-9 flex items-center justify-center rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors active:scale-95 shrink-0"
                 aria-label="Go back"
               >
                 <ArrowLeft className="w-5 h-5" />
               </button>
-              {title && (
+              {displayTitle && (
                 <h1 className="text-base font-semibold text-slate-900 dark:text-white truncate">
-                  {title}
+                  {displayTitle}
                 </h1>
               )}
             </>

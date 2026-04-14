@@ -1,8 +1,8 @@
 /**
  * Seed Philippine PSGC location data (PhRegion, PhProvince, PhMunicipality, PhBarangay).
  *
- * Idempotent — uses INSERT … ON CONFLICT (code) DO UPDATE so it is safe to re-run
- * after the tables already contain data (e.g. to pick up PSGC file updates).
+ * Idempotent — uses INSERT … ON CONFLICT (code) DO NOTHING so it is safe to re-run
+ * and will never overwrite records that already exist (e.g. admin edits are preserved).
  *
  * Usage:
  *   pnpm run seed:locations          # development (.env)
@@ -40,10 +40,7 @@ async function upsertRegions(records: { code: string; name: string; regionName: 
         await prisma.$executeRawUnsafe(
             `INSERT INTO "PhRegion" (code, name, "regionName", "createdAt", "updatedAt")
              VALUES ${ph}
-             ON CONFLICT (code) DO UPDATE SET
-               name         = EXCLUDED.name,
-               "regionName" = EXCLUDED."regionName",
-               "updatedAt"  = NOW()`,
+             ON CONFLICT (code) DO NOTHING`,
             ...vals,
         );
     }
@@ -57,10 +54,7 @@ async function upsertProvinces(records: { code: string; name: string; regionCode
         await prisma.$executeRawUnsafe(
             `INSERT INTO "PhProvince" (code, name, "regionCode", "createdAt", "updatedAt")
              VALUES ${ph}
-             ON CONFLICT (code) DO UPDATE SET
-               name         = EXCLUDED.name,
-               "regionCode" = EXCLUDED."regionCode",
-               "updatedAt"  = NOW()`,
+             ON CONFLICT (code) DO NOTHING`,
             ...vals,
         );
     }
@@ -78,12 +72,7 @@ async function upsertMunicipalities(
         await prisma.$executeRawUnsafe(
             `INSERT INTO "PhMunicipality" (code, name, "provinceCode", "isCity", "isCapital", "createdAt", "updatedAt")
              VALUES ${ph}
-             ON CONFLICT (code) DO UPDATE SET
-               name           = EXCLUDED.name,
-               "provinceCode" = EXCLUDED."provinceCode",
-               "isCity"       = EXCLUDED."isCity",
-               "isCapital"    = EXCLUDED."isCapital",
-               "updatedAt"    = NOW()`,
+             ON CONFLICT (code) DO NOTHING`,
             ...vals,
         );
     }
@@ -97,10 +86,7 @@ async function upsertBarangays(records: { code: string; name: string; municipali
         await prisma.$executeRawUnsafe(
             `INSERT INTO "PhBarangay" (code, name, "municipalityCode", "createdAt", "updatedAt")
              VALUES ${ph}
-             ON CONFLICT (code) DO UPDATE SET
-               name               = EXCLUDED.name,
-               "municipalityCode" = EXCLUDED."municipalityCode",
-               "updatedAt"        = NOW()`,
+             ON CONFLICT (code) DO NOTHING`,
             ...vals,
         );
     }

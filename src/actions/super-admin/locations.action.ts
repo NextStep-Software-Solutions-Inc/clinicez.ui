@@ -607,10 +607,7 @@ export async function seedLocationsFromJsonAction(): Promise<{
     await prisma.$executeRawUnsafe(
       `INSERT INTO "PhRegion" (code, name, "regionName", "createdAt", "updatedAt")
        VALUES ${ph}
-       ON CONFLICT (code) DO UPDATE SET
-         name         = EXCLUDED.name,
-         "regionName" = EXCLUDED."regionName",
-         "updatedAt"  = NOW()`,
+       ON CONFLICT (code) DO NOTHING`,
       ...vals
     );
   };
@@ -622,10 +619,7 @@ export async function seedLocationsFromJsonAction(): Promise<{
     await prisma.$executeRawUnsafe(
       `INSERT INTO "PhProvince" (code, name, "regionCode", "createdAt", "updatedAt")
        VALUES ${ph}
-       ON CONFLICT (code) DO UPDATE SET
-         name         = EXCLUDED.name,
-         "regionCode" = EXCLUDED."regionCode",
-         "updatedAt"  = NOW()`,
+       ON CONFLICT (code) DO NOTHING`,
       ...vals
     );
   };
@@ -639,12 +633,7 @@ export async function seedLocationsFromJsonAction(): Promise<{
     await prisma.$executeRawUnsafe(
       `INSERT INTO "PhMunicipality" (code, name, "provinceCode", "isCity", "isCapital", "createdAt", "updatedAt")
        VALUES ${ph}
-       ON CONFLICT (code) DO UPDATE SET
-         name           = EXCLUDED.name,
-         "provinceCode" = EXCLUDED."provinceCode",
-         "isCity"       = EXCLUDED."isCity",
-         "isCapital"    = EXCLUDED."isCapital",
-         "updatedAt"    = NOW()`,
+       ON CONFLICT (code) DO NOTHING`,
       ...vals
     );
   };
@@ -656,10 +645,7 @@ export async function seedLocationsFromJsonAction(): Promise<{
     await prisma.$executeRawUnsafe(
       `INSERT INTO "PhBarangay" (code, name, "municipalityCode", "createdAt", "updatedAt")
        VALUES ${ph}
-       ON CONFLICT (code) DO UPDATE SET
-         name               = EXCLUDED.name,
-         "municipalityCode" = EXCLUDED."municipalityCode",
-         "updatedAt"        = NOW()`,
+       ON CONFLICT (code) DO NOTHING`,
       ...vals
     );
   };

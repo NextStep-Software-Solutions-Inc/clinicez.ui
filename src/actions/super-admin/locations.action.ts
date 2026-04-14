@@ -555,25 +555,25 @@ export async function seedLocationsFromJsonAction(): Promise<{
 
   const upsertRegionChunk = async (chunk: typeof regionRecords) => {
     if (!chunk.length) return;
-    const ph = chunk.map((_, i) => `($${i * 3 + 1}, $${i * 3 + 2}, $${i * 3 + 3})`).join(", ");
+    const ph = chunk.map((_, i) => `($${i * 3 + 1}, $${i * 3 + 2}, $${i * 3 + 3}, NOW(), NOW())`).join(", ");
     const vals = chunk.flatMap((r) => [r.code, r.name, r.regionName]);
     await prisma.$executeRawUnsafe(
-      `INSERT INTO "PhRegion" (code, name, "regionName")
+      `INSERT INTO "PhRegion" (code, name, "regionName", "createdAt", "updatedAt")
        VALUES ${ph}
        ON CONFLICT (code) DO UPDATE SET
-         name        = EXCLUDED.name,
+         name         = EXCLUDED.name,
          "regionName" = EXCLUDED."regionName",
-         "updatedAt" = NOW()`,
+         "updatedAt"  = NOW()`,
       ...vals
     );
   };
 
   const upsertProvinceChunk = async (chunk: typeof provinceRecords) => {
     if (!chunk.length) return;
-    const ph = chunk.map((_, i) => `($${i * 3 + 1}, $${i * 3 + 2}, $${i * 3 + 3})`).join(", ");
+    const ph = chunk.map((_, i) => `($${i * 3 + 1}, $${i * 3 + 2}, $${i * 3 + 3}, NOW(), NOW())`).join(", ");
     const vals = chunk.flatMap((p) => [p.code, p.name, p.regionCode]);
     await prisma.$executeRawUnsafe(
-      `INSERT INTO "PhProvince" (code, name, "regionCode")
+      `INSERT INTO "PhProvince" (code, name, "regionCode", "createdAt", "updatedAt")
        VALUES ${ph}
        ON CONFLICT (code) DO UPDATE SET
          name         = EXCLUDED.name,
@@ -586,11 +586,11 @@ export async function seedLocationsFromJsonAction(): Promise<{
   const upsertMunicipalityChunk = async (chunk: typeof municipalityRecords) => {
     if (!chunk.length) return;
     const ph = chunk
-      .map((_, i) => `($${i * 5 + 1}, $${i * 5 + 2}, $${i * 5 + 3}, $${i * 5 + 4}, $${i * 5 + 5})`)
+      .map((_, i) => `($${i * 5 + 1}, $${i * 5 + 2}, $${i * 5 + 3}, $${i * 5 + 4}, $${i * 5 + 5}, NOW(), NOW())`)
       .join(", ");
     const vals = chunk.flatMap((m) => [m.code, m.name, m.provinceCode, m.isCity, m.isCapital]);
     await prisma.$executeRawUnsafe(
-      `INSERT INTO "PhMunicipality" (code, name, "provinceCode", "isCity", "isCapital")
+      `INSERT INTO "PhMunicipality" (code, name, "provinceCode", "isCity", "isCapital", "createdAt", "updatedAt")
        VALUES ${ph}
        ON CONFLICT (code) DO UPDATE SET
          name           = EXCLUDED.name,
@@ -604,10 +604,10 @@ export async function seedLocationsFromJsonAction(): Promise<{
 
   const upsertBarangayChunk = async (chunk: typeof barangayRecords) => {
     if (!chunk.length) return;
-    const ph = chunk.map((_, i) => `($${i * 3 + 1}, $${i * 3 + 2}, $${i * 3 + 3})`).join(", ");
+    const ph = chunk.map((_, i) => `($${i * 3 + 1}, $${i * 3 + 2}, $${i * 3 + 3}, NOW(), NOW())`).join(", ");
     const vals = chunk.flatMap((b) => [b.code, b.name, b.municipalityCode]);
     await prisma.$executeRawUnsafe(
-      `INSERT INTO "PhBarangay" (code, name, "municipalityCode")
+      `INSERT INTO "PhBarangay" (code, name, "municipalityCode", "createdAt", "updatedAt")
        VALUES ${ph}
        ON CONFLICT (code) DO UPDATE SET
          name               = EXCLUDED.name,

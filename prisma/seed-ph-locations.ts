@@ -35,10 +35,10 @@ const CHUNK_SIZE = 1000;
 async function upsertRegions(records: { code: string; name: string; regionName: string }[]) {
     for (let i = 0; i < records.length; i += CHUNK_SIZE) {
         const chunk = records.slice(i, i + CHUNK_SIZE);
-        const ph = chunk.map((_, j) => `($${j * 3 + 1}, $${j * 3 + 2}, $${j * 3 + 3})`).join(', ');
+        const ph = chunk.map((_, j) => `($${j * 3 + 1}, $${j * 3 + 2}, $${j * 3 + 3}, NOW(), NOW())`).join(', ');
         const vals = chunk.flatMap((r) => [r.code, r.name, r.regionName]);
         await prisma.$executeRawUnsafe(
-            `INSERT INTO "PhRegion" (code, name, "regionName")
+            `INSERT INTO "PhRegion" (code, name, "regionName", "createdAt", "updatedAt")
              VALUES ${ph}
              ON CONFLICT (code) DO UPDATE SET
                name         = EXCLUDED.name,
@@ -52,10 +52,10 @@ async function upsertRegions(records: { code: string; name: string; regionName: 
 async function upsertProvinces(records: { code: string; name: string; regionCode: string }[]) {
     for (let i = 0; i < records.length; i += CHUNK_SIZE) {
         const chunk = records.slice(i, i + CHUNK_SIZE);
-        const ph = chunk.map((_, j) => `($${j * 3 + 1}, $${j * 3 + 2}, $${j * 3 + 3})`).join(', ');
+        const ph = chunk.map((_, j) => `($${j * 3 + 1}, $${j * 3 + 2}, $${j * 3 + 3}, NOW(), NOW())`).join(', ');
         const vals = chunk.flatMap((p) => [p.code, p.name, p.regionCode]);
         await prisma.$executeRawUnsafe(
-            `INSERT INTO "PhProvince" (code, name, "regionCode")
+            `INSERT INTO "PhProvince" (code, name, "regionCode", "createdAt", "updatedAt")
              VALUES ${ph}
              ON CONFLICT (code) DO UPDATE SET
                name         = EXCLUDED.name,
@@ -72,11 +72,11 @@ async function upsertMunicipalities(
     for (let i = 0; i < records.length; i += CHUNK_SIZE) {
         const chunk = records.slice(i, i + CHUNK_SIZE);
         const ph = chunk
-            .map((_, j) => `($${j * 5 + 1}, $${j * 5 + 2}, $${j * 5 + 3}, $${j * 5 + 4}, $${j * 5 + 5})`)
+            .map((_, j) => `($${j * 5 + 1}, $${j * 5 + 2}, $${j * 5 + 3}, $${j * 5 + 4}, $${j * 5 + 5}, NOW(), NOW())`)
             .join(', ');
         const vals = chunk.flatMap((m) => [m.code, m.name, m.provinceCode, m.isCity, m.isCapital]);
         await prisma.$executeRawUnsafe(
-            `INSERT INTO "PhMunicipality" (code, name, "provinceCode", "isCity", "isCapital")
+            `INSERT INTO "PhMunicipality" (code, name, "provinceCode", "isCity", "isCapital", "createdAt", "updatedAt")
              VALUES ${ph}
              ON CONFLICT (code) DO UPDATE SET
                name           = EXCLUDED.name,
@@ -92,10 +92,10 @@ async function upsertMunicipalities(
 async function upsertBarangays(records: { code: string; name: string; municipalityCode: string }[]) {
     for (let i = 0; i < records.length; i += CHUNK_SIZE) {
         const chunk = records.slice(i, i + CHUNK_SIZE);
-        const ph = chunk.map((_, j) => `($${j * 3 + 1}, $${j * 3 + 2}, $${j * 3 + 3})`).join(', ');
+        const ph = chunk.map((_, j) => `($${j * 3 + 1}, $${j * 3 + 2}, $${j * 3 + 3}, NOW(), NOW())`).join(', ');
         const vals = chunk.flatMap((b) => [b.code, b.name, b.municipalityCode]);
         await prisma.$executeRawUnsafe(
-            `INSERT INTO "PhBarangay" (code, name, "municipalityCode")
+            `INSERT INTO "PhBarangay" (code, name, "municipalityCode", "createdAt", "updatedAt")
              VALUES ${ph}
              ON CONFLICT (code) DO UPDATE SET
                name               = EXCLUDED.name,

@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from 'next/navigation'
 import { ArrowLeft, Settings } from 'lucide-react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { ThemeToggle } from '@/components/patient-dashboard-v2/ThemeToggle'
 import { NotificationBell } from '@/components/v2/notifications/NotificationBell'
 
@@ -46,9 +47,14 @@ export function MobileHeader() {
         <div className="flex items-center gap-2 min-w-[44px]">
           {isHome ? (
             <Link href={HOME_PATH} className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center shadow-sm">
-                <span className="text-white font-bold text-sm">CZ</span>
-              </div>
+              <Image
+                src="/assets/clinic-ez_mini-logo.svg"
+                alt="ClinicEZ"
+                width={32}
+                height={32}
+                className="rounded-lg"
+                priority
+              />
               <span className="text-base font-bold bg-gradient-to-r from-teal-600 to-cyan-500 bg-clip-text text-transparent hidden sm:block">
                 ClinicEZ
               </span>
@@ -79,7 +85,7 @@ export function MobileHeader() {
               className="w-9 h-9 flex items-center justify-center rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
               aria-label="Integrations"
             >
-              <Settings className="w-4 h-4" />
+              <Settings className="w-5 h-5" />
             </Link>
           )}
           <NotificationBell />

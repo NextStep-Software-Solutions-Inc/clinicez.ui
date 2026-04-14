@@ -16,6 +16,7 @@ import {
   Edit,
   X,
   UserCircle,
+  ArrowLeft,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -359,31 +360,22 @@ export function PatientFilesClient({
 
   return (
     <div className="w-full">
-      {/* Sticky section header with inline action button */}
-      <div className="sticky top-14 z-20 -mx-4 px-4 py-2.5 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-b border-slate-100 dark:border-slate-800 mb-4 flex items-center justify-between">
+      {/* Sticky section header — shows page title or folder name with back button */}
+      <div className="sticky top-14 z-20 -mx-4 px-4 py-2.5 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-b border-slate-100 dark:border-slate-800 mb-4 flex items-center gap-2">
         {currentFolder ? (
-          <div className="flex items-center gap-1 text-sm text-slate-500 dark:text-slate-400 min-w-0">
+          <>
             <button
               onClick={() => setSelectedFolder(null)}
-              className="hover:text-teal-600 dark:hover:text-teal-400 shrink-0"
+              className="w-8 h-8 flex items-center justify-center rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shrink-0"
+              aria-label="Back to all files"
             >
-              All Files
+              <ArrowLeft className="w-4 h-4" />
             </button>
-            <span className="shrink-0"> › </span>
-            <span className="text-slate-900 dark:text-white font-medium truncate">{currentFolder.name}</span>
-          </div>
+            <span className="text-base font-bold text-slate-900 dark:text-white truncate">{currentFolder.name}</span>
+          </>
         ) : (
-          <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">My Files</span>
+          <span className="text-base font-bold text-slate-900 dark:text-white">My Files</span>
         )}
-        <button
-          type="button"
-          onClick={() => currentFolder ? setShowUpload(true) : setShowCreateFolder(true)}
-          className="shrink-0 ml-2 h-8 px-3 rounded-xl bg-teal-50 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400 text-xs font-semibold border border-teal-200 dark:border-teal-800 hover:bg-teal-100 dark:hover:bg-teal-900/50 transition-colors flex items-center gap-1.5 active:scale-95"
-          aria-label={currentFolder ? 'Upload file' : 'New folder'}
-        >
-          <Plus className="w-3.5 h-3.5" />
-          {currentFolder ? 'Upload' : 'New Folder'}
-        </button>
       </div>
 
       {/* Folder View */}
@@ -655,7 +647,7 @@ export function PatientFilesClient({
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-6 w-6 opacity-0 group-hover:opacity-100"
+                              className="h-6 w-6"
                             >
                               <MoreVertical className="w-3 h-3" />
                             </Button>
@@ -736,6 +728,28 @@ export function PatientFilesClient({
           )}
         </div>
       )}
+
+      {/* Sticky action bar — above BottomNav (bottom-20) */}
+      <div className="fixed bottom-24 left-0 right-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-t border-slate-200 dark:border-slate-700 px-4 py-2.5 flex items-center gap-3">
+        <button
+          type="button"
+          onClick={() => setShowCreateFolder(true)}
+          className="flex-1 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-semibold border border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors flex items-center justify-center gap-1.5 active:scale-95"
+        >
+          <Plus className="w-4 h-4" />
+          New Folder
+        </button>
+        {currentFolder && (
+          <button
+            type="button"
+            onClick={() => setShowUpload(true)}
+            className="flex-1 h-10 rounded-xl bg-teal-500 text-white text-sm font-semibold shadow-md shadow-teal-500/20 hover:bg-teal-600 transition-colors flex items-center justify-center gap-1.5 active:scale-95"
+          >
+            <Upload className="w-4 h-4" />
+            Upload
+          </button>
+        )}
+      </div>
 
       {/* Create Folder Dialog */}
       <Dialog open={showCreateFolder} onOpenChange={setShowCreateFolder}>

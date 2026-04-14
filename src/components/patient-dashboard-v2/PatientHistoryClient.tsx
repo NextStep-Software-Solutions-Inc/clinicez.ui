@@ -22,6 +22,7 @@ import {
   ActivitySquare,
   Download,
   Search,
+  ChevronDown,
 } from 'lucide-react'
 import type { GetPatientSelfHistory } from '@/actions/patient-dashboard/get-self-history'
 import { formatTime12Hr } from '@/lib/day-utils'
@@ -851,10 +852,13 @@ export default function PatientHistoryClient({
                       <cfg.Icon className="h-3.5 w-3.5" />
                       {cfg.label}
                     </span>
-                    <span className="flex items-center gap-1 text-xs text-slate-400 dark:text-slate-500 shrink-0">
-                      <Clock className="h-3 w-3" />
-                      {displayDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                    </span>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="flex items-center gap-1 text-xs text-slate-400 dark:text-slate-500">
+                        <Clock className="h-3 w-3" />
+                        {displayDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </span>
+                      <ChevronDown className={`h-4 w-4 text-slate-400 dark:text-slate-500 transition-transform flex-shrink-0 ${isExpanded ? 'rotate-180' : ''}`} />
+                    </div>
                   </div>
                   <p className="text-sm font-bold text-slate-900 dark:text-white mt-1.5 leading-snug">
                     {ticket.subject ?? 'Consultation'}
@@ -863,10 +867,6 @@ export default function PatientHistoryClient({
                     {ticket.Clinic && (
                       <span className="text-xs font-medium text-slate-600 dark:text-slate-300">{ticket.Clinic.name}</span>
                     )}
-                    <span className="inline-flex items-center gap-1 text-xs text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">
-                      <Stethoscope className="h-3 w-3" />
-                      Consultation
-                    </span>
                   </div>
                 </button>
                 {/* Expanded content */}
@@ -908,10 +908,13 @@ export default function PatientHistoryClient({
                       Appointment
                     </span>
                   )}
-                  <span className="flex items-center gap-1 text-xs text-slate-400 dark:text-slate-500 shrink-0">
-                    <Clock className="h-3 w-3" />
-                    {displayDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                  </span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="flex items-center gap-1 text-xs text-slate-400 dark:text-slate-500">
+                      <Clock className="h-3 w-3" />
+                      {displayDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </span>
+                    <ChevronDown className={`h-4 w-4 text-slate-400 dark:text-slate-500 transition-transform flex-shrink-0 ${isExpanded ? 'rotate-180' : ''}`} />
+                  </div>
                 </div>
                 <p className="text-sm font-bold text-slate-900 dark:text-white mt-1.5 leading-snug">
                   {appt.subject ?? appt.complaint ?? 'Appointment'}
@@ -920,10 +923,6 @@ export default function PatientHistoryClient({
                   {appt.Clinic && (
                     <span className="text-xs font-medium text-slate-600 dark:text-slate-300">{appt.Clinic.name}</span>
                   )}
-                  <span className="inline-flex items-center gap-1 text-xs text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">
-                    <Calendar className="h-3 w-3" />
-                    Appointment
-                  </span>
                 </div>
               </button>
               {/* Expanded content */}

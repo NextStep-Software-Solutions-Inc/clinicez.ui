@@ -106,6 +106,11 @@ export function ProfileAvatarCamera({ userId, picture, initials }: ProfileAvatar
         )}
       </div>
 
+      {/* Persistent camera badge for mobile */}
+      <div className="absolute -bottom-1.5 -right-1.5 w-6 h-6 rounded-full bg-teal-500 border-2 border-white dark:border-slate-900 flex items-center justify-center shadow-sm pointer-events-none z-10">
+        <Camera className="w-3 h-3 text-white" />
+      </div>
+
       {/* Hidden file input */}
       <input
         ref={fileInputRef}

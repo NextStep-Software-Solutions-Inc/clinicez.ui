@@ -1,11 +1,12 @@
 'use client'
 
+import type { LucideIcon } from 'lucide-react'
 import type { TabBadge } from '../_lib/tab-badges'
 
 export interface ProfileTab {
   id: string
   label: string
-  icon: string
+  icon: LucideIcon
 }
 
 interface TabNavProps {
@@ -21,6 +22,7 @@ export function TabNav({ tabs, activeTab, badges, onTabChange }: TabNavProps) {
       {tabs.map(tab => {
         const badge = badges[tab.id]
         const isActive = activeTab === tab.id
+        const TabIcon = tab.icon
         return (
           <button
             key={tab.id}
@@ -31,7 +33,7 @@ export function TabNav({ tabs, activeTab, badges, onTabChange }: TabNavProps) {
                 : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
             }`}
           >
-            <span className="text-base">{tab.icon}</span>
+            <TabIcon className="w-4 h-4" />
             <span>{tab.label}</span>
             {badge && (
               <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${

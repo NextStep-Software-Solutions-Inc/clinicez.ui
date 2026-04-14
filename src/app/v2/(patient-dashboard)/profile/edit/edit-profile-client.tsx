@@ -1,7 +1,29 @@
 'use client'
 
 import { useEffect, useState, useRef, useMemo, useCallback, Suspense } from 'react'
-import { Save, CheckCircle2, XCircle, Loader2, MinusCircle } from 'lucide-react'
+import {
+  Save,
+  CheckCircle2,
+  XCircle,
+  Loader2,
+  MinusCircle,
+  User,
+  MapPin,
+  Phone,
+  AlertTriangle,
+  Syringe,
+  Accessibility,
+  Activity,
+  ClipboardList,
+  Baby,
+  Ruler,
+  Stethoscope,
+  Scissors,
+  Users,
+  FlaskConical,
+  Building,
+} from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import {
   mapPersonalHistoryToFormInput,
   mapPatientDataToDemographicsFormInput,
@@ -51,7 +73,7 @@ import './edit-profile.css'
 type Section = {
   id: string
   label: string
-  icon: string
+  icon: LucideIcon
   ref: React.RefObject<HTMLDivElement | null>
 } & (
   | { saveType: 'auto' }
@@ -83,7 +105,7 @@ type SaveAllStatus = 'idle' | 'pending' | 'saving' | 'saved' | 'error' | 'no-cha
 interface SaveAllItem {
   id: string
   label: string
-  icon: string
+  icon: LucideIcon
   status: SaveAllStatus
   error?: string
 }
@@ -169,21 +191,21 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
 
   const sections: Section[] = useMemo(
     () => [
-      { id: 'demographics', label: 'Demographics', icon: '👤', ref: demographicsRef, saveType: 'batch', saveRef: demographicsSaveRef, onDirtyChange: (d) => onSectionDirtyChange('demographics', d) },
-      { id: 'addresses', label: 'Addresses', icon: '📍', ref: addressesRef, saveType: 'auto' },
-      { id: 'emergency-contacts', label: 'Contacts', icon: '🆘', ref: emergencyContactsRef, saveType: 'auto' },
-      { id: 'allergies', label: 'Allergies', icon: '⚠️', ref: allergiesRef, saveType: 'auto' },
-      { id: 'vaccinations', label: 'Vaccinations', icon: '💉', ref: vaccinationsRef, saveType: 'auto' },
-      { id: 'disabilities', label: 'Disabilities', icon: '♿', ref: disabilitiesRef, saveType: 'auto' },
-      { id: 'vital-signs', label: 'Vitals', icon: '❤️', ref: vitalSignsRef, saveType: 'batch', saveRef: vitalSignsSaveRef, onDirtyChange: (d) => onSectionDirtyChange('vital-signs', d) },
-      { id: 'personal-history', label: 'History', icon: '📋', ref: personalHistoryRef, saveType: 'batch', saveRef: personalHistorySaveRef, onDirtyChange: (d) => onSectionDirtyChange('personal-history', d) },
-      { id: 'ob-gyne', label: 'OB/GYN', icon: '👶', ref: obGyneRef, saveType: 'batch', saveRef: obGyneSaveRef, onDirtyChange: (d) => onSectionDirtyChange('ob-gyne', d) },
-      { id: 'pediatric', label: 'Pediatric', icon: '📏', ref: pediatricRef, saveType: 'batch', saveRef: pediatricSaveRef, onDirtyChange: (d) => onSectionDirtyChange('pediatric', d) },
-      { id: 'medical', label: 'Conditions', icon: '🏥', ref: medicalRef, saveType: 'batch', saveRef: medicalSaveRef, onDirtyChange: (d) => onSectionDirtyChange('medical', d) },
-      { id: 'surgical', label: 'Surgical', icon: '⚕️', ref: surgicalRef, saveType: 'auto' },
-      { id: 'family', label: 'Family', icon: '👨‍👩‍👧‍👦', ref: familyRef, saveType: 'batch', saveRef: familySaveRef, onDirtyChange: (d) => onSectionDirtyChange('family', d) },
-      { id: 'examination', label: 'Exam', icon: '🔍', ref: examinationRef, saveType: 'batch', saveRef: examinationSaveRef, onDirtyChange: (d) => onSectionDirtyChange('examination', d) },
-      { id: 'philhealth', label: 'PhilHealth', icon: '🏛️', ref: philhealthRef, saveType: 'batch', saveRef: philhealthSaveRef, onDirtyChange: (d) => onSectionDirtyChange('philhealth', d) },
+      { id: 'demographics', label: 'Demographics', icon: User, ref: demographicsRef, saveType: 'batch', saveRef: demographicsSaveRef, onDirtyChange: (d) => onSectionDirtyChange('demographics', d) },
+      { id: 'addresses', label: 'Addresses', icon: MapPin, ref: addressesRef, saveType: 'auto' },
+      { id: 'emergency-contacts', label: 'Contacts', icon: Phone, ref: emergencyContactsRef, saveType: 'auto' },
+      { id: 'allergies', label: 'Allergies', icon: AlertTriangle, ref: allergiesRef, saveType: 'auto' },
+      { id: 'vaccinations', label: 'Vaccinations', icon: Syringe, ref: vaccinationsRef, saveType: 'auto' },
+      { id: 'disabilities', label: 'Disabilities', icon: Accessibility, ref: disabilitiesRef, saveType: 'auto' },
+      { id: 'vital-signs', label: 'Vitals', icon: Activity, ref: vitalSignsRef, saveType: 'batch', saveRef: vitalSignsSaveRef, onDirtyChange: (d) => onSectionDirtyChange('vital-signs', d) },
+      { id: 'personal-history', label: 'History', icon: ClipboardList, ref: personalHistoryRef, saveType: 'batch', saveRef: personalHistorySaveRef, onDirtyChange: (d) => onSectionDirtyChange('personal-history', d) },
+      { id: 'ob-gyne', label: 'OB/GYN', icon: Baby, ref: obGyneRef, saveType: 'batch', saveRef: obGyneSaveRef, onDirtyChange: (d) => onSectionDirtyChange('ob-gyne', d) },
+      { id: 'pediatric', label: 'Pediatric', icon: Ruler, ref: pediatricRef, saveType: 'batch', saveRef: pediatricSaveRef, onDirtyChange: (d) => onSectionDirtyChange('pediatric', d) },
+      { id: 'medical', label: 'Conditions', icon: Stethoscope, ref: medicalRef, saveType: 'batch', saveRef: medicalSaveRef, onDirtyChange: (d) => onSectionDirtyChange('medical', d) },
+      { id: 'surgical', label: 'Surgical', icon: Scissors, ref: surgicalRef, saveType: 'auto' },
+      { id: 'family', label: 'Family', icon: Users, ref: familyRef, saveType: 'batch', saveRef: familySaveRef, onDirtyChange: (d) => onSectionDirtyChange('family', d) },
+      { id: 'examination', label: 'Exam', icon: FlaskConical, ref: examinationRef, saveType: 'batch', saveRef: examinationSaveRef, onDirtyChange: (d) => onSectionDirtyChange('examination', d) },
+      { id: 'philhealth', label: 'PhilHealth', icon: Building, ref: philhealthRef, saveType: 'batch', saveRef: philhealthSaveRef, onDirtyChange: (d) => onSectionDirtyChange('philhealth', d) },
     ],
     [onSectionDirtyChange],
   )
@@ -426,7 +448,7 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
                     : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
                 }`}
               >
-                <span className="mr-1 md:mr-1.5">{section.icon}</span>
+                <span className="mr-1 md:mr-1.5 inline-flex items-center"><section.icon className="w-4 h-4" /></span>
                 {section.label}
               </button>
             ))}
@@ -878,19 +900,22 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
 
             {/* Checklist */}
             <div className="overflow-y-auto flex-1 px-6 py-4 space-y-2">
-              {saveAllItems.map((item) => (
-                <div key={item.id} className="flex items-center gap-3 py-2">
-                  <span className="text-base shrink-0">{item.icon}</span>
-                  <span className="flex-1 text-sm font-medium text-slate-800 dark:text-slate-200">{item.label}</span>
-                  <span className="shrink-0">
-                    {item.status === 'pending' && <MinusCircle className="w-4 h-4 text-slate-400" />}
-                    {item.status === 'saving' && <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />}
-                    {item.status === 'saved' && <CheckCircle2 className="w-4 h-4 text-green-500" />}
-                    {item.status === 'error' && <XCircle className="w-4 h-4 text-red-500" />}
-                    {item.status === 'no-changes' && <span className="text-xs text-slate-400 italic">No changes</span>}
-                  </span>
-                </div>
-              ))}
+              {saveAllItems.map((item) => {
+                const ItemIcon = item.icon
+                return (
+                  <div key={item.id} className="flex items-center gap-3 py-2">
+                    <ItemIcon className="w-4 h-4 text-slate-400 shrink-0" />
+                    <span className="flex-1 text-sm font-medium text-slate-800 dark:text-slate-200">{item.label}</span>
+                    <span className="shrink-0">
+                      {item.status === 'pending' && <MinusCircle className="w-4 h-4 text-slate-400" />}
+                      {item.status === 'saving' && <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />}
+                      {item.status === 'saved' && <CheckCircle2 className="w-4 h-4 text-green-500" />}
+                      {item.status === 'error' && <XCircle className="w-4 h-4 text-red-500" />}
+                      {item.status === 'no-changes' && <span className="text-xs text-slate-400 italic">No changes</span>}
+                    </span>
+                  </div>
+                )
+              })}
             </div>
 
             {/* Footer */}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   GetBarangaysResult,
   getBarangaysAction,
@@ -8,6 +8,7 @@ import {
   updateBarangayAction,
   toggleBarangayActiveAction,
   deleteBarangayAction,
+  getMunicipalitiesForSelectAction,
 } from "@actions/super-admin/locations.action";
 import {
   Table,
@@ -22,7 +23,7 @@ import { Input } from "@components/ui/input";
 import { Badge } from "@components/ui/badge";
 import { Label } from "@components/ui/label";
 import { Switch } from "@components/ui/switch";
-import { Search, Plus, Pencil, Trash2, MapPin } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, MapPin, ExternalLink, X } from "lucide-react";
 import { toast } from "sonner";
 import { getActionErrorMessage } from "@/lib/action-error";
 import {
@@ -43,6 +44,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@components/ui/alert-dialog";
+import { LocationParentCombobox, LocationOption } from "./LocationParentCombobox";
 
 interface BarangaysTabProps {
   initialData: GetBarangaysResult;
@@ -62,6 +64,35 @@ export function BarangaysTab({ initialData }: BarangaysTabProps) {
   const [form, setForm] = useState(emptyForm);
   const [isSaving, setIsSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<BarangayRow | null>(null);
+
+  // Municipalities for combobox (searchable, server-side)
+  const [municipalityOptions, setMunicipalityOptions] = useState<LocationOption[]>([]);
+  const [isLoadingMunicipalities, setIsLoadingMunicipalities] = useState(false);
+  const searchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const fetchMunicipalities = useCallback(async (search?: string) => {
+    setIsLoadingMunicipalities(true);
+    try {
+      const results = await getMunicipalitiesForSelectAction({ search });
+      setMunicipalityOptions(results.map((m) => ({ code: m.code, label: m.name })));
+    } catch {
+      // silently fail
+    } finally {
+      setIsLoadingMunicipalities(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    // Load a small initial set so the combobox isn't empty when opened
+    fetchMunicipalities();
+  }, [fetchMunicipalities]);
+
+  const handleMunicipalitySearch = (query: string) => {
+    if (searchDebounce.current) clearTimeout(searchDebounce.current);
+    searchDebounce.current = setTimeout(() => {
+      fetchMunicipalities(query || undefined);
+    }, 300);
+  };
 
   const loadData = async (
     page = 1,
@@ -98,6 +129,11 @@ export function BarangaysTab({ initialData }: BarangaysTabProps) {
       municipalityCode: row.municipalityCode,
       isActive: row.isActive,
     });
+    // Ensure the currently-selected municipality appears in options when editing
+    const alreadyLoaded = municipalityOptions.some((m) => m.code === row.municipalityCode);
+    if (!alreadyLoaded) {
+      fetchMunicipalities();
+    }
     setShowDialog(true);
   };
 
@@ -142,6 +178,18 @@ export function BarangaysTab({ initialData }: BarangaysTabProps) {
     }
   };
 
+  const handleMunicipalitySelect = (code: string) => {
+    setForm((prev) => ({
+      ...prev,
+      municipalityCode: code,
+      code: prev.code === "" || (!editingRow && !prev.code) ? code : prev.code,
+    }));
+  };
+
+  const filterMunicipalityLabel = filterMunicipalityCode
+    ? (municipalityOptions.find((m) => m.code === filterMunicipalityCode)?.label ?? filterMunicipalityCode)
+    : null;
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-2 sm:flex-row">
@@ -155,13 +203,38 @@ export function BarangaysTab({ initialData }: BarangaysTabProps) {
             className="pl-8"
           />
         </div>
-        <Input
-          placeholder="Filter by municipality code..."
-          value={filterMunicipalityCode}
-          onChange={(e) => setFilterMunicipalityCode(e.target.value)}
-          className="sm:w-56"
-          onKeyDown={(e) => e.key === "Enter" && loadData(1, search, filterMunicipalityCode)}
-        />
+
+        {/* Municipality filter combobox */}
+        <div className="sm:w-64">
+          <div className="relative">
+            <LocationParentCombobox
+              value={filterMunicipalityCode}
+              onSelect={(code) => {
+                setFilterMunicipalityCode(code);
+                loadData(1, search, code);
+              }}
+              options={municipalityOptions}
+              placeholder="Filter by municipality…"
+              searchPlaceholder="Type to search municipalities…"
+              emptyText="No municipalities found."
+              isLoading={isLoadingMunicipalities}
+              onSearchChange={handleMunicipalitySearch}
+            />
+            {filterMunicipalityCode && (
+              <button
+                type="button"
+                className="absolute right-8 top-2.5 text-muted-foreground hover:text-foreground"
+                onClick={() => {
+                  setFilterMunicipalityCode("");
+                  loadData(1, search, "");
+                }}
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+        </div>
+
         <Button
           variant="outline"
           onClick={() => loadData(1, search, filterMunicipalityCode)}
@@ -174,6 +247,13 @@ export function BarangaysTab({ initialData }: BarangaysTabProps) {
           Add Barangay
         </Button>
       </div>
+
+      {filterMunicipalityLabel && (
+        <p className="text-sm text-muted-foreground">
+          Filtering by municipality:{" "}
+          <span className="font-medium text-foreground">{filterMunicipalityLabel}</span>
+        </p>
+      )}
 
       <div className="rounded-md border">
         <Table>
@@ -198,7 +278,7 @@ export function BarangaysTab({ initialData }: BarangaysTabProps) {
               <TableRow>
                 <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                   <MapPin className="mx-auto h-8 w-8 mb-2 opacity-40" />
-                  No barangays found. Use the municipality code filter to narrow results.
+                  No barangays found. Use the municipality filter to narrow results.
                 </TableCell>
               </TableRow>
             ) : (
@@ -279,6 +359,24 @@ export function BarangaysTab({ initialData }: BarangaysTabProps) {
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
+              <Label>Municipality / City</Label>
+              <LocationParentCombobox
+                value={form.municipalityCode}
+                onSelect={handleMunicipalitySelect}
+                options={municipalityOptions}
+                placeholder="Select a municipality or city…"
+                searchPlaceholder="Type to search municipalities…"
+                emptyText="No municipalities found. Seed municipalities first."
+                isLoading={isLoadingMunicipalities}
+                onSearchChange={handleMunicipalitySearch}
+              />
+              {form.municipalityCode && (
+                <p className="text-xs text-muted-foreground font-mono">
+                  Municipality code: {form.municipalityCode}
+                </p>
+              )}
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="brgy-code">PSGC Code</Label>
               <Input
                 id="brgy-code"
@@ -286,6 +384,17 @@ export function BarangaysTab({ initialData }: BarangaysTabProps) {
                 onChange={(e) => setForm({ ...form, code: e.target.value })}
                 placeholder="e.g. 012801001"
               />
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                9-digit Philippine Standard Geographic Code.{" "}
+                <a
+                  href="https://psa.gov.ph/classification/psgc/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-0.5 text-primary hover:underline"
+                >
+                  Find codes at PSA PSGC <ExternalLink className="h-3 w-3" />
+                </a>
+              </p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="brgy-name">Name</Label>
@@ -294,15 +403,6 @@ export function BarangaysTab({ initialData }: BarangaysTabProps) {
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
                 placeholder="e.g. Adams (Pob.)"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="brgy-municipality-code">Municipality Code</Label>
-              <Input
-                id="brgy-municipality-code"
-                value={form.municipalityCode}
-                onChange={(e) => setForm({ ...form, municipalityCode: e.target.value })}
-                placeholder="e.g. 012801000"
               />
             </div>
             <div className="flex items-center gap-2">

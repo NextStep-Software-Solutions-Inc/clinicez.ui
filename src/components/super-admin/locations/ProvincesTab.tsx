@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   GetProvincesResult,
   getProvincesAction,
@@ -8,6 +8,7 @@ import {
   updateProvinceAction,
   toggleProvinceActiveAction,
   deleteProvinceAction,
+  getRegionsForSelectAction,
 } from "@actions/super-admin/locations.action";
 import {
   Table,
@@ -22,7 +23,7 @@ import { Input } from "@components/ui/input";
 import { Badge } from "@components/ui/badge";
 import { Label } from "@components/ui/label";
 import { Switch } from "@components/ui/switch";
-import { Search, Plus, Pencil, Trash2, MapPin } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, MapPin, ExternalLink, X } from "lucide-react";
 import { toast } from "sonner";
 import { getActionErrorMessage } from "@/lib/action-error";
 import {
@@ -43,6 +44,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@components/ui/alert-dialog";
+import { LocationParentCombobox, LocationOption } from "./LocationParentCombobox";
 
 interface ProvincesTabProps {
   initialData: GetProvincesResult;
@@ -62,6 +64,28 @@ export function ProvincesTab({ initialData }: ProvincesTabProps) {
   const [form, setForm] = useState(emptyForm);
   const [isSaving, setIsSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<ProvinceRow | null>(null);
+
+  // Regions for combobox
+  const [regionOptions, setRegionOptions] = useState<LocationOption[]>([]);
+  const [isLoadingRegions, setIsLoadingRegions] = useState(false);
+
+  const loadRegions = useCallback(async () => {
+    setIsLoadingRegions(true);
+    try {
+      const regions = await getRegionsForSelectAction();
+      setRegionOptions(
+        regions.map((r) => ({ code: r.code, label: r.name, description: r.regionName }))
+      );
+    } catch {
+      // silently fail — raw text input still works
+    } finally {
+      setIsLoadingRegions(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadRegions();
+  }, [loadRegions]);
 
   const loadData = async (page = 1, searchTerm = search, regionCode = filterRegionCode) => {
     setIsLoading(true);
@@ -133,6 +157,19 @@ export function ProvincesTab({ initialData }: ProvincesTabProps) {
     }
   };
 
+  const handleRegionSelect = (code: string) => {
+    setForm((prev) => ({
+      ...prev,
+      regionCode: code,
+      // Pre-populate PSGC code with region's code as a starting reference when creating
+      code: prev.code === "" || (!editingRow && !prev.code) ? code : prev.code,
+    }));
+  };
+
+  const filterRegionLabel = filterRegionCode
+    ? (regionOptions.find((r) => r.code === filterRegionCode)?.label ?? filterRegionCode)
+    : null;
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-2 sm:flex-row">
@@ -146,13 +183,45 @@ export function ProvincesTab({ initialData }: ProvincesTabProps) {
             className="pl-8"
           />
         </div>
-        <Input
-          placeholder="Filter by region code..."
-          value={filterRegionCode}
-          onChange={(e) => setFilterRegionCode(e.target.value)}
-          className="sm:w-48"
-          onKeyDown={(e) => e.key === "Enter" && loadData(1, search, filterRegionCode)}
-        />
+
+        {/* Region filter combobox */}
+        <div className="sm:w-56">
+          {regionOptions.length > 0 ? (
+            <div className="relative">
+              <LocationParentCombobox
+                value={filterRegionCode}
+                onSelect={(code) => {
+                  setFilterRegionCode(code);
+                  loadData(1, search, code);
+                }}
+                options={regionOptions}
+                placeholder="Filter by region…"
+                searchPlaceholder="Search regions…"
+                emptyText="No regions found."
+              />
+              {filterRegionCode && (
+                <button
+                  type="button"
+                  className="absolute right-8 top-2.5 text-muted-foreground hover:text-foreground"
+                  onClick={() => {
+                    setFilterRegionCode("");
+                    loadData(1, search, "");
+                  }}
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+          ) : (
+            <Input
+              placeholder="Filter by region code…"
+              value={filterRegionCode}
+              onChange={(e) => setFilterRegionCode(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && loadData(1, search, filterRegionCode)}
+            />
+          )}
+        </div>
+
         <Button variant="outline" onClick={() => loadData(1, search, filterRegionCode)} disabled={isLoading}>
           Search
         </Button>
@@ -161,6 +230,12 @@ export function ProvincesTab({ initialData }: ProvincesTabProps) {
           Add Province
         </Button>
       </div>
+
+      {filterRegionLabel && (
+        <p className="text-sm text-muted-foreground">
+          Filtering by region: <span className="font-medium text-foreground">{filterRegionLabel}</span>
+        </p>
+      )}
 
       <div className="rounded-md border">
         <Table>
@@ -267,6 +342,23 @@ export function ProvincesTab({ initialData }: ProvincesTabProps) {
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
+              <Label>Region</Label>
+              <LocationParentCombobox
+                value={form.regionCode}
+                onSelect={handleRegionSelect}
+                options={regionOptions}
+                placeholder="Select a region…"
+                searchPlaceholder="Search regions…"
+                emptyText="No regions found. Seed regions first."
+                isLoading={isLoadingRegions}
+              />
+              {form.regionCode && (
+                <p className="text-xs text-muted-foreground font-mono">
+                  Region code: {form.regionCode}
+                </p>
+              )}
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="province-code">PSGC Code</Label>
               <Input
                 id="province-code"
@@ -274,6 +366,17 @@ export function ProvincesTab({ initialData }: ProvincesTabProps) {
                 onChange={(e) => setForm({ ...form, code: e.target.value })}
                 placeholder="e.g. 012800000"
               />
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                9-digit Philippine Standard Geographic Code.{" "}
+                <a
+                  href="https://psa.gov.ph/classification/psgc/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-0.5 text-primary hover:underline"
+                >
+                  Find codes at PSA PSGC <ExternalLink className="h-3 w-3" />
+                </a>
+              </p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="province-name">Name</Label>
@@ -282,15 +385,6 @@ export function ProvincesTab({ initialData }: ProvincesTabProps) {
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
                 placeholder="e.g. Ilocos Norte"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="province-region-code">Region Code</Label>
-              <Input
-                id="province-region-code"
-                value={form.regionCode}
-                onChange={(e) => setForm({ ...form, regionCode: e.target.value })}
-                placeholder="e.g. 010000000"
               />
             </div>
             <div className="flex items-center gap-2">

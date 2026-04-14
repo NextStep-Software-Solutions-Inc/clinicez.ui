@@ -22,7 +22,7 @@ import { Input } from "@components/ui/input";
 import { Badge } from "@components/ui/badge";
 import { Label } from "@components/ui/label";
 import { Switch } from "@components/ui/switch";
-import { Search, Plus, Pencil, Trash2, MapPin } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, MapPin, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { getActionErrorMessage } from "@/lib/action-error";
 import {
@@ -266,6 +266,17 @@ export function RegionsTab({ initialData }: RegionsTabProps) {
                 onChange={(e) => setForm({ ...form, code: e.target.value })}
                 placeholder="e.g. 010000000"
               />
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                9-digit Philippine Standard Geographic Code.{" "}
+                <a
+                  href="https://psa.gov.ph/classification/psgc/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-0.5 text-primary hover:underline"
+                >
+                  Find codes at PSA PSGC <ExternalLink className="h-3 w-3" />
+                </a>
+              </p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="region-name">Name</Label>

@@ -481,6 +481,53 @@ export async function deleteBarangayAction(id: number) {
   return prisma.phBarangay.delete({ where: { id } });
 }
 
+// ─── "For Select" lightweight actions ────────────────────────────────────
+// Compact lists intended for use in dropdowns / comboboxes.
+
+export async function getRegionsForSelectAction() {
+  const isSuperAdmin = await isSuperAdminAction();
+  if (!isSuperAdmin) throw new Error(ERROR_MESSAGES.UNAUTHORIZED);
+
+  return prisma.phRegion.findMany({
+    orderBy: { name: "asc" },
+    select: { code: true, name: true, regionName: true },
+  });
+}
+
+export async function getProvincesForSelectAction(regionCode?: string) {
+  const isSuperAdmin = await isSuperAdminAction();
+  if (!isSuperAdmin) throw new Error(ERROR_MESSAGES.UNAUTHORIZED);
+
+  return prisma.phProvince.findMany({
+    where: regionCode ? { regionCode } : undefined,
+    orderBy: { name: "asc" },
+    select: { code: true, name: true, regionCode: true },
+  });
+}
+
+export async function getMunicipalitiesForSelectAction({
+  provinceCode,
+  search,
+}: {
+  provinceCode?: string;
+  search?: string;
+} = {}) {
+  const isSuperAdmin = await isSuperAdminAction();
+  if (!isSuperAdmin) throw new Error(ERROR_MESSAGES.UNAUTHORIZED);
+
+  const where = {
+    ...(provinceCode ? { provinceCode } : {}),
+    ...(search ? { name: { contains: search, mode: "insensitive" as const } } : {}),
+  };
+
+  return prisma.phMunicipality.findMany({
+    where,
+    orderBy: { name: "asc" },
+    take: 100,
+    select: { code: true, name: true, provinceCode: true },
+  });
+}
+
 // ─── Seed Action ───────────────────────────────────────────────────────────
 
 // Rows per raw-SQL INSERT … ON CONFLICT batch.

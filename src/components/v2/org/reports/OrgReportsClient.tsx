@@ -273,14 +273,18 @@ function DailyTrendChart({ trend }: { trend: { date: string; count: number }[] }
   }
   const maxVal = Math.max(...trend.map((t) => t.count), 1);
   return (
-    <div className="flex items-end gap-0.5 h-16">
+    <div className="flex items-end gap-0.5 h-16" aria-label="Daily registrations trend chart">
       {trend.map((t) => (
         <div
           key={t.date}
-          className="flex-1 bg-primary/50 rounded-sm hover:bg-primary/70 transition-colors cursor-default"
-          style={{ height: `${Math.max((t.count / maxVal) * 100, 4)}%` }}
+          className="flex-1 h-full flex flex-col justify-end group cursor-default"
           title={`${t.date}: ${t.count}`}
-        />
+        >
+          <div
+            className="w-full rounded-sm bg-primary/50 transition-colors group-hover:bg-primary/70"
+            style={{ height: `${Math.max((t.count / maxVal) * 100, 4)}%` }}
+          />
+        </div>
       ))}
     </div>
   );

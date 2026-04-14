@@ -2836,3 +2836,73 @@ enum HPApplicationStatus {
   APPROVED
   REJECTED
 }
+
+// ─── Philippine Location Reference Tables ────────────────────────────────────
+
+/// Master reference table for Philippine regions (PSGC-based).
+/// Managed via the super-admin Location Management console.
+model PhRegion {
+  id         Int          @id @default(autoincrement())
+  code       String       @unique
+  name       String
+  regionName String
+  isActive   Boolean      @default(true)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  provinces  PhProvince[]
+
+  @@index([code])
+  @@index([isActive])
+}
+
+/// Master reference table for Philippine provinces (PSGC-based).
+model PhProvince {
+  id           Int              @id @default(autoincrement())
+  code         String           @unique
+  name         String
+  regionCode   String
+  isActive     Boolean          @default(true)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  region       PhRegion         @relation(fields: [regionCode], references: [code])
+  municipalities PhMunicipality[]
+
+  @@index([code])
+  @@index([regionCode])
+  @@index([isActive])
+}
+
+/// Master reference table for Philippine cities and municipalities (PSGC-based).
+model PhMunicipality {
+  id           Int          @id @default(autoincrement())
+  code         String       @unique
+  name         String
+  provinceCode String
+  isCity       Boolean      @default(false)
+  isCapital    Boolean      @default(false)
+  isActive     Boolean      @default(true)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  province     PhProvince   @relation(fields: [provinceCode], references: [code])
+  barangays    PhBarangay[]
+
+  @@index([code])
+  @@index([provinceCode])
+  @@index([isActive])
+}
+
+/// Master reference table for Philippine barangays (PSGC-based).
+model PhBarangay {
+  id               Int            @id @default(autoincrement())
+  code             String         @unique
+  name             String
+  municipalityCode String
+  isActive         Boolean        @default(true)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  municipality     PhMunicipality @relation(fields: [municipalityCode], references: [code])
+
+  @@index([code])
+  @@index([municipalityCode])
+  @@index([isActive])
+}

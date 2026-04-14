@@ -1,5 +1,6 @@
 'use client'
 
+import { AlertTriangle } from 'lucide-react'
 import type { AllergiesTabData } from '@/types/patient-profile-tabs'
 
 type Props = { data: AllergiesTabData }
@@ -8,7 +9,7 @@ export function AllergiesTab({ data }: Props) {
   return (
     <div className="space-y-6">
       <div className="glassmorphic-card p-6">
-        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">⚠️ Allergies</h3>
+        <h3 className="flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-white mb-4"><AlertTriangle className="w-5 h-5 text-teal-500" /> Allergies</h3>
         {data.userAllergies.length > 0 ? (
           <div className="space-y-3">
             {data.userAllergies.map((allergy) => (

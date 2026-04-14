@@ -77,7 +77,7 @@ export function ModernUserButton({ isDark }: ModernUserButtonProps) {
           appearance={{
             baseTheme: isDark ? dark : undefined,
             elements: {
-              avatarBox: "w-10 h-10"
+              avatarBox: "w-8 h-8"
             }
           }}
         >

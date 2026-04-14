@@ -12,41 +12,33 @@ import {
   UpcomingAppointmentsList,
   ConsultationNotes,
   PendingLabWork,
-  FloatingActionMenu,
   SelectClinicDialog,
   JoinAsPatientDialogV2,
 } from '@/components/patient-dashboard-v2';
-import { ThemeToggle } from '@/components/patient-dashboard-v2/ThemeToggle';
 import { getPatientDashboardData } from '@/actions/patient-dashboard';
 import { bookAppointmentAtom } from '@/state/book-appointment';
 import { checkIsClinicPatientAction } from '@/actions/clinics/clinic-patient.action';
 import BookAppointmentSheet from '@/components/appointment/BookAppointmentSheet';
-import { NotificationBell } from '@/components/v2/notifications/NotificationBell';
 
-// Loading skeleton for initial page load
+// Mobile loading skeleton
 function DashboardLoadingSkeleton() {
   return (
-    <div className="w-full">
-      {/* Header skeleton */}
-      <div className="h-12 bg-slate-300/40 dark:bg-slate-700/50 rounded-lg mb-8 animate-pulse" />
-
-      {/* Main content skeletons */}
-      <div className="space-y-6">
-        {/* Hero card skeleton */}
-        <div className="h-48 bg-slate-300/40 dark:bg-slate-700/50 rounded-2xl animate-pulse" />
-
-        {/* Grid skeletons */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6">
-            <div className="h-64 bg-slate-300/40 dark:bg-slate-700/50 rounded-xl animate-pulse" />
-            <div className="h-80 bg-slate-300/40 dark:bg-slate-700/50 rounded-xl animate-pulse" />
-          </div>
-          <div className="space-y-6">
-            <div className="h-64 bg-slate-300/40 dark:bg-slate-700/50 rounded-xl animate-pulse" />
-            <div className="h-64 bg-slate-300/40 dark:bg-slate-700/50 rounded-xl animate-pulse" />
-          </div>
-        </div>
+    <div className="w-full space-y-6 pt-2">
+      {/* Hero greeting skeleton */}
+      <div className="h-32 bg-gradient-to-r from-slate-300/50 to-slate-200/50 dark:from-slate-700/50 dark:to-slate-600/50 rounded-2xl animate-pulse" />
+      {/* Quick vitals row */}
+      <div className="flex gap-3 overflow-hidden">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="h-20 w-28 flex-shrink-0 bg-slate-200/60 dark:bg-slate-700/50 rounded-2xl animate-pulse" />
+        ))}
       </div>
+      {/* Card sections */}
+      {[...Array(3)].map((_, i) => (
+        <div key={i} className="space-y-2">
+          <div className="h-4 w-32 bg-slate-200/60 dark:bg-slate-700/50 rounded animate-pulse" />
+          <div className="h-36 bg-slate-200/60 dark:bg-slate-700/50 rounded-2xl animate-pulse" />
+        </div>
+      ))}
     </div>
   );
 }
@@ -59,31 +51,29 @@ function PatientDashboardContent() {
   const [showJoinDialog, setShowJoinDialog] = useState(false);
   const diagnosticRequestsRef = useRef<HTMLDivElement>(null);
   const prescriptionsRef = useRef<HTMLDivElement>(null);
-  const appointmentRef = useRef<HTMLDivElement>(null);
-  
+
   const { data: dashboardData, isLoading, error } = useSWR(
     'patient-dashboard',
     getPatientDashboardData,
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
-      dedupingInterval: 5 * 60 * 1000, // 5 minutes
+      dedupingInterval: 5 * 60 * 1000,
       focusThrottleInterval: 5 * 60 * 1000,
     }
   );
 
   if (error) {
     return (
-      <div className="bg-red-500/10 border border-red-400/30 rounded-xl p-6 text-center">
-        <p className="text-red-300 font-semibold">Unable to load dashboard</p>
-        <p className="text-sm text-red-200 mt-2">
+      <div className="bg-red-500/10 border border-red-400/30 rounded-2xl p-6 text-center mt-4">
+        <p className="text-red-600 dark:text-red-400 font-semibold">Unable to load dashboard</p>
+        <p className="text-sm text-red-500 dark:text-red-300 mt-2">
           {error instanceof Error ? error.message : 'Please try refreshing the page'}
         </p>
       </div>
     );
   }
 
-  // Header greeting
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return 'Good morning';
@@ -91,20 +81,19 @@ function PatientDashboardContent() {
     return 'Good evening';
   };
 
-  const getCurrentUserName = () => {
-    let name = 'Patient';
-    if (!dashboardData?.patient) return name;
-    
-    // Prefer nickname if available, then firstName/lastName, then fallback
-    if (dashboardData.patient.nickname) {
-      name = dashboardData.patient.nickname;
-    }
-    
-    name = `${dashboardData.patient.firstName || ''} ${dashboardData.patient.lastName || ''}`.trim();
-    return name.charAt(0).toUpperCase() + name.slice(1);
+  const getFirstName = () => {
+    if (!dashboardData?.patient) return 'there';
+    if (dashboardData.patient.nickname) return dashboardData.patient.nickname;
+    return dashboardData.patient.firstName || 'there';
   };
 
-  // FAB handlers
+  const getInitials = () => {
+    if (!dashboardData?.patient) return '?';
+    const f = dashboardData.patient.firstName?.[0] ?? '';
+    const l = dashboardData.patient.lastName?.[0] ?? '';
+    return (f + l).toUpperCase() || '?';
+  };
+
   const handleScheduleAppointment = () => {
     setShowClinicDialog(true);
   };
@@ -123,162 +112,137 @@ function PatientDashboardContent() {
   };
 
   const handleJoinSuccess = () => {
-    const clinicUid = pendingClinic?.clinicUid
-    setShowJoinDialog(false)
-    setPendingClinic(null)
-    router.push(`/v2/book-appointment?clinic=${clinicUid ?? ''}`)
+    const clinicUid = pendingClinic?.clinicUid;
+    setShowJoinDialog(false);
+    setPendingClinic(null);
+    router.push(`/v2/book-appointment?clinic=${clinicUid ?? ''}`);
   };
 
-  const handleViewTestRequests = () => {
-    diagnosticRequestsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  };
-
-  const handleViewPrescriptions = () => {
-    prescriptionsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  };
-
-  const handleViewProfile = () => {
-    router.push('/v2/profile');
-  };
-
-  const handleViewFiles = () => {
-    router.push('/v2/patient/files');
-  };
-
-  const handleViewHistory = () => {
-    router.push('/v2/appointments-consultations');
-  };
-
-  const handleViewIntegrations = () => {
-    router.push('/v2/integrations');
-  };
   return (
-    <div className="w-full">
-      {/* Header with greeting and theme toggle */}
-      <div className="mb-8 flex items-center justify-between">
-        <div className="min-w-0 flex-1 mr-4">
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white mb-2 truncate">
-            {getGreeting()}, {getCurrentUserName()}
-          </h1>
-          <p className="text-slate-600 dark:text-slate-400">
-            {new Date().toLocaleDateString('en-US', {
-              weekday: 'long',
-              month: 'long',
-              day: 'numeric',
-            })}
-          </p>
+    <div className="w-full space-y-6 pt-2">
+
+      {/* ── Hero Greeting Card ───────────────────────────────── */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-teal-500 via-cyan-500 to-indigo-500 p-5 shadow-lg">
+        <div className="flex items-start justify-between">
+          <div className="flex-1 min-w-0">
+            <p className="text-teal-100 text-sm font-medium">
+              {new Date().toLocaleDateString('en-US', {
+                weekday: 'long',
+                month: 'long',
+                day: 'numeric',
+              })}
+            </p>
+            <h1 className="text-white text-2xl font-bold mt-1 leading-tight">
+              {getGreeting()},<br />
+              <span className="truncate block">{getFirstName()}!</span>
+            </h1>
+          </div>
+          {/* Avatar initials */}
+          <div className="flex-shrink-0 w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-white font-bold text-lg shadow-inner">
+            {isLoading ? (
+              <span className="text-white/60">…</span>
+            ) : (
+              getInitials()
+            )}
+          </div>
         </div>
-        <div className="flex items-center gap-4">
-          <NotificationBell />
-          <ThemeToggle />
-        </div>
+        {/* Subtle orb decoration */}
+        <div className="absolute -bottom-8 -right-8 w-32 h-32 rounded-full bg-white/10 pointer-events-none" />
+        <div className="absolute -top-8 -left-4 w-24 h-24 rounded-full bg-white/10 pointer-events-none" />
       </div>
 
-      {/* Main Dashboard Grid - Mobile responsive */}
-      <div className="space-y-6">
-        {/* Hero: Next Appointment - Full Width */}
-        <div ref={appointmentRef}>
-          <NextAppointmentHeroCard
-            appointment={dashboardData?.nextAppointment || null}
-            isLoading={isLoading}
-          />
-        </div>
-
-        {/* 3 Column Layout: 2 col main + 1 col sidebar */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Content - Left (2 columns) */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Vitals Grid */}
-            <div>
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-                <span className="w-1 h-6 bg-blue-500 rounded-full"></span>
-                Health Metrics
-              </h2>
-              <VitalsGrid vitals={dashboardData?.latestVitals || null} isLoading={isLoading} />
-            </div>
-
-            {/* Medications Carousel */}
-            <div ref={prescriptionsRef}>
-              <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-                <span className="w-1 h-6 bg-emerald-500 rounded-full"></span>
-                Current Medications
-              </h2>
-              <MedicationsCarousel
-                prescriptions={dashboardData?.prescriptions?.prescriptions || null}
-                lowRefillCount={dashboardData?.prescriptions?.lowRefillCount || 0}
-                isLoading={isLoading}
-              />
-            </div>
-          </div>
-
-          {/* Sidebar - Right (1 column) */}
-          <div className="space-y-6">
-            {/* Upcoming Appointments */}
-            <div>
-              <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Upcoming</h2>
-              <UpcomingAppointmentsList
-                appointments={dashboardData?.upcomingAppointments?.appointments || null}
-                isLoading={isLoading}
-              />
-            </div>
-
-            {/* Pending Lab Work */}
-            <div ref={diagnosticRequestsRef}>
-              <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Diagnostic Requests</h2>
-              <PendingLabWork
-                labRequests={dashboardData?.pendingLabWork?.requests || null}
-                imagingRequests={dashboardData?.imagingRequests?.requests || null}
-                heartStationRequests={dashboardData?.heartStationRequests?.requests || null}
-                isLoading={isLoading}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Full Width: Consultation Notes */}
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <span className="w-1 h-6 bg-purple-500 rounded-full"></span>
-              Recent Consultations
-            </h2>
-            <Link
-              href="/v2/appointments-consultations"
-              className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              View All
-            </Link>
-          </div>
-          <ConsultationNotes
-            consultations={
-              dashboardData?.recentConsultations?.consultations || null
-            }
-            isLoading={isLoading}
-          />
-        </div>
-
-        {/* Last Updated Info */}
-        {dashboardData?.lastUpdated && (
-          <div className="text-center text-xs text-slate-500 dark:text-slate-500 mt-8">
-            Last updated{' '}
-            {new Date(dashboardData.lastUpdated).toLocaleTimeString('en-US', {
-              hour: '2-digit',
-              minute: '2-digit',
-            })}
-          </div>
-        )}
+      {/* ── Quick Vitals Row ─────────────────────────────────── */}
+      <div>
+        <h2 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
+          Health Metrics
+        </h2>
+        <VitalsGrid vitals={dashboardData?.latestVitals || null} isLoading={isLoading} />
       </div>
 
-      {/* Floating Action Menu */}
-      <FloatingActionMenu
-        onScheduleAppointment={handleScheduleAppointment}
-        onViewTestRequests={handleViewTestRequests}
-        onViewPrescriptions={handleViewPrescriptions}
-        onViewProfile={handleViewProfile}
-        onViewFiles={handleViewFiles}
-        onViewHistory={handleViewHistory}
-        onViewIntegrations={handleViewIntegrations}
-      />
+      {/* ── Next Appointment ─────────────────────────────────── */}
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+            Next Appointment
+          </h2>
+          <Link
+            href="/v2/appointments-consultations"
+            className="text-xs font-medium text-teal-600 dark:text-teal-400 hover:underline"
+          >
+            View all →
+          </Link>
+        </div>
+        <NextAppointmentHeroCard
+          appointment={dashboardData?.nextAppointment || null}
+          isLoading={isLoading}
+        />
+      </div>
+
+      {/* ── Upcoming Appointments ────────────────────────────── */}
+      <div>
+        <h2 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
+          Upcoming
+        </h2>
+        <UpcomingAppointmentsList
+          appointments={dashboardData?.upcomingAppointments?.appointments || null}
+          isLoading={isLoading}
+        />
+      </div>
+
+      {/* ── Current Medications ──────────────────────────────── */}
+      <div ref={prescriptionsRef}>
+        <h2 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
+          Current Medications
+        </h2>
+        <MedicationsCarousel
+          prescriptions={dashboardData?.prescriptions?.prescriptions || null}
+          lowRefillCount={dashboardData?.prescriptions?.lowRefillCount || 0}
+          isLoading={isLoading}
+        />
+      </div>
+
+      {/* ── Recent Consultations ─────────────────────────────── */}
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+            Recent Consultations
+          </h2>
+          <Link
+            href="/v2/appointments-consultations"
+            className="text-xs font-medium text-teal-600 dark:text-teal-400 hover:underline"
+          >
+            View all →
+          </Link>
+        </div>
+        <ConsultationNotes
+          consultations={dashboardData?.recentConsultations?.consultations || null}
+          isLoading={isLoading}
+        />
+      </div>
+
+      {/* ── Lab & Diagnostics ────────────────────────────────── */}
+      <div ref={diagnosticRequestsRef}>
+        <h2 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
+          Lab &amp; Diagnostics
+        </h2>
+        <PendingLabWork
+          labRequests={dashboardData?.pendingLabWork?.requests || null}
+          imagingRequests={dashboardData?.imagingRequests?.requests || null}
+          heartStationRequests={dashboardData?.heartStationRequests?.requests || null}
+          isLoading={isLoading}
+        />
+      </div>
+
+      {/* Last Updated */}
+      {dashboardData?.lastUpdated && (
+        <div className="text-center text-xs text-slate-400 dark:text-slate-500 pb-2">
+          Last updated{' '}
+          {new Date(dashboardData.lastUpdated).toLocaleTimeString('en-US', {
+            hour: '2-digit',
+            minute: '2-digit',
+          })}
+        </div>
+      )}
 
       {/* Select Clinic Dialog */}
       <SelectClinicDialog
@@ -287,7 +251,7 @@ function PatientDashboardContent() {
         onClinicSelected={handleClinicSelected}
       />
 
-      {/* Join as Patient consent dialog (shown when user is not yet a clinic patient) */}
+      {/* Join as Patient consent dialog */}
       {pendingClinic && (
         <JoinAsPatientDialogV2
           clinicUid={pendingClinic.clinicUid}
@@ -301,7 +265,7 @@ function PatientDashboardContent() {
         />
       )}
 
-      {/* BookAppointmentSheet: kept for V1 backward compatibility (?book-appointment=true query param) */}
+      {/* BookAppointmentSheet: V1 backward compatibility */}
       <BookAppointmentSheet />
     </div>
   );

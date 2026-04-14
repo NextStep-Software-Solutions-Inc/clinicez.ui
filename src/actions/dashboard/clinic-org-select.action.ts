@@ -6,6 +6,7 @@ import { getCachedSession } from "@actions/session.action";
 export interface ClinicOption {
   clinicUid: string;
   name: string;
+  logo: string | null;
   role: string;
   canAccessDashboard: boolean;
 }
@@ -35,7 +36,7 @@ export async function getClinicSelectOptionsAction(): Promise<ClinicOption[]> {
     },
     select: {
       Clinic: {
-        select: { clinicUid: true, name: true },
+        select: { clinicUid: true, name: true, logo: true },
       },
       Role: {
         select: { name: true, canAccessDashboard: true },
@@ -51,6 +52,7 @@ export async function getClinicSelectOptionsAction(): Promise<ClinicOption[]> {
   return clinicMemberships.map((m) => ({
     clinicUid: m.Clinic.clinicUid,
     name: m.Clinic.name,
+    logo: m.Clinic.logo,
     role: m.Role.name,
     canAccessDashboard: m.Role.canAccessDashboard,
   }));
@@ -82,7 +84,7 @@ export async function getOrgAssociatedClinicOptionsAction(): Promise<ClinicOptio
             },
             select: {
               Clinic: {
-                select: { clinicUid: true, name: true },
+                select: { clinicUid: true, name: true, logo: true },
               },
             },
           },
@@ -102,6 +104,7 @@ export async function getOrgAssociatedClinicOptionsAction(): Promise<ClinicOptio
         clinics.push({
           clinicUid: clinicOrg.Clinic.clinicUid,
           name: clinicOrg.Clinic.name,
+          logo: clinicOrg.Clinic.logo,
           // This action is for appointment booking; dashboard access is not checked here
           role: "member",
           canAccessDashboard: true,

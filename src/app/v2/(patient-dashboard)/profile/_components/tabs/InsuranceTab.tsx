@@ -1,5 +1,6 @@
 'use client'
 
+import { FileText, ClipboardList, Stethoscope } from 'lucide-react'
 import { PhilHealthRecords } from '@/components/patient-dashboard-v2/PhilHealthRecords'
 import type { InsuranceTabData } from '@/types/patient-profile-tabs'
 
@@ -11,7 +12,7 @@ export function InsuranceTab({ data }: Props) {
       <PhilHealthRecords records={(data.philHealthRecords?.filter(r => r.PhilHealthMemberType) || []) as never} />
 
       <div className="glassmorphic-card p-6">
-        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">📜 Medical Certificates</h3>
+        <h3 className="flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-white mb-4"><FileText className="w-5 h-5 text-teal-500" /> Medical Certificates</h3>
         {data.medicalCertificates.length > 0 ? (
           <div className="space-y-2">
             {data.medicalCertificates.map((c, i) => (
@@ -29,7 +30,7 @@ export function InsuranceTab({ data }: Props) {
       </div>
 
       <div className="glassmorphic-card p-6">
-        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">📋 Referral Slips</h3>
+        <h3 className="flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-white mb-4"><ClipboardList className="w-5 h-5 text-teal-500" /> Referral Slips</h3>
         {data.referralSlips.length > 0 ? (
           <div className="space-y-2">
             {data.referralSlips.map((r, i) => (
@@ -48,7 +49,7 @@ export function InsuranceTab({ data }: Props) {
       </div>
 
       <div className="glassmorphic-card p-6">
-        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">⚕️ Procedure History</h3>
+        <h3 className="flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-white mb-4"><Stethoscope className="w-5 h-5 text-teal-500" /> Procedure History</h3>
         {data.procedureHistory.length > 0 ? (
           <div className="space-y-2">
             {data.procedureHistory.map((p, i) => (

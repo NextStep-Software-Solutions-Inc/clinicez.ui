@@ -264,6 +264,8 @@ function BreakdownRow({
 }
 
 function DailyTrendChart({ trend }: { trend: { date: string; count: number }[] }) {
+  const [tooltip, setTooltip] = useState<{ x: number; y: number; date: string; count: number } | null>(null);
+
   if (!trend.length) {
     return (
       <div className="flex items-center justify-center h-16 text-muted-foreground text-sm">
@@ -273,15 +275,36 @@ function DailyTrendChart({ trend }: { trend: { date: string; count: number }[] }
   }
   const maxVal = Math.max(...trend.map((t) => t.count), 1);
   return (
-    <div className="flex items-end gap-0.5 h-16">
+    <div className="relative flex items-end gap-0.5 h-16" aria-label="Daily registrations trend chart">
       {trend.map((t) => (
         <div
           key={t.date}
-          className="flex-1 bg-primary/50 rounded-sm hover:bg-primary/70 transition-colors cursor-default"
-          style={{ height: `${Math.max((t.count / maxVal) * 100, 4)}%` }}
-          title={`${t.date}: ${t.count}`}
-        />
+          className="flex-1 h-full flex flex-col justify-end group cursor-default"
+          onMouseEnter={(e) => {
+            const rect = (e.currentTarget.parentElement as HTMLElement).getBoundingClientRect();
+            setTooltip({ x: e.clientX - rect.left, y: e.clientY - rect.top, date: t.date, count: t.count });
+          }}
+          onMouseMove={(e) => {
+            const rect = (e.currentTarget.parentElement as HTMLElement).getBoundingClientRect();
+            setTooltip({ x: e.clientX - rect.left, y: e.clientY - rect.top, date: t.date, count: t.count });
+          }}
+          onMouseLeave={() => setTooltip(null)}
+        >
+          <div
+            className="w-full rounded-sm bg-primary/50 transition-colors group-hover:bg-primary/70"
+            style={{ height: `${Math.max((t.count / maxVal) * 100, 4)}%` }}
+          />
+        </div>
       ))}
+      {tooltip && (
+        <div
+          className="pointer-events-none absolute z-50 rounded-md border bg-popover px-3 py-1.5 text-xs font-medium text-popover-foreground shadow-md space-y-0.5"
+          style={{ left: tooltip.x + 12, top: Math.max(4, tooltip.y - 52) }}
+        >
+          <p>Date: {tooltip.date}</p>
+          <p>Value: {tooltip.count}</p>
+        </div>
+      )}
     </div>
   );
 }

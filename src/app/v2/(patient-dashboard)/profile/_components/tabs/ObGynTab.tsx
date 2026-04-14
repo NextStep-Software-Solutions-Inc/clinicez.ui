@@ -1,5 +1,6 @@
 'use client'
 
+import { Baby, User } from 'lucide-react'
 import type { ObGynTabData } from '@/types/patient-profile-tabs'
 
 type Props = { data: ObGynTabData }
@@ -8,10 +9,10 @@ export function ObGynTab({ data }: Props) {
   if (data.gender?.toUpperCase() === 'MALE') {
     return (
       <div className="glassmorphic-card p-6">
-        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">👶 OB/GYN History</h3>
+        <h3 className="flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-white mb-4"><Baby className="w-5 h-5 text-teal-500" /> OB/GYN History</h3>
         <div className="flex items-center justify-center py-12">
           <div className="text-center">
-            <div className="text-5xl mb-3">♂️</div>
+            <User className="w-12 h-12 text-slate-400 mx-auto mb-3" />
             <p className="text-slate-600 dark:text-slate-400 text-lg mb-2">OB/GYN records are not applicable</p>
             <p className="text-slate-500 dark:text-slate-500 text-sm">
               Obstetric and gynecological history is specific to female patients.
@@ -24,7 +25,7 @@ export function ObGynTab({ data }: Props) {
 
   return (
     <div className="glassmorphic-card p-6">
-      <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">👶 OB/GYN History</h3>
+      <h3 className="flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-white mb-4"><Baby className="w-5 h-5 text-teal-500" /> OB/GYN History</h3>
       {data.obGyneHistory ? (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {data.obGyneHistory.menarche && (

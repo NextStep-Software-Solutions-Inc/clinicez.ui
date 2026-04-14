@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { List, BarChart3 } from 'lucide-react'
+import { Ruler, List, BarChart3 } from 'lucide-react'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip as RechartsTooltip, Legend, ResponsiveContainer,
@@ -17,7 +17,7 @@ export function PediatricTab({ data }: Props) {
   if (data.pediatricMeasurements.length === 0) {
     return (
       <div className="glassmorphic-card p-6">
-        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">📏 Pediatric Measurements</h3>
+        <h3 className="flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-white mb-4"><Ruler className="w-5 h-5 text-teal-500" /> Pediatric Measurements</h3>
         <p className="text-slate-600 dark:text-slate-400 text-center py-8">No pediatric measurements recorded</p>
       </div>
     )
@@ -27,7 +27,7 @@ export function PediatricTab({ data }: Props) {
     <div className="space-y-6">
       <div className="glassmorphic-card p-6">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-semibold text-slate-900 dark:text-white">📏 Pediatric Measurements</h3>
+          <h3 className="flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-white"><Ruler className="w-5 h-5 text-teal-500" /> Pediatric Measurements</h3>
           <div className="flex gap-2">
             <button
               onClick={() => setViewMode('list')}

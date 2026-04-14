@@ -240,12 +240,12 @@ export function AddressEditForm({
           {editingId ? 'Edit Address' : 'Add New Address'}
         </h3>
 
-        <FormField label="Complete Address" required htmlFor="address">
+        <FormField label="Address Line" required htmlFor="address">
           <Input
             id="address"
             value={newAddress.address || ''}
             onChange={(e) => setNewAddress((prev) => ({ ...prev, address: e.target.value }))}
-            placeholder="Complete address"
+            placeholder="Address line"
           />
         </FormField>
 

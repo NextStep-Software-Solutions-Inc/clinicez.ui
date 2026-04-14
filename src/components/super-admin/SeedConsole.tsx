@@ -6,17 +6,18 @@ import { Button } from "@components/ui/button";
 import { Badge } from "@components/ui/badge";
 import { toast } from "sonner";
 import { getActionErrorMessage } from "@/lib/action-error";
-import { Loader2, Database, Shield, Stethoscope, Heart, Syringe, Play } from "lucide-react";
+import { Loader2, Database, Shield, Stethoscope, Heart, Syringe, MapPin, Play } from "lucide-react";
 import {
   seedPermissionsAction,
   seedProceduresAction,
   seedPhilHealthAction,
   seedVaccinesAction,
+  seedLocationsAction,
   seedAllAction,
   type SeedResult,
 } from "@actions/super-admin/seed.action";
 
-type SeedKey = "permissions" | "procedures" | "philhealth" | "vaccines" | "all";
+type SeedKey = "permissions" | "procedures" | "philhealth" | "vaccines" | "locations" | "all";
 
 const seedConfigs: Array<{
   key: SeedKey;
@@ -52,6 +53,13 @@ const seedConfigs: Array<{
     description: "Seed vaccine catalog, administration routes, and dose types.",
     icon: <Syringe className="h-5 w-5" />,
     action: seedVaccinesAction,
+  },
+  {
+    key: "locations",
+    title: "Philippine Locations",
+    description: "Seed Philippine Standard Geographic Code (PSGC) data: 17 regions, 81 provinces, 1,615 municipalities, and 40,254 barangays (idempotent upsert).",
+    icon: <MapPin className="h-5 w-5" />,
+    action: seedLocationsAction,
   },
 ];
 

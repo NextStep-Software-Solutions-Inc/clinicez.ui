@@ -9,7 +9,7 @@ export const addressSchema = z.object({
     id: z.number().optional(),
     address: z
         .string()
-        .min(1, "Complete address is required")
+        .min(1, "Address line is required")
         .max(500, "Address must be less than 500 characters"),
 
     apartmentUnit: z

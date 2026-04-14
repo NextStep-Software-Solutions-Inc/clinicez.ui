@@ -308,11 +308,18 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
       if (scrollRoot) {
         const rootRect = scrollRoot.getBoundingClientRect()
         const elTop = el.getBoundingClientRect().top - rootRect.top
-        // Use the bottom of the section nav strip as the sticky header boundary.
+        // Compute the sticky header boundary from the section nav's CSS 'top' threshold
+        // plus its rendered height. This is position-independent: getBoundingClientRect()
+        // would return the flow position when the nav hasn't scrolled into sticky mode yet
+        // (e.g. immediately after page load), giving a stale over-estimate. Using
+        // getComputedStyle().top (the sticky threshold) + offsetHeight always reflects the
+        // correct sticky coverage regardless of current scroll position.
         // Fall back to scroll-mt-32 equivalent (128px) if the ref is not yet attached.
-        const stickyOffset = sectionNavRef.current
-          ? sectionNavRef.current.getBoundingClientRect().bottom - rootRect.top
-          : 128
+        const stickyOffset = (() => {
+          if (!sectionNavRef.current) return 128
+          const computedTop = parseFloat(window.getComputedStyle(sectionNavRef.current).top)
+          return isNaN(computedTop) ? 128 : computedTop + sectionNavRef.current.offsetHeight
+        })()
         const MARGIN = 8
         scrollRoot.scrollTo({
           top: Math.max(0, scrollRoot.scrollTop + elTop - stickyOffset - MARGIN),

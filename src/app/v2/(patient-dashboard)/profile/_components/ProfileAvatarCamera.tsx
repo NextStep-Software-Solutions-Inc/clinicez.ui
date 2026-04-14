@@ -108,10 +108,11 @@ function ImageCropModal({ objectUrl, onConfirm, onCancel }: CropModalProps) {
           onPointerUp={handlePointerUp}
           onPointerCancel={handlePointerUp}
         >
+          {/* objectUrl is always a blob: URL created by URL.createObjectURL — safe to use as img src */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             ref={imgRef}
-            src={objectUrl}
+            src={objectUrl.startsWith('blob:') ? objectUrl : undefined}
             alt="Crop preview"
             onLoad={handleImgLoad}
             draggable={false}
@@ -183,7 +184,8 @@ export function ProfileAvatarCamera({ userId, picture, initials }: ProfileAvatar
   }
 
   const handleCropConfirm = async (croppedFile: File) => {
-    const { objectUrl } = cropData!
+    if (!cropData) return
+    const { objectUrl } = cropData
     setCropData(null)
 
     try {

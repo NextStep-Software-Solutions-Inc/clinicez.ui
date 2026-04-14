@@ -594,14 +594,15 @@ export function PatientFilesClient({
                 const fileCreatorClinic = isProviderUploaded
                   ? file.FileSetting?.FileClinicShares?.map((s) => s.Clinic.name).join(", ") ?? null
                   : null;
+                const openFile = () => window.open(`/api/patient/files/${file.id}`, '_blank', 'noopener,noreferrer')
                 return (
                   <div
                     key={file.id}
                     role="button"
                     tabIndex={0}
                     className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-4 flex items-center gap-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/60 transition-colors active:scale-[0.99]"
-                    onClick={() => window.open(`/api/patient/files/${file.id}`, '_blank', 'noopener,noreferrer')}
-                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); window.open(`/api/patient/files/${file.id}`, '_blank', 'noopener,noreferrer') } }}
+                    onClick={openFile}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openFile() } }}
                   >
                     <div className="relative shrink-0">
                       <File className="w-8 h-8 text-blue-500 flex-shrink-0" />

@@ -1084,8 +1084,7 @@ export default function BookAppointmentWizard({
       setOverrideTitle(null)
       setOverrideBack(null)
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [clinicName])
+  }, [clinicName, setOverrideTitle, setOverrideBack])
 
   // On mount: hydrate form from localStorage draft (if not expired), then
   // set clinicUid. Any expired envelope is wiped immediately.

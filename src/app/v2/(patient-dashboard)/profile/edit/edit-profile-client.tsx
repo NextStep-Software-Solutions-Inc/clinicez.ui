@@ -431,6 +431,7 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
               </button>
             ))}
           </div>
+          <div className="absolute left-0 top-0 bottom-0 w-8 md:w-12 bg-gradient-to-r from-white/80 dark:from-slate-950/80 to-transparent pointer-events-none"></div>
           <div className="absolute right-0 top-0 bottom-0 w-8 md:w-12 bg-gradient-to-l from-white/80 dark:from-slate-950/80 to-transparent pointer-events-none"></div>
         </div>
       </div>
@@ -473,6 +474,7 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
                   <DemographicsEditForm
                     userId={patientData.userId}
                     currentPicture={patientData.picture}
+                    hidePicture={true}
                     inline={true}
                     currentData={demographicsData}
                     onSuccess={handleSuccess}

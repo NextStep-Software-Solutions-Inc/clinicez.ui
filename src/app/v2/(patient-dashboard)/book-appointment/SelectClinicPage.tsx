@@ -3,10 +3,10 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Building2, Loader2, ChevronRight, CalendarPlus, Globe } from 'lucide-react'
-import { getPatientClinicsAction } from '@/actions/patient/patient-files.action'
+import { getOrgAssociatedClinicOptionsAction } from '@/actions/dashboard/clinic-org-select.action'
 import { getClinicsV2Action } from '@/actions/clinics/clinic.action'
 
-type EnrolledClinic = { id: number; clinicUid: string; name: string; logo: string | null }
+type OrgClinic = { clinicUid: string; name: string }
 type PublicClinic = { clinicUid: string; name: string; description: string | null; logo: string | null; memberCount: number }
 
 function ClinicCard({
@@ -53,21 +53,20 @@ function ClinicCard({
 
 export default function SelectClinicPage() {
   const router = useRouter()
-  const [enrolledClinics, setEnrolledClinics] = useState<EnrolledClinic[]>([])
+  const [enrolledClinics, setEnrolledClinics] = useState<OrgClinic[]>([])
   const [publicClinics, setPublicClinics] = useState<PublicClinic[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     Promise.all([
-      getPatientClinicsAction(),
+      getOrgAssociatedClinicOptionsAction(),
       getClinicsV2Action({ isPublic: true }),
-    ]).then(([enrolledResult, publicResult]) => {
-      const enrolled = enrolledResult.status && enrolledResult.data ? enrolledResult.data : []
-      setEnrolledClinics(enrolled)
+    ]).then(([orgClinics, publicResult]) => {
+      setEnrolledClinics(orgClinics)
 
       if (publicResult.status && publicResult.data) {
-        const enrolledUids = new Set(enrolled.map((c) => c.clinicUid))
-        // Filter out public clinics the patient is already enrolled in
+        const enrolledUids = new Set(orgClinics.map((c) => c.clinicUid))
+        // Filter out public clinics the patient already has access to
         setPublicClinics(publicResult.data.filter((c) => !enrolledUids.has(c.clinicUid)))
       }
     }).finally(() => setIsLoading(false))
@@ -122,7 +121,7 @@ export default function SelectClinicPage() {
                     key={clinic.clinicUid}
                     clinicUid={clinic.clinicUid}
                     name={clinic.name}
-                    logo={clinic.logo}
+                    logo={null}
                     subtitle="Book Now →"
                     onSelect={handleSelectClinic}
                   />

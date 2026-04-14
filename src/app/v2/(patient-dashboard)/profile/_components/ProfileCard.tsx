@@ -5,6 +5,7 @@ import { formatBloodType } from '@/lib/utils'
 import type { PatientBaseData } from '@/types/patient-profile-tabs'
 import { VerificationStatusBadge } from './VerificationStatusBadge'
 import { DownloadPHRButton } from '@/components/v2/phr/DownloadPHRButton'
+import { ProfileAvatarCamera } from './ProfileAvatarCamera'
 
 interface ProfileCardProps {
   patient: PatientBaseData
@@ -23,9 +24,16 @@ export function ProfileCard({ patient, isOwner }: ProfileCardProps) {
         <div className="absolute -top-10 -right-10 w-36 h-36 rounded-full bg-white/10 pointer-events-none" />
         <div className="absolute -bottom-8 -left-6 w-28 h-28 rounded-full bg-white/10 pointer-events-none" />
 
-        {/* Avatar */}
+        {/* Avatar — with camera overlay if owner */}
         <div className="flex justify-center mb-3 relative z-10">
-          {patient.picture ? (
+          {isOwner ? (
+            <ProfileAvatarCamera
+              userId={patient.userId}
+              picture={patient.picture}
+              initials={initials}
+            />
+          ) : patient.picture ? (
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={patient.picture}
               alt={patient.fullName}

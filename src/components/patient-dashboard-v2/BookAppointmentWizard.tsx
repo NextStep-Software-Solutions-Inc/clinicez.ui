@@ -155,6 +155,7 @@ function BottomBar({ children }: { children: React.ReactNode }) {
 // ---------------------------------------------------------------------------
 
 function StepDots({ step, total }: { step: number; total: number }) {
+  const stepMeta = step >= 1 && step <= STEPS.length ? STEPS[step - 1] : null
   return (
     <div className="flex flex-col items-center py-4 gap-2">
       <div className="flex items-center gap-2">
@@ -169,9 +170,12 @@ function StepDots({ step, total }: { step: number; total: number }) {
           />
         ))}
       </div>
-      <p className="text-xs font-semibold text-teal-600 dark:text-teal-400 tracking-wide">
-        {STEPS[step - 1]?.label ?? ''} <span className="text-slate-400 dark:text-slate-500 font-normal">· Step {step} of {total}</span>
-      </p>
+      {stepMeta && (
+        <p className="text-xs font-semibold text-teal-600 dark:text-teal-400 tracking-wide">
+          {stepMeta.label}{' '}
+          <span className="text-slate-400 dark:text-slate-500 font-normal">· Step {step} of {total}</span>
+        </p>
+      )}
     </div>
   )
 }

@@ -36,6 +36,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import type { GetOrgReports } from "@/actions/organizations/org-reports.action";
 import { getOrgReportsAction } from "@/actions/organizations/org-reports.action";
@@ -275,16 +281,19 @@ function DailyTrendChart({ trend }: { trend: { date: string; count: number }[] }
   return (
     <div className="flex items-end gap-0.5 h-16" aria-label="Daily registrations trend chart">
       {trend.map((t) => (
-        <div
-          key={t.date}
-          className="flex-1 h-full flex flex-col justify-end group cursor-default"
-          title={`${t.date}: ${t.count}`}
-        >
-          <div
-            className="w-full rounded-sm bg-primary/50 transition-colors group-hover:bg-primary/70"
-            style={{ height: `${Math.max((t.count / maxVal) * 100, 4)}%` }}
-          />
-        </div>
+        <Tooltip key={t.date}>
+          <TooltipTrigger asChild>
+            <div className="flex-1 h-full flex flex-col justify-end group cursor-default">
+              <div
+                className="w-full rounded-sm bg-primary/50 transition-colors group-hover:bg-primary/70"
+                style={{ height: `${Math.max((t.count / maxVal) * 100, 4)}%` }}
+              />
+            </div>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p className="text-xs font-medium">{t.date}: {t.count}</p>
+          </TooltipContent>
+        </Tooltip>
       ))}
     </div>
   );
@@ -374,6 +383,7 @@ export function OrgReportsClient({
   const { org, members, students, staff } = data;
 
   return (
+    <TooltipProvider>
     <div className="space-y-6 px-4 md:px-6">
       {/* ── Header ── */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
@@ -822,5 +832,6 @@ export function OrgReportsClient({
         </DialogContent>
       </Dialog>
     </div>
+    </TooltipProvider>
   );
 }

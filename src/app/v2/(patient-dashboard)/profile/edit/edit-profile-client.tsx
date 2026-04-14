@@ -148,6 +148,9 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
 
   // Ref for the sticky section nav strip — used to calculate scroll offset in
   // DashboardShell contexts where overflow-y-auto is the scroll container.
+  // Only one makeSectionNav instance is ever mounted at a time (the three headerSlot
+  // branches — null / undefined / ReactNode — are mutually exclusive), so this ref
+  // always points to the one visible strip.
   const sectionNavRef = useRef<HTMLDivElement>(null)
 
   // Save refs for batch-save forms (forms with a single "Save Changes" button)
@@ -530,9 +533,12 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
   return (
     <div className="w-full">
       {headerSlot !== null && (headerSlot ?? defaultHeader)}
-      {/* null → no header, show section nav at top-12 */}
+      {/* The next two conditions are mutually exclusive — at most one makeSectionNav is
+          ever mounted, so sectionNavRef always points to the single visible strip.
+          null  → no header at all; section nav sits at top-12 (just below DashboardShell nav)
+          !null && !undefined → custom header provided; section nav at top-24 (below nav + breadcrumb)
+          undefined → defaultHeader is used; makeSectionNav is not rendered at all (tabs live inside defaultHeader) */}
       {headerSlot === null && makeSectionNav('top-12')}
-      {/* custom node → show section nav below the custom header at top-24 */}
       {headerSlot !== undefined && headerSlot !== null && makeSectionNav('top-24')}
 
       {/* Containerized Content */}

@@ -1,6 +1,6 @@
 'use client'
 
-import { ClipboardList } from 'lucide-react'
+import { ClipboardList, Heart } from 'lucide-react'
 import {
   calculateBMI,
   calculateBodyFat,

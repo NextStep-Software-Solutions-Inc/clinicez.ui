@@ -1,9 +1,23 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import {
+  ClipboardList,
+  MapPin,
+  Phone,
+  AlertTriangle,
+  Syringe,
+  Accessibility,
+  Stethoscope,
+  Activity,
+  FlaskConical,
+  Baby,
+  Ruler,
+  Heart,
+  FileText,
+} from 'lucide-react'
 import type { PatientBaseData } from '@/types/patient-profile-tabs'
 import { getTabBadge } from './_lib/tab-badges'
-import { ProfileHeader } from './_components/ProfileHeader'
 import { ProfileCard } from './_components/ProfileCard'
 import { TabNav } from './_components/TabNav'
 import { TabContent } from './_components/TabContent'
@@ -35,19 +49,19 @@ interface ProfileClientProps {
 }
 
 const PROFILE_TABS = [
-  { id: 'overview',     label: 'Overview',           icon: '📋' },
-  { id: 'addresses',    label: 'Addresses',           icon: '📍' },
-  { id: 'contacts',     label: 'Contacts',            icon: '🆘' },
-  { id: 'allergies',    label: 'Allergies',           icon: '⚠️' },
-  { id: 'vaccinations', label: 'Vaccinations',        icon: '💉' },
-  { id: 'disabilities', label: 'Disabilities',        icon: '♿' },
-  { id: 'medical',      label: 'Medical Profile',     icon: '🏥' },
-  { id: 'vitals',       label: 'Vital Signs',         icon: '❤️' },
-  { id: 'exams',        label: 'Physical Exams',      icon: '🔍' },
-  { id: 'obgyn',        label: 'OB/GYN',              icon: '👶' },
-  { id: 'pediatric',    label: 'Pediatric',           icon: '📏' },
-  { id: 'lifestyle',    label: 'Lifestyle & Social',  icon: '👤' },
-  { id: 'insurance',    label: 'Insurance & Docs',    icon: '📄' },
+  { id: 'overview',     label: 'Overview',           icon: ClipboardList },
+  { id: 'addresses',    label: 'Addresses',           icon: MapPin },
+  { id: 'contacts',     label: 'Contacts',            icon: Phone },
+  { id: 'allergies',    label: 'Allergies',           icon: AlertTriangle },
+  { id: 'vaccinations', label: 'Vaccinations',        icon: Syringe },
+  { id: 'disabilities', label: 'Disabilities',        icon: Accessibility },
+  { id: 'medical',      label: 'Medical Profile',     icon: Stethoscope },
+  { id: 'vitals',       label: 'Vital Signs',         icon: Activity },
+  { id: 'exams',        label: 'Physical Exams',      icon: FlaskConical },
+  { id: 'obgyn',        label: 'OB/GYN',              icon: Baby },
+  { id: 'pediatric',    label: 'Pediatric',           icon: Ruler },
+  { id: 'lifestyle',    label: 'Lifestyle & Social',  icon: Heart },
+  { id: 'insurance',    label: 'Insurance & Docs',    icon: FileText },
 ] as const
 
 type ProfileTabId = typeof PROFILE_TABS[number]['id']
@@ -74,18 +88,20 @@ export default function ProfileClient({
   )
 
   return (
-    <div className="w-full">
-      {headerSlot !== null && (headerSlot ?? <ProfileHeader />)}
-
-      <div className="max-w-6xl mx-auto pb-32">
+    <div className="w-full pt-2">
+      {/* Optional custom header (used by clinic staff dashboards) */}
+      {headerSlot != null && headerSlot}
+      <div className="pb-24">
         <ProfileCard patient={patient} isOwner={!patientUserId} />
 
-        <TabNav
-          tabs={[...PROFILE_TABS]}
-          activeTab={activeTab}
-          badges={tabBadges}
-          onTabChange={(id) => setActiveTab(id as ProfileTabId)}
-        />
+        <div className="sticky top-14 z-[15] -mx-4 px-4 pt-1 pb-2 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-b border-slate-100 dark:border-slate-800">
+          <TabNav
+            tabs={[...PROFILE_TABS]}
+            activeTab={activeTab}
+            badges={tabBadges}
+            onTabChange={(id) => setActiveTab(id as ProfileTabId)}
+          />
+        </div>
 
         {/* Tab content is fetched lazily — each tab loads its own data on first visit */}
         <TabContent tab={activeTab} userId={patientUserId} />

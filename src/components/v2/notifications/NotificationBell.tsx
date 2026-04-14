@@ -188,13 +188,13 @@ export function NotificationBell() {
     <Button
       variant="ghost"
       size="icon"
-      className="relative h-8 w-8 rounded-lg hover:bg-muted"
+      className="relative w-9 h-9 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
       aria-label={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ""}`}
     >
       {isMuted ? (
-        <BellOff className="h-4 w-4 text-muted-foreground" />
+        <BellOff className="h-5 w-5" />
       ) : (
-        <Bell className="h-4 w-4" />
+        <Bell className="h-5 w-5" />
       )}
       {unreadCount > 0 && !isMuted && (
         <Badge
@@ -378,7 +378,7 @@ export function NotificationBell() {
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetTrigger asChild>{bellButton}</SheetTrigger>
         <SheetContent side="bottom" className="p-0 rounded-t-2xl max-h-[85vh] flex flex-col">
-          <SheetHeader className="flex-row items-center justify-between border-b px-4 py-3 space-y-0">
+          <SheetHeader className="flex-row items-center justify-between border-b px-4 py-3 pr-12 space-y-0">
             <div className="flex items-center gap-2">
               <Bell className="h-4 w-4 text-muted-foreground" />
               <SheetTitle className="text-sm font-semibold">Notifications</SheetTitle>

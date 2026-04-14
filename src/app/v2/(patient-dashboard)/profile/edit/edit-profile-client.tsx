@@ -1,8 +1,29 @@
 'use client'
 
 import { useEffect, useState, useRef, useMemo, useCallback, Suspense } from 'react'
-import { useRouter } from 'next/navigation'
-import { ArrowLeft, Save, CheckCircle2, XCircle, Loader2, MinusCircle } from 'lucide-react'
+import {
+  Save,
+  CheckCircle2,
+  XCircle,
+  Loader2,
+  MinusCircle,
+  User,
+  MapPin,
+  Phone,
+  AlertTriangle,
+  Syringe,
+  Accessibility,
+  Activity,
+  ClipboardList,
+  Baby,
+  Ruler,
+  Stethoscope,
+  Scissors,
+  Users,
+  FlaskConical,
+  Building,
+} from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import {
   mapPersonalHistoryToFormInput,
   mapPatientDataToDemographicsFormInput,
@@ -22,7 +43,6 @@ import type {
   EmergencyContactFormInput,
   AddressFormInput,
 } from '@/schemas'
-import { ThemeToggle } from '@/components/patient-dashboard-v2/ThemeToggle'
 import {
   DemographicsEditForm,
   VitalSignEditForm,
@@ -53,7 +73,7 @@ import './edit-profile.css'
 type Section = {
   id: string
   label: string
-  icon: string
+  icon: LucideIcon
   ref: React.RefObject<HTMLDivElement | null>
 } & (
   | { saveType: 'auto' }
@@ -85,7 +105,7 @@ type SaveAllStatus = 'idle' | 'pending' | 'saving' | 'saved' | 'error' | 'no-cha
 interface SaveAllItem {
   id: string
   label: string
-  icon: string
+  icon: LucideIcon
   status: SaveAllStatus
   error?: string
 }
@@ -108,7 +128,6 @@ function FormLoadingFallback() {
  * Server component (page.tsx) handles data fetching and initial load
  */
 export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refreshFn }: EditProfileClientProps) {
-  const router = useRouter()
   const [activeSection, setActiveSection] = useState('demographics')
   const [patientData, setPatientData] = useState<PatientHealthRecordsResponse | null>(initialData)
   const [loadedSections, setLoadedSections] = useState<LoadedSections>({
@@ -172,21 +191,21 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
 
   const sections: Section[] = useMemo(
     () => [
-      { id: 'demographics', label: 'Demographics', icon: '👤', ref: demographicsRef, saveType: 'batch', saveRef: demographicsSaveRef, onDirtyChange: (d) => onSectionDirtyChange('demographics', d) },
-      { id: 'addresses', label: 'Addresses', icon: '📍', ref: addressesRef, saveType: 'auto' },
-      { id: 'emergency-contacts', label: 'Contacts', icon: '🆘', ref: emergencyContactsRef, saveType: 'auto' },
-      { id: 'allergies', label: 'Allergies', icon: '⚠️', ref: allergiesRef, saveType: 'auto' },
-      { id: 'vaccinations', label: 'Vaccinations', icon: '💉', ref: vaccinationsRef, saveType: 'auto' },
-      { id: 'disabilities', label: 'Disabilities', icon: '♿', ref: disabilitiesRef, saveType: 'auto' },
-      { id: 'vital-signs', label: 'Vitals', icon: '❤️', ref: vitalSignsRef, saveType: 'batch', saveRef: vitalSignsSaveRef, onDirtyChange: (d) => onSectionDirtyChange('vital-signs', d) },
-      { id: 'personal-history', label: 'History', icon: '📋', ref: personalHistoryRef, saveType: 'batch', saveRef: personalHistorySaveRef, onDirtyChange: (d) => onSectionDirtyChange('personal-history', d) },
-      { id: 'ob-gyne', label: 'OB/GYN', icon: '👶', ref: obGyneRef, saveType: 'batch', saveRef: obGyneSaveRef, onDirtyChange: (d) => onSectionDirtyChange('ob-gyne', d) },
-      { id: 'pediatric', label: 'Pediatric', icon: '📏', ref: pediatricRef, saveType: 'batch', saveRef: pediatricSaveRef, onDirtyChange: (d) => onSectionDirtyChange('pediatric', d) },
-      { id: 'medical', label: 'Conditions', icon: '🏥', ref: medicalRef, saveType: 'batch', saveRef: medicalSaveRef, onDirtyChange: (d) => onSectionDirtyChange('medical', d) },
-      { id: 'surgical', label: 'Surgical', icon: '⚕️', ref: surgicalRef, saveType: 'auto' },
-      { id: 'family', label: 'Family', icon: '👨‍👩‍👧‍👦', ref: familyRef, saveType: 'batch', saveRef: familySaveRef, onDirtyChange: (d) => onSectionDirtyChange('family', d) },
-      { id: 'examination', label: 'Exam', icon: '🔍', ref: examinationRef, saveType: 'batch', saveRef: examinationSaveRef, onDirtyChange: (d) => onSectionDirtyChange('examination', d) },
-      { id: 'philhealth', label: 'PhilHealth', icon: '🏛️', ref: philhealthRef, saveType: 'batch', saveRef: philhealthSaveRef, onDirtyChange: (d) => onSectionDirtyChange('philhealth', d) },
+      { id: 'demographics', label: 'Demographics', icon: User, ref: demographicsRef, saveType: 'batch', saveRef: demographicsSaveRef, onDirtyChange: (d) => onSectionDirtyChange('demographics', d) },
+      { id: 'addresses', label: 'Addresses', icon: MapPin, ref: addressesRef, saveType: 'auto' },
+      { id: 'emergency-contacts', label: 'Contacts', icon: Phone, ref: emergencyContactsRef, saveType: 'auto' },
+      { id: 'allergies', label: 'Allergies', icon: AlertTriangle, ref: allergiesRef, saveType: 'auto' },
+      { id: 'vaccinations', label: 'Vaccinations', icon: Syringe, ref: vaccinationsRef, saveType: 'auto' },
+      { id: 'disabilities', label: 'Disabilities', icon: Accessibility, ref: disabilitiesRef, saveType: 'auto' },
+      { id: 'vital-signs', label: 'Vitals', icon: Activity, ref: vitalSignsRef, saveType: 'batch', saveRef: vitalSignsSaveRef, onDirtyChange: (d) => onSectionDirtyChange('vital-signs', d) },
+      { id: 'personal-history', label: 'History', icon: ClipboardList, ref: personalHistoryRef, saveType: 'batch', saveRef: personalHistorySaveRef, onDirtyChange: (d) => onSectionDirtyChange('personal-history', d) },
+      { id: 'ob-gyne', label: 'OB/GYN', icon: Baby, ref: obGyneRef, saveType: 'batch', saveRef: obGyneSaveRef, onDirtyChange: (d) => onSectionDirtyChange('ob-gyne', d) },
+      { id: 'pediatric', label: 'Pediatric', icon: Ruler, ref: pediatricRef, saveType: 'batch', saveRef: pediatricSaveRef, onDirtyChange: (d) => onSectionDirtyChange('pediatric', d) },
+      { id: 'medical', label: 'Conditions', icon: Stethoscope, ref: medicalRef, saveType: 'batch', saveRef: medicalSaveRef, onDirtyChange: (d) => onSectionDirtyChange('medical', d) },
+      { id: 'surgical', label: 'Surgical', icon: Scissors, ref: surgicalRef, saveType: 'auto' },
+      { id: 'family', label: 'Family', icon: Users, ref: familyRef, saveType: 'batch', saveRef: familySaveRef, onDirtyChange: (d) => onSectionDirtyChange('family', d) },
+      { id: 'examination', label: 'Exam', icon: FlaskConical, ref: examinationRef, saveType: 'batch', saveRef: examinationSaveRef, onDirtyChange: (d) => onSectionDirtyChange('examination', d) },
+      { id: 'philhealth', label: 'PhilHealth', icon: Building, ref: philhealthRef, saveType: 'batch', saveRef: philhealthSaveRef, onDirtyChange: (d) => onSectionDirtyChange('philhealth', d) },
     ],
     [onSectionDirtyChange],
   )
@@ -411,32 +430,31 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
     setIsSavingAll(false)
   }, [sections])
 
-  // Section nav strip — defined before early return so it's always in scope.
-  // topClass controls sticky offset:
-  //   'top-12' when headerSlot=null (just below DashboardShell horizontal nav)
-  //   'top-24' when a custom headerSlot is provided (below nav + breadcrumb)
+  //   'top-14' when headerSlot=null (below MobileHeader)
+  //   'top-28' when a custom headerSlot is provided (below nav + breadcrumb)
   const makeSectionNav = (topClass: string) => (
-    <div className={`sticky ${topClass} z-40 backdrop-blur-sm bg-white/20 dark:bg-slate-950/20 border-b border-slate-200/20 dark:border-slate-800/20 mb-6 md:mb-8 -mx-4 md:-mx-8 px-4 md:px-8 py-2 md:py-3`}>
+    <div className={`sticky ${topClass} z-[25] backdrop-blur-sm bg-white/80 dark:bg-slate-950/80 border-b border-slate-200/30 dark:border-slate-800/30 mb-6 md:mb-8 -mx-4 md:-mx-8 px-4 md:px-8 py-2 md:py-3`}>
       <div className="max-w-6xl mx-auto">
         <div className="relative">
-          <div className="flex gap-2 overflow-x-auto scroll-smooth pb-1" style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(100,116,139,0.4) transparent' }}>
+          <div className="flex gap-1.5 overflow-x-auto scroll-smooth pb-1 scrollbar-hide">
             {sections.map((section) => (
               <button
                 key={section.id}
                 data-tab-id={section.id}
                 onClick={() => scrollToSection(section.id)}
-                className={`whitespace-nowrap px-3 md:px-4 py-1.5 md:py-2 rounded-lg font-medium text-xs md:text-sm transition-all ${
+                className={`whitespace-nowrap px-3 md:px-4 py-1.5 md:py-2 rounded-2xl font-medium text-xs md:text-sm transition-all shrink-0 flex items-center justify-center gap-1.5 ${
                   activeSection === section.id
-                    ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg shadow-blue-500/30'
-                    : 'bg-white/40 dark:bg-slate-800/40 text-slate-700 dark:text-slate-300 hover:bg-white/60 dark:hover:bg-slate-800/60 backdrop-blur-sm border border-white/20 dark:border-slate-700/20'
+                    ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-md shadow-teal-500/25'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
                 }`}
               >
-                <span className="mr-1 md:mr-2">{section.icon}</span>
+                <section.icon className="w-4 h-4 shrink-0" />
                 {section.label}
               </button>
             ))}
           </div>
-          <div className="absolute right-0 top-0 bottom-0 w-8 md:w-12 bg-gradient-to-l from-white/30 dark:from-slate-950/30 to-transparent pointer-events-none rounded-r-lg"></div>
+          <div className="absolute left-0 top-0 bottom-0 w-8 md:w-12 bg-gradient-to-r from-white/80 dark:from-slate-950/80 to-transparent pointer-events-none"></div>
+          <div className="absolute right-0 top-0 bottom-0 w-8 md:w-12 bg-gradient-to-l from-white/80 dark:from-slate-950/80 to-transparent pointer-events-none"></div>
         </div>
       </div>
     </div>
@@ -452,58 +470,12 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
     )
   }
 
-  const defaultHeader = (
-    <div className="sticky top-0 z-50 backdrop-blur-sm bg-white/20 dark:bg-slate-950/20 border-b border-slate-200/20 dark:border-slate-800/20 mb-4 md:mb-6 -mx-4 md:-mx-8 px-4 md:px-8 py-3 md:py-4 rounded-b-3xl">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2 md:gap-3 min-w-0">
-            <button
-              onClick={() => router.back()}
-              className="p-1.5 md:p-2 hover:bg-white/50 dark:hover:bg-slate-800/50 rounded-lg transition-colors backdrop-blur-sm border border-white/20 dark:border-slate-700/20 shrink-0"
-            >
-              <ArrowLeft className="w-4 h-4 md:w-5 md:h-5 text-slate-600 dark:text-slate-400" />
-            </button>
-            <div className="min-w-0">
-              <h1 className="text-lg md:text-2xl font-bold text-slate-900 dark:text-white truncate">Edit Profile</h1>
-              <p className="text-xs text-slate-500 dark:text-slate-400 hidden sm:block">Update your health information</p>
-            </div>
-          </div>
-          <ThemeToggle />
-        </div>
-
-        {/* Horizontal Section Navigation */}
-        <div className="relative mt-3 md:mt-4">
-          <div className="flex gap-2 overflow-x-auto scroll-smooth pb-2 md:pb-3 -mx-4 md:-mx-8 px-4 md:px-8 mt-2 md:mt-4" style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(100,116,139,0.4) transparent' }}>
-            {sections.map((section) => (
-              <button
-                key={section.id}
-                data-tab-id={section.id}
-                onClick={() => scrollToSection(section.id)}
-                className={`whitespace-nowrap px-3 md:px-4 py-1.5 md:py-2 rounded-lg font-medium text-xs md:text-sm transition-all ${
-                  activeSection === section.id
-                    ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg shadow-blue-500/30'
-                    : 'bg-white/40 dark:bg-slate-800/40 text-slate-700 dark:text-slate-300 hover:bg-white/60 dark:hover:bg-slate-800/60 backdrop-blur-sm border border-white/20 dark:border-slate-700/20'
-                }`}
-              >
-                <span className="mr-1 md:mr-2">{section.icon}</span>
-                {section.label}
-              </button>
-            ))}
-          </div>
-          {/* Scroll indicator gradient (right side) */}
-          <div className="absolute right-0 top-0 bottom-0 w-8 md:w-12 bg-gradient-to-l from-white/30 dark:from-slate-950/30 to-transparent pointer-events-none rounded-r-lg"></div>
-        </div>
-      </div>
-    </div>
-  )
-
   return (
     <div className="w-full">
-      {headerSlot !== null && (headerSlot ?? defaultHeader)}
-      {/* null → no header, show section nav at top-12 */}
-      {headerSlot === null && makeSectionNav('top-12')}
-      {/* custom node → show section nav below the custom header at top-24 */}
-      {headerSlot !== undefined && headerSlot !== null && makeSectionNav('top-24')}
+      {/* custom header slot if provided */}
+      {headerSlot != null && headerSlot}
+      {/* Section nav - always shown */}
+      {makeSectionNav('top-14')}
 
       {/* Containerized Content */}
       <div className="max-w-6xl mx-auto">
@@ -524,6 +496,7 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
                   <DemographicsEditForm
                     userId={patientData.userId}
                     currentPicture={patientData.picture}
+                    hidePicture={true}
                     inline={true}
                     currentData={demographicsData}
                     onSuccess={handleSuccess}
@@ -890,30 +863,20 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="mt-12 pb-24 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <button
-            onClick={() => router.back()}
-            className="px-8 py-3 rounded-lg font-medium text-sm transition-all backdrop-blur-sm border border-white/20 dark:border-slate-700/20 bg-white/20 dark:bg-slate-800/20 text-slate-700 dark:text-slate-300 hover:bg-white/40 dark:hover:bg-slate-800/40"
-          >
-            ← Back to Profile
-          </button>
-          <div className="flex flex-col sm:flex-row items-center gap-4">
-          </div>
-        </div>
       </div>
 
       {/* Sticky Save All Changes bar — only visible when there are unsaved changes */}
       {hasPendingChanges && (
-        <div className="fixed bottom-0 left-0 right-0 z-50 backdrop-blur-md bg-white/80 dark:bg-slate-900/80 border-t border-slate-200/60 dark:border-slate-700/60 px-4 py-3 shadow-lg flex items-center">
-          <div className="max-w-6xl mx-auto w-full flex items-center justify-center">
+        <div className="fixed bottom-20 left-0 right-0 z-50 backdrop-blur-md bg-white/90 dark:bg-slate-900/90 border-t border-slate-200/60 dark:border-slate-700/60 px-4 py-3 shadow-xl flex items-center">
+          <div className="max-w-screen-sm mx-auto w-full flex items-center justify-between gap-3">
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">You have unsaved changes</p>
             <button
               onClick={() => void handleSaveAll()}
               disabled={isSavingAll}
-              className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-xl font-medium text-sm shadow-lg shadow-blue-500/30 hover:from-blue-600 hover:to-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-teal-500 to-cyan-500 text-white rounded-2xl font-semibold text-sm shadow-md shadow-teal-500/25 hover:shadow-lg hover:from-teal-600 hover:to-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98]"
             >
               <Save className="w-4 h-4" />
-              Save All Changes
+              Save All
             </button>
           </div>
         </div>
@@ -937,19 +900,22 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
 
             {/* Checklist */}
             <div className="overflow-y-auto flex-1 px-6 py-4 space-y-2">
-              {saveAllItems.map((item) => (
-                <div key={item.id} className="flex items-center gap-3 py-2">
-                  <span className="text-base shrink-0">{item.icon}</span>
-                  <span className="flex-1 text-sm font-medium text-slate-800 dark:text-slate-200">{item.label}</span>
-                  <span className="shrink-0">
-                    {item.status === 'pending' && <MinusCircle className="w-4 h-4 text-slate-400" />}
-                    {item.status === 'saving' && <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />}
-                    {item.status === 'saved' && <CheckCircle2 className="w-4 h-4 text-green-500" />}
-                    {item.status === 'error' && <XCircle className="w-4 h-4 text-red-500" />}
-                    {item.status === 'no-changes' && <span className="text-xs text-slate-400 italic">No changes</span>}
-                  </span>
-                </div>
-              ))}
+              {saveAllItems.map((item) => {
+                const ItemIcon = item.icon
+                return (
+                  <div key={item.id} className="flex items-center gap-3 py-2">
+                    <ItemIcon className="w-4 h-4 text-slate-400 shrink-0" />
+                    <span className="flex-1 text-sm font-medium text-slate-800 dark:text-slate-200">{item.label}</span>
+                    <span className="shrink-0">
+                      {item.status === 'pending' && <MinusCircle className="w-4 h-4 text-slate-400" />}
+                      {item.status === 'saving' && <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />}
+                      {item.status === 'saved' && <CheckCircle2 className="w-4 h-4 text-green-500" />}
+                      {item.status === 'error' && <XCircle className="w-4 h-4 text-red-500" />}
+                      {item.status === 'no-changes' && <span className="text-xs text-slate-400 italic">No changes</span>}
+                    </span>
+                  </div>
+                )
+              })}
             </div>
 
             {/* Footer */}

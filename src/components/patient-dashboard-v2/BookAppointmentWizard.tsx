@@ -9,6 +9,7 @@
 import { useState, useCallback, useMemo, useEffect, FormEvent } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { useHeaderTitle } from '@/app/v2/(patient-dashboard)/_components/HeaderTitleContext'
 import { useAtom } from 'jotai'
 import { useUser } from '@clerk/nextjs'
 import { toast } from 'sonner'
@@ -33,7 +34,6 @@ import { useClinicAppointmentTypes } from '@/hooks/useOrgAppointmentType'
 import { useClinicAppointmentModes } from '@/hooks/useOrgAppointmentMode'
 import BookingCalendar from '@/components/patient-dashboard-v2/BookingCalendar'
 import BookingTimeSlots from '@/components/patient-dashboard-v2/BookingTimeSlots'
-import { ThemeToggle } from '@/components/patient-dashboard-v2/ThemeToggle'
 import {
   Select,
   SelectContent,
@@ -65,9 +65,7 @@ import {
   Clock,
   ShieldCheck,
   ClipboardList,
-  Building2,
   TriangleAlert,
-  ChevronLeft,
 } from 'lucide-react'
 
 // ---------------------------------------------------------------------------
@@ -103,7 +101,7 @@ const ACCENT = {
   border: 'border-teal-500',
   bg:     'bg-teal-50 dark:bg-teal-950/30',
   pill:   'bg-teal-500/15 text-teal-700 dark:text-teal-300',
-  btn:    'bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white',
+  btn:    'bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-md shadow-teal-500/25 hover:shadow-lg hover:from-teal-600 hover:to-cyan-600 active:from-teal-700 active:to-cyan-700',
   check:  'bg-teal-600 border-teal-600',
 }
 
@@ -144,7 +142,7 @@ function TextArea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
 /** Sticky bottom action bar — mobile-app navigation pattern */
 function BottomBar({ children }: { children: React.ReactNode }) {
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-30 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-t border-slate-200/80 dark:border-white/10 px-4 pb-[env(safe-area-inset-bottom)] pt-3 pb-4">
+    <div className="fixed bottom-16 left-0 right-0 z-[45] bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-t border-slate-200/80 dark:border-white/10 px-4 pt-3 pb-4">
       <div className="max-w-lg mx-auto flex gap-3">
         {children}
       </div>
@@ -153,64 +151,31 @@ function BottomBar({ children }: { children: React.ReactNode }) {
 }
 
 // ---------------------------------------------------------------------------
-// Progress header
+// Step dots indicator
 // ---------------------------------------------------------------------------
 
-function ProgressHeader({
-  step,
-  total,
-  label,
-  clinicName,
-  onBack,
-}: {
-  step: number
-  total: number
-  label: string
-  clinicName: string
-  onBack: () => void
-}) {
-  const pct = Math.round(((step - 1) / total) * 100)
-  const StepIcon = STEPS[step - 1]?.icon
-
+function StepDots({ step, total }: { step: number; total: number }) {
+  const stepMeta = step >= 1 && step <= STEPS.length ? STEPS[step - 1] : null
   return (
-    <div className="sticky top-0 z-20 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200/60 dark:border-white/10 -mx-4 sm:-mx-6 md:-mx-8 px-4 sm:px-6 md:px-8 pb-0">
-      {/* Thin progress strip */}
-      <div className="h-1 w-full bg-slate-200 dark:bg-slate-700/60 mb-3">
-        <div
-          className={`h-full ${ACCENT.bar} transition-all duration-500 rounded-full`}
-          style={{ width: `${pct}%` }}
-        />
+    <div className="flex flex-col items-center py-4 gap-2">
+      <div className="flex items-center gap-2">
+        {Array.from({ length: total }, (_, i) => (
+          <div
+            key={i}
+            className={`rounded-full transition-all duration-300 ${
+              i + 1 <= step
+                ? 'w-6 h-2 bg-teal-500'
+                : 'w-2 h-2 bg-slate-300 dark:bg-slate-600'
+            }`}
+          />
+        ))}
       </div>
-
-      <div className="flex items-center gap-3 pb-3">
-        <button
-          type="button"
-          aria-label="Go back"
-          onClick={onBack}
-          className="shrink-0 w-10 h-10 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 active:scale-95 transition-all"
-        >
-          <ChevronLeft className="w-5 h-5" />
-        </button>
-
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            {StepIcon && (
-              <span className={`inline-flex items-center justify-center w-6 h-6 rounded-lg ${ACCENT.pill}`}>
-                <StepIcon className="w-3.5 h-3.5" />
-              </span>
-            )}
-            <span className={`text-xs font-bold uppercase tracking-widest ${ACCENT.text}`}>
-              Step {step} of {total} — {label}
-            </span>
-          </div>
-          <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
-            <Building2 className="inline w-3 h-3 mr-1 -mt-px" />
-            {clinicName}
-          </p>
-        </div>
-
-        <ThemeToggle />
-      </div>
+      {stepMeta && (
+        <p className="text-xs font-semibold text-teal-600 dark:text-teal-400 tracking-wide">
+          {stepMeta.label}{' '}
+          <span className="text-slate-400 dark:text-slate-500 font-normal">· Step {step} of {total}</span>
+        </p>
+      )}
     </div>
   )
 }
@@ -377,7 +342,7 @@ function Step1Complaint({
             {files.map((file, i) => (
               <FileUploaderItem key={i} index={i} className="rounded-xl">
                 <Paperclip className="h-4 w-4 shrink-0 text-teal-600 dark:text-teal-400" />
-                <span className="text-sm truncate">{file.name}</span>
+                <span className="text-sm truncate text-slate-800 dark:text-slate-200">{file.name}</span>
               </FileUploaderItem>
             ))}
           </FileUploaderContent>
@@ -1020,29 +985,27 @@ function SuccessScreen({
 }) {
   return (
     <div className="flex flex-col items-center text-center py-10 px-4 gap-6">
-      {/* Animated check mark */}
-      <div className="relative">
-        <div className="w-24 h-24 rounded-full bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center">
-          <CheckCircle2 className="w-14 h-14 text-teal-500 dark:text-teal-400" />
+      {/* Green gradient success card */}
+      <div className="w-full bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 rounded-2xl p-6 text-white">
+        {/* Animated check mark */}
+        <div className="relative mx-auto w-20 h-20 mb-4">
+          <div className="w-20 h-20 rounded-full bg-white/20 flex items-center justify-center">
+            <CheckCircle2 className="w-12 h-12 text-white" />
+          </div>
+          {/* Ripple ring */}
+          <span className="absolute inset-0 rounded-full border-4 border-white/30 animate-ping" />
         </div>
-        {/* Ripple rings */}
-        <span className="absolute inset-0 rounded-full border-4 border-teal-400/40 animate-ping" />
-      </div>
-
-      <div className="space-y-2">
-        <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white">
-          Booking Sent! 🎉
-        </h2>
-        <p className="text-sm text-slate-500 dark:text-slate-400 max-w-xs mx-auto leading-relaxed">
-          Your request has been sent to <strong className="text-slate-700 dark:text-slate-200">{clinicName}</strong>. Keep notifications on — the clinic will confirm your appointment soon.
+        <h2 className="text-2xl font-extrabold mb-2">Booking Sent! 🎉</h2>
+        <p className="text-sm text-white/85 leading-relaxed max-w-xs mx-auto">
+          Your request has been sent to <strong className="text-white">{clinicName}</strong>. The clinic will confirm your appointment soon.
         </p>
       </div>
 
-      <div className="w-full max-w-xs flex flex-col gap-3 mt-2">
+      <div className="w-full max-w-xs flex flex-col gap-3">
         <button
           type="button"
           onClick={onBookAnother}
-          className={`w-full h-14 flex items-center justify-center gap-2 rounded-2xl font-bold text-base ${ACCENT.btn}`}
+          className={`w-full h-14 flex items-center justify-center gap-2 rounded-2xl font-bold text-base transition-all active:scale-[0.98] ${ACCENT.btn}`}
         >
           Book Another
         </button>
@@ -1109,9 +1072,19 @@ export default function BookAppointmentWizard({
   preferredHpId,
 }: BookAppointmentWizardProps) {
   const router = useRouter()
+  const { setOverrideTitle, setOverrideBack } = useHeaderTitle()
   const [form, setForm] = useAtom(bookAppointmentAtom)
   const [currentStep, setCurrentStep] = useState(1)
   const [isComplete, setIsComplete] = useState(false)
+
+  // Push clinic name into the MobileHeader title slot; clear on unmount
+  useEffect(() => {
+    setOverrideTitle(clinicName)
+    return () => {
+      setOverrideTitle(null)
+      setOverrideBack(null)
+    }
+  }, [clinicName, setOverrideTitle, setOverrideBack])
 
   // On mount: hydrate form from localStorage draft (if not expired), then
   // set clinicUid. Any expired envelope is wiped immediately.
@@ -1172,6 +1145,11 @@ export default function BookAppointmentWizard({
     }
   }, [currentStep, router])
 
+  // Keep the MobileHeader back button wired to the wizard's back action
+  useEffect(() => {
+    setOverrideBack(goBack)
+  }, [goBack, setOverrideBack])
+
   const handleSuccess = useCallback(() => {
     clearDraftFromStorage()
     setIsComplete(true)
@@ -1187,16 +1165,10 @@ export default function BookAppointmentWizard({
   const currentStepMeta = STEPS[currentStep - 1]
 
   return (
-    /* Break out of parent horizontal padding on mobile for full-bleed header */
+    /* Break out of parent horizontal padding on mobile for full-bleed step dots */
     <div className="-mx-4 sm:-mx-0">
       {!isComplete && (
-        <ProgressHeader
-          step={currentStep}
-          total={STEPS.length}
-          label={currentStepMeta?.label ?? ''}
-          clinicName={clinicName}
-          onBack={goBack}
-        />
+        <StepDots step={currentStep} total={STEPS.length} />
       )}
 
       <div className="px-4 sm:px-0 max-w-lg mx-auto">

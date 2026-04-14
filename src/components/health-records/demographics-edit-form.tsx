@@ -41,6 +41,8 @@ export interface DemographicsEditFormProps {
   userId: string
   currentData?: DemographicsFormInput
   currentPicture?: string | null
+  /** When true, the Profile Picture upload section is hidden (e.g. when it has been moved to another page) */
+  hidePicture?: boolean
   onSuccess?: () => void
   inline?: boolean
   saveRef?: React.MutableRefObject<{ submit: () => Promise<void>; hasChanges: boolean } | null>
@@ -55,6 +57,7 @@ export function DemographicsEditForm({
   userId,
   currentData,
   currentPicture,
+  hidePicture = false,
   onSuccess,
   inline = false,
   saveRef,
@@ -117,18 +120,20 @@ export function DemographicsEditForm({
 
   const formContent = (
     <>
-        {/* Profile Picture */}
-        <div className="space-y-5 border-b border-slate-200 dark:border-slate-700 pb-6">
-          <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <span className="w-1 h-6 bg-gradient-to-b from-purple-500 to-pink-500 rounded-full"></span>
-            Profile Picture
-          </h3>
-          <ProfilePictureUpload
-            userId={userId}
-            currentPicture={currentPicture}
-            onSuccess={() => onSuccess?.()}
-          />
-        </div>
+        {/* Profile Picture — hidden when moved to the health record page */}
+        {!hidePicture && (
+          <div className="space-y-5 border-b border-slate-200 dark:border-slate-700 pb-6">
+            <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <span className="w-1 h-6 bg-gradient-to-b from-purple-500 to-pink-500 rounded-full"></span>
+              Profile Picture
+            </h3>
+            <ProfilePictureUpload
+              userId={userId}
+              currentPicture={currentPicture}
+              onSuccess={() => onSuccess?.()}
+            />
+          </div>
+        )}
 
         {/* Basic Information */}
         <div className="space-y-5 border-b border-slate-200 dark:border-slate-700 py-6">

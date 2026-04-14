@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useTransition, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useTransition, useRef, useEffect } from "react";
 import {
   Folder,
   FolderOpen,
@@ -16,12 +15,11 @@ import {
   Share2,
   Edit,
   X,
-  ChevronRight,
-  ArrowLeft,
   UserCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useHeaderTitle } from "@/app/v2/(patient-dashboard)/_components/HeaderTitleContext";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
@@ -47,7 +45,6 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { FilePrivacy } from "@prisma/client";
-import { ThemeToggle } from "@/components/patient-dashboard-v2/ThemeToggle";
 import type {
   GetPatientFolders,
   PatientFolder,
@@ -100,7 +97,14 @@ const PRIVACY_LABELS: Record<FilePrivacy, string> = {
 const PRIVACY_COLORS: Record<FilePrivacy, string> = {
   PRIVATE: "bg-slate-100/70 text-slate-700 dark:bg-slate-800/70 dark:text-slate-300",
   CLINIC: "bg-blue-100/70 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300",
-  PUBLIC: "bg-green-100/70 text-green-700 dark:bg-green-900/50 dark:text-green-300",
+  PUBLIC: "bg-emerald-100/70 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300",
+};
+
+/** Colored folder icon per privacy level */
+const PRIVACY_FOLDER_COLOR: Record<FilePrivacy, string> = {
+  PRIVATE: "text-amber-500",
+  CLINIC:  "text-blue-500",
+  PUBLIC:  "text-emerald-500",
 };
 
 function formatBytes(bytes: number): string {
@@ -121,12 +125,31 @@ export function PatientFilesClient({
   initialFolders,
   clinics,
   fileTypes,
-  patientInfo,
+  patientInfo: _patientInfo,
 }: PatientFilesClientProps) {
-  const router = useRouter();
   const [folders, setFolders] = useState(initialFolders);
   const [selectedFolder, setSelectedFolder] = useState<PatientFolder | null>(null);
   const [isPending, startTransition] = useTransition();
+  const { setOverrideTitle, setOverrideBack } = useHeaderTitle();
+
+  const currentFolder = selectedFolder
+    ? folders.find((f) => f.id === selectedFolder.id) ?? selectedFolder
+    : null;
+
+  // Push folder name & back handler to the MobileHeader
+  useEffect(() => {
+    if (currentFolder) {
+      setOverrideTitle(currentFolder.name);
+      setOverrideBack(() => setSelectedFolder(null));
+    } else {
+      setOverrideTitle(null);
+      setOverrideBack(null);
+    }
+    return () => {
+      setOverrideTitle(null);
+      setOverrideBack(null);
+    };
+  }, [currentFolder, setOverrideTitle, setOverrideBack]);
 
   // Dialogs
   const [showCreateFolder, setShowCreateFolder] = useState(false);
@@ -351,144 +374,33 @@ export function PatientFilesClient({
     });
   };
 
-  const currentFolder = selectedFolder
-    ? folders.find((f) => f.id === selectedFolder.id) ?? selectedFolder
-    : null;
-
   return (
-    <div className="w-full space-y-6">
-      {/* Sticky Glassmorphic Header */}
-      <div className="sticky top-0 z-50 glassmorphic-card px-4 py-3 md:px-6 md:py-4 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 min-w-0">
-          {/* Back button — goes to previous page when at root, or back to folder list when inside a folder */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => {
-              if (currentFolder) {
-                setSelectedFolder(null);
-              } else {
-                router.back();
-              }
-            }}
-            className="h-8 w-8 shrink-0"
-            aria-label="Go back"
-          >
-            <ArrowLeft className="w-4 h-4" />
-          </Button>
-
-          <div className="min-w-0">
-            <h1 className="text-lg md:text-2xl font-bold text-slate-900 dark:text-white leading-tight truncate">
-              {currentFolder ? currentFolder.name : "My Files"}
-            </h1>
-            {currentFolder && (
-              <div className="flex items-center gap-1 text-xs md:text-sm text-slate-500 dark:text-slate-400">
-                <button
-                  className="hover:underline truncate max-w-[80px] md:max-w-none"
-                  onClick={() => setSelectedFolder(null)}
-                >
-                  My Files
-                </button>
-                <ChevronRight className="w-3 h-3 shrink-0" />
-                <span className="truncate">{currentFolder.name}</span>
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 shrink-0">
-          {currentFolder ? (
-            <Button
-              size="sm"
-              onClick={() => setShowUpload(true)}
-              disabled={isPending}
-              className="bg-gradient-to-r from-blue-600 to-blue-500 text-white hover:from-blue-700 hover:to-blue-600 border-0 text-xs md:text-sm px-3 md:px-4"
-            >
-              <Upload className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
-              <span className="hidden sm:inline">Upload File</span>
-              <span className="sm:hidden">Upload</span>
-            </Button>
-          ) : (
-            <Button
-              size="sm"
-              onClick={() => setShowCreateFolder(true)}
-              disabled={isPending}
-              className="bg-gradient-to-r from-yellow-500 to-amber-500 text-white hover:from-yellow-600 hover:to-amber-600 border-0 text-xs md:text-sm px-3 md:px-4"
-            >
-              <Plus className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
-              <span className="hidden sm:inline">New Folder</span>
-              <span className="sm:hidden">New</span>
-            </Button>
-          )}
-          <ThemeToggle />
-        </div>
-      </div>
-
-      {/* Patient Context Card */}
-      {patientInfo && (
-        <div className="glassmorphic-card px-4 py-3 md:px-6 flex items-center gap-4">
-          <div className="w-11 h-11 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-base shrink-0 overflow-hidden">
-            {patientInfo.picture ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={patientInfo.picture} alt={patientInfo.name} className="w-full h-full object-cover" />
-            ) : (
-              patientInfo.name.charAt(0).toUpperCase()
-            )}
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-semibold text-slate-900 dark:text-white truncate">{patientInfo.name}</span>
-              {patientInfo.caseNumber && (
-                <span className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-2 py-0.5 rounded-full font-mono">
-                  #{patientInfo.caseNumber}
-                </span>
-              )}
-            </div>
-            <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-              {patientInfo.age !== null && (
-                <span className="text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">
-                  {patientInfo.age} yrs
-                </span>
-              )}
-              {patientInfo.gender && (
-                <span className="text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">
-                  {formatGender(patientInfo.gender)}
-                </span>
-              )}
-              {patientInfo.bloodType && (
-                <span className="text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30 px-2 py-0.5 rounded-full font-medium">
-                  {formatBloodType(patientInfo.bloodType)}
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
+    <div className="w-full pb-28">
       {/* Folder View */}
       {!currentFolder ? (
         <div>
           {folders.length === 0 ? (
-            <div className="glassmorphic-card p-16 flex flex-col items-center justify-center text-center border-dashed">
-              <Folder className="w-16 h-16 text-slate-300 dark:text-slate-500 mb-4" />
-              <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-2">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-dashed border-slate-200 dark:border-slate-700 p-16 flex flex-col items-center justify-center text-center">
+              <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-amber-100 to-amber-200 dark:from-amber-900/20 dark:to-amber-800/20 flex items-center justify-center mb-5">
+                <Folder className="w-10 h-10 text-amber-500" />
+              </div>
+              <h3 className="text-base font-bold text-slate-700 dark:text-slate-200 mb-1.5">
                 No folders yet
               </h3>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mb-6 max-w-sm">
-                Create folders to organize your medical records, lab results,
-                and other health documents.
+              <p className="text-sm text-slate-500 dark:text-slate-400 mb-6 max-w-sm leading-relaxed">
+                Create folders to organize your medical records, lab results, and other health documents.
               </p>
               <Button
                 onClick={() => setShowCreateFolder(true)}
                 size="sm"
-                className="bg-gradient-to-r from-yellow-500 to-amber-500 text-white border-0"
+                className="bg-gradient-to-r from-amber-500 to-yellow-500 text-white border-0 shadow-md shadow-amber-500/20 rounded-xl h-10 px-5"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Create your first folder
               </Button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               {folders.map((folder) => {
                 const privacy = folder.FolderSetting?.privacy ?? "PRIVATE";
                 const fileCount = folder.Files.length;
@@ -512,7 +424,7 @@ export function PatientFilesClient({
                   >
                     <div className="flex items-start justify-between mb-3">
                       <div className="relative">
-                        <FolderOpen className="w-8 h-8 text-yellow-500 flex-shrink-0" />
+                        <FolderOpen className={`w-8 h-8 flex-shrink-0 ${PRIVACY_FOLDER_COLOR[privacy]}`} />
                         {creatorName && (
                           <div
                             title={`${creatorClinic ? `Created by ${creatorClinic}` : "Provider created"} · ${creatorName}`}
@@ -538,7 +450,7 @@ export function PatientFilesClient({
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-6 w-6 opacity-0 group-hover:opacity-100"
+                              className="h-6 w-6 text-slate-500 dark:text-slate-400"
                             >
                               <MoreVertical className="w-3 h-3" />
                             </Button>
@@ -648,26 +560,27 @@ export function PatientFilesClient({
         /* File View */
         <div>
           {currentFolder.Files.length === 0 ? (
-            <div className="glassmorphic-card p-16 flex flex-col items-center justify-center text-center border-dashed">
-              <File className="w-16 h-16 text-slate-300 dark:text-slate-500 mb-4" />
-              <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-2">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-dashed border-slate-200 dark:border-slate-700 p-16 flex flex-col items-center justify-center text-center">
+              <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900/20 dark:to-blue-800/20 flex items-center justify-center mb-5">
+                <File className="w-10 h-10 text-blue-500" />
+              </div>
+              <h3 className="text-base font-bold text-slate-700 dark:text-slate-200 mb-1.5">
                 No files in this folder
               </h3>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mb-6 max-w-sm">
-                Upload your medical documents, lab results, or any
-                health-related files.
+              <p className="text-sm text-slate-500 dark:text-slate-400 mb-6 max-w-sm leading-relaxed">
+                Upload your medical documents, lab results, or any health-related files here.
               </p>
               <Button
                 onClick={() => setShowUpload(true)}
                 size="sm"
-                className="bg-gradient-to-r from-blue-600 to-blue-500 text-white border-0"
+                className="bg-gradient-to-r from-blue-600 to-blue-500 text-white border-0 shadow-md shadow-blue-500/20 rounded-xl h-10 px-5"
               >
                 <Upload className="w-4 h-4 mr-2" />
                 Upload a file
               </Button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className="space-y-3">
               {currentFolder.Files.map((file) => {
                 const privacy = file.FileSetting?.privacy ?? "PRIVATE";
                 // Show creator info if file was uploaded by a provider (not the patient)
@@ -679,27 +592,56 @@ export function PatientFilesClient({
                 const fileCreatorClinic = isProviderUploaded
                   ? file.FileSetting?.FileClinicShares?.map((s) => s.Clinic.name).join(", ") ?? null
                   : null;
+                const openFile = () => window.open(`/api/patient/files/${file.id}`, '_blank', 'noopener,noreferrer')
                 return (
                   <div
                     key={file.id}
-                    className="glassmorphic-card group hover:scale-[1.02] transition-all duration-200"
+                    role="button"
+                    tabIndex={0}
+                    className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-4 flex items-center gap-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/60 transition-colors active:scale-[0.99]"
+                    onClick={openFile}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openFile() } }}
                   >
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="relative">
-                        <File className="w-8 h-8 text-blue-500 flex-shrink-0" />
-                        {fileCreatorName && (
-                          <div
-                            title={`${fileCreatorClinic ? `Uploaded by ${fileCreatorClinic}` : "Provider uploaded"} · ${fileCreatorName}`}
-                            className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center cursor-help"
-                          >
-                            <UserCircle className="w-3 h-3 text-white" />
+                    <div className="relative shrink-0">
+                      <File className="w-8 h-8 text-blue-500 flex-shrink-0" />
+                      {fileCreatorName && (
+                        <div
+                          title={`${fileCreatorClinic ? `Uploaded by ${fileCreatorClinic}` : "Provider uploaded"} · ${fileCreatorName}`}
+                          className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center cursor-help"
+                        >
+                          <UserCircle className="w-3 h-3 text-white" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-slate-900 dark:text-white truncate">
+                        {file.name}
+                      </p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        {file.FileType.name} · {formatBytes(file.size)}
+                      </p>
+                      {file.FileSetting?.FileClinicShares &&
+                        file.FileSetting.FileClinicShares.length > 0 && (
+                          <div className="mt-1 flex flex-wrap gap-1">
+                            {file.FileSetting.FileClinicShares.map((share) => {
+                              const isCreator = share.clinicId === fileCreatorClinicId;
+                              const badgeClassName = `text-xs text-white hover:bg-blue-600 ${isCreator ? "bg-blue-700" : "bg-blue-600"}`;
+                              return (
+                                <Badge key={share.id} className={badgeClassName}>
+                                  {share.Clinic.name}
+                                  {isCreator && (
+                                    <Lock className="w-2.5 h-2.5 ml-1 inline" />
+                                  )}
+                                </Badge>
+                              );
+                            })}
                           </div>
                         )}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <span
-                          className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${PRIVACY_COLORS[privacy]}`}
-                        >
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                      <span
+                        className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${PRIVACY_COLORS[privacy]}`}
+                      >
                           {PRIVACY_ICONS[privacy]}
                           {PRIVACY_LABELS[privacy]}
                         </span>
@@ -708,7 +650,7 @@ export function PatientFilesClient({
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-6 w-6 opacity-0 group-hover:opacity-100"
+                              className="h-6 w-6 text-slate-500 dark:text-slate-400"
                             >
                               <MoreVertical className="w-3 h-3" />
                             </Button>
@@ -782,30 +724,6 @@ export function PatientFilesClient({
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
-                    </div>
-                    <p className="font-medium text-slate-900 dark:text-white truncate mb-1">
-                      {file.name}
-                    </p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">
-                      {file.FileType.name} · {formatBytes(file.size)}
-                    </p>
-                    {file.FileSetting?.FileClinicShares &&
-                      file.FileSetting.FileClinicShares.length > 0 && (
-                        <div className="mt-2 flex flex-wrap gap-1">
-                          {file.FileSetting.FileClinicShares.map((share) => {
-                            const isCreator = share.clinicId === fileCreatorClinicId;
-                            const badgeClassName = `text-xs text-white hover:bg-blue-600 ${isCreator ? "bg-blue-700" : "bg-blue-600"}`;
-                            return (
-                              <Badge key={share.id} className={badgeClassName}>
-                                {share.Clinic.name}
-                                {isCreator && (
-                                  <Lock className="w-2.5 h-2.5 ml-1 inline" />
-                                )}
-                              </Badge>
-                            );
-                          })}
-                        </div>
-                      )}
                   </div>
                 );
               })}
@@ -813,6 +731,28 @@ export function PatientFilesClient({
           )}
         </div>
       )}
+
+      {/* Sticky action bar — sits directly above BottomNav (bottom-16 = 64px) */}
+      <div className="fixed bottom-16 left-0 right-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-t border-slate-200 dark:border-slate-700 px-4 py-2.5 flex items-center gap-3">
+        <button
+          type="button"
+          onClick={() => setShowCreateFolder(true)}
+          className="flex-1 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-semibold border border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors flex items-center justify-center gap-1.5 active:scale-95"
+        >
+          <Plus className="w-4 h-4" />
+          New Folder
+        </button>
+        {currentFolder && (
+          <button
+            type="button"
+            onClick={() => setShowUpload(true)}
+            className="flex-1 h-10 rounded-xl bg-teal-500 text-white text-sm font-semibold shadow-md shadow-teal-500/20 hover:bg-teal-600 transition-colors flex items-center justify-center gap-1.5 active:scale-95"
+          >
+            <Upload className="w-4 h-4" />
+            Upload
+          </button>
+        )}
+      </div>
 
       {/* Create Folder Dialog */}
       <Dialog open={showCreateFolder} onOpenChange={setShowCreateFolder}>

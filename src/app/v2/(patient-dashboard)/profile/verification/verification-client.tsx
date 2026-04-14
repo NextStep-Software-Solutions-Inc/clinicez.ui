@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, ShieldCheck, ShieldQuestion, ShieldAlert, Shield, Upload, Plus, Trash2, FileCheck, X, Loader2, ImageIcon } from 'lucide-react'
+import { ShieldCheck, ShieldQuestion, ShieldAlert, Shield, Upload, Plus, Trash2, FileCheck, X, Loader2, ImageIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -323,25 +323,7 @@ export default function VerificationClient({
   }
 
   return (
-    <div className="w-full max-w-3xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <button
-          onClick={() => router.back()}
-          className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-        <div>
-          <h1 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">
-            Identity Verification
-          </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            Verify your identity for enhanced account security
-          </p>
-        </div>
-      </div>
-
+    <div className="w-full max-w-3xl mx-auto pt-2">
       {/* Current Status Card */}
       <Card className={`mb-6 ${statusConfig.cardClass}`}>
         <CardHeader className="pb-3">

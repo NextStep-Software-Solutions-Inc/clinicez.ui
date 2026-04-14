@@ -29,7 +29,7 @@ export function FloatingActions({
   if (editProfileHref === null) return null
 
   return (
-    <div className="fixed bottom-4 md:bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 md:gap-3">
+    <div className="fixed bottom-20 md:bottom-24 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 md:gap-3">
       {appointmentsHref && (
         <button
           onClick={() => router.push(appointmentsHref)}

@@ -1,5 +1,6 @@
 'use client'
 
+import { FlaskConical } from 'lucide-react'
 import type { ExamsTabData } from '@/types/patient-profile-tabs'
 
 type Props = { data: ExamsTabData }
@@ -27,12 +28,12 @@ function getVisionStatus(acuity: string | null): string {
 }
 
 const EXAM_STATUS_SUMMARY: Record<string, string> = {
-  good: '✅ Physical examination is within normal limits',
-  normal: '✅ All findings are normal',
-  fair: '📊 Some findings observed - follow-up recommended',
-  moderate: '⚠️ Moderate findings - medical attention advised',
-  poor: '⚠️ Significant findings - consult healthcare provider',
-  abnormal: '⚠️ Abnormal findings - requires evaluation',
+  good: 'Physical examination is within normal limits',
+  normal: 'All findings are normal',
+  fair: 'Some findings observed - follow-up recommended',
+  moderate: 'Moderate findings - medical attention advised',
+  poor: 'Significant findings - consult healthcare provider',
+  abnormal: 'Abnormal findings - requires evaluation',
 }
 
 const STATUS_DOT_COLORS: Record<string, string> = {
@@ -48,7 +49,7 @@ export function ExamsTab({ data }: Props) {
   return (
     <div className="space-y-6">
       <div className="glassmorphic-card p-6">
-        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">🔍 Physical Examinations</h3>
+        <h3 className="flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-white mb-2"><FlaskConical className="w-5 h-5 text-teal-500" /> Physical Examinations</h3>
         <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">Latest physical examination records</p>
         {data.physicalExaminations.length > 0 ? (
           <div className="space-y-3">

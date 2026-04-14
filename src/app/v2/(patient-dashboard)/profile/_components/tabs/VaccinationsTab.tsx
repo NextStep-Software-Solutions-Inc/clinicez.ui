@@ -1,5 +1,6 @@
 'use client'
 
+import { Syringe } from 'lucide-react'
 import type { VaccinationsTabData } from '@/types/patient-profile-tabs'
 
 type Props = { data: VaccinationsTabData }
@@ -8,7 +9,7 @@ export function VaccinationsTab({ data }: Props) {
   return (
     <div className="space-y-6">
       <div className="glassmorphic-card p-6">
-        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">💉 Vaccinations & Immunizations</h3>
+        <h3 className="flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-white mb-4"><Syringe className="w-5 h-5 text-teal-500" /> Vaccinations &amp; Immunizations</h3>
         {data.userVaccinations.length > 0 ? (
           <div className="space-y-3">
             {data.userVaccinations.map((vaccination) => (

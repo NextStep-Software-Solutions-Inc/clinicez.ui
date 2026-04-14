@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { List, BarChart3 } from 'lucide-react'
+import { Activity, List, BarChart3 } from 'lucide-react'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip as RechartsTooltip, Legend, ResponsiveContainer,
@@ -24,7 +24,7 @@ export function VitalsTab({ data }: Props) {
   if (data.vitalSigns.length === 0) {
     return (
       <div className="glassmorphic-card p-6">
-        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">❤️ Vital Signs</h3>
+        <h3 className="flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-white mb-4"><Activity className="w-5 h-5 text-teal-500" /> Vital Signs</h3>
         <p className="text-slate-600 dark:text-slate-400 text-center py-8">No vital signs recorded yet</p>
       </div>
     )
@@ -35,7 +35,7 @@ export function VitalsTab({ data }: Props) {
       <div className="glassmorphic-card p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-1">📊 Vital Signs History</h3>
+            <h3 className="flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-white mb-1"><Activity className="w-5 h-5 text-teal-500" /> Vital Signs History</h3>
             <p className="text-sm text-slate-600 dark:text-slate-400">Latest measurements and trends</p>
           </div>
           <div className="flex gap-2">

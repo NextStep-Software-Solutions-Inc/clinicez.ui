@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
-import { redirect, notFound } from 'next/navigation'
+import { notFound } from 'next/navigation'
 import { getBookingClinicAction } from '@/actions/patient-dashboard/get-booking-clinic'
 import BookAppointmentWizard from '@/components/patient-dashboard-v2/BookAppointmentWizard'
+import SelectClinicPage from './SelectClinicPage'
 
 export const metadata: Metadata = {
   title: 'Book an Appointment',
@@ -18,7 +19,7 @@ export default async function BookAppointmentPage({ searchParams }: PageProps) {
   const { clinic: clinicUid, hp: hpParam } = await searchParams
 
   if (!clinicUid) {
-    redirect('/v2/patient')
+    return <SelectClinicPage />
   }
 
   const result = await getBookingClinicAction({ clinicUid })

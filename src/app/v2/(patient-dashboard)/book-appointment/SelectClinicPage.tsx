@@ -9,6 +9,10 @@ import { getClinicsV2Action } from '@/actions/clinics/clinic.action'
 type OrgClinic = { clinicUid: string; name: string; logo: string | null }
 type PublicClinic = { clinicUid: string; name: string; description: string | null; logo: string | null; memberCount: number }
 
+function getClinicInitials(name: string): string {
+  return name.split(' ').filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('')
+}
+
 function ClinicCard({
   clinicUid,
   name,
@@ -38,7 +42,7 @@ function ClinicCard({
           <img src={logo} alt={name} className="w-full h-full object-cover" />
         ) : (
           <span className="text-white font-extrabold text-xl">
-            {name.split(' ').filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('')}
+            {getClinicInitials(name)}
           </span>
         )}
       </div>

@@ -20,6 +20,7 @@ const OUTPUT_SIZE = 512 // output image size
 const MIN_ZOOM = 1.0
 const MAX_ZOOM = 4.0
 const ZOOM_STEP = 0.05
+const ZOOM_BUTTON_MULTIPLIER = 4 // button click zooms by 4× ZOOM_STEP
 
 interface CropModalProps {
   objectUrl: string
@@ -152,7 +153,7 @@ function ImageCropModal({ objectUrl, onConfirm, onCancel }: CropModalProps) {
           <button
             type="button"
             aria-label="Zoom out"
-            onClick={() => applyZoom(zoom - ZOOM_STEP * 4)}
+            onClick={() => applyZoom(zoom - ZOOM_STEP * ZOOM_BUTTON_MULTIPLIER)}
             className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors shrink-0"
           >
             <ZoomOut className="w-4 h-4" />
@@ -170,7 +171,7 @@ function ImageCropModal({ objectUrl, onConfirm, onCancel }: CropModalProps) {
           <button
             type="button"
             aria-label="Zoom in"
-            onClick={() => applyZoom(zoom + ZOOM_STEP * 4)}
+            onClick={() => applyZoom(zoom + ZOOM_STEP * ZOOM_BUTTON_MULTIPLIER)}
             className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors shrink-0"
           >
             <ZoomIn className="w-4 h-4" />

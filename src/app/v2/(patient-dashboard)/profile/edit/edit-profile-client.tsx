@@ -442,13 +442,13 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
                 key={section.id}
                 data-tab-id={section.id}
                 onClick={() => scrollToSection(section.id)}
-                className={`whitespace-nowrap px-3 md:px-4 py-1.5 md:py-2 rounded-2xl font-medium text-xs md:text-sm transition-all shrink-0 ${
+                className={`whitespace-nowrap px-3 md:px-4 py-1.5 md:py-2 rounded-2xl font-medium text-xs md:text-sm transition-all shrink-0 flex items-center justify-center gap-1.5 ${
                   activeSection === section.id
                     ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-md shadow-teal-500/25'
                     : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
                 }`}
               >
-                <span className="mr-1 md:mr-1.5 inline-flex items-center"><section.icon className="w-4 h-4" /></span>
+                <section.icon className="w-4 h-4 shrink-0" />
                 {section.label}
               </button>
             ))}

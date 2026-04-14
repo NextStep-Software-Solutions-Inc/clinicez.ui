@@ -258,44 +258,6 @@ function ConsultationDetailPanel({ ticket }: { ticket: ConsultationTicket }) {
 
   return (
     <div className="flex flex-col overflow-hidden">
-      {/* Detail header */}
-      <div className="px-5 pt-5 pb-4 shrink-0 border-b border-slate-200/60 dark:border-white/10">
-        <div className="flex items-center gap-2 flex-wrap mb-2">
-          <StatusBadge config={statusConfig} />
-          <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full dark:bg-slate-700/60 bg-slate-200/60 dark:text-slate-300 text-slate-600 border dark:border-white/10 border-slate-200/60">
-            <Stethoscope className="h-3 w-3" />
-            Consultation
-          </span>
-        </div>
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <h2 className="text-lg font-bold dark:text-white text-slate-900 leading-snug">
-              {ticket.subject ?? 'Consultation'}
-            </h2>
-            <div className="flex items-center gap-3 mt-1 flex-wrap">
-              {ticket.Clinic && (
-                <span className="text-sm dark:text-slate-400 text-slate-500">{ticket.Clinic.name}</span>
-              )}
-              {ticket.caseNumber && (
-                <span className="text-xs dark:text-slate-500 text-slate-400 font-mono">
-                  #{ticket.caseNumber}
-                </span>
-              )}
-              <span className="text-xs dark:text-slate-500 text-slate-400">
-                {displayDate.toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric',
-                })}
-                {appointment?.AppointmentAttribute?.timeStart && (
-                  <span> · {formatTime12Hr(appointment.AppointmentAttribute.timeStart)}</span>
-                )}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:dark:bg-white/10 [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-full">
         {/* Healthcare Providers */}
         {hpsToShow.length > 0 && (
@@ -527,45 +489,6 @@ function AppointmentDetailPanel({ appointment }: { appointment: Appointment }) {
 
   return (
     <div className="flex flex-col overflow-hidden">
-      {/* Detail header */}
-      <div className="px-5 pt-5 pb-4 shrink-0 border-b border-slate-200/60 dark:border-white/10">
-        <div className="flex items-center gap-2 flex-wrap mb-2">
-          {attr && <StatusBadge config={statusConfig} />}
-          <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full dark:bg-slate-700/60 bg-slate-200/60 dark:text-slate-300 text-slate-600 border dark:border-white/10 border-slate-200/60">
-            <Calendar className="h-3 w-3" />
-            Appointment
-          </span>
-        </div>
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <h2 className="text-lg font-bold dark:text-white text-slate-900 leading-snug">
-              {appointment.subject ?? appointment.complaint ?? 'Appointment'}
-            </h2>
-            <div className="flex items-center gap-3 mt-1 flex-wrap">
-              {appointment.Clinic && (
-                <span className="text-sm dark:text-slate-400 text-slate-500">{appointment.Clinic.name}</span>
-              )}
-              <span className="text-xs dark:text-slate-500 text-slate-400">
-                {attr?.date
-                  ? new Date(attr.date).toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric',
-                    })
-                  : new Date(appointment.createdAt).toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric',
-                    })}
-                {attr?.timeStart && (
-                  <span> · {formatTime12Hr(attr.timeStart)}</span>
-                )}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:dark:bg-white/10 [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-full">
         {/* Your Healthcare Providers */}
         {hpsToShow.length > 0 && (

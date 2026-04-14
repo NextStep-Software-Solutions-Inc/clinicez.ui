@@ -188,13 +188,13 @@ export function NotificationBell() {
     <Button
       variant="ghost"
       size="icon"
-      className="relative h-8 w-8 rounded-lg hover:bg-muted"
+      className="relative w-9 h-9 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
       aria-label={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ""}`}
     >
       {isMuted ? (
-        <BellOff className="h-4 w-4 text-muted-foreground" />
+        <BellOff className="h-5 w-5" />
       ) : (
-        <Bell className="h-4 w-4" />
+        <Bell className="h-5 w-5" />
       )}
       {unreadCount > 0 && !isMuted && (
         <Badge

@@ -21,10 +21,10 @@ export function ThemeToggle() {
   if (!mounted) return null;
 
   return (
-    <div className="flex items-center gap-4">
+    <div className="flex items-center gap-1">
       <button
         onClick={toggleTheme}
-        className="p-2 rounded-lg transition-colors hover:bg-slate-700/50 dark:hover:bg-slate-700/50 hover:bg-slate-200"
+        className="w-9 h-9 flex items-center justify-center rounded-xl transition-colors text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
         aria-label="Toggle theme"
       >
         {isDark ? (

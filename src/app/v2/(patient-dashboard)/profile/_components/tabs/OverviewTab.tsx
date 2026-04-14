@@ -1,6 +1,6 @@
 'use client'
 
-import { Heart } from 'lucide-react'
+import { ClipboardList } from 'lucide-react'
 import {
   calculateBMI,
   calculateBodyFat,
@@ -25,7 +25,7 @@ export function OverviewTab({ data }: Props) {
 function DemographicsCard({ data }: Props) {
   return (
     <div className="glassmorphic-card p-6">
-      <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">📋 Demographics</h3>
+      <h3 className="flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-white mb-4"><ClipboardList className="w-5 h-5 text-teal-500" /> Demographics</h3>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {data.email && <InfoCell label="Email" value={data.email} />}
         {data.mobile && <InfoCell label="Mobile" value={data.mobile} />}

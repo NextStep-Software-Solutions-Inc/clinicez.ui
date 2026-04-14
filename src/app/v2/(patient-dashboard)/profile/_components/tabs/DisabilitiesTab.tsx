@@ -1,5 +1,6 @@
 'use client'
 
+import { Accessibility } from 'lucide-react'
 import type { DisabilitiesTabData } from '@/types/patient-profile-tabs'
 
 type Props = { data: DisabilitiesTabData }
@@ -8,7 +9,7 @@ export function DisabilitiesTab({ data }: Props) {
   return (
     <div className="space-y-6">
       <div className="glassmorphic-card p-6">
-        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">♿ Disabilities & Illnesses</h3>
+        <h3 className="flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-white mb-4"><Accessibility className="w-5 h-5 text-teal-500" /> Disabilities &amp; Illnesses</h3>
         {data.userDisabilities.length > 0 ? (
           <div className="space-y-3">
             {data.userDisabilities.map((disability) => (

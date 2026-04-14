@@ -359,7 +359,7 @@ export function PatientFilesClient({
     : null;
 
   return (
-    <div className="w-full">
+    <div className="w-full pb-28">
       {/* Sticky section header — shows page title or folder name with back button */}
       <div className="sticky top-14 z-20 -mx-4 px-4 py-2.5 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-b border-slate-100 dark:border-slate-800 mb-4 flex items-center gap-2">
         {currentFolder ? (
@@ -452,7 +452,7 @@ export function PatientFilesClient({
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-6 w-6 opacity-0 group-hover:opacity-100"
+                              className="h-6 w-6"
                             >
                               <MoreVertical className="w-3 h-3" />
                             </Button>
@@ -597,7 +597,11 @@ export function PatientFilesClient({
                 return (
                   <div
                     key={file.id}
-                    className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-4 flex items-center gap-3 group"
+                    role="button"
+                    tabIndex={0}
+                    className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-4 flex items-center gap-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/60 transition-colors active:scale-[0.99]"
+                    onClick={() => window.open(`/api/patient/files/${file.id}`, '_blank', 'noopener,noreferrer')}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); window.open(`/api/patient/files/${file.id}`, '_blank', 'noopener,noreferrer') } }}
                   >
                     <div className="relative shrink-0">
                       <File className="w-8 h-8 text-blue-500 flex-shrink-0" />
@@ -635,7 +639,7 @@ export function PatientFilesClient({
                           </div>
                         )}
                     </div>
-                    <div className="flex items-center gap-1 shrink-0">
+                    <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
                       <span
                         className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${PRIVACY_COLORS[privacy]}`}
                       >
@@ -729,8 +733,8 @@ export function PatientFilesClient({
         </div>
       )}
 
-      {/* Sticky action bar — above BottomNav (bottom-20) */}
-      <div className="fixed bottom-24 left-0 right-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-t border-slate-200 dark:border-slate-700 px-4 py-2.5 flex items-center gap-3">
+      {/* Sticky action bar — sits directly above BottomNav (bottom-16 = 64px) */}
+      <div className="fixed bottom-16 left-0 right-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-t border-slate-200 dark:border-slate-700 px-4 py-2.5 flex items-center gap-3">
         <button
           type="button"
           onClick={() => setShowCreateFolder(true)}

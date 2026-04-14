@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition, useRef } from "react";
-import { useRouter } from "next/navigation";
 import {
   Folder,
   FolderOpen,
@@ -16,8 +15,6 @@ import {
   Share2,
   Edit,
   X,
-  ChevronRight,
-  ArrowLeft,
   UserCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -47,7 +44,6 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { FilePrivacy } from "@prisma/client";
-import { ThemeToggle } from "@/components/patient-dashboard-v2/ThemeToggle";
 import type {
   GetPatientFolders,
   PatientFolder,
@@ -121,9 +117,8 @@ export function PatientFilesClient({
   initialFolders,
   clinics,
   fileTypes,
-  patientInfo,
+  patientInfo: _patientInfo,
 }: PatientFilesClientProps) {
-  const router = useRouter();
   const [folders, setFolders] = useState(initialFolders);
   const [selectedFolder, setSelectedFolder] = useState<PatientFolder | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -356,112 +351,15 @@ export function PatientFilesClient({
     : null;
 
   return (
-    <div className="w-full space-y-6">
-      {/* Sticky Glassmorphic Header */}
-      <div className="sticky top-0 z-50 glassmorphic-card px-4 py-3 md:px-6 md:py-4 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 min-w-0">
-          {/* Back button — goes to previous page when at root, or back to folder list when inside a folder */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => {
-              if (currentFolder) {
-                setSelectedFolder(null);
-              } else {
-                router.back();
-              }
-            }}
-            className="h-8 w-8 shrink-0"
-            aria-label="Go back"
-          >
-            <ArrowLeft className="w-4 h-4" />
-          </Button>
-
-          <div className="min-w-0">
-            <h1 className="text-lg md:text-2xl font-bold text-slate-900 dark:text-white leading-tight truncate">
-              {currentFolder ? currentFolder.name : "My Files"}
-            </h1>
-            {currentFolder && (
-              <div className="flex items-center gap-1 text-xs md:text-sm text-slate-500 dark:text-slate-400">
-                <button
-                  className="hover:underline truncate max-w-[80px] md:max-w-none"
-                  onClick={() => setSelectedFolder(null)}
-                >
-                  My Files
-                </button>
-                <ChevronRight className="w-3 h-3 shrink-0" />
-                <span className="truncate">{currentFolder.name}</span>
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 shrink-0">
-          {currentFolder ? (
-            <Button
-              size="sm"
-              onClick={() => setShowUpload(true)}
-              disabled={isPending}
-              className="bg-gradient-to-r from-blue-600 to-blue-500 text-white hover:from-blue-700 hover:to-blue-600 border-0 text-xs md:text-sm px-3 md:px-4"
-            >
-              <Upload className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
-              <span className="hidden sm:inline">Upload File</span>
-              <span className="sm:hidden">Upload</span>
-            </Button>
-          ) : (
-            <Button
-              size="sm"
-              onClick={() => setShowCreateFolder(true)}
-              disabled={isPending}
-              className="bg-gradient-to-r from-yellow-500 to-amber-500 text-white hover:from-yellow-600 hover:to-amber-600 border-0 text-xs md:text-sm px-3 md:px-4"
-            >
-              <Plus className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
-              <span className="hidden sm:inline">New Folder</span>
-              <span className="sm:hidden">New</span>
-            </Button>
-          )}
-          <ThemeToggle />
-        </div>
-      </div>
-
-      {/* Patient Context Card */}
-      {patientInfo && (
-        <div className="glassmorphic-card px-4 py-3 md:px-6 flex items-center gap-4">
-          <div className="w-11 h-11 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-base shrink-0 overflow-hidden">
-            {patientInfo.picture ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={patientInfo.picture} alt={patientInfo.name} className="w-full h-full object-cover" />
-            ) : (
-              patientInfo.name.charAt(0).toUpperCase()
-            )}
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-semibold text-slate-900 dark:text-white truncate">{patientInfo.name}</span>
-              {patientInfo.caseNumber && (
-                <span className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-2 py-0.5 rounded-full font-mono">
-                  #{patientInfo.caseNumber}
-                </span>
-              )}
-            </div>
-            <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-              {patientInfo.age !== null && (
-                <span className="text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">
-                  {patientInfo.age} yrs
-                </span>
-              )}
-              {patientInfo.gender && (
-                <span className="text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">
-                  {formatGender(patientInfo.gender)}
-                </span>
-              )}
-              {patientInfo.bloodType && (
-                <span className="text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30 px-2 py-0.5 rounded-full font-medium">
-                  {formatBloodType(patientInfo.bloodType)}
-                </span>
-              )}
-            </div>
-          </div>
+    <div className="w-full">
+      {/* Breadcrumb when inside a folder */}
+      {currentFolder && (
+        <div className="flex items-center gap-1 text-sm text-slate-500 dark:text-slate-400 mb-4">
+          <button onClick={() => setSelectedFolder(null)} className="hover:text-teal-600 dark:hover:text-teal-400">
+            All Files
+          </button>
+          <span> › </span>
+          <span className="text-slate-900 dark:text-white font-medium truncate">{currentFolder.name}</span>
         </div>
       )}
 
@@ -469,7 +367,7 @@ export function PatientFilesClient({
       {!currentFolder ? (
         <div>
           {folders.length === 0 ? (
-            <div className="glassmorphic-card p-16 flex flex-col items-center justify-center text-center border-dashed">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-dashed border-slate-200 dark:border-slate-700 p-16 flex flex-col items-center justify-center text-center">
               <Folder className="w-16 h-16 text-slate-300 dark:text-slate-500 mb-4" />
               <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-2">
                 No folders yet
@@ -488,7 +386,7 @@ export function PatientFilesClient({
               </Button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               {folders.map((folder) => {
                 const privacy = folder.FolderSetting?.privacy ?? "PRIVATE";
                 const fileCount = folder.Files.length;
@@ -648,7 +546,7 @@ export function PatientFilesClient({
         /* File View */
         <div>
           {currentFolder.Files.length === 0 ? (
-            <div className="glassmorphic-card p-16 flex flex-col items-center justify-center text-center border-dashed">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-dashed border-slate-200 dark:border-slate-700 p-16 flex flex-col items-center justify-center text-center">
               <File className="w-16 h-16 text-slate-300 dark:text-slate-500 mb-4" />
               <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-2">
                 No files in this folder
@@ -667,7 +565,7 @@ export function PatientFilesClient({
               </Button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className="space-y-3">
               {currentFolder.Files.map((file) => {
                 const privacy = file.FileSetting?.privacy ?? "PRIVATE";
                 // Show creator info if file was uploaded by a provider (not the patient)
@@ -682,24 +580,48 @@ export function PatientFilesClient({
                 return (
                   <div
                     key={file.id}
-                    className="glassmorphic-card group hover:scale-[1.02] transition-all duration-200"
+                    className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-4 flex items-center gap-3 group"
                   >
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="relative">
-                        <File className="w-8 h-8 text-blue-500 flex-shrink-0" />
-                        {fileCreatorName && (
-                          <div
-                            title={`${fileCreatorClinic ? `Uploaded by ${fileCreatorClinic}` : "Provider uploaded"} · ${fileCreatorName}`}
-                            className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center cursor-help"
-                          >
-                            <UserCircle className="w-3 h-3 text-white" />
+                    <div className="relative shrink-0">
+                      <File className="w-8 h-8 text-blue-500 flex-shrink-0" />
+                      {fileCreatorName && (
+                        <div
+                          title={`${fileCreatorClinic ? `Uploaded by ${fileCreatorClinic}` : "Provider uploaded"} · ${fileCreatorName}`}
+                          className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center cursor-help"
+                        >
+                          <UserCircle className="w-3 h-3 text-white" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-slate-900 dark:text-white truncate">
+                        {file.name}
+                      </p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        {file.FileType.name} · {formatBytes(file.size)}
+                      </p>
+                      {file.FileSetting?.FileClinicShares &&
+                        file.FileSetting.FileClinicShares.length > 0 && (
+                          <div className="mt-1 flex flex-wrap gap-1">
+                            {file.FileSetting.FileClinicShares.map((share) => {
+                              const isCreator = share.clinicId === fileCreatorClinicId;
+                              const badgeClassName = `text-xs text-white hover:bg-blue-600 ${isCreator ? "bg-blue-700" : "bg-blue-600"}`;
+                              return (
+                                <Badge key={share.id} className={badgeClassName}>
+                                  {share.Clinic.name}
+                                  {isCreator && (
+                                    <Lock className="w-2.5 h-2.5 ml-1 inline" />
+                                  )}
+                                </Badge>
+                              );
+                            })}
                           </div>
                         )}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <span
-                          className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${PRIVACY_COLORS[privacy]}`}
-                        >
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <span
+                        className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${PRIVACY_COLORS[privacy]}`}
+                      >
                           {PRIVACY_ICONS[privacy]}
                           {PRIVACY_LABELS[privacy]}
                         </span>
@@ -782,30 +704,6 @@ export function PatientFilesClient({
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
-                    </div>
-                    <p className="font-medium text-slate-900 dark:text-white truncate mb-1">
-                      {file.name}
-                    </p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">
-                      {file.FileType.name} · {formatBytes(file.size)}
-                    </p>
-                    {file.FileSetting?.FileClinicShares &&
-                      file.FileSetting.FileClinicShares.length > 0 && (
-                        <div className="mt-2 flex flex-wrap gap-1">
-                          {file.FileSetting.FileClinicShares.map((share) => {
-                            const isCreator = share.clinicId === fileCreatorClinicId;
-                            const badgeClassName = `text-xs text-white hover:bg-blue-600 ${isCreator ? "bg-blue-700" : "bg-blue-600"}`;
-                            return (
-                              <Badge key={share.id} className={badgeClassName}>
-                                {share.Clinic.name}
-                                {isCreator && (
-                                  <Lock className="w-2.5 h-2.5 ml-1 inline" />
-                                )}
-                              </Badge>
-                            );
-                          })}
-                        </div>
-                      )}
                   </div>
                 );
               })}
@@ -813,6 +711,16 @@ export function PatientFilesClient({
           )}
         </div>
       )}
+
+      {/* FAB */}
+      <button
+        type="button"
+        onClick={() => currentFolder ? setShowUpload(true) : setShowCreateFolder(true)}
+        className="fixed bottom-24 right-4 z-40 w-14 h-14 rounded-full bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-lg flex items-center justify-center hover:shadow-xl transition-all active:scale-95"
+        aria-label={currentFolder ? 'Upload file' : 'New folder'}
+      >
+        <Plus className="w-6 h-6" />
+      </button>
 
       {/* Create Folder Dialog */}
       <Dialog open={showCreateFolder} onOpenChange={setShowCreateFolder}>

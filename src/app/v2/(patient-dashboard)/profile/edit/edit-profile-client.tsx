@@ -1,8 +1,7 @@
 'use client'
 
 import { useEffect, useState, useRef, useMemo, useCallback, Suspense } from 'react'
-import { useRouter } from 'next/navigation'
-import { ArrowLeft, Save, CheckCircle2, XCircle, Loader2, MinusCircle } from 'lucide-react'
+import { Save, CheckCircle2, XCircle, Loader2, MinusCircle } from 'lucide-react'
 import {
   mapPersonalHistoryToFormInput,
   mapPatientDataToDemographicsFormInput,
@@ -22,7 +21,6 @@ import type {
   EmergencyContactFormInput,
   AddressFormInput,
 } from '@/schemas'
-import { ThemeToggle } from '@/components/patient-dashboard-v2/ThemeToggle'
 import {
   DemographicsEditForm,
   VitalSignEditForm,
@@ -108,7 +106,6 @@ function FormLoadingFallback() {
  * Server component (page.tsx) handles data fetching and initial load
  */
 export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refreshFn }: EditProfileClientProps) {
-  const router = useRouter()
   const [activeSection, setActiveSection] = useState('demographics')
   const [patientData, setPatientData] = useState<PatientHealthRecordsResponse | null>(initialData)
   const [loadedSections, setLoadedSections] = useState<LoadedSections>({
@@ -425,8 +422,8 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
                 onClick={() => scrollToSection(section.id)}
                 className={`whitespace-nowrap px-3 md:px-4 py-1.5 md:py-2 rounded-lg font-medium text-xs md:text-sm transition-all ${
                   activeSection === section.id
-                    ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg shadow-blue-500/30'
-                    : 'bg-white/40 dark:bg-slate-800/40 text-slate-700 dark:text-slate-300 hover:bg-white/60 dark:hover:bg-slate-800/60 backdrop-blur-sm border border-white/20 dark:border-slate-700/20'
+                    ? 'bg-teal-500 text-white shadow-lg shadow-teal-500/30'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
                 }`}
               >
                 <span className="mr-1 md:mr-2">{section.icon}</span>
@@ -450,58 +447,12 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
     )
   }
 
-  const defaultHeader = (
-    <div className="sticky top-14 z-50 backdrop-blur-sm bg-white/20 dark:bg-slate-950/20 border-b border-slate-200/20 dark:border-slate-800/20 mb-4 md:mb-6 -mx-4 md:-mx-8 px-4 md:px-8 py-3 md:py-4 rounded-b-3xl">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2 md:gap-3 min-w-0">
-            <button
-              onClick={() => router.back()}
-              className="p-1.5 md:p-2 hover:bg-white/50 dark:hover:bg-slate-800/50 rounded-lg transition-colors backdrop-blur-sm border border-white/20 dark:border-slate-700/20 shrink-0"
-            >
-              <ArrowLeft className="w-4 h-4 md:w-5 md:h-5 text-slate-600 dark:text-slate-400" />
-            </button>
-            <div className="min-w-0">
-              <h1 className="text-lg md:text-2xl font-bold text-slate-900 dark:text-white truncate">Edit Profile</h1>
-              <p className="text-xs text-slate-500 dark:text-slate-400 hidden sm:block">Update your health information</p>
-            </div>
-          </div>
-          <ThemeToggle />
-        </div>
-
-        {/* Horizontal Section Navigation */}
-        <div className="relative mt-3 md:mt-4">
-          <div className="flex gap-2 overflow-x-auto scroll-smooth pb-2 md:pb-3 -mx-4 md:-mx-8 px-4 md:px-8 mt-2 md:mt-4" style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(100,116,139,0.4) transparent' }}>
-            {sections.map((section) => (
-              <button
-                key={section.id}
-                data-tab-id={section.id}
-                onClick={() => scrollToSection(section.id)}
-                className={`whitespace-nowrap px-3 md:px-4 py-1.5 md:py-2 rounded-lg font-medium text-xs md:text-sm transition-all ${
-                  activeSection === section.id
-                    ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg shadow-blue-500/30'
-                    : 'bg-white/40 dark:bg-slate-800/40 text-slate-700 dark:text-slate-300 hover:bg-white/60 dark:hover:bg-slate-800/60 backdrop-blur-sm border border-white/20 dark:border-slate-700/20'
-                }`}
-              >
-                <span className="mr-1 md:mr-2">{section.icon}</span>
-                {section.label}
-              </button>
-            ))}
-          </div>
-          {/* Scroll indicator gradient (right side) */}
-          <div className="absolute right-0 top-0 bottom-0 w-8 md:w-12 bg-gradient-to-l from-white/30 dark:from-slate-950/30 to-transparent pointer-events-none rounded-r-lg"></div>
-        </div>
-      </div>
-    </div>
-  )
-
   return (
     <div className="w-full">
-      {headerSlot !== null && (headerSlot ?? defaultHeader)}
-      {/* null → no header, show section nav at top-14 */}
-      {headerSlot === null && makeSectionNav('top-14')}
-      {/* custom node → show section nav below the custom header at top-28 */}
-      {headerSlot !== undefined && headerSlot !== null && makeSectionNav('top-28')}
+      {/* custom header slot if provided */}
+      {headerSlot != null && headerSlot}
+      {/* Section nav - always shown */}
+      {makeSectionNav('top-14')}
 
       {/* Containerized Content */}
       <div className="max-w-6xl mx-auto">
@@ -888,22 +839,11 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="mt-12 pb-24 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <button
-            onClick={() => router.back()}
-            className="px-8 py-3 rounded-lg font-medium text-sm transition-all backdrop-blur-sm border border-white/20 dark:border-slate-700/20 bg-white/20 dark:bg-slate-800/20 text-slate-700 dark:text-slate-300 hover:bg-white/40 dark:hover:bg-slate-800/40"
-          >
-            ← Back to Profile
-          </button>
-          <div className="flex flex-col sm:flex-row items-center gap-4">
-          </div>
-        </div>
       </div>
 
       {/* Sticky Save All Changes bar — only visible when there are unsaved changes */}
       {hasPendingChanges && (
-        <div className="fixed bottom-0 left-0 right-0 z-50 backdrop-blur-md bg-white/80 dark:bg-slate-900/80 border-t border-slate-200/60 dark:border-slate-700/60 px-4 py-3 shadow-lg flex items-center">
+        <div className="fixed bottom-20 left-0 right-0 z-50 backdrop-blur-md bg-white/80 dark:bg-slate-900/80 border-t border-slate-200/60 dark:border-slate-700/60 px-4 py-3 shadow-lg flex items-center">
           <div className="max-w-6xl mx-auto w-full flex items-center justify-center">
             <button
               onClick={() => void handleSaveAll()}

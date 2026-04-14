@@ -33,7 +33,6 @@ import { useClinicAppointmentTypes } from '@/hooks/useOrgAppointmentType'
 import { useClinicAppointmentModes } from '@/hooks/useOrgAppointmentMode'
 import BookingCalendar from '@/components/patient-dashboard-v2/BookingCalendar'
 import BookingTimeSlots from '@/components/patient-dashboard-v2/BookingTimeSlots'
-import { ThemeToggle } from '@/components/patient-dashboard-v2/ThemeToggle'
 import {
   Select,
   SelectContent,
@@ -67,7 +66,6 @@ import {
   ClipboardList,
   Building2,
   TriangleAlert,
-  ChevronLeft,
 } from 'lucide-react'
 
 // ---------------------------------------------------------------------------
@@ -153,64 +151,22 @@ function BottomBar({ children }: { children: React.ReactNode }) {
 }
 
 // ---------------------------------------------------------------------------
-// Progress header
+// Step dots indicator
 // ---------------------------------------------------------------------------
 
-function ProgressHeader({
-  step,
-  total,
-  label,
-  clinicName,
-  onBack,
-}: {
-  step: number
-  total: number
-  label: string
-  clinicName: string
-  onBack: () => void
-}) {
-  const pct = Math.round(((step - 1) / total) * 100)
-  const StepIcon = STEPS[step - 1]?.icon
-
+function StepDots({ step, total }: { step: number; total: number }) {
   return (
-    <div className="sticky top-0 z-20 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200/60 dark:border-white/10 -mx-4 sm:-mx-6 md:-mx-8 px-4 sm:px-6 md:px-8 pb-0">
-      {/* Thin progress strip */}
-      <div className="h-1 w-full bg-slate-200 dark:bg-slate-700/60 mb-3">
+    <div className="flex items-center justify-center gap-2 py-4">
+      {Array.from({ length: total }, (_, i) => (
         <div
-          className={`h-full ${ACCENT.bar} transition-all duration-500 rounded-full`}
-          style={{ width: `${pct}%` }}
+          key={i}
+          className={`rounded-full transition-all ${
+            i + 1 <= step
+              ? 'w-6 h-2 bg-teal-500'
+              : 'w-2 h-2 bg-slate-300 dark:bg-slate-600'
+          }`}
         />
-      </div>
-
-      <div className="flex items-center gap-3 pb-3">
-        <button
-          type="button"
-          aria-label="Go back"
-          onClick={onBack}
-          className="shrink-0 w-10 h-10 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 active:scale-95 transition-all"
-        >
-          <ChevronLeft className="w-5 h-5" />
-        </button>
-
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            {StepIcon && (
-              <span className={`inline-flex items-center justify-center w-6 h-6 rounded-lg ${ACCENT.pill}`}>
-                <StepIcon className="w-3.5 h-3.5" />
-              </span>
-            )}
-            <span className={`text-xs font-bold uppercase tracking-widest ${ACCENT.text}`}>
-              Step {step} of {total} — {label}
-            </span>
-          </div>
-          <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
-            <Building2 className="inline w-3 h-3 mr-1 -mt-px" />
-            {clinicName}
-          </p>
-        </div>
-
-        <ThemeToggle />
-      </div>
+      ))}
     </div>
   )
 }
@@ -1190,13 +1146,21 @@ export default function BookAppointmentWizard({
     /* Break out of parent horizontal padding on mobile for full-bleed header */
     <div className="-mx-4 sm:-mx-0">
       {!isComplete && (
-        <ProgressHeader
-          step={currentStep}
-          total={STEPS.length}
-          label={currentStepMeta?.label ?? ''}
-          clinicName={clinicName}
-          onBack={goBack}
-        />
+        <div>
+          <div className="px-4 pt-4 flex items-center gap-2">
+            <button
+              type="button"
+              onClick={goBack}
+              className="flex items-center justify-center w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <span className="text-sm text-slate-500 dark:text-slate-400 truncate">
+              <Building2 className="inline w-3.5 h-3.5 mr-1 -mt-px" />{clinicName}
+            </span>
+          </div>
+          <StepDots step={currentStep} total={STEPS.length} />
+        </div>
       )}
 
       <div className="px-4 sm:px-0 max-w-lg mx-auto">

@@ -162,7 +162,7 @@ export function ProvincesTab({ initialData }: ProvincesTabProps) {
       ...prev,
       regionCode: code,
       // Pre-populate PSGC code with region's code as a starting reference when creating
-      code: prev.code === "" || (!editingRow && !prev.code) ? code : prev.code,
+      code: !editingRow && !prev.code ? code : prev.code,
     }));
   };
 

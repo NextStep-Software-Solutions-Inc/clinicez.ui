@@ -85,6 +85,9 @@ export function BarangaysTab({ initialData }: BarangaysTabProps) {
   useEffect(() => {
     // Load a small initial set so the combobox isn't empty when opened
     fetchMunicipalities();
+    return () => {
+      if (searchDebounce.current) clearTimeout(searchDebounce.current);
+    };
   }, [fetchMunicipalities]);
 
   const handleMunicipalitySearch = (query: string) => {
@@ -182,7 +185,7 @@ export function BarangaysTab({ initialData }: BarangaysTabProps) {
     setForm((prev) => ({
       ...prev,
       municipalityCode: code,
-      code: prev.code === "" || (!editingRow && !prev.code) ? code : prev.code,
+      code: !editingRow && !prev.code ? code : prev.code,
     }));
   };
 

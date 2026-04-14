@@ -84,7 +84,7 @@ export function LocationParentCombobox({
                   {options.map((option) => (
                     <CommandItem
                       key={option.code}
-                      value={option.label + " " + (option.description ?? "") + " " + option.code}
+                      value={`${option.label} ${option.description ?? ""} ${option.code}`}
                       onSelect={() => {
                         onSelect(option.code);
                         setOpen(false);

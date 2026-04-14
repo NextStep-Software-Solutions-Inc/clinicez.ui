@@ -177,7 +177,7 @@ export function MunicipalitiesTab({ initialData }: MunicipalitiesTabProps) {
     setForm((prev) => ({
       ...prev,
       provinceCode: code,
-      code: prev.code === "" || (!editingRow && !prev.code) ? code : prev.code,
+      code: !editingRow && !prev.code ? code : prev.code,
     }));
   };
 

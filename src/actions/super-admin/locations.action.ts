@@ -499,66 +499,100 @@ export async function seedLocationsFromJsonAction(): Promise<{
 
   const regions = locationsData.default.regions;
 
-  let regionCount = 0;
-  let provinceCount = 0;
-  let municipalityCount = 0;
-  let barangayCount = 0;
+  // Flatten all records at each level for efficient batch operations
+  const regionRecords = regions.map((r) => ({
+    code: r.code,
+    name: r.name,
+    regionName: r.regionName,
+  }));
+
+  const provinceRecords: { code: string; name: string; regionCode: string }[] = [];
+  const municipalityRecords: {
+    code: string;
+    name: string;
+    provinceCode: string;
+    isCity: boolean;
+    isCapital: boolean;
+  }[] = [];
+  const barangayRecords: { code: string; name: string; municipalityCode: string }[] = [];
 
   for (const region of regions) {
-    await prisma.phRegion.upsert({
-      where: { code: region.code },
-      create: { code: region.code, name: region.name, regionName: region.regionName },
-      update: { name: region.name, regionName: region.regionName },
-    });
-    regionCount++;
-
     for (const province of region.provinces) {
-      await prisma.phProvince.upsert({
-        where: { code: province.code },
-        create: { code: province.code, name: province.name, regionCode: region.code },
-        update: { name: province.name, regionCode: region.code },
-      });
-      provinceCount++;
+      provinceRecords.push({ code: province.code, name: province.name, regionCode: region.code });
 
+      const cityCodes = new Set((province.cities ?? []).map((c) => c.code));
       const allCities = [...(province.cities ?? []), ...(province.municipalities ?? [])];
 
       for (const city of allCities) {
-        const isInCitiesArray = (province.cities ?? []).some((c) => c.code === city.code);
-        await prisma.phMunicipality.upsert({
-          where: { code: city.code },
-          create: {
-            code: city.code,
-            name: city.name,
-            provinceCode: province.code,
-            isCity: isInCitiesArray,
-            isCapital: city.isCapital ?? false,
-          },
-          update: {
-            name: city.name,
-            provinceCode: province.code,
-            isCity: isInCitiesArray,
-            isCapital: city.isCapital ?? false,
-          },
+        municipalityRecords.push({
+          code: city.code,
+          name: city.name,
+          provinceCode: province.code,
+          isCity: cityCodes.has(city.code),
+          isCapital: city.isCapital ?? false,
         });
-        municipalityCount++;
 
         for (const barangay of city.barangays ?? []) {
-          await prisma.phBarangay.upsert({
-            where: { code: barangay.code },
-            create: { code: barangay.code, name: barangay.name, municipalityCode: city.code },
-            update: { name: barangay.name, municipalityCode: city.code },
+          barangayRecords.push({
+            code: barangay.code,
+            name: barangay.name,
+            municipalityCode: city.code,
           });
-          barangayCount++;
         }
       }
     }
   }
 
+  // Upsert regions first (parent), then provinces, then municipalities, then barangays
+  // Use createMany with skipDuplicates for new records, then update existing ones
+  await prisma.phRegion.createMany({ data: regionRecords, skipDuplicates: true });
+  await prisma.$transaction(
+    regionRecords.map((r) =>
+      prisma.phRegion.update({ where: { code: r.code }, data: { name: r.name, regionName: r.regionName } })
+    )
+  );
+
+  await prisma.phProvince.createMany({ data: provinceRecords, skipDuplicates: true });
+  await prisma.$transaction(
+    provinceRecords.map((p) =>
+      prisma.phProvince.update({ where: { code: p.code }, data: { name: p.name, regionCode: p.regionCode } })
+    )
+  );
+
+  // Municipalities: batch in chunks to avoid hitting transaction limits
+  const CHUNK_SIZE = 500;
+  await prisma.phMunicipality.createMany({ data: municipalityRecords, skipDuplicates: true });
+  for (let i = 0; i < municipalityRecords.length; i += CHUNK_SIZE) {
+    const chunk = municipalityRecords.slice(i, i + CHUNK_SIZE);
+    await prisma.$transaction(
+      chunk.map((m) =>
+        prisma.phMunicipality.update({
+          where: { code: m.code },
+          data: { name: m.name, provinceCode: m.provinceCode, isCity: m.isCity, isCapital: m.isCapital },
+        })
+      )
+    );
+  }
+
+  // Barangays: batch in larger chunks
+  await prisma.phBarangay.createMany({ data: barangayRecords, skipDuplicates: true });
+  for (let i = 0; i < barangayRecords.length; i += CHUNK_SIZE) {
+    const chunk = barangayRecords.slice(i, i + CHUNK_SIZE);
+    await prisma.$transaction(
+      chunk.map((b) =>
+        prisma.phBarangay.update({
+          where: { code: b.code },
+          data: { name: b.name, municipalityCode: b.municipalityCode },
+        })
+      )
+    );
+  }
+
   return {
-    regions: regionCount,
-    provinces: provinceCount,
-    municipalities: municipalityCount,
-    barangays: barangayCount,
+    regions: regionRecords.length,
+    provinces: provinceRecords.length,
+    municipalities: municipalityRecords.length,
+    barangays: barangayRecords.length,
   };
 }
 

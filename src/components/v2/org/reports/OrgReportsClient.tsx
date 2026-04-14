@@ -264,7 +264,7 @@ function BreakdownRow({
 }
 
 function DailyTrendChart({ trend }: { trend: { date: string; count: number }[] }) {
-  const [tooltip, setTooltip] = useState<{ x: number; y: number; label: string } | null>(null);
+  const [tooltip, setTooltip] = useState<{ x: number; y: number; date: string; count: number } | null>(null);
 
   if (!trend.length) {
     return (
@@ -282,11 +282,11 @@ function DailyTrendChart({ trend }: { trend: { date: string; count: number }[] }
           className="flex-1 h-full flex flex-col justify-end group cursor-default"
           onMouseEnter={(e) => {
             const rect = (e.currentTarget.parentElement as HTMLElement).getBoundingClientRect();
-            setTooltip({ x: e.clientX - rect.left, y: e.clientY - rect.top, label: `${t.date}: ${t.count}` });
+            setTooltip({ x: e.clientX - rect.left, y: e.clientY - rect.top, date: t.date, count: t.count });
           }}
           onMouseMove={(e) => {
             const rect = (e.currentTarget.parentElement as HTMLElement).getBoundingClientRect();
-            setTooltip({ x: e.clientX - rect.left, y: e.clientY - rect.top, label: `${t.date}: ${t.count}` });
+            setTooltip({ x: e.clientX - rect.left, y: e.clientY - rect.top, date: t.date, count: t.count });
           }}
           onMouseLeave={() => setTooltip(null)}
         >
@@ -298,10 +298,11 @@ function DailyTrendChart({ trend }: { trend: { date: string; count: number }[] }
       ))}
       {tooltip && (
         <div
-          className="pointer-events-none absolute z-50 rounded-md border bg-popover px-3 py-1.5 text-xs font-medium text-popover-foreground shadow-md"
-          style={{ left: tooltip.x + 12, top: tooltip.y - 32 }}
+          className="pointer-events-none absolute z-50 rounded-md border bg-popover px-3 py-1.5 text-xs font-medium text-popover-foreground shadow-md space-y-0.5"
+          style={{ left: tooltip.x + 12, top: tooltip.y - 52 }}
         >
-          {tooltip.label}
+          <p>Date: {tooltip.date}</p>
+          <p>Value: {tooltip.count}</p>
         </div>
       )}
     </div>

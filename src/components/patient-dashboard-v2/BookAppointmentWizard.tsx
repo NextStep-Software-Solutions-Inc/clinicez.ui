@@ -9,6 +9,7 @@
 import { useState, useCallback, useMemo, useEffect, FormEvent } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { useHeaderTitle } from '@/app/v2/(patient-dashboard)/_components/HeaderTitleContext'
 import { useAtom } from 'jotai'
 import { useUser } from '@clerk/nextjs'
 import { toast } from 'sonner'
@@ -64,7 +65,6 @@ import {
   Clock,
   ShieldCheck,
   ClipboardList,
-  Building2,
   TriangleAlert,
 } from 'lucide-react'
 
@@ -1072,9 +1072,20 @@ export default function BookAppointmentWizard({
   preferredHpId,
 }: BookAppointmentWizardProps) {
   const router = useRouter()
+  const { setOverrideTitle, setOverrideBack } = useHeaderTitle()
   const [form, setForm] = useAtom(bookAppointmentAtom)
   const [currentStep, setCurrentStep] = useState(1)
   const [isComplete, setIsComplete] = useState(false)
+
+  // Push clinic name into the MobileHeader title slot; clear on unmount
+  useEffect(() => {
+    setOverrideTitle(clinicName)
+    return () => {
+      setOverrideTitle(null)
+      setOverrideBack(null)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clinicName])
 
   // On mount: hydrate form from localStorage draft (if not expired), then
   // set clinicUid. Any expired envelope is wiped immediately.
@@ -1135,6 +1146,11 @@ export default function BookAppointmentWizard({
     }
   }, [currentStep, router])
 
+  // Keep the MobileHeader back button wired to the wizard's back action
+  useEffect(() => {
+    setOverrideBack(goBack)
+  }, [goBack, setOverrideBack])
+
   const handleSuccess = useCallback(() => {
     clearDraftFromStorage()
     setIsComplete(true)
@@ -1150,24 +1166,10 @@ export default function BookAppointmentWizard({
   const currentStepMeta = STEPS[currentStep - 1]
 
   return (
-    /* Break out of parent horizontal padding on mobile for full-bleed header */
+    /* Break out of parent horizontal padding on mobile for full-bleed step dots */
     <div className="-mx-4 sm:-mx-0">
       {!isComplete && (
-        <div>
-          <div className="px-4 pt-4 flex items-center gap-2">
-            <button
-              type="button"
-              onClick={goBack}
-              className="flex items-center justify-center w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-            <span className="text-sm text-slate-500 dark:text-slate-400 truncate">
-              <Building2 className="inline w-3.5 h-3.5 mr-1 -mt-px" />{clinicName}
-            </span>
-          </div>
-          <StepDots step={currentStep} total={STEPS.length} />
-        </div>
+        <StepDots step={currentStep} total={STEPS.length} />
       )}
 
       <div className="px-4 sm:px-0 max-w-lg mx-auto">

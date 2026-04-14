@@ -94,7 +94,7 @@ export default function ProfileClient({
       <div className="pb-24">
         <ProfileCard patient={patient} isOwner={!patientUserId} />
 
-        <div className="sticky top-14 z-20 -mx-4 px-4 pt-1 pb-2 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-b border-slate-100 dark:border-slate-800">
+        <div className="sticky top-14 z-[15] -mx-4 px-4 pt-1 pb-2 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-b border-slate-100 dark:border-slate-800">
           <TabNav
             tabs={[...PROFILE_TABS]}
             activeTab={activeTab}

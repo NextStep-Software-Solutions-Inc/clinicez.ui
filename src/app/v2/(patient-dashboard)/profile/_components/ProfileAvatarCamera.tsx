@@ -62,9 +62,14 @@ function ImageCropModal({ objectUrl, onConfirm, onCancel }: CropModalProps) {
 
   const applyZoom = (newZoom: number) => {
     const clamped = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, newZoom))
+    if (!naturalSize.w) { setZoom(clamped); return }
     const newDw = naturalSize.w * baseScale * clamped
     const newDh = naturalSize.h * baseScale * clamped
-    setOffset(prev => clampOffset(prev.x, prev.y, newDw, newDh))
+    // Zoom from the centre of the crop window so scaling feels uniform
+    const scaleRatio = clamped / zoom
+    const newOx = CROP_SIZE / 2 - (CROP_SIZE / 2 - offset.x) * scaleRatio
+    const newOy = CROP_SIZE / 2 - (CROP_SIZE / 2 - offset.y) * scaleRatio
+    setOffset(clampOffset(newOx, newOy, newDw, newDh))
     setZoom(clamped)
   }
 

@@ -13,7 +13,7 @@ interface ProfileCardProps {
 }
 
 export function ProfileCard({ patient, isOwner }: ProfileCardProps) {
-  const initials = `${patient.firstName?.[0] ?? ''}${patient.lastName?.[0] ?? ''}`.toUpperCase()
+  const initials = (`${patient.firstName?.[0] ?? ''}${patient.lastName?.[0] ?? ''}`).toUpperCase() || '?'
 
   return (
     <div className="rounded-2xl overflow-hidden mb-5 shadow-lg">
@@ -79,7 +79,7 @@ export function ProfileCard({ patient, isOwner }: ProfileCardProps) {
           </div>
           <div className="flex flex-col items-center py-3 px-2 min-w-0">
             <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-0.5">Clinic</p>
-            <p className="text-xs font-semibold text-slate-900 dark:text-white text-center leading-snug line-clamp-2">
+            <p className="text-xs font-semibold text-slate-900 dark:text-white text-center leading-snug line-clamp-2" title={patient.clinic?.name ?? undefined}>
               {patient.clinic?.name || '—'}
             </p>
           </div>

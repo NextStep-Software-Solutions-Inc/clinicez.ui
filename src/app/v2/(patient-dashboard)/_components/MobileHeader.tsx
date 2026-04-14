@@ -17,6 +17,8 @@ const PAGE_TITLE_MAP: Record<string, string> = {
   '/v2/book-appointment': 'Book Appointment',
 }
 
+const HOME_PATH = '/v2/patient'
+
 function getPageTitle(pathname: string): string {
   // Exact match first
   if (PAGE_TITLE_MAP[pathname] !== undefined) {
@@ -24,7 +26,7 @@ function getPageTitle(pathname: string): string {
   }
   // Prefix match for dynamic routes
   for (const [path, title] of Object.entries(PAGE_TITLE_MAP)) {
-    if (pathname.startsWith(path) && path !== '/v2/patient') {
+    if (pathname.startsWith(path) && path !== HOME_PATH) {
       return title
     }
   }
@@ -34,7 +36,7 @@ function getPageTitle(pathname: string): string {
 export function MobileHeader() {
   const pathname = usePathname()
   const router = useRouter()
-  const isHome = pathname === '/v2/patient'
+  const isHome = pathname === HOME_PATH
   const title = getPageTitle(pathname)
 
   return (
@@ -43,7 +45,7 @@ export function MobileHeader() {
         {/* Left: Logo on home, back button on other pages */}
         <div className="flex items-center gap-2 min-w-[44px]">
           {isHome ? (
-            <Link href="/v2/patient" className="flex items-center gap-2">
+            <Link href={HOME_PATH} className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center shadow-sm">
                 <span className="text-white font-bold text-sm">CZ</span>
               </div>

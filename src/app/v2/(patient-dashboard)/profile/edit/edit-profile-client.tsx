@@ -411,10 +411,8 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
     setIsSavingAll(false)
   }, [sections])
 
-  // Section nav strip — defined before early return so it's always in scope.
-  // topClass controls sticky offset:
-  //   'top-12' when headerSlot=null (just below DashboardShell horizontal nav)
-  //   'top-24' when a custom headerSlot is provided (below nav + breadcrumb)
+  //   'top-14' when headerSlot=null (below MobileHeader)
+  //   'top-28' when a custom headerSlot is provided (below nav + breadcrumb)
   const makeSectionNav = (topClass: string) => (
     <div className={`sticky ${topClass} z-40 backdrop-blur-sm bg-white/20 dark:bg-slate-950/20 border-b border-slate-200/20 dark:border-slate-800/20 mb-6 md:mb-8 -mx-4 md:-mx-8 px-4 md:px-8 py-2 md:py-3`}>
       <div className="max-w-6xl mx-auto">
@@ -453,7 +451,7 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
   }
 
   const defaultHeader = (
-    <div className="sticky top-0 z-50 backdrop-blur-sm bg-white/20 dark:bg-slate-950/20 border-b border-slate-200/20 dark:border-slate-800/20 mb-4 md:mb-6 -mx-4 md:-mx-8 px-4 md:px-8 py-3 md:py-4 rounded-b-3xl">
+    <div className="sticky top-14 z-50 backdrop-blur-sm bg-white/20 dark:bg-slate-950/20 border-b border-slate-200/20 dark:border-slate-800/20 mb-4 md:mb-6 -mx-4 md:-mx-8 px-4 md:px-8 py-3 md:py-4 rounded-b-3xl">
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 md:gap-3 min-w-0">
@@ -500,10 +498,10 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
   return (
     <div className="w-full">
       {headerSlot !== null && (headerSlot ?? defaultHeader)}
-      {/* null → no header, show section nav at top-12 */}
-      {headerSlot === null && makeSectionNav('top-12')}
-      {/* custom node → show section nav below the custom header at top-24 */}
-      {headerSlot !== undefined && headerSlot !== null && makeSectionNav('top-24')}
+      {/* null → no header, show section nav at top-14 */}
+      {headerSlot === null && makeSectionNav('top-14')}
+      {/* custom node → show section nav below the custom header at top-28 */}
+      {headerSlot !== undefined && headerSlot !== null && makeSectionNav('top-28')}
 
       {/* Containerized Content */}
       <div className="max-w-6xl mx-auto">

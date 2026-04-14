@@ -3,7 +3,6 @@
 import { useState, useMemo } from 'react'
 import type { PatientBaseData } from '@/types/patient-profile-tabs'
 import { getTabBadge } from './_lib/tab-badges'
-import { ProfileHeader } from './_components/ProfileHeader'
 import { ProfileCard } from './_components/ProfileCard'
 import { TabNav } from './_components/TabNav'
 import { TabContent } from './_components/TabContent'
@@ -74,10 +73,10 @@ export default function ProfileClient({
   )
 
   return (
-    <div className="w-full">
-      {headerSlot !== null && (headerSlot ?? <ProfileHeader />)}
-
-      <div className="max-w-6xl mx-auto pb-32">
+    <div className="w-full pt-2">
+      {/* Optional custom header (used by clinic staff dashboards) */}
+      {headerSlot != null && headerSlot}
+      <div className="pb-24">
         <ProfileCard patient={patient} isOwner={!patientUserId} />
 
         <TabNav

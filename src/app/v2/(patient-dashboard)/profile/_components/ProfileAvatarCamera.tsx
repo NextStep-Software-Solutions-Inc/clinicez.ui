@@ -70,7 +70,19 @@ export function ProfileAvatarCamera({ userId, picture, initials }: ProfileAvatar
   }
 
   return (
-    <div className="relative group w-16 h-16 cursor-pointer" onClick={() => !isUploading && fileInputRef.current?.click()}>
+    <div
+      role="button"
+      tabIndex={0}
+      aria-label="Change profile picture"
+      className="relative group w-16 h-16 cursor-pointer"
+      onClick={() => !isUploading && fileInputRef.current?.click()}
+      onKeyDown={(e) => {
+        if ((e.key === 'Enter' || e.key === ' ') && !isUploading) {
+          e.preventDefault()
+          fileInputRef.current?.click()
+        }
+      }}
+    >
       {/* Avatar */}
       {preview ? (
         // eslint-disable-next-line @next/next/no-img-element

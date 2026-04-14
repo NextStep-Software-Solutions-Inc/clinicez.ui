@@ -49,13 +49,11 @@ export default function InstallPWAButton() {
 
     await installPrompt.prompt();
 
-    const { outcome } = await installPrompt.userChoice;
-
-    if (outcome === "accepted") {
-      // User accepted the install prompt — hide the button
-      setIsVisible(false);
-      setInstallPrompt(null);
-    }
+    // Hide the button regardless of whether the user accepted or dismissed —
+    // re-prompting immediately after a dismissal is poor UX.
+    await installPrompt.userChoice;
+    setIsVisible(false);
+    setInstallPrompt(null);
   };
 
   if (!isVisible) return null;

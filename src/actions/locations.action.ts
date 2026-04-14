@@ -128,6 +128,7 @@ export async function getBarangaysByCity(cityCode: string): Promise<BarangayOpti
 /**
  * Get city/municipality info by code.
  * DB-first with JSON fallback (see getRegions).
+ * Consistent with other public location functions: inactive entries are not returned.
  */
 export async function getCityInfo(cityCode: string): Promise<CityOption | null> {
     const dbMunicipality = await prisma.phMunicipality.findUnique({
@@ -136,10 +137,12 @@ export async function getCityInfo(cityCode: string): Promise<CityOption | null> 
     })
 
     if (dbMunicipality) {
+        // Record found in DB — honour isActive so deactivated entries are not surfaced
+        if (!dbMunicipality.isActive) return null
         return { id: dbMunicipality.code, name: dbMunicipality.name, code: dbMunicipality.code }
     }
 
-    // Fallback
+    // Fallback: DB not yet seeded — use bundled JSON
     const allCities = data.regions.flatMap((region) =>
         region.provinces.flatMap((province) => [
             ...province.cities,

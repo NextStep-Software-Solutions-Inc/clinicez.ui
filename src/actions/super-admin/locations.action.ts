@@ -483,6 +483,11 @@ export async function deleteBarangayAction(id: number) {
 
 // ─── Seed Action ───────────────────────────────────────────────────────────
 
+// Rows per raw-SQL INSERT … ON CONFLICT batch.
+// 1 000 rows × max 5 columns = 5 000 bind params per statement (well under the
+// PostgreSQL 65 535 limit), while keeping the total number of round-trips low.
+const SEED_CHUNK_SIZE = 1000;
+
 export async function seedLocationsFromJsonAction(): Promise<{
   regions: number;
   provinces: number;
@@ -499,7 +504,8 @@ export async function seedLocationsFromJsonAction(): Promise<{
 
   const regions = locationsData.default.regions;
 
-  // Flatten all records at each level for efficient batch operations
+  // ── Flatten all records ───────────────────────────────────────────────────
+
   const regionRecords = regions.map((r) => ({
     code: r.code,
     name: r.name,
@@ -543,49 +549,87 @@ export async function seedLocationsFromJsonAction(): Promise<{
     }
   }
 
-  // Upsert regions first (parent), then provinces, then municipalities, then barangays
-  // Use createMany with skipDuplicates for new records, then update existing ones
-  await prisma.phRegion.createMany({ data: regionRecords, skipDuplicates: true });
-  await prisma.$transaction(
-    regionRecords.map((r) =>
-      prisma.phRegion.update({ where: { code: r.code }, data: { name: r.name, regionName: r.regionName } })
-    )
-  );
+  // ── Raw-SQL upsert helpers ────────────────────────────────────────────────
+  // Table and column names are hardcoded (never user-supplied); only record
+  // *values* are bound as positional parameters to prevent SQL injection.
 
-  await prisma.phProvince.createMany({ data: provinceRecords, skipDuplicates: true });
-  await prisma.$transaction(
-    provinceRecords.map((p) =>
-      prisma.phProvince.update({ where: { code: p.code }, data: { name: p.name, regionCode: p.regionCode } })
-    )
-  );
-
-  // Municipalities: batch in chunks to avoid hitting transaction limits
-  const CHUNK_SIZE = 500;
-  await prisma.phMunicipality.createMany({ data: municipalityRecords, skipDuplicates: true });
-  for (let i = 0; i < municipalityRecords.length; i += CHUNK_SIZE) {
-    const chunk = municipalityRecords.slice(i, i + CHUNK_SIZE);
-    await prisma.$transaction(
-      chunk.map((m) =>
-        prisma.phMunicipality.update({
-          where: { code: m.code },
-          data: { name: m.name, provinceCode: m.provinceCode, isCity: m.isCity, isCapital: m.isCapital },
-        })
-      )
+  const upsertRegionChunk = async (chunk: typeof regionRecords) => {
+    if (!chunk.length) return;
+    const ph = chunk.map((_, i) => `($${i * 3 + 1}, $${i * 3 + 2}, $${i * 3 + 3})`).join(", ");
+    const vals = chunk.flatMap((r) => [r.code, r.name, r.regionName]);
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO "PhRegion" (code, name, "regionName")
+       VALUES ${ph}
+       ON CONFLICT (code) DO UPDATE SET
+         name        = EXCLUDED.name,
+         "regionName" = EXCLUDED."regionName",
+         "updatedAt" = NOW()`,
+      ...vals
     );
+  };
+
+  const upsertProvinceChunk = async (chunk: typeof provinceRecords) => {
+    if (!chunk.length) return;
+    const ph = chunk.map((_, i) => `($${i * 3 + 1}, $${i * 3 + 2}, $${i * 3 + 3})`).join(", ");
+    const vals = chunk.flatMap((p) => [p.code, p.name, p.regionCode]);
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO "PhProvince" (code, name, "regionCode")
+       VALUES ${ph}
+       ON CONFLICT (code) DO UPDATE SET
+         name         = EXCLUDED.name,
+         "regionCode" = EXCLUDED."regionCode",
+         "updatedAt"  = NOW()`,
+      ...vals
+    );
+  };
+
+  const upsertMunicipalityChunk = async (chunk: typeof municipalityRecords) => {
+    if (!chunk.length) return;
+    const ph = chunk
+      .map((_, i) => `($${i * 5 + 1}, $${i * 5 + 2}, $${i * 5 + 3}, $${i * 5 + 4}, $${i * 5 + 5})`)
+      .join(", ");
+    const vals = chunk.flatMap((m) => [m.code, m.name, m.provinceCode, m.isCity, m.isCapital]);
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO "PhMunicipality" (code, name, "provinceCode", "isCity", "isCapital")
+       VALUES ${ph}
+       ON CONFLICT (code) DO UPDATE SET
+         name           = EXCLUDED.name,
+         "provinceCode" = EXCLUDED."provinceCode",
+         "isCity"       = EXCLUDED."isCity",
+         "isCapital"    = EXCLUDED."isCapital",
+         "updatedAt"    = NOW()`,
+      ...vals
+    );
+  };
+
+  const upsertBarangayChunk = async (chunk: typeof barangayRecords) => {
+    if (!chunk.length) return;
+    const ph = chunk.map((_, i) => `($${i * 3 + 1}, $${i * 3 + 2}, $${i * 3 + 3})`).join(", ");
+    const vals = chunk.flatMap((b) => [b.code, b.name, b.municipalityCode]);
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO "PhBarangay" (code, name, "municipalityCode")
+       VALUES ${ph}
+       ON CONFLICT (code) DO UPDATE SET
+         name               = EXCLUDED.name,
+         "municipalityCode" = EXCLUDED."municipalityCode",
+         "updatedAt"        = NOW()`,
+      ...vals
+    );
+  };
+
+  // ── Execute in FK dependency order ────────────────────────────────────────
+
+  for (let i = 0; i < regionRecords.length; i += SEED_CHUNK_SIZE) {
+    await upsertRegionChunk(regionRecords.slice(i, i + SEED_CHUNK_SIZE));
   }
-
-  // Barangays: batch in larger chunks
-  await prisma.phBarangay.createMany({ data: barangayRecords, skipDuplicates: true });
-  for (let i = 0; i < barangayRecords.length; i += CHUNK_SIZE) {
-    const chunk = barangayRecords.slice(i, i + CHUNK_SIZE);
-    await prisma.$transaction(
-      chunk.map((b) =>
-        prisma.phBarangay.update({
-          where: { code: b.code },
-          data: { name: b.name, municipalityCode: b.municipalityCode },
-        })
-      )
-    );
+  for (let i = 0; i < provinceRecords.length; i += SEED_CHUNK_SIZE) {
+    await upsertProvinceChunk(provinceRecords.slice(i, i + SEED_CHUNK_SIZE));
+  }
+  for (let i = 0; i < municipalityRecords.length; i += SEED_CHUNK_SIZE) {
+    await upsertMunicipalityChunk(municipalityRecords.slice(i, i + SEED_CHUNK_SIZE));
+  }
+  for (let i = 0; i < barangayRecords.length; i += SEED_CHUNK_SIZE) {
+    await upsertBarangayChunk(barangayRecords.slice(i, i + SEED_CHUNK_SIZE));
   }
 
   return {

@@ -4,7 +4,7 @@ import { Toaster as SonnerToaster } from "sonner";
 import { Toaster } from "@components/ui/toaster";
 import dynamic from "next/dynamic";
 import { Analytics } from "@vercel/analytics/react";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "@styles/globals.css";
 
 import { SWRProvider } from "@provider/swr-provider";
@@ -12,12 +12,26 @@ import JotaiProvider from "@provider/JotaiProvider";
 import { ThemeProvider } from "@provider/theme-provider";
 import SyncTokenClient from "@components/SyncTokenClient";
 import BypassAutoplay from "@components/BypassAutoplay";
+import InstallPWAButton from "@components/pwa/install-pwa-button";
 
 const HotJar = dynamic(() => import("@components/HotJar"), { ssr: true });
 
 export const metadata: Metadata = {
   title: "Clinic EZ",
-  description: "Optimized Healthcare Management System"
+  description: "Optimized Healthcare Management System",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Clinic EZ",
+  },
+  formatDetection: {
+    telephone: false,
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0f766e",
 };
 
 interface Props {
@@ -56,6 +70,7 @@ export default function RootLayout({ children }: Props) {
                 <Analytics />
                 <SonnerToaster richColors />
                 <Toaster />
+                <InstallPWAButton />
               </SWRProvider>
             </JotaiProvider>
           </ThemeProvider>

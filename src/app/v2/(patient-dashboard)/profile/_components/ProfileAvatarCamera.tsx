@@ -42,6 +42,10 @@ async function cropImageToFile(imageSrc: string, pixelCrop: Area): Promise<File>
   const ctx = canvas.getContext('2d')
   if (!ctx) throw new Error('Canvas context unavailable')
 
+  // Fill white so transparent PNGs don't render with a black background in JPEG output
+  ctx.fillStyle = '#ffffff'
+  ctx.fillRect(0, 0, OUTPUT_SIZE, OUTPUT_SIZE)
+
   ctx.drawImage(
     image,
     pixelCrop.x, pixelCrop.y, pixelCrop.width, pixelCrop.height,
@@ -261,7 +265,7 @@ export function ProfileAvatarCamera({ userId, picture, initials }: ProfileAvatar
           <img
             src={preview}
             alt="Profile"
-            className="w-16 h-16 rounded-2xl object-cover shadow-md border-2 border-white/30"
+            className="w-16 h-16 rounded-2xl object-cover shadow-md border-2 border-white/30 bg-white"
           />
         ) : (
           <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-white text-2xl font-bold shadow-md border-2 border-white/30">

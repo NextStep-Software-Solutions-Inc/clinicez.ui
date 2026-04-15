@@ -1,6 +1,5 @@
 'use client'
 
-import { Suspense } from 'react'
 import { usePatientTab } from '@/hooks/use-patient-tab'
 import type { PatientTabDataMap } from '@/types/patient-profile-tabs'
 import { OverviewTab }     from './tabs/OverviewTab'
@@ -44,15 +43,18 @@ export function TabSkeleton() {
 }
 
 // ---------------------------------------------------------------------------
-// Factory — creates a Suspense-enabled loader for any tab.
-// Eliminates 13 near-identical loader declarations with a single generic.
+// Factory — creates a loader for any tab.
+// Does NOT use suspense:true to avoid "setState during render" errors caused
+// by Next.js router state updates when a server action is invoked in the
+// SWR fetcher during the Suspense render phase.
 // ---------------------------------------------------------------------------
 function createTabLoader<T extends keyof PatientTabDataMap>(
   tabId: T,
   TabComponent: React.ComponentType<{ data: PatientTabDataMap[T] }>,
 ): React.ComponentType<{ userId?: string }> {
   function TabLoader({ userId }: { userId?: string }) {
-    const { data } = usePatientTab(tabId, { suspense: true, userId })
+    const { data, isLoading } = usePatientTab(tabId, { suspense: false, userId })
+    if (isLoading) return <TabSkeleton />
     if (!data) return null
     return <TabComponent data={data as PatientTabDataMap[T]} />
   }
@@ -95,9 +97,5 @@ interface TabContentProps {
 
 export function TabContent({ tab, userId }: TabContentProps) {
   const Loader = TAB_LOADERS[tab]
-  return (
-    <Suspense fallback={<TabSkeleton />}>
-      <Loader userId={userId} />
-    </Suspense>
-  )
+  return <Loader userId={userId} />
 }

@@ -1,3 +1,15 @@
+import withPWA from "@ducanh2912/next-pwa";
+
+const withPWAConfig = withPWA({
+  dest: "public",
+  register: true,
+  skipWaiting: true,
+  disable: process.env.NODE_ENV === "development",
+  // Exclude the Next.js internal middleware manifest from the service worker
+  // precache list to prevent conflicts with Next.js routing at runtime.
+  buildExcludes: [/middleware-manifest\.json$/],
+});
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   serverExternalPackages: ['@prisma/client', '@prisma/adapter-pg', 'pg'],
@@ -51,4 +63,4 @@ const nextConfig = {
   }
 };
 
-export default nextConfig;
+export default withPWAConfig(nextConfig);

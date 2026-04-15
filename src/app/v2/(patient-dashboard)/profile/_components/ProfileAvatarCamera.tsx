@@ -1,6 +1,8 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
+import Cropper from 'react-easy-crop'
+import type { Area, Point } from 'react-easy-crop'
 import { Camera, Loader2, ZoomIn, ZoomOut } from 'lucide-react'
 import { toast } from 'sonner'
 import { uploadMediaAction } from '@/actions/blob.action'
@@ -15,12 +17,10 @@ interface ProfileAvatarCameraProps {
 
 // ── Image Crop Modal ──────────────────────────────────────────────────────────
 
-const CROP_SIZE = 260 // display crop window (px, square)
-const OUTPUT_SIZE = 512 // output image size
+const OUTPUT_SIZE = 512
 const MIN_ZOOM = 1.0
 const MAX_ZOOM = 4.0
-const ZOOM_STEP = 0.05
-const ZOOM_BUTTON_MULTIPLIER = 4 // button click zooms by 4× ZOOM_STEP
+const ZOOM_STEP = 0.2
 
 interface CropModalProps {
   objectUrl: string
@@ -28,92 +28,50 @@ interface CropModalProps {
   onCancel: () => void
 }
 
-function ImageCropModal({ objectUrl, onConfirm, onCancel }: CropModalProps) {
-  const imgRef = useRef<HTMLImageElement>(null)
-  const [offset, setOffset] = useState({ x: 0, y: 0 })
-  const [zoom, setZoom] = useState(1.0)
-  const [naturalSize, setNaturalSize] = useState({ w: 0, h: 0 })
-  const [baseScale, setBaseScale] = useState(1)
-  const drag = useRef<{ sx: number; sy: number; ox: number; oy: number } | null>(null)
-
-  // Compute display size from natural size × base scale × zoom
-  const displaySize = naturalSize.w
-    ? { w: naturalSize.w * baseScale * zoom, h: naturalSize.h * baseScale * zoom }
-    : { w: 0, h: 0 }
-
-  const clampOffset = (ox: number, oy: number, dw: number, dh: number) => ({
-    x: Math.min(0, Math.max(CROP_SIZE - dw, ox)),
-    y: Math.min(0, Math.max(CROP_SIZE - dh, oy)),
+async function cropImageToFile(imageSrc: string, pixelCrop: Area): Promise<File> {
+  const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const img = new Image()
+    img.onload = () => resolve(img)
+    img.onerror = reject
+    img.src = imageSrc
   })
 
-  const handleImgLoad = () => {
-    const img = imgRef.current
-    if (!img) return
-    const { naturalWidth: nw, naturalHeight: nh } = img
-    setNaturalSize({ w: nw, h: nh })
-    // Scale image to cover the crop window at zoom=1
-    const scale = Math.max(CROP_SIZE / nw, CROP_SIZE / nh)
-    setBaseScale(scale)
-    const dw = nw * scale
-    const dh = nh * scale
-    // Center the image
-    setOffset({ x: -(dw - CROP_SIZE) / 2, y: -(dh - CROP_SIZE) / 2 })
-  }
+  const canvas = document.createElement('canvas')
+  canvas.width = OUTPUT_SIZE
+  canvas.height = OUTPUT_SIZE
+  const ctx = canvas.getContext('2d')
+  if (!ctx) throw new Error('Canvas context unavailable')
 
-  const applyZoom = (newZoom: number) => {
-    const clamped = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, newZoom))
-    if (!naturalSize.w || !naturalSize.h) { setZoom(clamped); return }
-    const newDw = naturalSize.w * baseScale * clamped
-    const newDh = naturalSize.h * baseScale * clamped
-    // Zoom from the centre of the crop window so scaling feels uniform
-    const scaleRatio = clamped / zoom
-    const newOx = CROP_SIZE / 2 - (CROP_SIZE / 2 - offset.x) * scaleRatio
-    const newOy = CROP_SIZE / 2 - (CROP_SIZE / 2 - offset.y) * scaleRatio
-    setOffset(clampOffset(newOx, newOy, newDw, newDh))
-    setZoom(clamped)
-  }
+  ctx.drawImage(
+    image,
+    pixelCrop.x, pixelCrop.y, pixelCrop.width, pixelCrop.height,
+    0, 0, OUTPUT_SIZE, OUTPUT_SIZE,
+  )
 
-  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    drag.current = { sx: e.clientX, sy: e.clientY, ox: offset.x, oy: offset.y }
-    ;(e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId)
-  }
-
-  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!drag.current) return
-    const dx = e.clientX - drag.current.sx
-    const dy = e.clientY - drag.current.sy
-    setOffset(clampOffset(drag.current.ox + dx, drag.current.oy + dy, displaySize.w, displaySize.h))
-  }
-
-  const handlePointerUp = () => { drag.current = null }
-
-  const handleConfirm = () => {
-    const img = imgRef.current
-    if (!img || !naturalSize.w || !displaySize.w) return
-
-    const canvas = document.createElement('canvas')
-    canvas.width = OUTPUT_SIZE
-    canvas.height = OUTPUT_SIZE
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
-
-    const scaleX = naturalSize.w / displaySize.w
-    const scaleY = naturalSize.h / displaySize.h
-    // offset is the image's top-left corner within the crop container (negative = shifted left/up)
-    const srcX = (-offset.x) * scaleX
-    const srcY = (-offset.y) * scaleY
-    const srcW = CROP_SIZE * scaleX
-    const srcH = CROP_SIZE * scaleY
-
-    ctx.drawImage(img, srcX, srcY, srcW, srcH, 0, 0, OUTPUT_SIZE, OUTPUT_SIZE)
+  return new Promise<File>((resolve, reject) => {
     canvas.toBlob(
-      (blob) => {
-        if (blob) onConfirm(new File([blob], 'cropped.jpg', { type: 'image/jpeg' }))
-      },
+      (blob) => blob
+        ? resolve(new File([blob], 'cropped.jpg', { type: 'image/jpeg' }))
+        : reject(new Error('Canvas toBlob failed')),
       'image/jpeg',
       0.92,
     )
+  })
+}
+
+function ImageCropModal({ objectUrl, onConfirm, onCancel }: CropModalProps) {
+  const [crop, setCrop] = useState<Point>({ x: 0, y: 0 })
+  const [zoom, setZoom] = useState(1)
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null)
+
+  const onCropComplete = useCallback((_: Area, pixels: Area) => {
+    setCroppedAreaPixels(pixels)
+  }, [])
+
+  const handleConfirm = async () => {
+    if (!croppedAreaPixels) return
+    const file = await cropImageToFile(objectUrl, croppedAreaPixels)
+    onConfirm(file)
   }
 
   const zoomPercent = Math.round(zoom * 100)
@@ -124,31 +82,23 @@ function ImageCropModal({ objectUrl, onConfirm, onCancel }: CropModalProps) {
         <h3 className="text-base font-bold text-slate-900 dark:text-white mb-1">Crop Photo</h3>
         <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">Drag to reposition · pinch or use slider to zoom</p>
 
-        {/* Circular crop preview */}
-        <div
-          className="relative mx-auto overflow-hidden rounded-full border-4 border-teal-500 cursor-move touch-none select-none shadow-lg"
-          style={{ width: CROP_SIZE, height: CROP_SIZE }}
-          onPointerDown={handlePointerDown}
-          onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerUp}
-          onPointerCancel={handlePointerUp}
-        >
-          {/* objectUrl is always a blob: URL created by URL.createObjectURL — safe to use as img src */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            ref={imgRef}
-            src={objectUrl.startsWith('blob:') ? objectUrl : undefined}
-            alt="Crop preview"
-            onLoad={handleImgLoad}
-            draggable={false}
-            className="absolute"
+        {/* Crop area */}
+        <div className="relative mx-auto rounded-full overflow-hidden" style={{ width: 260, height: 260 }}>
+          <Cropper
+            image={objectUrl}
+            crop={crop}
+            zoom={zoom}
+            aspect={1}
+            cropShape="round"
+            showGrid={false}
+            minZoom={MIN_ZOOM}
+            maxZoom={MAX_ZOOM}
+            onCropChange={setCrop}
+            onZoomChange={setZoom}
+            onCropComplete={onCropComplete}
             style={{
-              width: displaySize.w || 'auto',
-              height: displaySize.h || 'auto',
-              left: offset.x,
-              top: offset.y,
-              userSelect: 'none',
-              pointerEvents: 'none',
+              containerStyle: { width: '100%', height: '100%', borderRadius: '50%' },
+              cropAreaStyle: { border: '4px solid rgb(20 184 166)', borderRadius: '50%' },
             }}
           />
         </div>
@@ -158,7 +108,7 @@ function ImageCropModal({ objectUrl, onConfirm, onCancel }: CropModalProps) {
           <button
             type="button"
             aria-label="Zoom out"
-            onClick={() => applyZoom(zoom - ZOOM_STEP * ZOOM_BUTTON_MULTIPLIER)}
+            onClick={() => setZoom(z => Math.max(MIN_ZOOM, z - ZOOM_STEP))}
             className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors shrink-0"
           >
             <ZoomOut className="w-4 h-4" />
@@ -167,16 +117,16 @@ function ImageCropModal({ objectUrl, onConfirm, onCancel }: CropModalProps) {
             type="range"
             min={MIN_ZOOM}
             max={MAX_ZOOM}
-            step={ZOOM_STEP}
+            step={0.05}
             value={zoom}
-            onChange={(e) => applyZoom(parseFloat(e.target.value))}
+            onChange={(e) => setZoom(parseFloat(e.target.value))}
             className="flex-1 accent-teal-500"
             aria-label="Zoom level"
           />
           <button
             type="button"
             aria-label="Zoom in"
-            onClick={() => applyZoom(zoom + ZOOM_STEP * ZOOM_BUTTON_MULTIPLIER)}
+            onClick={() => setZoom(z => Math.min(MAX_ZOOM, z + ZOOM_STEP))}
             className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors shrink-0"
           >
             <ZoomIn className="w-4 h-4" />

@@ -25,7 +25,7 @@ export function ProfileCard({ patient, isOwner }: ProfileCardProps) {
         <div className="absolute -bottom-8 -left-6 w-28 h-28 rounded-full bg-white/10 pointer-events-none" />
 
         {/* Avatar — with camera overlay if owner */}
-        <div className="flex justify-center mb-3 relative z-10">
+        <div className="flex justify-center mb-3 relative z-20">
           {isOwner ? (
             <ProfileAvatarCamera
               userId={patient.userId}

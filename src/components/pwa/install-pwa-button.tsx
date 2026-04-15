@@ -47,13 +47,17 @@ export default function InstallPWAButton() {
   const handleInstallClick = async () => {
     if (!installPrompt) return;
 
-    await installPrompt.prompt();
-
-    // Hide the button regardless of whether the user accepted or dismissed —
-    // re-prompting immediately after a dismissal is poor UX.
-    await installPrompt.userChoice;
-    setIsVisible(false);
-    setInstallPrompt(null);
+    try {
+      await installPrompt.prompt();
+      await installPrompt.userChoice;
+    } catch (err) {
+      console.warn("PWA install prompt failed:", err);
+    } finally {
+      // Hide the button regardless of whether the user accepted or dismissed —
+      // re-prompting immediately after a dismissal is poor UX.
+      setIsVisible(false);
+      setInstallPrompt(null);
+    }
   };
 
   if (!isVisible) return null;

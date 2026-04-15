@@ -57,12 +57,9 @@ export function MobileHeader() {
                 alt="ClinicEZ"
                 width={32}
                 height={32}
-                className="rounded-lg"
+                className="rounded"
                 priority
               />
-              <span className="text-base font-bold bg-gradient-to-r from-teal-600 to-cyan-500 bg-clip-text text-transparent hidden sm:block">
-                ClinicEZ
-              </span>
             </Link>
           ) : (
             <>

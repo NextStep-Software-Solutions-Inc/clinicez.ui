@@ -1,6 +1,6 @@
 "use client"
 
-import { Button } from "./ui/button"
+import { useEffect, useState } from "react"
 import { setLandingPageVersion, useLandingPageVersion } from "./VersionSwitcher"
 import { usePathname, useRouter } from "next/navigation"
 
@@ -8,6 +8,11 @@ export default function ClassicButton() {
   const version = useLandingPageVersion()
   const pathname = usePathname()
   const router = useRouter()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const handleClick = () => {
     // Save preference to localStorage and notify all listeners
@@ -23,7 +28,8 @@ export default function ClassicButton() {
   const isLandingPage = pathname === "/"
   const shouldShow = isV2Route || (isLandingPage && version === "v2")
 
-  if (!shouldShow) return null;
+  // Don't render during SSR to prevent hydration mismatch
+  if (!mounted || !shouldShow) return null;
 
   return (
     <button

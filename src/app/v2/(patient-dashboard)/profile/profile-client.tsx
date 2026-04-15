@@ -104,7 +104,8 @@ export default function ProfileClient({
         </div>
 
         {/* Tab content is fetched lazily — each tab loads its own data on first visit */}
-        <TabContent tab={activeTab} userId={patientUserId} />
+        {/* Always pass userId to avoid calling currentUser() during Suspense render */}
+        <TabContent tab={activeTab} userId={patientUserId ?? patient.userId} />
 
         <FloatingActions
           patientName={patient.fullName}

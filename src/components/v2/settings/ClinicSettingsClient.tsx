@@ -246,6 +246,10 @@ type AppointmentFormValues = z.infer<typeof appointmentSchema>;
 const philhealthSchema = z.object({
   philhealthAccreditationNumber: z.string().optional(),
   facilityName: z.string().optional(),
+  konsultaUsername: z.string().optional(),
+  konsultaPassword: z.string().optional(),
+  pmccNumber: z.string().optional(),
+  konsultaCipherKey: z.string().optional(),
 });
 type PhilHealthFormValues = z.infer<typeof philhealthSchema>;
 
@@ -733,12 +737,19 @@ function PhilHealthTab({
   clinicSetting: ClinicSettingData | null;
 }) {
   const [isPending, startTransition] = useTransition();
+  const [testResult, setTestResult] = useState<string | null>(null);
+  const [isTesting, setIsTesting] = useState(false);
+  const [testPin, setTestPin] = useState("000000000000");
 
   const form = useForm<PhilHealthFormValues>({
     resolver: zodResolver(philhealthSchema),
     defaultValues: {
       philhealthAccreditationNumber: clinicSetting?.philhealthAccreditationNumber ?? "",
       facilityName: clinicSetting?.facilityName ?? "",
+      konsultaUsername: clinicSetting?.konsultaUsername ?? "",
+      konsultaPassword: clinicSetting?.konsultaPassword ?? "",
+      pmccNumber: clinicSetting?.pmccNumber ?? "",
+      konsultaCipherKey: clinicSetting?.konsultaCipherKey ?? "",
     },
   });
 
@@ -747,6 +758,10 @@ function PhilHealthTab({
       const result = await updatePhilHealthSettingsAction(clinicUid, {
         philhealthAccreditationNumber: values.philhealthAccreditationNumber || undefined,
         facilityName: values.facilityName || undefined,
+        konsultaUsername: values.konsultaUsername || undefined,
+        konsultaPassword: values.konsultaPassword || undefined,
+        pmccNumber: values.pmccNumber || undefined,
+        konsultaCipherKey: values.konsultaCipherKey || undefined,
       });
 
       if (result.status) {
@@ -755,6 +770,106 @@ function PhilHealthTab({
         toast.error(result.message ?? "Failed to save PhilHealth settings.");
       }
     });
+  };
+
+  const handleTestConnection = async () => {
+    setIsTesting(true);
+    setTestResult(null);
+    const lines: string[] = [];
+    const post = async (action: string, extra?: object) => {
+      const res = await fetch("/api/konsulta/test-staging", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, clinicId: clinicSetting?.clinicId, ...extra }),
+      });
+      return res.json() as Promise<Record<string, unknown>>;
+    };
+
+    try {
+      // Step 1 — raw TCP ping
+      lines.push("[1/5] Pinging SOAP endpoint…");
+      setTestResult(lines.join("\n"));
+      const ping = await post("ping");
+      if (ping.ok) {
+        lines.push(`  ✓ Reachable (HTTP ${(ping.ping as Record<string, unknown>)?.statusCode ?? "?"})`);
+      } else {
+        lines.push(`  ✗ Unreachable — ${(ping.ping as Record<string, unknown>)?.error ?? "unknown error"}`);
+        lines.push("  → Server may be down, behind a firewall, or blocking this IP.");
+        setTestResult(lines.join("\n"));
+        toast.error("Staging server is unreachable");
+        return;
+      }
+
+      // Step 2 — WSDL fetch
+      lines.push("\n[2/5] Fetching WSDL…");
+      setTestResult(lines.join("\n"));
+      const describe = await post("describe");
+      if (describe.ok) {
+        const describeInner = describe.describe as Record<string, unknown>;
+        const operations = describeInner?.operations;
+        lines.push(`  ✓ WSDL loaded — ${Object.keys(operations as object ?? {}).length} operation(s) available`);
+      } else {
+        const describeInner = describe.describe as Record<string, unknown>;
+        lines.push(`  ✗ WSDL fetch failed — ${describeInner?.error ?? describe.error ?? "unknown"}`);
+        setTestResult(lines.join("\n"));
+        toast.error("WSDL fetch failed");
+        return;
+      }
+
+      // Step 3 — getToken
+      lines.push("\n[3/5] Getting access token…");
+      setTestResult(lines.join("\n"));
+      const tokenRes = await post("get-token");
+      if (tokenRes.ok) {
+        const raw = (tokenRes.result as Record<string, unknown>)?.return as string ?? "";
+        let jwt = raw;
+        try { jwt = (JSON.parse(raw) as { result?: string }).result ?? raw; } catch { /* plain string */ }
+        lines.push(`  ✓ Token: ${jwt.slice(0, 40)}…`);
+      } else {
+        lines.push(`  ✗ getToken failed — ${tokenRes.error ?? "unknown"}`);
+        if (tokenRes.hint) lines.push(`  ℹ ${tokenRes.hint}`);
+        setTestResult(lines.join("\n"));
+        toast.error("getToken failed");
+        return;
+      }
+
+      // Step 4 — isMemberDependentRegistered
+      lines.push(`\n[4/5] Checking member registration (PIN: ${testPin})…`);
+      setTestResult(lines.join("\n"));
+      const memberRes = await post("check-member", { pin: testPin, memberType: "MM" });
+      if (memberRes.ok) {
+        const raw = (memberRes.result as Record<string, unknown>)?.return ?? memberRes.result;
+        lines.push(`  ✓ Response: ${JSON.stringify(raw)}`);
+      } else {
+        lines.push(`  ✗ ${memberRes.error ?? "Unknown error"}`);
+        if (memberRes.hint) lines.push(`  ℹ ${memberRes.hint}`);
+        setTestResult(lines.join("\n"));
+        toast.error("Member check failed");
+        return;
+      }
+
+      // Step 5 — upload dummy PCB XML report (validateReport → submitReport)
+      lines.push("\n[5/5] Uploading dummy PCB XML report…");
+      setTestResult(lines.join("\n"));
+      const uploadRes = await post("upload-test");
+      if (uploadRes.ok) {
+        const validateReturn = (uploadRes.validateResult as Record<string, unknown>)?.return as string ?? "";
+        const submitReturn = (uploadRes.submitResult as Record<string, unknown>)?.return as string ?? "";
+        lines.push(`  ✓ validateReport: ${validateReturn}`);
+        lines.push(`  ✓ submitReport:   ${submitReturn}`);
+        toast.success("Full staging flow complete — all 5 steps passed");
+      } else {
+        lines.push(`  ✗ Upload failed — ${uploadRes.error ?? "unknown"}`);
+        if (uploadRes.hint) lines.push(`  ℹ ${uploadRes.hint}`);
+        toast.error("Report upload failed");
+      }
+    } catch (err) {
+      lines.push(`\nUnexpected error: ${err instanceof Error ? err.message : String(err)}`);
+      toast.error("Connection test failed");
+    } finally {
+      setTestResult(lines.join("\n"));
+      setIsTesting(false);
+    }
   };
 
   return (
@@ -803,6 +918,117 @@ function PhilHealthTab({
                 </FormItem>
               )}
             />
+
+            <Separator />
+
+            <div>
+              <p className="text-sm font-semibold mb-1">Konsulta PKA Credentials</p>
+              <p className="text-xs text-muted-foreground mb-4">
+                Required for submitting PCB reports to PhilHealth via the Konsulta v1.1 SOAP API.
+              </p>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="konsultaUsername"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Konsulta Username</FormLabel>
+                      <FormControl>
+                        <Input placeholder="PhilHealth-issued username" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="konsultaPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Konsulta Password</FormLabel>
+                      <FormControl>
+                        <Input type="password" placeholder="PhilHealth-issued password" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="pmccNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>PMCC Number</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g. Z15445" {...field} />
+                      </FormControl>
+                      <FormDescription>Primary care clinic code assigned by PhilHealth.</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="konsultaCipherKey"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Cipher Key</FormLabel>
+                      <FormControl>
+                        <Input type="password" placeholder="Encryption cipher key" {...field} />
+                      </FormControl>
+                      <FormDescription>Used to encrypt XML payloads before submission.</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <KeyRound className="h-4 w-4 text-primary" />
+              Konsulta Staging Connection Test
+            </CardTitle>
+            <CardDescription>
+              Verify that the saved credentials can reach the PhilHealth Konsulta staging server.
+              Save your credentials first before running this test.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-medium text-muted-foreground">Test PIN (PhilHealth PIN)</label>
+                <Input
+                  value={testPin}
+                  onChange={(e) => setTestPin(e.target.value)}
+                  placeholder="000000000000"
+                  maxLength={12}
+                  className="w-40 font-mono text-sm"
+                  disabled={isTesting}
+                />
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={isTesting}
+                onClick={handleTestConnection}
+                className="self-end"
+              >
+                {isTesting ? (
+                  <><Loader2 className="h-4 w-4 animate-spin mr-2" />Testing…</>
+                ) : (
+                  "Test Staging Connection"
+                )}
+              </Button>
+            </div>
+            {testResult && (
+              <pre className="rounded bg-muted p-3 text-xs whitespace-pre-wrap break-all">
+                {testResult}
+              </pre>
+            )}
           </CardContent>
         </Card>
 

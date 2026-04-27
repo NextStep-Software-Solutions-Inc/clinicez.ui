@@ -1,0 +1,60 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!--
+	Philippine Health Insurance Corporation
+	KonSulTa Assignment Masterlist Document Type Definition Version 1.0
+	Assignment Masterlist
+	Version History
+        0.1 2019-12-19 by ZNL
+            : Initial draft
+		0.2 2020-01-16 by ZNL
+            : Add pContactNumber attribute for Member's Contact Number handler
+		0.3 2020-03-04 by ZNL	
+			: Remove pContactNumber
+			: Add pMobileNumber
+			: Add pLandlineNumber
+			: Change pMemType to pClientType
+			: Add pPrimaryPIN, pPrimaryLastName, pPrimaryFirstName, pPrimaryMiddleName, pPrimaryExtName, pPrimaryDateOfBirth
+			: Add Range Date - pStartDate and pEndDate attributes
+		0.4 2020-03-25 by ZNL
+			: Add Sex for Assigned and Primary
+-->
+   
+<!--- Put your DTDDoc comment here. -->
+<!ELEMENT ASSIGNMENTS (ASSIGNMENT)*>
+<!ATTLIST ASSIGNMENTS
+   pUsername CDATA #REQUIRED
+   pPassword CDATA #REQUIRED
+   pHciAccreNo CDATA #REQUIRED
+   pStartDate CDATA #REQUIRED
+   pEndDate CDATE #REQUIRED
+   pAssignmentTotalCnt CDATA #REQUIRED
+   pReportTransmittalNumber CDATA #REQUIRED 
+   >
+   
+<!--- Put your DTDDoc comment here. -->
+<!ELEMENT ASSIGNMENT EMPTY>
+<!ATTLIST ASSIGNMENT
+   pAssignedPin CDATA #REQUIRED
+   pAssignedLastName CDATA #REQUIRED
+   pAssignedFirstName CDATA #REQUIRED
+   pAssignedMiddleName CDATA #REQUIRED
+   pAssignedExtName CDATA #REQUIRED
+   pAssignedDateOfBirth CDATA #REQUIRED
+   pAssignedSex CDATA #REQUIRED
+   pAssignedType (MM|DD) #REQUIRED  
+   pPrimaryPIN CDATA #REQUIRED
+   pPrimaryLastName CDATA #REQUIRED
+   pPrimaryFirstName CDATA #REQUIRED
+   pPrimaryMiddleName CDATA #REQUIRED
+   pPrimaryExtName CDATA #REQUIRED
+   pPrimaryDateOfBirth CDATA #REQUIRED
+   pPrimarySex CDATA #REQUIRED
+   pMobileNumber CDATA #REQUIRED
+   pLandlineNumber CDATA #REQUIRED
+   pMemberNewCat CDATA #REQUIRED
+   pMemberNewCatDesc CDATA #REQUIRED
+   pPackageType (E|K) #REQUIRED
+   pAssignedDate CDATA #REQUIRED
+   pAssignedStatus (1|2) #REQUIRED
+   pEffYear CDATA #REQUIRED
+   >

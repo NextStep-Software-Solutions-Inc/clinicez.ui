@@ -1,0 +1,6794 @@
+PhilHealth's
+Konsultasyong Sulit at Tama (Konsulta) Implementation Guide
+PKA v1.1 20220815
+
+Amendment History
+
+Version
+
+Date
+
+Remarks
+
+Version 1.0 02/16/2021 Parameters for Phase 1: Konsulta Implementation
+
+Version 1.1 08/15/2022  Updated valid values for the parameter pDeliveryTyp under PREGHIST
+
+ Added parameter `pOthMedDrugGrouping' under MEDICINE
+
+ Enhanced validation of parameters under MEDICINE and DIAGNOSTIC EXAM RESULTS from number to varchar
+
+ Enhanced validation of ZScore as not required
+
+TABLE OF CONTENTS
+1. INTRODUCTION....................................................................................................................... 1 2. PREPARATIONS........................................................................................................................ 2 3. PhilHealth Konsulta Application Programming Interface (API) ................................................. 3
+Module 1: Authentication of Application ............................................................................................. 5 Module 2: Konsulta Registration Validation ......................................................................................... 6 Module 3: Konsulta Reporting ............................................................................................................ 10 4. ANNEXES .............................................................................................................................. 14 Annex A: Konsulta Data Dictionary .................................................................................................... 15 Annex B: Sample Konsulta XML Report (First Tranche) ........................................................................ 40 Annex C: Sample Konsulta XML Report (Second Tranche).................................................................... 43 Annex D: Guidelines for the Encryption and Decryption of XML .......................................................... 49 Annex E: Non-Disclosure Agreement .................................................................................................. 51 Annex F: Software Testing and Validation........................................................................................... 52
+
+1. INTRODUCTION
+Philippine Health Insurance Corporation (PhilHealth), Republic of the Philippines (2012)
+Copyright to this material belongs to PhilHealth. Apart from any fair dealing for personal, academic, research or non-commercial use, no part may be reproduced without written permission of PhilHealth. PhilHealth is under no obligation to grant this permission. Please acknowledge the Philippine Health Insurance Corporation when reproducing or quoting material from this source
+Important Disclaimer: All information and content in this Material is provided in good faith by PhilHealth, and is based on sources believed to be reliable and accurate at the time of development. The Philippine Health Insurance Corporation, and their respective officers, employees and agents, do not accept legal liability or responsibility for the Material, or any consequences arising from its use.
+
+The primary care benefit package or most commonly referred to as the PCB1 was implemented last 2012 replacing the outpatient benefit package at the time as denoted in PhilHealth Circular No. 10 s-2012 "Implementing Guidelines for Universal Health Care Primary Care Benefit I (PCB1) Package for Transition Period CY 2012-2013. The said circular initially covers members under the Sponsored Program, Organized Group and Overseas Workers Program to avail of the services through the Rural Health Units.
+
+In October 2018, the PCB1 benefit package was expanded to members under the formal economy (private and government employees), senior citizens and lifetime members thru the PhilHealth Circular No. 17 s2018. And with the Corporation remaining true to its mandate of providing health insurance coverage and ensure affordable, acceptable, available and accessible healthcare services for all citizens of the Philippines, the PhilHealth Konsulta Benefit Package integrates the existing Primary Care Benefit I (PCB1) and expanded Primary Care Benefit 1 (ePCB) that shall be made available for all Filipinos.
+
+To ensure ease of availment at the point of care for all its beneficiaries, PhilHealth has partnered with existing electronic medical record (EMR) providers to automate the submission of reporting requirements necessary for the processing of provider payments. Said venture has been established through the issuance of PhilHealth Advisory 2016-0040 introducing the implementation of Electronic Medical Records for the Primary Care Benefit by January 1, 2017.
+
+Being that more data will be required from the Konsulta providers for the Konsulta implementation, PhilHealth will be opening direct transmission of Konsulta data which will integrate or be similar with the eClaims architecture. Among the list of services which will be offered to Konsulta providers and service providers are as follows:
+
+ Phase I: Authentication of Application o Get Token Method (GTM)
+
+ Phase II: Konsulta Registration Validation o Member/Dependent Registration Check (MDRC) o Extract Registration List (ERL) o Authorization Transaction Code Validation (ATCV)
+
+ Phase III: Konsulta Reporting o Validate Konsulta Report (VER) o Submit Konsulta Report (SER)
+
+Page 1
+
+Republic Act 8792 or the e-Commerce Act was signed into law on June 14, 2000, and mandated all government agencies to, among others, transact government business and perform government functions using electronic data messages or electronic documents. It therefore provides for the legal recognition of electronic documents, data messages, electronic signatures and electronic contracts. RA 8792 provides the legal framework and environment for the PhilHealth Konsulta environment. The Konsulta Benefit Package shall be included in the PhilHealth Konsulta environment to provide an efficient and effective reporting and processing of availment for the primary care benefit. The Konsulta system shall introduce the following features, to wit: 1) a paper-free transaction through a fully electronic and/or online submission of Konsulta report by accredited health providers; 2) online evaluation and processing of Konsulta in PhilHealth Regional and Service offices; and 3) online tracking or status verification of Konsulta availments. This document applies to accredited Konsulta health care providers and Service Provider (SP), which will serve as conduits between PhilHealth and the HCPs and HCIs with in-house software solutions, which will provide utilities to enable access to the PhilHealth Konsulta API or PKA.
+Page 2
+
+2. PREPARATIONS
+PROCEDURES ON HOW TO CONNECT TO PHILHEALTH KONSULTA API (PKA) Step 1. Check for internet connectivity requirements
+a. A good internet connection between the system of the HCP and PKA of PhilHealth is needed. HCP should have at least a bandwidth of 1mbps. HCP should have an internet connection dedicated to PKA.
+Step 2. Submit the public IP address a. HCP should have a public IP A good internet connection between the system of the HCP and PKA of PhilHealth is needed. HCP should have at least a bandwidth of 1mbps. HCP should have an internet connection dedicated to PKA. HCP should have a public ID.
+Page 3
+
+3. PhilHealth Konsulta Application Programming Interface (API)
+Page 4
+
+This section shows the PhilHealth Konsulta Application Programming Interface (API). The input and output parameters of the different methods of the web service are defined here. The different available methods are loosely grouped based the following "modules"
+1. Module 1: Authentication of Application 2. Module 2: Konsulta Registration Validation 3. Module 3: Konsulta Reporting
+ABOUT THE SOFTWARE CERTIFICATION ID Starting with version 1.0 of PKA, all applications that will access the said services shall be required to be certified by PhilHealth. Each certification is targeted for a specific version of PKA. To check whether an application calling a service method of PKA is certified, the calling application should indicate the Software Certification ID issued by PhilHealth after an application has been certified.
+USE OF ACCESS TOKEN Access tokens are used in token-based authentication to allow an application to access PKA. The application receives an access token after a user successfully authenticates and authorizes access, then passes the access token as a credential when it calls the target service method. Each method call will require token included in the header request. In the header request, use "Token" for the key and the generated access token for the value.
+ENCRYPTION AND DECRYPTION OF THE XML PAYLOAD DATA For added security measures, starting with version 1.0 of PKA, HCI applications should encrypt all input parameters that are to be encoded as XML text. HCI applications should also decrypt all output parameters that are returned in XML format. Please refer to the "Guidelines for the Encryption and Decryption of XML" included in the development kit.
+Page 5
+
+MODULE 1: AUTHENTICATION OF APPLICATION
+
+The Authentication Module shall contain Get Token Method (GTM) as shown below:
+
+Module
+
+Module Details
+
+Module 1-A: Get Token Method (GTM)
+
+The getToken method will allow generation of Access Token that will be used for consuming the service methods available in PKA.
+This token must be included on every method request. Use "Token" for the key and the generated access token for the value.
+WEB SERVICE METHOD
+getToken (pUsername, pUserPassword, pSoftwareCertificationId, pHospitalCode)
+
+PARAMETER DEFINITION
+
+Name pUserName*
+
+Length (Size)
+
+Description
+
+String(30) User Name
+
+pUserPassword*
+
+String(30) User Password
+
+pSoftwareCertificationId* String(30)
+
+pHospitalCode*
+
+String(9)
+
+Software Certification ID Facility Accreditation Number
+
+Remarks
+To be provided by PhilHealth To be provided by PhilHealth To be provided by PhilHealth
+
+RESPONSE DEFINITION
+
+Transaction Type
+Successful
+Unsuccessful
+
+Response
+Returns the Access Token to be used for consuming the service methods. The following shall be displayed based on scenario:
+
+Scenario
+Incorrect User Name or User Password Incorrect Software Certification ID
+
+Resulting Response / Message Invalid credentials
+Software Certification ID not found
+
+Invalid PAN
+
+No Accreditation Record Found
+
+Not registered user HCI is not a registered user of the
+
+of the software
+
+certified software
+
+Page 6
+
+MODULE 2: REGISTRATION VALIDATION
+The Registration Validation Module shall contain several web service methods as shown below:
+Module 2-A: Member/Dependent Registration Check (MDRC) Module 2-B: Extract Registration List (ERL) Module 2-C: Authorization Transaction Code Validation (ATCV)
+
+Module
+
+Module Details
+
+Module 2-A: Member/ Dependent Registration Check (MDRC)
+
+This method will check whether the member/dependent has already registered to the accredited health care provider for the current year.
+WEB SERVICE METHOD isMemberDependentRegistered (pPin, pType)
+
+PARAMETER DEFINITION
+
+Name pPIN*
+pType*
+
+Length (Size) String(12)
+String(2)
+
+Description
+
+Remarks
+
+PhilHealth Identification Number ­ a unique 12 digit number assigned to a member or dependent.
+ `MM'-Member
+ `DD'-Dependent
+
+The last character in the PIN is a modulus 11 check digit.
+
+RESPONSE DEFINITION
+
+Transaction Type
+Successful
+Unsuccessful
+
+Response
+Displays the message "YES" for PIN with current registration for the year. Returns "NO' if member/dependent PIN is invalid or not yet registered.
+
+Module 2-B: Extract The ERL service may be used to determine whether a member or dependent
+
+Registration List
+
+has been registered to the concerned health care provider through the resulting
+
+(ERL)
+
+XML file.
+
+To get list of all beneficiaries that are already registered to a given provider for a specified period, use the pStartDate and pEndDate parameter.
+
+Page 7
+
+WEB SERVICE METHOD
+
+extractRegistrationList (pStartDate, pEndDate) PARAMETER DEFINITION
+
+Name pStartDate*
+pEndDate*
+
+Length (Size) Date
+Date
+
+Description
+
+Remarks
+
+Starting coverage date to be used for the extraction. Ending coverage date to be used for the extraction.
+
+Date Format should be : `mm/dd/yyyy'
+Date Format should be : `mm/dd/yyyy'
+
+RESPONSE DEFINITION
+
+Transaction Type
+Successful
+Unsuccessful
+
+Response
+Return details of the member and dependent in encrypted XML format. The following shall be displayed based on scenario:
+
+Scenario No available record within the selected date range
+Invalid PAN
+
+Resulting Response / Message No record found
+No Accreditation Record Found
+
+Module 2-C: Authorization Transaction Code Validation (ATCV)
+
+This service will allow validation of the Authorization Transaction Code (ATC) provided by the member/dependent and ensure that ATC is valid within the date of appointment.
+WEB SERVICE METHOD
+
+isATCValid (pPIN, pATC, pEffectivityDate)
+
+PARAMETER DEFINITION
+
+Name pPIN*
+
+Length (Size) String(12)
+
+Description
+
+Remarks
+
+PhilHealth
+
+The
+
+last
+
+Identification
+
+character in the
+
+Number ­ a PIN is a modulus
+
+unique 12 digit 11 check digit.
+
+Page 8
+
+pATC* pEffectivityDate*
+
+String(12) String(10)
+
+number assigned to a member or dependent.
+
+Authorization
+
+To be provided
+
+Transaction Code by the member
+
+­ a unique code
+
+given to a member
+
+that
+
+is
+
+incorporated
+
+within the selected
+
+date
+
+of
+
+appointment
+
+Effectivity Date of Date Format
+
+ATC
+
+should be :
+
+`mm/dd/yyyy'
+
+RESPONSE DEFINITION
+
+Transaction Type
+Successful
+
+Response
+Displays the message "YES" for Authorization Transaction Code (ATC) that is match with the PIN and Date of Effectivity.
+
+Unsuccessful Returns "NO" for invalid ATC.
+
+Page 9
+
+MODULE 3: KONSULTA REPORTING
+
+Module 3 of the PKA shall include the services to be used for the reporting requirements of the program. The following services shall be made available:
+Module 3-A: Validate Konsulta Report (VKR) Module 3-B: Submit Konsulta Report (SKR)
+
+Module
+Module 3-A: Validate Konsulta Report (VKR)
+
+Module Details This service will allow validation of the Konsulta Report without uploading the XML.
+WEB SERVICE METHOD validateReport (pReport, pReportTagging)
+
+PARAMETER DEFINITION
+
+Name pReport*
+pReportTagging*
+
+Length (Size) String(2MB)
+String(1)
+
+Description
+
+Remarks
+
+Data requirements
+
+based on the
+
+defined Konsulta
+
+XML Report
+
+Tagging to identify
+
+XML report if :
+
+ 1-first patient
+
+encounter data
+
+ 2- first patient
+
+encounter data,
+
+consultations,
+
+diagnostic exam
+
+results
+
+and
+
+drug/medicines
+
+See Annex A
+
+RESPONSE DEFINITION
+
+Transaction Type
+Successful
+Unsuccessful
+
+Response
+Returns successful message. This will also return the validated Konsulta XML with an updated value in pReportStatus attributes as "V" (Validated) to indicate that the records have passed the validation based on the predefined requirements. Returns the error message. This will also return the validated Konsulta XML with an updated value in the pReportStatus attributes as "F" (Failed), and in the pDeficiencyRemarks attributes for the error description.
+
+Page 10
+
+Module 3-B: Submit Konsulta Report (SKR)
+
+This service will be used to submit or transmit the reporting requirements for the Konsulta based on a predefined XML format.
+WEB SERVICE METHOD submitReport (pTransmittalId, pReport, pReportTagging)
+
+PARAMETER DEFINITION
+
+Name pTransmittalID*
+pReport* pReportTagging*
+
+Length (Size) String(21)
+String(2MB)
+String(1)
+
+Description
+
+EMR generated
+
+transmittal
+
+reference number
+
+of the report
+
+submitted
+
+Data requirements
+
+based on the
+
+defined Konsulta
+
+XML Report
+
+Tagging to identify
+
+XML report if :
+
+ 1-first patient
+
+encounter data
+
+ 2- first patient
+
+encounter data,
+
+consultations,
+
+diagnostic exam
+
+results,
+
+and
+
+drug/medicines
+
+Remarks
+
+R + accreditation
+
+no (9) + date of
+
+extraction
+
+(yyyymm)
+
++
+
+sequence no (5)
+
+See Annex A
+
+RESPONSE DEFINITION
+
+Transaction Type
+
+Response
+
+Successful
+
+Returns the transaction number for the submitted report.
+
+Unsuccessful The following shall be displayed based on scenario:
+
+Scenario Resulting Response / Message
+
+Non-
+
+Display unsuccessful uploading
+
+compliance to message and returns the validated
+
+requirements XML.
+
+Duplicate Report
+
+Report already uploaded.
+
+Page 11
+
+4. CONFIDENTIALITY
+Given the nature PhilHealth mandate, it is vital that we maintain the confidentiality of patient information. PhilHealth is committed in ensuring utmost confidentiality of health records and related information of all patient because the right to privacy is personal and fundamental; likewise it is the responsibility of PhilHealth to safeguard all confidential information.
+Confidential Information
+Confidential information includes, but is not limited to, protected health information, personal financial information, patient records, or information gained from committee meetings, hospital or facility visits during accreditation and investigation, inquiries from members, patients or other PhilHealth employees. Example include: data contained on claim forms, past and current medical and psychiatric record member employment data, patient insurance and billing of records, computerized patient data, visual observation of patients/members or any verbal information provided by or about a patient. These information may be contained via any communication medium, including verbal, written or electronic. 1
+Protection Policies and Procedures
+All information that can be used to identify a Patient or a commercial entity in a commercially sensitive context is considered Confidential Health Information (CHI).
+It is required that all partners develop, institute, educate staff and periodically update standard operating policies and procedures that protect CHI. The policies and procedures must be available for inspection and their use must be demonstrate upon request. PhilHealth will make available default policies and procedures.
+Necessary and authorized access. Each party is required to ensure that only minimum necessary personnel have access to CHI. Additionally, each party must have appropriate means to secure CHI and its use within its operations including when exchanging CHI with other partners. Each party must provide a means to authenticate authorized users.
+Unauthorized access. Every party should keep CHI from unauthorized access. PhilHealth must be notified, however, as soon as unauthorized access is detected. This notice must include what was disclosed, how it was obtained (means and methods), who gained unauthorized access if known, if the data has been subsequently unlawfully disclosed and the risk mitigation plan the party is now pursuing to prevent any further unauthorized access. Confidentiality breaches can occur from external and internal sources. Each party must have a published sanction policy and ensure that is effectively communicated to staff periodically. For external breaches appropriate law enforcement officials will be involved in the investigation and prosecution as necessary.
+Storage of CHI. Each party is required to develop, maintain and implement policies and procedures for protecting CHI stored electronically or via paper. This is especially true for off-site storage in the case of paper records and back-ups, archives and live storage of electronic records. The storage policies and procedures apply irrespective of the purpose of storage, for instance whether the CHI is stored on a CD for archiving or transmission purposes.
+
+1 PhilHealth Office Order 0050, s.,2011
+
+Page 12
+
+Transmission of CHI. Each party must protect CHI during the full life cycle of transformations, whether electronic or not. This includes preparation of data transmission, transmitting data, and receiving transmitted data. For the electronic transmission of CHI
+ If the public internet is used for electronic data exchange, policies and procedures should cover the secure transmission of data, which includes encryption of data.
+ If private secure point-to-point connections are used for electronic data exchange, policies and procedures should cover their provisioning and maintenance. Data encryption is recommended even when using secure private point-to-point connections2
+
+2 www.shafafiya.org/HAAD, s2008
+
+Page 13
+
+4. ANNEXES
+Page 14
+
+DATA DICTIONARY
+
+DATA GROUP
+
+PARAMETER NAME
+
+S
+
+TYPE
+
+I Z
+
+E
+
+DESCRIPTION
+
+ANNEX A
+
+REQUIRED (Yes/No)
+12
+
+CONSTRAINT
+
+DATABASE
+SCHEMA
+KONSULTA
+
+DOCUMENTOR
+ISMD ­ ITMD
+OFFICE
+ISMD ­ ITMD
+
+REVISION NUMBER
+14
+DATE CREATED
+12/15/2019
+
+DATE OF REVISION
+08/17/2022
+PAGE
+Page 1 of 26
+
+TABLE REFERENCE
+
+FORMAT
+
+STANDARD DEFAULT
+
+VALID VALUES
+
+PCB ENLISTMENT
+
+pUsername
+
+VARCHAR2
+
+30 BYTE
+
+HCI User ID --to be provided by PhilHealth
+
+Y
+
+Y
+
+pPassword
+
+VARCHAR2 30
+
+HCI User Password --to be provided
+
+Y
+
+Y
+
+BYTE by PhilHealth
+
+pHciAccreNo
+
+VARCHAR2 9
+
+Accreditation Number of Health Care Y
+
+Y
+
+BYTE Institution (HCI)
+
+pPMCCNo
+
+VARCHAR2
+
+6 BYTE
+
+PMCC Number of Health Care Institution (HCI)
+
+Y
+
+Y
+
+pEnlistTotalCnt
+
+NUMBER
+
+Total Count of Enlistments
+
+Y
+
+Y
+
+pProfileTotalCnt
+
+NUMBER
+
+Total Count of Profiles
+
+Y
+
+Y
+
+pSoapTotalCnt
+
+NUMBER
+
+Total Count of Consultations
+
+Y
+
+Y
+
+pCertificationId
+
+VARCHAR2
+
+21 BYTE
+
+Software Certificate ID
+
+Y
+
+Y
+
+pHciTransmittalNumber VARCHAR2 21
+
+Health Care Institution (HCI)
+
+Y
+
+Y
+
+BYTE Transmittal Number ­ generated by
+
+the HCI own batching system. This
+
+should be unique per hospital.
+
+pHciCaseNo pHciTransNo
+
+VARCHAR2
+
+21 BYTE
+
+Patient Transaction Reference Number for the Whole Patient Record
+
+VARCHAR2
+
+21 BYTE
+
+Enlistment Reference Number
+
+Y
+
+Y
+
+Y
+
+Y
+
+PK
+
+pEffYear pEnlistStat
+pEnlistDate pPackageType
+pMemPin pMemFname pMemMname pMemLname
+
+VARCHAR2 VARCHAR2
+DATE VARCHAR2
+VARCHAR2 VARCHAR2 VARCHAR2 VARCHAR2
+
+4 BYTE 1 BYTE
+1 BYTE
+12 BYTE 30 BYTE 30 BYTE 30 BYTE
+
+Effectivity Year of Enlistment Status of Enlistment
+Date of Enlistment Enlistment Type
+Philhealth Identification Number (PIN) of Primary Member First Name of Primary Member Middle Name of Primary Member Last Name of Primary Member
+
+Y
+
+Y
+
+Y
+
+Y
+
+Y
+
+Y
+
+Y
+
+Y
+
+Y
+
+Y
+
+Y
+
+Y
+
+N
+
+N
+
+Y
+
+Y
+
+R+ACCRE_NO + date of extraction (YYYYMM) + 5 digit series number = R+XXXXXXXXX+YY YY+MM+99999 T+ACCRE_NO+YYY Y+MM+4 digits series number = T+XXXXXXXXX+YY YY+MM+99999 E+ACCRE_NO+YYY Y+MM+5 digits series number = E+XXXXXXXXX+YY YY+MM+99999 YYYY-MM-DD
+YYYY-MM-DD
+
+"K" ­ KONSULTA Package
+
+1 ­ Active; 2 ­ Cancelled; 3 ­ Transferred
+"P" ­ PCB1; "E" ­ Expanded PCB; "K" ­ KONSULTA Package
+
+DATA DICTIONARY
+
+DATA GROUP
+
+PARAMETER NAME
+
+S
+
+TYPE
+
+I Z
+
+E
+
+DESCRIPTION
+
+ANNEX A
+
+REQUIRED (Yes/No)
+12
+
+CONSTRAINT
+
+DATABASE
+SCHEMA
+KONSULTA
+
+DOCUMENTOR
+ISMD ­ ITMD
+OFFICE
+ISMD ­ ITMD
+
+REVISION NUMBER
+14
+DATE CREATED
+12/15/2019
+
+DATE OF REVISION
+08/17/2022
+PAGE
+Page 2 of 26
+
+TABLE REFERENCE
+
+FORMAT
+
+STANDARD DEFAULT
+
+VALID VALUES
+
+pMemExtname pMemDob pPatientPin pPatientFname
+pPatientMname
+pPatientLname
+pPatientExtname
+pPatientSex pPatientDob pPatientType pPatientMobileNo pPatientLandlineNo pWithConsent pTransDate pCreatedBy
+
+VARCHAR2 30
+
+Extension Name of Primary Member N
+
+N
+
+BYTE
+
+DATE
+
+Date of Birth of Primary Number
+
+Y
+
+Y
+
+VARCHAR2 12
+
+Refer to Member's PIN if patient type Y
+
+Y
+
+BYTE is MM; Refer to Dependent's PIN if
+
+type is DD
+
+VARCHAR2 30
+
+First Name of Patient
+
+Y
+
+Y
+
+BYTE
+
+Refer to Member's First Name if
+
+patient type is MM; Refer to
+
+Dependent's First Name if type is DD
+
+VARCHAR2 30
+
+Middle Name of Patient
+
+N
+
+N
+
+BYTE
+
+Refer to Member's Middle Name if
+
+patient type is MM; Refer to
+
+Dependent's Middle Name if type is
+
+DD
+
+VARCHAR2 30
+
+Last Name of Patient
+
+Y
+
+Y
+
+BYTE
+
+Refer to Member's Last Name if
+
+patient type is MM; Refer to
+
+Dependent's Last Name if type is DD
+
+VARCHAR2 30
+
+Extension Name of Patient
+
+N
+
+N
+
+BYTE
+
+Refer to Member's Extension Name if
+
+patient type is MM; Refer to
+
+Dependent's Extension Name if type
+
+is DD
+
+VARCHAR2 1
+
+Sex of Patient
+
+Y
+
+Y
+
+BYTE
+
+DATE VARCHAR2 VARCHAR2 VARCHAR2 VARCHAR2
+DATE
+
+2 BYTE 15 BYTE 15 BYTE 1 BYTE
+
+Date of Birth of Patient Patient Type Mobile No. Of Patient Landline No. Of Patient Flag for with Consent
+Date when the record inserted
+
+Y
+
+Y
+
+Y
+
+Y
+
+Y
+
+Y
+
+N
+
+N
+
+Y
+
+Y
+
+Y
+
+Y
+
+VARCHAR2
+
+30 BYTE
+
+User who created the record
+
+Y
+
+Y
+
+YYYY-MM-DD
+
+YYYY-MM-DD YYYY-MM-DD
+
+"F" ­ Female; "M" ­ Male
+"MM" ­ Member; "DD" ­ Dependent
+"Y "­ Yes; "N "­ No "X "­ Not Applicable
+
+DATA DICTIONARY
+
+DATA GROUP
+
+PARAMETER NAME
+
+S
+
+TYPE
+
+I Z
+
+E
+
+DESCRIPTION
+
+ANNEX A
+
+REQUIRED (Yes/No)
+12
+
+CONSTRAINT
+
+DATABASE
+SCHEMA
+KONSULTA
+
+DOCUMENTOR
+ISMD ­ ITMD
+OFFICE
+ISMD ­ ITMD
+
+REVISION NUMBER
+14
+DATE CREATED
+12/15/2019
+
+DATE OF REVISION
+08/17/2022
+PAGE
+Page 3 of 26
+
+TABLE REFERENCE
+
+FORMAT
+
+STANDARD DEFAULT
+
+VALID VALUES
+
+PROFILE
+
+pReportStatus
+pDeficiencyRemarks pHciTransNo
+
+VARCHAR2
+
+1 BYTE
+
+Report Status of Generated XML Report
+
+VARCHAR2 VARCHAR2
+
+2000 BYTE
+21 BYTE
+
+Remarks of the Report Status
+Profiling / Health Screening & Assessment Reference Number
+
+Y
+
+Y
+
+N
+
+N
+
+Y
+
+Y
+
+PK
+
+pHciCaseNo pProfDate pPatientPin pPatientType pPatientAge pMemPin
+pEffYear pATC
+
+pIsWalkedIn
+pTransDate pReportStatus
+
+MEDHIST (Patient Past Medical History)
+
+pDeficiencyRemarks pMdiseaseCode pReportStatus
+
+pDeficiencyRemarks
+
+VARCHAR2 DATE
+
+21 BYTE
+
+Patient Transaction Reference Number Profiling Date
+
+Y
+
+Y
+
+FK
+
+Y
+
+Y
+
+VARCHAR2 12
+
+PhilHealth Identification Number of
+
+Y
+
+Y
+
+BYTE Patient
+
+VARCHAR2 2
+
+Patient Type
+
+Y
+
+Y
+
+BYTE
+
+VARCHAR2
+
+Age of Patient
+
+Y
+
+Y
+
+VARCHAR2 12
+
+PhilHealth Identification Number of
+
+Y
+
+Y
+
+BYTE Primary Member
+
+VARCHAR2 VARCHAR2
+VARCHAR2 DATE VARCHAR2
+
+4 BYTE 10 BYTE
+1 BYTE
+1 BYTE
+
+Effectivity Year
+Authorization Transaction Code
+Note: Use `WALKEDIN' as value if pWalkedIn is `Y' Is Patient Walked In
+Date when the record inserted Report Status of Generated XML Report
+
+Y
+
+Y
+
+Y
+
+Y
+
+Y
+
+Y
+
+Y
+
+Y
+
+Y
+
+Y
+
+VARCHAR2 VARCHAR2 VARCHAR2
+
+2000 BYTE 3 BYTE 1 BYTE
+
+Remarks of the Status Report
+Disease Code
+Report Status of Generated XML Report
+
+N
+
+N
+
+Y
+
+Y
+
+Y
+
+Y
+
+VARCHAR2
+
+2000 BYTE
+
+Remarks of the Status Report
+
+N
+
+N
+
+ENLISTMENT TABLE
+
+P+ACCRE_NO+YYY Y+MM+5 digits series number = P+XXXXXXXXX+YY YY+MM+99999
+YYYY-MM-DD
+
+YYYY-MM-DD lib_mdisease
+
+"U" ­ Unvalidated
+
+"V" ­ Validated "U" ­ Unvalidated "F" ­ Failed
+
+"MM" ­ Member; "DD" ­ Dependent;
+
+"U" ­ Unvalidated
+
+"Y" ­ Yes; "N" - No
+"V" ­ Validated "U" ­ Unvalidated "F" ­ Failed
+
+"U" ­ Unvalidated
+
+"V" ­ Validated "U" ­ Unvalidated "F" ­ Failed
+
+DATA DICTIONARY
+
+DATA GROUP
+
+PARAMETER NAME
+
+S
+
+TYPE
+
+I Z
+
+E
+
+DESCRIPTION
+
+ANNEX A
+
+REQUIRED (Yes/No)
+12
+
+CONSTRAINT
+
+DATABASE
+SCHEMA
+KONSULTA
+
+DOCUMENTOR
+ISMD ­ ITMD
+OFFICE
+ISMD ­ ITMD
+
+REVISION NUMBER
+14
+DATE CREATED
+12/15/2019
+
+DATE OF REVISION
+08/17/2022
+PAGE
+Page 4 of 26
+
+TABLE REFERENCE
+
+FORMAT
+
+STANDARD DEFAULT
+
+VALID VALUES
+
+MHSPECIFIC (Patient Specific Disease Description in Past Medical History)
+
+pMdiseaseCode pSpecificDesc pReportStatus
+
+SURGHIST (Patient Surgical History)
+
+pDeficiencyRemarks
+pSurgDesc
+pSurgDate pReportStatus
+
+FAMHIST (Family Medical History)
+
+pDeficiencyRemarks pMdiseaseCode pReportStatus
+
+FHSPECIFIC (Specific Disease Description in Patient Family Medical History)
+SOCHIST (Patient Social/ Personal History)
+
+pDeficiencyRemarks pMdiseaseCode pSpecificDesc pReportStatus
+pDeficiencyRemarks pIsSmoker
+pNoCigpk
+
+pIsAdrinker pNoBottles
+
+VARCHAR2 3
+
+Selected Disease Code in the Patient N
+
+N
+
+BYTE Medical History
+
+VARCHAR2 2000 Value for Specific Description of
+
+N
+
+N
+
+BYTE Disease Code Selected
+
+VARCHAR2 1
+
+Report Status of Generated XML
+
+Y
+
+Y
+
+BYTE Report
+
+VARCHAR2
+VARCHAR2
+DATE VARCHAR2
+
+2000 BYTE 500 BYTE
+1 BYTE
+
+Remarks of the Status Report
+Description of Surgical Operation
+Date of Surgical Operation Report Status of Generated XML Report
+
+N
+
+N
+
+N
+
+N
+
+N
+
+N
+
+Y
+
+Y
+
+VARCHAR2 VARCHAR2 VARCHAR2
+
+2000 BYTE 3 BYTE 1 BYTE
+
+Remarks of the Status Report
+Disease Code for Family Medical/Disease History Report Status of Generated XML Report
+
+N
+
+N
+
+Y
+
+N
+
+Y
+
+Y
+
+VARCHAR2 2000 Remarks of the Status Report
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 3
+
+Disease Code
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 2000 Value for Specific Description Code
+
+N
+
+N
+
+BYTE Selected
+
+VARCHAR2 1
+
+Report Status of Generated XML
+
+Y
+
+Y
+
+BYTE Report
+
+VARCHAR2 VARCHAR2
+
+2000 BYTE 1 BYTE
+
+Remarks of the Status Report Is Patient is Smoker
+
+N
+
+N
+
+Y
+
+Y
+
+NUMBER
+
+Refer to the number of Cigarette
+
+N
+
+N
+
+Pack Consumed per Year ­ Required
+
+if pIsSmoker = `Y'
+
+VARCHAR2 NUMBER
+
+1 BYTE
+
+If Patient is Alcohol Drinker
+Refer to the number of bottles consumed per day ­ Required if pIsADrinker = `Y'
+
+Y
+
+Y
+
+N
+
+N
+
+lib_mdisease
+YYYY-MM-DD lib_mdisease lib_mdisease
+
+"U" ­ Unvalidated
+
+"V" ­ Validated "U" ­ Unvalidated "F" ­ Failed
+
+"U" ­ Unvalidated
+
+"V" ­ Validated "U" ­ Unvalidated "F" ­ Failed
+
+"U" ­ Unvalidated
+
+"V" ­ Validated "U" ­ Unvalidated "F" ­ Failed
+
+"U" ­ Unvalidated
+
+"V" ­ Validated "U" ­ Unvalidated "F" ­ Failed
+
+"Y "­ Yes; "N "­ No; "X" - Quit
+
+"Y "­ Yes; "N "­ No "X" ­ Quit
+
+DATA DICTIONARY
+
+DATA GROUP
+
+PARAMETER NAME
+
+S
+
+TYPE
+
+I Z
+
+E
+
+DESCRIPTION
+
+ANNEX A
+
+REQUIRED (Yes/No)
+12
+
+CONSTRAINT
+
+DATABASE
+SCHEMA
+KONSULTA
+
+DOCUMENTOR
+ISMD ­ ITMD
+OFFICE
+ISMD ­ ITMD
+
+REVISION NUMBER
+14
+DATE CREATED
+12/15/2019
+
+DATE OF REVISION
+08/17/2022
+PAGE
+Page 5 of 26
+
+TABLE REFERENCE
+
+FORMAT
+
+STANDARD DEFAULT
+
+VALID VALUES
+
+pIllDrugUser pIsSexuallyActive pReportStatus
+
+IMMUNIZATION (Patient Immunization Record)
+
+pDeficiencyRemarks pChildImmcode pYoungwImmcode pPregwImmcode pElderlyImmcode pOtherImm pReportStatus
+
+pDeficiencyRemarks
+
+MENSHIST (Patient Menstrual History ­ For Female Patient Only)
+
+pMenarchePeriod
+pLastMensPeriod pPeriodDuration
+pMensInterval
+
+pPadsPerDay
+
+pOnsetSexIc
+
+pBirthCtrlMethod
+
+pIsMenopause
+
+pMenopauseAge pIsApplicable
+
+pReportStatus
+
+pDeficiencyRemarks
+
+VARCHAR2 VARCHAR2 VARCHAR2
+
+1 BYTE 1 BYTE 1 BYTE
+
+If the patient is illicit Drug User
+If the patient is Sexually Active
+Report Status of Generated XML Report
+
+Y
+
+Y
+
+Y
+
+Y
+
+Y
+
+Y
+
+VARCHAR2 2000 Remarks of the Status Report
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 3
+
+Children Immunization Code
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 3
+
+Young Immunization Code
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 3
+
+Pregnant Immunization Code
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 3
+
+Elderly Immunization Code
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 2000 Other Immunization not found in the N
+
+N
+
+BYTE list provided by the system
+
+VARCHAR2 1
+
+Report Status of Generated XML
+
+Y
+
+Y
+
+BYTE Report
+
+VARCHAR2 NUMBER DATE
+
+2000 BYTE
+
+Remarks of the Status Report
+Age of First Menstruation (Menarche) Date of Last Menstrual Period
+
+N
+
+N
+
+N
+
+N
+
+N
+
+N
+
+NUMBER
+
+Duration of Menstrual Period in
+
+N
+
+N
+
+Number of Days
+
+NUMBER
+
+Interval/Cycle of Menstruation in
+
+N
+
+N
+
+Number of Days
+
+NUMBER
+
+Number of Pads/Napkins Used per
+
+N
+
+N
+
+Day during Menstruation
+
+NUMBER
+
+Onset of Sexual Intercourse (Age of
+
+N
+
+N
+
+First Sexual Intercourse)
+
+VARCHAR2 21
+
+Birth Control Method Used
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 1
+
+Is Menopause?
+
+N
+
+N
+
+BYTE
+
+NUMBER
+
+If Menopause, Age of Menopause
+
+N
+
+N
+
+VARCHAR2 VARCHAR2
+
+1 BYTE 1 BYTE
+
+If Patient Menstrual History Applicable Report Status of Generated XML Report
+
+Y
+
+Y
+
+Y
+
+Y
+
+VARCHAR2
+
+2000 BYTE
+
+Remarks of the Status Report
+
+N
+
+N
+
+lib_immchild lib_immyoungw lib_immpregw lib_immaelderly
+YYYY-MM-DD
+
+"U" ­ Unvalidated
+
+"Y "­ Yes; "N "­ No
+"Y "­ Yes; "N "­ No "V" ­ Validated "U" ­ Unvalidated "F" ­ Failed
+
+"U" ­ Unvalidated
+
+"V" ­ Validated "U" ­ Unvalidated "F" ­ Failed
+
+"U" ­ Unvalidated
+
+"Y "­ Yes; "N "­ No
+"Y "­ Yes; "N "­ No "V" ­ Validated "U" ­ Unvalidated "F" ­ Failed
+
+DATA DICTIONARY
+
+DATA GROUP
+
+PARAMETER NAME
+
+S
+
+TYPE
+
+I Z
+
+E
+
+DESCRIPTION
+
+ANNEX A
+
+REQUIRED (Yes/No)
+12
+
+CONSTRAINT
+
+DATABASE
+SCHEMA
+KONSULTA
+
+DOCUMENTOR
+ISMD ­ ITMD
+OFFICE
+ISMD ­ ITMD
+
+REVISION NUMBER
+14
+DATE CREATED
+12/15/2019
+
+DATE OF REVISION
+08/17/2022
+PAGE
+Page 6 of 26
+
+TABLE REFERENCE
+
+FORMAT
+
+STANDARD DEFAULT
+
+VALID VALUES
+
+PREGHIST (Patient Pregnancy History ­ For Female Patient Only)
+
+pPregCnt
+pDeliveryCnt pDeliveryTyp
+
+NUMBER NUMBER
+
+Number of Pregnancy to Date ­
+
+N
+
+N
+
+Gravity
+
+Chief
+
+Number of Delivery to Date ­Parity
+
+N
+
+N
+
+VARCHAR2
+
+1 BYTE
+
+Type of Delivery
+
+N
+
+N
+
+pFullTermCnt pPrematureCnt pAbortionCnt pLivChildrenCnt pWPregIndhyp
+pWFamPlan
+pIsApplicable
+pReportStatus
+
+PEPERT (Physical Examination Findings for BP Measurements, Heart and Respiratory Rate, Body Measurements and Vision)
+
+pDeficiencyRemarks pSystolic pDiastolic pHr pRr pTemp pHeight pWeight pBMI
+
+pZScore
+
+NUMBER
+
+Number of Full Term Pregnancy
+
+N
+
+N
+
+NUMBER
+
+Number of Premature Pregnancy
+
+N
+
+N
+
+NUMBER
+
+Number of Abortion
+
+N
+
+N
+
+NUMBER
+
+Number of Living Children
+
+N
+
+N
+
+VARCHAR2 1
+
+If Pregnancy ­ Induced Hypertension N
+
+N
+
+BYTE (Pre ­ Eclampsia)
+
+VARCHAR2 1
+
+If with access to Family Planning
+
+Y
+
+Y
+
+BYTE Counselling
+
+VARCHAR2 1
+
+If Pregnancy History Applicable
+
+Y
+
+Y
+
+BYTE
+
+VARCHAR2 1
+
+Report Status of Generated XML
+
+Y
+
+Y
+
+BYTE Report
+
+VARCHAR2 NUMBER NUMBER NUMBER
+
+2000 BYTE
+
+Remarks of the Status Report
+Systolic Blood Pressure of Adult Patient ­mmHG Diastolic Blood Pressure of Adult Patient Heart Rate of Patient per Minute
+
+N
+
+N
+
+Y
+
+Y
+
+Y
+
+Y
+
+Y
+
+Y
+
+NUMBER NUMBER
+
+Respiratory Rate of Patient per Minute Temperature in Celsius
+
+Y
+
+Y
+
+Y
+
+Y
+
+NUMBER
+
+Height of Patient in cm
+
+Y
+
+Y
+
+NUMBER
+
+Weight of Patient in kg
+
+Y
+
+Y
+
+NUMBER
+
+Body Mass Index
+
+Y
+
+Y
+
+Computation:
+
+weight (kg)/ height(m)*height(m)
+
+VARCHAR2 10
+
+Value is no longer required,
+
+N
+
+N
+
+BYTE parameters can be left empty. This
+
+will be computed thru back-end and
+
+the required fields to compute are
+
+"N" ­ Normal (NSD) "O" ­ Operative (CSD) "B" ­ Both Normal & Operative (NSD & CSD) "X" ­ Not Applicable
+
+"U" ­ Unvalidated
+
+"Y "­ Yes; "N "­ No/Nonr "Y "­ Yes; "N "­ No/None "Y "­ Yes; "N "­ No "V" ­ Validated "U" ­ Unvalidated "F" ­ Failed
+
+DATA DICTIONARY
+
+DATA GROUP
+
+PARAMETER NAME
+
+S
+
+TYPE
+
+I Z
+
+E
+
+DESCRIPTION
+
+ANNEX A
+
+REQUIRED (Yes/No)
+12
+
+CONSTRAINT
+
+DATABASE
+SCHEMA
+KONSULTA
+
+DOCUMENTOR
+ISMD ­ ITMD
+OFFICE
+ISMD ­ ITMD
+
+REVISION NUMBER
+14
+DATE CREATED
+12/15/2019
+
+DATE OF REVISION
+08/17/2022
+PAGE
+Page 7 of 26
+
+TABLE REFERENCE
+
+FORMAT
+
+STANDARD DEFAULT
+
+VALID VALUES
+
+pLeftVision pRightVision pLength
+
+pHeadCirc
+pSkinfoldThickness
+pWaist pHip pLimbs pMidUpperArmCirc
+
+pReportStatus
+
+pDeficiencyRemarks
+
+BLOODTYPE (Patient Blood type Details)
+
+pBloodType
+
+height\length, weight, age and sex of
+
+the patient, 60 months old and
+
+below.
+
+VARCHAR2 12
+
+Left Eye Visual Acuity (Vision) of
+
+N
+
+N
+
+BYTE Patient
+
+VARCHAR2 12
+
+Right Eye Visual Acuity (Vision) of
+
+N
+
+N
+
+BYTE Patient
+
+NUMBER
+
+Length of Patient in cm - for Pediatric N
+
+N
+
+Patient only age 0-24 Months
+
+NUMBER
+NUMBER
+NUMBER NUMBER NUMBER NUMBER
+
+Note: Required for Pediatric Patient
+
+only age 0-24 Months
+
+Head Circumference of Patient in cm N
+
+N
+
+- for Pediatric Patient only age 0-24
+
+Months
+
+Skinfold Thickness of Patient in cm - N
+
+N
+
+for Pediatric Patient only age 0-24
+
+Months
+
+Waist of Patient in cm - for Pediatric N
+
+N
+
+Patient only age 0-24 Months
+
+Hip of Patient in cm - for Pediatric
+
+N
+
+N
+
+Patient only age 0-24 Months
+
+Limbs of Patient in cm - for Pediatric N
+
+N
+
+Patient only age 0-24 Months
+
+Middle and Upper Arm
+
+N
+
+N
+
+Circumference
+
+Note: Required for Pediatric Patient
+
+only age 0-24 Months
+
+VARCHAR2 1
+
+Report Status of Generated XML
+
+Y
+
+Y
+
+BYTE Report
+
+VARCHAR2 VARCHAR2
+
+2000 BYTE 3 BYTE
+
+Remarks of the Status Report Patient Blood Type
+
+N
+
+N
+
+N
+
+N
+
+pReportStatus pDeficiencyRemarks
+
+VARCHAR2 VARCHAR2
+
+1 BYTE
+2000 BYTE
+
+Report Status of Generated XML Report
+Remarks of the Status Report
+
+Y
+
+Y
+
+N
+
+N
+
+"U" ­ Unvalidated
+
+"V" ­ Validated "U" ­ Unvalidated "F" ­ Failed
+
+"U" ­ Unvalidated
+
+A+; B+; AB+; O+; A-; B-; AB-; O-;
+"V" ­ Validated "U" ­ Unvalidated "F" ­ Failed
+
+DATA DICTIONARY
+
+DATA GROUP
+
+PARAMETER NAME
+
+S
+
+TYPE
+
+I Z
+
+E
+
+DESCRIPTION
+
+ANNEX A
+
+REQUIRED (Yes/No)
+12
+
+CONSTRAINT
+
+DATABASE
+SCHEMA
+KONSULTA
+
+DOCUMENTOR
+ISMD ­ ITMD
+OFFICE
+ISMD ­ ITMD
+
+REVISION NUMBER
+14
+DATE CREATED
+12/15/2019
+
+DATE OF REVISION
+08/17/2022
+PAGE
+Page 8 of 26
+
+TABLE REFERENCE
+
+FORMAT
+
+STANDARD DEFAULT
+
+VALID VALUES
+
+PEGENSURVEY (Physical Examination General Survey)
+
+pGenSurveyId pGenSurveyRem pReportStatus
+
+PEMISC (Physical Examination Findings for Skin, HEENT, Chest, Heart, Abdomen, Neuro, Rectal and Genitourinary)
+
+pDeficiencyRemarks pSkinId pHeentId
+pChestId pHeartId pAbdomenId pNeuroId pRectalId pGuId pReportStatus
+
+PESPECIFIC (Remarks in Patient Physical Examination Findings for Skin, HEENT, Chest, Heart, Abdomen, Neuro, Rectal and Genitourinary)
+
+pDeficiencyRemarks pSkinRem pHeentRem pChestRem pHeartRem pAbdomenRem pNeuroRem pRectalRem pGuRem
+
+VARCHAR2 VARCHAR2 VARCHAR2
+
+1 BYTE 2000 BYTE 1 BYTE
+
+General Survey
+Remarks for GenSurvey, if pGenSurveyId ==2 Report Status of Generated XML Report
+
+N
+
+N
+
+N
+
+N
+
+Y
+
+Y
+
+VARCHAR2 VARCHAR2 VARCHAR2
+
+2000 BYTE 3 BYTE 3 BYTE
+
+Remarks of the Status Report
+Skin / Extremities Description ID
+HEENT (Head, Eyes, Ears, Nose, Throat) Description ID
+
+N
+
+N
+
+N
+
+N
+
+N
+
+N
+
+VARCHAR2 VARCHAR2 VARCHAR2 VARCHAR2 VARCHAR2 VARCHAR2 VARCHAR2
+
+3 BYTE 3 BYTE 3 BYTE 3 BYTE 3 BYTE 3 BYTE 1 BYTE
+
+Chest Description ID Heart Description ID Abdomen Description ID Neurological Description ID Digital Rectal Description ID Genitourinary Description ID Report Status of Generated XML Report
+
+N
+
+N
+
+N
+
+N
+
+N
+
+N
+
+N
+
+N
+
+N
+
+N
+
+N
+
+N
+
+Y
+
+Y
+
+VARCHAR2 2000 Remarks of the Status Report
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 2000 Additional Findings in Skin
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 2000 Additional Findings in HEENT
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 2000 Additional Findings in Chest/Lungs
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 2000 Additional Findings in Heart
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 2000 Additional Findings in Abdomen
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 2000 Additional Findings in Neurological
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 2000 Additional Findings in Digital Rectal
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 2000 Additional Findings in Genitourinary N
+
+N
+
+BYTE
+
+lib_skin_extremitie s lib_heent
+lib_chest lib_heart lib_abdomen lib_neuro lib_digital_rectal lib_genitourinary
+
+1 ­ Awake and Alert; 2 ­ Altered Sensorium
+
+"U" ­ Unvalidated
+
+"V" ­ Validated "U" ­ Unvalidated "F" ­ Failed
+
+"U" ­ Unvalidated
+
+"V" ­ Validated "U" ­ Unvalidated "F" ­ Failed
+
+DATA DICTIONARY
+
+DATA GROUP
+
+PARAMETER NAME
+
+S
+
+TYPE
+
+I Z
+
+E
+
+DESCRIPTION
+
+ANNEX A
+
+REQUIRED (Yes/No)
+12
+
+CONSTRAINT
+
+DATABASE
+SCHEMA
+KONSULTA
+
+DOCUMENTOR
+ISMD ­ ITMD
+OFFICE
+ISMD ­ ITMD
+
+REVISION NUMBER
+14
+DATE CREATED
+12/15/2019
+
+DATE OF REVISION
+08/17/2022
+PAGE
+Page 9 of 26
+
+TABLE REFERENCE
+
+FORMAT
+
+STANDARD DEFAULT
+
+VALID VALUES
+
+pReportStatus
+
+NCDQANS (Patient Answer to NCD Questionnaires ­ For Patient Aged 25 Years Old)
+
+pDeficiencyRemarks pQid1_Yn pQid2_Yn pQid3_Yn pQid4_Yn pQid5_Ynx
+
+pQid6_Yn pQid7_Yn pQid8_Yn pQid9_Yn pQid10_Yn pQid11_Yn pQid12_Yn pQid13_Yn pQid14_Yn pQid15_Yn pQid16_Yn pQid17_Abcde
+
+VARCHAR2
+VARCHAR2 VARCHAR2 VARCHAR2 VARCHAR2 VARCHAR2 VARCHAR2
+VARCHAR2 VARCHAR2 VARCHAR2 VARCHAR2 VARCHAR2 VARCHAR2 VARCHAR2 VARCHAR2 VARCHAR2 VARCHAR2 VARCHAR2 VARCHAR2
+
+1 BYTE
+2000 BYTE 1 BYTE 1 BYTE 1 BYTE 1 BYTE 1 BYTE
+1 BYTE 1 BYTE 1 BYTE 1 BYTE 1 BYTE 1 BYTE 1 BYTE 1 BYTE 1 BYTE 1 BYTE 1 BYTE 1 BYTE
+
+Report Status of Generated XML Report Remarks of the Status Report Answer for QID1 Answer for QID2 Answer for QID3 Answer for QID4 Answer for QID21
+Answer for QID6 Answer for QID7 Answer for QID8 Answer for QID9 Answer for QID10 Answer for QID11 Answer for QID12 Answer for QID13 Answer for QID14 Answer for QID15 Answer for QID16 Answer for QID17: Risk Level Percentage
+
+Y
+
+Y
+
+N
+
+N
+
+N
+
+N
+
+N
+
+N
+
+N
+
+N
+
+N
+
+N
+
+N
+
+N
+
+N
+
+N
+
+N
+
+N
+
+N
+
+N
+
+N
+
+N
+
+N
+
+N
+
+N
+
+N
+
+N
+
+N
+
+N
+
+N
+
+N
+
+N
+
+N
+
+N
+
+N
+
+N
+
+N
+
+N
+
+pQid18_Yn pQid19_Yn
+
+VARCHAR2 1
+
+Answer for QID18: (With / Without
+
+N
+
+N
+
+BYTE Medication for Diabetes)
+
+VARCHAR2 1
+
+Answer for QID19
+
+N
+
+N
+
+BYTE
+
+lib_ncdq lib_ncdq lib_ncdq lib_ncdq lib_ncdq
+lib_ncdq lib_ncdq lib_ncdq lib_ncdq lib_ncdq lib_ncdq lib_ncdq lib_ncdq lib_ncdq lib_ncdq lib_ncdq lib_ncdq
+lib_ncdq lib_ncdq
+
+"U" ­ Unvalidated
+
+"V" ­ Validated "U" ­ Unvalidated "F" ­ Failed
+
+"Y "­ Yes; "N "­ No "Y "­ Yes; "N "­ No "Y "­ Yes; "N "­ No "Y "­ Yes; "N "­ No "Y "­ Yes; "N "­ No "X" ­ Don't Know "Y "­ Yes; "N "­ No "Y "­ Yes; "N "­ No "Y "­ Yes; "N "­ No "Y "­ Yes; "N "­ No "Y "­ Yes; "N "­ No "Y "­ Yes; "N "­ No "Y "­ Yes; "N "­ No "Y "­ Yes; "N "­ No "Y "­ Yes; "N "­ No "Y "­ Yes; "N "­ No "Y "­ Yes; "N "­ No A - <10% ; B: 10% to 20%; C: 20% to 30%; D : 30% to 40%; E: =>40% "Y "­ Yes; "N "­ No "Y "­ Yes; "N "­ No
+
+DATA DICTIONARY
+
+DATA GROUP
+
+PARAMETER NAME
+
+S
+
+TYPE
+
+I Z
+
+E
+
+DESCRIPTION
+
+ANNEX A
+
+REQUIRED (Yes/No)
+12
+
+CONSTRAINT
+
+DATABASE
+SCHEMA
+KONSULTA
+
+DOCUMENTOR
+ISMD ­ ITMD
+OFFICE
+ISMD ­ ITMD
+
+REVISION NUMBER
+14
+DATE CREATED
+12/15/2019
+
+DATE OF REVISION
+08/17/2022
+PAGE
+Page 10 of 26
+
+TABLE REFERENCE
+
+FORMAT
+
+STANDARD DEFAULT
+
+VALID VALUES
+
+SOAP (Consultation)
+
+pQid19_Fbsmg pQid19_Fbsmmol pQid19_Fbsdate pQid20_Yn pQid20_Choleval pQid20_Choledate pQid21_Yn pQid21_Ketonval pQid21_Ketondate pQid22_Yn pQid22_Proteinval pQid22_Proteindate pQid23_Yn pQid24_Yn pReportStatus
+pDeficiencyRemarks pHciTransNo
+pHciCaseNo pSoapDate pPatientPin pPatientType pMemPin
+
+VARCHAR2 50
+
+Answer for QID19: FBS/RBS in mg/dL N
+
+N
+
+BYTE
+
+VARCHAR2 50
+
+Answer for QID19: FBS/RBS in
+
+N
+
+N
+
+BYTE mmol/L
+
+DATE
+
+Answer for QIDI19: Date when is the N
+
+N
+
+FBS/RBS value was taken
+
+VARCHAR2 1
+
+Answer for QID20
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 3
+
+Answer for QID20: Total Cholesterol N
+
+N
+
+BYTE value in mg/dL
+
+DATE
+
+Answer for QID20: Date when is the N
+
+N
+
+FBS/RBS Value was taken
+
+VARCHAR2 1
+
+Answer for QID21
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 3
+
+Answer for QID21: Urine Ketones
+
+N
+
+N
+
+BYTE Value
+
+DATE
+
+Answer for QID21: Date when is the N
+
+N
+
+Urine Ketones Value was taken
+
+VARCHAR2 1
+
+Answer for QID22
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 3
+
+Answer for QID22: Urine Protein
+
+N
+
+N
+
+BYTE Value in mg/dL
+
+DATE
+
+Answer for QID22: Date when the
+
+N
+
+N
+
+Urine Protein Value was taken
+
+VARCHAR2 1
+
+Answer for QID23
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 1
+
+Answer for QID24
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 1
+
+Report Status of Generated XML
+
+Y
+
+Y
+
+BYTE Report
+
+VARCHAR2 VARCHAR2
+
+2000 BYTE 21 BYTE
+
+Remarks of the Status Report
+SOAP / Consultation Reference Number
+
+N
+
+N
+
+N
+
+Y
+
+PK
+
+VARCHAR2 DATE
+
+21 BYTE
+
+Patient Transaction Reference Number SOAP Date
+
+N
+
+Y
+
+FK
+
+N
+
+Y
+
+VARCHAR2 12
+
+Philhealth Identification Number of
+
+N
+
+Y
+
+BYTE Patient
+
+VARCHAR2 2
+
+Patient Type
+
+N
+
+Y
+
+BYTE
+
+VARCHAR2 12
+
+Philhealth Identification Card of
+
+N
+
+Y
+
+BYTE Primary Member
+
+lib_ncdq lib_ncdq lib_ncdq lib_ncdq lib_ncdq lib_ncdq lib_ncdq lib_ncdq lib_ncdq lib_ncdq lib_ncdq lib_ncdq lib_ncdq lib_ncdq
+
+YYYY-MM-DD YYYY-MM-DD YYYY-MM-DD YYYY-MM-DD
+
+ENLISTMENT TABLE
+
+S+ACCRE_NO+YYY Y+MM+5 digits series number = S+XXXXXXXXX+YY YY+MM+99999
+YYYY-MM-DD
+
+"Y "­ Yes; "N "­ No
+
+"Y "­ Yes; "N "­ No
+
+"Y "­ Yes; "N "­ No
+
+"U" ­ Unvalidated
+
+"Y "­ Yes; "N "­ No
+"Y "­ Yes; "N "­ No "V" ­ Validated "U" ­ Unvalidated "F" ­ Failed
+
+"MM" ­ Member; "DD" ­ Dependent
+
+DATA DICTIONARY
+
+DATA GROUP
+
+PARAMETER NAME
+
+S
+
+TYPE
+
+I Z
+
+E
+
+DESCRIPTION
+
+ANNEX A
+
+REQUIRED (Yes/No)
+12
+
+CONSTRAINT
+
+DATABASE
+SCHEMA
+KONSULTA
+
+DOCUMENTOR
+ISMD ­ ITMD
+OFFICE
+ISMD ­ ITMD
+
+REVISION NUMBER
+14
+DATE CREATED
+12/15/2019
+
+DATE OF REVISION
+08/17/2022
+PAGE
+Page 11 of 26
+
+TABLE REFERENCE
+
+FORMAT
+
+STANDARD DEFAULT
+
+VALID VALUES
+
+pEffYear pATC
+
+pIsWalkedIn
+pCoPay
+pTransDate pReportStatus
+
+SUBJECTIVE (Record of Patient Chief Complaint and History of Illness)
+
+pDeficiencyRemarks pIllnessHistory pSignsSymptoms
+pOtherComplaint
+
+pPainSite
+
+pReportStatus
+
+PEPERT (Physical Examination Findings for BP Measurements, Heart and Respiratory Rate, Body
+
+pDeficiencyRemarks pSystolic pDiastolic pHr pRr pTemp
+
+VARCHAR2 VARCHAR2
+VARCHAR2 VARCHAR2 DATE VARCHAR2
+VARCHAR2 VARCHAR2 VARCHAR2
+
+4 BYTE 10 BYTE
+1 BYTE 15 BYTE
+1 BYTE
+2000 BYTE 2000 BYTE 2000 BYTE
+
+Effectivity Year
+Authorization Transaction Code
+Note: Use `WALKEDIN' as value if pWalkedIn is `Y' Is Patient Walked In
+Patient Co-Payment Amount
+Date when the record inserted Report Status of Generated XML Report
+Remarks of the Status Report
+History of Patient Illnesses
+Pertinent Signs and Symptoms on Admission ID
+
+N
+
+Y
+
+N
+
+Y
+
+N
+
+Y
+
+N
+
+Y
+
+N
+
+Y
+
+Y
+
+Y
+
+N
+
+N
+
+N
+
+Y
+
+N
+
+Y
+
+VARCHAR2 VARCHAR2
+
+2000 BYTE
+500 BYTE
+
+Other Complaint
+Note: Required if `X' is included in pSignsSymptoms Site of Pain if Pain Element in Pertinent Signs and Symptoms on Admission is checked
+
+N
+
+N
+
+N
+
+N
+
+Note: Required if `38' is included in
+
+pSignsSymptoms
+
+VARCHAR2 1
+
+Report Status of Generated XML
+
+Y
+
+Y
+
+BYTE Report
+
+VARCHAR2 NUMBER NUMBER NUMBER
+
+2000 BYTE
+
+Remarks of the Status Report
+Systolic Blood Pressure of Adult Patient ­mmHG Diastolic Blood Pressure of Adult Patient Heart Rate of Patient per Minute
+
+N
+
+N
+
+N
+
+Y
+
+N
+
+Y
+
+N
+
+Y
+
+NUMBER NUMBER
+
+Respiratory Rate of Patient per Minute Temperature in Celsius
+
+N
+
+Y
+
+N
+
+Y
+
+YYYY-MM-DD
+
+lib_signssymptoms
+
+For multiple entries: use semicolon ";" as delimiter
+
+"Y" ­ Yes; "N" - No
+
+"U" ­ Unvalidated
+
+"V" ­ Validated "U" ­ Unvalidated "F" ­ Failed
+
+"U" ­ Unvalidated
+
+"V" ­ Validated "U" ­ Unvalidated "F" ­ Failed
+
+DATA DICTIONARY
+
+DATA GROUP
+
+PARAMETER NAME
+
+S
+
+TYPE
+
+I Z
+
+E
+
+DESCRIPTION
+
+ANNEX A
+
+REQUIRED (Yes/No)
+12
+
+CONSTRAINT
+
+DATABASE
+SCHEMA
+KONSULTA
+
+DOCUMENTOR
+ISMD ­ ITMD
+OFFICE
+ISMD ­ ITMD
+
+REVISION NUMBER
+14
+DATE CREATED
+12/15/2019
+
+DATE OF REVISION
+08/17/2022
+PAGE
+Page 12 of 26
+
+TABLE REFERENCE
+
+FORMAT
+
+STANDARD DEFAULT
+
+VALID VALUES
+
+Measurements and Vision)
+
+pHeight pWeight pBMI
+pZScore
+
+pLeftVision pRightVision pLength
+
+pHeadCirc pSkinfoldThickness pWaist pHip pLimbs pMidUpperArmCirc
+
+NUMBER
+
+Height of Patient in cm
+
+N
+
+Y
+
+NUMBER
+
+Weight of Patient in kg
+
+N
+
+Y
+
+NUMBER
+
+Body Mass Index
+
+N
+
+Y
+
+Computation:
+
+weight (kg)/ height(m)*height(m)
+
+VARCHAR2 10
+
+Value is no longer required,
+
+N
+
+N
+
+BYTE parameters can be left empty. This
+
+will be computed thru back-end and
+
+the required fields to compute are
+
+height\length, weight, age and sex of
+
+the patient, 60 months old and
+
+below.
+
+VARCHAR2 12
+
+Left Eye Visual Acuity (Vision) of
+
+N
+
+N
+
+BYTE Patient
+
+VARCHAR2 12
+
+Right Eye Visual Acuity (Vision) of
+
+N
+
+N
+
+BYTE Patient
+
+NUMBER
+
+Length or Height of Patient in cm -
+
+N
+
+N
+
+for Pediatric Patient only age 0-24
+
+Months
+
+Note: Required for Pediatric Patient only age 0-24 Months
+
+NUMBER NUMBER NUMBER
+
+Head Circumference of Patient in cm N
+
+N
+
+- for Pediatric Patient only age 0-24
+
+Months
+
+Skinfold Thickness of Patient in cm - N
+
+N
+
+for Pediatric Patient only age 0-24
+
+Months
+
+Waist of Patient in cm - for Pediatric N
+
+N
+
+Patient only age 0-24 Months
+
+NUMBER
+
+Hip of Patient in cm - for Pediatric Patient only age 0-24 Months
+
+N
+
+N
+
+NUMBER
+
+Limbs of Patient in cm - for Pediatric N
+
+N
+
+Patient only age 0-24 Months
+
+NUMBER
+
+Middle and Upper Arm Circumference
+
+N
+
+N
+
+Note: Required for Pediatric Patient only age 0-24 Months
+
+DATA DICTIONARY
+
+DATA GROUP
+
+PARAMETER NAME
+
+S
+
+TYPE
+
+I Z
+
+E
+
+DESCRIPTION
+
+ANNEX A
+
+REQUIRED (Yes/No)
+12
+
+CONSTRAINT
+
+DATABASE
+SCHEMA
+KONSULTA
+
+DOCUMENTOR
+ISMD ­ ITMD
+OFFICE
+ISMD ­ ITMD
+
+REVISION NUMBER
+14
+DATE CREATED
+12/15/2019
+
+DATE OF REVISION
+08/17/2022
+PAGE
+Page 13 of 26
+
+TABLE REFERENCE
+
+FORMAT
+
+STANDARD DEFAULT
+
+VALID VALUES
+
+pReportStatus
+
+PEMISC (Physical Examination Findings for Skin, HEENT, Chest, Heart, Abdomen, Neuro, Rectal and Genitourinary)
+
+pDeficiencyRemarks pSkinId pHeentId pChestId pHeartId pAbdomenId pNeuroId pRectalId pGuId pReportStatus
+
+PESPECIFIC (Remarks in Patient Physical Examination Findings for Skin, HEENT, Chest, Heart, Abdomen, Neuro, Rectal and Genitourinary)
+
+pDeficiencyRemarks pSkinRem pHeentRem pChestRem pHeartRem pAbdomenRem pNeuroRem pRectalRem pGuRem
+
+pReportStatus
+
+pDeficiencyRemarks
+
+VARCHAR2
+
+1 BYTE
+
+Report Status of Generated XML Report
+
+Y
+
+Y
+
+VARCHAR2 VARCHAR2 VARCHAR2 VARCHAR2 VARCHAR2 VARCHAR2 VARCHAR2 VARCHAR2 VARCHAR2 VARCHAR2
+
+2000 BYTE 3 BYTE 3 BYTE 3 BYTE 3 BYTE 3 BYTE 3 BYTE 3 BYTE 3 BYTE 1 BYTE
+
+Remarks of the Status Report
+Skin / Extremities Description ID
+HEENT (Head, Eyes, Ears, Nose, Throat) Description ID Chest Description ID
+Heart Description ID
+Abdomen Description ID
+Neurological Description ID
+Digital Rectal Description ID
+Genitourinary Description ID
+Report Status of Generated XML Report
+
+N
+
+N
+
+N
+
+Y
+
+N
+
+Y
+
+N
+
+Y
+
+N
+
+Y
+
+N
+
+Y
+
+N
+
+Y
+
+N
+
+Y
+
+N
+
+Y
+
+Y
+
+Y
+
+VARCHAR2 2000 Remarks of the Status Report
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 2000 Additional Findings in Skin
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 2000 Additional Findings in HEENT
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 2000 Additional Findings in Chest/Lungs
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 2000 Additional Findings in Heart
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 2000 Additional Findings in Abdomen
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 2000 Additional Findings in Extremities
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 2000 Location of Palpable Mass ­If
+
+N
+
+N
+
+BYTE Palpable Mass is Selected in HEENT
+
+VARCHAR2 2000 Description of Deformity and
+
+N
+
+N
+
+BYTE Laterality ­If Present / Absent is
+
+selected under Extremities
+
+VARCHAR2 1
+
+Report Status of Generated XML
+
+Y
+
+Y
+
+BYTE Report
+
+VARCHAR2
+
+2000 BYTE
+
+Remarks of the Status Report
+
+N
+
+N
+
+lib_skin_extremitie s lib_heent
+lib_chest
+lib_heart
+lib_abdomen
+lib_neuro
+lib_digital_rectal
+lib_genitourinary
+
+"U" ­ Unvalidated
+
+"V" ­ Validated "U" ­ Unvalidated "F" ­ Failed
+
+"U" ­ Unvalidated
+
+"V" ­ Validated "U" ­ Unvalidated "F" ­ Failed
+
+"U" ­ Unvalidated
+
+"V" ­ Validated "U" ­ Unvalidated "F" ­ Failed
+
+DATA DICTIONARY
+
+DATA GROUP
+
+PARAMETER NAME
+
+S
+
+TYPE
+
+I Z
+
+E
+
+DESCRIPTION
+
+ANNEX A
+
+REQUIRED (Yes/No)
+12
+
+CONSTRAINT
+
+DATABASE
+SCHEMA
+KONSULTA
+
+DOCUMENTOR
+ISMD ­ ITMD
+OFFICE
+ISMD ­ ITMD
+
+REVISION NUMBER
+14
+DATE CREATED
+12/15/2019
+
+DATE OF REVISION
+08/17/2022
+PAGE
+Page 14 of 26
+
+TABLE REFERENCE
+
+FORMAT
+
+STANDARD DEFAULT
+
+VALID VALUES
+
+ICD (List of ICD-10 Codes For Patient Diagnosis)
+
+pIcdCode pReportStatus
+
+VARCHAR2 VARCHAR2
+
+10 BYTE 1 BYTE
+
+ICD 10 Codes for Patient Diagnosis
+Report Status of Generated XML Report
+
+N
+
+Y
+
+Y
+
+Y
+
+pDeficiencyRemarks
+
+VARCHAR2
+
+2000 BYTE
+
+Remarks of the Status Report
+
+N
+
+N
+
+DIAGNOSTIC
+
+pDiagnosticId
+
+VARCHAR2 3
+
+Code for Diagnostic
+
+N
+
+Y
+
+(Prescribed
+
+BYTE
+
+Laboratory to the pOthRemarks
+
+VARCHAR2 500 Other Diagnostic Exam not included N
+
+N
+
+BYTE in Essential Services
+
+Patient)
+
+pIsPhysicianRecommend VARCHAR2 1
+
+Is diagnostic exam recommended by N
+
+Y
+
+ation
+
+BYTE Physician?
+
+pPatientRemarks
+
+VARCHAR2 2
+
+Patient Remarks per diagnostic exam N
+
+Y
+
+BYTE
+
+pReportStatus
+
+VARCHAR2
+
+1 BYTE
+
+Report Status of Generated XML Report
+
+Y
+
+Y
+
+MANAGEMENT (Patient Plan/Management Record)
+
+pDeficiencyRemarks pManagementId pOthRemarks pReportStatus
+
+VARCHAR2 2000 Remarks of the Status Report
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 1
+
+Code for Plan / Management done in N
+
+Y
+
+BYTE the Patient
+
+500 Other Remarks
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 1
+
+Report Status of Generated XML
+
+Y
+
+Y
+
+BYTE Report
+
+ADVICE (Doctor's Advice to Patient)
+
+pDeficiencyRemarks pRemarks
+
+VARCHAR2 2000 Remarks of the Status Report
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 2000 Remarks or additional instruction on N
+
+Y
+
+BYTE Drug/Medicine for Patient
+
+pReportStatus
+
+MEDICINE (List of Prescribed Drugs to the Patient)
+
+pDeficiencyRemarks pHciCaseNo pHciTransNo
+
+VARCHAR2
+VARCHAR2 VARCHAR2 VARCHAR2
+
+1 BYTE
+2000 BYTE 21 BYTE 21 BYTE
+
+Report Status of Generated XML Report
+Remarks of the Status Report
+Patient Transaction Reference Number SOAP Reference Number
+
+Y
+
+Y
+
+N
+
+N
+
+N
+
+Y
+
+FK
+
+N
+
+Y
+
+FK
+
+lib_icd lib_diagnostic
+lib_management
+Enlistment Table SOAP Table
+
+"U" ­ Unvalidated
+
+"V" ­ Validated "U" ­ Unvalidated "F" ­ Failed
+
+"0" ­ Not Applicable
+
+"U" ­ Unvalidated
+
+"Y" ­ Yes "N" ­ No "X" ­ None/ Not Applicable "RQ" ­ Request "RF" - Refuse "XX" ­ None / Not Applicable
+"V" ­ Validated "U" ­ Unvalidated "F" ­ Failed
+
+"0" ­ Not Applicable
+
+"U" ­ Unvalidated
+
+"V" ­ Validated "U" ­ Unvalidated "F" ­ Failed
+
+If no prescribed medicine then default value "NOT APPLICABLE "
+"U" ­ Unvalidated
+
+"V" ­ Validated "U" ­ Unvalidated "F" ­ Failed
+
+DATA DICTIONARY
+
+DATA GROUP
+
+PARAMETER NAME
+
+S
+
+TYPE
+
+I Z
+
+E
+
+DESCRIPTION
+
+ANNEX A
+
+REQUIRED (Yes/No)
+12
+
+CONSTRAINT
+
+DATABASE
+SCHEMA
+KONSULTA
+
+DOCUMENTOR
+ISMD ­ ITMD
+OFFICE
+ISMD ­ ITMD
+
+REVISION NUMBER
+14
+DATE CREATED
+12/15/2019
+
+DATE OF REVISION
+08/17/2022
+PAGE
+Page 15 of 26
+
+TABLE REFERENCE
+
+FORMAT
+
+STANDARD DEFAULT
+
+VALID VALUES
+
+pCategory
+
+VARCHAR2
+
+50 BYTE
+
+Drug/ Medicine Category
+
+N
+
+N
+
+pDrugCode
+
+VARCHAR2
+
+30 BYTE
+
+Complete Drug Code
+
+N
+
+N
+
+Note: Use
+
+`NOMED00000000000000000000000
+
+00' if no medicine record
+
+pGenericCode
+
+VARCHAR2
+
+5 BYTE
+
+Generic Code of Medicine
+
+N
+
+N
+
+Note: Use `NOMED' if no medicine
+
+record
+
+pSaltCode
+
+VARCHAR2
+
+5 BYTE
+
+Salt Code of Medicine
+
+N
+
+N
+
+Note: Use `00000' if no medicine
+
+record
+
+pStrengthCode
+
+VARCHAR2 5
+
+Strength / Dosage Code of Medicine N
+
+N
+
+BYTE
+
+Note: Use `00000' if no medicine
+
+record
+
+pFormCode
+
+VARCHAR2
+
+5 BYTE
+
+Form Code of Medicine
+
+N
+
+N
+
+Note: Use `00000' if no medicine
+
+record
+
+pUnitCode
+
+VARCHAR2
+
+5 BYTE
+
+Unit Code of Medicine
+
+N
+
+N
+
+Note: Use `00000' if no medicine
+
+record
+
+pPackageCode
+
+VARCHAR2
+
+5 BYTE
+
+Package Code of Medicine
+
+N
+
+N
+
+Note : Use `00000' if no medicine
+
+record
+
+pOtherMedicine
+
+VARCHAR2 500 Complete Drug Description, if
+
+N
+
+N
+
+BYTE Medicine is not listed on the library
+
+pOthMedDrugGrouping
+
+VARCHAR2
+
+50 BYTE
+
+Drug Grouping for other medicine not listed in the library
+
+N
+
+N
+
+pRoute
+pQuantity pActualUnitPrice pTotalAmtPrice pInstructionQuantity
+
+Note: Required if pOtherMedicine is
+
+with value and pIsApplicable is "Y"
+
+VARCHAR2 500 Medicine Route
+
+N
+
+N
+
+BYTE
+
+NUMBER
+
+Number of Medicines Prescribed
+
+N
+
+N
+
+NUMBER
+
+Drug Actual Price Look
+
+N
+
+N
+
+NUMBER
+
+Total Amount Price of Medicine
+
+N
+
+N
+
+Issued (Quantity * Unit Price)
+
+VARCHAR2 50
+
+Number of Medicines per Instruction N
+
+N
+
+lib_medicine lib_medicine
+lib_medicine_gene ric lib_medicine_salt
+lib_medicine_stren gth lib_medicine_form
+lib_medicine_unit
+lib_medicine_pack age
+
+"NCD"; "ANTIBIOTIC"; "OTHERS"
+0 0.00 0.00
+
+DATA DICTIONARY
+
+DATA GROUP
+
+PARAMETER NAME
+
+S
+
+TYPE
+
+I Z
+
+E
+
+DESCRIPTION
+
+ANNEX A
+
+REQUIRED (Yes/No)
+12
+
+CONSTRAINT
+
+DATABASE
+SCHEMA
+KONSULTA
+
+DOCUMENTOR
+ISMD ­ ITMD
+OFFICE
+ISMD ­ ITMD
+
+REVISION NUMBER
+14
+DATE CREATED
+12/15/2019
+
+DATE OF REVISION
+08/17/2022
+PAGE
+Page 16 of 26
+
+TABLE REFERENCE
+
+FORMAT
+
+STANDARD DEFAULT
+
+VALID VALUES
+
+pInstructionStrength pInstructionFrequency pPrescribingPhysician pIsDispensed pDateDispensed pDispensingPersonnel pIsApplicable
+
+VARCHAR2 VARCHAR2 VARCHAR VARCHAR DATE VARCHAR VARCHAR
+
+50
+50
+200 BYTE 1 BYTE
+200 BYTE 1 BYTE
+
+Stock Dosage of Medicine per Instruction Frequency of Medicine per Instruction Prescribing Physician/Doctor
+If medicine dispensed
+Date the medicine dispensed Dispensing Personnel
+If applicable
+
+N
+
+N
+
+N
+
+N
+
+N
+
+N
+
+N
+
+Y
+
+N
+
+N
+
+N
+
+N
+
+N
+
+Y
+
+pDateAdded pReportStatus
+
+pDeficiencyRemarks
+
+DIAGNOSTICEXAM pHciCaseNo
+
+RESULT
+
+pHciTransNo
+
+pPatientPin
+
+CBC (Complete Blood Count)
+
+pPatientType pMemPin pEffYear pReferralFacility pLabDate pHematocrit pHemoglobinG pHemoglobinMmol pMhcPg
+
+DATE VARCHAR2
+
+1 BYTE
+
+Date the record was added
+Report Status of Generated XML Report
+
+N
+
+N
+
+Y
+
+Y
+
+VARCHAR2 2000 Remarks of the Status Report
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 21
+
+Patient Transaction Reference
+
+N
+
+Y
+
+FK
+
+BYTE Number
+
+VARCHAR2 21
+
+Profile/SOAP Reference Number
+
+N
+
+Y
+
+FK
+
+BYTE
+
+VARCHAR2 12
+
+Refer to Member's Pin if patient type N
+
+Y
+
+BYTE is MM; Refer to Dependent's Pin if
+
+type is DD
+
+VARCHAR2 2
+
+Patient Type
+
+N
+
+Y
+
+BYTE
+
+VARCHAR2 12
+
+Philhealth Identification Number
+
+N
+
+Y
+
+BYTE (PIN) of Primary Member
+
+VARCHAR2 4
+
+Effectivity Year of Enlistment
+
+N
+
+Y
+
+BYTE
+
+VARCHAR2 1000 Name of Referral Facility, if referred N
+
+N
+
+BYTE
+
+DATE
+
+Date of Laboratory for CBC
+
+N
+
+N
+
+VARCHAR2 VARCHAR2 VARCHAR2 VARCHAR2
+
+50 BYTE 50 BYTE 50 BYTE 50 BYTE
+
+Value for Hematocrit Value for Hemoglobin in g/dL Value for Hemoglobin in mmol/L Value for MHC in pg/cell
+
+N
+
+N
+
+N
+
+N
+
+N
+
+N
+
+N
+
+N
+
+YYYY-MM-DD YYYY-MM-DD Enlistment Table SOAP Table
+YYYY-MM-DD
+
+If no prescribed medicine then default value "N"
+"U" ­ Unvalidated
+
+"Y "­ Yes; "N "­ No
+"V" ­ Validated "U" ­ Unvalidated "F" ­ Failed
+
+"MM" ­ Member; "DD" ­ Dependent;
+
+DATA DICTIONARY
+
+DATA GROUP
+
+PARAMETER NAME
+
+S
+
+TYPE
+
+I Z
+
+E
+
+DESCRIPTION
+
+ANNEX A
+
+REQUIRED (Yes/No)
+12
+
+CONSTRAINT
+
+DATABASE
+SCHEMA
+KONSULTA
+
+DOCUMENTOR
+ISMD ­ ITMD
+OFFICE
+ISMD ­ ITMD
+
+REVISION NUMBER
+14
+DATE CREATED
+12/15/2019
+
+DATE OF REVISION
+08/17/2022
+PAGE
+Page 17 of 26
+
+TABLE REFERENCE
+
+FORMAT
+
+STANDARD DEFAULT
+
+VALID VALUES
+
+URINALYSIS
+
+pMhcFmol pMchcGhb pMchcMmol pMcvUm pMcvFl pWbc1000 pWbc10 pMyelocyte pNeutrophilsBnd pNeutrophilsSeg pLymphocytes pMonocytes pEosinophils pBasophils pPlatelet pDateAdded pStatus
+pDiagnosticLabFee pReportStatus
+pDeficiencyRemarks
+pReferralFacility pLabDate pGravity
+
+VARCHAR2 50
+
+Value for MHC in fmol/cell
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 50
+
+Value for MCHC in fmol/cell
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 50
+
+Value for MCHC in mmol/Hb/L
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 50
+
+Value for MCV in um^3
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 50
+
+Value for MCV In fL
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 50
+
+Value for WBC in X 1000
+
+N
+
+N
+
+BYTE cells/mm^3uL
+
+VARCHAR2 50
+
+Value for WBC in X 10^9 cells/L
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 50
+
+Percentage Value of Myelocyte in
+
+N
+
+N
+
+BYTE Leukocyte Differential
+
+VARCHAR2 50
+
+Percentage Value of Neutrophil
+
+N
+
+N
+
+BYTE Bands in Leukocyte Differential
+
+VARCHAR2 50
+
+Percentage Value of Neutrophil
+
+N
+
+N
+
+BYTE Segmenters in Leukocyte Differential
+
+VARCHAR2 50
+
+Percentage Value of Lymphocytes in N
+
+N
+
+BYTE Leukocyte Differential
+
+VARCHAR2 50
+
+Percentage Value of Monocytes in
+
+N
+
+N
+
+BYTE Leukocyte Differential
+
+VARCHAR2 50
+
+Percentage Value of Eosinophils in
+
+N
+
+N
+
+BYTE Leukocyte Differential
+
+VARCHAR2 50
+
+Percentage Value of Basophils in
+
+N
+
+N
+
+BYTE Leukocyte Differential
+
+VARCHAR2 50
+
+Percentage Value of Platelet in
+
+N
+
+N
+
+BYTE Leukocyte Differential
+
+DATE
+
+Date the Record was Added
+
+N
+
+N
+
+VARCHAR2 1
+
+Status of Laboratory/Imaging Results N
+
+N
+
+BYTE
+
+NUMBER VARCHAR2
+
+1 BYTE
+
+Diagnostic Lab Fee
+Report Status of Generated XML Report
+
+N
+
+N
+
+Y
+
+Y
+
+VARCHAR2 2000 Remarks of the Report Status
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 1000 Name of Referral Facility, if referred N
+
+N
+
+BYTE
+
+DATE
+
+Date of Laboratory for Urinalysis
+
+N
+
+N
+
+VARCHAR2
+
+50 BYTE
+
+Specific Gravity of Urine
+
+N
+
+N
+
+YYYY-MM-DD YYYY-MM-DD
+
+"U" ­ Unvalidated
+
+"D" ­ Done "N" ­ Not yet done "X" ­ Deferred "W" ­ Waived
+"V" ­ Validated "U" ­ Unvalidated "F" ­ Failed
+
+DATA DICTIONARY
+
+DATA GROUP
+
+PARAMETER NAME
+
+S
+
+TYPE
+
+I Z
+
+E
+
+DESCRIPTION
+
+ANNEX A
+
+REQUIRED (Yes/No)
+12
+
+CONSTRAINT
+
+DATABASE
+SCHEMA
+KONSULTA
+
+DOCUMENTOR
+ISMD ­ ITMD
+OFFICE
+ISMD ­ ITMD
+
+REVISION NUMBER
+14
+DATE CREATED
+12/15/2019
+
+DATE OF REVISION
+08/17/2022
+PAGE
+Page 18 of 26
+
+TABLE REFERENCE
+
+FORMAT
+
+STANDARD DEFAULT
+
+VALID VALUES
+
+pAppearance pColor pGlucose pProteins pKetones pPh pRbCells pWbCells pBacteria pCrystals pBladderCell pSquamousCell pTubularCell pBroadCasts pEpithelialCast pGranularCast pHyalineCast pRbcCast pWaxyCast pWcCast pAlbumin pPusCells pDateAdded pStatus
+
+VARCHAR2 50
+
+Appearance of Urine
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 50
+
+Color of Urine
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 50
+
+Count of Glucose in Urine
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 50
+
+Count of Proteins in Urine
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 50
+
+Count of Ketones in Urine
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 50
+
+Count of PH in Urine
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 50
+
+Count of Red Blood Cells in Urine
+
+N
+
+N
+
+BYTE (/hpf)
+
+VARCHAR2 50
+
+Count of White Blood Cells in Urine
+
+N
+
+N
+
+BYTE (/hpf)
+
+VARCHAR2 50
+
+Count of Bacteria in Urine (/hpf)
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 50
+
+Count of Crystals in Urine (/hpf)
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 50
+
+Count of Bladder Cells in Urine (/hpf) N
+
+N
+
+BYTE
+
+VARCHAR2 50
+
+Count of Squamous Cells in Urine
+
+N
+
+N
+
+BYTE (/hpf)
+
+VARCHAR2 50
+
+Count of Tubular Cells in Urine (/hpf) N
+
+N
+
+BYTE
+
+VARCHAR2 50
+
+Count of Broad Cast in Urine (/hpf)
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 50
+
+Count of Epithelial Cell Casts in Urine N
+
+N
+
+BYTE (/hpf)
+
+VARCHAR2 50
+
+Count of Granular Casts in Urine
+
+N
+
+N
+
+BYTE (/hpf)
+
+VARCHAR2 50
+
+Count of Hyaline Casts in Urine (/hpf) N
+
+N
+
+BYTE
+
+VARCHAR2 50
+
+Count of RBC Casts in Urine (/hpf)
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 50
+
+Count of Waxy Casts in Urine (/hpf)
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 50
+
+Count of WC Casts in Urine (/hpf)
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 50
+
+Count of Albumin in Urine (/mg/dl)
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 50
+
+Count of PUS Cell
+
+N
+
+N
+
+BYTE
+
+DATE
+
+Date the Record was Added
+
+N
+
+N
+
+VARCHAR2 1
+
+Status of Laboratory/Imaging Results N
+
+N
+
+BYTE
+
+YYYY-MM-DD
+
+"D" ­ Done "N" ­ Not yet done
+
+DATA DICTIONARY
+
+DATA GROUP
+
+PARAMETER NAME
+
+S
+
+TYPE
+
+I Z
+
+E
+
+DESCRIPTION
+
+ANNEX A
+
+REQUIRED (Yes/No)
+12
+
+CONSTRAINT
+
+DATABASE
+SCHEMA
+KONSULTA
+
+DOCUMENTOR
+ISMD ­ ITMD
+OFFICE
+ISMD ­ ITMD
+
+REVISION NUMBER
+14
+DATE CREATED
+12/15/2019
+
+DATE OF REVISION
+08/17/2022
+PAGE
+Page 19 of 26
+
+TABLE REFERENCE
+
+FORMAT
+
+STANDARD DEFAULT
+
+VALID VALUES
+
+CHESTXRAY
+
+pDiagnosticLabFee pReportStatus
+pDeficiencyRemarks pReferralFacility pLabDate pFindings pRemarksFindings
+
+pObservation
+pRemarksObservation pDateAdded pStatus
+
+pDiagnosticLabFee pReportStatus
+
+SPUTUM (Sputum Microscopy)
+
+pDeficiencyRemarks pReferralFacility pLabDate
+
+pDataCollection pFindings pRemarks pNoPlusses
+
+NUMBER VARCHAR2
+
+1 BYTE
+
+Diagnostic Lab Fee
+Report Status of Generated XML Report
+
+N
+
+N
+
+Y
+
+Y
+
+VARCHAR2 2000 Remarks of the Report Status
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 1000 Name of Referral Facility, if referred N
+
+N
+
+BYTE
+
+DATE
+
+Date of Laboratory for Chest X-Ray
+
+N
+
+N
+
+VARCHAR2 3
+
+Chest X-ray Findings ID
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 2000 Supplemental remarks on chest x-ray N
+
+N
+
+BYTE if with findings id == 99
+
+VARCHAR2 100 Observations based on chest x­ray
+
+N
+
+N
+
+BYTE result ID
+
+VARCHAR2 DATE
+
+2000 BYTE
+
+Supplemental remarks for x-ray if with observation id = 99 Date the Record was Added
+
+N
+
+N
+
+N
+
+N
+
+VARCHAR2 1
+
+Status of Laboratory/Imaging Results N
+
+N
+
+BYTE
+
+NUMBER VARCHAR2
+
+1 BYTE
+
+Diagnostic Lab Fee
+Report Status of Generated XML Report
+
+N
+
+N
+
+Y
+
+Y
+
+VARCHAR2 2000 Remarks of the Report Status
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 1000 Name of Referral Facility, if referred N
+
+N
+
+BYTE
+
+DATE
+
+Date of Laboratory for Sputum
+
+N
+
+N
+
+Microscopy
+
+VARCHAR
+
+1
+
+Sequence number of Sputum
+
+N
+
+N
+
+BYTE Microscopy Completed
+
+NUMBER VARCHAR2 VARCHAR2
+
+2000 BYTE 5 BYTE
+
+Findings/Result of Sputum Microscopy
+Number of Plusses(+)
+
+N
+
+N
+
+N
+
+N
+
+N
+
+N
+
+lib_chestxray_findi ngs
+
+YYYY-MM-DD
+
+lib_chestxray_obse rvation
+
+For multiple entry: Use semicolon ";" as delimiter
+
+YYYY-MM-DD
+
+YYYY-MM-DD
+
+"U" ­ Unvalidated
+
+"X" ­ Deferred "W" ­ Waived
+"V" ­ Validated "U" ­ Unvalidated "F" ­ Failed
+
+"U" ­ Unvalidated
+
+"D" ­ Done "N" ­ Not yet done "X" ­ Deferred "W" ­ Waived
+"V" ­ Validated "U" ­ Unvalidated "F" ­ Failed
+
+X ­ Not Applicable
+
+1 ­ First Collection; 2 ­ Second Collection; 3 ­ Third Collection X ­ Not Applicable 1 ­ Essentially Normal; 2 ­ With Findings
+
+DATA DICTIONARY
+
+DATA GROUP
+
+PARAMETER NAME
+
+S
+
+TYPE
+
+I Z
+
+E
+
+DESCRIPTION
+
+ANNEX A
+
+REQUIRED (Yes/No)
+12
+
+CONSTRAINT
+
+DATABASE
+SCHEMA
+KONSULTA
+
+DOCUMENTOR
+ISMD ­ ITMD
+OFFICE
+ISMD ­ ITMD
+
+REVISION NUMBER
+14
+DATE CREATED
+12/15/2019
+
+DATE OF REVISION
+08/17/2022
+PAGE
+Page 20 of 26
+
+TABLE REFERENCE
+
+FORMAT
+
+STANDARD DEFAULT
+
+VALID VALUES
+
+pDateAdded pStatus
+
+LIPIDPROFILE
+
+pDiagnosticLabFee pReportStatus
+pDeficiencyRemarks pReferralFacility pLabDate pLdl pHdl pTotal pCholesterol pTriglycerides pDateAdded pStatus
+
+pDiagnosticLabFee pReportStatus
+
+FBS (Fasting Blood Sugar)
+
+pDeficiencyRemarks
+pReferralFacility pLabDate
+pGlucoseMg
+pGlucoseMmol pDateAdded pStatus
+
+DATE
+
+Date the Record was Added
+
+N
+
+N
+
+VARCHAR2 1
+
+Status of Laboratory/Imaging Results N
+
+N
+
+BYTE
+
+NUMBER VARCHAR2
+
+1 BYTE
+
+Diagnostic Lab Fee
+Report Status of Generated XML Report
+
+N
+
+N
+
+Y
+
+Y
+
+VARCHAR2 2000 Remarks of the Report Status
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 1000 Name of Referral Facility, if referred N
+
+N
+
+BYTE
+
+DATE
+
+Date of Laboratory for Lipid Profile
+
+N
+
+N
+
+VARCHAR2 50
+
+Value for LDL (mg/dL)
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 50
+
+Value for HDL (mg/dL)
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 50
+
+Total Value of Cholesterol (mg/dL)
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 50
+
+Total Value of Cholesterol (mg/dL)
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 50
+
+Total Value of Triglycerides (mg/dL) N
+
+N
+
+BYTE
+
+DATE
+
+Date the Record was Added
+
+N
+
+N
+
+VARCHAR2 1
+
+Status of Laboratory/Imaging Results N
+
+N
+
+BYTE
+
+NUMBER VARCHAR2
+
+1 BYTE
+
+Diagnostic Lab Fee
+Report Status of Generated XML Report
+
+N
+
+N
+
+Y
+
+Y
+
+VARCHAR2 2000 Remarks of the Report Status
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 1000 Name of Referral Facility, if referred N
+
+N
+
+BYTE
+
+DATE
+
+Date of Laboratory for FBS
+
+N
+
+N
+
+VARCHAR2 VARCHAR2 DATE
+
+50 BYTE 50 BYTE
+
+Value for Glucose in md/Dl Value for Glucose in mmol/L Date the Record was Added
+
+N
+
+N
+
+N
+
+N
+
+N
+
+N
+
+VARCHAR2 1
+
+Status of Laboratory/Imaging Results N
+
+N
+
+BYTE
+
+YYYY-MM-DD YYYY-MM-DD
+
+"U" ­ Unvalidated
+
+"D" ­ Done "N" ­ Not yet done "X" ­ Deferred "W" ­ Waived
+"V" ­ Validated "U" ­ Unvalidated "F" ­ Failed
+
+YYYY-MM-DD
+YYYY-MM-DD YYYY-MM-DD
+
+"U" ­ Unvalidated
+
+"D" ­ Done "N" ­ Not yet done "X" ­ Deferred "W" ­ Waived
+"V" ­ Validated "U" ­ Unvalidated "F" ­ Failed
+
+"D" ­ Done "N" ­ Not yet done "X" ­ Deferred
+
+DATA DICTIONARY
+
+DATA GROUP
+
+PARAMETER NAME
+
+S
+
+TYPE
+
+I Z
+
+E
+
+DESCRIPTION
+
+ANNEX A
+
+REQUIRED (Yes/No)
+12
+
+CONSTRAINT
+
+DATABASE
+SCHEMA
+KONSULTA
+
+DOCUMENTOR
+ISMD ­ ITMD
+OFFICE
+ISMD ­ ITMD
+
+REVISION NUMBER
+14
+DATE CREATED
+12/15/2019
+
+DATE OF REVISION
+08/17/2022
+PAGE
+Page 21 of 26
+
+TABLE REFERENCE
+
+FORMAT
+
+STANDARD DEFAULT
+
+VALID VALUES
+
+RBS (Random Blood Sugar)
+
+pDiagnosticLabFee pReportStatus
+pDeficiencyRemarks pReferralFacility pLabDate pGlucoseMg pGlucoseMmol pDateAdded pStatus
+
+pDiagnosticLabFee pReportStatus
+
+ECG (Electrocardiogram )
+
+pDeficiencyRemarks pReferralFacility pLabDate
+
+pFindings
+pRemarks pDateAdded pStatus
+
+pDiagnosticLabFee pReportStatus
+pDeficiencyRemarks
+
+NUMBER VARCHAR2
+
+1 BYTE
+
+Diagnostic Lab Fee
+Report Status of Generated XML Report
+
+N
+
+N
+
+Y
+
+Y
+
+VARCHAR2 2000 Remarks of the Report Status
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 1000 Name of Referral Facility, if referred N
+
+N
+
+BYTE
+
+DATE
+
+Date of Laboratory for RBS
+
+N
+
+N
+
+VARCHAR2 VARCHAR2 DATE
+
+50 BYTE 50 BYTE
+
+Value for Glucose in md/Dl Value for Glucose in mmol/L Date the Record was Added
+
+N
+
+N
+
+N
+
+N
+
+N
+
+N
+
+VARCHAR2 1
+
+Status of Laboratory/Imaging Results N
+
+N
+
+BYTE
+
+NUMBER VARCHAR2
+
+1 BYTE
+
+Diagnostic Lab Fee
+Report Status of Generated XML Report
+
+N
+
+N
+
+Y
+
+Y
+
+VARCHAR2 2000 Remarks of the Report Status
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 1000 Name of Referral Facility, if referred N
+
+N
+
+BYTE
+
+DATE
+
+Date of Laboratory for ECG
+
+N
+
+N
+
+NUMBER
+
+Findings/Result of ECG Laboratory
+
+N
+
+N
+
+VARCHAR2 1000 Remarks if with Findings ( Findings = N
+
+N
+
+BYTE 2)
+
+DATE
+
+Date the Record was Added
+
+N
+
+N
+
+VARCHAR2 1
+
+Status of Laboratory/Imaging Results N
+
+N
+
+BYTE
+
+NUMBER VARCHAR2
+VARCHAR2
+
+1 BYTE
+2000 BYTE
+
+Diagnostic Lab Fee Report Status of Generated XML Report
+Remarks of the Report Status
+
+N
+
+N
+
+Y
+
+Y
+
+N
+
+N
+
+YYYY-MM-DD YYYY-MM-DD
+YYYY-MM-DD YYYY-MM-DD
+
+"U" ­ Unvalidated
+
+"W" ­ Waived
+"V" ­ Validated "U" ­ Unvalidated "F" ­ Failed
+
+"U" ­ Unvalidated
+
+"D" ­ Done "N" ­ Not yet done "X" ­ Deferred "W" ­ Waived
+"V" ­ Validated "U" ­ Unvalidated "F" ­ Failed
+
+1 ­ Essentially Normal; 2 ­ With Findings
+
+"D" ­ Done "N" ­ Not yet done "X" ­ Deferred "W" ­ Waived
+
+"U" ­ Unvalidated
+
+"V" ­ Validated "U" ­ Unvalidated "F" ­ Failed
+
+DATA DICTIONARY
+
+DATA GROUP
+
+PARAMETER NAME
+
+S
+
+TYPE
+
+I Z
+
+E
+
+DESCRIPTION
+
+ANNEX A
+
+REQUIRED (Yes/No)
+12
+
+CONSTRAINT
+
+DATABASE
+SCHEMA
+KONSULTA
+
+DOCUMENTOR
+ISMD ­ ITMD
+OFFICE
+ISMD ­ ITMD
+
+REVISION NUMBER
+14
+DATE CREATED
+12/15/2019
+
+DATE OF REVISION
+08/17/2022
+PAGE
+Page 22 of 26
+
+TABLE REFERENCE
+
+FORMAT
+
+STANDARD DEFAULT
+
+VALID VALUES
+
+FECALYSIS PAPSMEAR
+
+pReferralFacility pLabDate
+
+VARCHAR2 1000 Name of Referral Facility, if referred N
+
+N
+
+BYTE
+
+DATE
+
+Date of Laboratory for Fecalysis
+
+N
+
+N
+
+NUMBER
+
+Refer to the Color of Stool
+
+N
+
+N
+
+pColor
+
+NUMBER
+
+Refer to the Consistency of Stool
+
+N
+
+N
+
+pConsistency pRbc pWbc pOva pParasite pBlood pPusCells pDateAdded pStatus
+pDiagnosticLabFee pReportStatus
+pDeficiencyRemarks pReferralFacility pLabDate pFindings pImpression pDateAdded
+
+VARCHAR2 VARCHAR2 VARCHAR2 VARCHAR2 NUMBER
+
+50 BYTE 50 BYTE 50 BYTE 50 BYTE
+
+Value for RBC (/hpf) Value for WBC(/hpf) Value for RBC (=/-) Value for Parasite (=/-) Presence of Blood in Stool
+
+N
+
+N
+
+N
+
+N
+
+N
+
+N
+
+N
+
+N
+
+N
+
+N
+
+VARCHAR2 DATE
+
+50 BYTE
+
+Value for PUS Cells Date the Record was Added
+
+N
+
+N
+
+N
+
+N
+
+VARCHAR2 1
+
+Status of Laboratory/Imaging Results N
+
+N
+
+BYTE
+
+NUMBER VARCHAR2
+
+1 BYTE
+
+Diagnostic Lab Fee
+Report Status of Generated XML Report
+
+N
+
+N
+
+Y
+
+Y
+
+VARCHAR2 2000 Remarks of the Report Status
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 1000 Name of Referral Facility, if referred N
+
+N
+
+BYTE
+
+DATE
+
+Date of Laboratory form Papsmear
+
+N
+
+N
+
+VARCHAR2 VARCHAR2 DATE
+
+500 BYTE 500 BYTE
+
+Findings/ Result in Papsmear Impression in Papsmear Date the Record was Added
+
+N
+
+N
+
+N
+
+N
+
+N
+
+N
+
+YYYY-MM-DD
+YYYY-MM-DD YYYY-MM-DD YYYY-MM-DD
+
+1 ­ Brown; 2 ­ Black; 3 ­ Red; 4 ­ White/Grey; 5 ­ Yellow; 6 ­ Green;
+1 ­ Soft; 2 ­ Well-Formed; 3 ­ Semi-Formed; 4 ­ Watery; 5 ­ Mucoid; 6 ­ Hard
+
+"P" ­ Present; "A" ­ Absent
+
+"U" ­ Unvalidated
+
+"D" ­ Done "N" ­ Not yet done "X" ­ Deferred "W" ­ Waived
+"V" ­ Validated "U" ­ Unvalidated "F" ­ Failed
+
+DATA DICTIONARY
+
+DATA GROUP
+
+PARAMETER NAME
+
+S
+
+TYPE
+
+I Z
+
+E
+
+DESCRIPTION
+
+ANNEX A
+
+REQUIRED (Yes/No)
+12
+
+CONSTRAINT
+
+DATABASE
+SCHEMA
+KONSULTA
+
+DOCUMENTOR
+ISMD ­ ITMD
+OFFICE
+ISMD ­ ITMD
+
+REVISION NUMBER
+14
+DATE CREATED
+12/15/2019
+
+DATE OF REVISION
+08/17/2022
+PAGE
+Page 23 of 26
+
+TABLE REFERENCE
+
+FORMAT
+
+STANDARD DEFAULT
+
+VALID VALUES
+
+pStatus
+
+VARCHAR2 1
+
+Status of Laboratory/Imaging Results N
+
+N
+
+BYTE
+
+pDiagnosticLabFee pReportStatus
+
+NUMBER VARCHAR2
+
+1 BYTE
+
+Diagnostic Lab Fee
+Report Status of Generated XML Report
+
+N
+
+N
+
+Y
+
+Y
+
+pDeficiencyRemarks
+
+VARCHAR2
+
+2000 BYTE
+
+Remarks of the Report Status
+
+N
+
+N
+
+OGTT (Oral Glucose Tolerance Test)
+
+pReferralFacility pLabDate
+pExamFastingMg
+
+VARCHAR2 1000 Name of Referral Facility, if referred N
+
+N
+
+BYTE
+
+DATE
+
+Date of Laboratory for OGTT
+
+N
+
+N
+
+VARCHAR2 50
+
+Result in Fasting Examination (mg/dL) N
+
+N
+
+BYTE
+
+pExamFastingMmol
+
+VARCHAR2
+
+50 BYTE
+
+Result in Fasting Examination (mmol/L)
+
+N
+
+N
+
+pExamOgttOneHrMg
+
+VARCHAR2 50
+
+Result in OGTT 1 Hour Examination
+
+N
+
+N
+
+BYTE (mg/dL)
+
+VARCHAR2 50
+
+Result in OGTT 1 Hour Examination
+
+N
+
+N
+
+pExamOgttOneHrMmol
+
+BYTE (mmol/L)
+
+pExamOgttTwoHrMg
+
+VARCHAR2 50
+
+Result in OGTT 2 Hours Examination N
+
+N
+
+BYTE (mg/dL)
+
+VARCHAR2 50
+
+Result in OGTT 2 Hours Examination N
+
+N
+
+pExamOgttTwoHrMmol
+
+BYTE (mmol/L)
+
+pDateAdded
+
+DATE
+
+Date the Record was Added
+
+N
+
+N
+
+pStatus
+
+VARCHAR2 1
+
+Status of Laboratory/Imaging Results N
+
+N
+
+BYTE
+
+pDiagnosticLabFee pReportStatus
+
+FOBT (Fecal Occult Blood Test)
+
+pDeficiencyRemarks
+pReferralFacility pLabDate
+pFindings pDateAdded pStatus
+
+NUMBER VARCHAR2
+
+1 BYTE
+
+Diagnostic Lab Fee
+Report Status of Generated XML Report
+
+N
+
+N
+
+Y
+
+Y
+
+VARCHAR2 2000 Remarks of the Report Status
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 1000 Name of Referral Facility, if referred N
+
+N
+
+BYTE
+
+DATE
+
+Date of Laboratory for FOBT
+
+N
+
+N
+
+VARCHAR2 DATE
+
+1 BYTE
+
+Findings/ Result in FOBT Date the Record was Added
+
+N
+
+N
+
+N
+
+N
+
+VARCHAR2 1
+
+Status of Laboratory/Imaging Results N
+
+N
+
+BYTE
+
+YYYY-MM-DD
+
+"U" ­ Unvalidated
+
+"D" ­ Done "N" ­ Not yet done "X" ­ Deferred "W" ­ Waived
+"V" ­ Validated "U" ­ Unvalidated "F" ­ Failed
+
+YYYY-MM-DD
+YYYY-MM-DD YYYY-MM-DD
+
+"U" ­ Unvalidated
+
+"D" ­ Done "N" ­ Not yet done "X" ­ Deferred "W" ­ Waived
+"V" ­ Validated "U" ­ Unvalidated "F" ­ Failed
+
+"P" ­ Positive "N" ­ Negative
+"D" ­ Done "N" ­ Not yet done "X" ­ Deferred "W" ­ Waived
+
+DATA DICTIONARY
+
+DATA GROUP
+
+PARAMETER NAME
+
+S
+
+TYPE
+
+I Z
+
+E
+
+DESCRIPTION
+
+ANNEX A
+
+REQUIRED (Yes/No)
+12
+
+CONSTRAINT
+
+DATABASE
+SCHEMA
+KONSULTA
+
+DOCUMENTOR
+ISMD ­ ITMD
+OFFICE
+ISMD ­ ITMD
+
+REVISION NUMBER
+14
+DATE CREATED
+12/15/2019
+
+DATE OF REVISION
+08/17/2022
+PAGE
+Page 24 of 26
+
+TABLE REFERENCE
+
+FORMAT
+
+STANDARD DEFAULT
+
+VALID VALUES
+
+CREATININE PPDTest HbA1c
+
+pDiagnosticLabFee pReportStatus
+pDeficiencyRemarks pReferralFacility pLabDate pFindings pDateAdded pStatus
+pDiagnosticLabFee pReportStatus
+pDeficiencyRemarks pReferralFacility pLabDate pFindings pDateAdded pStatus
+pDiagnosticLabFee pReportStatus
+pDeficiencyRemarks pReferralFacility pLabDate pFindings pDateAdded
+
+NUMBER VARCHAR2
+
+1 BYTE
+
+Diagnostic Lab Fee
+Report Status of Generated XML Report
+
+N
+
+N
+
+Y
+
+Y
+
+VARCHAR2 2000 Remarks of the Report Status
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 1000 Name of Referral Facility, if referred N
+
+N
+
+BYTE
+
+DATE
+
+Date of Laboratory for Creatinine
+
+N
+
+N
+
+VARCHAR2 100 Findings/ Result in Creatinine (mg/dL) N
+
+N
+
+BYTE
+
+DATE
+
+Date the Record was Added
+
+N
+
+N
+
+VARCHAR2 1
+
+Status of Laboratory/Imaging Results N
+
+N
+
+BYTE
+
+NUMBER VARCHAR2
+
+1 BYTE
+
+Diagnostic Lab Fee
+Report Status of Generated XML Report
+
+N
+
+N
+
+Y
+
+Y
+
+VARCHAR2 2000 Remarks of the Report Status
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 1000 Name of Referral Facility, if referred N
+
+N
+
+BYTE
+
+DATE
+
+Date of Laboratory for PPD Test
+
+N
+
+N
+
+VARCHAR2 DATE
+
+1 BYTE
+
+Findings/ Result in PPD Test Date the Record was Added
+
+N
+
+N
+
+N
+
+N
+
+VARCHAR2 1
+
+Status of Laboratory/Imaging Results N
+
+N
+
+BYTE
+
+NUMBER VARCHAR2
+
+1 BYTE
+
+Diagnostic Lab Fee
+Report Status of Generated XML Report
+
+N
+
+N
+
+Y
+
+Y
+
+VARCHAR2 2000 Remarks of the Report Status
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 1000 Name of Referral Facility, if referred N
+
+N
+
+BYTE
+
+DATE
+
+Date of Laboratory for HbA1c
+
+N
+
+N
+
+VARCHAR2 DATE
+
+1000 BYTE
+
+Findings/ Result in HbA1c (mmol/mol) Date the Record was Added
+
+N
+
+N
+
+N
+
+N
+
+YYYY-MM-DD YYYY-MM-DD
+YYYY-MM-DD YYYY-MM-DD
+YYYY-MM-DD YYYY-MM-DD
+
+"U" ­ Unvalidated
+
+"V" ­ Validated "U" ­ Unvalidated "F" ­ Failed
+
+"U" ­ Unvalidated
+
+"D" ­ Done "N" ­ Not yet done "X" ­ Deferred "W" ­ Waived
+"V" ­ Validated "U" ­ Unvalidated "F" ­ Failed
+
+"U" ­ Unvalidated
+
+"P" ­ Positive "N" ­ Negative
+"D" ­ Done "N" ­ Not yet done "X" ­ Deferred "W" ­ Waived
+"V" ­ Validated "U" ­ Unvalidated "F" ­ Failed
+
+DATA DICTIONARY
+
+DATA GROUP
+
+PARAMETER NAME
+
+S
+
+TYPE
+
+I Z
+
+E
+
+DESCRIPTION
+
+ANNEX A
+
+REQUIRED (Yes/No)
+12
+
+CONSTRAINT
+
+DATABASE
+SCHEMA
+KONSULTA
+
+DOCUMENTOR
+ISMD ­ ITMD
+OFFICE
+ISMD ­ ITMD
+
+REVISION NUMBER
+14
+DATE CREATED
+12/15/2019
+
+DATE OF REVISION
+08/17/2022
+PAGE
+Page 25 of 26
+
+TABLE REFERENCE
+
+FORMAT
+
+STANDARD DEFAULT
+
+VALID VALUES
+
+pStatus
+
+pDiagnosticLabFee pReportStatus
+
+OTHERDIAGEXAM
+
+pDeficiencyRemarks
+pReferralFacility
+pLabDate
+pOthDiagExam
+pFindings pDateAdded pStatus
+
+DOCUMENT
+
+pDiagnosticLabFee pReportStatus
+pDeficiencyRemarks pHciCaseNo pHciTransNo pPatientPin
+pPatientType pMemPin pDocumentType
+
+VARCHAR2 1
+
+Status of Laboratory/Imaging Results N
+
+N
+
+BYTE
+
+NUMBER VARCHAR2
+
+1 BYTE
+
+Diagnostic Lab Fee
+Report Status of Generated XML Report
+
+N
+
+N
+
+Y
+
+Y
+
+VARCHAR2
+
+2000 BYTE
+
+Remarks of the Report Status
+
+N
+
+N
+
+VARCHAR2 1000 Name of Referral Facility, if referred N
+
+N
+
+BYTE
+
+DATE
+
+Date of Laboratory for Other
+
+N
+
+N
+
+Diagnostic Exam
+
+VARCHAR2 1000 Description of Other Diagnostic Exam N
+
+N
+
+BYTE not included in Essential Services
+
+VARCHAR2 1000 Findings/ Result in Other Diagnostic
+
+N
+
+N
+
+BYTE Exam
+
+DATE
+
+Date the Record was Added
+
+N
+
+N
+
+VARCHAR2 1
+
+Status of Laboratory/Imaging Results N
+
+N
+
+BYTE
+
+NUMBER VARCHAR2
+
+1 BYTE
+
+Diagnostic Lab Fee
+Report Status of Generated XML Report
+
+N
+
+N
+
+Y
+
+Y
+
+VARCHAR2 2000 Remarks of the Report Status
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 21
+
+Patient Transaction Reference
+
+N
+
+N
+
+FK
+
+BYTE Number
+
+VARCHAR2 21
+
+Profiling / SOAP Reference Number
+
+N
+
+N
+
+FK
+
+BYTE
+
+VARCHAR2 12
+
+Refer to Member's PIN if patient type N
+
+N
+
+BYTE is MM; Refer to Dependent's PIN if
+
+type is DD
+
+VARCHAR2 2
+
+Patient Type
+
+N
+
+N
+
+BYTE
+
+VARCHAR2 12
+
+Philhealth Identification Number
+
+N
+
+N
+
+BYTE (PIN) of Primary Member
+
+VARCHAR2 10
+
+Document attachment type
+
+N
+
+N
+
+BYTE
+
+pDocumentUrl
+
+CLOB
+
+URL of document attachment where N
+
+N
+
+can be downloaded
+
+YYYY-MM-DD YYYY-MM-DD
+Enlistment Table SOAP Table
+
+"U" ­ Unvalidated
+
+"D" ­ Done "N" ­ Not yet done "X" ­ Deferred "W" ­ Waived
+"V" ­ Validated "U" ­ Unvalidated "F" ­ Failed
+
+"U" ­ Unvalidated
+
+"D" ­ Done "N" ­ Not yet done "X" ­ Deferred "W" ­ Waived
+"V" ­ Validated "U" ­ Unvalidated "F" ­ Failed
+
+"MM" ­ Member; "DD" ­ Dependent;
+"EKAS" ­ electronic KonSulTa Slip "EPRESS" ­ electronic Prescription Slip" "OTH" - Others
+
+DATA DICTIONARY
+
+DATA GROUP
+
+PARAMETER NAME
+
+S
+
+TYPE
+
+I Z
+
+E
+
+DESCRIPTION
+
+ANNEX A
+
+REQUIRED (Yes/No)
+12
+
+CONSTRAINT
+
+DATABASE
+SCHEMA
+KONSULTA
+
+DOCUMENTOR
+ISMD ­ ITMD
+OFFICE
+ISMD ­ ITMD
+
+REVISION NUMBER
+14
+DATE CREATED
+12/15/2019
+
+DATE OF REVISION
+08/17/2022
+PAGE
+Page 26 of 26
+
+TABLE REFERENCE
+
+FORMAT
+
+STANDARD DEFAULT
+
+VALID VALUES
+
+pTransDate pReportStatus
+pDeficiencyRemarks
+
+DATE VARCHAR2
+VARCHAR2
+
+1 BYTE
+2000 BYTE
+
+Date when the record inserted Report Status of Generated XML Report
+Remarks of the Report Status
+
+N
+
+N
+
+N
+
+N
+
+N
+
+N
+
+YYYY-MM-DD
+
+Note:
+
+ All parameters highlighted with:  Updated parameters for Konsulta Report Data Dictionary Revision 14  Valid values are required for XML submission of the Konsulta first tranche.  Highlighted parameters under the DIAGNOSTICEXAMRESULT must be required if pMdiseaseCode under FAMHIST is `Diabetes Mellitus'
+ For the DTD Validation, all pReportStatus parameters in the Konsulta first tranche XML must have the default value.  DOCUMENT parameters are not yet required and only included for future reference.
+
+"U" ­ Unvalidated
+
+"V" ­ Validated "U" ­ Unvalidated "F" ­ Failed
+
+ANNEX B: SAMPLE KONSULTA XML REPORT (FIRST TRANCHE)
+<PCB pUsername="" pPassword="" pHciAccreNo="H90000001" pPMCCNo="P00001" pEnlistTotalCnt="1" pProfileTotalCnt="1" pSoapTotalCnt="1" pCertificationId="KON-DUMMYSCERTP00001" pHciTransmittalNumber="RH9000000120220800001">
+<ENLISTMENTS> <ENLISTMENT pHciCaseNo="TH9000000120220800001" pHciTransNo="PH9000000120220800001"
+pEffYear="2022" pEnlistStat="1" pEnlistDate="2022-08-26" pPackageType="K" pMemPin="030263078507" pMemFname="MEMFIRSTNAME" pMemMname="MIDDLENAME" pMemLname="LASTNAME" pMemExtname="" pMemDob="1970-01-01" pPatientPin="242500004774" pPatientFname="DEPFIRSTNAME" pPatientMname="MIDDLENAME" pPatientLname="LASTNAME" pPatientExtname="" pPatientSex="M" pPatientDob="2021-08-01" pPatientType="DD" pPatientMobileNo="09090000000" pPatientLandlineNo="" pWithConsent="Y" pTransDate="2022-08-26" pCreatedBy="TEST01" pReportStatus="U" pDeficiencyRemarks=""/>
+</ENLISTMENTS> <PROFILING>
+<PROFILE pHciTransNo="PH9000000120220800001" pHciCaseNo="TH9000000120220800001" pProfDate="2022-08-26" pPatientPin="242500004774" pPatientType="DD" pPatientAge="1 YR(S), 0 MO(S), 25 DAY(S)" pMemPin="030263078507" pEffYear="2022" pATC="JruBaQ2Y" pIsWalkedIn="N" pTransDate="2022-08-27" pReportStatus="U" pDeficiencyRemarks="">
+<MEDHISTS> <MEDHIST pMdiseaseCode="001" pReportStatus="U" pDeficiencyRemarks=""/> <MEDHIST pMdiseaseCode="002" pReportStatus="U" pDeficiencyRemarks=""/>
+</MEDHISTS> <MHSPECIFICS>
+<MHSPECIFIC pMdiseaseCode="001" pSpecificDesc="SAMPLE ALLERGY" pReportStatus="U" pDeficiencyRemarks=""/>
+</MHSPECIFICS> <SURGHISTS>
+<SURGHIST pSurgDesc="SAMPLE OPERATION" pSurgDate="2022-06-01" pReportStatus="U" pDeficiencyRemarks=""/>
+</SURGHISTS> <FAMHISTS>
+<FAMHIST pMdiseaseCode="002" pReportStatus="U" pDeficiencyRemarks=""/> <FAMHIST pMdiseaseCode="006" pReportStatus="U" pDeficiencyRemarks=""/> </FAMHISTS> <FHSPECIFICS> <FHSPECIFIC pMdiseaseCode="" pSpecificDesc="" pReportStatus="U" pDeficiencyRemarks=""/> </FHSPECIFICS> <SOCHIST pIsSmoker="N" pNoCigpk="" pIsAdrinker="N" pNoBottles="" pIllDrugUser="N" pIsSexuallyActive="N" pReportStatus="U" pDeficiencyRemarks=""/> <IMMUNIZATIONS> <IMMUNIZATION pChildImmcode="C01" pYoungwImmcode="" pPregwImmcode="" pElderlyImmcode="" pOtherImm="" pReportStatus="U" pDeficiencyRemarks=""/> <IMMUNIZATION pChildImmcode="C02" pYoungwImmcode="" pPregwImmcode="" pElderlyImmcode="" pOtherImm="" pReportStatus="U" pDeficiencyRemarks=""/> <IMMUNIZATION pChildImmcode="C04" pYoungwImmcode="" pPregwImmcode="" pElderlyImmcode="" pOtherImm="" pReportStatus="U" pDeficiencyRemarks=""/> <IMMUNIZATION pChildImmcode="C08" pYoungwImmcode="" pPregwImmcode="" pElderlyImmcode="" pOtherImm="" pReportStatus="U" pDeficiencyRemarks=""/> <IMMUNIZATION pChildImmcode="C09" pYoungwImmcode="" pPregwImmcode="" pElderlyImmcode="" pOtherImm="" pReportStatus="U" pDeficiencyRemarks=""/> <IMMUNIZATION pChildImmcode="C13" pYoungwImmcode="" pPregwImmcode="" pElderlyImmcode="" pOtherImm="" pReportStatus="U" pDeficiencyRemarks=""/> <IMMUNIZATION pChildImmcode="" pYoungwImmcode="999" pPregwImmcode="" pElderlyImmcode="" pOtherImm="" pReportStatus="U" pDeficiencyRemarks=""/> <IMMUNIZATION pChildImmcode="" pYoungwImmcode="" pPregwImmcode="999" pElderlyImmcode="" pOtherImm="" pReportStatus="U" pDeficiencyRemarks=""/> <IMMUNIZATION pChildImmcode="" pYoungwImmcode="" pPregwImmcode="" pElderlyImmcode="999" pOtherImm="" pReportStatus="U" pDeficiencyRemarks=""/> </IMMUNIZATIONS>
+Page 40
+
+<MENSHIST pMenarchePeriod="0" pLastMensPeriod="" pPeriodDuration="0" pMensInterval="0" pPadsPerDay="0" pOnsetSexIc="0" pBirthCtrlMethod="" pIsMenopause="" pMenopauseAge="" pIsApplicable="N" pReportStatus="U" pDeficiencyRemarks=""/>
+<PREGHIST pPregCnt="0" pDeliveryCnt="0" pDeliveryTyp="X" pFullTermCnt="0" pPrematureCnt="0" pAbortionCnt="0" pLivChildrenCnt="0" pWPregIndhyp="N" pWFamPlan="N" pIsApplicable="N" pReportStatus="U" pDeficiencyRemarks=""/>
+<PEPERT pSystolic="95" pDiastolic="58" pHr="110" pRr="30" pTemp="36.10" pHeight="0" pWeight="8.9" pBMI="0" pZScore="&gt; +3SD" pLeftVision="20" pRightVision="20" pLength="63" pHeadCirc="46" pSkinfoldThickness="46" pWaist="48" pHip="50" pLimbs="40" pMidUpperArmCirc="" pReportStatus="U" pDeficiencyRemarks=""/>
+<BLOODTYPE pBloodType="B+" pReportStatus="U" pDeficiencyRemarks=""/> <PEGENSURVEY pGenSurveyId="1" pGenSurveyRem="" pReportStatus="U" pDeficiencyRemarks=""/> <PEMISCS>
+<PEMISC pSkinId="" pHeentId="11" pChestId="" pHeartId="" pAbdomenId="" pNeuroId="" pRectalId="" pGuId="" pReportStatus="U" pDeficiencyRemarks=""/>
+<PEMISC pSkinId="" pHeentId="" pChestId="8" pHeartId="" pAbdomenId="" pNeuroId="" pRectalId="" pGuId="" pReportStatus="U" pDeficiencyRemarks=""/>
+<PEMISC pSkinId="" pHeentId="" pChestId="" pHeartId="5" pAbdomenId="" pNeuroId="" pRectalId="" pGuId="" pReportStatus="U" pDeficiencyRemarks=""/>
+<PEMISC pSkinId="" pHeentId="" pChestId="" pHeartId="" pAbdomenId="7" pNeuroId="" pRectalId="" pGuId="" pReportStatus="U" pDeficiencyRemarks=""/>
+<PEMISC pSkinId="" pHeentId="" pChestId="" pHeartId="" pAbdomenId="" pNeuroId="" pRectalId="" pGuId="99" pReportStatus="U" pDeficiencyRemarks=""/>
+<PEMISC pSkinId="" pHeentId="" pChestId="" pHeartId="" pAbdomenId="" pNeuroId="" pRectalId="3" pGuId="" pReportStatus="U" pDeficiencyRemarks=""/>
+<PEMISC pSkinId="1" pHeentId="" pChestId="" pHeartId="" pAbdomenId="" pNeuroId="" pRectalId="" pGuId="" pReportStatus="U" pDeficiencyRemarks=""/>
+<PEMISC pSkinId="" pHeentId="" pChestId="" pHeartId="" pAbdomenId="" pNeuroId="6" pRectalId="" pGuId="" pReportStatus="U" pDeficiencyRemarks=""/>
+</PEMISCS> <PESPECIFIC pSkinRem="" pHeentRem="" pChestRem="" pHeartRem="" pAbdomenRem="" pNeuroRem="" pRectalRem="" pGuRem="SAMPLE REMARKS" pReportStatus="U" pDeficiencyRemarks=""/> <NCDQANS pQid1_Yn="" pQid2_Yn="" pQid3_Yn="" pQid4_Yn="" pQid5_Ynx="" pQid6_Yn="" pQid7_Yn="" pQid8_Yn="" pQid9_Yn="" pQid10_Yn="" pQid11_Yn="" pQid12_Yn="" pQid13_Yn="" pQid14_Yn="" pQid15_Yn="" pQid16_Yn="" pQid17_Abcde="" pQid18_Yn="" pQid19_Yn="" pQid19_Fbsmg="" pQid19_Fbsmmol="" pQid19_Fbsdate="" pQid20_Yn="" pQid20_Choleval="" pQid20_Choledate="" pQid21_Yn="" pQid21_Ketonval="" pQid21_Ketondate="" pQid22_Yn="" pQid22_Proteinval="" pQid22_Proteindate="" pQid23_Yn="" pQid24_Yn="" pReportStatus="U" pDeficiencyRemarks=""/> </PROFILE> </PROFILING> <SOAPS> <SOAP pHciCaseNo="" pHciTransNo="" pSoapDate="" pPatientPin="" pPatientType="" pMemPin="" pEffYear="" pATC="" pIsWalkedIn="" pCoPay="" pTransDate="" pReportStatus="U" pDeficiencyRemarks=""> <SUBJECTIVE pIllnessHistory="" pSignsSymptoms="" pOtherComplaint="" pPainSite="" pReportStatus="U" pDeficiencyRemarks=""/> <PEPERT pSystolic="" pDiastolic="" pHr="" pRr="" pTemp="" pHeight="" pWeight="" pBMI="" pZScore="" pLeftVision="" pRightVision="" pLength="" pHeadCirc="" pSkinfoldThickness="" pWaist="" pHip="" pLimbs="" pMidUpperArmCirc="" pReportStatus="U" pDeficiencyRemarks=""/> <PEMISCS>
+<PEMISC pSkinId="" pHeentId="" pChestId="" pHeartId="" pAbdomenId="" pNeuroId="" pGuId="" pRectalId="" pReportStatus="U" pDeficiencyRemarks=""/>
+</PEMISCS> <PESPECIFIC pSkinRem="" pHeentRem="" pChestRem="" pHeartRem="" pAbdomenRem="" pNeuroRem="" pRectalRem="" pGuRem="" pReportStatus="U" pDeficiencyRemarks=""/> <ICDS>
+<ICD pIcdCode="" pReportStatus="U" pDeficiencyRemarks=""/> </ICDS> <DIAGNOSTICS>
+<DIAGNOSTIC pDiagnosticId="" pOthRemarks="" pIsPhysicianRecommendation="" pPatientRemarks="" pReportStatus="U" pDeficiencyRemarks=""/>
+</DIAGNOSTICS> <MANAGEMENTS>
+Page 41
+
+<MANAGEMENT pManagementId="" pOthRemarks="" pReportStatus="U" pDeficiencyRemarks=""/>
+</MANAGEMENTS> <ADVICE pRemarks="" pReportStatus="U" pDeficiencyRemarks=""/> </SOAP> </SOAPS> <DIAGNOSTICEXAMRESULTS> <DIAGNOSTICEXAMRESULT pHciCaseNo="TH9000000120220800001" pHciTransNo="PH9000000120220800001" pPatientPin="242500004774" pPatientType="DD" pMemPin="030263078507" pEffYear="2022"> <FBSS>
+<FBS pReferralFacility="SAMPLE REFERRAL FACILITY" pLabDate="2022-08-26" pGlucoseMg="45" pGlucoseMmol="7.8" pDateAdded="2022-08-27" pStatus="D" pDiagnosticLabFee="0.00" pReportStatus="U" pDeficiencyRemarks=""/>
+</FBSS> <RBSS>
+<RBS pReferralFacility="" pLabDate="2022-08-26" pGlucoseMg="45" pGlucoseMmol="7.8" pDateAdded="2022-08-27" pStatus="D" pDiagnosticLabFee="0.00" pReportStatus="U" pDeficiencyRemarks=""/>
+</RBSS> </DIAGNOSTICEXAMRESULT> </DIAGNOSTICEXAMRESULTS> <MEDICINES> <MEDICINE pHciCaseNo="" pHciTransNo="" pCategory="" pDrugCode="" pGenericCode="" pSaltCode="" pStrengthCode="" pFormCode="" pUnitCode="" pPackageCode="" pOtherMedicine="" pRoute="" pQuantity="" pActualUnitPrice="" pTotalAmtPrice="" pInstructionQuantity="" pInstructionStrength="" pInstructionFrequency="" pPrescribingPhysician="" pIsDispensed="" pDateDispensed="" pDispensingPersonnel="" pIsApplicable="" pDateAdded="" pReportStatus="U" pDeficiencyRemarks=""/> </MEDICINES> </PCB>
+Page 42
+
+ANNEX C: SAMPLE KONSULTA XML REPORT (SECOND TRANCHE)
+<PCB pUsername="" pPassword="" pHciAccreNo="H90000001" pPMCCNo="P00001" pEnlistTotalCnt="1" pProfileTotalCnt="1" pSoapTotalCnt="1" pCertificationId="KON-DUMMYSCERTP00001" pHciTransmittalNumber="RH9000000120220800002">
+<ENLISTMENTS> <ENLISTMENT pHciCaseNo="TH9000000120220800002" pHciTransNo="EH9000000120220800002"
+pEffYear="2022" pEnlistStat="1" pEnlistDate="2022-08-26" pPackageType="K" pMemPin="030263078507" pMemFname="MEMFIRSTNAME" pMemMname="MIDDLENAME" pMemLname="LASTNAME" pMemExtname="" pMemDob="1995-02-14" pPatientPin="030263078507" pPatientFname="MEMFIRSTNAME" pPatientMname="MIDDLENAME" pPatientLname="LASTNAME" pPatientExtname="" pPatientSex="F" pPatientDob="1995-02-14" pPatientType="MM" pPatientMobileNo="09000000000" pPatientLandlineNo="" pWithConsent="Y" pTransDate="2022-08-31" pCreatedBy="TEST01" pReportStatus="U" pDeficiencyRemarks=""/>
+</ENLISTMENTS> <PROFILING>
+<PROFILE pHciTransNo="PH9000000120220800002" pHciCaseNo="TH9000000120220800002" pProfDate="2022-08-26" pPatientPin="030263078507" pPatientType="MM" pPatientAge="27 YR(S), 6 MO(S), 12 DAY(S)" pMemPin="030263078507" pEffYear="2022" pATC="WALKEDIN" pIsWalkedIn="Y" pTransDate="2022-08-31" pReportStatus="U" pDeficiencyRemarks="">
+<MEDHISTS> <MEDHIST pMdiseaseCode="011" pReportStatus="U" pDeficiencyRemarks=""/>
+</MEDHISTS> <MHSPECIFICS>
+<MHSPECIFIC pMdiseaseCode="011" pSpecificDesc="140 / 90 MMHG" pReportStatus="U" pDeficiencyRemarks=""/>
+</MHSPECIFICS> <SURGHISTS>
+<SURGHIST pSurgDesc="SAMPLE SURGERY" pSurgDate="2010-08-01" pReportStatus="U" pDeficiencyRemarks=""/>
+<SURGHIST pSurgDesc="SAMPLE SURGERY" pSurgDate="2012-10-01" pReportStatus="U" pDeficiencyRemarks=""/>
+</SURGHISTS> <FAMHISTS>
+<FAMHIST pMdiseaseCode="006" pReportStatus="U" pDeficiencyRemarks=""/> <FAMHIST pMdiseaseCode="011" pReportStatus="U" pDeficiencyRemarks=""/> </FAMHISTS> <FHSPECIFICS> <FHSPECIFIC pMdiseaseCode="011" pSpecificDesc="140/90 MMHG" pReportStatus="U" pDeficiencyRemarks=""/> </FHSPECIFICS> <SOCHIST pIsSmoker="Y" pNoCigpk="10" pIsAdrinker="Y" pNoBottles="2" pIllDrugUser="Y" pIsSexuallyActive="Y" pReportStatus="U" pDeficiencyRemarks=""/> <IMMUNIZATIONS> <IMMUNIZATION pChildImmcode="999" pYoungwImmcode="" pPregwImmcode="" pElderlyImmcode="" pOtherImm="" pReportStatus="U" pDeficiencyRemarks=""/> <IMMUNIZATION pChildImmcode="" pYoungwImmcode="Y01" pPregwImmcode="" pElderlyImmcode="" pOtherImm="" pReportStatus="U" pDeficiencyRemarks=""/> <IMMUNIZATION pChildImmcode="" pYoungwImmcode="Y02" pPregwImmcode="" pElderlyImmcode="" pOtherImm="" pReportStatus="U" pDeficiencyRemarks=""/> <IMMUNIZATION pChildImmcode="" pYoungwImmcode="" pPregwImmcode="999" pElderlyImmcode="" pOtherImm="" pReportStatus="U" pDeficiencyRemarks=""/> <IMMUNIZATION pChildImmcode="" pYoungwImmcode="" pPregwImmcode="" pElderlyImmcode="999" pOtherImm="" pReportStatus="U" pDeficiencyRemarks=""/> <IMMUNIZATION pChildImmcode="" pYoungwImmcode="" pPregwImmcode="" pElderlyImmcode="" pOtherImm="COVID VACCINE" pReportStatus="U" pDeficiencyRemarks=""/> </IMMUNIZATIONS> <MENSHIST pMenarchePeriod="13" pLastMensPeriod="2022-08-02" pPeriodDuration="5" pMensInterval="28" pPadsPerDay="5" pOnsetSexIc="19" pBirthCtrlMethod="none" pIsMenopause="N" pMenopauseAge="" pIsApplicable="Y" pReportStatus="U" pDeficiencyRemarks=""/> <PREGHIST pPregCnt="1" pDeliveryCnt="1" pDeliveryTyp="N" pFullTermCnt="1" pPrematureCnt="0" pAbortionCnt="0" pLivChildrenCnt="1" pWPregIndhyp="N" pWFamPlan="Y" pIsApplicable="Y" pReportStatus="U" pDeficiencyRemarks=""/>
+Page 43
+
+<PEPERT pSystolic="140" pDiastolic="90" pHr="60" pRr="18" pTemp="36.20" pHeight="153" pWeight="49" pBMI="20.93" pZScore="" pLeftVision="125" pRightVision="150" pLength="" pHeadCirc="" pSkinfoldThickness="" pWaist="" pHip="" pLimbs="" pMidUpperArmCirc="" pReportStatus="U" pDeficiencyRemarks=""/>
+<BLOODTYPE pBloodType="B+" pReportStatus="U" pDeficiencyRemarks=""/> <PEGENSURVEY pGenSurveyId="1" pGenSurveyRem="" pReportStatus="U" pDeficiencyRemarks=""/> <PEMISCS>
+<PEMISC pSkinId="" pHeentId="11" pChestId="" pHeartId="" pAbdomenId="" pNeuroId="" pRectalId="" pGuId="" pReportStatus="U" pDeficiencyRemarks=""/>
+<PEMISC pSkinId="" pHeentId="" pChestId="6" pHeartId="" pAbdomenId="" pNeuroId="" pRectalId="" pGuId="" pReportStatus="U" pDeficiencyRemarks=""/>
+<PEMISC pSkinId="" pHeentId="" pChestId="" pHeartId="6" pAbdomenId="" pNeuroId="" pRectalId="" pGuId="" pReportStatus="U" pDeficiencyRemarks=""/>
+<PEMISC pSkinId="" pHeentId="" pChestId="" pHeartId="3" pAbdomenId="" pNeuroId="" pRectalId="" pGuId="" pReportStatus="U" pDeficiencyRemarks=""/>
+<PEMISC pSkinId="" pHeentId="" pChestId="" pHeartId="7" pAbdomenId="" pNeuroId="" pRectalId="" pGuId="" pReportStatus="U" pDeficiencyRemarks=""/>
+<PEMISC pSkinId="" pHeentId="" pChestId="" pHeartId="8" pAbdomenId="" pNeuroId="" pRectalId="" pGuId="" pReportStatus="U" pDeficiencyRemarks=""/>
+<PEMISC pSkinId="" pHeentId="" pChestId="" pHeartId="4" pAbdomenId="" pNeuroId="" pRectalId="" pGuId="" pReportStatus="U" pDeficiencyRemarks=""/>
+<PEMISC pSkinId="" pHeentId="" pChestId="" pHeartId="9" pAbdomenId="" pNeuroId="" pRectalId="" pGuId="" pReportStatus="U" pDeficiencyRemarks=""/>
+<PEMISC pSkinId="" pHeentId="" pChestId="" pHeartId="99" pAbdomenId="" pNeuroId="" pRectalId="" pGuId="" pReportStatus="U" pDeficiencyRemarks=""/>
+<PEMISC pSkinId="" pHeentId="" pChestId="" pHeartId="" pAbdomenId="" pNeuroId="" pRectalId="" pGuId="3" pReportStatus="U" pDeficiencyRemarks=""/>
+<PEMISC pSkinId="" pHeentId="" pChestId="" pHeartId="" pAbdomenId="" pNeuroId="" pRectalId="99" pGuId="" pReportStatus="U" pDeficiencyRemarks=""/>
+<PEMISC pSkinId="7" pHeentId="" pChestId="" pHeartId="" pAbdomenId="" pNeuroId="" pRectalId="" pGuId="" pReportStatus="U" pDeficiencyRemarks=""/>
+<PEMISC pSkinId="10" pHeentId="" pChestId="" pHeartId="" pAbdomenId="" pNeuroId="" pRectalId="" pGuId="" pReportStatus="U" pDeficiencyRemarks=""/>
+<PEMISC pSkinId="99" pHeentId="" pChestId="" pHeartId="" pAbdomenId="" pNeuroId="" pRectalId="" pGuId="" pReportStatus="U" pDeficiencyRemarks=""/>
+<PEMISC pSkinId="" pHeentId="" pChestId="" pHeartId="" pAbdomenId="" pNeuroId="6" pRectalId="" pGuId="" pReportStatus="U" pDeficiencyRemarks=""/>
+</PEMISCS> <PESPECIFIC pSkinRem="SAMPLE REMARKS" pHeentRem="" pChestRem="" pHeartRem="" pAbdomenRem="" pNeuroRem="" pRectalRem="SAMPLE REMARKS" pGuRem="" pReportStatus="U" pDeficiencyRemarks=""/> <NCDQANS pQid1_Yn="Y" pQid2_Yn="Y" pQid3_Yn="Y" pQid4_Yn="Y" pQid5_Ynx="Y" pQid6_Yn="Y" pQid7_Yn="Y" pQid8_Yn="Y" pQid9_Yn="Y" pQid10_Yn="Y" pQid11_Yn="Y" pQid12_Yn="Y" pQid13_Yn="Y" pQid14_Yn="" pQid15_Yn="Y" pQid16_Yn="Y" pQid17_Abcde="D" pQid18_Yn="Y" pQid19_Yn="Y" pQid19_Fbsmg="126" pQid19_Fbsmmol="7" pQid19_Fbsdate="2022-0826" pQid20_Yn="Y" pQid20_Choleval="240" pQid20_Choledate="2022-08-26" pQid21_Yn="Y" pQid21_Ketonval="30" pQid21_Ketondate="2022-08-26 00:00:00" pQid22_Yn="Y" pQid22_Proteinval="150" pQid22_Proteindate="" pQid23_Yn="Y" pQid24_Yn="N" pReportStatus="U" pDeficiencyRemarks=""/> </PROFILE> </PROFILING> <SOAPS> <SOAP pHciCaseNo="TH9000000120220800002" pHciTransNo="SH9000000120220800002" pSoapDate="2022-08-27" pPatientPin="030263078507" pPatientType="MM" pMemPin="030263078507" pEffYear="2022" pATC="WALKEDIN" pIsWalkedIn="Y" pCoPay="0" pTransDate="2022-08-31" pReportStatus="U" pDeficiencyRemarks=""> <SUBJECTIVE pIllnessHistory="SAMPLE HISTORY OF ILLNESS" pSignsSymptoms="37;38;X" pOtherComplaint="SAMPLE CHIEF COMPLAINT" pPainSite="HEAD" pReportStatus="U" pDeficiencyRemarks=""/> <PEPERT pSystolic="140" pDiastolic="90" pHr="60" pRr="18" pTemp="36.20" pHeight="153" pWeight="49" pBMI="20.93" pZScore="" pLeftVision="125" pRightVision="150" pLength="" pHeadCirc="" pSkinfoldThickness="" pWaist="" pHip="" pLimbs="" pMidUpperArmCirc="" pReportStatus="U" pDeficiencyRemarks=""/> <PEMISCS>
+<PEMISC pSkinId="" pHeentId="11" pChestId="" pHeartId="" pAbdomenId="" pNeuroId="" pGuId="" pRectalId="" pReportStatus="U" pDeficiencyRemarks=""/>
+Page 44
+
+<PEMISC pSkinId="" pHeentId="" pChestId="6" pHeartId="" pAbdomenId="" pNeuroId="" pGuId="" pRectalId="" pReportStatus="U" pDeficiencyRemarks=""/>
+<PEMISC pSkinId="" pHeentId="" pChestId="" pHeartId="6" pAbdomenId="" pNeuroId="" pGuId="" pRectalId="" pReportStatus="U" pDeficiencyRemarks=""/>
+<PEMISC pSkinId="" pHeentId="" pChestId="" pHeartId="3" pAbdomenId="" pNeuroId="" pGuId="" pRectalId="" pReportStatus="U" pDeficiencyRemarks=""/>
+<PEMISC pSkinId="" pHeentId="" pChestId="" pHeartId="7" pAbdomenId="" pNeuroId="" pGuId="" pRectalId="" pReportStatus="U" pDeficiencyRemarks=""/>
+<PEMISC pSkinId="" pHeentId="" pChestId="" pHeartId="8" pAbdomenId="" pNeuroId="" pGuId="" pRectalId="" pReportStatus="U" pDeficiencyRemarks=""/>
+<PEMISC pSkinId="" pHeentId="" pChestId="" pHeartId="4" pAbdomenId="" pNeuroId="" pGuId="" pRectalId="" pReportStatus="U" pDeficiencyRemarks=""/>
+<PEMISC pSkinId="" pHeentId="" pChestId="" pHeartId="9" pAbdomenId="" pNeuroId="" pGuId="" pRectalId="" pReportStatus="U" pDeficiencyRemarks=""/>
+<PEMISC pSkinId="" pHeentId="" pChestId="" pHeartId="99" pAbdomenId="" pNeuroId="" pGuId="" pRectalId="" pReportStatus="U" pDeficiencyRemarks=""/>
+<PEMISC pSkinId="" pHeentId="" pChestId="" pHeartId="" pAbdomenId="8" pNeuroId="" pGuId="" pRectalId="" pReportStatus="U" pDeficiencyRemarks=""/>
+<PEMISC pSkinId="" pHeentId="" pChestId="" pHeartId="" pAbdomenId="9" pNeuroId="" pGuId="" pRectalId="" pReportStatus="U" pDeficiencyRemarks=""/>
+<PEMISC pSkinId="" pHeentId="" pChestId="" pHeartId="" pAbdomenId="" pNeuroId="" pGuId="3" pRectalId="" pReportStatus="U" pDeficiencyRemarks=""/>
+<PEMISC pSkinId="" pHeentId="" pChestId="" pHeartId="" pAbdomenId="" pNeuroId="" pGuId="" pRectalId="99" pReportStatus="U" pDeficiencyRemarks=""/>
+<PEMISC pSkinId="7" pHeentId="" pChestId="" pHeartId="" pAbdomenId="" pNeuroId="" pGuId="" pRectalId="" pReportStatus="U" pDeficiencyRemarks=""/>
+<PEMISC pSkinId="10" pHeentId="" pChestId="" pHeartId="" pAbdomenId="" pNeuroId="" pGuId="" pRectalId="" pReportStatus="U" pDeficiencyRemarks=""/>
+<PEMISC pSkinId="99" pHeentId="" pChestId="" pHeartId="" pAbdomenId="" pNeuroId="" pGuId="" pRectalId="" pReportStatus="U" pDeficiencyRemarks=""/>
+<PEMISC pSkinId="" pHeentId="" pChestId="" pHeartId="" pAbdomenId="" pNeuroId="6" pGuId="" pRectalId="" pReportStatus="U" pDeficiencyRemarks=""/>
+</PEMISCS> <PESPECIFIC pSkinRem="" pHeentRem="" pChestRem="" pHeartRem="" pAbdomenRem="" pNeuroRem="" pRectalRem="" pGuRem="" pReportStatus="U" pDeficiencyRemarks=""/> <ICDS>
+<ICD pIcdCode="E14.9" pReportStatus="U" pDeficiencyRemarks=""/> <ICD pIcdCode="I10.9" pReportStatus="U" pDeficiencyRemarks=""/> </ICDS> <DIAGNOSTICS> <DIAGNOSTIC pDiagnosticId="19" pOthRemarks="" pIsPhysicianRecommendation="Y" pPatientRemarks="RQ" pReportStatus="U" pDeficiencyRemarks=""/> <DIAGNOSTIC pDiagnosticId="1" pOthRemarks="" pIsPhysicianRecommendation="Y" pPatientRemarks="RQ" pReportStatus="U" pDeficiencyRemarks=""/> <DIAGNOSTIC pDiagnosticId="4" pOthRemarks="" pIsPhysicianRecommendation="Y" pPatientRemarks="RQ" pReportStatus="U" pDeficiencyRemarks=""/> <DIAGNOSTIC pDiagnosticId="8" pOthRemarks="" pIsPhysicianRecommendation="Y" pPatientRemarks="RQ" pReportStatus="U" pDeficiencyRemarks=""/> <DIAGNOSTIC pDiagnosticId="9" pOthRemarks="" pIsPhysicianRecommendation="Y" pPatientRemarks="RQ" pReportStatus="U" pDeficiencyRemarks=""/> <DIAGNOSTIC pDiagnosticId="7" pOthRemarks="" pIsPhysicianRecommendation="Y" pPatientRemarks="RQ" pReportStatus="U" pDeficiencyRemarks=""/> <DIAGNOSTIC pDiagnosticId="15" pOthRemarks="" pIsPhysicianRecommendation="Y" pPatientRemarks="RQ" pReportStatus="U" pDeficiencyRemarks=""/> <DIAGNOSTIC pDiagnosticId="3" pOthRemarks="" pIsPhysicianRecommendation="Y" pPatientRemarks="RQ" pReportStatus="U" pDeficiencyRemarks=""/> <DIAGNOSTIC pDiagnosticId="18" pOthRemarks="" pIsPhysicianRecommendation="Y" pPatientRemarks="RQ" pReportStatus="U" pDeficiencyRemarks=""/> <DIAGNOSTIC pDiagnosticId="6" pOthRemarks="" pIsPhysicianRecommendation="Y" pPatientRemarks="RQ" pReportStatus="U" pDeficiencyRemarks=""/> <DIAGNOSTIC pDiagnosticId="14" pOthRemarks="" pIsPhysicianRecommendation="Y" pPatientRemarks="RQ" pReportStatus="U" pDeficiencyRemarks=""/> <DIAGNOSTIC pDiagnosticId="13" pOthRemarks="" pIsPhysicianRecommendation="Y" pPatientRemarks="RQ" pReportStatus="U" pDeficiencyRemarks=""/> <DIAGNOSTIC pDiagnosticId="17" pOthRemarks="" pIsPhysicianRecommendation="Y" pPatientRemarks="RQ" pReportStatus="U" pDeficiencyRemarks=""/>
+Page 45
+
+<DIAGNOSTIC pDiagnosticId="5" pOthRemarks="" pIsPhysicianRecommendation="Y" pPatientRemarks="RQ" pReportStatus="U" pDeficiencyRemarks=""/>
+<DIAGNOSTIC pDiagnosticId="2" pOthRemarks="" pIsPhysicianRecommendation="Y" pPatientRemarks="RQ" pReportStatus="U" pDeficiencyRemarks=""/>
+<DIAGNOSTIC pDiagnosticId="99" pOthRemarks="" pIsPhysicianRecommendation="Y" pPatientRemarks="RQ" pReportStatus="U" pDeficiencyRemarks=""/>
+</DIAGNOSTICS> <MANAGEMENTS>
+<MANAGEMENT pManagementId="1" pOthRemarks="" pReportStatus="U" pDeficiencyRemarks=""/>
+<MANAGEMENT pManagementId="3" pOthRemarks="" pReportStatus="U" pDeficiencyRemarks=""/>
+<MANAGEMENT pManagementId="4" pOthRemarks="" pReportStatus="U" pDeficiencyRemarks=""/>
+<MANAGEMENT pManagementId="X" pOthRemarks="SAMPLE MANAGEMENT" pReportStatus="U" pDeficiencyRemarks=""/>
+</MANAGEMENTS> <ADVICE pRemarks="SAMPLE REMARKS" pReportStatus="U" pDeficiencyRemarks=""/> </SOAP> </SOAPS> <DIAGNOSTICEXAMRESULTS> <DIAGNOSTICEXAMRESULT pHciCaseNo="TH9000000120220800002" pHciTransNo="PH9000000120220800002" pPatientPin="030263078507" pPatientType="MM" pMemPin="030263078507" pEffYear="2022"> <FBSS>
+<FBS pReferralFacility="SAMPLE PARTNER FACILITY" pLabDate="2022-08-26" pGlucoseMg="126" pGlucoseMmol="7" pDateAdded="2022-08-31" pStatus="D" pDiagnosticLabFee="80.00" pReportStatus="U" pDeficiencyRemarks=""/>
+</FBSS> <RBSS>
+<RBS pReferralFacility="" pLabDate="2022-08-26" pGlucoseMg="126" pGlucoseMmol="7" pDateAdded="2022-08-31" pStatus="D" pDiagnosticLabFee="80.00" pReportStatus="U" pDeficiencyRemarks=""/>
+</RBSS> </DIAGNOSTICEXAMRESULT> <DIAGNOSTICEXAMRESULT pHciCaseNo="TH9000000120220800002" pHciTransNo="SH9000000120220800002" pPatientPin="030263078507" pPatientType="MM" pMemPin="030263078507" pEffYear="2022">
+<CBCS> <CBC pReferralFacility="" pLabDate="2022-08-27" pHematocrit="35"
+pHemoglobinG="11.9" pHemoglobinMmol="-" pMhcPg="32.5" pMhcFmol="-" pMchcGhb="32.5" pMchcMmol="-" pMcvUm="82.5" pMcvFl="-" pWbc1000="3.9" pWbc10="-" pMyelocyte="0" pNeutrophilsBnd="0-5" pNeutrophilsSeg="40-60" pLymphocytes="20-40" pMonocytes="4-8" pEosinophils="1-3" pBasophils="0-1" pPlatelet="200,000-500,000" pDateAdded="2022-08-31" pStatus="D" pDiagnosticLabFee="120.00" pReportStatus="U" pDeficiencyRemarks=""/>
+</CBCS> <URINALYSISS>
+<URINALYSIS pReferralFacility="" pLabDate="2022-08-27" pGravity="1.015" pAppearance="clear" pColor="yellow" pGlucose="0" pProteins="0" pKetones="0" pPh="6" pRbCells="3" pWbCells="3" pBacteria="6" pCrystals="0" pBladderCell="0" pSquamousCell="0" pTubularCell="0" pBroadCasts="0" pEpithelialCast="0" pGranularCast="0" pHyalineCast="0" pRbcCast="0" pWaxyCast="0" pWcCast="0" pAlbumin="20" pPusCells="0" pDateAdded="2022-08-31 17:53:29" pStatus="D" pDiagnosticLabFee="70.00" pReportStatus="U" pDeficiencyRemarks=""/>
+</URINALYSISS> <CHESTXRAYS>
+<CHESTXRAY pReferralFacility="SAMPLE FACILITY" pLabDate="2022-08-27" pFindings="99" pRemarksFindings="SAMPLE REMARKS" pObservation="3;99" pRemarksObservation="" pDateAdded="2022-08-31" pStatus="D" pDiagnosticLabFee="100.00" pReportStatus="U" pDeficiencyRemarks=""/>
+</CHESTXRAYS> <SPUTUMS>
+<SPUTUM pReferralFacility="" pLabDate="2022-08-27" pDataCollection="1" pFindings="2" pRemarks="SAMPLE FINDINGS" pNoPlusses="0" pDateAdded="2022-08-31" pStatus="D" pDiagnosticLabFee="120.00" pReportStatus="U" pDeficiencyRemarks=""/>
+</SPUTUMS> <LIPIDPROFILES>
+Page 46
+
+<LIPIDPROFILE pReferralFacility="" pLabDate="2022-08-27" pLdl="80" pHdl="65" pTotal="" pCholesterol="160" pTriglycerides="145" pDateAdded="2022-08-31" pStatus="D" pDiagnosticLabFee="120.00" pReportStatus="U" pDeficiencyRemarks=""/>
+</LIPIDPROFILES> <FBSS>
+<FBS pReferralFacility="" pLabDate="2022-08-27" pGlucoseMg="126" pGlucoseMmol="7" pDateAdded="2022-08-31" pStatus="D" pDiagnosticLabFee="80.00" pReportStatus="U" pDeficiencyRemarks=""/>
+</FBSS> <RBSS>
+<RBS pReferralFacility="" pLabDate="2022-08-27" pGlucoseMg="126" pGlucoseMmol="7" pDateAdded="2022-08-31" pStatus="D" pDiagnosticLabFee="80.00" pReportStatus="U" pDeficiencyRemarks=""/>
+</RBSS> <ECGS>
+<ECG pReferralFacility="" pLabDate="2022-08-27" pFindings="2" pRemarks="SAMPLE FINDINGS" pDateAdded="2022-08-31" pStatus="D" pDiagnosticLabFee="250.00" pReportStatus="U" pDeficiencyRemarks=""/>
+</ECGS> <FECALYSISS>
+<FECALYSIS pReferralFacility="" pLabDate="2022-08-27" pColor="1" pConsistency="3" pRbc="0-1" pWbc="4-5" pOva="NOPS" pParasite="NOPS" pBlood="P" pPusCells="0-2" pDateAdded="2022-08-31" pStatus="D" pDiagnosticLabFee="60.00" pReportStatus="U" pDeficiencyRemarks=""/>
+</FECALYSISS> <PAPSMEARS>
+<PAPSMEAR pReferralFacility="" pLabDate="2022-08-27" pFindings="SAMPLE FINDINGS" pImpression="SAMPLE IMPRESSION" pDateAdded="2022-08-31" pStatus="D" pDiagnosticLabFee="95.00" pReportStatus="U" pDeficiencyRemarks=""/>
+</PAPSMEARS> <OGTTS>
+<OGTT pReferralFacility="" pLabDate="2022-08-27" pExamFastingMg="95" pExamFastingMmol="5.3" pExamOgttOneHrMg="180" pExamOgttOneHrMmol="10" pExamOgttTwoHrMg="140" pExamOgttTwoHrMmol="7.8" pDateAdded="2022-08-31" pStatus="D" pDiagnosticLabFee="120.00" pReportStatus="U" pDeficiencyRemarks=""/>
+</OGTTS> <FOBTS>
+<FOBT pReferralFacility="" pLabDate="2022-08-27" pFindings="N" pDateAdded="2022-0831 17:53:30" pStatus="D" pDiagnosticLabFee="100.00" pReportStatus="U" pDeficiencyRemarks=""/>
+</FOBTS> <CREATININES>
+<CREATININE pReferralFacility="" pLabDate="2022-08-27" pFindings="1.1" pDateAdded="2022-08-31" pStatus="D" pDiagnosticLabFee="120.00" pReportStatus="U" pDeficiencyRemarks=""/>
+</CREATININES> <PPDTests>
+<PPDTest pReferralFacility="" pLabDate="2022-08-27" pFindings="N" pDateAdded="202208-31" pStatus="D" pDiagnosticLabFee="100.00" pReportStatus="U" pDeficiencyRemarks=""/>
+</PPDTests> <HbA1cs>
+<HbA1c pReferralFacility="SAMPLE FACILITY" pLabDate="2022-08-27" pFindings="42.1" pDateAdded="2022-08-31 17:53:30" pStatus="D" pDiagnosticLabFee="120.00" pReportStatus="U" pDeficiencyRemarks=""/>
+</HbA1cs> <OTHERDIAGEXAMS>
+<OTHERDIAGEXAM pReferralFacility="SAMPLE FACILITY" pLabDate="2022-08-27" pOthDiagExam="other diagnostic" pFindings="" pDateAdded="2022-08-31" pStatus="D" pDiagnosticLabFee="60.00" pReportStatus="U" pDeficiencyRemarks=""/>
+</OTHERDIAGEXAMS> </DIAGNOSTICEXAMRESULT> </DIAGNOSTICEXAMRESULTS> <MEDICINES> <MEDICINE pHciCaseNo="TH9000000120220800002" pHciTransNo="SH9000000120220800002" pCategory="-" pDrugCode="FELOD0000000069TAB490000000000" pGenericCode="FELOD" pSaltCode="00000" pStrengthCode="00069" pFormCode="TAB49" pUnitCode="00000" pPackageCode="00000" pOtherMedicine="" pOthMedDrugGrouping="" pRoute=""
+Page 47
+
+pQuantity="10.00" pActualUnitPrice="50.00" pTotalAmtPrice="500.00" pInstructionQuantity="1" pInstructionStrength="10 MG" pInstructionFrequency="" pPrescribingPhysician="SAMPLE PHYSICIAN" pIsDispensed="Y" pDateDispensed="2022-08-27" pDispensingPersonnel="SAMPLE DISPENSING PERSONNEL" pIsApplicable="Y" pDateAdded="2022-08-31" pReportStatus="U" pDeficiencyRemarks=""/>
+<MEDICINE pHciCaseNo="TH9000000120220800002" pHciTransNo="SH9000000120220800002" pCategory="-" pDrugCode="" pGenericCode="" pSaltCode="" pStrengthCode="" pFormCode="" pUnitCode="" pPackageCode="" pOtherMedicine="SAMPLE ANTIBIOTICS" pOthMedDrugGrouping="NCD" pRoute="" pQuantity="10.00" pActualUnitPrice="20.00" pTotalAmtPrice="200.00" pInstructionQuantity="2" pInstructionStrength="N/A" pInstructionFrequency="" pPrescribingPhysician="SAMPLE PHYSICIAN" pIsDispensed="Y" pDateDispensed="2022-08-27" pDispensingPersonnel="SAMPLE DISPENSING PERSONNEL" pIsApplicable="Y" pDateAdded="2022-0831" pReportStatus="U" pDeficiencyRemarks=""/>
+</MEDICINES> </PCB>
+Page 48
+
+ANNEX D: GUIDELINES FOR THE ENCRYPTION AND DECRYPTION OF XML
+GUIDELINES AND PROCEDURES
+ The application of HCI should encrypt input parameters that are supposed to be passed as XML. HCI applications should also decrypt all the output parameters that are supposed to be returned by PKA as XML.
+ The input and output parameters that are to be passed as XML text will be referred in this section as XML payload data.
+ENCRYPTION OF THE XML PAYLOAD DATA
+1. The procedures for the encryption of the XML payload data will be similar to the procedures in the encryption of the image files of the supporting documents of electronically submitted claims. The difference is that encryption of the XML payload data will not use public-key encryption.
+2. The XML payload data will be encrypted using "AES-256-CBC" algorithm. 3. PhilHealth will issue the passphrase/password/cipher key to be used by each HCI. The password
+should be hashed using SHA-256 algorithm. The first 32 bytes of the hashed value should be passed as the password for the AES encryption. If the resulting hashed value is less than 32-bytes, the value should be padded with `0x00' or null character. 4. An array of random 128 bytes should be used as the initialization vector. 5. Before encrypting the data, compute for the hash of file using SHA-256 hash method. (This hash will be compared to the hash that will be computed later after the file has been extracted on from decrypted file on PhilHealth side. If the hash values match, it assures that the file has been encrypted 6. The expected output of these encryption procedures is to be encoded in JSON. The figure below shows the expected key-value pairs that are to be included in the JSON text.
+a. The "docMimeType" key, should have fixed value of "<text/xml>". b. The value for the "hash" item is the computed hash of the raw unencrypted XML text using
+the SHA-256 hash algorithm. c. The value for "key1" should be an empty string. d. The value for "key2" should also be set to empty string. e. The value for "iv" key should be the base-64 encoded value of the initialization vector
+mentioned in Step#6. f. The value for the "doc" key should the base-64 encoded value of the result of the AES-256
+encryption of the XML payload data.
+{ "docMimeType": "<text/xml>", "hash": "<SHA-256 hash of the XML text (before encryption)>", "key1" : "", "key2" : "", "iv" : "<Encoded in Base64 format, the public key encrypted initialization vector>", "doc" : "<Encoded in Base64 format, AES-256-CBC encrypted image file data> }
+Figure 1: Format/Layout of encrypted data
+7. SPs/HCIs may use their preferred programming language or tools in doing the encryption and decryption. The development kit includes sample codes in C# and PHP. For the sample source codes
+Page 49
+
+in PHP, the encryptXmlPayloadData method of the PhilHealthEClaimsEncryptor class contains an implementation of the encryption procedures outlined above.
+DECRYPTION OF THE XML PAYLOAD DATA
+The decryption process is just the reverse of the encryption process outlined in previous section.For the service methods that are supposed to return an XML, PKA will encrypt the supposed XML data and return a text encoded in JSON whose key-value pairs as described in the previous section.
+1. After receiving the JSON text, the HCI application should parse it. 2. Get the value of the "iv" key. That is the base-64 encoded value of the initialization vector used in
+the AES-256 encryption of the XML payload data. Decode the value of the initialization vector from base-64 encoding to its corresponding raw array of bytes. 3. Get the password, passphrase or cipher key of the HCI. 4. Get the SHA-256 hash value of that value. . If the length in bytes of the resulting hashed value is less than 32, pad the value with `\0'' or null character. 5. Get the value of the "doc" key. That value is the base-64 encoding of the encrypted data. Decode the data from base-64 encoding to the raw array of bytes of the encrypted data, With values of the passphrase, initialization vector and actual encrypted data, decrypt the data using AES-256CBC. 6. You may get the hash value of the decrypted data and compare it with the value of the "hash" key. 7. After the decryption, the application of HCI may now process and parse the target XML data. SPs/HCIs may use their preferred programming language or tools in doing the encryption and decryption. The development kit includes sample codes in C# and PHP. For the sample source codes in PHP, the decryptPayloadDataToXmlmethod of the PhilHealthEClaimsEncryptor class contains an implementation of the decryption procedures outlined above.
+Page 50
+
+ANNEX E: NON-DISCLOSURE AGREEMENT
+Page 51
+
+ANNEX F: SOFTWARE SOLUTION VALIDATION TEST FORM
+Page 52
+
+Page 53
+
+

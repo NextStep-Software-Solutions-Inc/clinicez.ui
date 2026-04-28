@@ -34,13 +34,14 @@ export interface CheckUploadStatusResponse {
 
 /**
  * validateReport — pre-validate an encrypted XML payload before submission.
- * pReportTagging = the encrypted XML JSON string (from encryptXmlPayload).
- * pReport        = "PCB" | "ML"
- * Returns a transmittal ID on success which must be passed to submitReport.
+ * pReport        = the encrypted XML JSON string (from encryptXmlPayload, up to 2 MB).
+ * pReportTagging = "1" (first patient encounter: enlistment + profiling)
+ *                  "2" (encounter, consultations, diagnostics, drugs)
+ * Returns validated XML with pReportStatus="V" on success.
  */
 export interface ValidateReportParams {
-    pReportTagging: string;
-    pReport: "PCB" | "ML";
+    pReport: string;
+    pReportTagging: "1" | "2";
 }
 
 export interface ValidateReportResponse {
@@ -49,14 +50,14 @@ export interface ValidateReportResponse {
 
 /**
  * submitReport — final submission after a successful validateReport.
- * pTransmittalID  = value returned by validateReport
- * pReport         = "PCB" | "ML"
- * pReportTagging  = same encrypted XML JSON string used in validateReport
+ * pTransmittalID  = EMR-generated transmittal reference (R + accreno(9) + yyyymm + seq(5))
+ * pReport         = the encrypted XML JSON string (same as used in validateReport)
+ * pReportTagging  = "1" or "2" (same as used in validateReport)
  */
 export interface SubmitReportParams {
     pTransmittalID: string;
-    pReport: "PCB" | "ML";
-    pReportTagging: string;
+    pReport: string;
+    pReportTagging: "1" | "2";
 }
 
 export interface SubmitReportResponse {
@@ -115,6 +116,36 @@ export interface IsMemberDependentRegisteredParams {
 
 export interface IsMemberDependentRegisteredResponse {
     return: string;
+}
+
+/**
+ * Parsed ASSIGNMENT element from an extractRegistrationList XML response.
+ * Maps directly to the attributes declared in KonsultaMasterlist_v1.4.dtd.
+ *
+ * For a principal member (pAssignedType="MM"):
+ *   pAssignedPin  = member PIN   |  pPrimaryPIN = same PIN
+ * For a dependent (pAssignedType="DD"):
+ *   pAssignedPin  = dependent PIN |  pPrimaryPIN = primary member PIN
+ */
+export interface ErlAssignment {
+    pAssignedPin: string;
+    pAssignedLastName: string;
+    pAssignedFirstName: string;
+    pAssignedMiddleName: string;
+    pAssignedExtName: string;
+    pAssignedDateOfBirth: string;
+    pAssignedSex: "M" | "F";
+    pAssignedType: "MM" | "DD";
+    pPrimaryPIN: string;
+    pPrimaryLastName: string;
+    pPrimaryFirstName: string;
+    pPrimaryMiddleName: string;
+    pPrimaryExtName: string;
+    pPrimaryDateOfBirth: string;
+    pMobileNumber: string;
+    pPackageType: "E" | "K";
+    pEffYear: string;
+    pAssignedDate: string;
 }
 
 // ─── Deprecated aliases (kept for backwards-compat during migration) ─────────

@@ -306,6 +306,14 @@ export function getLastKonsultaRequest(): string | undefined {
 }
 
 /**
+ * Returns the raw SOAP XML of the most recent response received by the client.
+ * Useful for seeing exactly what the server sent back.
+ */
+export function getLastKonsultaResponse(): string | undefined {
+    return (_clientCache as unknown as { lastResponse?: string })?.lastResponse;
+}
+
+/**
  * Clears the cached SOAP client singleton.
  * Call this if the WSDL endpoint changes (e.g. staging → production).
  */

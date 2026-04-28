@@ -121,6 +121,8 @@ model User {
   PhilHealthRecordsDeleted         PhilHealthRecord[]               @relation("PhilHealthRecordsDeletedBy")
   PhilHealthRecordsUpdated         PhilHealthRecord[]               @relation("PhilHealthRecordsUpdatedBy")
   PhilHealthRecords                PhilHealthRecord[]
+  KonsultaBatchesCreated           KonsultaBatch[]                  @relation("KonsultaBatchCreatedBy")
+  KonsultaEntryPatients            KonsultaEntry[]                  @relation("KonsultaEntryPatient")
   PhysicalExaminations             PhysicalExamination[]
   PreAssessmentNotes               PreAssessmentNote[]
   PrescriptionsCreated             Prescription[]                   @relation("PrescriptionCreatedBy")
@@ -167,21 +169,24 @@ model User {
 }
 
 model PhilHealthRecord {
-  id                   Int                   @id @default(autoincrement())
-  userId               Int
-  pin                  String                @unique
-  tin                  String?               @unique
-  philSysId            String?               @unique
-  memberTypeId         Int
-  isActive             Boolean               @default(true)
-  createdAt            DateTime              @default(now())
-  updatedAt            DateTime              @updatedAt
-  deletedAt            DateTime?
-  createdBy            Int?
-  updatedBy            Int?
-  deletedBy            Int?
-  photoUrl             String?
-  PhilHealthDependents PhilHealthDependent[]
+  id                     Int                   @id @default(autoincrement())
+  userId                 Int
+  pin                    String                @unique
+  tin                    String?               @unique
+  philSysId              String?               @unique
+  memberTypeId           Int
+  isActive               Boolean               @default(true)
+  createdAt              DateTime              @default(now())
+  updatedAt              DateTime              @updatedAt
+  deletedAt              DateTime?
+  createdBy              Int?
+  updatedBy              Int?
+  deletedBy              Int?
+  photoUrl               String?
+  pinVerificationStatus  String?               // "VERIFIED" | "MISMATCH" | "NOT_FOUND" | "FAILED"
+  pinVerifiedAt          DateTime?
+  pinVerificationResult  Json?                 // stores raw matched fields + discrepancies
+  PhilHealthDependents   PhilHealthDependent[]
   createdByUser        User?                 @relation("PhilHealthRecordsCreatedBy", fields: [createdBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
   deletedByUser        User?                 @relation("PhilHealthRecordsDeletedBy", fields: [deletedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
   PhilHealthMemberType PhilHealthMemberType  @relation(fields: [memberTypeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -233,6 +238,14 @@ model ClinicPatient {
   claimedBy                Int?
   onboardingStatus         OnboardingStatus            @default(NOT_STARTED)
   profileCompletionStatus  ProfileCompletionStatus     @default(INCOMPLETE)
+  konsultaPatientType      String?                     // "MM" member | "DD" dependent
+  konsultaEffYear          String?
+  konsultaMemberPin        String?
+  konsultaRegistrationStatus String?                   // REGISTERED | NOT_REGISTERED | FAILED | UNENROLLED
+  konsultaRegisteredAt     DateTime?
+  konsultaRegistrationCheckedAt DateTime?
+  konsultaRegistrationResult Json?
+  konsultaUnenrolledAt     DateTime?
   HeartStationRequests     ClinicHeartStationRequest[]
   ImagingRequests          ClinicImagingRequest[]
   LaboratoryRequests       ClinicLaboratoryRequest[]
@@ -246,6 +259,7 @@ model ClinicPatient {
   ConsultationTickets      ConsultationTicket[]
 
   @@unique([clinicId, patientId], name: "unique_clinic_patient")
+  @@index([clinicId, konsultaEffYear, konsultaRegistrationStatus])
 }
 
 model ClinicPatientPermission {
@@ -1290,6 +1304,7 @@ model Clinic {
   Systems                         System[]
   UserClinicAppointmentWhitelists UserClinicAppointmentWhitelist[]
   UserDefaultClinicRoles          UserDefaultClinicRole[]
+  KonsultaBatches                 KonsultaBatch[]
 
   @@index([tenantId, clinicUid], map: "clinic_index")
 }
@@ -1642,6 +1657,12 @@ model ConsultationTicket {
   ekasTransactionGeneratedAt  DateTime?
   ekasTransactionNumber       String?                      @unique
   caseNumber                  String?                      @unique
+  konsultaHciCaseNo           String?                      @unique
+  konsultaHciTransNo          String?                      @unique
+  konsultaAtc                 String?
+  konsultaAtcValidationStatus String?                      // VALID | INVALID | FAILED
+  konsultaAtcValidatedAt      DateTime?
+  konsultaAtcValidationResult Json?
   HeartStationRequests        ClinicHeartStationRequest[]
   ImagingRequests             ClinicImagingRequest[]
   LaboratoryRequests          ClinicLaboratoryRequest[]
@@ -1661,6 +1682,8 @@ model ConsultationTicket {
 
   @@index([caseNumber])
   @@index([ekasTransactionNumber])
+  @@index([konsultaHciCaseNo])
+  @@index([konsultaHciTransNo])
   @@index([clinicPatientId])
 }
 
@@ -2909,4 +2932,64 @@ model PhBarangay {
   @@index([code])
   @@index([municipalityCode])
   @@index([isActive])
+}
+
+// ─── PhilHealth Konsulta Report Tracking ─────────────────────────────────────
+
+enum KonsultaBatchStatus {
+  DRAFT
+  GENERATED
+  VALIDATED
+  SUBMITTED
+  FAILED
+}
+
+/// Represents a single PCB XML submission batch for a reporting period.
+model KonsultaBatch {
+  id             Int                 @id @default(autoincrement())
+  batchUid       String              @unique @default(cuid())
+  clinicId       Int
+  period         String              // "YYYYMM" e.g. "202604"
+  reportTagging  String              @default("1") // "1" = enlistment+profile, "2" = encounter
+  transmittalNo  String?             @unique
+  status         KonsultaBatchStatus @default(DRAFT)
+  notes          String?
+  xmlPayload     String?             @db.Text
+  validateResult Json?
+  submitResult   Json?
+  errorMessage   String?
+  submittedAt    DateTime?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  createdBy      Int?
+  Clinic         Clinic              @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  CreatedByUser  User?               @relation("KonsultaBatchCreatedBy", fields: [createdBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  KonsultaEntries KonsultaEntry[]
+
+  @@index([clinicId, period])
+  @@index([status])
+}
+
+/// Individual patient entry within a KonsultaBatch.
+model KonsultaEntry {
+  id              Int           @id @default(autoincrement())
+  batchId         Int
+  patientUserId   Int
+  philHealthPin   String
+  memberPin       String?
+  memberType      String        // "MM" | "DD"
+  hciCaseNo       String?
+  hciTransNo      String?
+  consultationIds Int[]         @default([])
+  included        Boolean       @default(true)
+  status          String        @default("PENDING") // PENDING | INCLUDED | EXCLUDED | FAILED
+  errorMessage    String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  KonsultaBatch   KonsultaBatch @relation(fields: [batchId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  Patient         User          @relation("KonsultaEntryPatient", fields: [patientUserId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([batchId, patientUserId], name: "unique_batch_patient")
+  @@index([batchId])
+  @@index([philHealthPin])
 }

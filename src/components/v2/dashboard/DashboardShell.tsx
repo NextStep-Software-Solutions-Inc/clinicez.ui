@@ -21,6 +21,7 @@ import {
   Heart,
   Stethoscope,
   Folder,
+  ShieldCheck,
   type LucideIcon,
 } from "lucide-react";
 import { Input } from "@components/ui/input";
@@ -49,6 +50,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   heart: Heart,
   stethoscope: Stethoscope,
   folder: Folder,
+  "shield-check": ShieldCheck,
 };
 
 function resolveIcon(name: string): LucideIcon {

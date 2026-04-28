@@ -8,6 +8,8 @@ import { PERMISSIONS } from '@lib/permissions';
 import { hasCodeProperty } from '@lib/utils';
 import { withErrorHandling } from '@/lib/with-error-handling';
 import { getHPsAction, GetHPsType } from '@actions/hp.actions';
+import { getNextSequenceNumber } from '@/lib/sequence-generator';
+import { formatKonsultaHciNumber } from '@/lib/format-sequence';
 
 type CreateConsultationTicketPayload = {
   systemId?: number;
@@ -32,6 +34,23 @@ export const createConsultationTicketAction = withErrorHandling(async ({ systemI
   })
 
   if (!canCreateConsultationTicket) throw new Error("You do not have permission to create consultation tickets")
+
+  const clinicForKonsulta = await prismaClient.clinic.findUnique({
+    where: { clinicUid },
+    select: {
+      id: true,
+      ClinicSetting: { select: { philhealthAccreditationNumber: true } },
+    },
+  });
+  const hciAccreNo = clinicForKonsulta?.ClinicSetting?.philhealthAccreditationNumber ?? null;
+  const clinicIdForKonsulta = clinicForKonsulta?.id ?? null;
+  const caseSequence = hciAccreNo && clinicIdForKonsulta
+    ? await getNextSequenceNumber("KONSULTA_HCI_CASE", clinicIdForKonsulta)
+    : null;
+  const soapSequence = hciAccreNo && clinicIdForKonsulta
+    ? await getNextSequenceNumber("KONSULTA_SOAP_TRANSACTION", clinicIdForKonsulta)
+    : null;
+  const now = new Date();
 
   const consultationTicket = await prismaClient.$transaction(async (prisma) => {
     const consultationConfig = await prismaClient.consultationConfig.findFirstOrThrow({
@@ -62,6 +81,10 @@ export const createConsultationTicketAction = withErrorHandling(async ({ systemI
         Clinic: {
           connect: { clinicUid }
         },
+        ...(hciAccreNo && caseSequence && soapSequence ? {
+          konsultaHciCaseNo: formatKonsultaHciNumber("T", hciAccreNo, caseSequence, now),
+          konsultaHciTransNo: formatKonsultaHciNumber("S", hciAccreNo, soapSequence, now),
+        } : {}),
         ConsultationTicketHPs: {
           createMany: {
             data: hpIds.map(hpId => ({ hpId }))

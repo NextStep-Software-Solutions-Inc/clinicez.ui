@@ -739,7 +739,6 @@ function PhilHealthTab({
   const [isPending, startTransition] = useTransition();
   const [testResult, setTestResult] = useState<string | null>(null);
   const [isTesting, setIsTesting] = useState(false);
-  const [testPin, setTestPin] = useState("000000000000");
 
   const form = useForm<PhilHealthFormValues>({
     resolver: zodResolver(philhealthSchema),
@@ -833,34 +832,62 @@ function PhilHealthTab({
         return;
       }
 
-      // Step 4 — isMemberDependentRegistered
-      lines.push(`\n[4/5] Checking member registration (PIN: ${testPin})…`);
+      // Step 4 — extractRegistrationList (ERL)
+      lines.push("\n[4/5] Extracting registration list (ERL)…");
       setTestResult(lines.join("\n"));
-      const memberRes = await post("check-member", { pin: testPin, memberType: "MM" });
-      if (memberRes.ok) {
-        const raw = (memberRes.result as Record<string, unknown>)?.return ?? memberRes.result;
-        lines.push(`  ✓ Response: ${JSON.stringify(raw)}`);
+      const erlRes = await post("extract-registration");
+      if (erlRes.ok) {
+        const m = erlRes.firstMember as Record<string, string> | null;
+        if (m?.pAssignedPin) {
+          lines.push(`  ✓ Found registered member: PIN ${m.pAssignedPin} (${m.pAssignedType}) — effYear ${m.pEffYear}`);
+        } else {
+          lines.push("  ✓ ERL succeeded but returned no members — upload test will use Annex B sample PINs");
+        }
       } else {
-        lines.push(`  ✗ ${memberRes.error ?? "Unknown error"}`);
-        if (memberRes.hint) lines.push(`  ℹ ${memberRes.hint}`);
-        setTestResult(lines.join("\n"));
-        toast.error("Member check failed");
-        return;
+        lines.push(`  ⚠ ERL failed (${erlRes.error ?? "unknown"}) — upload test will use Annex B sample PINs`);
       }
 
       // Step 5 — upload dummy PCB XML report (validateReport → submitReport)
       lines.push("\n[5/5] Uploading dummy PCB XML report…");
       setTestResult(lines.join("\n"));
-      const uploadRes = await post("upload-test");
+      const uploadRes = await post("upload-test", { memberType: "MM" });
+      console.log({ uploadRes });
       if (uploadRes.ok) {
-        const validateReturn = (uploadRes.validateResult as Record<string, unknown>)?.return as string ?? "";
-        const submitReturn = (uploadRes.submitResult as Record<string, unknown>)?.return as string ?? "";
-        lines.push(`  ✓ validateReport: ${validateReturn}`);
-        lines.push(`  ✓ submitReport:   ${submitReturn}`);
+        const erlNote = uploadRes.erlNote as string | undefined;
+        if (erlNote) lines.push(`  ℹ ${erlNote}`);
+        const validateData = uploadRes.validate as Record<string, unknown> | string | null;
+        const submitData = uploadRes.submit as Record<string, unknown> | string | null;
+        const validateMsg = typeof validateData === "object" && validateData
+          ? JSON.stringify(validateData, null, 2).split("\n").map((l, i) => i === 0 ? l : "      " + l).join("\n")
+          : String(validateData ?? "");
+        const submitMsg = typeof submitData === "object" && submitData
+          ? JSON.stringify(submitData, null, 2).split("\n").map((l, i) => i === 0 ? l : "      " + l).join("\n")
+          : String(submitData ?? "");
+        lines.push(`  ✓ validateReport: ${validateMsg}`);
+        lines.push(`  ✓ submitReport:   ${submitMsg}`);
         toast.success("Full staging flow complete — all 5 steps passed");
       } else {
-        lines.push(`  ✗ Upload failed — ${uploadRes.error ?? "unknown"}`);
+        const errMsg = uploadRes.error as string | undefined;
+        const erlNote = uploadRes.erlNote as string | undefined;
+        const validateData = uploadRes.validate as Record<string, unknown> | string | null;
+        const soapFault = uploadRes.soapFaultBody as string | undefined;
+        const rawResp = uploadRes.rawSoapResponse as string | undefined;
+
+        if (erlNote) lines.push(`  ℹ ${erlNote}`);
+        if (errMsg) {
+          lines.push(`  ✗ Upload failed — ${errMsg}`);
+        } else if (typeof validateData === "object" && validateData) {
+          lines.push(`  ✗ Validation failed — ${JSON.stringify(validateData)}`);
+        } else if (validateData) {
+          lines.push(`  ✗ Validation failed — ${String(validateData)}`);
+        } else {
+          lines.push(`  ✗ Upload failed — no error detail returned`);
+        }
+
         if (uploadRes.hint) lines.push(`  ℹ ${uploadRes.hint}`);
+        if (uploadRes.validationErrors) lines.push(`  Validation errors:\n${String(uploadRes.validationErrors)}`);
+        if (soapFault) lines.push(`  SOAP fault:\n  ${soapFault.slice(0, 400)}`);
+        if (rawResp) lines.push(`  Server response:\n  ${rawResp.slice(0, 600)}`);
         toast.error("Report upload failed");
       }
     } catch (err) {
@@ -999,23 +1026,11 @@ function PhilHealthTab({
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex items-center gap-3">
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-medium text-muted-foreground">Test PIN (PhilHealth PIN)</label>
-                <Input
-                  value={testPin}
-                  onChange={(e) => setTestPin(e.target.value)}
-                  placeholder="000000000000"
-                  maxLength={12}
-                  className="w-40 font-mono text-sm"
-                  disabled={isTesting}
-                />
-              </div>
               <Button
                 type="button"
                 variant="outline"
                 disabled={isTesting}
                 onClick={handleTestConnection}
-                className="self-end"
               >
                 {isTesting ? (
                   <><Loader2 className="h-4 w-4 animate-spin mr-2" />Testing…</>
@@ -1025,7 +1040,7 @@ function PhilHealthTab({
               </Button>
             </div>
             {testResult && (
-              <pre className="rounded bg-muted p-3 text-xs whitespace-pre-wrap break-all">
+              <pre className="rounded bg-muted p-3 text-xs whitespace-pre-wrap break-all max-h-72 overflow-y-auto">
                 {testResult}
               </pre>
             )}

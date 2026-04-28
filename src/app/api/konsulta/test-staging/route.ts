@@ -24,14 +24,17 @@ import {
     submitReport,
     getToken,
     isMemberDependentRegistered,
+    extractRegistrationList,
     getLastKonsultaRequest,
+    getLastKonsultaResponse,
     resetKonsultaClient,
 } from "@services/konsulta/konsulta-soap.service";
-import { encryptXmlPayload } from "@services/konsulta/xml-encryption.service";
-import { buildStagingTestPcbXml } from "@services/konsulta/pcb-xml-builder";
-import type { KonsultaHciCredentials } from "@services/konsulta/types";
+import { encryptXmlPayload, decryptXmlPayload } from "@services/konsulta/xml-encryption.service";
+import { buildStagingTestPcbXml, generateTransmittalNumber, STAGING_TEST_MEMBERS } from "@services/konsulta/pcb-xml-builder";
+import { parseErlXml, isoToPhilHealthDate } from "@services/konsulta/erl-parser";
+import type { KonsultaHciCredentials, KonsultaEncryptedPayload, ErlAssignment } from "@services/konsulta/types";
 
-type TestAction = "ping" | "describe" | "check-status" | "get-token" | "check-member" | "upload-test";
+type TestAction = "ping" | "describe" | "check-status" | "get-token" | "check-member" | "extract-registration" | "upload-test";
 
 interface RequestBody {
     action: TestAction;
@@ -41,9 +44,13 @@ interface RequestBody {
     pin?: string;
     /** "MM" (member) or "DD" (dependent). Defaults to "MM". */
     memberType?: "MM" | "DD";
+    /** Start date for extract-registration (defaults to 2020-01-01). */
+    erlStartDate?: string;
+    /** End date for extract-registration (defaults to today). */
+    erlEndDate?: string;
 }
 
-const VALID_ACTIONS: TestAction[] = ["ping", "describe", "check-status", "get-token", "check-member", "upload-test"];
+const VALID_ACTIONS: TestAction[] = ["ping", "describe", "check-status", "get-token", "check-member", "extract-registration", "upload-test"];
 
 // ─── Raw connectivity ping ────────────────────────────────────────────────────
 
@@ -240,13 +247,13 @@ export async function POST(request: NextRequest) {
 
     try {
         if (action === "check-status") {
-            const today = new Date().toISOString().slice(0, 10);
+            const todayPhilHealth = isoToPhilHealthDate(new Date().toISOString().slice(0, 10));
             const result = await checkUploadStatus({
                 pUsername: credentials.username,
                 pUserPassword: credentials.password,
                 pHospitalCode: credentials.hciAccreNo,
-                pStartDate: today,
-                pEndDate: today,
+                pStartDate: todayPhilHealth,
+                pEndDate: todayPhilHealth,
                 pTransmittalID: "",
                 pReport: "PCB",
             });
@@ -293,8 +300,37 @@ export async function POST(request: NextRequest) {
             });
         }
 
+        if (action === "extract-registration") {
+            const tokenResult = await getToken({
+                pUsername: credentials.username,
+                pUserPassword: credentials.password,
+                pSoftwareCertificationId: credentials.certificationId,
+                pHospitalCode: credentials.hciAccreNo,
+            });
+            const sessionToken = extractJwt(tokenResult.return);
+
+            const todayStr = isoToPhilHealthDate(new Date().toISOString().slice(0, 10));
+            const erlResult = await extractRegistrationList({
+                pStartDate: body.erlStartDate ? isoToPhilHealthDate(body.erlStartDate) : "01/01/2010",
+                pEndDate: body.erlEndDate ? isoToPhilHealthDate(body.erlEndDate) : todayStr,
+            }, sessionToken);
+            console.log({ erlResult });
+            const firstMember = parseErlXml(erlResult.return);
+            return NextResponse.json({
+                ok: true,
+                step: "extract-registration",
+                token: sessionToken,
+                firstMember,
+                erlRaw: erlResult.return.slice(0, 2000),
+                rawSoapRequest: getLastKonsultaRequest(),
+                rawSoapResponse: getLastKonsultaResponse(),
+                ping: pingResult,
+            });
+        }
+
         // action === "upload-test"
-        // Obtain a token first, then two-step: validateReport → submitReport
+        // Use real HCI credentials for getToken — the server uses the JWT to identify the HCI
+        // and look up its cipher key for decryption. Token and cipher key must be from the same HCI.
         const uploadTokenResult = await getToken({
             pUsername: credentials.username,
             pUserPassword: credentials.password,
@@ -303,40 +339,132 @@ export async function POST(request: NextRequest) {
         });
         const uploadToken = extractJwt(uploadTokenResult.return);
 
-        const xml = buildStagingTestPcbXml(credentials);
+        // Use seconds mod 99999 as seq so each test run produces a unique transmittal number
+        const transmittalNumber = generateTransmittalNumber(credentials.hciAccreNo, Math.floor(Date.now() / 1000) % 99999);
+
+        // Call ERL to find a real registered member to use in the PCB XML.
+        // This lets the server validate against an actual registrant rather
+        // than the Annex B demo PINs (which may not be in our HCI's registry).
+        let erlMember: ErlAssignment | null = null;
+        let erlNote: string;
+        try {
+            const todayStr = isoToPhilHealthDate(new Date().toISOString().slice(0, 10));
+            const erlResult = await extractRegistrationList({
+                pStartDate: "01/01/2020",
+                pEndDate: todayStr,
+            }, uploadToken);
+            erlMember = parseErlXml(erlResult.return);
+            erlNote = erlMember
+                ? `ERL: using member ${erlMember.pAssignedPin} (${erlMember.pAssignedType})`
+                : `ERL returned no members — using YNXTSTP fallback (${STAGING_TEST_MEMBERS[0].pAssignedPin})`;
+        } catch (erlErr) {
+            erlNote = `ERL failed (${erlErr instanceof Error ? erlErr.message : String(erlErr)}) — using YNXTSTP fallback (${STAGING_TEST_MEMBERS[0].pAssignedPin})`;
+        }
+
+        const xml = buildStagingTestPcbXml(credentials, transmittalNumber, pin, erlMember ?? STAGING_TEST_MEMBERS[0]);
         const encryptedJson = encryptXmlPayload(xml, credentials.cipherKey);
-        console.log({ xml, encryptedJson });
         const validateResult = await validateReport({
-            pReportTagging: encryptedJson,
-            pReport: "PCB",
+            pReport: encryptedJson,
+            pReportTagging: "1",
         }, uploadToken);
 
-        // Parse the transmittal ID out of the validate response
-        const transmittalId = validateResult.return ?? "";
+        // Parse the validate response — server returns a JSON string
+        interface ValidateResponse {
+            success: boolean;
+            message: string;
+            encryptedxml: KonsultaEncryptedPayload | null;
+            encryptedxmlerrors: KonsultaEncryptedPayload | null;
+        }
+        let validateParsed: ValidateResponse | null = null;
+        try {
+            validateParsed = JSON.parse(validateResult.return) as ValidateResponse;
+        } catch {
+            // raw string response — not JSON
+        }
+        const validationPassed = validateParsed?.success === true;
 
-        const submitResult = await submitReport({
-            pTransmittalID: transmittalId,
-            pReport: "PCB",
-            pReportTagging: encryptedJson,
-        }, uploadToken);
+        // Decrypt the validation errors — server encrypts responses with the same HCI cipher key
+        let validationErrors: string | null = null;
+        if (!validationPassed && validateParsed?.encryptedxmlerrors) {
+            try {
+                validationErrors = decryptXmlPayload(
+                    JSON.stringify(validateParsed.encryptedxmlerrors),
+                    credentials.cipherKey
+                );
+            } catch {
+                validationErrors = "(failed to decrypt encryptedxmlerrors)";
+            }
+        }
+
+        // Only submit if validation passed
+        let submitResult: { return: string } | null = null;
+        if (validationPassed) {
+            submitResult = await submitReport({
+                pTransmittalID: transmittalNumber,
+                pReport: encryptedJson,
+                pReportTagging: "1",
+            }, uploadToken);
+        }
+
+        // Parse submit response — the SOAP wrapper has a `return` string which is
+        // itself a JSON string, so we need two levels of JSON.parse.
+        // Strip large encryptedxml blobs before returning.
+        let submitParsed: Record<string, unknown> | null = null;
+        if (submitResult) {
+            try {
+                // First level: unwrap the SOAP `return` string
+                let inner: unknown = submitResult.return;
+                if (typeof inner === "string") inner = JSON.parse(inner);
+                // Second level: some servers double-encode the payload
+                if (typeof inner === "string") inner = JSON.parse(inner);
+                const raw = inner as Record<string, unknown>;
+                const { encryptedxml: _sv, ...rest } = raw;
+                void _sv;
+                // Also parse the nested JSON string in uploadxmlresult.errors if present
+                if (rest.uploadxmlresult && typeof (rest.uploadxmlresult as Record<string, unknown>).errors === "string") {
+                    try {
+                        (rest.uploadxmlresult as Record<string, unknown>).errors =
+                            JSON.parse((rest.uploadxmlresult as Record<string, unknown>).errors as string);
+                    } catch { /* leave as string if not valid JSON */ }
+                }
+                submitParsed = rest;
+            } catch {
+                submitParsed = { raw: submitResult.return };
+            }
+        }
+
+        // Strip large encryptedxml blobs from validate response too
+        const validateSummary = validateParsed
+            ? { success: validateParsed.success, message: validateParsed.message, encryptedxmlerrors: validateParsed.encryptedxmlerrors }
+            : validateResult.return;
 
         return NextResponse.json({
-            ok: true,
+            ok: validationPassed,
             step: "upload-test",
             token: uploadToken,
-            validateResult,
-            submitResult,
+            transmittalNumber,
+            erlNote,
+            erlMember,
+            validate: validateSummary,
+            validationErrors,
+            submit: submitParsed ?? { skipped: true, reason: "validateReport did not return success:true" },
             xmlPreview: xml.slice(0, 500) + (xml.length > 500 ? "…" : ""),
+            rawSoapRequest: getLastKonsultaRequest(),
+            rawSoapResponse: getLastKonsultaResponse(),
             ping: pingResult,
         });
     } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         const code = (err as NodeJS.ErrnoException).code;
+        const soapFaultBody = (err as { body?: string }).body;
         return NextResponse.json({
             ok: false,
             step: action,
             error: message,
             code,
+            soapFaultBody: soapFaultBody ?? null,
+            rawSoapRequest: getLastKonsultaRequest(),
+            rawSoapResponse: getLastKonsultaResponse(),
             hint: code === "ECONNRESET" || message.includes("socket hang up")
                 ? "The staging server dropped the connection. The server may be down, behind a firewall, or blocking this IP. Try action=ping first to check raw connectivity."
                 : undefined,

@@ -389,6 +389,7 @@ function buildConsultationRows(
         "Subject": ticket.subject ?? "-",
         "Assigned To": "-",
         "Has Consultation": "-",
+        "Has Appointment": ticket.Appointment != null ? "Yes" : "No",
       };
     });
 }
@@ -484,6 +485,7 @@ function buildAppointmentRows(
         "Subject": appt.subject ?? "-",
         "Assigned To": assignedTo,
         "Has Consultation": appt.ConsultationTickets.length > 0 ? "Yes" : "No",
+        "Has Appointment": "-",
       };
     });
 }
@@ -513,6 +515,7 @@ const COMBINED_COLUMNS = [
   "Subject",
   "Assigned To",
   "Has Consultation",
+  "Has Appointment",
 ];
 
 const CONSULTATION_COLUMNS = [

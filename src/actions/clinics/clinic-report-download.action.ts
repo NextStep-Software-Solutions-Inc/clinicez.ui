@@ -234,6 +234,9 @@ export const getClinicExportDataAction = withErrorHandling(
               },
             },
           },
+          ConsultationTickets: {
+            select: { id: true },
+          },
         },
       }),
     ]);

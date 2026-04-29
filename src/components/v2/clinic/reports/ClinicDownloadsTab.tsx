@@ -388,6 +388,7 @@ function buildConsultationRows(
         "System": ticket.System?.name ?? "-",
         "Subject": ticket.subject ?? "-",
         "Assigned To": "-",
+        "Has Consultation": "-",
       };
     });
 }
@@ -482,6 +483,7 @@ function buildAppointmentRows(
         "System": "-",
         "Subject": appt.subject ?? "-",
         "Assigned To": assignedTo,
+        "Has Consultation": appt.ConsultationTickets.length > 0 ? "Yes" : "No",
       };
     });
 }
@@ -510,6 +512,7 @@ const COMBINED_COLUMNS = [
   "System",
   "Subject",
   "Assigned To",
+  "Has Consultation",
 ];
 
 const CONSULTATION_COLUMNS = [

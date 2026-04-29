@@ -388,10 +388,7 @@ function buildConsultationRows(
         "System": ticket.System?.name ?? "-",
         "Subject": ticket.subject ?? "-",
         "Assigned To": "-",
-        "Has Consultation": "-",
-        "Has Appointment": ticket.Appointment != null ? "Yes" : "No",
-        "Linked Appointment ID": ticket.Appointment?.id ?? "-",
-        "Linked Consultation ID": "-",
+        "Pair ID": ticket.Appointment?.id ?? "-",
       };
     });
 }
@@ -486,10 +483,7 @@ function buildAppointmentRows(
         "System": "-",
         "Subject": appt.subject ?? "-",
         "Assigned To": assignedTo,
-        "Has Consultation": appt.ConsultationTickets.length > 0 ? "Yes" : "No",
-        "Has Appointment": "-",
-        "Linked Appointment ID": "-",
-        "Linked Consultation ID":
+        "Pair ID":
           appt.ConsultationTickets.length > 0
             ? appt.ConsultationTickets.map((t) => t.id).join(", ")
             : "-",
@@ -521,10 +515,7 @@ const COMBINED_COLUMNS = [
   "System",
   "Subject",
   "Assigned To",
-  "Has Consultation",
-  "Has Appointment",
-  "Linked Appointment ID",
-  "Linked Consultation ID",
+  "Pair ID",
 ];
 
 const CONSULTATION_COLUMNS = [

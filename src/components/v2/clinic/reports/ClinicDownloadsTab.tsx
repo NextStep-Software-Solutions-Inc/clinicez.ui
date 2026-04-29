@@ -390,6 +390,8 @@ function buildConsultationRows(
         "Assigned To": "-",
         "Has Consultation": "-",
         "Has Appointment": ticket.Appointment != null ? "Yes" : "No",
+        "Linked Appointment ID": ticket.Appointment?.id ?? "-",
+        "Linked Consultation ID": "-",
       };
     });
 }
@@ -486,6 +488,11 @@ function buildAppointmentRows(
         "Assigned To": assignedTo,
         "Has Consultation": appt.ConsultationTickets.length > 0 ? "Yes" : "No",
         "Has Appointment": "-",
+        "Linked Appointment ID": "-",
+        "Linked Consultation ID":
+          appt.ConsultationTickets.length > 0
+            ? appt.ConsultationTickets.map((t) => t.id).join(", ")
+            : "-",
       };
     });
 }
@@ -516,6 +523,8 @@ const COMBINED_COLUMNS = [
   "Assigned To",
   "Has Consultation",
   "Has Appointment",
+  "Linked Appointment ID",
+  "Linked Consultation ID",
 ];
 
 const CONSULTATION_COLUMNS = [

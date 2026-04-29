@@ -86,6 +86,7 @@ export const getClinicExportDataAction = withErrorHandling(
           },
           Appointment: {
             select: {
+              id: true,
               complaint: true,
               Requesters: {
                 select: {

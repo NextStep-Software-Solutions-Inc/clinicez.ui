@@ -365,6 +365,7 @@ function buildConsultationRows(
       return {
         Type: "Consultation",
         "ID": ticket.id,
+        "Pair ID": ticket.Appointment?.id ?? "-",
         "Date": date,
         "Patient Name": formatUserName(patient as BasicUserRecord),
         "Age": calculateAge(patient?.dob) ?? "-",
@@ -388,7 +389,8 @@ function buildConsultationRows(
         "System": ticket.System?.name ?? "-",
         "Subject": ticket.subject ?? "-",
         "Assigned To": "-",
-        "Pair ID": ticket.Appointment?.id ?? "-",
+        "Has Consultation": "-",
+        "Has Appointment": ticket.Appointment != null ? "Yes" : "No",
       };
     });
 }
@@ -461,6 +463,10 @@ function buildAppointmentRows(
       return {
         Type: "Appointment",
         "ID": appt.id,
+        "Pair ID":
+          appt.ConsultationTickets.length > 0
+            ? appt.ConsultationTickets.map((t) => t.id).join(", ")
+            : "-",
         "Date": date,
         "Patient Name": formatUserName(patient as BasicUserRecord),
         "Age": calculateAge(patient?.dob) ?? "-",
@@ -483,10 +489,9 @@ function buildAppointmentRows(
         "System": "-",
         "Subject": appt.subject ?? "-",
         "Assigned To": assignedTo,
-        "Pair ID":
-          appt.ConsultationTickets.length > 0
-            ? appt.ConsultationTickets.map((t) => t.id).join(", ")
-            : "-",
+        "Has Consultation":
+          appt.ConsultationTickets.length > 0 ? "Yes" : "No",
+        "Has Appointment": "-",
       };
     });
 }
@@ -494,6 +499,7 @@ function buildAppointmentRows(
 const COMBINED_COLUMNS = [
   "Type",
   "ID",
+  "Pair ID",
   "Date",
   "Patient Name",
   "Age",
@@ -515,7 +521,8 @@ const COMBINED_COLUMNS = [
   "System",
   "Subject",
   "Assigned To",
-  "Pair ID",
+  "Has Consultation",
+  "Has Appointment",
 ];
 
 const CONSULTATION_COLUMNS = [

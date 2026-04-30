@@ -263,14 +263,23 @@ export const getAllClinicPatientsWithPhilHealthStatusAction = withErrorHandling(
         const effYear = currentEffYear();
         const page = normalizePage(skip, take);
         const patientSearch = buildPatientSearch(search);
+        const registrationFilter: Prisma.ClinicPatientWhereInput = kind === "ENROLLED"
+            ? { konsultaEffYear: effYear, konsultaRegistrationStatus: "REGISTERED" }
+            : {
+                OR: [
+                    { konsultaEffYear: null },
+                    { konsultaEffYear: { not: effYear } },
+                    { konsultaRegistrationStatus: null },
+                    { konsultaRegistrationStatus: { not: "REGISTERED" } },
+                ],
+            };
+
         const where: Prisma.ClinicPatientWhereInput = {
             clinicId,
             isActive: true,
             deletedAt: null,
             ...(patientSearch ? { Patient: patientSearch } : {}),
-            ...(kind === "ENROLLED"
-                ? { konsultaEffYear: effYear, konsultaRegistrationStatus: "REGISTERED" }
-                : { NOT: { konsultaEffYear: effYear, konsultaRegistrationStatus: "REGISTERED" } }),
+            ...registrationFilter,
         };
 
         const [patients, total] = await prisma.$transaction([

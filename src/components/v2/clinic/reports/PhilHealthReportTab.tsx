@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback, useTransition } from "react";
+import { useState, useEffect, useCallback, useTransition, useRef, useLayoutEffect } from "react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import {
     Loader2, ShieldCheck, Users, ClipboardList, Send,
     History, RefreshCw, Plus, Trash2, CheckSquare, Square,
@@ -39,14 +40,17 @@ import {
     enrollPatientPhilHealthAction,
     unenrollKonsultaPatientAction,
     checkKonsultaPatientRegistrationAction,
+    checkEnrolledPatientsRegistrationBatchAction,
     validateKonsultaAtcAction,
     getPhilHealthConsultationsAction,
     getKonsultaBatchesAction,
     createKonsultaBatchAction,
     generateBatchXmlAction,
+    validateKonsultaBatchAction,
     submitKonsultaBatchAction,
     deleteKonsultaBatchAction,
     toggleKonsultaEntryAction,
+    generateConsultationCaseTransNumbersAction,
 } from "@/actions/clinics/konsulta-report.action";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -62,6 +66,21 @@ const BATCH_STATUS_LABELS: Record<string, string> = {
     VALIDATED: "Validated",
     SUBMITTED: "Submitted",
     FAILED: "Failed",
+};
+
+const BATCH_STATUS_DESCRIPTIONS: Record<string, string> = {
+    DRAFT: "Batch is being prepared. Add patients and generate the XML report when ready.",
+    GENERATED: "The PCB XML report has been generated. Run validation before submitting to PhilHealth.",
+    VALIDATED: "The XML report passed PhilHealth validation. Ready to submit.",
+    SUBMITTED: "Successfully submitted to PhilHealth. Awaiting acknowledgment.",
+    FAILED: "An error occurred during validation or submission. Review the response and regenerate.",
+};
+
+const ENTRY_STATUS_DESCRIPTIONS: Record<string, string> = {
+    PENDING: "Queued for inclusion in the next batch XML.",
+    INCLUDED: "Included in the generated XML report.",
+    EXCLUDED: "Manually excluded from this batch.",
+    FAILED: "Could not be processed. Review the patient data.",
 };
 
 const BATCH_STATUS_VARIANTS: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
@@ -96,9 +115,24 @@ interface PhilHealthReportTabProps {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
+const VALID_TABS = ["patients", "consultations", "batches", "history"] as const;
+type KonsultaTab = typeof VALID_TABS[number];
+
 export function PhilHealthReportTab({ clinicUid }: PhilHealthReportTabProps) {
+    const router = useRouter();
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
+    const rawTab = searchParams.get("konsultaTab");
+    const activeTab: KonsultaTab = (VALID_TABS as readonly string[]).includes(rawTab ?? "") ? (rawTab as KonsultaTab) : "patients";
+
+    const handleTabChange = (value: string) => {
+        const params = new URLSearchParams(searchParams.toString());
+        params.set("konsultaTab", value);
+        router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    };
+
     return (
-        <Tabs defaultValue="patients" className="mt-4">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="mt-4">
             <TabsList className="mb-4">
                 <TabsTrigger value="patients" className="gap-2">
                     <Users className="h-4 w-4" />Patients
@@ -171,6 +205,7 @@ function PatientsPanel({ clinicUid }: { clinicUid: string }) {
     const [enrollTarget, setEnrollTarget] = useState<ClinicPatientRow | null>(null);
     const [enrollForm, setEnrollForm] = useState<EnrollForm>(EMPTY_ENROLL_FORM);
     const [enrollLoading, setEnrollLoading] = useState(false);
+    const [selectedEnrolledIds, setSelectedEnrolledIds] = useState<Set<number>>(new Set());
 
     const loadFeed = useCallback(async (kind: "ENROLLED" | "UNENROLLED", skip: number, replace: boolean) => {
         const setFeed = kind === "ENROLLED" ? setEnrolledFeed : setUnenrolledFeed;
@@ -234,6 +269,13 @@ function PatientsPanel({ clinicUid }: { clinicUid: string }) {
         }
 
         setEnrollLoading(true);
+        const patientName = `${enrollTarget.Patient.firstName} ${enrollTarget.Patient.lastName}`;
+        console.log(`[Enrollment] Starting enrollment for ${patientName} (ID: ${enrollTarget.id})`, {
+            pin: enrollForm.pin.substring(0, 6) + "****",
+            patientType: enrollForm.patientType,
+            memberPin: enrollForm.patientType === "DD" ? enrollForm.memberPin.substring(0, 6) + "****" : "(same as patient PIN)",
+        });
+        
         const res = await enrollPatientPhilHealthAction({
             clinicUid,
             clinicPatientId: enrollTarget.id,
@@ -245,16 +287,48 @@ function PatientsPanel({ clinicUid }: { clinicUid: string }) {
         });
         setEnrollLoading(false);
 
+        console.log(`[Enrollment] Response for ${patientName}:`, {
+            status: res.status,
+            registrationStatus: res.data?.registrationStatus,
+            registrationResult: res.data?.registrationResult,
+            message: res.message,
+        });
+        
+
         if (res.status) {
             if (res.data?.registrationStatus === "REGISTERED") {
-                toast.success("Konsulta registration confirmed");
+                toast.success(`✓ ${patientName} is now registered with Konsulta`);
+                console.log(`[Enrollment] Success: Patient registered`);
             } else {
-                toast.warning(res.message ?? "Patient details saved, but registration was not confirmed.");
+                // Build detailed error message from registration result
+                let detailedMessage = `Patient details saved. Status: ${res.data?.registrationStatus ?? "unknown"}.`;
+                const result = res.data?.registrationResult as Record<string, unknown> | undefined;
+                
+                if (result?.error) {
+                    detailedMessage += ` Error: ${result.error}`;
+                } else if (result) {
+                    // PhilHealth SOAP response details
+                    const details = Object.entries(result)
+                        .filter(([key]) => key !== "registrationStatus")
+                        .map(([key, value]) => `${key}: ${value}`)
+                        .join(" | ");
+                    if (details) {
+                        detailedMessage += ` Details: ${details}`;
+                    }
+                }
+                
+                toast.warning(detailedMessage);
+                console.warn(`[Enrollment] Partial success: Registration not confirmed.`, {
+                    status: res.data?.registrationStatus,
+                    result: res.data?.registrationResult,
+                    message: res.message,
+                });
             }
             setEnrollTarget(null);
             void reload();
         } else {
             toast.error(res.message ?? "Enrollment failed");
+            console.error(`[Enrollment] Failed:`, res.message);
         }
     }
 
@@ -282,22 +356,74 @@ function PatientsPanel({ clinicUid }: { clinicUid: string }) {
         }
     }
 
-    function PatientRow({ patient, enrolled }: { patient: ClinicPatientRow; enrolled: boolean }) {
+    const [isBatchChecking, startBatchCheckTransition] = useTransition();
+
+    function toggleEnrolledSelection(patientId: number) {
+        setSelectedEnrolledIds((prev) => {
+            const next = new Set(prev);
+            if (next.has(patientId)) {
+                next.delete(patientId);
+            } else {
+                next.add(patientId);
+            }
+            return next;
+        });
+    }
+
+    function toggleSelectAllEnrolled() {
+        if (selectedEnrolledIds.size === enrolledFeed.rows.length) {
+            setSelectedEnrolledIds(new Set());
+        } else {
+            setSelectedEnrolledIds(new Set(enrolledFeed.rows.map((p) => p.id)));
+        }
+    }
+
+    async function handleBatchCheckEnrolled() {
+        startBatchCheckTransition(async () => {
+            const idsToCheck = selectedEnrolledIds.size > 0 ? Array.from(selectedEnrolledIds) : undefined;
+            const res = await checkEnrolledPatientsRegistrationBatchAction({ clinicUid, clinicPatientIds: idsToCheck });
+            if (res.status) {
+                const data = res.data;
+                if (data) {
+                    const { checked, valid, invalid, failed } = data;
+                    const summary = `Checked ${checked} patients: ${valid} registered, ${invalid} not registered, ${failed} errors`;
+                    if (failed === 0) {
+                        toast.success(summary);
+                    } else {
+                        toast.warning(summary);
+                    }
+                }
+                setSelectedEnrolledIds(new Set());
+                reload();
+            } else {
+                toast.error(res.message ?? "Batch check failed");
+            }
+        });
+    }
+
+    function PatientRow({ patient, enrolled, isSelected, onToggleSelect }: { patient: ClinicPatientRow; enrolled: boolean; isSelected?: boolean; onToggleSelect?: (id: number) => void }) {
         const ph = patient.Patient.PhilHealthRecords[0];
         return (
             <div className="border-b px-4 py-3 last:border-b-0">
                 <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                        <p className="font-medium text-sm truncate">{patientDisplayName(patient.Patient)}</p>
-                        <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-                            <code className="rounded bg-muted px-1.5 py-0.5">{ph?.pin ?? "No PIN"}</code>
-                            <Badge variant="outline" className="text-xs">{patient.konsultaPatientType === "DD" ? "Dependent" : "Member"}</Badge>
-                            {registrationBadge(patient.konsultaRegistrationStatus)}
+                    <div className="flex items-start gap-2">
+                        {enrolled && onToggleSelect && (
+                            <div className="mt-0.5 flex items-center">
+                                <Checkbox checked={isSelected ?? false} onCheckedChange={() => onToggleSelect(patient.id)} />
+                            </div>
+                        )}
+                        <div className="min-w-0">
+                            <p className="font-medium text-sm truncate">{patientDisplayName(patient.Patient)}</p>
+                            <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                                <code className="rounded bg-muted px-1.5 py-0.5">{ph?.pin ?? "No PIN"}</code>
+                                <Badge variant="outline" className="text-xs">{patient.konsultaPatientType === "DD" ? "Dependent" : "Member"}</Badge>
+                                {registrationBadge(patient.konsultaRegistrationStatus)}
+                            </div>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                                {patient.Patient.dob ? new Date(patient.Patient.dob).toLocaleDateString("en-PH") : "No DOB"}
+                                {patient.Patient.mobile ? ` • ${patient.Patient.mobile}` : ""}
+                            </p>
                         </div>
-                        <p className="mt-1 text-xs text-muted-foreground">
-                            {patient.Patient.dob ? new Date(patient.Patient.dob).toLocaleDateString("en-PH") : "No DOB"}
-                            {patient.Patient.mobile ? ` • ${patient.Patient.mobile}` : ""}
-                        </p>
                     </div>
                     <div className="flex shrink-0 flex-wrap justify-end gap-1.5">
                         <Button variant="outline" size="sm" className="h-8 gap-1 px-2 text-xs" onClick={() => openEnrollDialog(patient)}>
@@ -325,22 +451,101 @@ function PatientsPanel({ clinicUid }: { clinicUid: string }) {
         kind,
         feed,
         icon,
+        selectedIds,
+        onToggleSelect,
+        onToggleSelectAll,
     }: {
         title: string;
         kind: "ENROLLED" | "UNENROLLED";
         feed: PatientFeed;
         icon: React.ReactNode;
+        selectedIds?: Set<number>;
+        onToggleSelect?: (id: number) => void;
+        onToggleSelectAll?: () => void;
     }) {
+        const scrollRef = useRef<HTMLDivElement>(null);
+        const savedScrollRef = useRef<number>(0);
+        const wasLoadingMoreRef = useRef<boolean>(false);
+
+        // When loading completes and new rows are added, restore scroll position
+        useLayoutEffect(() => {
+            const node = scrollRef.current;
+            if (!node) return;
+
+            // Detect the moment when loadingMore transitions from true to false
+            const wasLoading = wasLoadingMoreRef.current;
+            const isLoading = feed.loadingMore;
+
+            if (wasLoading && !isLoading) {
+                // Load completed, restore scroll position
+                node.scrollTop = savedScrollRef.current;
+                console.log(`[Scroll] Restored after load complete: ${savedScrollRef.current}px`);
+            } else if (!wasLoading && isLoading) {
+                // Load starting, save current scroll position
+                savedScrollRef.current = node.scrollTop;
+                console.log(`[Scroll] Saving position ${savedScrollRef.current}px before load`);
+            }
+
+            wasLoadingMoreRef.current = isLoading;
+        }, [feed.loadingMore]);
+
         return (
             <Card>
                 <CardHeader className="pb-3">
                     <div className="flex items-center justify-between gap-3">
                         <CardTitle className="flex items-center gap-2 text-sm">{icon}{title}</CardTitle>
-                        <Badge variant="outline" className="text-xs">{feed.rows.length}/{feed.total}</Badge>
+                        <div className="flex items-center gap-2">
+                            {kind === "ENROLLED" && feed.rows.length > 0 && (
+                                <>
+                                    {selectedIds && onToggleSelectAll && (
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={onToggleSelectAll}
+                                            className="h-7 gap-1 px-2 text-xs"
+                                        >
+                                            {selectedIds.size > 0 && selectedIds.size === feed.rows.length ? (
+                                                <>
+                                                    <CheckSquare className="h-4 w-4" />
+                                                    Deselect All
+                                                </>
+                                            ) : selectedIds.size > 0 ? (
+                                                <>
+                                                    <Square className="h-4 w-4 opacity-60" />
+                                                    Deselect All
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Square className="h-4 w-4" />
+                                                    Select All
+                                                </>
+                                            )}
+                                        </Button>
+                                    )}
+                                    {selectedIds && selectedIds.size > 0 && (
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            disabled={isBatchChecking || feed.loading}
+                                            onClick={() => void handleBatchCheckEnrolled()}
+                                            className="h-7 gap-1 px-2 text-xs"
+                                        >
+                                            {isBatchChecking ? (
+                                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                            ) : (
+                                                <ShieldCheck className="h-3.5 w-3.5" />
+                                            )}
+                                            Check Selected ({selectedIds.size})
+                                        </Button>
+                                    )}
+                                </>
+                            )}
+                            <Badge variant="outline" className="text-xs">{feed.rows.length}/{feed.total}</Badge>
+                        </div>
                     </div>
                 </CardHeader>
                 <CardContent className="p-0">
-                    <div className="h-[620px] overflow-y-auto" onScroll={(e) => handleScroll(kind, e)}>
+                    <div ref={scrollRef} className="h-[620px] overflow-y-auto" onScroll={(e) => handleScroll(kind, e)}>
                         {feed.loading ? (
                             <div className="flex h-full items-center justify-center">
                                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -352,7 +557,13 @@ function PatientsPanel({ clinicUid }: { clinicUid: string }) {
                         ) : (
                             <>
                                 {feed.rows.map((patient) => (
-                                    <PatientRow key={patient.id} patient={patient} enrolled={kind === "ENROLLED"} />
+                                    <PatientRow
+                                        key={patient.id}
+                                        patient={patient}
+                                        enrolled={kind === "ENROLLED"}
+                                        isSelected={kind === "ENROLLED" ? selectedIds?.has(patient.id) : undefined}
+                                        onToggleSelect={kind === "ENROLLED" ? onToggleSelect : undefined}
+                                    />
                                 ))}
                                 {feed.loadingMore && (
                                     <div className="flex justify-center py-4">
@@ -403,6 +614,9 @@ function PatientsPanel({ clinicUid }: { clinicUid: string }) {
                     kind="ENROLLED"
                     feed={enrolledFeed}
                     icon={<CheckCircle2 className="h-4 w-4 text-green-500" />}
+                    selectedIds={selectedEnrolledIds}
+                    onToggleSelect={toggleEnrolledSelection}
+                    onToggleSelectAll={toggleSelectAllEnrolled}
                 />
                 <PatientFeedColumn
                     title="Unenrolled"
@@ -536,6 +750,8 @@ function ConsultationsPanel({ clinicUid }: { clinicUid: string }) {
     const [atcTarget, setAtcTarget] = useState<Consultation | null>(null);
     const [atc, setAtc] = useState("");
     const [atcLoading, setAtcLoading] = useState(false);
+    const [generateTarget, setGenerateTarget] = useState<Consultation | null>(null);
+    const [generateLoading, setGenerateLoading] = useState(false);
     const [from, setFrom] = useState(() => {
         const d = new Date();
         d.setDate(1);
@@ -581,6 +797,27 @@ function ConsultationsPanel({ clinicUid }: { clinicUid: string }) {
         }
     }
 
+    async function handleGenerateCaseTransNumbers() {
+        if (!generateTarget) return;
+        setGenerateLoading(true);
+        try {
+            const res = await generateConsultationCaseTransNumbersAction({
+                consultationTicketId: generateTarget.id,
+            });
+            if (res.status && res.data) {
+                toast.success(`Generated: ${res.data.konsultaHciCaseNo} / ${res.data.konsultaHciTransNo}`);
+                setGenerateTarget(null);
+                void load();
+            } else {
+                toast.error(res.message ?? "Failed to generate numbers");
+            }
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : "Failed to generate numbers");
+        } finally {
+            setGenerateLoading(false);
+        }
+    }
+
     return (
         <>
         <Card>
@@ -592,7 +829,7 @@ function ConsultationsPanel({ clinicUid }: { clinicUid: string }) {
                             PhilHealth Patient Consultations
                         </CardTitle>
                         <CardDescription className="mt-1">
-                            Consultations from enrolled PhilHealth patients eligible for reporting.
+                            Consultations from patients with REGISTERED status in the current effectivity year, within the selected date range.
                         </CardDescription>
                     </div>
                     <Button variant="ghost" size="sm" onClick={() => void load()} disabled={loading}>
@@ -640,11 +877,13 @@ function ConsultationsPanel({ clinicUid }: { clinicUid: string }) {
                         </TableHeader>
                         <TableBody>
                             {consultations.map((c) => {
-                                const patient = c.ClinicPatient?.Patient;
+                                // Get patient from either path: ClinicPatient or Appointment.Requesters
+                                const patient = c.ClinicPatient?.Patient ?? c.Appointment?.Requesters[0]?.User;
                                 const pin = patient?.PhilHealthRecords[0]?.pin;
                                 const primary = c.ConsultationDiagnoses.find((d) => d.type === "PRIMARY");
                                 const hp = c.ConsultationTicketHPs[0]?.HealthCareProvider?.User;
                                 const ready = !!c.konsultaHciCaseNo && !!c.konsultaHciTransNo && c.konsultaAtcValidationStatus === "VALID";
+                                const hasValidCaseAndTrans = !!c.konsultaHciCaseNo && !!c.konsultaHciTransNo;
                                 return (
                                     <TableRow key={c.id}>
                                         <TableCell className="font-mono text-xs">
@@ -688,15 +927,26 @@ function ConsultationsPanel({ clinicUid }: { clinicUid: string }) {
                                                 {ready ? "Ready" : "Needs ATC"}
                                             </Badge>
                                         </TableCell>
-                                        <TableCell className="text-right">
-                                            <Button
-                                                size="sm"
-                                                variant="outline"
-                                                className="h-8 text-xs"
-                                                onClick={() => { setAtcTarget(c); setAtc(c.konsultaAtc ?? ""); }}
-                                            >
-                                                Validate ATC
-                                            </Button>
+                                        <TableCell className="text-right flex gap-1 justify-end">
+                                            {!hasValidCaseAndTrans ? (
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    className="h-8 text-xs"
+                                                    onClick={() => setGenerateTarget(c)}
+                                                >
+                                                    Generate
+                                                </Button>
+                                            ) : (
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    className="h-8 text-xs"
+                                                    onClick={() => { setAtcTarget(c); setAtc(c.konsultaAtc ?? ""); }}
+                                                >
+                                                    Validate ATC
+                                                </Button>
+                                            )}
                                         </TableCell>
                                     </TableRow>
                                 );
@@ -731,6 +981,48 @@ function ConsultationsPanel({ clinicUid }: { clinicUid: string }) {
                 </DialogFooter>
             </DialogContent>
         </Dialog>
+
+        <Dialog open={!!generateTarget} onOpenChange={(open) => { if (!open) setGenerateTarget(null); }}>
+            <DialogContent className="max-w-md">
+                <DialogHeader>
+                    <DialogTitle>Generate Case & Transaction Numbers</DialogTitle>
+                    <DialogDescription>
+                        This will generate the HCI Case Number and HCI Transaction Number for this consultation. These are required for reporting.
+                    </DialogDescription>
+                </DialogHeader>
+                {generateTarget && (
+                    <div className="space-y-2 py-2 text-sm">
+                        <div>
+                            <Label className="text-xs font-semibold">Case Number</Label>
+                            <div className="font-mono text-sm bg-muted px-2 py-1 rounded">
+                                {generateTarget.caseNumber ?? `#${generateTarget.id}`}
+                            </div>
+                        </div>
+                        <div>
+                            <Label className="text-xs font-semibold">Current HCI Case No</Label>
+                            <div className="font-mono text-sm bg-muted px-2 py-1 rounded">
+                                {generateTarget.konsultaHciCaseNo ?? "Not set"}
+                            </div>
+                        </div>
+                        <div>
+                            <Label className="text-xs font-semibold">Current HCI Trans No</Label>
+                            <div className="font-mono text-sm bg-muted px-2 py-1 rounded">
+                                {generateTarget.konsultaHciTransNo ?? "Not set"}
+                            </div>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-3">
+                            Generation of these numbers requires valid clinic HCI credentials and sequence management. Please ensure the clinic Konsulta settings are configured.
+                        </p>
+                    </div>
+                )}
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => setGenerateTarget(null)} disabled={generateLoading}>Cancel</Button>
+                    <Button onClick={() => void handleGenerateCaseTransNumbers()} disabled={generateLoading}>
+                        {generateLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Generating…</> : "Generate"}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
         </>
     );
 }
@@ -752,7 +1044,56 @@ function BatchesPanel({ clinicUid }: { clinicUid: string }) {
         setLoading(false);
     }, [clinicUid]);
 
+    // Silently refresh a single batch in-place without triggering the full loading state
+    const refreshBatch = useCallback(async (batchUid: string) => {
+        const res = await getKonsultaBatchesAction(clinicUid);
+        if (res.status && res.data) {
+            const updated = res.data.find((b) => b.batchUid === batchUid);
+            if (updated) {
+                setBatches((prev) => prev.map((b) => b.batchUid === batchUid ? updated : b));
+            }
+        }
+    }, [clinicUid]);
+
     useEffect(() => { void load(); }, [load]);
+
+    // Helper function to parse and format error messages for toast
+    const showErrorToast = (message: string | undefined, defaultMessage: string = "An error occurred") => {
+        if (!message) {
+            toast.error(defaultMessage);
+            return;
+        }
+        
+        try {
+            // Try to parse as JSON
+            const parsed = JSON.parse(message);
+            
+            // If it has an errors array, extract and display them
+            if (parsed.errors && Array.isArray(parsed.errors) && parsed.errors.length > 0) {
+                const errors = parsed.errors.map((e: unknown) => 
+                    typeof e === "string" ? e : JSON.stringify(e)
+                );
+                
+                // Clean summary in title, all errors in description
+                const title = `PhilHealth validation failed (${errors.length} error${errors.length > 1 ? "s" : ""})`;
+                const description = errors.map((e: string, i: number) => `${i + 1}. ${e}`).join('\n');
+                
+                toast.error(title, { description });
+                return;
+            }
+            
+            // If it's an object with message property, use that
+            if (parsed.message && typeof parsed.message === "string") {
+                toast.error(parsed.message);
+                return;
+            }
+        } catch {
+            // Not JSON, continue below
+        }
+        
+        // Fallback: use message as-is
+        toast.error(message);
+    };
 
     const handleGenerateXml = (batchUid: string) => {
         setPendingAction(batchUid + ":generate");
@@ -760,10 +1101,32 @@ function BatchesPanel({ clinicUid }: { clinicUid: string }) {
             const res = await generateBatchXmlAction(batchUid);
             if (res.status) {
                 toast.success(`XML generated — transmittal: ${(res.data as { transmittalNo: string }).transmittalNo}`);
-                void load();
+                // Expand the batch to show the generated XML
+                setExpandedBatch(batchUid);
+                await refreshBatch(batchUid);
             } else {
-                toast.error(res.message ?? "XML generation failed");
+                // Show detailed error message from server
+                if (res.message) {
+                    showErrorToast(res.message, "XML generation failed");
+                } else {
+                    toast.error("XML generation failed");
+                }
             }
+            setPendingAction(null);
+        });
+    };
+
+    const handleValidate = (batchUid: string) => {
+        setPendingAction(batchUid + ":validate");
+        startTransition(async () => {
+            const res = await validateKonsultaBatchAction(batchUid);
+            if (res.status) {
+                toast.success("Batch validated — ready to submit to PhilHealth.");
+            } else {
+                showErrorToast(res.message, "Validation failed");
+            }
+            // Always refresh the single batch after validation, whether it succeeds or fails
+            await refreshBatch(batchUid);
             setPendingAction(null);
         });
     };
@@ -773,11 +1136,12 @@ function BatchesPanel({ clinicUid }: { clinicUid: string }) {
         startTransition(async () => {
             const res = await submitKonsultaBatchAction(batchUid);
             if (res.status) {
-                toast.success("Batch submitted to PhilHealth successfully");
-                void load();
+                toast.success("Batch submitted to PhilHealth successfully.");
             } else {
-                toast.error(res.message ?? "Submission failed");
+                showErrorToast(res.message, "Submission failed");
             }
+            // Always refresh the single batch after submission, whether it succeeds or fails
+            await refreshBatch(batchUid);
             setPendingAction(null);
         });
     };
@@ -788,7 +1152,7 @@ function BatchesPanel({ clinicUid }: { clinicUid: string }) {
             const res = await deleteKonsultaBatchAction(batchUid);
             if (res.status) {
                 toast.success("Batch deleted");
-                void load();
+                await load();  // Properly await the load to ensure data is refreshed
             } else {
                 toast.error(res.message ?? "Delete failed");
             }
@@ -800,10 +1164,10 @@ function BatchesPanel({ clinicUid }: { clinicUid: string }) {
         startTransition(async () => {
             const res = await toggleKonsultaEntryAction({ entryId, included });
             if (!res.status) toast.error(res.message ?? "Failed to update entry");
-            else void load();
-            // Reopen expanded batch
-            setExpandedBatch(batchUid);
+            else await refreshBatch(batchUid);
         });
+        // Reopen expanded batch
+        setExpandedBatch(batchUid);
     };
 
     return (
@@ -842,10 +1206,12 @@ function BatchesPanel({ clinicUid }: { clinicUid: string }) {
                     {batches.map((batch) => {
                         const isExpanded = expandedBatch === batch.batchUid;
                         const isGenerating = pendingAction === batch.batchUid + ":generate";
+                        const isValidating = pendingAction === batch.batchUid + ":validate";
                         const isSubmitting = pendingAction === batch.batchUid + ":submit";
                         const isDeleting = pendingAction === batch.batchUid + ":delete";
                         const canGenerate = ["DRAFT", "GENERATED", "FAILED"].includes(batch.status);
-                        const canSubmit = ["GENERATED", "VALIDATED"].includes(batch.status);
+                        const canValidate = ["GENERATED", "FAILED"].includes(batch.status);
+                        const canSubmit = batch.status === "VALIDATED";
                         const canDelete = batch.status !== "SUBMITTED";
 
                         return (
@@ -862,9 +1228,11 @@ function BatchesPanel({ clinicUid }: { clinicUid: string }) {
                                             <span className="font-semibold text-sm">
                                                 {formatPeriod(batch.period)}
                                             </span>
-                                            <Badge variant={BATCH_STATUS_VARIANTS[batch.status] ?? "outline"}>
-                                                {BATCH_STATUS_LABELS[batch.status] ?? batch.status}
-                                            </Badge>
+                                            <span title={BATCH_STATUS_DESCRIPTIONS[batch.status]}>
+                                                <Badge variant={BATCH_STATUS_VARIANTS[batch.status] ?? "outline"}>
+                                                    {BATCH_STATUS_LABELS[batch.status] ?? batch.status}
+                                                </Badge>
+                                            </span>
                                             <span className="text-xs text-muted-foreground">
                                                 Tagging {batch.reportTagging} · {batch.KonsultaEntries.length} patient(s)
                                             </span>
@@ -873,30 +1241,46 @@ function BatchesPanel({ clinicUid }: { clinicUid: string }) {
                                         <div className="flex gap-1 shrink-0">
                                             {canGenerate && (
                                                 <Button
+                                                    type="button"
                                                     size="sm" variant="outline"
                                                     disabled={isGenerating}
                                                     onClick={() => handleGenerateXml(batch.batchUid)}
-                                                    title="Generate PCB XML"
+                                                    title={batch.xmlPayload ? "Regenerate PCB XML report" : "Generate PCB XML report"}
                                                 >
                                                     {isGenerating
-                                                        ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                                        : <FileCode2 className="h-3.5 w-3.5" />}
+                                                        ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /><span className="ml-1 text-xs">Generating…</span></>
+                                                        : <><FileCode2 className="h-3.5 w-3.5" /><span className="ml-1 text-xs">{batch.xmlPayload ? "Regenerate XML" : "Generate XML"}</span></>}
+                                                </Button>
+                                            )}
+                                            {canValidate && (
+                                                <Button
+                                                    type="button"
+                                                    size="sm" variant="outline"
+                                                    disabled={isValidating}
+                                                    onClick={() => handleValidate(batch.batchUid)}
+                                                    title="Validate report with PhilHealth"
+                                                >
+                                                    {isValidating
+                                                        ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /><span className="ml-1 text-xs">Validating…</span></>
+                                                        : <><ShieldCheck className="h-3.5 w-3.5" /><span className="ml-1 text-xs">Validate</span></>}
                                                 </Button>
                                             )}
                                             {canSubmit && (
                                                 <Button
+                                                    type="button"
                                                     size="sm"
                                                     disabled={isSubmitting}
                                                     onClick={() => handleSubmit(batch.batchUid)}
-                                                    title="Validate & Submit"
+                                                    title="Submit validated report to PhilHealth"
                                                 >
                                                     {isSubmitting
-                                                        ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                                        : <Upload className="h-3.5 w-3.5" />}
+                                                        ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /><span className="ml-1 text-xs">Submitting…</span></>
+                                                        : <><Upload className="h-3.5 w-3.5" /><span className="ml-1 text-xs">Submit</span></>}
                                                 </Button>
                                             )}
                                             {canDelete && (
                                                 <Button
+                                                    type="button"
                                                     size="sm" variant="ghost"
                                                     disabled={isDeleting}
                                                     onClick={() => handleDelete(batch.batchUid)}
@@ -916,11 +1300,6 @@ function BatchesPanel({ clinicUid }: { clinicUid: string }) {
                                             Transmittal: <code className="font-mono">{batch.transmittalNo}</code>
                                         </div>
                                     )}
-                                    {batch.errorMessage && (
-                                        <div className="mt-1 ml-6 flex items-center gap-1 text-xs text-destructive">
-                                            <AlertCircle className="h-3 w-3" />{batch.errorMessage}
-                                        </div>
-                                    )}
                                 </CardHeader>
 
                                 {isExpanded && (
@@ -931,10 +1310,35 @@ function BatchesPanel({ clinicUid }: { clinicUid: string }) {
                                             readOnly={batch.status === "SUBMITTED"}
                                             onToggle={handleToggleEntry}
                                         />
-                                        {(batch.validateResult ?? batch.submitResult) && (
-                                            <ResultJsonViewer
-                                                label="Response"
-                                                data={batch.submitResult ?? batch.validateResult}
+                                        {batch.xmlPayload && !batch.validateResult && !batch.submitResult && (
+                                            <div className="mt-4">
+                                                <BatchResultSummary
+                                                    label="Generated XML"
+                                                    data={{ status: "XML generated successfully", length: batch.xmlPayload.length }}
+                                                    batchUid={batch.batchUid}
+                                                    xmlPayload={batch.xmlPayload}
+                                                    onDecrypted={() => void refreshBatch(batch.batchUid)}
+                                                />
+                                            </div>
+                                        )}
+                                        {batch.validateResult && (
+                                            <BatchResultSummary
+                                                label="Validation Response"
+                                                data={batch.validateResult}
+                                                batchUid={batch.batchUid}
+                                                xmlPayload={batch.xmlPayload}
+                                                onDecrypted={() => void refreshBatch(batch.batchUid)}
+                                                resultType="validate"
+                                            />
+                                        )}
+                                        {batch.submitResult && (
+                                            <BatchResultSummary
+                                                label="Submission Response"
+                                                data={batch.submitResult}
+                                                batchUid={batch.batchUid}
+                                                xmlPayload={batch.xmlPayload}
+                                                onDecrypted={() => void refreshBatch(batch.batchUid)}
+                                                resultType="submit"
                                             />
                                         )}
                                     </CardContent>
@@ -976,68 +1380,470 @@ function BatchEntryTable({
             <TableHeader>
                 <TableRow>
                     <TableHead className="w-8">{!readOnly && "Include"}</TableHead>
-                    <TableHead>PIN</TableHead>
+                    <TableHead>Patient</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead>HCI Case</TableHead>
                     <TableHead>HCI Trans</TableHead>
-                    <TableHead>Consultations</TableHead>
+                    <TableHead>Consults</TableHead>
                     <TableHead>Status</TableHead>
                 </TableRow>
             </TableHeader>
             <TableBody>
-                {entries.map((e) => (
-                    <TableRow key={e.id} className={e.included ? "" : "opacity-50"}>
-                        <TableCell>
-                            {!readOnly && (
-                                <Checkbox
-                                    checked={e.included}
-                                    onCheckedChange={(v) => onToggle(e.id, !!v, batchUid)}
-                                />
-                            )}
-                        </TableCell>
-                        <TableCell>
-                            <code className="text-xs">{e.philHealthPin}</code>
-                        </TableCell>
-                        <TableCell>
-                            <Badge variant="outline" className="text-xs">{e.memberType}</Badge>
-                        </TableCell>
-                        <TableCell><code className="text-xs">{e.hciCaseNo ?? "—"}</code></TableCell>
-                        <TableCell><code className="text-xs">{e.hciTransNo ?? "—"}</code></TableCell>
-                        <TableCell className="text-xs text-muted-foreground">
-                            {e.included
-                                ? `${(e as EntryRow & { consultationIds?: number[] }).consultationIds?.length ?? 0} consult(s)`
-                                : "excluded"}
-                        </TableCell>
-                        <TableCell>
-                            <StatusChip status={e.status} />
-                        </TableCell>
-                    </TableRow>
-                ))}
+                {entries.map((e) => {
+                    const name = [e.Patient?.firstName, e.Patient?.lastName].filter(Boolean).join(" ") || "—";
+                    const consultCount = e.consultationIds?.length ?? 0;
+                    return (
+                        <TableRow key={e.id} className={e.included ? "" : "opacity-50"}>
+                            <TableCell>
+                                {!readOnly && (
+                                    <Checkbox
+                                        checked={e.included}
+                                        onCheckedChange={(v) => onToggle(e.id, !!v, batchUid)}
+                                    />
+                                )}
+                            </TableCell>
+                            <TableCell>
+                                <div className="font-medium text-sm">{name}</div>
+                                <code className="text-xs text-muted-foreground">{e.philHealthPin}</code>
+                            </TableCell>
+                            <TableCell>
+                                <Badge variant="outline" className="text-xs">{e.memberType}</Badge>
+                            </TableCell>
+                            <TableCell><code className="text-xs">{e.hciCaseNo ?? "—"}</code></TableCell>
+                            <TableCell><code className="text-xs">{e.hciTransNo ?? "—"}</code></TableCell>
+                            <TableCell className="text-xs">
+                                {e.included
+                                    ? <span className={consultCount === 0 ? "text-muted-foreground" : ""}>{consultCount} consult{consultCount !== 1 ? "s" : ""}</span>
+                                    : <span className="text-muted-foreground">excluded</span>}
+                            </TableCell>
+                            <TableCell>
+                                <EntryStatusChip status={e.status} />
+                            </TableCell>
+                        </TableRow>
+                    );
+                })}
             </TableBody>
         </Table>
     );
 }
 
-function StatusChip({ status }: { status: string }) {
-    if (status === "PENDING") return <Badge variant="outline" className="text-xs gap-1"><Clock className="h-3 w-3" />Pending</Badge>;
-    if (status === "INCLUDED") return <Badge variant="default" className="text-xs gap-1"><CheckCircle2 className="h-3 w-3" />Included</Badge>;
-    if (status === "FAILED") return <Badge variant="destructive" className="text-xs gap-1"><AlertCircle className="h-3 w-3" />Failed</Badge>;
-    return <Badge variant="secondary" className="text-xs">{status}</Badge>;
+function EntryStatusChip({ status }: { status: string }) {
+    const desc = ENTRY_STATUS_DESCRIPTIONS[status];
+    const chip = (() => {
+        if (status === "PENDING") return <Badge variant="outline" className="text-xs gap-1"><Clock className="h-3 w-3" />Pending</Badge>;
+        if (status === "INCLUDED") return <Badge variant="default" className="text-xs gap-1"><CheckCircle2 className="h-3 w-3" />Included</Badge>;
+        if (status === "FAILED") return <Badge variant="destructive" className="text-xs gap-1"><AlertCircle className="h-3 w-3" />Failed</Badge>;
+        return <Badge variant="secondary" className="text-xs">{status}</Badge>;
+    })();
+    return desc ? <span title={desc}>{chip}</span> : chip;
 }
 
-// ─── Result JSON Viewer ───────────────────────────────────────────────────────
+// ─── Batch Result Summary ─────────────────────────────────────────────────────
 
-function ResultJsonViewer({ label, data }: { label: string; data: unknown }) {
+function extractFriendlySummary(data: unknown): { status: "ok" | "warn" | "error"; lines: string[]; decryptedErrors: string | null; parsedErrors: string[] | null } {
+    const str = JSON.stringify(data ?? {}).toLowerCase();
+    const lines: string[] = [];
+
+    const obj = typeof data === "object" && data !== null ? data as Record<string, unknown> : {};
+
+    // Surface decrypted PhilHealth errors first
+    let decryptedErrors = typeof obj.decryptedErrors === "string" ? obj.decryptedErrors : null;
+    let parsedErrors: string[] | null = null;
+
+    // Try to parse decrypted errors if they're stringified JSON
+    if (decryptedErrors) {
+        try {
+            // Try to parse as JSON
+            const parsed = JSON.parse(decryptedErrors);
+            if (parsed && typeof parsed === "object") {
+                // If it has an errors array, extract those
+                if (Array.isArray(parsed.errors)) {
+                    parsedErrors = parsed.errors.map((e: unknown) => 
+                        typeof e === "string" ? e : typeof e === "object" ? JSON.stringify(e) : String(e)
+                    );
+                    // Don't show the raw decryptedErrors string if we have parsed errors
+                    decryptedErrors = null;
+                } else if (Array.isArray(parsed)) {
+                    // If the parsed result is directly an array
+                    parsedErrors = parsed.map((e: unknown) => 
+                        typeof e === "string" ? e : typeof e === "object" ? JSON.stringify(e) : String(e)
+                    );
+                    decryptedErrors = null;
+                }
+            }
+        } catch {
+            // Not JSON, keep as raw text
+        }
+    }
+
+    // uploadxmlresult structure
+    const upload = obj.uploadxmlresult as Record<string, unknown> | undefined;
+    if (upload) {
+        if (upload.responsecode) lines.push(`Response Code: ${String(upload.responsecode)}`);
+        if (upload.responsemessage) lines.push(`Message: ${String(upload.responsemessage)}`);
+        if (upload.transmittalid) lines.push(`Transmittal ID: ${String(upload.transmittalid)}`);
+        if (upload.referencenumber) lines.push(`Reference No: ${String(upload.referencenumber)}`);
+        const errors = upload.errors;
+        if (errors && typeof errors === "object") {
+            const errorArr = Array.isArray(errors) ? errors : Object.values(errors);
+            errorArr.slice(0, 5).forEach((e) => {
+                if (typeof e === "object" && e !== null) {
+                    const er = e as Record<string, unknown>;
+                    lines.push(`• ${er.errordescription ?? er.message ?? JSON.stringify(e)}`);
+                } else {
+                    lines.push(`• ${String(e)}`);
+                }
+            });
+        }
+    }
+
+    // Flat validate response
+    if (!lines.length) {
+        if (obj.responsecode) lines.push(`Response Code: ${String(obj.responsecode)}`);
+        if (obj.responsemessage) lines.push(`Message: ${String(obj.responsemessage)}`);
+        if (obj.message) lines.push(`Message: ${String(obj.message)}`);
+        if (obj.result) lines.push(`Result: ${String(obj.result)}`);
+        if (obj.raw) lines.push(String(obj.raw).slice(0, 200));
+    }
+
+    if (!lines.length && !decryptedErrors && !parsedErrors) lines.push("No details available.");
+
+    const isError = str.includes("failed") || str.includes("error") || str.includes("invalid");
+    const isOk = str.includes("success") || str.includes("valid") || str.includes('"v"');
+    const status = isError ? "error" : isOk ? "ok" : "warn";
+
+    return { status, lines, decryptedErrors, parsedErrors };
+}
+
+const IS_DEV = process.env.NODE_ENV === "development";
+
+// Helper function to format XML with proper indentation
+function formatXml(xml: string): string {
+    // Remove existing extra whitespace but preserve text content
+    let formatted = xml.replace(/>\s+</g, '><');
+    
+    // Add newlines and indentation
+    let indent = 0;
+    const lines: string[] = [];
+    let currentLine = '';
+    let i = 0;
+    
+    while (i < formatted.length) {
+        const char = formatted[i];
+        
+        if (char === '<') {
+            // Check if this is a closing tag or self-closing tag
+            const tagEnd = formatted.indexOf('>', i);
+            if (tagEnd === -1) break;
+            
+            const tag = formatted.substring(i, tagEnd + 1);
+            const isClosing = tag.startsWith('</');
+            const isSelfClosing = tag.endsWith('/>');
+            
+            // Decrease indent for closing tags
+            if (isClosing) indent = Math.max(0, indent - 1);
+            
+            // Add current line if it has content
+            if (currentLine.trim()) {
+                lines.push('  '.repeat(indent) + currentLine.trim());
+                currentLine = '';
+            }
+            
+            // Add the tag
+            lines.push('  '.repeat(indent) + tag);
+            
+            // Increase indent for opening tags (not self-closing)
+            if (!isClosing && !isSelfClosing) indent++;
+            
+            i = tagEnd + 1;
+        } else if (char === ' ' || char === '\n' || char === '\t') {
+            // Skip whitespace outside tags
+            if (currentLine.trim()) currentLine += char;
+            i++;
+        } else {
+            // Accumulate content
+            currentLine += char;
+            i++;
+        }
+    }
+    
+    // Add any remaining content
+    if (currentLine.trim()) {
+        lines.push('  '.repeat(indent) + currentLine.trim());
+    }
+    
+    return lines.join('\n');
+}
+
+// Helper function to colorize XML syntax
+function colorizeXmlLine(line: string): React.ReactNode[] {
+    const parts: React.ReactNode[] = [];
+    
+    // Split by tags: match anything between < and >
+    const tagRegex = /<[^>]*>/g;
+    let lastIndex = 0;
+    let match;
+    let keyCounter = 0;
+    
+    while ((match = tagRegex.exec(line)) !== null) {
+        const tag = match[0];
+        const tagIndex = match.index;
+        
+        // Add text before the tag
+        if (tagIndex > lastIndex) {
+            parts.push(
+                <span key={`text-${keyCounter++}`} className="text-slate-700">
+                    {line.substring(lastIndex, tagIndex)}
+                </span>
+            );
+        }
+        
+        // Parse and colorize the tag
+        const tagContent = tag.substring(1, tag.length - 1); // Remove < and >
+        const isClosingTag = tagContent.startsWith('/');
+        const isSelfClosing = tagContent.endsWith('/');
+        
+        // Extract tag name (first word after < or </)
+        const nameMatch = tagContent.match(/^\/?\s*([a-zA-Z_:][a-zA-Z0-9_:.-]*)/);
+        const tagName = nameMatch ? nameMatch[1] : '';
+        const afterName = nameMatch ? tagContent.substring(nameMatch[0].length) : tagContent;
+        
+        const tagParts: React.ReactNode[] = ['<'];
+        
+        if (isClosingTag) tagParts.push('/');
+        
+        tagParts.push(
+            <span key={`tagname-${keyCounter}`} className="text-blue-600">
+                {tagName}
+            </span>
+        );
+        
+        // Parse attributes
+        if (afterName.trim()) {
+            const attrRegex = /(\s+)([a-zA-Z_:][a-zA-Z0-9_:.-]*)(?:=("[^"]*"|'[^']*'))?/g;
+            let attrMatch;
+            let lastAttrIndex = 0;
+            
+            while ((attrMatch = attrRegex.exec(afterName)) !== null) {
+                const [fullAttrMatch, whitespace, attrName, attrValue] = attrMatch;
+                const matchIndex = attrMatch.index;
+                
+                // Add whitespace before attribute
+                if (whitespace) {
+                    tagParts.push(whitespace);
+                }
+                
+                // Add attribute name
+                tagParts.push(
+                    <span key={`attr-${keyCounter}-${attrName}`} className="text-purple-600">
+                        {attrName}
+                    </span>
+                );
+                
+                // Add attribute value if present
+                if (attrValue) {
+                    tagParts.push('=');
+                    tagParts.push(
+                        <span key={`val-${keyCounter}-${attrName}`} className="text-green-600">
+                            {attrValue}
+                        </span>
+                    );
+                }
+                
+                lastAttrIndex = matchIndex + fullAttrMatch.length;
+            }
+            
+            // Add remaining content after last attribute (like trailing / for self-closing)
+            if (lastAttrIndex < afterName.length) {
+                const remaining = afterName.substring(lastAttrIndex);
+                if (remaining.trim() || remaining.includes('/')) {
+                    tagParts.push(remaining);
+                }
+            }
+        }
+        
+        tagParts.push('>');
+        
+        parts.push(
+            <span key={`tag-${keyCounter++}`} className="text-blue-600">
+                {tagParts}
+            </span>
+        );
+        
+        lastIndex = tagIndex + tag.length;
+    }
+    
+    // Add remaining text after last tag
+    if (lastIndex < line.length) {
+        parts.push(
+            <span key={`text-${keyCounter++}`} className="text-slate-700">
+                {line.substring(lastIndex)}
+            </span>
+        );
+    }
+    
+    return parts.length > 0 ? parts : [line];
+}
+
+function BatchResultSummary({ label, data, batchUid, xmlPayload, onDecrypted, resultType = "validate" }: { label: string; data: unknown; batchUid?: string; xmlPayload?: string | null; onDecrypted?: () => void; resultType?: "validate" | "submit" }) {
     const [show, setShow] = useState(false);
+    const [showXml, setShowXml] = useState(false);
+    const [isDecrypting, setIsDecrypting] = useState(false);
+    const lineNumbersRef = useRef<HTMLDivElement>(null);
+    const codeRef = useRef<HTMLDivElement>(null);
+    const { status, lines, decryptedErrors, parsedErrors } = extractFriendlySummary(data);
+    const icon = status === "ok"
+        ? <CheckCircle2 className="h-4 w-4 text-green-600" />
+        : status === "error"
+            ? <AlertCircle className="h-4 w-4 text-destructive" />
+            : <Clock className="h-4 w-4 text-yellow-600" />;
+
+    // Check if encrypted errors are still present
+    const obj = typeof data === "object" && data !== null ? data as Record<string, unknown> : {};
+    const hasEncryptedErrors = !!obj.encryptedxmlerrors;
+
+    // Strip decryptedErrors from the object before showing raw JSON
+    const rawForDisplay = typeof data === "object" && data !== null
+        ? Object.fromEntries(Object.entries(data as Record<string, unknown>).filter(([k]) => k !== "decryptedErrors"))
+        : data;
+
+    const handleDecryptErrors = async () => {
+        if (!batchUid) return;
+        setIsDecrypting(true);
+        try {
+            const { decryptStoredValidationErrorsAction } = await import("@/actions/clinics/konsulta-report.action");
+            const result = await decryptStoredValidationErrorsAction(batchUid, resultType);
+            if (result.data?.decryptedErrors) {
+                onDecrypted?.();
+            }
+        } catch (err) {
+            console.error("Decrypt error:", err);
+        } finally {
+            setIsDecrypting(false);
+        }
+    };
+
+    // Sync vertical scroll between line numbers and code
+    const handleCodeScroll = () => {
+        if (codeRef.current && lineNumbersRef.current) {
+            lineNumbersRef.current.scrollTop = codeRef.current.scrollTop;
+        }
+    };
+
+    // Format XML with line numbers for highlighting error lines
+    const xmlLines = xmlPayload ? formatXml(xmlPayload).split('\n') : [];
+
     return (
-        <div className="mt-3">
-            <Button variant="ghost" size="sm" className="h-7 text-xs gap-1 px-2" onClick={() => setShow(!show)}>
-                {show ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
-                {show ? "Hide" : "Show"} {label}
-            </Button>
-            {show && (
-                <pre className="mt-1 rounded bg-muted p-3 text-xs whitespace-pre-wrap break-all max-h-64 overflow-y-auto">
-                    {JSON.stringify(data, null, 2)}
+        <div className="mt-3 rounded-md border px-3 py-2 text-sm">
+            <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 font-medium">
+                    {icon}
+                    {label}
+                </div>
+                <div className="flex items-center gap-1 flex-wrap justify-end">
+                    {hasEncryptedErrors && batchUid && (
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-6 text-xs gap-1 px-1.5"
+                            onClick={handleDecryptErrors}
+                            disabled={isDecrypting}
+                        >
+                            {isDecrypting ? (
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                                <Lock className="h-3 w-3" />
+                            )}
+                            Decrypt Errors
+                        </Button>
+                    )}
+                    {xmlPayload && (
+                        <Button type="button" variant="ghost" size="sm" className="h-6 text-xs gap-1 px-1.5" onClick={() => setShowXml(!showXml)}>
+                            {showXml ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                            {showXml ? "Hide XML" : "View XML"}
+                        </Button>
+                    )}
+                    {IS_DEV && (
+                        <Button type="button" variant="ghost" size="sm" className="h-6 text-xs gap-1 px-1.5" onClick={() => setShow(!show)}>
+                            {show ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                            {show ? "Hide JSON" : "Raw JSON"}
+                        </Button>
+                    )}
+                </div>
+            </div>
+
+            {parsedErrors && parsedErrors.length > 0 && (
+                <div className="mt-2 rounded-md bg-destructive/10 border border-destructive/30 px-3 py-2">
+                    <p className="text-xs font-semibold text-destructive mb-2">PhilHealth Validation Errors</p>
+                    <ul className="space-y-1 text-xs text-destructive/90">
+                        {parsedErrors.map((err, i) => (
+                            <li key={i} className="ml-2">• {err}</li>
+                        ))}
+                    </ul>
+                </div>
+            )}
+
+            {decryptedErrors && (
+                <div className="mt-2 rounded-md bg-destructive/10 border border-destructive/30 px-3 py-2">
+                    <p className="text-xs font-semibold text-destructive mb-1">PhilHealth Validation Errors</p>
+                    <pre className="text-xs whitespace-pre-wrap break-words text-destructive/90">{decryptedErrors}</pre>
+                </div>
+            )}
+
+            {showXml && xmlPayload && (
+                <div className="mt-2 rounded-md bg-slate-50 border border-slate-200 p-0 overflow-hidden">
+                    <div className="sticky top-0 bg-slate-100 border-b border-slate-200 px-3 py-1.5 flex items-center justify-between">
+                        <p className="text-xs font-semibold text-slate-700">Generated XML ({xmlLines.length} lines)</p>
+                        <Button type="button" variant="ghost" size="sm" className="h-5 text-xs px-1.5" onClick={() => setShowXml(false)}>
+                            <EyeOff className="h-3 w-3" />
+                        </Button>
+                    </div>
+                    <div className="max-h-96 bg-white font-mono text-xs leading-6 flex overflow-hidden">
+                        {/* Line numbers column */}
+                        <div
+                            ref={lineNumbersRef}
+                            className="bg-slate-100 border-r border-slate-200 text-slate-500 p-0 select-none flex-shrink-0 overflow-hidden"
+                        >
+                            {xmlLines.map((_, i) => (
+                                <div
+                                    key={`ln-${i}`}
+                                    className="px-3 text-right min-w-12"
+                                    style={{ height: '1.5rem' }}
+                                >
+                                    {i + 1}
+                                </div>
+                            ))}
+                        </div>
+                        {/* Code column */}
+                        <div
+                            ref={codeRef}
+                            onScroll={handleCodeScroll}
+                            className="flex-1 overflow-auto"
+                        >
+                            {xmlLines.map((line, i) => (
+                                <div
+                                    key={i}
+                                    className="px-4 hover:bg-blue-50 whitespace-pre transition-colors"
+                                    style={{ height: '1.5rem' }}
+                                >
+                                    {colorizeXmlLine(line)}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {lines.length > 0 && (
+                <ul className="mt-1.5 space-y-0.5 text-sm text-muted-foreground">
+                    {lines.map((l, i) => <li key={i}>{l}</li>)}
+                </ul>
+            )}
+
+            {IS_DEV && show && (
+                <pre className="mt-2 rounded bg-muted p-2 text-xs whitespace-pre-wrap break-all max-h-48 overflow-y-auto">
+                    {JSON.stringify(rawForDisplay, null, 2)}
                 </pre>
             )}
         </div>
@@ -1329,20 +2135,24 @@ function SubmissionHistoryPanel({ clinicUid }: { clinicUid: string }) {
                         </DialogHeader>
                         <div className="space-y-3 max-h-[60vh] overflow-y-auto">
                             {selected.validateResult && (
-                                <div>
-                                    <p className="text-xs font-medium mb-1">Validate Result</p>
-                                    <pre className="text-xs bg-muted rounded p-3 whitespace-pre-wrap break-all">
-                                        {JSON.stringify(selected.validateResult, null, 2)}
-                                    </pre>
-                                </div>
+                                <BatchResultSummary
+                                    label="Validation Response"
+                                    data={selected.validateResult}
+                                    batchUid={selected.batchUid}
+                                    xmlPayload={selected.xmlPayload}
+                                    onDecrypted={() => void load()}
+                                    resultType="validate"
+                                />
                             )}
                             {selected.submitResult && (
-                                <div>
-                                    <p className="text-xs font-medium mb-1">Submit Result</p>
-                                    <pre className="text-xs bg-muted rounded p-3 whitespace-pre-wrap break-all">
-                                        {JSON.stringify(selected.submitResult, null, 2)}
-                                    </pre>
-                                </div>
+                                <BatchResultSummary
+                                    label="Submission Response"
+                                    data={selected.submitResult}
+                                    batchUid={selected.batchUid}
+                                    xmlPayload={selected.xmlPayload}
+                                    onDecrypted={() => void load()}
+                                    resultType="submit"
+                                />
                             )}
                         </div>
                         <DialogFooter>

@@ -249,7 +249,6 @@ const philhealthSchema = z.object({
   konsultaUsername: z.string().optional(),
   konsultaPassword: z.string().optional(),
   pmccNumber: z.string().optional(),
-  konsultaCipherKey: z.string().optional(),
 });
 type PhilHealthFormValues = z.infer<typeof philhealthSchema>;
 
@@ -748,7 +747,6 @@ function PhilHealthTab({
       konsultaUsername: clinicSetting?.konsultaUsername ?? "",
       konsultaPassword: clinicSetting?.konsultaPassword ?? "",
       pmccNumber: clinicSetting?.pmccNumber ?? "",
-      konsultaCipherKey: clinicSetting?.konsultaCipherKey ?? "",
     },
   });
 
@@ -760,7 +758,6 @@ function PhilHealthTab({
         konsultaUsername: values.konsultaUsername || undefined,
         konsultaPassword: values.konsultaPassword || undefined,
         pmccNumber: values.pmccNumber || undefined,
-        konsultaCipherKey: values.konsultaCipherKey || undefined,
       });
 
       if (result.status) {
@@ -990,20 +987,6 @@ function PhilHealthTab({
                         <Input placeholder="e.g. Z15445" {...field} />
                       </FormControl>
                       <FormDescription>Primary care clinic code assigned by PhilHealth.</FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="konsultaCipherKey"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Cipher Key</FormLabel>
-                      <FormControl>
-                        <Input type="password" placeholder="Encryption cipher key" {...field} />
-                      </FormControl>
-                      <FormDescription>Used to encrypt XML payloads before submission.</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

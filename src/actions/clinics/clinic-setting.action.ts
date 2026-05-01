@@ -105,7 +105,6 @@ type UpdatePhilHealthSettings = {
   konsultaUsername?: string;
   konsultaPassword?: string;
   pmccNumber?: string;
-  konsultaCipherKey?: string;
 }
 export const updatePhilHealthSettingsAction = async (clinicUid: string, data: UpdatePhilHealthSettings) => {
 
@@ -133,7 +132,7 @@ export const updatePhilHealthSettingsAction = async (clinicUid: string, data: Up
     // Upsert clinic setting - create if doesn't exist, update if it does
     const clinicSetting = await prisma.clinicSetting.upsert({
       where: {
-        clinicId: clinic.id
+        clinicId: clinic.id,
       },
       create: {
         clinicId: clinic.id,
@@ -142,7 +141,6 @@ export const updatePhilHealthSettingsAction = async (clinicUid: string, data: Up
         konsultaUsername: data.konsultaUsername,
         konsultaPassword: data.konsultaPassword,
         pmccNumber: data.pmccNumber,
-        konsultaCipherKey: data.konsultaCipherKey,
       },
       update: {
         philhealthAccreditationNumber: data.philhealthAccreditationNumber,
@@ -150,7 +148,6 @@ export const updatePhilHealthSettingsAction = async (clinicUid: string, data: Up
         konsultaUsername: data.konsultaUsername,
         konsultaPassword: data.konsultaPassword,
         pmccNumber: data.pmccNumber,
-        konsultaCipherKey: data.konsultaCipherKey,
       }
     });
     return { status: true, message, data: clinicSetting }

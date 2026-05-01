@@ -236,6 +236,7 @@ export async function getToken(
         params,
         { timeout: SOAP_TIMEOUT_MS }
     )) as [GetTokenResponse];
+    console.log({ result, params });
     return result;
 }
 

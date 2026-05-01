@@ -1,13 +1,17 @@
+
 "use server";
+// ─── System-level Konsulta Credentials (never exposed to client) ────────────
+const KONSULTA_SOFTWARE_CERT_ID = process.env.PHILHEALTH_KONSULTA_SOFTWARE_CERT_ID;
+const KONSULTA_CIPHER_KEY = process.env.PHILHEALTH_KONSULTA_CIPHER_KEY;
 
 import prisma from "@lib/prisma";
 import { withErrorHandling } from "@/lib/with-error-handling";
 import { getCachedSession } from "@actions/session.action";
 import { Prisma, type KonsultaBatchStatus } from "@prisma/client";
 import { buildPcbXml } from "@/services/konsulta/pcb-xml-builder";
-import { encryptXmlPayload } from "@/services/konsulta/xml-encryption.service";
+import { encryptXmlPayload, decryptXmlPayload } from "@/services/konsulta/xml-encryption.service";
 import { generateTransmittalNumber } from "@/services/konsulta/pcb-xml-builder";
-import type { KonsultaEnlistmentData, KonsultaPatientType, KonsultaSoapData } from "@/services/konsulta/types";
+import type { KonsultaEnlistmentData, KonsultaPatientType, KonsultaSoapData, KonsultaProfileData } from "@/services/konsulta/types";
 import { formatKonsultaHciNumber } from "@/lib/format-sequence";
 import { getNextSequenceNumber } from "@/lib/sequence-generator";
 
@@ -18,6 +22,7 @@ export type GetAllClinicPatientsWithPhilHealthStatus = Awaited<ReturnType<typeof
 export type GetPhilHealthConsultations = Awaited<ReturnType<typeof getPhilHealthConsultationsAction>>;
 export type GetKonsultaBatches = Awaited<ReturnType<typeof getKonsultaBatchesAction>>;
 export type GetKonsultaBatch = Awaited<ReturnType<typeof getKonsultaBatchAction>>;
+export type CheckEnrolledPatientsRegistrationBatch = Awaited<ReturnType<typeof checkEnrolledPatientsRegistrationBatchAction>>;
 
 type KonsultaPatientListKind = "ENROLLED" | "UNENROLLED";
 
@@ -67,25 +72,26 @@ async function getClinicKonsultaCredentials(clinicId: number) {
             konsultaPassword: true,
             philhealthAccreditationNumber: true,
             pmccNumber: true,
-            konsultaCipherKey: true,
         },
     });
     if (
-        !setting?.konsultaUsername ||
-        !setting.konsultaPassword ||
+        typeof setting?.konsultaUsername === "undefined" ||
+        typeof setting.konsultaPassword === "undefined" ||
         !setting.philhealthAccreditationNumber ||
-        !setting.pmccNumber ||
-        !setting.konsultaCipherKey
+        !setting.pmccNumber
     ) {
         throw new Error("PhilHealth Konsulta credentials are not fully configured in Clinic Settings.");
     }
+    if (!KONSULTA_SOFTWARE_CERT_ID || !KONSULTA_CIPHER_KEY) {
+        throw new Error("Konsulta system certificate ID and cipher key are not set in environment variables.");
+    }
     return {
-        username: setting.konsultaUsername,
-        password: setting.konsultaPassword,
+        username: setting.konsultaUsername ?? "",
+        password: setting.konsultaPassword ?? "",
         hciAccreNo: setting.philhealthAccreditationNumber,
         pmccNumber: setting.pmccNumber,
-        certificationId: setting.pmccNumber,
-        cipherKey: setting.konsultaCipherKey,
+        certificationId: KONSULTA_SOFTWARE_CERT_ID,
+        cipherKey: KONSULTA_CIPHER_KEY,
     };
 }
 
@@ -151,6 +157,7 @@ function isAffirmativeSoapResult(result: Prisma.InputJsonObject): boolean {
 
 async function getKonsultaTokenForClinic(clinicId: number): Promise<string> {
     const credentials = await getClinicKonsultaCredentials(clinicId);
+    console.log({ credentials });
     const { getToken: konsultaGetToken } = await import("@/services/konsulta/konsulta-soap.service");
     const tokenRaw = await konsultaGetToken({
         pUsername: credentials.username,
@@ -158,6 +165,7 @@ async function getKonsultaTokenForClinic(clinicId: number): Promise<string> {
         pSoftwareCertificationId: credentials.certificationId,
         pHospitalCode: credentials.hciAccreNo,
     });
+    console.log({ tokenRaw });
     let token = tokenRaw.return;
     try { token = (JSON.parse(token) as { result?: string }).result ?? token; } catch { /* plain string */ }
     return token;
@@ -367,24 +375,42 @@ export const enrollPatientPhilHealthAction = withErrorHandling(async ({
 
         const existingRecord = clinicPatient.Patient.PhilHealthRecords[0];
         if (existingRecord) {
-            await tx.philHealthRecord.update({
-                where: { id: existingRecord.id },
-                data: {
-                    pin: normalizedPin,
-                    philSysId: philSysId?.trim() || null,
-                    tin: tin?.trim() || null,
-                },
-            });
+            try {
+                await tx.philHealthRecord.update({
+                    where: { id: existingRecord.id },
+                    data: {
+                        pin: normalizedPin,
+                        philSysId: philSysId?.trim() || null,
+                        tin: tin?.trim() || null,
+                    },
+                });
+            } catch (error) {
+                if (error instanceof Error && error.message.includes("Unique constraint failed")) {
+                    if (error.message.includes("pin")) {
+                        throw new Error("This PhilHealth PIN is already registered to another patient.");
+                    }
+                }
+                throw error;
+            }
         } else {
-            await tx.philHealthRecord.create({
-                data: {
-                    userId: clinicPatient.Patient.id,
-                    pin: normalizedPin,
-                    memberTypeId: await resolveDefaultMemberTypeId(tx),
-                    philSysId: philSysId?.trim() || null,
-                    tin: tin?.trim() || null,
-                },
-            });
+            try {
+                await tx.philHealthRecord.create({
+                    data: {
+                        userId: clinicPatient.Patient.id,
+                        pin: normalizedPin,
+                        memberTypeId: await resolveDefaultMemberTypeId(tx),
+                        philSysId: philSysId?.trim() || null,
+                        tin: tin?.trim() || null,
+                    },
+                });
+            } catch (error) {
+                if (error instanceof Error && error.message.includes("Unique constraint failed")) {
+                    if (error.message.includes("pin")) {
+                        throw new Error("This PhilHealth PIN is already registered to another patient.");
+                    }
+                }
+                throw error;
+            }
         }
 
         await tx.clinicPatient.update({
@@ -414,11 +440,14 @@ export const enrollPatientPhilHealthAction = withErrorHandling(async ({
     let registrationResult: Prisma.InputJsonObject;
     try {
         const token = await getKonsultaTokenForClinic(clinicId);
+        console.log({ token });
         const { isMemberDependentRegistered } = await import("@/services/konsulta/konsulta-soap.service");
         const raw = await isMemberDependentRegistered({ pPIN: identity.pin, pType: identity.patientType }, token);
+        console.log({ identity, raw });
         registrationResult = parseSoapReturn(raw.return);
         registrationStatus = isAffirmativeSoapResult(registrationResult) ? "REGISTERED" : "NOT_REGISTERED";
     } catch (error) {
+        console.log({ error });
         registrationResult = { error: error instanceof Error ? error.message : String(error) };
     }
 
@@ -505,6 +534,127 @@ export const checkKonsultaPatientRegistrationAction = withErrorHandling(async ({
     return { message: "Konsulta registration checked", data: { registrationStatus, registrationResult } };
 });
 
+export const checkEnrolledPatientsRegistrationBatchAction = withErrorHandling(async ({
+    clinicUid,
+    clinicPatientIds,
+}: { clinicUid: string; clinicPatientIds?: number[] }) => {
+    const session = await getCachedSession();
+    if (!session) throw new Error("Unauthorized");
+
+    const clinicId = await resolveClinicId(clinicUid);
+    const effYear = currentEffYear();
+
+    // Fetch all enrolled patients (or filtered by IDs)
+    const enrolledPatients = await prisma.clinicPatient.findMany({
+        where: {
+            clinicId,
+            isActive: true,
+            deletedAt: null,
+            konsultaEffYear: effYear,
+            konsultaRegistrationStatus: "REGISTERED",
+            ...(clinicPatientIds ? { id: { in: clinicPatientIds } } : {}),
+        },
+        select: {
+            id: true,
+            konsultaPatientType: true,
+            Patient: {
+                select: {
+                    id: true,
+                    firstName: true,
+                    lastName: true,
+                    PhilHealthRecords: { where: { deletedAt: null }, select: { pin: true }, take: 1 },
+                },
+            },
+        },
+    });
+
+    if (enrolledPatients.length === 0) {
+        return {
+            message: "No enrolled patients found to check",
+            data: { checked: 0, valid: 0, invalid: 0, failed: 0, results: [] },
+        };
+    }
+
+    const token = await getKonsultaTokenForClinic(clinicId);
+    const { isMemberDependentRegistered } = await import("@/services/konsulta/konsulta-soap.service");
+    const results: Array<{
+        clinicPatientId: number;
+        patientName: string;
+        status: "REGISTERED" | "NOT_REGISTERED" | "ERROR";
+        message: string;
+    }> = [];
+
+    let validCount = 0;
+    let invalidCount = 0;
+    let failedCount = 0;
+
+    for (const patient of enrolledPatients) {
+        try {
+            const pin = patient.Patient.PhilHealthRecords[0]?.pin;
+            const patientType = patient.konsultaPatientType as KonsultaPatientType | null;
+
+            if (!pin || !patientType) {
+                failedCount++;
+                results.push({
+                    clinicPatientId: patient.id,
+                    patientName: `${patient.Patient.firstName ?? ""} ${patient.Patient.lastName ?? ""}`.trim(),
+                    status: "ERROR",
+                    message: "Missing PhilHealth PIN or patient type",
+                });
+                continue;
+            }
+
+            const raw = await isMemberDependentRegistered({ pPIN: pin, pType: patientType }, token);
+            const registrationResult = parseSoapReturn(raw.return);
+            const registrationStatus = isAffirmativeSoapResult(registrationResult) ? "REGISTERED" : "NOT_REGISTERED";
+
+            await prisma.clinicPatient.update({
+                where: { id: patient.id },
+                data: {
+                    konsultaRegistrationStatus: registrationStatus,
+                    konsultaRegisteredAt: registrationStatus === "REGISTERED" ? new Date() : null,
+                    konsultaRegistrationCheckedAt: new Date(),
+                    konsultaRegistrationResult: registrationResult,
+                },
+            });
+
+            if (registrationStatus === "REGISTERED") {
+                validCount++;
+            } else {
+                invalidCount++;
+            }
+
+            results.push({
+                clinicPatientId: patient.id,
+                patientName: `${patient.Patient.firstName ?? ""} ${patient.Patient.lastName ?? ""}`.trim(),
+                status: registrationStatus,
+                message: registrationStatus === "REGISTERED"
+                    ? "Patient is registered to this Konsulta provider"
+                    : "Patient is not registered to this Konsulta provider",
+            });
+        } catch (error) {
+            failedCount++;
+            results.push({
+                clinicPatientId: patient.id,
+                patientName: `${patient.Patient.firstName ?? ""} ${patient.Patient.lastName ?? ""}`.trim(),
+                status: "ERROR",
+                message: error instanceof Error ? error.message : "Unknown error",
+            });
+        }
+    }
+
+    return {
+        message: `Registration check completed for ${enrolledPatients.length} patients`,
+        data: {
+            checked: enrolledPatients.length,
+            valid: validCount,
+            invalid: invalidCount,
+            failed: failedCount,
+            results,
+        },
+    };
+});
+
 // ─── Consultations ────────────────────────────────────────────────────────────
 
 export type PhilHealthConsultationsParams = {
@@ -533,7 +683,7 @@ export const getPhilHealthConsultationsAction = withErrorHandling(
                 konsultaEffYear: effYear,
                 konsultaRegistrationStatus: "REGISTERED",
             },
-            select: { id: true },
+            select: { id: true, patientId: true },
         });
 
         if (enrolledClinicPatients.length === 0) {
@@ -541,17 +691,31 @@ export const getPhilHealthConsultationsAction = withErrorHandling(
         }
 
         const enrolledIds = enrolledClinicPatients.map((cp) => cp.id);
+        const enrolledPatientUserIds = enrolledClinicPatients.map((cp) => cp.patientId);
 
         const dateFilter =
             from && to ? { gte: from, lte: to } : undefined;
-
+        console.log({ clinicId, enrolledIds, enrolledPatientUserIds, dateFilter });
         const consultations = await prisma.consultationTicket.findMany({
             where: {
                 clinicId,
                 isActive: true,
                 isArchived: false,
-                clinicPatientId: { in: enrolledIds },
                 createdAt: dateFilter,
+                OR: [
+                    // New way: Direct clinicPatientId link to enrolled patient
+                    { clinicPatientId: { in: enrolledIds } },
+                    // Old way: Through appointment to enrolled patient (via AppointmentRequester)
+                    {
+                        Appointment: {
+                            Requesters: {
+                                some: {
+                                    userId: { in: enrolledPatientUserIds },
+                                },
+                            },
+                        },
+                    },
+                ],
             },
             select: {
                 id: true,
@@ -562,13 +726,40 @@ export const getPhilHealthConsultationsAction = withErrorHandling(
                 konsultaAtcValidationStatus: true,
                 konsultaAtcValidatedAt: true,
                 createdAt: true,
+                clinicPatientId: true,
                 Appointment: {
                     select: {
+                        id: true,
                         AppointmentAttribute: { select: { date: true, isWalkIn: true } },
+                        Requesters: {
+                            select: {
+                                User: {
+                                    select: {
+                                        id: true,
+                                        firstName: true,
+                                        lastName: true,
+                                        dob: true,
+                                        gender: true,
+                                        PhilHealthRecords: {
+                                            where: { deletedAt: null },
+                                            select: {
+                                                pin: true,
+                                                PhilHealthMemberType: { select: { name: true } },
+                                            },
+                                            take: 1,
+                                        },
+                                    },
+                                },
+                            },
+                            take: 1,
+                        },
                     },
                 },
                 ClinicPatient: {
                     select: {
+                        id: true,
+                        konsultaEffYear: true,
+                        konsultaRegistrationStatus: true,
                         konsultaPatientType: true,
                         konsultaMemberPin: true,
                         Patient: {
@@ -615,9 +806,23 @@ export const getPhilHealthConsultationsAction = withErrorHandling(
             take: 200,
         });
 
+        // Additional filter: ensure consultations from both paths are from registered patients
+        const filteredConsultations = consultations.filter((c) => {
+            if (c.clinicPatientId && c.ClinicPatient) {
+                // Direct clinicPatientId path: verify enrollment
+                return (
+                    c.ClinicPatient.konsultaEffYear === effYear &&
+                    c.ClinicPatient.konsultaRegistrationStatus === "REGISTERED"
+                );
+            }
+            // For appointment path, the WHERE clause already verified the patient is enrolled
+            // but ClinicPatient might be null, which is fine for old consultations
+            return true;
+        });
+
         return {
             message: "PhilHealth consultations retrieved",
-            data: consultations,
+            data: filteredConsultations,
         };
     }
 );
@@ -695,6 +900,7 @@ export const getKonsultaBatchesAction = withErrorHandling(async (clinicUid: stri
             transmittalNo: true,
             status: true,
             notes: true,
+            xmlPayload: true,
             errorMessage: true,
             submittedAt: true,
             createdAt: true,
@@ -705,7 +911,20 @@ export const getKonsultaBatchesAction = withErrorHandling(async (clinicUid: stri
                 select: { firstName: true, lastName: true },
             },
             KonsultaEntries: {
-                select: { id: true, philHealthPin: true, memberPin: true, memberType: true, hciCaseNo: true, hciTransNo: true, status: true, included: true },
+                select: {
+                    id: true,
+                    philHealthPin: true,
+                    memberPin: true,
+                    memberType: true,
+                    hciCaseNo: true,
+                    hciTransNo: true,
+                    status: true,
+                    included: true,
+                    consultationIds: true,
+                    Patient: {
+                        select: { firstName: true, lastName: true },
+                    },
+                },
             },
         },
         orderBy: { createdAt: "desc" },
@@ -945,13 +1164,36 @@ export const generateBatchXmlAction = withErrorHandling(async (batchUid: string)
 
     const batch = await prisma.konsultaBatch.findUnique({
         where: { batchUid },
-        include: {
+        select: {
+            batchUid: true,
+            id: true,
+            clinicId: true,
+            period: true,
+            reportTagging: true,
+            transmittalNo: true,
+            status: true,
+            xmlPayload: true,
+            validateResult: true,
+            submitResult: true,
+            errorMessage: true,
             KonsultaEntries: {
-                where: { included: true, status: { not: "FAILED" } },
-                include: {
+                where: { included: true },
+                select: {
+                    id: true,
+                    batchId: true,
+                    patientUserId: true,
+                    philHealthPin: true,
+                    memberPin: true,
+                    memberType: true,
+                    hciCaseNo: true,
+                    hciTransNo: true,
+                    consultationIds: true,
+                    status: true,
+                    included: true,
                     Patient: {
                         select: {
                             id: true,
+                            userId: true,
                             firstName: true,
                             lastName: true,
                             middleName: true,
@@ -959,6 +1201,7 @@ export const generateBatchXmlAction = withErrorHandling(async (batchUid: string)
                             dob: true,
                             gender: true,
                             mobile: true,
+                            email: true,
                         },
                     },
                 },
@@ -967,6 +1210,31 @@ export const generateBatchXmlAction = withErrorHandling(async (batchUid: string)
     });
     if (!batch) throw new Error("Batch not found");
     if (batch.status === "SUBMITTED") throw new Error("Batch already submitted.");
+
+    // Validate that entries exist
+    if (batch.KonsultaEntries.length === 0) {
+        throw new Error("No patients selected for this batch.");
+    }
+
+    // Validate patient profiles have required information
+    for (const entry of batch.KonsultaEntries) {
+        const p = entry.Patient;
+        if (!p.firstName || !p.lastName) {
+            throw new Error(`Patient ${p.id} is missing required name information (First Name and Last Name).`);
+        }
+        if (!p.dob) {
+            throw new Error(`Patient ${p.firstName} ${p.lastName} is missing date of birth.`);
+        }
+        if (!p.gender) {
+            throw new Error(`Patient ${p.firstName} ${p.lastName} is missing gender information.`);
+        }
+        if (!entry.philHealthPin) {
+            throw new Error(`Patient ${p.firstName} ${p.lastName} is missing PhilHealth PIN.`);
+        }
+        if (!entry.memberType || (entry.memberType !== "MM" && entry.memberType !== "DD")) {
+            throw new Error(`Patient ${p.firstName} ${p.lastName} is missing or has invalid member type. Must be MM or DD.`);
+        }
+    }
 
     const credentials = await getClinicKonsultaCredentials(batch.clinicId);
     const seq = Math.floor(Date.now() / 1000) % 99999;
@@ -982,13 +1250,17 @@ export const generateBatchXmlAction = withErrorHandling(async (batchUid: string)
         const dob = p.dob ? p.dob.toISOString().slice(0, 10) : "1990-01-01";
         const mobile = p.mobile ?? `09${entry.philHealthPin.slice(-9)}`;
         const transDate = periodDate.toISOString().slice(0, 10);
-        const memberPin = entry.memberPin || entry.philHealthPin;
+        const patientType = (entry.memberType ?? "").trim() as "MM" | "DD";
+
+        // For MM (member): pMemPin is the patient's own PIN
+        // For DD (dependent): pMemPin is the member's PIN that they're dependent under
+        const memberPin = patientType === "MM" ? entry.philHealthPin : (entry.memberPin || entry.philHealthPin);
 
         return {
             pHciCaseNo: entry.hciCaseNo || formatKonsultaHciNumber("T", credentials.hciAccreNo, entry.id, periodDate),
             pHciTransNo: entry.hciTransNo || formatKonsultaHciNumber("E", credentials.hciAccreNo, entry.id, periodDate),
             pEffYear: effYear,
-            pEnlistStat: "A",
+            pEnlistStat: "1",
             pEnlistDate: transDate,
             pPackageType: "K",
             pMemPin: memberPin,
@@ -1004,7 +1276,7 @@ export const generateBatchXmlAction = withErrorHandling(async (batchUid: string)
             pPatientExtname: p.suffix ?? "",
             pPatientSex: (p.gender === "FEMALE" ? "F" : "M") as "M" | "F",
             pPatientDob: dob,
-            pPatientType: entry.memberType as "MM" | "DD",
+            pPatientType: patientType,
             pPatientMobileNo: mobile,
             pPatientLandlineNo: "",
             pWithConsent: "Y",
@@ -1015,6 +1287,20 @@ export const generateBatchXmlAction = withErrorHandling(async (batchUid: string)
         };
     });
 
+    // Helper function to format age like PhilHealth expects
+    const formatAge = (dob: string): string => {
+        if (!dob) return "0 YR(S), 0 MO(S), 0 DAY(S)";
+        const d = new Date(dob);
+        const now = new Date();
+        let y = now.getFullYear() - d.getFullYear();
+        let m = now.getMonth() - d.getMonth();
+        let days = now.getDate() - d.getDate();
+        if (days < 0) { m--; days += 30; }
+        if (m < 0) { y--; m += 12; }
+        return `${y} YR(S), ${m} MO(S), ${days} DAY(S)`;
+    };
+
+    // For SOAPS: fetch consultation records for second-tranche reports
     const entryByConsultationId = new Map<number, (typeof batch.KonsultaEntries)[number]>();
     for (const entry of batch.KonsultaEntries) {
         for (const consultationId of entry.consultationIds) {
@@ -1023,6 +1309,12 @@ export const generateBatchXmlAction = withErrorHandling(async (batchUid: string)
     }
 
     const consultationIds = Array.from(entryByConsultationId.keys());
+
+    // Validate consultation records for second-tranche reports
+    if (batch.reportTagging === "2" && consultationIds.length === 0) {
+        throw new Error("Second-tranche reports require at least one consultation SOAP entry. Please add consultations to the patient records.");
+    }
+
     const consultationRows = batch.reportTagging === "2" && consultationIds.length > 0
         ? await prisma.consultationTicket.findMany({
             where: {
@@ -1042,45 +1334,108 @@ export const generateBatchXmlAction = withErrorHandling(async (batchUid: string)
         })
         : [];
 
-    const soaps: KonsultaSoapData[] = consultationRows.map((consultation) => {
-        const entry = entryByConsultationId.get(consultation.id);
-        if (!entry) throw new Error("Consultation is not attached to a batch entry.");
-        const soapDate = (consultation.Appointment?.AppointmentAttribute?.date ?? consultation.createdAt)
-            .toISOString()
-            .slice(0, 10);
-        const isWalkIn = consultation.Appointment?.AppointmentAttribute?.isWalkIn ? "Y" : "N";
-        const transDate = consultation.createdAt.toISOString().slice(0, 10);
-        const memberPin = entry.memberPin || entry.philHealthPin;
+    // PROFILE elements: Type 1 (ENLISTMENT) = per-entry, Type 2 (SOAP) = per-consultation
+    const profiles: KonsultaProfileData[] =
+        batch.reportTagging === "1"
+            ? batch.KonsultaEntries.map((entry) => {
+                const p = entry.Patient;
+                const dob = p.dob ? p.dob.toISOString().slice(0, 10) : "1990-01-01";
+                const patientType = (entry.memberType ?? "").trim() as "MM" | "DD";
+                // For MM (member): pMemPin is the patient's own PIN
+                // For DD (dependent): pMemPin is the member's PIN that they're dependent under
+                const memberPin = patientType === "MM" ? entry.philHealthPin : (entry.memberPin || entry.philHealthPin);
+                const patientAge = formatAge(dob);
 
-        return {
-            pHciCaseNo: consultation.konsultaHciCaseNo || entry.hciCaseNo || formatKonsultaHciNumber("T", credentials.hciAccreNo, entry.id, periodDate),
-            pHciTransNo: consultation.konsultaHciTransNo || formatKonsultaHciNumber("S", credentials.hciAccreNo, consultation.id, consultation.createdAt),
-            pSoapDate: soapDate,
-            pPatientPin: entry.philHealthPin,
-            pPatientType: entry.memberType as KonsultaPatientType,
-            pMemPin: memberPin,
-            pEffYear: effYear,
-            pATC: consultation.konsultaAtc || (isWalkIn === "Y" ? "WALKEDIN" : ""),
-            pIsWalkedIn: isWalkIn,
-            pCoPay: "0",
-            pTransDate: transDate,
-            pReportStatus: "U",
-            pDeficiencyRemarks: "",
-        };
-    });
+                return {
+                    pHciCaseNo: entry.hciCaseNo || formatKonsultaHciNumber("T", credentials.hciAccreNo, entry.id, periodDate),
+                    pHciTransNo: formatKonsultaHciNumber("P", credentials.hciAccreNo, entry.id, periodDate),
+                    pProfDate: periodDate.toISOString().slice(0, 10),
+                    pPatientPin: entry.philHealthPin,
+                    pPatientType: patientType,
+                    pPatientAge: patientAge,
+                    pMemPin: memberPin,
+                    pEffYear: effYear,
+                    pATC: "",
+                    pIsWalkedIn: "N",
+                    pTransDate: periodDate.toISOString().slice(0, 10),
+                    pReportStatus: "U",
+                    pDeficiencyRemarks: "",
+                };
+            })
+            : consultationRows.map((consultation) => {
+                const entry = entryByConsultationId.get(consultation.id);
+                if (!entry) throw new Error("Consultation is not attached to a batch entry.");
+                const p = entry.Patient;
+                const dob = p.dob ? p.dob.toISOString().slice(0, 10) : "1990-01-01";
+                const patientType = (entry.memberType ?? "").trim() as "MM" | "DD";
+                // For MM (member): pMemPin is the patient's own PIN
+                // For DD (dependent): pMemPin is the member's PIN that they're dependent under
+                const memberPin = patientType === "MM" ? entry.philHealthPin : (entry.memberPin || entry.philHealthPin);
+                const patientAge = formatAge(dob);
+                const profDate = (consultation.Appointment?.AppointmentAttribute?.date ?? consultation.createdAt)
+                    .toISOString()
+                    .slice(0, 10);
+                const isWalkIn = consultation.Appointment?.AppointmentAttribute?.isWalkIn ? "Y" : "N";
 
-    if (batch.reportTagging === "2" && soaps.length === 0) {
-        throw new Error("Second-tranche reports require at least one consultation SOAP entry.");
-    }
+                return {
+                    pHciCaseNo: consultation.konsultaHciCaseNo || entry.hciCaseNo || formatKonsultaHciNumber("T", credentials.hciAccreNo, entry.id, periodDate),
+                    pHciTransNo: consultation.konsultaHciTransNo || formatKonsultaHciNumber("P", credentials.hciAccreNo, consultation.id, consultation.createdAt),
+                    pProfDate: profDate,
+                    pPatientPin: entry.philHealthPin,
+                    pPatientType: patientType,
+                    pPatientAge: patientAge,
+                    pMemPin: memberPin,
+                    pEffYear: effYear,
+                    pATC: consultation.konsultaAtc || (isWalkIn === "Y" ? "WALKEDIN" : ""),
+                    pIsWalkedIn: isWalkIn,
+                    pTransDate: consultation.createdAt.toISOString().slice(0, 10),
+                    pReportStatus: "U",
+                    pDeficiencyRemarks: "",
+                };
+            });
+
+    const soaps: KonsultaSoapData[] =
+        batch.reportTagging === "2"
+            ? consultationRows.map((consultation) => {
+                const entry = entryByConsultationId.get(consultation.id);
+                if (!entry) throw new Error("Consultation is not attached to a batch entry.");
+                const soapDate = (consultation.Appointment?.AppointmentAttribute?.date ?? consultation.createdAt)
+                    .toISOString()
+                    .slice(0, 10);
+                const isWalkIn = consultation.Appointment?.AppointmentAttribute?.isWalkIn ? "Y" : "N";
+                const transDate = consultation.createdAt.toISOString().slice(0, 10);
+                const patientType = (entry.memberType ?? "").trim() as KonsultaPatientType;
+                // For MM (member): pMemPin is the patient's own PIN
+                // For DD (dependent): pMemPin is the member's PIN that they're dependent under
+                const memberPin = patientType === "MM" ? entry.philHealthPin : (entry.memberPin || entry.philHealthPin);
+
+                return {
+                    pHciCaseNo: consultation.konsultaHciCaseNo || entry.hciCaseNo || formatKonsultaHciNumber("T", credentials.hciAccreNo, entry.id, periodDate),
+                    pHciTransNo: consultation.konsultaHciTransNo || formatKonsultaHciNumber("S", credentials.hciAccreNo, consultation.id, consultation.createdAt),
+                    pSoapDate: soapDate,
+                    pPatientPin: entry.philHealthPin,
+                    pPatientType: patientType,
+                    pMemPin: memberPin,
+                    pEffYear: effYear,
+                    pATC: consultation.konsultaAtc || (isWalkIn === "Y" ? "WALKEDIN" : ""),
+                    pIsWalkedIn: isWalkIn,
+                    pCoPay: "0",
+                    pTransDate: transDate,
+                    pReportStatus: "U",
+                    pDeficiencyRemarks: "",
+                };
+            })
+            : [];
 
     const xml = buildPcbXml({
         credentials,
         transmittalNumber: transmittalNo,
         enlistments: batch.reportTagging === "1" ? enlistments : [],
-        profiles: [],
+        profiles,
         soaps,
     });
 
+    // Update batch with new XML and clear old validation/submission results
     await prisma.konsultaBatch.update({
         where: { batchUid },
         data: {
@@ -1091,10 +1446,241 @@ export const generateBatchXmlAction = withErrorHandling(async (batchUid: string)
         },
     });
 
-    return { message: "XML generated successfully", data: { transmittalNo, xmlLength: xml.length } };
+    // Clear validation and submission results using raw query to handle JSON null properly
+    await prisma.$executeRaw`
+        UPDATE "KonsultaBatch" 
+        SET "validateResult" = NULL, "submitResult" = NULL 
+        WHERE "batchUid" = ${batchUid}
+    `;
+
+    // Reset all included entries back to PENDING status so they can be re-validated
+    await prisma.konsultaEntry.updateMany({
+        where: { batchId: batch.id, included: true },
+        data: { status: "PENDING" },
+    });
+
+    return {
+        message: "XML generated successfully",
+        data: { transmittalNo, xmlLength: xml.length, xmlPayload: xml },
+    };
 });
 
 // ─── Validate + Submit ────────────────────────────────────────────────────────
+
+export const validateKonsultaBatchAction = withErrorHandling(async (batchUid: string) => {
+    const session = await getCachedSession();
+    if (!session) throw new Error("Unauthorized");
+
+    const batch = await prisma.konsultaBatch.findUnique({
+        where: { batchUid },
+        select: {
+            id: true, clinicId: true, xmlPayload: true,
+            transmittalNo: true, reportTagging: true, status: true,
+        },
+    });
+    if (!batch) throw new Error("Batch not found");
+    if (!batch.xmlPayload || !batch.transmittalNo) {
+        throw new Error("Generate the XML first before validating.");
+    }
+    if (batch.status === "SUBMITTED") throw new Error("Batch already submitted.");
+
+    const credentials = await getClinicKonsultaCredentials(batch.clinicId);
+    const encryptedPayload = encryptXmlPayload(batch.xmlPayload, credentials.cipherKey);
+
+    const {
+        getToken: konsultaGetToken,
+        validateReport: konsultaValidateReport,
+    } = await import("@/services/konsulta/konsulta-soap.service");
+
+    const tokenRaw = await konsultaGetToken({
+        pUsername: credentials.username,
+        pUserPassword: credentials.password,
+        pSoftwareCertificationId: credentials.certificationId,
+        pHospitalCode: credentials.hciAccreNo,
+    });
+    let token = tokenRaw.return;
+    try { token = (JSON.parse(token) as { result?: string }).result ?? token; } catch { /* plain string */ }
+
+    const validateRaw = await konsultaValidateReport(
+        {
+            pReport: encryptedPayload,
+            pReportTagging: batch.reportTagging as "1" | "2",
+        },
+        token
+    );
+
+    interface ValidateResponse {
+        success?: boolean;
+        message?: string;
+        encryptedxml?: unknown;
+        encryptedxmlerrors?: unknown;
+        [key: string]: unknown;
+    }
+
+    let validateResult: Prisma.InputJsonObject;
+    let decryptedErrors: string | null = null;
+    let validationPassed = false;
+
+    try {
+        let parsed = JSON.parse(validateRaw.return) as ValidateResponse;
+        if (typeof parsed === "string") parsed = JSON.parse(parsed) as ValidateResponse;
+
+        validationPassed = parsed.success === true;
+
+        // Decrypt encryptedxmlerrors if present
+        if (!validationPassed && parsed.encryptedxmlerrors) {
+            try {
+                if (!credentials.cipherKey) {
+                    throw new Error("Cipher key not available for decryption");
+                }
+                decryptedErrors = decryptXmlPayload(
+                    JSON.stringify(parsed.encryptedxmlerrors),
+                    credentials.cipherKey
+                );
+            } catch (decryptErr) {
+                const errMsg = decryptErr instanceof Error ? decryptErr.message : String(decryptErr);
+                decryptedErrors = `ERROR: ${errMsg}\n\nRaw encrypted payload available in raw JSON.`;
+            }
+        }
+
+        // Strip large encrypted blobs before storing
+        if (parsed.encryptedxml) delete parsed.encryptedxml;
+        if (parsed.encryptedxmlerrors) delete parsed.encryptedxmlerrors;
+
+        validateResult = toInputJsonObject({
+            ...parsed,
+            ...(decryptedErrors ? { decryptedErrors } : {}),
+        });
+    } catch (parseErr) {
+        const errMsg = parseErr instanceof Error ? parseErr.message : String(parseErr);
+        validateResult = { raw: validateRaw.return, parseError: errMsg };
+    }
+
+    if (!validationPassed) {
+        // Format decrypted errors for display
+        let formattedErrorMessage = "Validation failed. Review the batch response for details.";
+        let errorMessageForToast = formattedErrorMessage;
+
+        if (decryptedErrors) {
+            try {
+                // Try to parse and format the JSON errors
+                const parsedErrors = JSON.parse(decryptedErrors) as { errors?: unknown[] };
+                if (parsedErrors.errors && Array.isArray(parsedErrors.errors)) {
+                    // Create a formatted error message for the database
+                    formattedErrorMessage = `Validation failed: ${parsedErrors.errors
+                        .slice(0, 3) // First 3 errors
+                        .join("; ")}`;
+                    // Create a JSON structure for the client to parse
+                    errorMessageForToast = JSON.stringify({ errors: parsedErrors.errors });
+                } else {
+                    formattedErrorMessage = `Validation failed: ${decryptedErrors.slice(0, 300)}`;
+                    errorMessageForToast = decryptedErrors;
+                }
+            } catch {
+                // If parsing fails, use the raw string
+                formattedErrorMessage = `Validation failed: ${decryptedErrors.slice(0, 300)}`;
+                errorMessageForToast = decryptedErrors;
+            }
+        }
+
+        await prisma.konsultaBatch.update({
+            where: { batchUid },
+            data: {
+                status: "FAILED",
+                validateResult,
+                errorMessage: formattedErrorMessage,
+            },
+        });
+
+        // Mark entries as FAILED since batch validation failed
+        await prisma.konsultaEntry.updateMany({
+            where: { batchId: batch.id, included: true },
+            data: { status: "FAILED" },
+        });
+
+        throw new Error(errorMessageForToast);
+    }
+
+    // Update batch status
+    await prisma.konsultaBatch.update({
+        where: { batchUid },
+        data: { status: "VALIDATED", validateResult, errorMessage: null },
+    });
+
+    // Update all included entries to INCLUDED status
+    await prisma.konsultaEntry.updateMany({
+        where: { batchId: batch.id, included: true },
+        data: { status: "INCLUDED" },
+    });
+
+    return {
+        message: "Batch validated successfully. Ready to submit.",
+        data: { validateResult },
+    };
+});
+
+export const decryptStoredValidationErrorsAction = withErrorHandling(async (batchUid: string, resultType: "validate" | "submit" = "validate") => {
+    const session = await getCachedSession();
+    if (!session) throw new Error("Unauthorized");
+
+    const batch = await prisma.konsultaBatch.findUnique({
+        where: { batchUid },
+        select: { id: true, clinicId: true, validateResult: true, submitResult: true },
+    });
+    if (!batch) throw new Error("Batch not found");
+
+    const result = resultType === "validate" ? batch.validateResult : batch.submitResult;
+    if (!result) throw new Error(`No ${resultType} result found for this batch`);
+
+    const resultObj = result as Record<string, unknown>;
+
+    // Check if encryptedxmlerrors is still present (raw encrypted form)
+    if (!resultObj.encryptedxmlerrors) {
+        // Already decrypted or no errors
+        if (resultObj.decryptedErrors) {
+            return {
+                message: `${resultType === "validate" ? "Validation" : "Submission"} errors already decrypted`,
+                data: { decryptedErrors: resultObj.decryptedErrors },
+            };
+        }
+        throw new Error("No encrypted errors found in this result");
+    }
+
+    const credentials = await getClinicKonsultaCredentials(batch.clinicId);
+    let decryptedErrors: string | null = null;
+
+    try {
+        if (!credentials.cipherKey) {
+            throw new Error("Cipher key not available for decryption");
+        }
+        decryptedErrors = decryptXmlPayload(
+            JSON.stringify(resultObj.encryptedxmlerrors),
+            credentials.cipherKey
+        );
+    } catch (decryptErr) {
+        const errMsg = decryptErr instanceof Error ? decryptErr.message : String(decryptErr);
+        decryptedErrors = `ERROR: ${errMsg}`;
+    }
+
+    // Update the batch with decrypted errors and remove encrypted blob
+    const updated = { ...resultObj };
+    delete updated.encryptedxmlerrors;
+    updated.decryptedErrors = decryptedErrors;
+
+    const updateData = resultType === "validate"
+        ? { validateResult: toInputJsonObject(updated) }
+        : { submitResult: toInputJsonObject(updated) };
+
+    await prisma.konsultaBatch.update({
+        where: { batchUid },
+        data: updateData,
+    });
+
+    return {
+        message: `${resultType === "validate" ? "Validation" : "Submission"} errors decrypted successfully`,
+        data: { decryptedErrors },
+    };
+});
 
 export const submitKonsultaBatchAction = withErrorHandling(async (batchUid: string) => {
     const session = await getCachedSession();
@@ -1111,27 +1697,18 @@ export const submitKonsultaBatchAction = withErrorHandling(async (batchUid: stri
     if (!batch.xmlPayload || !batch.transmittalNo) {
         throw new Error("Generate the XML first before submitting.");
     }
-    if (batch.status === "SUBMITTED") throw new Error("Batch already submitted.");
+    if (batch.status !== "VALIDATED") {
+        throw new Error("Batch must be validated before submitting. Run validation first.");
+    }
 
     const credentials = await getClinicKonsultaCredentials(batch.clinicId);
-
-    // Set status to VALIDATING
-    await prisma.konsultaBatch.update({
-        where: { batchUid },
-        data: { status: "VALIDATED", errorMessage: null },
-    });
-
-    // Encrypt
     const encryptedPayload = encryptXmlPayload(batch.xmlPayload, credentials.cipherKey);
 
-    // Call SOAP via standalone service functions
     const {
         getToken: konsultaGetToken,
-        validateReport: konsultaValidateReport,
         submitReport: konsultaSubmitReport,
     } = await import("@/services/konsulta/konsulta-soap.service");
 
-    // Get token
     const tokenRaw = await konsultaGetToken({
         pUsername: credentials.username,
         pUserPassword: credentials.password,
@@ -1141,41 +1718,6 @@ export const submitKonsultaBatchAction = withErrorHandling(async (batchUid: stri
     let token = tokenRaw.return;
     try { token = (JSON.parse(token) as { result?: string }).result ?? token; } catch { /* plain string */ }
 
-    // Validate
-    const validateRaw = await konsultaValidateReport(
-        {
-            pReport: encryptedPayload,
-            pReportTagging: batch.reportTagging as "1" | "2",
-        },
-        token
-    );
-
-    let validateResult: Prisma.InputJsonObject;
-    try {
-        let parsed = JSON.parse(validateRaw.return) as Record<string, unknown>;
-        if (typeof parsed === "string") parsed = JSON.parse(parsed) as Record<string, unknown>;
-        if (parsed.encryptedxml) delete parsed.encryptedxml;
-        validateResult = toInputJsonObject(parsed);
-    } catch {
-        validateResult = { raw: validateRaw.return };
-    }
-
-    const isValid = JSON.stringify(validateResult).toLowerCase().includes('"v"') ||
-        JSON.stringify(validateResult).toLowerCase().includes("valid");
-
-    if (!isValid) {
-        await prisma.konsultaBatch.update({
-            where: { batchUid },
-            data: {
-                status: "FAILED",
-                validateResult,
-                errorMessage: "Validation failed — see validateResult for details",
-            },
-        });
-        throw new Error("Validation failed. Check the batch detail for errors.");
-    }
-
-    // Submit
     const submitRaw = await konsultaSubmitReport(
         {
             pTransmittalID: batch.transmittalNo,
@@ -1190,7 +1732,6 @@ export const submitKonsultaBatchAction = withErrorHandling(async (batchUid: stri
         let parsed = JSON.parse(submitRaw.return) as Record<string, unknown>;
         if (typeof parsed === "string") parsed = JSON.parse(parsed) as Record<string, unknown>;
         if (parsed.encryptedxml) delete parsed.encryptedxml;
-        // Parse nested errors JSON
         if (parsed.uploadxmlresult && typeof (parsed.uploadxmlresult as Record<string, unknown>).errors === "string") {
             try {
                 (parsed.uploadxmlresult as Record<string, unknown>).errors = JSON.parse(
@@ -1207,7 +1748,6 @@ export const submitKonsultaBatchAction = withErrorHandling(async (batchUid: stri
         where: { batchUid },
         data: {
             status: "SUBMITTED",
-            validateResult,
             submitResult,
             submittedAt: new Date(),
             errorMessage: null,
@@ -1215,7 +1755,126 @@ export const submitKonsultaBatchAction = withErrorHandling(async (batchUid: stri
     });
 
     return {
-        message: "Batch submitted successfully",
-        data: { validateResult, submitResult },
+        message: "Batch submitted to PhilHealth successfully.",
+        data: { submitResult },
     };
 });
+
+// ─── Generate Consultation Case/Trans Numbers ─────────────────────────────────
+
+export const generateConsultationCaseTransNumbersAction = withErrorHandling(
+    async ({ consultationTicketId }: { consultationTicketId: number }) => {
+        const session = await getCachedSession();
+        if (!session) throw new Error("Unauthorized");
+
+        // Get consultation with clinic info
+        const consultation = await prisma.consultationTicket.findUnique({
+            where: { id: consultationTicketId },
+            include: {
+                ClinicPatient: true,
+                Appointment: {
+                    include: {
+                        Requesters: {
+                            include: {
+                                User: true,
+                            },
+                            take: 1,
+                        },
+                    },
+                },
+            },
+        });
+
+        if (!consultation) {
+            throw new Error("Consultation not found");
+        }
+
+        // Check if already has both numbers
+        if (consultation.konsultaHciCaseNo && consultation.konsultaHciTransNo) {
+            return {
+                message: "Consultation already has case and transaction numbers",
+                data: {
+                    konsultaHciCaseNo: consultation.konsultaHciCaseNo,
+                    konsultaHciTransNo: consultation.konsultaHciTransNo,
+                },
+            };
+        }
+
+        // Verify consultation is for a registered patient (support both direct and old paths)
+        let clinicPatientRegistrationStatus: string | null = null;
+
+        // Path 1: Direct clinic patient link
+        if (consultation.ClinicPatient) {
+            clinicPatientRegistrationStatus = consultation.ClinicPatient.konsultaRegistrationStatus;
+        }
+        // Path 2: Old path through appointment requester - look up clinic patient for this patient
+        else if (consultation.Appointment?.Requesters[0]?.User?.id) {
+            const requesterUserId = consultation.Appointment.Requesters[0].User.id;
+            const clinicPatient = await prisma.clinicPatient.findFirst({
+                where: {
+                    clinicId: consultation.clinicId,
+                    patientId: requesterUserId,
+                },
+                select: { konsultaRegistrationStatus: true },
+            });
+            if (clinicPatient) {
+                clinicPatientRegistrationStatus = clinicPatient.konsultaRegistrationStatus;
+            }
+        }
+
+        if (clinicPatientRegistrationStatus !== "REGISTERED") {
+            throw new Error("Consultation is not linked to a registered PhilHealth patient");
+        }
+
+        // Get clinic credentials for HCI accreditation number
+        const credentials = await getClinicKonsultaCredentials(consultation.clinicId);
+
+        // Get next sequence numbers for this clinic on this date
+        const caseSequence = await getNextSequenceNumber(
+            "KONSULTA_HCI_CASE",
+            consultation.clinicId,
+            consultation.createdAt
+        );
+        const transSequence = await getNextSequenceNumber(
+            "KONSULTA_HCI_TRANS",
+            consultation.clinicId,
+            consultation.createdAt
+        );
+
+        // Format the HCI numbers
+        const konsultaHciCaseNo = formatKonsultaHciNumber(
+            "T",
+            credentials.hciAccreNo,
+            caseSequence,
+            consultation.createdAt
+        );
+        const konsultaHciTransNo = formatKonsultaHciNumber(
+            "E",
+            credentials.hciAccreNo,
+            transSequence,
+            consultation.createdAt
+        );
+
+        // Update consultation with generated numbers
+        const updated = await prisma.consultationTicket.update({
+            where: { id: consultationTicketId },
+            data: {
+                konsultaHciCaseNo,
+                konsultaHciTransNo,
+            },
+            select: {
+                konsultaHciCaseNo: true,
+                konsultaHciTransNo: true,
+                caseNumber: true,
+            },
+        });
+
+        return {
+            message: "Case and transaction numbers generated successfully",
+            data: {
+                konsultaHciCaseNo: updated.konsultaHciCaseNo,
+                konsultaHciTransNo: updated.konsultaHciTransNo,
+            },
+        };
+    }
+);

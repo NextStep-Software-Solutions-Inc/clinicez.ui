@@ -17,7 +17,6 @@ import type {
     PhysicalExaminationData,
     CertificateData,
     ReferralData,
-    ClinicInfo,
 } from '@/types/patient-profile'
 
 // ---------------------------------------------------------------------------
@@ -91,7 +90,6 @@ export interface PatientBaseData {
     caseNumber: string | null
     nickname: string | null
     suffix: string | null
-    clinic: ClinicInfo | null
     verificationStatus: VerificationStatus
     badges: PatientBadgeCounts
 }

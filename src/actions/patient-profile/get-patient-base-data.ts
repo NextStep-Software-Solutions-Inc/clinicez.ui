@@ -53,8 +53,6 @@ export async function getPatientBaseData(): Promise<PatientBaseData | null> {
                     where: { isActive: true, deletedAt: null },
                     select: {
                         id: true,
-                        clinicId: true,
-                        Clinic: { select: { id: true, name: true } },
                         _count: {
                             select: {
                                 MedicalCertificates: { where: { isActive: true } },
@@ -91,7 +89,6 @@ export async function getPatientBaseData(): Promise<PatientBaseData | null> {
             caseNumber: patient.caseNumber,
             nickname: patient.nickname,
             suffix: patient.suffix,
-            clinic: clinicPatient?.Clinic ?? null,
             verificationStatus: patient.verificationStatus,
             badges: {
                 hasEmail: !!patient.email,

@@ -117,9 +117,37 @@
 @layer base {
   * {
     @apply border-border;
+    /* Remove the blue tap-highlight rectangle on iOS/Safari when tapping elements */
+    -webkit-tap-highlight-color: transparent;
   }
   body {
     @apply bg-background text-foreground;
+  }
+  html {
+    /*
+     * Font smoothing — makes text render crisply on macOS/iOS (Safari & Firefox).
+     * Chrome applies antialiasing by default; this brings Safari and Firefox in line.
+     */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+
+    /*
+     * Prevent iOS Safari from automatically scaling up font sizes when the
+     * device is rotated to landscape or when the viewport is narrowed.
+     * Tailwind Preflight adds the -webkit- prefix; the unprefixed property
+     * is needed for Firefox and future-proofing.
+     */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+  /*
+   * Safari renders <input type="search"> with a native rounded pill style by
+   * default. Reset appearance so it follows our design system like all other
+   * inputs. Firefox and Chrome already leave this unstyled.
+   */
+  input[type="search"] {
+    -webkit-appearance: none;
+    appearance: none;
   }
 }
 @layer utilities {

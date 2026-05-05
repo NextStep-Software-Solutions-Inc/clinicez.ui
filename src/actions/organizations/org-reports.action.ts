@@ -26,45 +26,38 @@ export const getOrgReportsAction = withErrorHandling(
     const dateFilter = { gte: from, lte: to };
 
     const [
-      // All active members with user + role details
-      allMembers,
-      // New members who joined in the selected period
-      newMembersInPeriod,
+      // Total active members (all time, no date filter) — used for the "Total Active" KPI
+      totalActiveMembersCount,
+      // Members who joined within the selected period — used for all breakdowns
+      periodMembers,
       // Pending membership requests
       pendingCount,
       // Suspended members
       suspendedCount,
-      // Member gender distribution (via User)
-      memberGenders,
-      // Member age data (via User dob)
-      memberAges,
-      // Student records breakdown by college / program / year level
-      studentRecords,
-      // Employment records breakdown by department / office
-      employmentRecords,
     ] = await Promise.all([
-      // ── All active members ───────────────────────────────────────────────
-      prisma.organizationMember.findMany({
+      // ── Total active members (unfiltered) ───────────────────────────────
+      prisma.organizationMember.count({
         where: { organizationId: org.id, status: "ACTIVE" },
+      }),
+
+      // ── Members who joined in period (with details for breakdowns) ───────
+      prisma.organizationMember.findMany({
+        where: {
+          organizationId: org.id,
+          status: "ACTIVE",
+          createdAt: dateFilter,
+        },
         select: {
           id: true,
           createdAt: true,
           OrganizationRole: { select: { name: true } },
           User: {
             select: {
+              id: true,
               gender: true,
               dob: true,
             },
           },
-        },
-      }),
-
-      // ── New members in period ────────────────────────────────────────────
-      prisma.organizationMember.count({
-        where: {
-          organizationId: org.id,
-          status: "ACTIVE",
-          createdAt: dateFilter,
         },
       }),
 
@@ -77,29 +70,24 @@ export const getOrgReportsAction = withErrorHandling(
       prisma.organizationMember.count({
         where: { organizationId: org.id, status: "SUSPENDED" },
       }),
+    ]);
 
-      // ── Member gender distribution ───────────────────────────────────────
-      prisma.organizationMember.findMany({
-        where: { organizationId: org.id, status: "ACTIVE" },
-        select: {
-          User: { select: { gender: true } },
-        },
-      }),
+    // Collect user IDs of members who joined in the period for scoped sub-queries
+    const periodMemberUserIds = periodMembers.map((m) => m.User.id);
 
-      // ── Member age data ──────────────────────────────────────────────────
-      prisma.organizationMember.findMany({
-        where: { organizationId: org.id, status: "ACTIVE" },
-        select: {
-          User: { select: { dob: true } },
-        },
-      }),
-
-      // ── Student records breakdown ────────────────────────────────────────
+    const [
+      // Student records for members who joined in the selected period
+      studentRecords,
+      // Employment records for members who joined in the selected period
+      employmentRecords,
+    ] = await Promise.all([
+      // ── Student records scoped to period members ─────────────────────────
       prisma.userStudentRecord.findMany({
         where: {
           organizationId: org.id,
           isActive: true,
           deletedAt: null,
+          userId: { in: periodMemberUserIds },
         },
         select: {
           College: { select: { name: true } },
@@ -108,12 +96,13 @@ export const getOrgReportsAction = withErrorHandling(
         },
       }),
 
-      // ── Employment records breakdown ─────────────────────────────────────
+      // ── Employment records scoped to period members ───────────────────────
       prisma.userEmploymentRecord.findMany({
         where: {
           organizationId: org.id,
           isActive: true,
           deletedAt: null,
+          userId: { in: periodMemberUserIds },
         },
         select: {
           Department: { select: { name: true } },
@@ -122,31 +111,28 @@ export const getOrgReportsAction = withErrorHandling(
       }),
     ]);
 
-    // ── Process member role counts ────────────────────────────────────────────
+    // ── Process member role counts (period members only) ─────────────────────
     const membersByRole: Record<string, number> = {};
-    for (const m of allMembers) {
+    for (const m of periodMembers) {
       const role = m.OrganizationRole.name;
       membersByRole[role] = (membersByRole[role] ?? 0) + 1;
     }
 
-    // ── Process daily registration trend (in period) ──────────────────────────
+    // ── Process daily registration trend (period members only) ────────────────
     const registrationsByDay: Record<string, number> = {};
-    for (const m of allMembers) {
+    for (const m of periodMembers) {
       const day = m.createdAt.toISOString().slice(0, 10);
-      // Only include days within the selected period
-      if (m.createdAt >= from && m.createdAt <= to) {
-        registrationsByDay[day] = (registrationsByDay[day] ?? 0) + 1;
-      }
+      registrationsByDay[day] = (registrationsByDay[day] ?? 0) + 1;
     }
 
-    // ── Process gender distribution ───────────────────────────────────────────
+    // ── Process gender distribution (period members only) ─────────────────────
     const genderCounts: Record<string, number> = {};
-    for (const m of memberGenders) {
+    for (const m of periodMembers) {
       const g = m.User.gender ?? "Unknown";
       genderCounts[g] = (genderCounts[g] ?? 0) + 1;
     }
 
-    // ── Process age group distribution ────────────────────────────────────────
+    // ── Process age group distribution (period members only) ──────────────────
     const ageGroupCounts: Record<string, number> = {
       "0-12": 0,
       "13-17": 0,
@@ -158,7 +144,7 @@ export const getOrgReportsAction = withErrorHandling(
       Unknown: 0,
     };
     const now = new Date();
-    for (const m of memberAges) {
+    for (const m of periodMembers) {
       const dob = m.User.dob;
       if (dob) {
         const ageYears = Math.floor(
@@ -208,8 +194,8 @@ export const getOrgReportsAction = withErrorHandling(
         org,
         period: { from: from.toISOString(), to: to.toISOString() },
         members: {
-          totalActive: allMembers.length,
-          newInPeriod: newMembersInPeriod,
+          totalActive: totalActiveMembersCount,
+          newInPeriod: periodMembers.length,
           pending: pendingCount,
           suspended: suspendedCount,
           byRole: Object.entries(membersByRole)

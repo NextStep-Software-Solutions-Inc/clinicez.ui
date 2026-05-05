@@ -25,7 +25,6 @@ function toPatientBaseData(p: SerializedPatientHealthRecordsResponse): PatientBa
     age:            p.age,
     bloodType:      p.bloodType,
     gender:         p.gender,
-    clinic:         p.clinic,
     verificationStatus: p.verificationStatus,
     badges: {
       hasEmail:                    !!p.email,

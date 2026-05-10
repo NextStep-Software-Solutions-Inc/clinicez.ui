@@ -4,6 +4,7 @@
 
 @layer base {
   :root {
+    color-scheme: light;
     --background: 0 0% 100%;
     --foreground: 175 10% 3.9%;
     --card: 0 0% 100%;
@@ -64,6 +65,7 @@
   }
 
   .dark {
+    color-scheme: dark;
     --background: 220 13% 14%;
     --foreground: 0 0% 95%;
     --card: 220 11% 20%;
@@ -141,11 +143,19 @@
     text-size-adjust: 100%;
   }
   /*
-   * Safari renders <input type="search"> with a native rounded pill style by
-   * default. Reset appearance so it follows our design system like all other
-   * inputs. Firefox and Chrome already leave this unstyled.
+   * Safari renders several input types with native chrome (pill shape on
+   * search, date-picker widgets on date/time, spinner arrows on number, and
+   * OS-level dropdown on select). Reset appearance to none so every input
+   * follows our design system consistently across all browsers.
    */
-  input[type="search"] {
+  input[type="search"],
+  input[type="date"],
+  input[type="time"],
+  input[type="datetime-local"],
+  input[type="week"],
+  input[type="month"],
+  input[type="number"],
+  select {
     -webkit-appearance: none;
     appearance: none;
   }

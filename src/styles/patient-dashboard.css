@@ -77,6 +77,12 @@ body {
   background-color: var(--color-border-light);
 }
 
+/* Firefox scrollbar — mirrors the webkit thumb/track colors above */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--color-border)) hsl(var(--color-bg-secondary));
+}
+
 /* ============================================================================
    3. ANIMATIONS - Keyframe Animations with Phase Motion
    ============================================================================ */

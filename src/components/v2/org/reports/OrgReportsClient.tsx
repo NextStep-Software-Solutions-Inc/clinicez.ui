@@ -453,7 +453,9 @@ export function OrgReportsClient({
   const handleDownloadExcel = () => {
     const columns = ["Section", "Metric", "Value"];
     const rows = buildExcelRows(data);
-    const filename = `organization_report_${sanitizeFilenamePart(data.org.name)}_${getDateStamp(new Date())}`;
+    const reportFrom = getDateStamp(new Date(data.period.from));
+    const reportTo = getDateStamp(new Date(data.period.to));
+    const filename = `organization_report_${sanitizeFilenamePart(data.org.name)}_${reportFrom}_to_${reportTo}`;
 
     try {
       exportXLSX(columns, rows, {

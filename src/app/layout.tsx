@@ -12,8 +12,6 @@ import JotaiProvider from "@provider/JotaiProvider";
 import { ThemeProvider } from "@provider/theme-provider";
 import SyncTokenClient from "@components/SyncTokenClient";
 import BypassAutoplay from "@components/BypassAutoplay";
-import InstallPWAButton from "@components/pwa/install-pwa-button";
-
 const HotJar = dynamic(() => import("@components/HotJar"), { ssr: true });
 
 export const metadata: Metadata = {
@@ -70,7 +68,6 @@ export default function RootLayout({ children }: Props) {
                 <Analytics />
                 <SonnerToaster richColors />
                 <Toaster />
-                <InstallPWAButton />
               </SWRProvider>
             </JotaiProvider>
           </ThemeProvider>

@@ -66,8 +66,12 @@ function formatDate(iso: string) {
   });
 }
 
+function getDateStamp(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
+
 function toInputDate(d: Date) {
-  return d.toISOString().slice(0, 10);
+  return getDateStamp(d);
 }
 
 /* ──────────────────────────────────────── */
@@ -449,9 +453,7 @@ export function OrgReportsClient({
   const handleDownloadExcel = () => {
     const columns = ["Section", "Metric", "Value"];
     const rows = buildExcelRows(data);
-    const filename = `organization_report_${sanitizeFilenamePart(data.org.name)}_${new Date()
-      .toISOString()
-      .slice(0, 10)}`;
+    const filename = `organization_report_${sanitizeFilenamePart(data.org.name)}_${getDateStamp(new Date())}`;
 
     try {
       exportXLSX(columns, rows, {
@@ -459,8 +461,9 @@ export function OrgReportsClient({
         sheetName: "Organization Report",
       });
       toast.success("Excel report downloaded");
-    } catch {
-      toast.error("Failed to download Excel report");
+    } catch (error) {
+      console.error("Failed to download organization Excel report", error);
+      toast.error("Failed to download Excel report. Please try again.");
     }
   };
 

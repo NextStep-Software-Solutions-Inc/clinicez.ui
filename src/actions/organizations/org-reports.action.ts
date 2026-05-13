@@ -12,6 +12,38 @@ export type OrgReportParams = {
 
 export type GetOrgReports = Awaited<ReturnType<typeof getOrgReportsAction>>;
 
+type PeriodMemberRow = {
+  id: number;
+  createdAt: Date;
+  OrganizationRole: {
+    name: string;
+  };
+  User: {
+    id: number;
+    gender: string | null;
+    dob: Date | null;
+    firstName: string | null;
+    middleName: string | null;
+    lastName: string | null;
+    suffix: string | null;
+    email: string | null;
+  };
+};
+
+type RawMemberRow = {
+  memberId: number;
+  firstName: string | null;
+  middleName: string | null;
+  lastName: string | null;
+  suffix: string | null;
+  email: string | null;
+  role: string;
+  gender: string;
+  birthdate: string | null;
+  ageGroup: string;
+  dateRegistered: string;
+};
+
 const getAgeGroup = (dob: Date | null | undefined, now: Date): string => {
   if (!dob) return "Unknown";
 
@@ -94,10 +126,9 @@ export const getOrgReportsAction = withErrorHandling(
     ]);
 
     // Collect user IDs of members who joined in the period for scoped sub-queries
-    const periodMemberUserIds: number[] = [];
-    for (const member of periodMembers) {
-      periodMemberUserIds.push(member.User.id);
-    }
+    const periodMemberUserIds = periodMembers.map(
+      (member: PeriodMemberRow) => member.User.id
+    );
 
     const [
       // Student records for members who joined in the selected period
@@ -199,22 +230,8 @@ export const getOrgReportsAction = withErrorHandling(
       byOffice[office] = (byOffice[office] ?? 0) + 1;
     }
 
-    const rawMemberRows: Array<{
-      memberId: number;
-      firstName: string | null;
-      middleName: string | null;
-      lastName: string | null;
-      suffix: string | null;
-      email: string | null;
-      role: string;
-      gender: string;
-      birthdate: string | null;
-      ageGroup: string;
-      dateRegistered: string;
-    }> = [];
-
-    for (const member of periodMembers) {
-      rawMemberRows.push({
+    const rawMemberRows: RawMemberRow[] = periodMembers.map(
+      (member: PeriodMemberRow) => ({
         memberId: member.id,
         firstName: member.User.firstName ?? null,
         middleName: member.User.middleName ?? null,
@@ -226,8 +243,8 @@ export const getOrgReportsAction = withErrorHandling(
         birthdate: member.User.dob ? member.User.dob.toISOString() : null,
         ageGroup: getAgeGroup(member.User.dob, now),
         dateRegistered: member.createdAt.toISOString(),
-      });
-    }
+      })
+    );
 
     return {
       message: "Organization reports retrieved successfully",

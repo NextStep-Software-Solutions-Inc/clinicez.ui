@@ -12,6 +12,22 @@ export type OrgReportParams = {
 
 export type GetOrgReports = Awaited<ReturnType<typeof getOrgReportsAction>>;
 
+const getAgeGroup = (dob: Date | null | undefined, now: Date): string => {
+  if (!dob) return "Unknown";
+
+  const ageYears = Math.floor(
+    (now.getTime() - new Date(dob).getTime()) / (1000 * 60 * 60 * 24 * 365.25)
+  );
+
+  if (ageYears <= 12) return "0-12";
+  if (ageYears <= 17) return "13-17";
+  if (ageYears <= 25) return "18-25";
+  if (ageYears <= 35) return "26-35";
+  if (ageYears <= 45) return "36-45";
+  if (ageYears <= 59) return "46-59";
+  return "60+";
+};
+
 export const getOrgReportsAction = withErrorHandling(
   async ({ orgUid, from, to }: OrgReportParams) => {
     const session = await getCachedSession();
@@ -56,6 +72,11 @@ export const getOrgReportsAction = withErrorHandling(
               id: true,
               gender: true,
               dob: true,
+              firstName: true,
+              middleName: true,
+              lastName: true,
+              suffix: true,
+              email: true,
             },
           },
         },
@@ -73,7 +94,10 @@ export const getOrgReportsAction = withErrorHandling(
     ]);
 
     // Collect user IDs of members who joined in the period for scoped sub-queries
-    const periodMemberUserIds = periodMembers.map((m) => m.User.id);
+    const periodMemberUserIds: number[] = [];
+    for (const member of periodMembers) {
+      periodMemberUserIds.push(member.User.id);
+    }
 
     const [
       // Student records for members who joined in the selected period
@@ -145,21 +169,8 @@ export const getOrgReportsAction = withErrorHandling(
     };
     const now = new Date();
     for (const m of periodMembers) {
-      const dob = m.User.dob;
-      if (dob) {
-        const ageYears = Math.floor(
-          (now.getTime() - new Date(dob).getTime()) / (1000 * 60 * 60 * 24 * 365.25)
-        );
-        if (ageYears <= 12) ageGroupCounts["0-12"]++;
-        else if (ageYears <= 17) ageGroupCounts["13-17"]++;
-        else if (ageYears <= 25) ageGroupCounts["18-25"]++;
-        else if (ageYears <= 35) ageGroupCounts["26-35"]++;
-        else if (ageYears <= 45) ageGroupCounts["36-45"]++;
-        else if (ageYears <= 59) ageGroupCounts["46-59"]++;
-        else ageGroupCounts["60+"]++;
-      } else {
-        ageGroupCounts["Unknown"]++;
-      }
+      const group = getAgeGroup(m.User.dob, now);
+      ageGroupCounts[group] = (ageGroupCounts[group] ?? 0) + 1;
     }
 
     // ── Process student record breakdowns ─────────────────────────────────────
@@ -188,6 +199,36 @@ export const getOrgReportsAction = withErrorHandling(
       byOffice[office] = (byOffice[office] ?? 0) + 1;
     }
 
+    const rawMemberRows: Array<{
+      memberId: number;
+      firstName: string | null;
+      middleName: string | null;
+      lastName: string | null;
+      suffix: string | null;
+      email: string | null;
+      role: string;
+      gender: string;
+      birthdate: string | null;
+      ageGroup: string;
+      dateRegistered: string;
+    }> = [];
+
+    for (const member of periodMembers) {
+      rawMemberRows.push({
+        memberId: member.id,
+        firstName: member.User.firstName ?? null,
+        middleName: member.User.middleName ?? null,
+        lastName: member.User.lastName ?? null,
+        suffix: member.User.suffix ?? null,
+        email: member.User.email ?? null,
+        role: member.OrganizationRole.name,
+        gender: member.User.gender ?? "Unknown",
+        birthdate: member.User.dob ? member.User.dob.toISOString() : null,
+        ageGroup: getAgeGroup(member.User.dob, now),
+        dateRegistered: member.createdAt.toISOString(),
+      });
+    }
+
     return {
       message: "Organization reports retrieved successfully",
       data: {
@@ -210,6 +251,7 @@ export const getOrgReportsAction = withErrorHandling(
           registrationTrend: Object.entries(registrationsByDay)
             .map(([date, count]) => ({ date, count }))
             .sort((a, b) => a.date.localeCompare(b.date)),
+          raw: rawMemberRows,
         },
         students: {
           total: studentRecords.length,

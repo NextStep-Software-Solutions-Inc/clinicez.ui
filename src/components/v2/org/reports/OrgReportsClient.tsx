@@ -218,52 +218,30 @@ function sanitizeFilenamePart(value: string): string {
     .replace(/^_+|_+$/g, "");
 }
 
+function buildMemberFullName(member: ReportData["members"]["raw"][number]): string {
+  const fullName = [member.firstName, member.middleName, member.lastName, member.suffix]
+    .map((part) => part?.trim())
+    .filter((part): part is string => Boolean(part && part.length))
+    .join(" ");
+
+  return fullName.length ? fullName : "Unknown";
+}
+
 function buildExcelRows(data: ReportData): XLSXExportData[] {
   const rows: XLSXExportData[] = [];
-  const pushRow = (section: string, metric: string, value: string | number) => {
+
+  for (const member of data.members.raw) {
     rows.push({
-      Section: section,
-      Metric: metric,
-      Value: value,
+      "Member ID": member.memberId,
+      Name: buildMemberFullName(member),
+      Email: member.email ?? "-",
+      Role: member.role,
+      Gender: member.gender,
+      "Age Group": member.ageGroup,
+      Birthdate: member.birthdate ? getDateStamp(new Date(member.birthdate)) : "-",
+      "Date Registered": getDateStamp(new Date(member.dateRegistered)),
     });
-  };
-
-  pushRow("Overview", "Active Members", data.members.totalActive);
-  pushRow("Overview", "New in Period", data.members.newInPeriod);
-  pushRow("Overview", "Pending Requests", data.members.pending);
-  pushRow("Overview", "Suspended Members", data.members.suspended);
-
-  data.members.byRole.forEach((entry) => {
-    pushRow("Member Insights", `Role: ${entry.role}`, entry.count);
-  });
-  data.members.byGender.forEach((entry) => {
-    pushRow("Member Insights", `Gender: ${entry.gender}`, entry.count);
-  });
-  data.members.byAgeGroup.forEach((entry) => {
-    pushRow("Member Insights", `Age Group: ${entry.group}`, entry.count);
-  });
-  data.members.registrationTrend.forEach((entry) => {
-    pushRow("Member Insights", `Registrations (${entry.date})`, entry.count);
-  });
-
-  pushRow("Students", "Total Student Records", data.students.total);
-  data.students.byCollege.forEach((entry) => {
-    pushRow("Students", `College: ${entry.college}`, entry.count);
-  });
-  data.students.byProgram.forEach((entry) => {
-    pushRow("Students", `Program: ${entry.program}`, entry.count);
-  });
-  data.students.byYearLevel.forEach((entry) => {
-    pushRow("Students", `Year Level: ${entry.yearLevel}`, entry.count);
-  });
-
-  pushRow("Staff", "Total Employment Records", data.staff.total);
-  data.staff.byDepartment.forEach((entry) => {
-    pushRow("Staff", `Department: ${entry.department}`, entry.count);
-  });
-  data.staff.byOffice.forEach((entry) => {
-    pushRow("Staff", `Office: ${entry.office}`, entry.count);
-  });
+  }
 
   return rows;
 }
@@ -451,7 +429,16 @@ export function OrgReportsClient({
   };
 
   const handleDownloadExcel = () => {
-    const columns = ["Section", "Metric", "Value"];
+    const columns = [
+      "Member ID",
+      "Name",
+      "Email",
+      "Role",
+      "Gender",
+      "Age Group",
+      "Birthdate",
+      "Date Registered",
+    ];
     const rows = buildExcelRows(data);
     const reportFrom = getDateStamp(new Date(data.period.from));
     const reportTo = getDateStamp(new Date(data.period.to));

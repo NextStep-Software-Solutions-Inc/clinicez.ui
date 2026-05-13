@@ -196,7 +196,7 @@ export default function DashboardShell({
 
           {/* Right: Actions */}
           <div className="flex items-center gap-3 shrink-0">
-            <InstallPWAButton />
+            <InstallPWAButton label="Install App" />
             {headerActions}
             <ThemeToggle/>
           </div>
@@ -223,7 +223,7 @@ export default function DashboardShell({
             )}
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <InstallPWAButton />
+            <InstallPWAButton label="Install App (mobile)" />
             {headerActions}
             <Button
               variant="ghost"

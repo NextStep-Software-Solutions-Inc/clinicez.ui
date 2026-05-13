@@ -25,7 +25,7 @@ interface BeforeInstallPromptEvent extends Event {
  * - Dismisses itself after the user accepts or dismisses the install prompt.
  * - Renders nothing on platforms that do not support PWA installation.
  */
-export default function InstallPWAButton() {
+export default function InstallPWAButton({ label = "Install App" }: { label?: string }) {
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
 
   useEffect(() => {
@@ -58,9 +58,9 @@ export default function InstallPWAButton() {
       size="sm"
       onClick={handleInstallClick}
       className="flex items-center gap-1.5 h-8 px-3 text-xs font-medium rounded-lg"
-      aria-label="Install Clinic EZ app"
+      aria-label={label}
     >
-      <Download className="h-3.5 w-3.5" />
+      <Download className="h-3.5 w-3.5" aria-hidden="true" />
       <span className="hidden sm:inline">Install App</span>
     </Button>
   );

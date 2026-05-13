@@ -229,20 +229,22 @@ function buildMemberFullName(member: ReportData["members"]["raw"][number]): stri
 }
 
 function buildExcelRows(data: ReportData): { rows: XLSXExportData[]; requirementColumns: string[] } {
-  const allRequirementColumns = new Set<string>();
+  const requirementColumnByKey: Record<string, string> = {};
   for (const member of data.members.raw) {
     for (const requirementKey of Object.keys(member.requirementsSubmitted)) {
-      allRequirementColumns.add(`Requirement: ${formatRequirementLabel(requirementKey)} Submitted`);
+      requirementColumnByKey[requirementKey] =
+        requirementColumnByKey[requirementKey] ??
+        `Requirement: ${formatRequirementLabel(requirementKey)} Submitted`;
     }
   }
 
-  const requirementColumns = Array.from(allRequirementColumns).sort((a, b) => a.localeCompare(b));
+  const requirementColumns = Object.values(requirementColumnByKey).sort((a, b) => a.localeCompare(b));
   const rows: XLSXExportData[] = [];
 
   for (const member of data.members.raw) {
     const requirementStatusColumns: Record<string, boolean> = {};
     for (const requirementKey of Object.keys(member.requirementsSubmitted)) {
-      const columnName = `Requirement: ${formatRequirementLabel(requirementKey)} Submitted`;
+      const columnName = requirementColumnByKey[requirementKey];
       requirementStatusColumns[columnName] = member.requirementsSubmitted[requirementKey];
     }
 

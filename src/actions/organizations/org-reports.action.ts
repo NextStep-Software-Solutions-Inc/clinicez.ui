@@ -3,6 +3,10 @@
 import prisma from "@lib/prisma";
 import { withErrorHandling } from "@/lib/with-error-handling";
 import { getCachedSession } from "@actions/session.action";
+import {
+  REQUIREMENT_EMPLOYEE_RECORD,
+  REQUIREMENT_STUDENT_RECORD,
+} from "@/lib/requirement-types";
 
 export type OrgReportParams = {
   orgUid: string;
@@ -298,11 +302,11 @@ export const getOrgReportsAction = withErrorHandling(
       );
       const requirementsSubmitted: Record<string, boolean> = {};
       for (const requirement of member.OrganizationRole.requirements) {
-        if (requirement === "student_record") {
+        if (requirement === REQUIREMENT_STUDENT_RECORD) {
           requirementsSubmitted[requirement] = member.User.StudentRecords.length > 0;
           continue;
         }
-        if (requirement === "employee_record") {
+        if (requirement === REQUIREMENT_EMPLOYEE_RECORD) {
           requirementsSubmitted[requirement] = member.User.UserEmployments.length > 0;
           continue;
         }

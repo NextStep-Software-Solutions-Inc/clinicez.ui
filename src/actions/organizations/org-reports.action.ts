@@ -44,14 +44,27 @@ type PeriodMemberRow = {
     bloodType: string | null;
     nationality: string | null;
     placeOfBirth: string | null;
-    StudentRecords: Array<{ id: number }>;
-    UserEmployments: Array<{ id: number }>;
+    StudentRecords: Array<{
+      studentId: string;
+      lrn: string | null;
+      Level: { name: string };
+      OrganizationYearLevel: { name: string } | null;
+      Program: { name: string } | null;
+      Department: { name: string } | null;
+      College: { name: string } | null;
+    }>;
+    UserEmployments: Array<{
+      employeeId: string;
+      position: string;
+      designation: string | null;
+      Office: { name: string } | null;
+      Department: { name: string } | null;
+      College: { name: string } | null;
+    }>;
   };
 };
 
 type RawMemberRow = {
-  memberId: number;
-  userSub: string;
   status: string;
   acceptedAt: string | null;
   firstName: string | null;
@@ -70,6 +83,23 @@ type RawMemberRow = {
   birthdate: string | null;
   ageGroup: string;
   dateRegistered: string;
+  studentRecord: {
+    studentId: string | null;
+    lrn: string | null;
+    level: string | null;
+    yearLevel: string | null;
+    program: string | null;
+    department: string | null;
+    college: string | null;
+  };
+  employeeRecord: {
+    employeeId: string | null;
+    position: string | null;
+    designation: string | null;
+    office: string | null;
+    department: string | null;
+    college: string | null;
+  };
   requirementsSubmitted: Record<string, boolean>;
 };
 
@@ -164,7 +194,15 @@ export const getOrgReportsAction = withErrorHandling(
                     id: org.id,
                   },
                 },
-                select: { id: true },
+                select: {
+                  studentId: true,
+                  lrn: true,
+                  Level: { select: { name: true } },
+                  OrganizationYearLevel: { select: { name: true } },
+                  Program: { select: { name: true } },
+                  Department: { select: { name: true } },
+                  College: { select: { name: true } },
+                },
               },
               UserEmployments: {
                 where: {
@@ -173,7 +211,14 @@ export const getOrgReportsAction = withErrorHandling(
                     id: org.id,
                   },
                 },
-                select: { id: true },
+                select: {
+                  employeeId: true,
+                  position: true,
+                  designation: true,
+                  Office: { select: { name: true } },
+                  Department: { select: { name: true } },
+                  College: { select: { name: true } },
+                },
               },
             },
           },
@@ -301,21 +346,21 @@ export const getOrgReportsAction = withErrorHandling(
         member.OrgMemberRequirementFiles.map((item) => item.requirementType)
       );
       const requirementsSubmitted: Record<string, boolean> = {};
+      const studentRecord = member.User.StudentRecords[0] ?? null;
+      const employeeRecord = member.User.UserEmployments[0] ?? null;
       for (const requirement of member.OrganizationRole.requirements) {
         if (requirement === REQUIREMENT_STUDENT_RECORD) {
-          requirementsSubmitted[requirement] = member.User.StudentRecords.length > 0;
+          requirementsSubmitted[requirement] = studentRecord !== null;
           continue;
         }
         if (requirement === REQUIREMENT_EMPLOYEE_RECORD) {
-          requirementsSubmitted[requirement] = member.User.UserEmployments.length > 0;
+          requirementsSubmitted[requirement] = employeeRecord !== null;
           continue;
         }
         requirementsSubmitted[requirement] = submittedFileRequirements.has(requirement);
       }
 
       return {
-        memberId: member.id,
-        userSub: member.User.userId,
         status: member.status,
         acceptedAt: member.acceptedAt ? member.acceptedAt.toISOString() : null,
         firstName: member.User.firstName ?? null,
@@ -334,6 +379,23 @@ export const getOrgReportsAction = withErrorHandling(
         birthdate: member.User.dob ? member.User.dob.toISOString() : null,
         ageGroup: getAgeGroup(member.User.dob, now),
         dateRegistered: member.createdAt.toISOString(),
+        studentRecord: {
+          studentId: studentRecord?.studentId ?? null,
+          lrn: studentRecord?.lrn ?? null,
+          level: studentRecord?.Level.name ?? null,
+          yearLevel: studentRecord?.OrganizationYearLevel?.name ?? null,
+          program: studentRecord?.Program?.name ?? null,
+          department: studentRecord?.Department?.name ?? null,
+          college: studentRecord?.College?.name ?? null,
+        },
+        employeeRecord: {
+          employeeId: employeeRecord?.employeeId ?? null,
+          position: employeeRecord?.position ?? null,
+          designation: employeeRecord?.designation ?? null,
+          office: employeeRecord?.Office?.name ?? null,
+          department: employeeRecord?.Department?.name ?? null,
+          college: employeeRecord?.College?.name ?? null,
+        },
         requirementsSubmitted,
       };
     });

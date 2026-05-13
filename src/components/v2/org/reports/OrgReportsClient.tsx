@@ -249,8 +249,6 @@ function buildExcelRows(data: ReportData): { rows: XLSXExportData[]; requirement
     }
 
     rows.push({
-      "Member ID": member.memberId,
-      "Member Sub": member.userSub,
       "Membership Status": member.status,
       "Accepted At": member.acceptedAt ? getDateStamp(new Date(member.acceptedAt)) : "-",
       Name: buildMemberFullName(member),
@@ -266,6 +264,19 @@ function buildExcelRows(data: ReportData): { rows: XLSXExportData[]; requirement
       "Age Group": member.ageGroup,
       Birthdate: member.birthdate ? getDateStamp(new Date(member.birthdate)) : "-",
       "Date Registered": getDateStamp(new Date(member.dateRegistered)),
+      "Student Record - Student ID": member.studentRecord.studentId ?? "-",
+      "Student Record - LRN": member.studentRecord.lrn ?? "-",
+      "Student Record - Level": member.studentRecord.level ?? "-",
+      "Student Record - Year Level": member.studentRecord.yearLevel ?? "-",
+      "Student Record - Program": member.studentRecord.program ?? "-",
+      "Student Record - Department": member.studentRecord.department ?? "-",
+      "Student Record - College": member.studentRecord.college ?? "-",
+      "Employee Record - Employee ID": member.employeeRecord.employeeId ?? "-",
+      "Employee Record - Position": member.employeeRecord.position ?? "-",
+      "Employee Record - Designation": member.employeeRecord.designation ?? "-",
+      "Employee Record - Office": member.employeeRecord.office ?? "-",
+      "Employee Record - Department": member.employeeRecord.department ?? "-",
+      "Employee Record - College": member.employeeRecord.college ?? "-",
       ...requirementStatusColumns,
     });
   }
@@ -458,8 +469,6 @@ export function OrgReportsClient({
   const handleDownloadExcel = () => {
     const { rows, requirementColumns } = buildExcelRows(data);
     const columns = [
-      "Member ID",
-      "Member Sub",
       "Membership Status",
       "Accepted At",
       "Name",
@@ -475,6 +484,19 @@ export function OrgReportsClient({
       "Age Group",
       "Birthdate",
       "Date Registered",
+      "Student Record - Student ID",
+      "Student Record - LRN",
+      "Student Record - Level",
+      "Student Record - Year Level",
+      "Student Record - Program",
+      "Student Record - Department",
+      "Student Record - College",
+      "Employee Record - Employee ID",
+      "Employee Record - Position",
+      "Employee Record - Designation",
+      "Employee Record - Office",
+      "Employee Record - Department",
+      "Employee Record - College",
       ...requirementColumns,
     ];
     const reportFrom = getDateStamp(new Date(data.period.from));

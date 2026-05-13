@@ -47,6 +47,7 @@ import {
 } from "@/lib/report-period-utils";
 import { handlePrintHtmlToPDF } from "@/lib/print-pdf";
 import { exportXLSX, type XLSXExportData } from "@/lib/file-manipulation";
+import { formatRequirementLabel } from "@/lib/requirement-types";
 
 type ReportData = NonNullable<GetOrgReports["data"]>;
 
@@ -227,23 +228,47 @@ function buildMemberFullName(member: ReportData["members"]["raw"][number]): stri
   return fullName.length ? fullName : "Unknown";
 }
 
-function buildExcelRows(data: ReportData): XLSXExportData[] {
+function buildExcelRows(data: ReportData): { rows: XLSXExportData[]; requirementColumns: string[] } {
+  const allRequirementColumns = new Set<string>();
+  for (const member of data.members.raw) {
+    for (const requirementKey of Object.keys(member.requirementsSubmitted)) {
+      allRequirementColumns.add(`Requirement: ${formatRequirementLabel(requirementKey)} Submitted`);
+    }
+  }
+
+  const requirementColumns = Array.from(allRequirementColumns).sort((a, b) => a.localeCompare(b));
   const rows: XLSXExportData[] = [];
 
   for (const member of data.members.raw) {
+    const requirementStatusColumns: Record<string, boolean> = {};
+    for (const requirementKey of Object.keys(member.requirementsSubmitted)) {
+      const columnName = `Requirement: ${formatRequirementLabel(requirementKey)} Submitted`;
+      requirementStatusColumns[columnName] = member.requirementsSubmitted[requirementKey];
+    }
+
     rows.push({
       "Member ID": member.memberId,
+      "Member Sub": member.userSub,
+      "Membership Status": member.status,
+      "Accepted At": member.acceptedAt ? getDateStamp(new Date(member.acceptedAt)) : "-",
       Name: buildMemberFullName(member),
       Email: member.email ?? "-",
+      Mobile: member.mobile ?? "-",
+      Telephone: member.telephone ?? "-",
+      "Civil Status": member.civilStatus ?? "-",
+      "Blood Type": member.bloodType ?? "-",
+      Nationality: member.nationality ?? "-",
+      "Place of Birth": member.placeOfBirth ?? "-",
       Role: member.role,
       Gender: member.gender,
       "Age Group": member.ageGroup,
       Birthdate: member.birthdate ? getDateStamp(new Date(member.birthdate)) : "-",
       "Date Registered": getDateStamp(new Date(member.dateRegistered)),
+      ...requirementStatusColumns,
     });
   }
 
-  return rows;
+  return { rows, requirementColumns };
 }
 
 /* ──────────────────────────────────────── */
@@ -429,17 +454,27 @@ export function OrgReportsClient({
   };
 
   const handleDownloadExcel = () => {
+    const { rows, requirementColumns } = buildExcelRows(data);
     const columns = [
       "Member ID",
+      "Member Sub",
+      "Membership Status",
+      "Accepted At",
       "Name",
       "Email",
+      "Mobile",
+      "Telephone",
+      "Civil Status",
+      "Blood Type",
+      "Nationality",
+      "Place of Birth",
       "Role",
       "Gender",
       "Age Group",
       "Birthdate",
       "Date Registered",
+      ...requirementColumns,
     ];
-    const rows = buildExcelRows(data);
     const reportFrom = getDateStamp(new Date(data.period.from));
     const reportTo = getDateStamp(new Date(data.period.to));
     const filename = `organization_report_${sanitizeFilenamePart(data.org.name)}_${reportFrom}_to_${reportTo}`;

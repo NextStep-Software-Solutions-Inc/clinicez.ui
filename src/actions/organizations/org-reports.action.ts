@@ -15,11 +15,18 @@ export type GetOrgReports = Awaited<ReturnType<typeof getOrgReportsAction>>;
 type PeriodMemberRow = {
   id: number;
   createdAt: Date;
+  acceptedAt: Date | null;
+  status: string;
   OrganizationRole: {
     name: string;
+    requirements: string[];
   };
+  OrgMemberRequirementFiles: Array<{
+    requirementType: string;
+  }>;
   User: {
     id: number;
+    userId: string;
     gender: string | null;
     dob: Date | null;
     firstName: string | null;
@@ -27,21 +34,39 @@ type PeriodMemberRow = {
     lastName: string | null;
     suffix: string | null;
     email: string | null;
+    mobile: string | null;
+    telephone: string | null;
+    civilStatus: string | null;
+    bloodType: string | null;
+    nationality: string | null;
+    placeOfBirth: string | null;
+    StudentRecords: Array<{ id: number }>;
+    UserEmployments: Array<{ id: number }>;
   };
 };
 
 type RawMemberRow = {
   memberId: number;
+  userSub: string;
+  status: string;
+  acceptedAt: string | null;
   firstName: string | null;
   middleName: string | null;
   lastName: string | null;
   suffix: string | null;
   email: string | null;
+  mobile: string | null;
+  telephone: string | null;
+  civilStatus: string | null;
+  bloodType: string | null;
+  nationality: string | null;
+  placeOfBirth: string | null;
   role: string;
   gender: string;
   birthdate: string | null;
   ageGroup: string;
   dateRegistered: string;
+  requirementsSubmitted: Record<string, boolean>;
 };
 
 const getAgeGroup = (dob: Date | null | undefined, now: Date): string => {
@@ -98,10 +123,23 @@ export const getOrgReportsAction = withErrorHandling(
         select: {
           id: true,
           createdAt: true,
-          OrganizationRole: { select: { name: true } },
+          acceptedAt: true,
+          status: true,
+          OrganizationRole: {
+            select: {
+              name: true,
+              requirements: true,
+            },
+          },
+          OrgMemberRequirementFiles: {
+            select: {
+              requirementType: true,
+            },
+          },
           User: {
             select: {
               id: true,
+              userId: true,
               gender: true,
               dob: true,
               firstName: true,
@@ -109,6 +147,30 @@ export const getOrgReportsAction = withErrorHandling(
               lastName: true,
               suffix: true,
               email: true,
+              mobile: true,
+              telephone: true,
+              civilStatus: true,
+              bloodType: true,
+              nationality: true,
+              placeOfBirth: true,
+              StudentRecords: {
+                where: {
+                  isActive: true,
+                  Organization: {
+                    id: org.id,
+                  },
+                },
+                select: { id: true },
+              },
+              UserEmployments: {
+                where: {
+                  isActive: true,
+                  Organization: {
+                    id: org.id,
+                  },
+                },
+                select: { id: true },
+              },
             },
           },
         },
@@ -230,21 +292,47 @@ export const getOrgReportsAction = withErrorHandling(
       byOffice[office] = (byOffice[office] ?? 0) + 1;
     }
 
-    const rawMemberRows: RawMemberRow[] = periodMembers.map(
-      (member: PeriodMemberRow) => ({
+    const rawMemberRows: RawMemberRow[] = periodMembers.map((member: PeriodMemberRow) => {
+      const submittedFileRequirements = new Set(
+        member.OrgMemberRequirementFiles.map((item) => item.requirementType)
+      );
+      const requirementsSubmitted: Record<string, boolean> = {};
+      for (const requirement of member.OrganizationRole.requirements) {
+        if (requirement === "student_record") {
+          requirementsSubmitted[requirement] = member.User.StudentRecords.length > 0;
+          continue;
+        }
+        if (requirement === "employee_record") {
+          requirementsSubmitted[requirement] = member.User.UserEmployments.length > 0;
+          continue;
+        }
+        requirementsSubmitted[requirement] = submittedFileRequirements.has(requirement);
+      }
+
+      return {
         memberId: member.id,
+        userSub: member.User.userId,
+        status: member.status,
+        acceptedAt: member.acceptedAt ? member.acceptedAt.toISOString() : null,
         firstName: member.User.firstName ?? null,
         middleName: member.User.middleName ?? null,
         lastName: member.User.lastName ?? null,
         suffix: member.User.suffix ?? null,
         email: member.User.email ?? null,
+        mobile: member.User.mobile ?? null,
+        telephone: member.User.telephone ?? null,
+        civilStatus: member.User.civilStatus ?? null,
+        bloodType: member.User.bloodType ?? null,
+        nationality: member.User.nationality ?? null,
+        placeOfBirth: member.User.placeOfBirth ?? null,
         role: member.OrganizationRole.name,
         gender: member.User.gender ?? "Unknown",
         birthdate: member.User.dob ? member.User.dob.toISOString() : null,
         ageGroup: getAgeGroup(member.User.dob, now),
         dateRegistered: member.createdAt.toISOString(),
-      })
-    );
+        requirementsSubmitted,
+      };
+    });
 
     return {
       message: "Organization reports retrieved successfully",

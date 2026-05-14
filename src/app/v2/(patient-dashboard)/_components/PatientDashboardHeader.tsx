@@ -22,6 +22,7 @@ export function PatientDashboardHeader() {
   const pathname = usePathname()
   const router = useRouter()
   const isHome = pathname === PATIENT_DASHBOARD_HOME_PATH
+  const isBookAppointmentActive = isPatientDashboardRouteActive(pathname, PATIENT_DASHBOARD_BOOK_APPOINTMENT_PATH)
   const title = getPatientDashboardPageTitle(pathname)
   const { overrideTitle, overrideBack } = useHeaderTitle()
 
@@ -98,7 +99,12 @@ export function PatientDashboardHeader() {
         <div className="flex items-center gap-1 shrink-0 ml-auto">
           <Link
             href={PATIENT_DASHBOARD_BOOK_APPOINTMENT_PATH}
-            className="hidden md:inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-white bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 transition-colors"
+            aria-current={isBookAppointmentActive ? 'page' : undefined}
+            className={`hidden md:inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
+              isBookAppointmentActive
+                ? 'bg-teal-500/15 text-teal-700 dark:bg-teal-500/20 dark:text-teal-300'
+                : 'text-white bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600'
+            }`}
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Book Appointment</span>

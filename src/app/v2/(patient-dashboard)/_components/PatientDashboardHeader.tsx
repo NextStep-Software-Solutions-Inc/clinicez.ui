@@ -1,7 +1,7 @@
 'use client'
 
 import { usePathname, useRouter } from 'next/navigation'
-import { ArrowLeft, Settings } from 'lucide-react'
+import { ArrowLeft, Plus, Settings } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { ThemeToggle } from '@/components/patient-dashboard-v2/ThemeToggle'
@@ -12,6 +12,7 @@ import {
   APP_ROOT_PATH,
   getPatientDashboardPageTitle,
   isPatientDashboardRouteActive,
+  PATIENT_DASHBOARD_BOOK_APPOINTMENT_PATH,
   PATIENT_DASHBOARD_HOME_PATH,
   PATIENT_DASHBOARD_INTEGRATIONS_PATH,
   PATIENT_DASHBOARD_NAV_ITEMS,
@@ -95,6 +96,13 @@ export function PatientDashboardHeader() {
 
         {/* Right: Actions */}
         <div className="flex items-center gap-1 shrink-0 ml-auto">
+          <Link
+            href={PATIENT_DASHBOARD_BOOK_APPOINTMENT_PATH}
+            className="hidden md:inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-white bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 transition-colors"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Book Appointment</span>
+          </Link>
           {isHome && (
             <Link
               href={PATIENT_DASHBOARD_INTEGRATIONS_PATH}

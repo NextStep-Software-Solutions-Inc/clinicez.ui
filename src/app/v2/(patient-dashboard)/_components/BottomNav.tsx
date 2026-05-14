@@ -28,7 +28,7 @@ export function BottomNav() {
   }
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 h-16 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-t border-slate-200/50 dark:border-slate-700/50 pb-safe">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 h-16 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-t border-slate-200/50 dark:border-slate-700/50 pb-safe md:hidden">
       <div className="max-w-screen-sm mx-auto h-full flex items-center justify-around px-2">
         {/* Home */}
         <Link

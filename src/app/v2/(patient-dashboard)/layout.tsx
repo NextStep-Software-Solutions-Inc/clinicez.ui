@@ -28,9 +28,11 @@ export default function PatientDashboardLayout({
         <MobileHeader />
 
         {/* Main content */}
-        <main className="relative w-full z-10 min-h-screen bg-white/80 dark:bg-slate-900/80">
-          <div className="max-w-screen-sm mx-auto px-4 pt-16 pb-24">
-            {children}
+        <main className="relative z-10 min-h-screen bg-white/80 dark:bg-slate-900/80 md:bg-transparent">
+          <div className="mx-auto w-full max-w-screen-sm px-4 pt-16 pb-24 md:max-w-6xl md:px-6 md:pt-24 md:pb-10">
+            <div className="md:rounded-3xl md:border md:border-slate-200/70 md:bg-white/85 md:p-6 md:shadow-sm md:backdrop-blur-sm dark:md:border-slate-700/60 dark:md:bg-slate-900/80 lg:p-8">
+              {children}
+            </div>
           </div>
         </main>
 

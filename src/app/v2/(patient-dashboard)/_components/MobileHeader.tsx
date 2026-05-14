@@ -64,7 +64,7 @@ export function MobileHeader() {
       <div className="mx-auto h-full flex items-center gap-2 px-4 max-w-screen-sm md:max-w-none">
         {/* Left: Mobile (home logo/back+title), Desktop (always logo + optional title) */}
         <div className="flex items-center gap-2 min-w-0 flex-1 md:flex-none md:min-w-[220px]">
-          <Link href={ROOT_PATH} className="hidden md:flex items-center gap-2">
+          <Link href={ROOT_PATH} aria-label="Go to ClinicEZ home page" className="hidden md:flex items-center gap-2">
             <Image
               src="/assets/clinic-ez_mini-logo.svg"
               alt="ClinicEZ"
@@ -76,7 +76,7 @@ export function MobileHeader() {
           </Link>
 
           {isHome ? (
-            <Link href={ROOT_PATH} className="flex items-center gap-2 md:hidden">
+            <Link href={ROOT_PATH} aria-label="Go to ClinicEZ home page" className="flex items-center gap-2 md:hidden">
               <Image
                 src="/assets/clinic-ez_mini-logo.svg"
                 alt="ClinicEZ"

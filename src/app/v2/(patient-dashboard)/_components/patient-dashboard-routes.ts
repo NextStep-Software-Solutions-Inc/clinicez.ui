@@ -20,6 +20,15 @@ export interface PatientDashboardNavItem {
   mobileLabel?: string
 }
 
+export const PATIENT_DASHBOARD_DESKTOP_NAV_ACTIVE_CLASS =
+  'bg-teal-500/15 text-teal-700 dark:bg-teal-500/20 dark:text-teal-300'
+export const PATIENT_DASHBOARD_DESKTOP_NAV_INACTIVE_CLASS =
+  'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
+
+export function getPatientDashboardDesktopNavClass(isActive: boolean): string {
+  return isActive ? PATIENT_DASHBOARD_DESKTOP_NAV_ACTIVE_CLASS : PATIENT_DASHBOARD_DESKTOP_NAV_INACTIVE_CLASS
+}
+
 export const PATIENT_DASHBOARD_NAV_ITEMS: PatientDashboardNavItem[] = [
   { href: PATIENT_DASHBOARD_HOME_PATH, label: 'Home' },
   { href: PATIENT_DASHBOARD_APPOINTMENTS_PATH, label: 'Appointments' },

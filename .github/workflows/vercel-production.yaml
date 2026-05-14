@@ -23,6 +23,10 @@ jobs:
         with:
           version: 10.12.4
           run_install: false
+      - name: Install dependencies
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/clinicez
+        run: pnpm install --frozen-lockfile
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
       - name: Pull Vercel Environment Information

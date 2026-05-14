@@ -10,6 +10,7 @@ import { useHeaderTitle } from './HeaderTitleContext'
 import InstallPWAButton from '@/components/pwa/install-pwa-button'
 import {
   APP_ROOT_PATH,
+  getPatientDashboardDesktopNavClass,
   getPatientDashboardPageTitle,
   isPatientDashboardRouteActive,
   PATIENT_DASHBOARD_BOOK_APPOINTMENT_PATH,
@@ -84,9 +85,7 @@ export function PatientDashboardHeader() {
                 key={item.href}
                 href={item.href}
                 className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
-                  isActive
-                    ? 'bg-teal-500/15 text-teal-700 dark:bg-teal-500/20 dark:text-teal-300'
-                    : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
+                  getPatientDashboardDesktopNavClass(isActive)
                 }`}
               >
                 {item.label}
@@ -102,7 +101,7 @@ export function PatientDashboardHeader() {
             aria-current={isBookAppointmentActive ? 'page' : undefined}
             className={`hidden md:inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
               isBookAppointmentActive
-                ? 'bg-teal-500/15 text-teal-700 dark:bg-teal-500/20 dark:text-teal-300'
+                ? getPatientDashboardDesktopNavClass(true)
                 : 'text-white bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600'
             }`}
           >

@@ -7,6 +7,7 @@ import Image from 'next/image'
 import { ThemeToggle } from '@/components/patient-dashboard-v2/ThemeToggle'
 import { NotificationBell } from '@/components/v2/notifications/NotificationBell'
 import { useHeaderTitle } from './HeaderTitleContext'
+import InstallPWAButton from '@/components/pwa/install-pwa-button'
 
 const PAGE_TITLE_MAP: Record<string, string> = {
   '/v2/patient': '',
@@ -90,6 +91,7 @@ export function MobileHeader() {
               <Settings className="w-5 h-5" />
             </Link>
           )}
+          <InstallPWAButton />
           <NotificationBell />
           <ThemeToggle />
         </div>

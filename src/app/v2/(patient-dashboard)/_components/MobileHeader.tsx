@@ -53,11 +53,18 @@ export function MobileHeader() {
   const displayTitle = overrideTitle ?? title
   const handleBack = overrideBack ? overrideBack.fn : () => router.back()
   const isDesktopRouteActive = (href: string) => {
-    if (href === HOME_PATH) {
-      return pathname === HOME_PATH
-    }
-    return pathname.startsWith(href)
+    return pathname === href || pathname.startsWith(`${href}/`)
   }
+  const logo = (
+    <Image
+      src="/assets/clinic-ez_mini-logo.svg"
+      alt="ClinicEZ"
+      width={32}
+      height={32}
+      className="rounded"
+      priority
+    />
+  )
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 h-14 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-700/50 md:top-4 md:left-1/2 md:right-auto md:w-[min(100%-2rem,72rem)] md:-translate-x-1/2 md:rounded-2xl md:border md:shadow-sm">
@@ -65,26 +72,12 @@ export function MobileHeader() {
         {/* Left: Mobile (home logo/back+title), Desktop (always logo + optional title) */}
         <div className="flex items-center gap-2 min-w-0 flex-1 md:flex-none md:min-w-[220px]">
           <Link href={ROOT_PATH} aria-label="Go to ClinicEZ home page" className="hidden md:flex items-center gap-2">
-            <Image
-              src="/assets/clinic-ez_mini-logo.svg"
-              alt="ClinicEZ"
-              width={32}
-              height={32}
-              className="rounded"
-              priority
-            />
+            {logo}
           </Link>
 
           {isHome ? (
             <Link href={ROOT_PATH} aria-label="Go to ClinicEZ home page" className="flex items-center gap-2 md:hidden">
-              <Image
-                src="/assets/clinic-ez_mini-logo.svg"
-                alt="ClinicEZ"
-                width={32}
-                height={32}
-                className="rounded"
-                priority
-              />
+              {logo}
             </Link>
           ) : (
             <>

@@ -8,8 +8,14 @@ export const PATIENT_DASHBOARD_PROFILE_EDIT_PATH = '/v2/profile/edit'
 export const PATIENT_DASHBOARD_PROFILE_VERIFICATION_PATH = '/v2/profile/verification'
 export const PATIENT_DASHBOARD_BOOK_APPOINTMENT_PATH = '/v2/book-appointment'
 
+export type PatientDashboardNavHref =
+  | typeof PATIENT_DASHBOARD_HOME_PATH
+  | typeof PATIENT_DASHBOARD_APPOINTMENTS_PATH
+  | typeof PATIENT_DASHBOARD_PROFILE_PATH
+  | typeof PATIENT_DASHBOARD_FILES_PATH
+
 export interface PatientDashboardNavItem {
-  href: string
+  href: PatientDashboardNavHref
   label: string
   mobileLabel?: string
 }
@@ -33,6 +39,10 @@ const PATIENT_DASHBOARD_PAGE_TITLE_MAP: Record<string, string> = {
 }
 
 export function isPatientDashboardRouteActive(pathname: string, href: string): boolean {
+  if (href === PATIENT_DASHBOARD_HOME_PATH) {
+    return pathname === href
+  }
+
   return pathname === href || pathname.startsWith(`${href}/`)
 }
 

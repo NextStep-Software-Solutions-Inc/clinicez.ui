@@ -55,13 +55,12 @@ export default function InstallPWAButton({ label = "Install App" }: { label?: st
   return (
     <Button
       variant="ghost"
-      size="sm"
+      size="icon"
       onClick={handleInstallClick}
-      className="flex items-center gap-1.5 h-8 px-3 text-xs font-medium rounded-lg"
+      className="w-9 h-9 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
       aria-label={label}
     >
-      <Download className="h-3.5 w-3.5" aria-hidden="true" />
-      <span className="hidden sm:inline">Install App</span>
+      <Download className="h-5 w-5" aria-hidden="true" />
     </Button>
   );
 }

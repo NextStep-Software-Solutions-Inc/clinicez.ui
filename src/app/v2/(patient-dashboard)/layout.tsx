@@ -1,7 +1,7 @@
 import React from 'react';
 import { Metadata } from 'next';
 import '@styles/patient-dashboard.css';
-import { MobileHeader } from './_components/MobileHeader';
+import { PatientDashboardHeader } from './_components/PatientDashboardHeader';
 import { BottomNav } from './_components/BottomNav';
 import { HeaderTitleProvider } from './_components/HeaderTitleContext';
 
@@ -24,8 +24,8 @@ export default function PatientDashboardLayout({
           <div className="absolute bottom-0 right-0 w-80 h-80 rounded-full blur-3xl opacity-[0.07] dark:opacity-[0.12]" style={{background: 'radial-gradient(circle, rgb(99,102,241), transparent)'}} />
         </div>
 
-        {/* Mobile Header — sticky top */}
-        <MobileHeader />
+        {/* Patient Dashboard Header — sticky top */}
+        <PatientDashboardHeader />
 
         {/* Main content */}
         <main className="relative z-10 min-h-screen bg-white/80 dark:bg-slate-900/80 md:bg-transparent">

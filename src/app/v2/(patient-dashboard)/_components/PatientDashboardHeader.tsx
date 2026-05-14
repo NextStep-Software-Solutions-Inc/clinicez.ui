@@ -8,53 +8,24 @@ import { ThemeToggle } from '@/components/patient-dashboard-v2/ThemeToggle'
 import { NotificationBell } from '@/components/v2/notifications/NotificationBell'
 import { useHeaderTitle } from './HeaderTitleContext'
 import InstallPWAButton from '@/components/pwa/install-pwa-button'
+import {
+  getPatientDashboardPageTitle,
+  isPatientDashboardRouteActive,
+  PATIENT_DASHBOARD_HOME_PATH,
+  PATIENT_DASHBOARD_INTEGRATIONS_PATH,
+  PATIENT_DASHBOARD_NAV_ITEMS,
+  PATIENT_DASHBOARD_ROOT_PATH,
+} from './patient-dashboard-routes'
 
-const PAGE_TITLE_MAP: Record<string, string> = {
-  '/v2/patient': '',
-  '/v2/appointments-consultations': 'My Appointments',
-  '/v2/patient/files': 'My Files',
-  '/v2/integrations': 'Integrations',
-  '/v2/profile': 'Health Records',
-  '/v2/profile/edit': 'Edit Profile',
-  '/v2/profile/verification': 'Verification',
-  '/v2/book-appointment': 'Book Appointment',
-}
-
-const HOME_PATH = '/v2/patient'
-const ROOT_PATH = '/'
-const DESKTOP_NAV_ITEMS = [
-  { href: HOME_PATH, label: 'Home' },
-  { href: '/v2/appointments-consultations', label: 'Appointments' },
-  { href: '/v2/profile', label: 'Health Records' },
-  { href: '/v2/patient/files', label: 'Files' },
-] as const
-
-function getPageTitle(pathname: string): string {
-  // Exact match first
-  if (PAGE_TITLE_MAP[pathname] !== undefined) {
-    return PAGE_TITLE_MAP[pathname]
-  }
-  // Prefix match for dynamic routes
-  for (const [path, title] of Object.entries(PAGE_TITLE_MAP)) {
-    if (pathname.startsWith(path) && path !== HOME_PATH) {
-      return title
-    }
-  }
-  return ''
-}
-
-export function MobileHeader() {
+export function PatientDashboardHeader() {
   const pathname = usePathname()
   const router = useRouter()
-  const isHome = pathname === HOME_PATH
-  const title = getPageTitle(pathname)
+  const isHome = pathname === PATIENT_DASHBOARD_HOME_PATH
+  const title = getPatientDashboardPageTitle(pathname)
   const { overrideTitle, overrideBack } = useHeaderTitle()
 
   const displayTitle = overrideTitle ?? title
   const handleBack = overrideBack ? overrideBack.fn : () => router.back()
-  const isDesktopRouteActive = (href: string) => {
-    return pathname === href || pathname.startsWith(`${href}/`)
-  }
   const logo = (
     <Image
       src="/assets/clinic-ez_mini-logo.svg"
@@ -71,12 +42,12 @@ export function MobileHeader() {
       <div className="mx-auto h-full flex items-center gap-2 px-4 max-w-screen-sm md:max-w-none">
         {/* Left: Mobile (home logo/back+title), Desktop (always logo + optional title) */}
         <div className="flex items-center gap-2 min-w-0 flex-1 md:flex-none md:min-w-[220px]">
-          <Link href={ROOT_PATH} aria-label="Go to ClinicEZ home page" className="hidden md:flex items-center gap-2">
+          <Link href={PATIENT_DASHBOARD_ROOT_PATH} aria-label="Go to ClinicEZ home page" className="hidden md:flex items-center gap-2">
             {logo}
           </Link>
 
           {isHome ? (
-            <Link href={ROOT_PATH} aria-label="Go to ClinicEZ home page" className="flex items-center gap-2 md:hidden">
+            <Link href={PATIENT_DASHBOARD_ROOT_PATH} aria-label="Go to ClinicEZ home page" className="flex items-center gap-2 md:hidden">
               {logo}
             </Link>
           ) : (
@@ -104,8 +75,8 @@ export function MobileHeader() {
         </div>
 
         <nav className="hidden md:flex items-center gap-1 flex-1 justify-center">
-          {DESKTOP_NAV_ITEMS.map((item) => {
-            const isActive = isDesktopRouteActive(item.href)
+          {PATIENT_DASHBOARD_NAV_ITEMS.map((item) => {
+            const isActive = isPatientDashboardRouteActive(pathname, item.href)
             return (
               <Link
                 key={item.href}
@@ -126,7 +97,7 @@ export function MobileHeader() {
         <div className="flex items-center gap-1 shrink-0 ml-auto">
           {isHome && (
             <Link
-              href="/v2/integrations"
+              href={PATIENT_DASHBOARD_INTEGRATIONS_PATH}
               className="w-9 h-9 flex items-center justify-center rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
               aria-label="Integrations"
             >

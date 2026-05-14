@@ -9,12 +9,12 @@ import { NotificationBell } from '@/components/v2/notifications/NotificationBell
 import { useHeaderTitle } from './HeaderTitleContext'
 import InstallPWAButton from '@/components/pwa/install-pwa-button'
 import {
+  APP_ROOT_PATH,
   getPatientDashboardPageTitle,
   isPatientDashboardRouteActive,
   PATIENT_DASHBOARD_HOME_PATH,
   PATIENT_DASHBOARD_INTEGRATIONS_PATH,
   PATIENT_DASHBOARD_NAV_ITEMS,
-  PATIENT_DASHBOARD_ROOT_PATH,
 } from './patient-dashboard-routes'
 
 export function PatientDashboardHeader() {
@@ -42,12 +42,12 @@ export function PatientDashboardHeader() {
       <div className="mx-auto h-full flex items-center gap-2 px-4 max-w-screen-sm md:max-w-none">
         {/* Left: Mobile (home logo/back+title), Desktop (always logo + optional title) */}
         <div className="flex items-center gap-2 min-w-0 flex-1 md:flex-none md:min-w-[220px]">
-          <Link href={PATIENT_DASHBOARD_ROOT_PATH} aria-label="Go to ClinicEZ home page" className="hidden md:flex items-center gap-2">
+          <Link href={APP_ROOT_PATH} aria-label="Go to ClinicEZ home page" className="hidden md:flex items-center gap-2">
             {logo}
           </Link>
 
           {isHome ? (
-            <Link href={PATIENT_DASHBOARD_ROOT_PATH} aria-label="Go to ClinicEZ home page" className="flex items-center gap-2 md:hidden">
+            <Link href={APP_ROOT_PATH} aria-label="Go to ClinicEZ home page" className="flex items-center gap-2 md:hidden">
               {logo}
             </Link>
           ) : (

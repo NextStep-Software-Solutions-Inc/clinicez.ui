@@ -1,4 +1,4 @@
-export const PATIENT_DASHBOARD_ROOT_PATH = '/'
+export const APP_ROOT_PATH = '/'
 export const PATIENT_DASHBOARD_HOME_PATH = '/v2/patient'
 export const PATIENT_DASHBOARD_APPOINTMENTS_PATH = '/v2/appointments-consultations'
 export const PATIENT_DASHBOARD_PROFILE_PATH = '/v2/profile'

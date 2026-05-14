@@ -23,7 +23,7 @@ const PAGE_TITLE_MAP: Record<string, string> = {
 const HOME_PATH = '/v2/patient'
 const ROOT_PATH = '/'
 const DESKTOP_NAV_ITEMS = [
-  { href: '/v2/patient', label: 'Home' },
+  { href: HOME_PATH, label: 'Home' },
   { href: '/v2/appointments-consultations', label: 'Appointments' },
   { href: '/v2/profile', label: 'Health Records' },
   { href: '/v2/patient/files', label: 'Files' },
@@ -62,10 +62,21 @@ export function MobileHeader() {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 h-14 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-700/50 md:top-4 md:left-1/2 md:right-auto md:w-[min(100%-2rem,72rem)] md:-translate-x-1/2 md:rounded-2xl md:border md:shadow-sm">
       <div className="mx-auto h-full flex items-center gap-2 px-4 max-w-screen-sm md:max-w-none">
-        {/* Left: Logo on home; back button + page title on sub-pages */}
+        {/* Left: Mobile (home logo/back+title), Desktop (always logo + optional title) */}
         <div className="flex items-center gap-2 min-w-0 flex-1 md:flex-none md:min-w-[220px]">
+          <Link href={ROOT_PATH} className="hidden md:flex items-center gap-2">
+            <Image
+              src="/assets/clinic-ez_mini-logo.svg"
+              alt="ClinicEZ"
+              width={32}
+              height={32}
+              className="rounded"
+              priority
+            />
+          </Link>
+
           {isHome ? (
-            <Link href={ROOT_PATH} className="flex items-center gap-2">
+            <Link href={ROOT_PATH} className="flex items-center gap-2 md:hidden">
               <Image
                 src="/assets/clinic-ez_mini-logo.svg"
                 alt="ClinicEZ"
@@ -85,11 +96,17 @@ export function MobileHeader() {
                 <ArrowLeft className="w-5 h-5" />
               </button>
               {displayTitle && (
-                <h1 className="text-base font-semibold text-slate-900 dark:text-white truncate">
+                <h1 className="text-base font-semibold text-slate-900 dark:text-white truncate md:hidden">
                   {displayTitle}
                 </h1>
               )}
             </>
+          )}
+
+          {!isHome && displayTitle && (
+            <h1 className="hidden md:block text-sm font-semibold text-slate-900 dark:text-white truncate">
+              {displayTitle}
+            </h1>
           )}
         </div>
 

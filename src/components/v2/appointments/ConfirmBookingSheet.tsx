@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { CalendarDays, Stethoscope, Video, CalendarPlus, Info, AlertTriangle, ExternalLink } from "lucide-react";
 import {
   Sheet,
@@ -71,7 +71,9 @@ export function ConfirmBookingSheet({
   // Google Calendar state
   const [googleConnected, setGoogleConnected] = useState<boolean | null>(null);
   const [addToCalendar, setAddToCalendar] = useState(true);
-  const [createMeet, setCreateMeet] = useState(false);
+  // User's explicit Meet preference; auto-elevated to true when virtual+calendar is on
+  const [userCreateMeet, setUserCreateMeet] = useState(false);
+  const createMeet = (isVirtualMode && addToCalendar) || userCreateMeet;
 
   // Detect if selected mode is virtual
   const selectedMode = modes.find(m => String(m.id) === modeId);
@@ -90,12 +92,8 @@ export function ConfirmBookingSheet({
     return () => { cancelled = true; };
   }, [open]);
 
-  // Auto-enable Meet for virtual mode when calendar is on
-  useEffect(() => {
-    if (isVirtualMode && addToCalendar) {
-      setCreateMeet(true);
-    }
-  }, [isVirtualMode, addToCalendar]);
+  // Auto-enable Meet for virtual mode when calendar is on — no effect needed;
+  // createMeet is derived above.
 
   const handleConnectGoogle = () => {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
@@ -383,7 +381,7 @@ export function ConfirmBookingSheet({
                       <Switch
                         id="createMeet"
                         checked={createMeet}
-                        onCheckedChange={setCreateMeet}
+                        onCheckedChange={setUserCreateMeet}
                       />
                     </div>
 

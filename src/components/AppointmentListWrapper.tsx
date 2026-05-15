@@ -9,7 +9,7 @@ import { useClinicAppointments } from "@hooks/useAppointment";
 import { AppointmentStatus, RoutedAptStatus } from "@public/json/appointment-list";
 import { Filter, Search } from "lucide-react";
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { GetAppointments } from "@actions/appointments/appointments.action";
 import { AppointmentList } from "./appointment/AppointmentList";
 import { useHPs } from "@hooks/useHP";
@@ -61,13 +61,11 @@ export default function AppointmentListWrapper({ clinicUid }: AppointmentListWra
     return Array.from(options).sort((a, b) => a.localeCompare(b));
   }, [appointments, getRequesterColleges]);
 
-  useEffect(() => {
-    setSelectedColleges((prev) => {
-      const filtered = prev.filter((college) => collegeOptions.includes(college));
-      if (filtered.length === prev.length) return prev;
-      return filtered;
-    });
-  }, [collegeOptions]);
+  // Derive the effective selection: drop any colleges that are no longer in the options list
+  const effectiveSelectedColleges = useMemo(
+    () => selectedColleges.filter((c) => collegeOptions.includes(c)),
+    [selectedColleges, collegeOptions]
+  );
 
   const toggleCollege = (college: string, checked: boolean) => {
     setSelectedColleges((prev) => {
@@ -133,10 +131,10 @@ export default function AppointmentListWrapper({ clinicUid }: AppointmentListWra
         || appointment.subject.toLowerCase().includes(queryLower)
         || appointment.complaint?.toLowerCase().includes(queryLower);
 
-      const matchesCollege = selectedColleges.length === 0
+      const matchesCollege = effectiveSelectedColleges.length === 0
         || appointment.Requesters.some((requester) => {
           const requesterColleges = getRequesterColleges(requester);
-          return requesterColleges.some((college) => selectedColleges.includes(college));
+          return requesterColleges.some((college) => effectiveSelectedColleges.includes(college));
         });
 
       const matchesHP = selectedHPs.length === 0
@@ -146,13 +144,13 @@ export default function AppointmentListWrapper({ clinicUid }: AppointmentListWra
 
       return matchesQuery && matchesCollege && matchesHP;
     });
-  }, [appointments, getRequesterColleges, query, selectedColleges, selectedHPs])
+  }, [appointments, getRequesterColleges, query, effectiveSelectedColleges, selectedHPs])
 
   const updateQuery = (q: string) => {
     setQuery(q);
   }
 
-  const totalFilters = selectedColleges.length + selectedHPs.length;
+  const totalFilters = effectiveSelectedColleges.length + selectedHPs.length;
 
   return (
     <>

@@ -569,10 +569,8 @@ export const findOrCreateUserAction = withErrorHandling(cache(async () => {
       const looksLikeAuth0Id = typeof userSub === 'string' && userSub.includes('|');
 
       if (looksLikeAuth0Id) {
-        // eslint-disable-next-line no-console
         console.warn('Auth0 user deletion skipped during Clerk migration', { userSub });
       } else {
-        // eslint-disable-next-line no-console
         console.warn('Skipping Auth0 operations: user id does not look like Auth0 id', { userSub });
       }
 

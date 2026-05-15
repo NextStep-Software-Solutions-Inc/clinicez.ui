@@ -26,7 +26,7 @@ export default function NotFound() {
 
         {/* Description */}
         <p className="text-slate-600 dark:text-slate-400 mb-8">
-          The patient profile you're looking for doesn't exist or may have been removed.
+          The patient profile you&apos;re looking for doesn&apos;t exist or may have been removed.
         </p>
 
         {/* Buttons */}

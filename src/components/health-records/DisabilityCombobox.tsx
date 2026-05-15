@@ -243,7 +243,7 @@ export function DisabilityCombobox({
                             ✨ Create new disability
                           </span>
                           <span className="text-purple-600 dark:text-purple-400 ml-2 font-semibold">
-                            "{normalizedSearch}"
+                            &ldquo;{normalizedSearch}&rdquo;
                           </span>
                         </>
                       )}

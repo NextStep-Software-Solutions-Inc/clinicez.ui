@@ -96,8 +96,8 @@ export function GlobalAIDefaultsManager() {
         <Alert className="mb-6">
           <Info className="h-4 w-4" />
           <AlertDescription>
-            These defaults are used as fallback values for tenants that don't have custom limits set.
-            Tenants can override these values, and clinics must stay within their tenant's limits.
+            These defaults are used as fallback values for tenants that don&apos;t have custom limits set.
+            Tenants can override these values, and clinics must stay within their tenant&apos;s limits.
           </AlertDescription>
         </Alert>
 

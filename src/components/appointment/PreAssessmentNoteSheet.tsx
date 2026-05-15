@@ -93,7 +93,7 @@ export default function PreAssessmentNoteSheet({ children, disabled, preAssessme
       remarks: preAssessmentNote.remarks
     },
   })
-  const watch = form.watch
+  const noteDraft = useWatch({ control: form.control })
 
   // Fetch patient allergies, vitals, and attachments when appointment data is available
   useEffect(() => {
@@ -131,9 +131,8 @@ export default function PreAssessmentNoteSheet({ children, disabled, preAssessme
   }, [appointmentData]);
 
   useEffect(() => {
-    const subscription = watch((value) => setPreAssessmentNote(value))
-    return () => subscription.unsubscribe()
-  }, [setPreAssessmentNote, watch])
+    setPreAssessmentNote(noteDraft)
+  }, [noteDraft, setPreAssessmentNote])
 
   // Auto-apply quick generated notes when ready
   useEffect(() => {
@@ -254,7 +253,7 @@ export default function PreAssessmentNoteSheet({ children, disabled, preAssessme
                 Notes to be taken before the actual consultation. Can be completed by any healthcare provider with the appropriate permissions.
                 {isAIEnabled() && (
                   <span className="block mt-2 text-xs text-muted-foreground">
-                    💡 Click "AI Generate" for instant AI-assisted notes using comprehensive patient data including vitals, allergies, and medical history.
+                    💡 Click &ldquo;AI Generate&rdquo; for instant AI-assisted notes using comprehensive patient data including vitals, allergies, and medical history.
                   </span>
                 )}
               </SheetDescription>
@@ -383,5 +382,3 @@ export default function PreAssessmentNoteSheet({ children, disabled, preAssessme
     </Sheet>
   );
 }
-
-

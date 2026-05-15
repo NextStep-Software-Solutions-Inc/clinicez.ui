@@ -154,7 +154,8 @@ export function AppointmentDetailSheet({
   // AI Symptoms Analyzer — reuse v1 hook
   const { analyze, isLoading: aiAnalyzing, error: aiAnalysisError, analysis: aiAnalysis } = useSymptomAnalysis();
   const [aiSaving, setAiSaving] = useState(false);
-  const [aiPendingResult, setAiPendingResult] = useState<typeof aiAnalysis>(null);
+  const [aiResultDismissed, setAiResultDismissed] = useState(false);
+  const aiPendingResult = aiResultDismissed ? null : aiAnalysis;
 
   // Patient PHR/EMR context for AI symptom analysis (must be called before any early return)
   const patientUserId = appointment?.Requesters?.[0]?.User?.userId ?? "";
@@ -208,19 +209,10 @@ export function AppointmentDetailSheet({
 
   // Fetch pre-assessment notes when appointment changes
   useEffect(() => {
-    if (!appointment) {
-      setPreAssessmentNotes([]);
-      setSavedAiAnalysis(null);
-      return;
-    }
+    if (!appointment) return;
     refreshNotes(appointment.id);
     refreshAiAnalysis(appointment.id);
   }, [appointment, refreshNotes, refreshAiAnalysis]);
-
-  // Keep pending result in sync with hook result
-  useEffect(() => {
-    if (aiAnalysis) setAiPendingResult(aiAnalysis);
-  }, [aiAnalysis]);
 
   // Reset inline forms when appointment changes
   useEffect(() => {
@@ -235,7 +227,7 @@ export function AppointmentDetailSheet({
     setReturnReason("");
     setShowDropForm(false);
     setDropReason("");
-    setAiPendingResult(null);
+    setAiResultDismissed(false);
     setVitalsExpanded(false);
     setIsEditingSubjectComplaint(false);
     setEditSubject("");
@@ -288,7 +280,7 @@ export function AppointmentDetailSheet({
 
   const handleAnalyzeSymptoms = async () => {
     if (!appointment.complaint) return;
-    setAiPendingResult(null);
+    setAiResultDismissed(false);
     const patientContext = {
       age: requester?.dob ? calculateAge(requester.dob) || undefined : undefined,
       gender: requester?.gender || undefined,
@@ -303,7 +295,7 @@ export function AppointmentDetailSheet({
     await analyze(appointment.complaint, patientContext);
   };
 
-  const handleSaveAIAnalysis = async (pendingAnalysis: NonNullable<typeof aiPendingResult>) => {
+  const handleSaveAIAnalysis = async (pendingAnalysis: NonNullable<typeof aiAnalysis>) => {
     // Compose a Markdown summary to persist
     const markdown = [
       `**Urgency:** ${pendingAnalysis.urgencyLevel.toUpperCase()}`,
@@ -322,7 +314,7 @@ export function AppointmentDetailSheet({
     setAiSaving(false);
     if (result.status) {
       toast.success("AI symptom analysis saved.");
-      setAiPendingResult(null);
+      setAiResultDismissed(true);
       setSavedAiAnalysis(markdown);
     } else {
       toast.error(result.message);
@@ -973,7 +965,7 @@ export function AppointmentDetailSheet({
                       size="sm"
                       variant="outline"
                       className="h-6 px-2 text-xs border-violet-200 text-violet-600 hover:bg-violet-50"
-                      onClick={() => setAiPendingResult(null)}
+                      onClick={() => setAiResultDismissed(true)}
                     >
                       Discard
                     </Button>

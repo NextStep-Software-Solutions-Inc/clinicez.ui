@@ -8,7 +8,7 @@ export default function TermsOfServiceContent() {
       <section className="mb-8">
         <h2 className="text-2xl font-bold text-gray-900 mb-4">1. Agreement to Terms</h2>
         <p>
-          By accessing and using ClinicEZ ("Service," "Platform," "we," "us," "our," or "Company"), you agree to be bound by these Terms of Service ("Terms"). If you disagree with any part of these terms, then you do not have permission to access the Service.
+          By accessing and using ClinicEZ (&ldquo;Service,&rdquo; &ldquo;Platform,&rdquo; &ldquo;we,&rdquo; &ldquo;us,&rdquo; &ldquo;our,&rdquo; or &ldquo;Company&rdquo;), you agree to be bound by these Terms of Service (&ldquo;Terms&rdquo;). If you disagree with any part of these terms, then you do not have permission to access the Service.
         </p>
         <p className="mt-4">
           These Terms apply to all users, including but not limited to healthcare providers, clinic administrators, patients, and any other individuals or organizations accessing the Service.
@@ -25,7 +25,7 @@ export default function TermsOfServiceContent() {
           <li>Use the materials for any commercial purpose or for any public display</li>
           <li>Attempt to decompile or reverse engineer any software contained on the Service</li>
           <li>Remove any copyright or other proprietary notations from the materials</li>
-          <li>Transfer the materials to another person or "mirror" the materials on any other server</li>
+          <li>Transfer the materials to another person or &ldquo;mirror&rdquo; the materials on any other server</li>
           <li>Violate any applicable laws or regulations in your jurisdiction</li>
           <li>Access the Service through automated means without authorization</li>
         </ul>
@@ -112,7 +112,7 @@ export default function TermsOfServiceContent() {
       <section className="mb-8">
         <h2 className="text-2xl font-bold text-gray-900 mb-4">7. Disclaimer of Warranties</h2>
         <p>
-          The Service is provided on an "AS IS" and "AS AVAILABLE" basis. ClinicEZ makes no warranties, expressed or implied, regarding:
+          The Service is provided on an &ldquo;AS IS&rdquo; and &ldquo;AS AVAILABLE&rdquo; basis. ClinicEZ makes no warranties, expressed or implied, regarding:
         </p>
         <ul className="list-disc pl-5 space-y-2">
           <li>The accuracy, completeness, or reliability of the Service</li>
@@ -128,7 +128,7 @@ export default function TermsOfServiceContent() {
       <section className="mb-8">
         <h2 className="text-2xl font-bold text-gray-900 mb-4">8. Indemnification</h2>
         <p>
-          You agree to indemnify, defend, and hold harmless ClinicEZ and its officers, directors, employees, and agents from any claims, damages, losses, liabilities, and expenses (including attorney's fees) arising from:
+          You agree to indemnify, defend, and hold harmless ClinicEZ and its officers, directors, employees, and agents from any claims, damages, losses, liabilities, and expenses (including attorney&apos;s fees) arising from:
         </p>
         <ul className="list-disc pl-5 space-y-2">
           <li>Your use of the Service</li>
@@ -269,7 +269,7 @@ export default function TermsOfServiceContent() {
       <section className="mb-8">
         <h2 className="text-2xl font-bold text-gray-900 mb-4">19. Amendments to Terms</h2>
         <p>
-          ClinicEZ reserves the right to modify these Terms at any time. We will notify you of material changes by posting the updated Terms on our website and updating the "Last updated" date.
+          ClinicEZ reserves the right to modify these Terms at any time. We will notify you of material changes by posting the updated Terms on our website and updating the &ldquo;Last updated&rdquo; date.
         </p>
         <p className="mt-4">
           Your continued use of the Service following notification of changes constitutes your acceptance of the modified Terms. If you do not agree to the modified Terms, you must stop using the Service.

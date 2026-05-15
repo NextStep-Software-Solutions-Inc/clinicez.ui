@@ -147,7 +147,6 @@ export function VitalSignEditForm({
   }
 
   // Expose submit handler to parent via saveRef (no deps — always keeps ref current with latest closure)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (saveRef) saveRef.current = { submit: handleSubmit, hasChanges }
     onDirtyChange?.(hasChanges)

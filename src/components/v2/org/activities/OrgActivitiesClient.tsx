@@ -245,7 +245,7 @@ function ActivityRow({ item }: { item: ActivityItem }) {
 
         {/* Reason */}
         {item.reason && (
-          <p className="text-xs text-muted-foreground italic">"{item.reason}"</p>
+          <p className="text-xs text-muted-foreground italic">&ldquo;{item.reason}&rdquo;</p>
         )}
       </div>
 

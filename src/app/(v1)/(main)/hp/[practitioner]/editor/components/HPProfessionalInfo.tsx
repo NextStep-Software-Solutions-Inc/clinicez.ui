@@ -10,7 +10,7 @@ import {
   FormMessage,
 } from "@components/ui/form"
 import { Input } from "@components/ui/input"
-import { useForm } from "react-hook-form"
+import { useForm, useWatch } from "react-hook-form"
 import { format } from "date-fns"
 import { ProfessionalDetailsFormType, professionalDetailsSchema } from "../hp-form.schema"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -36,7 +36,10 @@ export default function HPProfessionalInfo({ professionalDetails }: HPProfession
   })
 
   // Watch the licenseIssued field to set min date for licenseExpires
-  const licenseIssuedDate = form.watch("licenseIssued")
+  const licenseIssuedDate = useWatch({
+    control: form.control,
+    name: "licenseIssued",
+  })
 
   const action = async () => {
     form.handleSubmit(async (data) => {
@@ -166,4 +169,3 @@ export default function HPProfessionalInfo({ professionalDetails }: HPProfession
     </Form>
   )
 }
-

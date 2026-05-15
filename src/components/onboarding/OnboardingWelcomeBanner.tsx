@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { X, Sparkles, ArrowRight } from "lucide-react";
 import { Button } from "@components/ui/button";
@@ -33,13 +33,8 @@ const TIPS = [
 
 export default function OnboardingWelcomeBanner() {
   const searchParams = useSearchParams();
-  const [showBanner, setShowBanner] = useState(false);
-
-  useEffect(() => {
-    if (searchParams.get("onboarding") === "complete") {
-      setShowBanner(true);
-    }
-  }, [searchParams]);
+  const [dismissed, setDismissed] = useState(false);
+  const showBanner = searchParams.get("onboarding") === "complete" && !dismissed;
 
   if (!showBanner) return null;
 
@@ -48,7 +43,7 @@ export default function OnboardingWelcomeBanner() {
       <Card className="border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50">
         <CardContent className="relative py-6">
           <button
-            onClick={() => setShowBanner(false)}
+            onClick={() => setDismissed(true)}
             className="absolute right-4 top-4 rounded-full p-1 hover:bg-emerald-100"
             aria-label="Close welcome banner"
           >
@@ -92,7 +87,7 @@ export default function OnboardingWelcomeBanner() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setShowBanner(false)}
+              onClick={() => setDismissed(true)}
               className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-100"
             >
               Dismiss

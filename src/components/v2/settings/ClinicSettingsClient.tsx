@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useRef, useCallback, useEffect } from "react";
+import { useState, useTransition, useRef, useCallback, useEffect, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -2900,23 +2900,25 @@ function DocumentsTab({ clinicUid }: { clinicUid: string }) {
   const documentTypes = documentTypesResult?.data ?? [];
   const allTemplates = allTemplatesResult?.data ?? [];
 
-  const [prescriptionTemplateId, setPrescriptionTemplateId] = useState<string>("");
-  const [defaultTemplateIds, setDefaultTemplateIds] = useState<Record<number, string>>({});
+  const [prescriptionTemplateIdOverride, setPrescriptionTemplateIdOverride] = useState<string | null>(null);
+  const [defaultTemplateIdOverrides, setDefaultTemplateIdOverrides] = useState<Record<number, string>>({});
 
-  // Sync prescription state when remote data loads
-  useEffect(() => {
-    setPrescriptionTemplateId(prescriptionConfig?.prescriptionTemplateId?.toString() ?? "");
-  }, [prescriptionConfig?.id]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Sync non-prescription defaults from the junction table
-  useEffect(() => {
-    if (!documentDefaults) return;
+  const remotePrescriptionTemplateId =
+    prescriptionConfig?.prescriptionTemplateId?.toString() ?? "";
+  const remoteDefaultTemplateIds = useMemo(() => {
     const map: Record<number, string> = {};
-    for (const d of documentDefaults) {
+    for (const d of documentDefaults ?? []) {
       map[d.documentTypeId] = d.templateId.toString();
     }
-    setDefaultTemplateIds(map);
-  }, [documentDefaults]); // eslint-disable-line react-hooks/exhaustive-deps
+    return map;
+  }, [documentDefaults]);
+
+  const prescriptionTemplateId =
+    prescriptionTemplateIdOverride ?? remotePrescriptionTemplateId;
+  const defaultTemplateIds = useMemo(
+    () => ({ ...remoteDefaultTemplateIds, ...defaultTemplateIdOverrides }),
+    [remoteDefaultTemplateIds, defaultTemplateIdOverrides]
+  );
 
   const prescriptionType = documentTypes.find((t) => t.name === "prescription");
   const nonPrescriptionTypes = documentTypes.filter((t) => t.name !== "prescription");
@@ -3048,7 +3050,7 @@ function DocumentsTab({ clinicUid }: { clinicUid: string }) {
                 label={formatDocumentTypeName(prescriptionType.name)}
                 description={prescriptionType.description ?? `Default template for ${formatDocumentTypeName(prescriptionType.name).toLowerCase()}.`}
                 value={prescriptionTemplateId}
-                onChange={setPrescriptionTemplateId}
+                onChange={setPrescriptionTemplateIdOverride}
                 templates={allTemplates
                   .filter((t) => t.DocumentTemplateType.id === prescriptionType.id)
                   .map((t) => ({ id: t.id, name: t.name }))}
@@ -3065,7 +3067,9 @@ function DocumentsTab({ clinicUid }: { clinicUid: string }) {
                   label={formatDocumentTypeName(type.name)}
                   description={type.description ?? `Default template for ${formatDocumentTypeName(type.name).toLowerCase()}.`}
                   value={defaultTemplateIds[type.id] ?? ""}
-                  onChange={(v) => setDefaultTemplateIds((prev) => ({ ...prev, [type.id]: v }))}
+                  onChange={(v) =>
+                    setDefaultTemplateIdOverrides((prev) => ({ ...prev, [type.id]: v }))
+                  }
                   templates={templates}
                 />
               );
@@ -3267,4 +3271,3 @@ export function ClinicSettingsClient({
     </div>
   );
 }
-

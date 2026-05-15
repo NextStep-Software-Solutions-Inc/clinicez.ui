@@ -3,7 +3,7 @@
 import { z } from "zod";
 import BackSubmitAndNext from "@components/SubmitAndNext";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from "@components/ui/form";
 import { Input } from "@components/ui/input";
 import { Button } from "@components/ui/button";
@@ -44,6 +44,10 @@ export default function TenantPaymentVerification({ prevStep, nextStep }: Tenant
       receiptCode: tenantApplication?.receiptCode || "",
     }
   })
+  const receiptCode = useWatch({
+    control: form.control,
+    name: "receiptCode",
+  });
 
   const action = async () =>{
     form.handleSubmit(async (data) => {
@@ -91,7 +95,7 @@ export default function TenantPaymentVerification({ prevStep, nextStep }: Tenant
               </FormItem>
             )}
           />
-          <Button disabled={!form.formState.isValid || paymentVerified} onClick={() => handleVerify(form.watch("receiptCode"))} type="button">Verify</Button>
+          <Button disabled={!form.formState.isValid || paymentVerified} onClick={() => handleVerify(receiptCode)} type="button">Verify</Button>
         </div>
         <div className="mt-4">
           <BackSubmitAndNext

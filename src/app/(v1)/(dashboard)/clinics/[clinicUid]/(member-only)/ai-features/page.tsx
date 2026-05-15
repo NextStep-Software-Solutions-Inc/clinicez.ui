@@ -252,7 +252,7 @@ Patient reports experiencing **persistent headaches** for the past 3 days. Assoc
               Navigate to: Clinics → Consultations → Select Consultation → Consultation Notes
             </p>
             <p className="text-sm mt-2">
-              Look for the "AI Summarize" button in the consultation notes header.
+              Look for the &ldquo;AI Summarize&rdquo; button in the consultation notes header.
             </p>
           </CardContent>
         </Card>

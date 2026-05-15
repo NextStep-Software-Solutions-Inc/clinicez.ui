@@ -9,7 +9,7 @@ import ConditionalRender from "@components/utils/ConditionalRender";
 import Each from "@components/utils/Each";
 import { zodResolver } from "@hookform/resolvers/zod";
 import React, { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 import { useAtom } from "jotai";
 import { additionalInfoValidAtom } from "./AdditionalInformationStep";
@@ -70,6 +70,10 @@ export default function EmployeeRecordForm({orgUid, userId} : {orgUid: string, u
       ...orgApplication.employee_record
     }
   })
+  const isCollege = useWatch({
+    control: form.control,
+    name: "isCollege",
+  });
 
   useEffect(() => {
     if (employeeRecord?.data) {
@@ -247,7 +251,7 @@ export default function EmployeeRecordForm({orgUid, userId} : {orgUid: string, u
             )
           }}
         />
-        <ConditionalRender condition={form.watch("isCollege")}>
+        <ConditionalRender condition={Boolean(isCollege)}>
           <FormField
             control={form.control}
             name="collegeId"

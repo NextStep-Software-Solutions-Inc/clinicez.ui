@@ -42,7 +42,7 @@ export default function AILimitsPage() {
                 Tenant AI Limits
               </CardTitle>
               <CardDescription>
-                View and manage AI limits for individual tenants. Navigate to a specific tenant's page to configure limits.
+                View and manage AI limits for individual tenants. Navigate to a specific tenant&apos;s page to configure limits.
               </CardDescription>
             </CardHeader>
             <CardContent>

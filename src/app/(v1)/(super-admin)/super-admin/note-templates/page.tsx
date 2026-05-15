@@ -3,9 +3,10 @@ import NoteTemplateManager from "@components/super-admin/NoteTemplateManager";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@components/ui/card";
 
 export default async function NoteTemplatesPage() {
+  let templates: Awaited<ReturnType<typeof getNoteTemplatesWithSectionsAction>> | null = null;
+
   try {
-    const templates = await getNoteTemplatesWithSectionsAction();
-    return <NoteTemplateManager initialData={templates} />;
+    templates = await getNoteTemplatesWithSectionsAction();
   } catch {
     return (
       <Card>
@@ -21,4 +22,6 @@ export default async function NoteTemplatesPage() {
       </Card>
     );
   }
+
+  return <NoteTemplateManager initialData={templates} />;
 }

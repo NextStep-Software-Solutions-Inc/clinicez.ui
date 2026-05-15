@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useTransition, useRef, useLayoutEffect } from "react";
+import { useState, useEffect, useCallback, useTransition, useRef, useLayoutEffect, useMemo } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import {
     Loader2, ShieldCheck, Users, ClipboardList, Send,
@@ -12,6 +12,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -122,6 +123,7 @@ const VALID_TABS = [
     "history",
     "atc-verification",
     "konsulta-validation",
+    "xml-import",
 ] as const;
 type KonsultaTab = typeof VALID_TABS[number];
 
@@ -160,6 +162,9 @@ export function PhilHealthReportTab({ clinicUid }: PhilHealthReportTabProps) {
                     <TabsTrigger value="konsulta-validation" className="gap-2 whitespace-nowrap">
                         <ShieldCheck className="h-4 w-4" />Konsulta Registration Validation
                     </TabsTrigger>
+                    <TabsTrigger value="xml-import" className="gap-2 whitespace-nowrap">
+                        <FileCode2 className="h-4 w-4" />XML Import
+                    </TabsTrigger>
                 </TabsList>
             </div>
 
@@ -180,6 +185,9 @@ export function PhilHealthReportTab({ clinicUid }: PhilHealthReportTabProps) {
             </TabsContent>
             <TabsContent value="konsulta-validation">
                 <KonsultaValidationPanel />
+            </TabsContent>
+            <TabsContent value="xml-import">
+                <KonsultaXmlImportPanel />
             </TabsContent>
         </Tabs>
     );
@@ -1059,7 +1067,7 @@ function AtcVerificationPanel() {
             toast.error("PIN, ATC, and validity date are required.");
             return;
         }
-        toast.success("ATC verification input captured.");
+        toast.success("ATC verification parameters captured.");
     };
 
     return (
@@ -1070,7 +1078,7 @@ function AtcVerificationPanel() {
                     ATC Verification
                 </CardTitle>
                 <CardDescription className="mt-1">
-                    Validate patient PIN, ATC, and validity date using this quick verification form.
+                    Provide patient PIN, ATC, and validity date. This screen currently captures verification parameters.
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -1105,7 +1113,7 @@ function AtcVerificationPanel() {
                         </div>
                     </div>
                     <Button type="submit" className="w-full sm:w-auto">
-                        Verify ATC
+                        Save Verification Input
                     </Button>
                 </form>
             </CardContent>
@@ -1128,7 +1136,7 @@ function KonsultaValidationPanel() {
             toast.error("Dependent PIN is required for dependent type.");
             return;
         }
-        toast.success("Konsulta registration validation input captured.");
+        toast.success("Konsulta validation parameters captured.");
     };
 
     return (
@@ -1139,7 +1147,7 @@ function KonsultaValidationPanel() {
                     Konsulta Registration Validation
                 </CardTitle>
                 <CardDescription className="mt-1">
-                    Enter member type and PIN details to validate Konsulta registration under this clinic.
+                    Enter member type and PIN details. This screen currently captures Konsulta validation parameters.
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -1179,9 +1187,234 @@ function KonsultaValidationPanel() {
                         )}
                     </div>
                     <Button type="submit" className="w-full sm:w-auto">
-                        Validate Registration
+                        Save Validation Input
                     </Button>
                 </form>
+            </CardContent>
+        </Card>
+    );
+}
+
+type XmlImportTrancheType = "FIRST_TRANCHE" | "SECOND_TRANCHE";
+
+type ParsedXmlRow = {
+    key: string;
+    pin: string;
+    memberPin: string;
+    firstName: string;
+    middleName: string;
+    lastName: string;
+    patientType: "MM" | "DD";
+    effYear: string;
+    selected: boolean;
+};
+
+function parseAssignmentRowsFromXml(xml: string): ParsedXmlRow[] {
+    const assignmentMatches = [...xml.matchAll(/<ASSIGNMENT\s([\s\S]*?)(?:\/>|>)/gi)];
+
+    return assignmentMatches.map((match, index) => {
+        const attributes = match[1];
+        const getValue = (name: string): string =>
+            new RegExp(`${name}="([^"]*)"`, "i").exec(attributes)?.[1]?.trim() ?? "";
+
+        const pin = getValue("pAssignedPin");
+        const memberPin = getValue("pPrimaryPIN");
+        const patientType: "MM" | "DD" = getValue("pAssignedType") === "DD" ? "DD" : "MM";
+        const rowKey = `${pin || "unknown"}-${index}`;
+
+        return {
+            key: rowKey,
+            pin,
+            memberPin: memberPin || pin,
+            firstName: getValue("pAssignedFirstName"),
+            middleName: getValue("pAssignedMiddleName"),
+            lastName: getValue("pAssignedLastName"),
+            patientType,
+            effYear: getValue("pEffYear"),
+            selected: true,
+        };
+    });
+}
+
+function KonsultaXmlImportPanel() {
+    const [trancheType, setTrancheType] = useState<XmlImportTrancheType>("FIRST_TRANCHE");
+    const [xmlInput, setXmlInput] = useState("");
+    const [rows, setRows] = useState<ParsedXmlRow[]>([]);
+    const [warnings, setWarnings] = useState<string[]>([]);
+
+    const onFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const selectedFile = event.target.files?.[0];
+        if (!selectedFile) return;
+        const text = await selectedFile.text();
+        setXmlInput(text);
+    };
+
+    const handleParse = () => {
+        if (!xmlInput.trim()) {
+            toast.error("Upload or paste XML before parsing.");
+            return;
+        }
+
+        const parsedRows = parseAssignmentRowsFromXml(xmlInput);
+        const nextWarnings: string[] = [];
+
+        if (parsedRows.length === 0) {
+            nextWarnings.push("No ASSIGNMENT records found in the XML.");
+        }
+
+        const missingPinCount = parsedRows.filter((row) => !row.pin).length;
+        if (missingPinCount > 0) {
+            nextWarnings.push(`${missingPinCount} record(s) have missing assigned PIN.`);
+        }
+
+        if (trancheType === "FIRST_TRANCHE" && (/second tranche/i.test(xmlInput) || /2nd tranche/i.test(xmlInput))) {
+            nextWarnings.push("Selected First Tranche, but XML content appears to contain Second Tranche marker text.");
+        }
+        if (trancheType === "SECOND_TRANCHE" && (/first tranche/i.test(xmlInput) || /1st tranche/i.test(xmlInput))) {
+            nextWarnings.push("Selected Second Tranche, but XML content appears to contain First Tranche marker text.");
+        }
+
+        setRows(parsedRows);
+        setWarnings(nextWarnings);
+        toast.success(`Parsed ${parsedRows.length} record(s) from XML and converted to JSON.`);
+    };
+
+    const toggleAll = (checked: boolean) => {
+        setRows((prevRows) => prevRows.map((row) => ({ ...row, selected: checked })));
+    };
+
+    const toggleRow = (key: string, checked: boolean) => {
+        setRows((prevRows) =>
+            prevRows.map((row) => (row.key === key ? { ...row, selected: checked } : row))
+        );
+    };
+
+    const selectedCount = rows.filter((row) => row.selected).length;
+    const parsedJsonPreview = useMemo(() => JSON.stringify(rows, null, 2), [rows]);
+
+    return (
+        <Card>
+            <CardHeader className="pb-3">
+                <CardTitle className="text-sm flex items-center gap-2">
+                    <FileCode2 className="h-4 w-4 text-primary" />
+                    Konsulta XML Import
+                </CardTitle>
+                <CardDescription className="mt-1">
+                    Upload or paste XML, choose tranche type, parse to JSON, then select which records will proceed to import.
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <div className="space-y-3">
+                    <Label>XML Tranche Type</Label>
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+                        <label className="flex items-center gap-2 text-sm">
+                            <input
+                                type="radio"
+                                name="xml-tranche"
+                                checked={trancheType === "FIRST_TRANCHE"}
+                                onChange={() => setTrancheType("FIRST_TRANCHE")}
+                            />
+                            First Tranche
+                        </label>
+                        <label className="flex items-center gap-2 text-sm">
+                            <input
+                                type="radio"
+                                name="xml-tranche"
+                                checked={trancheType === "SECOND_TRANCHE"}
+                                onChange={() => setTrancheType("SECOND_TRANCHE")}
+                            />
+                            Second Tranche
+                        </label>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto]">
+                    <Input type="file" accept=".xml,text/xml" onChange={(event) => void onFileUpload(event)} />
+                    <Button onClick={handleParse} className="w-full sm:w-auto">Parse XML</Button>
+                </div>
+
+                <div className="space-y-2">
+                    <Label htmlFor="konsulta-xml-input">Paste XML</Label>
+                    <Textarea
+                        id="konsulta-xml-input"
+                        value={xmlInput}
+                        onChange={(event) => setXmlInput(event.target.value)}
+                        className="min-h-36 font-mono text-xs"
+                        placeholder="Paste XML payload here..."
+                    />
+                </div>
+
+                {warnings.length > 0 && (
+                    <Alert variant="destructive">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertTitle>XML Parsing Warning</AlertTitle>
+                        <AlertDescription>
+                            <ul className="list-disc pl-4 space-y-1 text-xs">
+                                {warnings.map((warning, index) => (
+                                    <li key={index}>{warning}</li>
+                                ))}
+                            </ul>
+                        </AlertDescription>
+                    </Alert>
+                )}
+
+                {rows.length > 0 && (
+                    <>
+                        <div className="flex items-center justify-between gap-3">
+                            <p className="text-sm text-muted-foreground">
+                                Parsed {rows.length} record(s) • {selectedCount} selected for import
+                            </p>
+                            <div className="flex gap-2">
+                                <Button size="sm" variant="outline" onClick={() => toggleAll(true)}>Select all</Button>
+                                <Button size="sm" variant="outline" onClick={() => toggleAll(false)}>Clear all</Button>
+                            </div>
+                        </div>
+
+                        <div className="overflow-x-auto rounded-md border">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead className="w-12">Pick</TableHead>
+                                        <TableHead>PIN</TableHead>
+                                        <TableHead>Name</TableHead>
+                                        <TableHead>Type</TableHead>
+                                        <TableHead>Member PIN</TableHead>
+                                        <TableHead>Eff Year</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {rows.map((row) => (
+                                        <TableRow key={row.key}>
+                                            <TableCell>
+                                                <Checkbox
+                                                    checked={row.selected}
+                                                    onCheckedChange={(checked) => toggleRow(row.key, checked === true)}
+                                                />
+                                            </TableCell>
+                                            <TableCell className="font-mono text-xs">{row.pin || "—"}</TableCell>
+                                            <TableCell className="text-sm">
+                                                {row.lastName}, {row.firstName}{row.middleName ? ` ${row.middleName}` : ""}
+                                            </TableCell>
+                                            <TableCell>{row.patientType === "DD" ? "Dependent" : "Member"}</TableCell>
+                                            <TableCell className="font-mono text-xs">{row.memberPin || "—"}</TableCell>
+                                            <TableCell>{row.effYear || "—"}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="parsed-json-preview">Parsed JSON Preview</Label>
+                            <Textarea
+                                id="parsed-json-preview"
+                                value={parsedJsonPreview}
+                                readOnly
+                                className="min-h-36 font-mono text-xs"
+                            />
+                        </div>
+                    </>
+                )}
             </CardContent>
         </Card>
     );

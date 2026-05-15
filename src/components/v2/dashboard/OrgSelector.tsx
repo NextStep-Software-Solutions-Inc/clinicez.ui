@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import {
@@ -34,11 +35,13 @@ export function OrgSelector({ activeOrg, orgs = [] }: OrgSelectorProps) {
   return (
     <div className="flex items-center gap-3">
       {/* Logo */}
-      <img
-        src="/assets/clinic-ez_mini-logo.svg"
-        alt="ClinicEZ"
-        className="h-8 w-8 object-contain"
-      />
+      <Link href="/" aria-label="Go to home page">
+        <img
+          src="/assets/clinic-ez_mini-logo.svg"
+          alt="ClinicEZ"
+          className="h-8 w-8 object-contain"
+        />
+      </Link>
 
       {/* Org Selector */}
       <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>

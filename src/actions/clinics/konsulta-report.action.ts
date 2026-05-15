@@ -1006,6 +1006,7 @@ export const validateKonsultaAtcAction = withErrorHandling(async ({
     if (!consultation) throw new Error("Consultation not found");
     const pin = consultation.ClinicPatient?.Patient.PhilHealthRecords[0]?.pin;
     if (!pin) throw new Error("Patient has no PhilHealth PIN.");
+    // Konsulta Kit 1.1 examples and service usage expect ATC token values in uppercase form.
     const normalizedAtc = atc.trim().toUpperCase();
     if (!normalizedAtc) throw new Error("ATC is required.");
 
@@ -1029,6 +1030,89 @@ export const validateKonsultaAtcAction = withErrorHandling(async ({
     });
 
     return { message: "ATC validation completed", data: { validationStatus, validationResult } };
+});
+
+export const verifyKonsultaAtcByPinAction = withErrorHandling(async ({
+    clinicUid,
+    pin,
+    atc,
+    effectivityDate,
+}: { clinicUid: string; pin: string; atc: string; effectivityDate: string }) => {
+    const session = await getCachedSession();
+    if (!session) throw new Error("Unauthorized");
+
+    const clinicId = await resolveClinicId(clinicUid);
+    const normalizedPin = pin.trim();
+    const normalizedAtc = atc.trim().toUpperCase();
+    const normalizedEffectivityDate = effectivityDate.trim();
+
+    if (!normalizedPin) throw new Error("PIN is required.");
+    if (!normalizedAtc) throw new Error("ATC is required.");
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(normalizedEffectivityDate)) {
+        throw new Error("Effectivity date must be in YYYY-MM-DD format.");
+    }
+
+    const token = await getKonsultaTokenForClinic(clinicId);
+    const { isATCValid } = await import("@/services/konsulta/konsulta-soap.service");
+    const raw = await isATCValid(
+        { pPIN: normalizedPin, pATC: normalizedAtc, pEffectivityDate: normalizedEffectivityDate },
+        token
+    );
+    const validationResult = parseSoapReturn(raw.return);
+    const validationStatus = isAffirmativeSoapResult(validationResult) ? "VALID" : "INVALID";
+
+    return {
+        message: "ATC verification completed",
+        data: {
+            validationStatus,
+            validationResult,
+            pin: normalizedPin,
+            atc: normalizedAtc,
+            effectivityDate: normalizedEffectivityDate,
+        },
+    };
+});
+
+export const verifyKonsultaMemberDependentRegistrationAction = withErrorHandling(async ({
+    clinicUid,
+    memberType,
+    memberPin,
+    dependentPin,
+}: {
+    clinicUid: string;
+    memberType: "MM" | "DD";
+    memberPin: string;
+    dependentPin?: string | null;
+}) => {
+    const session = await getCachedSession();
+    if (!session) throw new Error("Unauthorized");
+
+    const clinicId = await resolveClinicId(clinicUid);
+    const normalizedMemberPin = memberPin.trim();
+    const normalizedDependentPin = dependentPin?.trim() ?? "";
+    if (!normalizedMemberPin) throw new Error("Member PIN is required.");
+    if (memberType === "DD" && !normalizedDependentPin) {
+        throw new Error("Dependent PIN is required when member type is Dependent.");
+    }
+
+    const pinToCheck = memberType === "DD" ? normalizedDependentPin : normalizedMemberPin;
+    const token = await getKonsultaTokenForClinic(clinicId);
+    const { isMemberDependentRegistered } = await import("@/services/konsulta/konsulta-soap.service");
+    const raw = await isMemberDependentRegistered({ pPIN: pinToCheck, pType: memberType }, token);
+    const registrationResult = parseSoapReturn(raw.return);
+    const registrationStatus = isAffirmativeSoapResult(registrationResult) ? "REGISTERED" : "NOT_REGISTERED";
+
+    return {
+        message: "Konsulta registration verification completed",
+        data: {
+            registrationStatus,
+            registrationResult,
+            memberType,
+            memberPin: normalizedMemberPin,
+            dependentPin: memberType === "DD" ? normalizedDependentPin : null,
+            pinChecked: pinToCheck,
+        },
+    };
 });
 
 // ─── Batches ──────────────────────────────────────────────────────────────────

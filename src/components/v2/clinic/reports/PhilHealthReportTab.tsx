@@ -43,6 +43,8 @@ import {
     checkKonsultaPatientRegistrationAction,
     checkEnrolledPatientsRegistrationBatchAction,
     validateKonsultaAtcAction,
+    verifyKonsultaAtcByPinAction,
+    verifyKonsultaMemberDependentRegistrationAction,
     getPhilHealthConsultationsAction,
     getKonsultaBatchesAction,
     createKonsultaBatchAction,
@@ -181,10 +183,10 @@ export function PhilHealthReportTab({ clinicUid }: PhilHealthReportTabProps) {
                 <SubmissionHistoryPanel clinicUid={clinicUid} />
             </TabsContent>
             <TabsContent value="atc-verification">
-                <AtcVerificationPanel />
+                <AtcVerificationPanel clinicUid={clinicUid} />
             </TabsContent>
             <TabsContent value="konsulta-validation">
-                <KonsultaValidationPanel />
+                <KonsultaValidationPanel clinicUid={clinicUid} />
             </TabsContent>
             <TabsContent value="xml-import">
                 <KonsultaXmlImportPanel />
@@ -1056,10 +1058,13 @@ function ConsultationsPanel({ clinicUid }: { clinicUid: string }) {
     );
 }
 
-function AtcVerificationPanel() {
+function AtcVerificationPanel({ clinicUid }: { clinicUid: string }) {
     const [pin, setPin] = useState("");
     const [atc, setAtc] = useState("");
     const [validityDate, setValidityDate] = useState("");
+    const [isVerifying, startVerificationTransition] = useTransition();
+    const [verificationStatus, setVerificationStatus] = useState<"VALID" | "INVALID" | null>(null);
+    const [verificationMessage, setVerificationMessage] = useState<string | null>(null);
 
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -1067,7 +1072,27 @@ function AtcVerificationPanel() {
             toast.error("PIN, ATC, and validity date are required.");
             return;
         }
-        toast.success("ATC verification parameters captured.");
+        startVerificationTransition(async () => {
+            const res = await verifyKonsultaAtcByPinAction({
+                clinicUid,
+                pin: pin.trim(),
+                atc: atc.trim(),
+                effectivityDate: validityDate,
+            });
+            if (res.status && res.data) {
+                setVerificationStatus(res.data.validationStatus === "VALID" ? "VALID" : "INVALID");
+                const resultText = typeof res.data.validationResult.result === "string"
+                    ? res.data.validationResult.result
+                    : JSON.stringify(res.data.validationResult);
+                setVerificationMessage(resultText);
+                if (res.data.validationStatus === "VALID") toast.success("ATC is valid.");
+                else toast.warning("ATC is invalid.");
+            } else {
+                setVerificationStatus(null);
+                setVerificationMessage(null);
+                toast.error(res.message ?? "ATC verification failed.");
+            }
+        });
     };
 
     return (
@@ -1078,7 +1103,7 @@ function AtcVerificationPanel() {
                     ATC Verification
                 </CardTitle>
                 <CardDescription className="mt-1">
-                    Provide patient PIN, ATC, and validity date. This screen currently captures verification parameters.
+                    Verify ATC using Konsulta Kit 1.1 SOAP method <code>isATCValid(pPIN, pATC, pEffectivityDate)</code>.
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -1112,19 +1137,42 @@ function AtcVerificationPanel() {
                             />
                         </div>
                     </div>
-                    <Button type="submit" className="w-full sm:w-auto">
-                        Save Verification Input
+                    <Button type="submit" className="w-full sm:w-auto" disabled={isVerifying}>
+                        {isVerifying ? (
+                            <span className="inline-flex items-center">
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Verifying...
+                            </span>
+                        ) : "Verify"}
                     </Button>
                 </form>
+                {verificationStatus ? (
+                    <div className="mx-auto mt-4 w-full max-w-2xl rounded-md border p-3 text-sm">
+                        <div className="flex items-center gap-2">
+                            <span className="font-medium">Result:</span>
+                            <Badge variant={verificationStatus === "VALID" ? "default" : "destructive"}>
+                                {verificationStatus}
+                            </Badge>
+                        </div>
+                        {verificationMessage ? (
+                            <p className="mt-2 text-xs text-muted-foreground break-words">
+                                SOAP response: {verificationMessage}
+                            </p>
+                        ) : null}
+                    </div>
+                ) : null}
             </CardContent>
         </Card>
     );
 }
 
-function KonsultaValidationPanel() {
+function KonsultaValidationPanel({ clinicUid }: { clinicUid: string }) {
     const [memberType, setMemberType] = useState<"MM" | "DD">("MM");
     const [memberPin, setMemberPin] = useState("");
     const [dependentPin, setDependentPin] = useState("");
+    const [isVerifying, startVerificationTransition] = useTransition();
+    const [registrationStatus, setRegistrationStatus] = useState<"REGISTERED" | "NOT_REGISTERED" | null>(null);
+    const [registrationMessage, setRegistrationMessage] = useState<string | null>(null);
 
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -1136,7 +1184,28 @@ function KonsultaValidationPanel() {
             toast.error("Dependent PIN is required for dependent type.");
             return;
         }
-        toast.success("Konsulta validation parameters captured.");
+        startVerificationTransition(async () => {
+            const res = await verifyKonsultaMemberDependentRegistrationAction({
+                clinicUid,
+                memberType,
+                memberPin: memberPin.trim(),
+                dependentPin: memberType === "DD" ? dependentPin.trim() : null,
+            });
+
+            if (res.status && res.data) {
+                setRegistrationStatus(res.data.registrationStatus === "REGISTERED" ? "REGISTERED" : "NOT_REGISTERED");
+                const resultText = typeof res.data.registrationResult.result === "string"
+                    ? res.data.registrationResult.result
+                    : JSON.stringify(res.data.registrationResult);
+                setRegistrationMessage(resultText);
+                if (res.data.registrationStatus === "REGISTERED") toast.success("PIN is registered to this Konsulta provider.");
+                else toast.warning("PIN is not registered to this Konsulta provider.");
+            } else {
+                setRegistrationStatus(null);
+                setRegistrationMessage(null);
+                toast.error(res.message ?? "Konsulta registration verification failed.");
+            }
+        });
     };
 
     return (
@@ -1147,7 +1216,7 @@ function KonsultaValidationPanel() {
                     Konsulta Registration Validation
                 </CardTitle>
                 <CardDescription className="mt-1">
-                    Enter member type and PIN details. This screen currently captures Konsulta validation parameters.
+                    Verify registration using Konsulta Kit 1.1 SOAP method <code>isMemberDependentRegistered(pPin, pType)</code>.
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -1186,10 +1255,30 @@ function KonsultaValidationPanel() {
                             </div>
                         )}
                     </div>
-                    <Button type="submit" className="w-full sm:w-auto">
-                        Save Validation Input
+                    <Button type="submit" className="w-full sm:w-auto" disabled={isVerifying}>
+                        {isVerifying ? (
+                            <span className="inline-flex items-center">
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Verifying...
+                            </span>
+                        ) : "Verify"}
                     </Button>
                 </form>
+                {registrationStatus ? (
+                    <div className="mx-auto mt-4 w-full max-w-2xl rounded-md border p-3 text-sm">
+                        <div className="flex items-center gap-2">
+                            <span className="font-medium">Result:</span>
+                            <Badge variant={registrationStatus === "REGISTERED" ? "default" : "destructive"}>
+                                {registrationStatus}
+                            </Badge>
+                        </div>
+                        {registrationMessage ? (
+                            <p className="mt-2 text-xs text-muted-foreground break-words">
+                                SOAP response: {registrationMessage}
+                            </p>
+                        ) : null}
+                    </div>
+                ) : null}
             </CardContent>
         </Card>
     );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { CalendarDays, Stethoscope, Video, CalendarPlus, Info, AlertTriangle, ExternalLink } from "lucide-react";
 import {
   Sheet,
@@ -91,9 +91,6 @@ export function ConfirmBookingSheet({
     });
     return () => { cancelled = true; };
   }, [open]);
-
-  // Auto-enable Meet for virtual mode when calendar is on — no effect needed;
-  // createMeet is derived above.
 
   const handleConnectGoogle = () => {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";

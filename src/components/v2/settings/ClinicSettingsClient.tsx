@@ -2916,7 +2916,7 @@ function DocumentsTab({ clinicUid }: { clinicUid: string }) {
       map[d.documentTypeId] = d.templateId.toString();
     }
     setDefaultTemplateIds(map);
-  }, [documentDefaults]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [documentDefaults]);
 
   const prescriptionType = documentTypes.find((t) => t.name === "prescription");
   const nonPrescriptionTypes = documentTypes.filter((t) => t.name !== "prescription");
@@ -3267,4 +3267,3 @@ export function ClinicSettingsClient({
     </div>
   );
 }
-

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
 
@@ -60,22 +60,11 @@ export const AddClinicMemberDialog = ({ onAdded }: AddClinicMemberDialogProps) =
     setSelectedUserId(""); // Reset user selection when org changes
   };
 
-  // Reset dialog state when opened/closed
-  useEffect(() => {
-    if (open) {
-      setSelectedOrgUid("");
-      setSelectedUserId("");
-      setSelectedRoleId("");
-    } else {
-      // Cleanup with delay for animation
-      const timer = setTimeout(() => {
-        setSelectedOrgUid("");
-        setSelectedUserId("");
-        setSelectedRoleId("");
-      }, 150);
-      return () => clearTimeout(timer);
-    }
-  }, [open]);
+  const resetFormState = () => {
+    setSelectedOrgUid("");
+    setSelectedUserId("");
+    setSelectedRoleId("");
+  };
 
   // Submit handler
   const handleSubmit = async () => {
@@ -103,7 +92,13 @@ export const AddClinicMemberDialog = ({ onAdded }: AddClinicMemberDialogProps) =
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        setOpen(nextOpen);
+        resetFormState();
+      }}
+    >
       <DialogTrigger asChild>
         <Button>Add Member</Button>
       </DialogTrigger>

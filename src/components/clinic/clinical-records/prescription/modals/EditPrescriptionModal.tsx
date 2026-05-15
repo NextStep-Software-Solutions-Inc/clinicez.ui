@@ -29,7 +29,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import ActionButton from "@/components/ActionButton";
 import Each from "@/components/utils/Each";
 import { UnitCombobox } from "../UnitCombobox";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
@@ -124,7 +124,10 @@ export default function EditPrescriptionModal({
     },
   });
 
-  const medicines = form.watch("medicines");
+  const medicines = useWatch({
+    control: form.control,
+    name: "medicines",
+  });
 
   const resetForm = useCallback(() => {
     form.reset({

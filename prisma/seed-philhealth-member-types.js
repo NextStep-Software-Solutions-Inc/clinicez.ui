@@ -1,5 +1,4 @@
 /* Seed PhilHealth Member Types (idempotent) */
-/* eslint-disable */
 require('dotenv').config();
 const { PrismaClient, PhilHealthMemberCategory } = require('@prisma/client');
 const { Pool } = require('pg');

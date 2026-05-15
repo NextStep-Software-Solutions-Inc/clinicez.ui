@@ -25,7 +25,7 @@ import { calculateAge, cn } from "@/lib/utils"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Plus, Pill, User, ChevronDown, ChevronUp, X } from "lucide-react"
 import React from "react"
-import { useForm } from "react-hook-form"
+import { useForm, useWatch } from "react-hook-form"
 import { toast } from "sonner"
 import { z } from "zod"
 import { promiseWrapper } from "@/lib/with-error-handling"
@@ -165,12 +165,14 @@ export default function CreatePrescriptionModal({
     handleSubmit,
     getValues,
     reset,
-    watch,
     setValue,
     formState: { isSubmitting: formIsSubmitting, errors, dirtyFields },
   } = form
 
-  const medicines = watch("medicines")
+  const medicines = useWatch({
+    control: form.control,
+    name: "medicines",
+  })
 
   const resetFormWithDefaults = React.useCallback(() => {
     reset(autofillDefaults)

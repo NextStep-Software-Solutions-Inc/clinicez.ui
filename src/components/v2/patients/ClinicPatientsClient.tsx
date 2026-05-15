@@ -94,7 +94,6 @@ export function ClinicPatientsClient({
     scrollRoot.addEventListener('scroll', handleScroll, { passive: true });
     handleScroll(); // trigger once in case already near bottom
     return () => scrollRoot.removeEventListener('scroll', handleScroll);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ── Sync filters → URL ───────────────────────────────────────────────────

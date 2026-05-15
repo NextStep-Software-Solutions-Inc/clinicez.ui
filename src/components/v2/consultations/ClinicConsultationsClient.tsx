@@ -219,7 +219,6 @@ export default function ClinicConsultationsClient({
     });
   // `search` is intentionally excluded — it's applied client-side (filteredItems),
   // not as a server filter, so changing it must not re-fetch.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clinicUid, statusFilter, hpOnly]);
 
   /* ── Load next page ── */

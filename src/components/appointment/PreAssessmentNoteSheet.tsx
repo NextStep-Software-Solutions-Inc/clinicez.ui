@@ -93,7 +93,7 @@ export default function PreAssessmentNoteSheet({ children, disabled, preAssessme
       remarks: preAssessmentNote.remarks
     },
   })
-  const watch = form.watch
+  const noteDraft = useWatch({ control: form.control })
 
   // Fetch patient allergies, vitals, and attachments when appointment data is available
   useEffect(() => {
@@ -131,9 +131,8 @@ export default function PreAssessmentNoteSheet({ children, disabled, preAssessme
   }, [appointmentData]);
 
   useEffect(() => {
-    const subscription = watch((value) => setPreAssessmentNote(value))
-    return () => subscription.unsubscribe()
-  }, [setPreAssessmentNote, watch])
+    setPreAssessmentNote(noteDraft)
+  }, [noteDraft, setPreAssessmentNote])
 
   // Auto-apply quick generated notes when ready
   useEffect(() => {
@@ -383,4 +382,3 @@ export default function PreAssessmentNoteSheet({ children, disabled, preAssessme
     </Sheet>
   );
 }
-

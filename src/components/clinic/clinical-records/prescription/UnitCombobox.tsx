@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
@@ -17,17 +17,22 @@ export function UnitCombobox({ value, onChange }: UnitComboboxProps) {
   const [open, setOpen] = useState(false);
   const [inputValue, setInputValue] = useState(value || "");
 
-  useEffect(() => {
-    setInputValue(value || "");
-  }, [value]);
-
   const filteredOptions = unitOptions.filter((option) =>
     option.label.toLowerCase().includes(inputValue.toLowerCase()) ||
     option.value.toLowerCase().includes(inputValue.toLowerCase())
   );
 
   return (
-    <Popover open={open} onOpenChange={setOpen} modal={true}>
+    <Popover
+      open={open}
+      onOpenChange={(nextOpen) => {
+        setOpen(nextOpen);
+        if (nextOpen) {
+          setInputValue(value || "");
+        }
+      }}
+      modal={true}
+    >
       <PopoverTrigger asChild>
         <Button
           variant="outline"

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import React, { useState, useCallback, useMemo } from 'react'
 import { ChevronsUpDown, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -79,13 +79,6 @@ export function VaccineCombobox({
   const frequentVaccines = vaccineList.filter(v => commonVaccineNames.includes(v))
   const otherVaccines = vaccineList.filter(v => !commonVaccineNames.includes(v))
 
-  // Reset search term when popover opens
-  useEffect(() => {
-    if (open) {
-      setSearchTerm('')
-    }
-  }, [open])
-
   // Normalize search term for consistent comparisons
   const normalizedSearch = searchTerm.toLowerCase().trim()
 
@@ -113,7 +106,15 @@ export function VaccineCombobox({
   }
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover
+      open={open}
+      onOpenChange={(nextOpen) => {
+        setOpen(nextOpen)
+        if (nextOpen) {
+          setSearchTerm('')
+        }
+      }}
+    >
       <PopoverTrigger asChild>
         <Button
           variant="outline"

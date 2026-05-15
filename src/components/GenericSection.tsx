@@ -2,7 +2,7 @@ import { upsertConsultationNotesAction } from "@actions/consultation/consultatio
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useDebounceFunc } from "@hooks/useDebounceFunc"
 import { useEffect, useRef } from "react"
-import { useForm } from "react-hook-form"
+import { useForm, useWatch } from "react-hook-form"
 import { z } from "zod"
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@components/ui/form"
 import { AccordionContent, AccordionTrigger } from "@components/ui/accordion"
@@ -39,16 +39,19 @@ export default function GenericSection({ hpId, name, label, consultationId, valu
       [name]: value,
     }
   })
-  const { watch } = form
+  const sectionValue = useWatch({
+    control: form.control,
+    name,
+  })
+  const hasMounted = useRef(false)
 
   useEffect(() => {
-    const subscription = watch((value, { name, type }) => {
-      if (type === "change") {
-        autoSubmit()
-      }
-    });
-    return () => subscription.unsubscribe();
-  }, [autoSubmit, watch]);
+    if (!hasMounted.current) {
+      hasMounted.current = true
+      return
+    }
+    autoSubmit()
+  }, [autoSubmit, sectionValue]);
 
   // Patient views should have their fields masked when showOnPatient is false
   const shouldBlur = readonly && isPatientView && !showOnPatient

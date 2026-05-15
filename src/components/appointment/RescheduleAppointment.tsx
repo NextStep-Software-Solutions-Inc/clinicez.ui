@@ -11,7 +11,7 @@ import AppointmentCalendar from "./AppointmentCalendar";
 import VacantTimeSlot from "./VacantTimeSlot";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@components/ui/form";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@components/ui/select";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import Each from "@components/utils/Each";
 import { useHPs } from "@hooks/useHP";
 import { z } from "zod";
@@ -70,7 +70,7 @@ export default function RescheduleAppointment({disabled = true, onRescheduled, a
     }
   })
   
-  const hpId = form.watch("hpId")
+  const hpId = useWatch({ control: form.control, name: "hpId" })
   const existingRoute = appointment.AppointmentRouting.some(r => r.RoutedTo.id === hpId)
   const selectedHp = useMemo(() => hps?.find(hp => hp.id === hpId), [hpId, hps])
   const {data: timeSlots, isValidating} = useTimeSlots({
@@ -121,9 +121,9 @@ export default function RescheduleAppointment({disabled = true, onRescheduled, a
     })()
   }
   
-  const selectedDate = form.watch("date")
-  const startDateTime = form.watch("startDateTime")
-  const endDateTime = form.watch("endDateTime")
+  const selectedDate = useWatch({ control: form.control, name: "date" })
+  const startDateTime = useWatch({ control: form.control, name: "startDateTime" })
+  const endDateTime = useWatch({ control: form.control, name: "endDateTime" })
   const availableDates = useMemo(() => isValidating ? [] : timeSlots?.data?.filter(a => a.status).map(a => dayjs(a.date).startOf("day").toDate()), [isValidating, timeSlots?.data]) ?? []
   const availableTimeSlots = useMemo(() => isValidating 
     ?  [] 
@@ -136,15 +136,14 @@ export default function RescheduleAppointment({disabled = true, onRescheduled, a
 
   useEffect(() => {
     if(isValidating){
-      const date = form.watch("date")
       form.reset({
         hpId: hpId,
         assign: true,
-        date
+        date: selectedDate
       })
     }
     ;
-  }, [form, isValidating, hpId])
+  }, [form, isValidating, hpId, selectedDate])
   return (
     <Tooltip>
       <Popover>

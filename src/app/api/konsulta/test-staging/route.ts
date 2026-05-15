@@ -96,7 +96,6 @@ async function resolveCredentials(
                 konsultaUsername: true,
                 konsultaPassword: true,
                 pmccNumber: true,
-                konsultaCipherKey: true,
             },
         });
 
@@ -104,8 +103,7 @@ async function resolveCredentials(
             setting?.konsultaUsername &&
             setting.konsultaPassword &&
             setting.philhealthAccreditationNumber &&
-            setting.pmccNumber &&
-            setting.konsultaCipherKey
+            setting.pmccNumber
         ) {
             return {
                 username: setting.konsultaUsername,
@@ -113,7 +111,8 @@ async function resolveCredentials(
                 hciAccreNo: setting.philhealthAccreditationNumber,
                 pmccNumber: setting.pmccNumber,
                 certificationId: `KON-DUMMYCERTS-${setting.pmccNumber}`,
-                cipherKey: setting.konsultaCipherKey,
+                cipherKey:
+                    process.env.PHILHEALTH_KONSULTA_CIPHER_KEY ?? "PHilheaLthDuMmyZ15445",
             };
         }
     }

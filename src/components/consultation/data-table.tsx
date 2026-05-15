@@ -1,4 +1,5 @@
 "use client"
+"use no memo"
 
 import * as React from "react"
 import {
@@ -68,6 +69,8 @@ export function DataTable<TData extends NonNullable<GetConsultationTickets["data
    * This ensures search works across ALL pages, not just the current page.
    * Follows the Single Responsibility Principle and Separation of Concerns.
    */
+  // React Compiler currently skips TanStack Table internals for this hook usage.
+  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data,
     columns,

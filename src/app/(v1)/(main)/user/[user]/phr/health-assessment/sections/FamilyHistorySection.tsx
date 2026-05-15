@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition, useEffect } from "react";
+import { useState, useTransition, useEffect, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -31,8 +31,19 @@ export const FamilyHistorySection = ({
 }: FamilyHistorySectionProps) => {
   const [isPending, startTransition] = useTransition();
   const [conditions, setConditions] = useState<HealthCondition[]>([]);
-  const [selectedConditionIds, setSelectedConditionIds] = useState<number[]>([]);
-  const [conditionDetails, setConditionDetails] = useState<Record<number, ConditionData>>({});
+  const initialConditionState = useMemo(() => {
+    const selectedIds = initialData.map((fmh) => fmh.conditionId);
+    const details: Record<number, ConditionData> = {};
+    for (const fmh of initialData) {
+      details[fmh.conditionId] = {
+        conditionId: fmh.conditionId,
+        details: fmh.details || "",
+      };
+    }
+    return { selectedIds, details };
+  }, [initialData]);
+  const [selectedConditionIds, setSelectedConditionIds] = useState<number[]>(initialConditionState.selectedIds);
+  const [conditionDetails, setConditionDetails] = useState<Record<number, ConditionData>>(initialConditionState.details);
 
   // Fetch all available conditions on mount
   useEffect(() => {
@@ -47,23 +58,6 @@ export const FamilyHistorySection = ({
     };
     fetchConditions();
   }, []);
-
-  // Initialize selected conditions from initialData
-  useEffect(() => {
-    if (initialData && initialData.length > 0) {
-      const selectedIds = initialData.map(fmh => fmh.conditionId);
-      setSelectedConditionIds(selectedIds);
-
-      const details: Record<number, ConditionData> = {};
-      initialData.forEach(fmh => {
-        details[fmh.conditionId] = {
-          conditionId: fmh.conditionId,
-          details: fmh.details || "",
-        };
-      });
-      setConditionDetails(details);
-    }
-  }, [initialData]);
 
   const handleConditionToggle = (conditionId: number) => {
     setSelectedConditionIds(prev =>

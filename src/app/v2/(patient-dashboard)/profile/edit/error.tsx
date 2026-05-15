@@ -16,5 +16,5 @@ interface ErrorProps {
 }
 
 export default function Error({ error, reset }: ErrorProps) {
-  return <ProfileErrorBoundary error={error} reset={reset} children={undefined} />
+  return <ProfileErrorBoundary error={error} reset={reset}>{null}</ProfileErrorBoundary>
 }

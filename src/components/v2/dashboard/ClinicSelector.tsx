@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import {
   DropdownMenu,
@@ -37,11 +38,13 @@ export function ClinicSelector({
   return (
     <div className="flex items-center gap-3">
       {/* Logo */}
-      <img
-        src="/assets/clinic-ez_mini-logo.svg"
-        alt="ClinicEZ"
-        className="h-8 w-8 object-contain"
-      />
+      <Link href="/" aria-label="Go to home page">
+        <img
+          src="/assets/clinic-ez_mini-logo.svg"
+          alt="ClinicEZ"
+          className="h-8 w-8 object-contain"
+        />
+      </Link>
 
       {/* Clinic Selector */}
       <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>

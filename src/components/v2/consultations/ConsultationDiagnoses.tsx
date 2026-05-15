@@ -348,7 +348,7 @@ export default function ConsultationDiagnoses({
         <div>
           <h3 className="text-sm font-semibold">ICD-10 Diagnoses</h3>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Assign ICD-10 codes to document this consultation's diagnoses
+            Assign ICD-10 codes to document this consultation&apos;s diagnoses
           </p>
         </div>
         {!isResolved && myActiveHp && !showForm && (
@@ -460,7 +460,7 @@ export default function ConsultationDiagnoses({
           <p className="text-sm text-muted-foreground">No diagnoses recorded</p>
           {!isResolved && myActiveHp && (
             <p className="text-xs text-muted-foreground mt-1">
-              Use "Add Diagnosis" to attach ICD-10 codes
+              Use &ldquo;Add Diagnosis&rdquo; to attach ICD-10 codes
             </p>
           )}
         </div>

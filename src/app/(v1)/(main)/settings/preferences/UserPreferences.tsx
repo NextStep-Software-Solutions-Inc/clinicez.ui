@@ -1,7 +1,7 @@
 "use client"
 
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
+import { useForm, useWatch } from "react-hook-form"
 import { z } from "zod"
 
 import {
@@ -111,8 +111,18 @@ export default function UserPreferences({ userPreference }: UserPreferenceFormPr
     })()
   }
 
-  const subscribedTypes = form.watch("subscribedNotificationTypes")
-  const isMuted = form.watch("muteNotifications")
+  const subscribedTypes = useWatch({
+    control: form.control,
+    name: "subscribedNotificationTypes",
+  })
+  const isMuted = useWatch({
+    control: form.control,
+    name: "muteNotifications",
+  })
+  const autoAssignAppointmentToSelf = useWatch({
+    control: form.control,
+    name: "autoAssignAppointmentToSelf",
+  })
 
   return (
     <Form {...form}>
@@ -162,7 +172,7 @@ export default function UserPreferences({ userPreference }: UserPreferenceFormPr
           )}
         />
         {
-          form.watch("autoAssignAppointmentToSelf") && (
+          autoAssignAppointmentToSelf && (
             <FormField
               control={form.control}
               name="defaultHpId"

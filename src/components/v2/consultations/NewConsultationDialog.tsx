@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
@@ -91,6 +91,10 @@ export default function NewConsultationDialog({
       hpId: myHPs[0]?.id,
       appointmentId: undefined,
     },
+  });
+  const selectedApptId = useWatch({
+    control: form.control,
+    name: "appointmentId",
   });
 
   const handleLinkToggle = (checked: boolean) => {
@@ -322,7 +326,6 @@ export default function NewConsultationDialog({
 
             {/* Co-creators: assigned HPs from the selected appointment's routing */}
             {linkToAppointment && (() => {
-              const selectedApptId = form.watch("appointmentId");
               const selectedAppt = confirmedAppointments.find(
                 (a) => a.id === Number(selectedApptId)
               );

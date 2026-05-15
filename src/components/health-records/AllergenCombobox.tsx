@@ -243,7 +243,7 @@ export function AllergenCombobox({
                             ✨ Create new allergen
                           </span>
                           <span className="text-amber-600 dark:text-amber-400 ml-2 font-semibold">
-                            "{normalizedSearch}"
+                            &ldquo;{normalizedSearch}&rdquo;
                           </span>
                         </>
                       )}

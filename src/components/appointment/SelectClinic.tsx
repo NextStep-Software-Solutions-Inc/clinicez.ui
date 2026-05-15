@@ -71,7 +71,7 @@ export default function SelectClinic({ nextStep, isFirstStep }: SelectClinicProp
     <div className="shadow-lg w-full p-8 bg-white rounded-md">
       <div className="mb-6">
         <h3 className="text-lg font-semibold text-slate-900 mb-2">Select a Clinic</h3>
-        <p className="text-sm text-slate-600">Choose which clinic you'd like to book an appointment with</p>
+        <p className="text-sm text-slate-600">Choose which clinic you&apos;d like to book an appointment with</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">

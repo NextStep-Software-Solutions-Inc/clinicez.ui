@@ -79,6 +79,8 @@ export function DataTable<
     onColumnFiltersChange?.(columnFilters);
   }, [onColumnFiltersChange, columnFilters]);
 
+  // React Compiler currently skips TanStack Table internals for this hook usage.
+  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data,
     columns,

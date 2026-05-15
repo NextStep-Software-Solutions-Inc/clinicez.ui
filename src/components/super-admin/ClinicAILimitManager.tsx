@@ -330,7 +330,7 @@ export function ClinicAILimitManager({ clinicId, clinicName }: ClinicAILimitMana
               <Alert>
                 <Info className="h-4 w-4" />
                 <AlertDescription>
-                  Clinic limits are allocated from the tenant's available capacity. Total clinic allocations cannot exceed tenant limits.
+                  Clinic limits are allocated from the tenant&apos;s available capacity. Total clinic allocations cannot exceed tenant limits.
                 </AlertDescription>
               </Alert>
             )}

@@ -138,7 +138,7 @@ export function RelationshipCombobox({
                   className="cursor-pointer hover:bg-amber-50 dark:hover:bg-amber-950/30 bg-amber-50/50 dark:bg-amber-950/20 border-amber-300 dark:border-amber-700"
                 >
                   <span className="text-amber-600 dark:text-amber-500 font-medium">
-                    ✨ Create "{searchTerm}"
+                    ✨ Create &ldquo;{searchTerm}&rdquo;
                   </span>
                 </CommandItem>
               </CommandGroup>

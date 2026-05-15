@@ -113,7 +113,7 @@ import type { GetOrganizationRoles } from "@/actions/organizations/organization-
 import type { OrganizationMemberStatus } from "@/types";
 import { toast } from "sonner";
 import { z } from "zod";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Form,
@@ -933,10 +933,12 @@ function AdminStudentRecordSubform({ orgUid, onValidChange }: AdminStudentRecord
     defaultValues: { studentId: "", lrn: "", isCollege: false },
   });
 
-  const { watch, formState } = form;
-  const isCollege = watch("isCollege");
-  const [studentId, lrn, levelId, yearLevelId, programId, collegeId, departmentId] =
-    watch(["studentId", "lrn", "levelId", "yearLevelId", "programId", "collegeId", "departmentId"]);
+  const { formState } = form;
+  const isCollege = useWatch({ control: form.control, name: "isCollege" });
+  const [studentId, lrn, levelId, yearLevelId, programId, collegeId, departmentId] = useWatch({
+    control: form.control,
+    name: ["studentId", "lrn", "levelId", "yearLevelId", "programId", "collegeId", "departmentId"],
+  });
 
   useEffect(() => {
     if (formState.isValid) {
@@ -1140,10 +1142,12 @@ function AdminEmployeeRecordSubform({ orgUid, onValidChange }: AdminEmployeeReco
     defaultValues: { employeeId: "", position: "", designation: "", isCollege: false },
   });
 
-  const { watch, formState } = form;
-  const isCollege = watch("isCollege");
-  const [employeeId, position, designation, officeId, departmentId, collegeId] =
-    watch(["employeeId", "position", "designation", "officeId", "departmentId", "collegeId"]);
+  const { formState } = form;
+  const isCollege = useWatch({ control: form.control, name: "isCollege" });
+  const [employeeId, position, designation, officeId, departmentId, collegeId] = useWatch({
+    control: form.control,
+    name: ["employeeId", "position", "designation", "officeId", "departmentId", "collegeId"],
+  });
 
   useEffect(() => {
     if (formState.isValid) {

@@ -3,7 +3,7 @@
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@components/ui/form";
 import { Input } from "@components/ui/input";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 import BackSubmitAndNext from "@components/SubmitAndNext";
 import { useMemo, useState } from "react";
@@ -44,6 +44,10 @@ export default function PaymentForm({ nextStep, prevStep, isFirstStep, isLastSte
       receiptCode: hpApplication?.receiptCode,
     }
   })
+  const receiptCode = useWatch({
+    control: form.control,
+    name: "receiptCode",
+  });
 
 
   const action = async () => {
@@ -90,7 +94,7 @@ export default function PaymentForm({ nextStep, prevStep, isFirstStep, isLastSte
               </FormItem>
             )}
           />
-          <Button onClick={() => handleVerify(form.watch("receiptCode"))} disabled={!form.formState.isValid || paymentVerified} type="button">Verify</Button>
+          <Button onClick={() => handleVerify(receiptCode)} disabled={!form.formState.isValid || paymentVerified} type="button">Verify</Button>
         </div>
         <div className="mt-4">
           <BackSubmitAndNext

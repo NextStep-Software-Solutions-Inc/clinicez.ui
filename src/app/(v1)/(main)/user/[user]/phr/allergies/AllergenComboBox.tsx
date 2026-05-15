@@ -10,7 +10,6 @@ import Each from "@components/utils/Each";
 import { cn } from "@lib/utils";
 import { Check, ChevronsUpDown, Plus } from "lucide-react";
 import React, { useEffect } from "react";
-import { useForm } from "react-hook-form";
 
 interface AllergenComboBoxProps {
     value: string;
@@ -19,13 +18,8 @@ interface AllergenComboBoxProps {
   
 export const AllergenComboBox = ({value, onChange}: AllergenComboBoxProps) => {
   const [allergens, setAllergens] = React.useState<string[]>([])
-  
+  const [allergenInput, setAllergenInput] = React.useState(value)
   const [open, setOpen] = React.useState(false)
-  const form = useForm({
-    defaultValues: {
-      allergen: value
-    }
-  })
   
   useEffect(() => {
     (async () => {
@@ -34,10 +28,16 @@ export const AllergenComboBox = ({value, onChange}: AllergenComboBoxProps) => {
     })()
   }, [])
     
-  const allergen = form.watch("allergen")
-  
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover
+      open={open}
+      onOpenChange={(nextOpen) => {
+        setOpen(nextOpen)
+        if (nextOpen) {
+          setAllergenInput(value)
+        }
+      }}
+    >
       <PopoverTrigger asChild>
         <FormControl>
           <Button
@@ -56,17 +56,17 @@ export const AllergenComboBox = ({value, onChange}: AllergenComboBoxProps) => {
       </PopoverTrigger>
       <PopoverContent className=" p-0">
         <Command>
-          <CommandInput placeholder="Search allergen..." onValueChange={value => form.setValue("allergen", value)} />
+          <CommandInput placeholder="Search allergen..." onValueChange={setAllergenInput} />
           <CommandEmpty asChild>
             <Button className="m-1 font-normal" size="sm" variant="ghost"
               onClick={() =>{
-                onChange(allergen)
+                onChange(allergenInput)
                 setOpen(false)
               }}
             >
               <Plus className="w-4 h-4 mr-1"/>
                 Add 
-              <span className="font-bold px-1">{allergen}</span>
+              <span className="font-bold px-1">{allergenInput}</span>
                 as new allergen
             </Button>
           </CommandEmpty>

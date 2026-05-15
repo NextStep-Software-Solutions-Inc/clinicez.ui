@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { cn } from "@lib/utils";
 import { Input } from "@components/ui/input";
 import { Search, X, Sun, Moon } from "lucide-react";
 import { Button } from "@components/ui/button";
+import { useIsClient } from "@/hooks/use-is-client";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -40,15 +41,14 @@ export default function DashboardTopbar({
 }: DashboardTopbarProps) {
   const [searchQuery, setSearchQuery] = React.useState("");
   const [isSearching, setIsSearching] = React.useState(false);
-  const [isDark, setIsDark] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const [isDark, setIsDark] = useState(() => {
+    if (typeof window === "undefined") {
+      return false;
+    }
 
-  // Initialize dark mode from localStorage
-  useEffect(() => {
-    setMounted(true);
-    const savedTheme = localStorage.getItem("theme");
-    setIsDark(savedTheme === "dark");
-  }, []);
+    return localStorage.getItem("theme") === "dark";
+  });
+  const mounted = useIsClient();
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);

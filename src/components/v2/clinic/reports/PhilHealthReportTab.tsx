@@ -51,6 +51,7 @@ import {
     deleteKonsultaBatchAction,
     toggleKonsultaEntryAction,
     generateConsultationCaseTransNumbersAction,
+    importKonsultaAssignmentsAction,
 } from "@/actions/clinics/konsulta-report.action";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -115,7 +116,14 @@ interface PhilHealthReportTabProps {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-const VALID_TABS = ["patients", "consultations", "batches", "history"] as const;
+const VALID_TABS = [
+    "patients",
+    "batches",
+    "history",
+    "atc-verification",
+    "konsulta-validation",
+    "xml-import",
+] as const;
 type KonsultaTab = typeof VALID_TABS[number];
 
 export function PhilHealthReportTab({ clinicUid }: PhilHealthReportTabProps) {
@@ -123,7 +131,8 @@ export function PhilHealthReportTab({ clinicUid }: PhilHealthReportTabProps) {
     const pathname = usePathname();
     const searchParams = useSearchParams();
     const rawTab = searchParams.get("konsultaTab");
-    const activeTab: KonsultaTab = (VALID_TABS as readonly string[]).includes(rawTab ?? "") ? (rawTab as KonsultaTab) : "patients";
+    const normalizedTab = rawTab === "consultations" ? "atc-verification" : rawTab;
+    const activeTab: KonsultaTab = (VALID_TABS as readonly string[]).includes(normalizedTab ?? "") ? (normalizedTab as KonsultaTab) : "patients";
 
     const handleTabChange = (value: string) => {
         const params = new URLSearchParams(searchParams.toString());
@@ -133,32 +142,46 @@ export function PhilHealthReportTab({ clinicUid }: PhilHealthReportTabProps) {
 
     return (
         <Tabs value={activeTab} onValueChange={handleTabChange} className="mt-4">
-            <TabsList className="mb-4">
-                <TabsTrigger value="patients" className="gap-2">
-                    <Users className="h-4 w-4" />Patients
-                </TabsTrigger>
-                <TabsTrigger value="consultations" className="gap-2">
-                    <ClipboardList className="h-4 w-4" />Consultations
-                </TabsTrigger>
-                <TabsTrigger value="batches" className="gap-2">
-                    <Send className="h-4 w-4" />Report Batches
-                </TabsTrigger>
-                <TabsTrigger value="history" className="gap-2">
-                    <History className="h-4 w-4" />Submission History
-                </TabsTrigger>
-            </TabsList>
+            <div className="mb-4 overflow-x-auto">
+                <TabsList className="w-max min-w-full">
+                    <TabsTrigger value="patients" className="gap-2 whitespace-nowrap">
+                        <Users className="h-4 w-4" />Patient Enrollment
+                    </TabsTrigger>
+                    <TabsTrigger value="batches" className="gap-2 whitespace-nowrap">
+                        <Send className="h-4 w-4" />Report Batch Management
+                    </TabsTrigger>
+                    <TabsTrigger value="history" className="gap-2 whitespace-nowrap">
+                        <History className="h-4 w-4" />Submission History
+                    </TabsTrigger>
+                    <TabsTrigger value="atc-verification" className="gap-2 whitespace-nowrap">
+                        <ClipboardList className="h-4 w-4" />ATC Verification
+                    </TabsTrigger>
+                    <TabsTrigger value="konsulta-validation" className="gap-2 whitespace-nowrap">
+                        <ShieldCheck className="h-4 w-4" />Konsulta Registration Validation
+                    </TabsTrigger>
+                    <TabsTrigger value="xml-import" className="gap-2 whitespace-nowrap">
+                        <FileCode2 className="h-4 w-4" />Konsulta XML Patient Import
+                    </TabsTrigger>
+                </TabsList>
+            </div>
 
             <TabsContent value="patients">
                 <PatientsPanel clinicUid={clinicUid} />
-            </TabsContent>
-            <TabsContent value="consultations">
-                <ConsultationsPanel clinicUid={clinicUid} />
             </TabsContent>
             <TabsContent value="batches">
                 <BatchesPanel clinicUid={clinicUid} />
             </TabsContent>
             <TabsContent value="history">
                 <SubmissionHistoryPanel clinicUid={clinicUid} />
+            </TabsContent>
+            <TabsContent value="atc-verification">
+                <ConsultationsPanel clinicUid={clinicUid} />
+            </TabsContent>
+            <TabsContent value="konsulta-validation">
+                <KonsultaValidationPanel clinicUid={clinicUid} />
+            </TabsContent>
+            <TabsContent value="xml-import">
+                <KonsultaXmlImportPanel clinicUid={clinicUid} />
             </TabsContent>
         </Tabs>
     );
@@ -1024,6 +1047,415 @@ function ConsultationsPanel({ clinicUid }: { clinicUid: string }) {
             </DialogContent>
         </Dialog>
         </>
+    );
+}
+
+type ValidationRow = {
+    id: number;
+    patientName: string;
+    pin: string;
+    patientType: "MM" | "DD";
+    registrationStatus: string | null;
+};
+
+function KonsultaValidationPanel({ clinicUid }: { clinicUid: string }) {
+    const [rows, setRows] = useState<ValidationRow[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+    const [isBatchChecking, startBatchCheckTransition] = useTransition();
+    const [pendingId, setPendingId] = useState<number | null>(null);
+
+    const load = useCallback(async () => {
+        setLoading(true);
+        const res = await getAllClinicPatientsWithPhilHealthStatusAction({
+            clinicUid,
+            kind: "ENROLLED",
+            skip: 0,
+            take: 200,
+            search: "",
+        });
+        if (res.status && res.data) {
+            const mappedRows: ValidationRow[] = res.data.patients
+                .map((row) => {
+                    const pin = row.Patient.PhilHealthRecords[0]?.pin ?? "";
+                    const patientType: "MM" | "DD" = row.konsultaPatientType === "DD" ? "DD" : "MM";
+                    return {
+                        id: row.id,
+                        patientName: `${row.Patient.lastName ?? ""}, ${row.Patient.firstName ?? ""}`.trim(),
+                        pin,
+                        patientType,
+                        registrationStatus: row.konsultaRegistrationStatus ?? null,
+                    };
+                })
+                .filter((row) => row.pin.length > 0);
+            setRows(mappedRows);
+        } else {
+            toast.error(res.message ?? "Failed to load enrolled patients");
+            setRows([]);
+        }
+        setLoading(false);
+    }, [clinicUid]);
+
+    useEffect(() => { void load(); }, [load]);
+
+    const toggleSelection = (id: number) => {
+        setSelectedIds((prev) => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
+        });
+    };
+
+    const toggleAll = () => {
+        if (rows.length === 0) return;
+        if (selectedIds.size === rows.length) {
+            setSelectedIds(new Set());
+        } else {
+            setSelectedIds(new Set(rows.map((row) => row.id)));
+        }
+    };
+
+    const validateSingle = async (clinicPatientId: number) => {
+        setPendingId(clinicPatientId);
+        const res = await checkKonsultaPatientRegistrationAction({ clinicUid, clinicPatientId });
+        if (res.status) {
+            if (res.data?.registrationStatus === "REGISTERED") {
+                toast.success("Konsulta registration confirmed");
+            } else {
+                toast.warning("Patient is not registered to this Konsulta provider.");
+            }
+            await load();
+        } else {
+            toast.error(res.message ?? "Registration check failed");
+        }
+        setPendingId(null);
+    };
+
+    const validateBatch = () => {
+        startBatchCheckTransition(async () => {
+            const idsToCheck = selectedIds.size > 0 ? Array.from(selectedIds) : rows.map((row) => row.id);
+            const res = await checkEnrolledPatientsRegistrationBatchAction({ clinicUid, clinicPatientIds: idsToCheck });
+            if (res.status && res.data) {
+                const summary = `Checked ${res.data.checked}: ${res.data.valid} registered, ${res.data.invalid} not registered, ${res.data.failed} errors.`;
+                if (res.data.failed > 0) toast.warning(summary);
+                else toast.success(summary);
+                setSelectedIds(new Set());
+                await load();
+            } else {
+                toast.error(res.message ?? "Batch registration validation failed");
+            }
+        });
+    };
+
+    return (
+        <Card>
+            <CardHeader className="pb-3">
+                <div className="flex items-center justify-between gap-3">
+                    <div>
+                        <CardTitle className="text-sm flex items-center gap-2">
+                            <ShieldCheck className="h-4 w-4 text-primary" />
+                            Konsulta Registration Validation
+                        </CardTitle>
+                        <CardDescription className="mt-1">
+                            Verify whether member/dependent PINs are registered under this clinic&apos;s Konsulta provider.
+                        </CardDescription>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Button variant="outline" size="sm" onClick={toggleAll} disabled={rows.length === 0 || loading}>
+                            {selectedIds.size === rows.length && rows.length > 0 ? "Deselect all" : "Select all"}
+                        </Button>
+                        <Button
+                            size="sm"
+                            onClick={validateBatch}
+                            disabled={loading || rows.length === 0 || isBatchChecking}
+                        >
+                            {isBatchChecking ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                            Validate Selected
+                        </Button>
+                    </div>
+                </div>
+            </CardHeader>
+            <CardContent className="p-0">
+                {loading ? (
+                    <div className="flex items-center justify-center py-10">
+                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                    </div>
+                ) : rows.length === 0 ? (
+                    <div className="text-center text-muted-foreground text-sm py-10">
+                        No enrolled patients with PIN found for validation.
+                    </div>
+                ) : (
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead className="w-10" />
+                                <TableHead>Patient</TableHead>
+                                <TableHead>PIN</TableHead>
+                                <TableHead>Type</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead className="text-right">Action</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {rows.map((row) => (
+                                <TableRow key={row.id}>
+                                    <TableCell>
+                                        <Checkbox
+                                            checked={selectedIds.has(row.id)}
+                                            onCheckedChange={() => toggleSelection(row.id)}
+                                        />
+                                    </TableCell>
+                                    <TableCell className="font-medium text-sm">{row.patientName}</TableCell>
+                                    <TableCell><code className="text-xs bg-muted px-1 py-0.5 rounded">{row.pin}</code></TableCell>
+                                    <TableCell><Badge variant="outline">{row.patientType === "DD" ? "Dependent" : "Member"}</Badge></TableCell>
+                                    <TableCell>{registrationBadge(row.registrationStatus)}</TableCell>
+                                    <TableCell className="text-right">
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-8 text-xs"
+                                            onClick={() => void validateSingle(row.id)}
+                                            disabled={pendingId === row.id || isBatchChecking}
+                                        >
+                                            {pendingId === row.id ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : null}
+                                            Validate
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                )}
+            </CardContent>
+        </Card>
+    );
+}
+
+type XmlAssignmentRow = {
+    key: string;
+    pin: string;
+    memberPin: string;
+    firstName: string;
+    lastName: string;
+    middleName: string;
+    patientType: "MM" | "DD";
+    effYear: string;
+    warnings: string[];
+    importable: boolean;
+};
+
+function parseXmlAssignments(xml: string): XmlAssignmentRow[] {
+    const matches = [...xml.matchAll(/<ASSIGNMENT\s([\s\S]*?)(?:\/>|>)/gi)];
+    const thisYear = new Date().getFullYear();
+
+    return matches.map((match, index) => {
+        const attrStr = match[1];
+        const get = (name: string): string =>
+            new RegExp(`${name}="([^"]*)"`, "i").exec(attrStr)?.[1]?.trim() ?? "";
+
+        const pin = get("pAssignedPin");
+        const firstName = get("pAssignedFirstName");
+        const lastName = get("pAssignedLastName");
+        const middleName = get("pAssignedMiddleName");
+        const patientType = get("pAssignedType") === "DD" ? "DD" : "MM";
+        const memberPin = get("pPrimaryPIN");
+        const effYear = get("pEffYear");
+
+        const warnings: string[] = [];
+        if (!pin) warnings.push("Missing assigned PIN");
+        if (!firstName || !lastName) warnings.push("Missing patient name");
+        if (patientType === "DD" && !memberPin) warnings.push("Missing primary member PIN for dependent");
+        if (effYear && Number.isFinite(Number(effYear)) && Number(effYear) < thisYear) {
+            warnings.push("Expired Konsulta membership");
+        }
+
+        return {
+            key: `${pin}-${index}`,
+            pin,
+            memberPin: memberPin || pin,
+            firstName,
+            lastName,
+            middleName,
+            patientType,
+            effYear,
+            warnings,
+            importable: warnings.length === 0,
+        };
+    });
+}
+
+function KonsultaXmlImportPanel({ clinicUid }: { clinicUid: string }) {
+    const [xmlContent, setXmlContent] = useState("");
+    const [rows, setRows] = useState<XmlAssignmentRow[]>([]);
+    const [selected, setSelected] = useState<Set<string>>(new Set());
+    const [importing, setImporting] = useState(false);
+
+    const parse = () => {
+        const nextRows = parseXmlAssignments(xmlContent);
+        setRows(nextRows);
+        setSelected(new Set(nextRows.filter((row) => row.importable).map((row) => row.key)));
+        if (nextRows.length === 0) {
+            toast.warning("No ASSIGNMENT entries found in XML");
+        } else {
+            toast.success(`Parsed ${nextRows.length} assignment record(s)`);
+        }
+    };
+
+    const onFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+        const text = await file.text();
+        setXmlContent(text);
+    };
+
+    const toggleRow = (key: string) => {
+        setSelected((prev) => {
+            const next = new Set(prev);
+            if (next.has(key)) next.delete(key);
+            else next.add(key);
+            return next;
+        });
+    };
+
+    const toggleAllImportable = () => {
+        const importableKeys = rows.filter((row) => row.importable).map((row) => row.key);
+        if (selected.size === importableKeys.length) {
+            setSelected(new Set());
+        } else {
+            setSelected(new Set(importableKeys));
+        }
+    };
+
+    const importSelected = async () => {
+        const selectedRows = rows.filter((row) => selected.has(row.key) && row.importable);
+        if (selectedRows.length === 0) {
+            toast.warning("Select at least one importable profile");
+            return;
+        }
+
+        setImporting(true);
+        const res = await importKonsultaAssignmentsAction({
+            clinicUid,
+            assignments: selectedRows.map((row) => ({
+                pin: row.pin,
+                patientType: row.patientType,
+                memberPin: row.memberPin,
+                firstName: row.firstName,
+                lastName: row.lastName,
+                middleName: row.middleName || null,
+                effYear: row.effYear || null,
+            })),
+        });
+        setImporting(false);
+
+        if (res.status && res.data) {
+            if (res.data.rejected > 0) {
+                toast.warning(`Imported ${res.data.imported}; rejected ${res.data.rejected}.`);
+            } else {
+                toast.success(`Successfully imported ${res.data.imported} patient profile(s).`);
+            }
+        } else {
+            toast.error(res.message ?? "XML import failed");
+        }
+    };
+
+    return (
+        <Card>
+            <CardHeader className="pb-3">
+                <CardTitle className="text-sm flex items-center gap-2">
+                    <FileCode2 className="h-4 w-4 text-primary" />
+                    Konsulta XML Patient Import
+                </CardTitle>
+                <CardDescription className="mt-1">
+                    Parse ASSIGNMENT records, review import quality flags, then import selected profiles to clinic patients and PhilHealth enrollment.
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <div className="grid gap-3 md:grid-cols-[1fr_auto_auto] md:items-end">
+                    <div>
+                        <Label htmlFor="konsulta-xml-file">Konsulta XML File</Label>
+                        <Input id="konsulta-xml-file" type="file" accept=".xml,text/xml" onChange={(event) => void onFileChange(event)} />
+                    </div>
+                    <Button variant="outline" onClick={parse} disabled={!xmlContent.trim()}>
+                        Preview XML
+                    </Button>
+                    <Button onClick={() => void importSelected()} disabled={importing || rows.length === 0 || selected.size === 0}>
+                        {importing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                        Import Selected
+                    </Button>
+                </div>
+
+                <div>
+                    <Label htmlFor="konsulta-xml-content">XML Input</Label>
+                    <Textarea
+                        id="konsulta-xml-content"
+                        value={xmlContent}
+                        onChange={(event) => setXmlContent(event.target.value)}
+                        className="min-h-40 font-mono text-xs"
+                        placeholder="Paste XML payload here to preview assignment rows..."
+                    />
+                </div>
+
+                {rows.length > 0 && (
+                    <div className="border rounded-md">
+                        <div className="flex items-center justify-between px-3 py-2 border-b bg-muted/40">
+                            <p className="text-sm font-medium">
+                                Preview ({rows.length} records, {rows.filter((row) => row.importable).length} importable)
+                            </p>
+                            <Button size="sm" variant="ghost" onClick={toggleAllImportable}>
+                                {selected.size === rows.filter((row) => row.importable).length ? "Deselect all" : "Select all importable"}
+                            </Button>
+                        </div>
+                        <div className="max-h-[420px] overflow-auto">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead className="w-10" />
+                                        <TableHead>PIN</TableHead>
+                                        <TableHead>Name</TableHead>
+                                        <TableHead>Type</TableHead>
+                                        <TableHead>Eff Year</TableHead>
+                                        <TableHead>Status</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {rows.map((row) => (
+                                        <TableRow key={row.key}>
+                                            <TableCell>
+                                                <Checkbox
+                                                    checked={selected.has(row.key)}
+                                                    onCheckedChange={() => toggleRow(row.key)}
+                                                    disabled={!row.importable}
+                                                />
+                                            </TableCell>
+                                            <TableCell><code className="text-xs">{row.pin || "—"}</code></TableCell>
+                                            <TableCell className="text-sm">
+                                                {row.lastName}, {row.firstName}
+                                                {row.middleName ? ` ${row.middleName}` : ""}
+                                            </TableCell>
+                                            <TableCell>
+                                                <Badge variant="outline">{row.patientType === "DD" ? "Dependent" : "Member"}</Badge>
+                                            </TableCell>
+                                            <TableCell>{row.effYear || "—"}</TableCell>
+                                            <TableCell>
+                                                {row.importable ? (
+                                                    <Badge className="text-xs">Ready</Badge>
+                                                ) : (
+                                                    <Badge variant="destructive" className="text-xs">
+                                                        Reject • {row.warnings.join("; ")}
+                                                    </Badge>
+                                                )}
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    </div>
+                )}
+            </CardContent>
+        </Card>
     );
 }
 

@@ -655,6 +655,151 @@ export const checkEnrolledPatientsRegistrationBatchAction = withErrorHandling(as
     };
 });
 
+type ImportKonsultaAssignmentInput = {
+    pin: string;
+    patientType: "MM" | "DD";
+    memberPin?: string | null;
+    firstName: string;
+    lastName: string;
+    middleName?: string | null;
+    effYear?: string | null;
+};
+
+export const importKonsultaAssignmentsAction = withErrorHandling(async ({
+    clinicUid,
+    assignments,
+}: {
+    clinicUid: string;
+    assignments: ImportKonsultaAssignmentInput[];
+}) => {
+    const session = await getCachedSession();
+    if (!session) throw new Error("Unauthorized");
+
+    if (assignments.length === 0) {
+        return {
+            message: "No assignments to import",
+            data: {
+                imported: 0,
+                rejected: 0,
+                results: [] as Array<{ pin: string; status: "IMPORTED" | "REJECTED"; reason: string }>,
+            },
+        };
+    }
+
+    const clinicId = await resolveClinicId(clinicUid);
+    const currentYear = currentEffYear();
+
+    const results: Array<{ pin: string; status: "IMPORTED" | "REJECTED"; reason: string }> = [];
+    let imported = 0;
+    let rejected = 0;
+
+    for (const assignment of assignments) {
+        const pin = assignment.pin.trim();
+        if (!pin) {
+            rejected++;
+            results.push({ pin: assignment.pin, status: "REJECTED", reason: "Missing assigned PIN" });
+            continue;
+        }
+
+        if (assignment.patientType === "DD" && !(assignment.memberPin ?? "").trim()) {
+            rejected++;
+            results.push({ pin, status: "REJECTED", reason: "Dependent assignment is missing primary member PIN" });
+            continue;
+        }
+
+        if (assignment.effYear && assignment.effYear.trim() && assignment.effYear.trim() < currentYear) {
+            rejected++;
+            results.push({ pin, status: "REJECTED", reason: "Expired Konsulta membership" });
+            continue;
+        }
+
+        let clinicPatientId: number | null = null;
+
+        const existingClinicPatient = await prisma.clinicPatient.findFirst({
+            where: {
+                clinicId,
+                Patient: {
+                    PhilHealthRecords: {
+                        some: {
+                            deletedAt: null,
+                            pin,
+                        },
+                    },
+                },
+            },
+            select: { id: true, isActive: true, deletedAt: true },
+        });
+
+        if (existingClinicPatient) {
+            if (!existingClinicPatient.isActive || existingClinicPatient.deletedAt) {
+                await prisma.clinicPatient.update({
+                    where: { id: existingClinicPatient.id },
+                    data: { isActive: true, deletedAt: null },
+                });
+            }
+            clinicPatientId = existingClinicPatient.id;
+        } else {
+            const philHealthRecord = await prisma.philHealthRecord.findFirst({
+                where: { pin, deletedAt: null, User: { isActive: true } },
+                select: {
+                    userId: true,
+                    User: {
+                        select: { firstName: true, lastName: true, middleName: true },
+                    },
+                },
+            });
+
+            if (!philHealthRecord) {
+                rejected++;
+                results.push({
+                    pin,
+                    status: "REJECTED",
+                    reason: "Patient profile with this PIN does not exist in system",
+                });
+                continue;
+            }
+
+            const addedClinicPatient = await prisma.clinicPatient.create({
+                data: {
+                    clinicId,
+                    patientId: philHealthRecord.userId,
+                    konsultaEffYear: currentYear,
+                },
+                select: { id: true },
+            });
+
+            clinicPatientId = addedClinicPatient.id;
+        }
+
+        const enrollment = await enrollPatientPhilHealthAction({
+            clinicUid,
+            clinicPatientId,
+            pin,
+            patientType: assignment.patientType,
+            memberPin: assignment.patientType === "DD" ? (assignment.memberPin ?? "").trim() : pin,
+            philSysId: null,
+            tin: null,
+        });
+
+        if (enrollment.status) {
+            imported++;
+            results.push({ pin, status: "IMPORTED", reason: "Imported and enrolled" });
+        } else {
+            rejected++;
+            results.push({
+                pin,
+                status: "REJECTED",
+                reason: enrollment.message ?? "Enrollment failed",
+            });
+        }
+    }
+
+    return {
+        message: `Imported ${imported} assignment(s); rejected ${rejected}`,
+        data: { imported, rejected, results },
+    };
+});
+
 // ─── Consultations ────────────────────────────────────────────────────────────
 
 export type PhilHealthConsultationsParams = {

@@ -1,17 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useIsClient } from '@/hooks/use-is-client';
 import { useTheme } from 'next-themes';
 import { Sun, Moon } from 'lucide-react';
 import { ModernUserButton } from '../avatar/ModernUserButton';
 
 export function ThemeToggle() {
   const { theme, setTheme, resolvedTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = useIsClient();
 
   const isDark = resolvedTheme === 'dark';
 

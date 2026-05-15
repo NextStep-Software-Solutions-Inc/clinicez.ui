@@ -2,7 +2,7 @@
 
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel } from "@components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 import BackSubmitAndNext from "@components/SubmitAndNext";
 import { Checkbox } from "@components/ui/checkbox";
@@ -101,7 +101,11 @@ export default function ConfirmationAndReviewStep({ orgUid, termsAndConditionsUr
     })()
   }
 
-  const agreeAllConditions = form.watch(["certify", "agreeTerms", "agreePrivacy"])?.every(Boolean);
+  const [certify, agreeTerms, agreePrivacy] = useWatch({
+    control: form.control,
+    name: ["certify", "agreeTerms", "agreePrivacy"],
+  });
+  const agreeAllConditions = [certify, agreeTerms, agreePrivacy].every(Boolean);
 
   return (
     <Form {...form}>

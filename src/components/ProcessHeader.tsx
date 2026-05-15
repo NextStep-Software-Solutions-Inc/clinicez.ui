@@ -1,5 +1,6 @@
 
 import Image from "next/image";
+import Link from "next/link";
 import { DetailedHTMLProps, HTMLAttributes, Suspense, lazy } from "react";
 import UserAvatarWrapper from "./UserAvatarWrapper";
 
@@ -11,14 +12,14 @@ export default function ProcessHeader({...props}: IProcessHeaderProps) {
       <div className="px-4 mx-auto sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 lg:h-20">
           <div className="flex-shrink-0">
-            <a href="/" title="" className="flex">
+            <Link href="/" title="" className="flex">
               <Image
                 width={100}
                 height={100}
                 className="w-auto" 
                 src="https://i.postimg.cc/VsH4j92b/clinicez-logo.png" alt="" 
               />
-            </a>
+            </Link>
           </div>
 
           <button type="button" className="inline-flex p-2 text-black transition-all duration-200 rounded-md lg:hidden focus:bg-gray-100 hover:bg-gray-100">

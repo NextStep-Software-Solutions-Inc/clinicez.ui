@@ -3,6 +3,10 @@
 import prisma from "@lib/prisma";
 import { withErrorHandling } from "@/lib/with-error-handling";
 import { getCachedSession } from "@actions/session.action";
+import {
+  REQUIREMENT_EMPLOYEE_RECORD,
+  REQUIREMENT_STUDENT_RECORD,
+} from "@/lib/requirement-types";
 
 export type OrgReportParams = {
   orgUid: string;
@@ -11,6 +15,109 @@ export type OrgReportParams = {
 };
 
 export type GetOrgReports = Awaited<ReturnType<typeof getOrgReportsAction>>;
+
+type PeriodMemberRow = {
+  id: number;
+  createdAt: Date;
+  acceptedAt: Date | null;
+  status: string;
+  OrganizationRole: {
+    name: string;
+    requirements: string[];
+  };
+  OrgMemberRequirementFiles: Array<{
+    requirementType: string;
+  }>;
+  User: {
+    id: number;
+    userId: string;
+    gender: string | null;
+    dob: Date | null;
+    firstName: string | null;
+    middleName: string | null;
+    lastName: string | null;
+    suffix: string | null;
+    email: string | null;
+    mobile: string | null;
+    telephone: string | null;
+    civilStatus: string | null;
+    bloodType: string | null;
+    nationality: string | null;
+    placeOfBirth: string | null;
+    StudentRecords: Array<{
+      studentId: string;
+      lrn: string | null;
+      Level: { name: string };
+      OrganizationYearLevel: { name: string } | null;
+      Program: { name: string } | null;
+      Department: { name: string } | null;
+      College: { name: string } | null;
+    }>;
+    UserEmployments: Array<{
+      employeeId: string;
+      position: string;
+      designation: string | null;
+      Office: { name: string } | null;
+      Department: { name: string } | null;
+      College: { name: string } | null;
+    }>;
+  };
+};
+
+type RawMemberRow = {
+  status: string;
+  acceptedAt: string | null;
+  firstName: string | null;
+  middleName: string | null;
+  lastName: string | null;
+  suffix: string | null;
+  email: string | null;
+  mobile: string | null;
+  telephone: string | null;
+  civilStatus: string | null;
+  bloodType: string | null;
+  nationality: string | null;
+  placeOfBirth: string | null;
+  role: string;
+  gender: string;
+  birthdate: string | null;
+  ageGroup: string;
+  dateRegistered: string;
+  studentRecord: {
+    studentId: string | null;
+    lrn: string | null;
+    level: string | null;
+    yearLevel: string | null;
+    program: string | null;
+    department: string | null;
+    college: string | null;
+  };
+  employeeRecord: {
+    employeeId: string | null;
+    position: string | null;
+    designation: string | null;
+    office: string | null;
+    department: string | null;
+    college: string | null;
+  };
+  requirementsSubmitted: Record<string, boolean>;
+};
+
+const getAgeGroup = (dob: Date | null | undefined, now: Date): string => {
+  if (!dob) return "Unknown";
+
+  const ageYears = Math.floor(
+    (now.getTime() - new Date(dob).getTime()) / (1000 * 60 * 60 * 24 * 365.25)
+  );
+
+  if (ageYears <= 12) return "0-12";
+  if (ageYears <= 17) return "13-17";
+  if (ageYears <= 25) return "18-25";
+  if (ageYears <= 35) return "26-35";
+  if (ageYears <= 45) return "36-45";
+  if (ageYears <= 59) return "46-59";
+  return "60+";
+};
 
 export const getOrgReportsAction = withErrorHandling(
   async ({ orgUid, from, to }: OrgReportParams) => {
@@ -26,45 +133,95 @@ export const getOrgReportsAction = withErrorHandling(
     const dateFilter = { gte: from, lte: to };
 
     const [
-      // All active members with user + role details
-      allMembers,
-      // New members who joined in the selected period
-      newMembersInPeriod,
+      // Total active members (all time, no date filter) — used for the "Total Active" KPI
+      totalActiveMembersCount,
+      // Members who joined within the selected period — used for all breakdowns
+      periodMembers,
       // Pending membership requests
       pendingCount,
       // Suspended members
       suspendedCount,
-      // Member gender distribution (via User)
-      memberGenders,
-      // Member age data (via User dob)
-      memberAges,
-      // Student records breakdown by college / program / year level
-      studentRecords,
-      // Employment records breakdown by department / office
-      employmentRecords,
     ] = await Promise.all([
-      // ── All active members ───────────────────────────────────────────────
-      prisma.organizationMember.findMany({
+      // ── Total active members (unfiltered) ───────────────────────────────
+      prisma.organizationMember.count({
         where: { organizationId: org.id, status: "ACTIVE" },
-        select: {
-          id: true,
-          createdAt: true,
-          OrganizationRole: { select: { name: true } },
-          User: {
-            select: {
-              gender: true,
-              dob: true,
-            },
-          },
-        },
       }),
 
-      // ── New members in period ────────────────────────────────────────────
-      prisma.organizationMember.count({
+      // ── Members who joined in period (with details for breakdowns) ───────
+      prisma.organizationMember.findMany({
         where: {
           organizationId: org.id,
           status: "ACTIVE",
           createdAt: dateFilter,
+        },
+        select: {
+          id: true,
+          createdAt: true,
+          acceptedAt: true,
+          status: true,
+          OrganizationRole: {
+            select: {
+              name: true,
+              requirements: true,
+            },
+          },
+          OrgMemberRequirementFiles: {
+            select: {
+              requirementType: true,
+            },
+          },
+          User: {
+            select: {
+              id: true,
+              userId: true,
+              gender: true,
+              dob: true,
+              firstName: true,
+              middleName: true,
+              lastName: true,
+              suffix: true,
+              email: true,
+              mobile: true,
+              telephone: true,
+              civilStatus: true,
+              bloodType: true,
+              nationality: true,
+              placeOfBirth: true,
+              StudentRecords: {
+                where: {
+                  isActive: true,
+                  Organization: {
+                    id: org.id,
+                  },
+                },
+                select: {
+                  studentId: true,
+                  lrn: true,
+                  Level: { select: { name: true } },
+                  OrganizationYearLevel: { select: { name: true } },
+                  Program: { select: { name: true } },
+                  Department: { select: { name: true } },
+                  College: { select: { name: true } },
+                },
+              },
+              UserEmployments: {
+                where: {
+                  isActive: true,
+                  Organization: {
+                    id: org.id,
+                  },
+                },
+                select: {
+                  employeeId: true,
+                  position: true,
+                  designation: true,
+                  Office: { select: { name: true } },
+                  Department: { select: { name: true } },
+                  College: { select: { name: true } },
+                },
+              },
+            },
+          },
         },
       }),
 
@@ -77,29 +234,26 @@ export const getOrgReportsAction = withErrorHandling(
       prisma.organizationMember.count({
         where: { organizationId: org.id, status: "SUSPENDED" },
       }),
+    ]);
 
-      // ── Member gender distribution ───────────────────────────────────────
-      prisma.organizationMember.findMany({
-        where: { organizationId: org.id, status: "ACTIVE" },
-        select: {
-          User: { select: { gender: true } },
-        },
-      }),
+    // Collect user IDs of members who joined in the period for scoped sub-queries
+    const periodMemberUserIds = periodMembers.map(
+      (member: PeriodMemberRow) => member.User.id
+    );
 
-      // ── Member age data ──────────────────────────────────────────────────
-      prisma.organizationMember.findMany({
-        where: { organizationId: org.id, status: "ACTIVE" },
-        select: {
-          User: { select: { dob: true } },
-        },
-      }),
-
-      // ── Student records breakdown ────────────────────────────────────────
+    const [
+      // Student records for members who joined in the selected period
+      studentRecords,
+      // Employment records for members who joined in the selected period
+      employmentRecords,
+    ] = await Promise.all([
+      // ── Student records scoped to period members ─────────────────────────
       prisma.userStudentRecord.findMany({
         where: {
           organizationId: org.id,
           isActive: true,
           deletedAt: null,
+          userId: { in: periodMemberUserIds },
         },
         select: {
           College: { select: { name: true } },
@@ -108,12 +262,13 @@ export const getOrgReportsAction = withErrorHandling(
         },
       }),
 
-      // ── Employment records breakdown ─────────────────────────────────────
+      // ── Employment records scoped to period members ───────────────────────
       prisma.userEmploymentRecord.findMany({
         where: {
           organizationId: org.id,
           isActive: true,
           deletedAt: null,
+          userId: { in: periodMemberUserIds },
         },
         select: {
           Department: { select: { name: true } },
@@ -122,31 +277,28 @@ export const getOrgReportsAction = withErrorHandling(
       }),
     ]);
 
-    // ── Process member role counts ────────────────────────────────────────────
+    // ── Process member role counts (period members only) ─────────────────────
     const membersByRole: Record<string, number> = {};
-    for (const m of allMembers) {
+    for (const m of periodMembers) {
       const role = m.OrganizationRole.name;
       membersByRole[role] = (membersByRole[role] ?? 0) + 1;
     }
 
-    // ── Process daily registration trend (in period) ──────────────────────────
+    // ── Process daily registration trend (period members only) ────────────────
     const registrationsByDay: Record<string, number> = {};
-    for (const m of allMembers) {
+    for (const m of periodMembers) {
       const day = m.createdAt.toISOString().slice(0, 10);
-      // Only include days within the selected period
-      if (m.createdAt >= from && m.createdAt <= to) {
-        registrationsByDay[day] = (registrationsByDay[day] ?? 0) + 1;
-      }
+      registrationsByDay[day] = (registrationsByDay[day] ?? 0) + 1;
     }
 
-    // ── Process gender distribution ───────────────────────────────────────────
+    // ── Process gender distribution (period members only) ─────────────────────
     const genderCounts: Record<string, number> = {};
-    for (const m of memberGenders) {
+    for (const m of periodMembers) {
       const g = m.User.gender ?? "Unknown";
       genderCounts[g] = (genderCounts[g] ?? 0) + 1;
     }
 
-    // ── Process age group distribution ────────────────────────────────────────
+    // ── Process age group distribution (period members only) ──────────────────
     const ageGroupCounts: Record<string, number> = {
       "0-12": 0,
       "13-17": 0,
@@ -158,22 +310,9 @@ export const getOrgReportsAction = withErrorHandling(
       Unknown: 0,
     };
     const now = new Date();
-    for (const m of memberAges) {
-      const dob = m.User.dob;
-      if (dob) {
-        const ageYears = Math.floor(
-          (now.getTime() - new Date(dob).getTime()) / (1000 * 60 * 60 * 24 * 365.25)
-        );
-        if (ageYears <= 12) ageGroupCounts["0-12"]++;
-        else if (ageYears <= 17) ageGroupCounts["13-17"]++;
-        else if (ageYears <= 25) ageGroupCounts["18-25"]++;
-        else if (ageYears <= 35) ageGroupCounts["26-35"]++;
-        else if (ageYears <= 45) ageGroupCounts["36-45"]++;
-        else if (ageYears <= 59) ageGroupCounts["46-59"]++;
-        else ageGroupCounts["60+"]++;
-      } else {
-        ageGroupCounts["Unknown"]++;
-      }
+    for (const m of periodMembers) {
+      const group = getAgeGroup(m.User.dob, now);
+      ageGroupCounts[group] = (ageGroupCounts[group] ?? 0) + 1;
     }
 
     // ── Process student record breakdowns ─────────────────────────────────────
@@ -202,14 +341,73 @@ export const getOrgReportsAction = withErrorHandling(
       byOffice[office] = (byOffice[office] ?? 0) + 1;
     }
 
+    const rawMemberRows: RawMemberRow[] = periodMembers.map((member: PeriodMemberRow) => {
+      const submittedFileRequirements = new Set(
+        member.OrgMemberRequirementFiles.map((item) => item.requirementType)
+      );
+      const requirementsSubmitted: Record<string, boolean> = {};
+      const studentRecord = member.User.StudentRecords[0] ?? null;
+      const employeeRecord = member.User.UserEmployments[0] ?? null;
+      for (const requirement of member.OrganizationRole.requirements) {
+        if (requirement === REQUIREMENT_STUDENT_RECORD) {
+          requirementsSubmitted[requirement] = studentRecord !== null;
+          continue;
+        }
+        if (requirement === REQUIREMENT_EMPLOYEE_RECORD) {
+          requirementsSubmitted[requirement] = employeeRecord !== null;
+          continue;
+        }
+        requirementsSubmitted[requirement] = submittedFileRequirements.has(requirement);
+      }
+
+      return {
+        status: member.status,
+        acceptedAt: member.acceptedAt ? member.acceptedAt.toISOString() : null,
+        firstName: member.User.firstName ?? null,
+        middleName: member.User.middleName ?? null,
+        lastName: member.User.lastName ?? null,
+        suffix: member.User.suffix ?? null,
+        email: member.User.email ?? null,
+        mobile: member.User.mobile ?? null,
+        telephone: member.User.telephone ?? null,
+        civilStatus: member.User.civilStatus ?? null,
+        bloodType: member.User.bloodType ?? null,
+        nationality: member.User.nationality ?? null,
+        placeOfBirth: member.User.placeOfBirth ?? null,
+        role: member.OrganizationRole.name,
+        gender: member.User.gender ?? "Unknown",
+        birthdate: member.User.dob ? member.User.dob.toISOString() : null,
+        ageGroup: getAgeGroup(member.User.dob, now),
+        dateRegistered: member.createdAt.toISOString(),
+        studentRecord: {
+          studentId: studentRecord?.studentId ?? null,
+          lrn: studentRecord?.lrn ?? null,
+          level: studentRecord?.Level.name ?? null,
+          yearLevel: studentRecord?.OrganizationYearLevel?.name ?? null,
+          program: studentRecord?.Program?.name ?? null,
+          department: studentRecord?.Department?.name ?? null,
+          college: studentRecord?.College?.name ?? null,
+        },
+        employeeRecord: {
+          employeeId: employeeRecord?.employeeId ?? null,
+          position: employeeRecord?.position ?? null,
+          designation: employeeRecord?.designation ?? null,
+          office: employeeRecord?.Office?.name ?? null,
+          department: employeeRecord?.Department?.name ?? null,
+          college: employeeRecord?.College?.name ?? null,
+        },
+        requirementsSubmitted,
+      };
+    });
+
     return {
       message: "Organization reports retrieved successfully",
       data: {
         org,
         period: { from: from.toISOString(), to: to.toISOString() },
         members: {
-          totalActive: allMembers.length,
-          newInPeriod: newMembersInPeriod,
+          totalActive: totalActiveMembersCount,
+          newInPeriod: periodMembers.length,
           pending: pendingCount,
           suspended: suspendedCount,
           byRole: Object.entries(membersByRole)
@@ -224,6 +422,7 @@ export const getOrgReportsAction = withErrorHandling(
           registrationTrend: Object.entries(registrationsByDay)
             .map(([date, count]) => ({ date, count }))
             .sort((a, b) => a.date.localeCompare(b.date)),
+          raw: rawMemberRows,
         },
         students: {
           total: studentRecords.length,

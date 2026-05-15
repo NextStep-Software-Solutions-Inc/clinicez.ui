@@ -14,7 +14,6 @@ export default function LogoutLink() {
       localStorage.clear();
       await signOut();
     } catch (err) {
-      // eslint-disable-next-line no-console
       console.error('Sign out failed', err);
       // fallback to legacy path
       window.location.href = '/auth/logout';

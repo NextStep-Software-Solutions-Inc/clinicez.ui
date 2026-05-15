@@ -113,7 +113,6 @@ export function LocationSelector({
       }
     }
     loadBarangays()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [city])
 
   const handleRegionChange = (value: string) => {

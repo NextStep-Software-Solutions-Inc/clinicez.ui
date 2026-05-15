@@ -257,7 +257,7 @@ export default function ProcedureMultiSelect({
                               }}
                             >
                               <PlusCircle className="w-3 h-3 mr-1" />
-                              Use "{categorySearch}" as custom category
+                              Use &ldquo;{categorySearch}&rdquo; as custom category
                             </Button>
                           </div>
                         ) : (

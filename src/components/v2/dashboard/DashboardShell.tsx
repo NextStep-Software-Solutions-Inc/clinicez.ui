@@ -29,6 +29,7 @@ import { Button } from "@components/ui/button";
 import { ThemeToggle } from "@/components/patient-dashboard-v2";
 import { ClinicSelector } from "./ClinicSelector";
 import { OrgSelector } from "./OrgSelector";
+import InstallPWAButton from "@/components/pwa/install-pwa-button";
 
 /* ------------------------------------------------------------------ */
 /*  Icon mapping                                                       */
@@ -197,6 +198,7 @@ export default function DashboardShell({
 
           {/* Right: Actions */}
           <div className="flex items-center gap-3 shrink-0">
+            <InstallPWAButton />
             {headerActions}
             <ThemeToggle/>
           </div>
@@ -223,6 +225,7 @@ export default function DashboardShell({
             )}
           </div>
           <div className="flex items-center gap-2 shrink-0">
+            <InstallPWAButton />
             {headerActions}
             <Button
               variant="ghost"

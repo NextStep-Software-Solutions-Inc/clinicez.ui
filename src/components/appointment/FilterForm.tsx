@@ -2,7 +2,7 @@
 
 import React, { useMemo, useState, useEffect } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
+import { useForm, useWatch } from "react-hook-form"
 import { z } from "zod"
 
 import {
@@ -216,8 +216,14 @@ export default function FilterForm({ onContinue }: FilterFormProps) {
   })
 
   // Watch for changes in requester to check repeat patient status
-  const watchedRequester = form.watch('requester')
-  const watchedBookAFriend = form.watch('bookAFriend')
+  const watchedRequester = useWatch({
+    control: form.control,
+    name: 'requester'
+  })
+  const watchedBookAFriend = useWatch({
+    control: form.control,
+    name: 'bookAFriend'
+  })
 
   // Determine the patient userId: use requester if booking for a friend, otherwise use current user
   const patientUserId = watchedBookAFriend ? watchedRequester : user?.id
@@ -275,7 +281,7 @@ export default function FilterForm({ onContinue }: FilterFormProps) {
     form.reset(data)
     onContinue?.()
   }
-  const bookAFriend = form.watch('bookAFriend')
+  const bookAFriend = watchedBookAFriend
   const myPermissionArray = myOrgPermissions?.map(permission => permission.name)
 
   const writeOrgAppointmentPermissions = [PERMISSIONS.CLINIC["WRITE:CLINIC:APPOINTMENT"].name]

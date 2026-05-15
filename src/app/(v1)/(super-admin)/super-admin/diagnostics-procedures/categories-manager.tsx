@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -35,19 +35,21 @@ interface LocalCategories {
 
 export function CategoriesManager() {
   const [activeType, setActiveType] = useState<"imaging" | "laboratory" | "heart_station">("imaging");
-  const [baseCategories, setBaseCategories] = useState<LocalCategories>({
+
+  // User-driven additions and deletions on top of the remote-derived list
+  const [userAdditions, setUserAdditions] = useState<LocalCategories>({
     imaging: [],
     laboratory: [],
     heart_station: [],
   });
-  const [localCategories, setLocalCategories] = useState<LocalCategories>({
+  const [userDeletions, setUserDeletions] = useState<LocalCategories>({
     imaging: [],
     laboratory: [],
     heart_station: [],
   });
+
   const [newCategory, setNewCategory] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<{ type: string; category: string } | null>(null);
-  const [hasChanges, setHasChanges] = useState(false);
 
   // Fetch master procedures to derive categories (no hardcoded defaults)
   const { data: imaging } = useQuery({
@@ -79,15 +81,23 @@ export function CategoriesManager() {
     } as LocalCategories;
   }, [imaging, laboratory, heartStation]);
 
-  // Initialize categories from derived lists once data is available
-  useEffect(() => {
-    setBaseCategories(derivedCategories);
-    setLocalCategories((prev) => ({
-      imaging: Array.from(new Set([...(prev.imaging || []), ...(derivedCategories.imaging || [])])),
-      laboratory: Array.from(new Set([...(prev.laboratory || []), ...(derivedCategories.laboratory || [])])),
-      heart_station: Array.from(new Set([...(prev.heart_station || []), ...(derivedCategories.heart_station || [])])),
-    }));
-  }, [derivedCategories]);
+  // Merge remote-derived categories with user additions, then subtract user deletions
+  const localCategories = useMemo<LocalCategories>(() => {
+    const merge = (type: string) =>
+      Array.from(
+        new Set([...(derivedCategories[type] ?? []), ...(userAdditions[type] ?? [])])
+      ).filter((c) => !(userDeletions[type] ?? []).includes(c));
+    return {
+      imaging: merge("imaging"),
+      laboratory: merge("laboratory"),
+      heart_station: merge("heart_station"),
+    };
+  }, [derivedCategories, userAdditions, userDeletions]);
+
+  const hasChanges =
+    (["imaging", "laboratory", "heart_station"] as const).some(
+      (t) => (userAdditions[t]?.length ?? 0) > 0 || (userDeletions[t]?.length ?? 0) > 0
+    );
 
   const currentCategories = localCategories[activeType];
 
@@ -104,13 +114,12 @@ export function CategoriesManager() {
       return;
     }
 
-    setLocalCategories({
-      ...localCategories,
-      [activeType]: [...currentCategories, newCategory.trim()],
-    });
+    setUserAdditions((prev) => ({
+      ...prev,
+      [activeType]: [...(prev[activeType] ?? []), newCategory.trim()],
+    }));
 
     setNewCategory("");
-    setHasChanges(true);
     toast.success("Category added");
   };
 
@@ -121,15 +130,19 @@ export function CategoriesManager() {
   const confirmDelete = () => {
     if (!deleteTarget) return;
 
-    setLocalCategories({
-      ...localCategories,
-      [deleteTarget.type]: localCategories[deleteTarget.type].filter(
-        (cat) => cat !== deleteTarget.category
+    // Remove from additions if it was a user addition, otherwise mark as deleted
+    setUserAdditions((prev) => ({
+      ...prev,
+      [deleteTarget.type]: (prev[deleteTarget.type] ?? []).filter(
+        (c) => c !== deleteTarget.category
       ),
-    });
+    }));
+    setUserDeletions((prev) => ({
+      ...prev,
+      [deleteTarget.type]: [...(prev[deleteTarget.type] ?? []), deleteTarget.category],
+    }));
 
     setDeleteTarget(null);
-    setHasChanges(true);
     toast.success("Category removed");
   };
 
@@ -137,16 +150,13 @@ export function CategoriesManager() {
     // Note: In production, this would call a server action to persist categories
     // For now, we'll just show a success message and reset the state
     toast.success("Categories updated successfully. (Note: Changes are local. Use server actions to persist.)");
-    setHasChanges(false);
+    setUserAdditions({ imaging: [], laboratory: [], heart_station: [] });
+    setUserDeletions({ imaging: [], laboratory: [], heart_station: [] });
   };
 
   const handleReset = () => {
-    setLocalCategories({
-      imaging: [...(baseCategories.imaging || [])],
-      laboratory: [...(baseCategories.laboratory || [])],
-      heart_station: [...(baseCategories.heart_station || [])],
-    });
-    setHasChanges(false);
+    setUserAdditions({ imaging: [], laboratory: [], heart_station: [] });
+    setUserDeletions({ imaging: [], laboratory: [], heart_station: [] });
     toast.info("Changes discarded");
   };
 
@@ -247,10 +257,10 @@ export function CategoriesManager() {
           <p>
             • Categories help organize procedures by their type and standardize terminology across the system
           </p>
-          <p>• When creating master procedures, you'll select from the categories you define here</p>
+          <p>• When creating master procedures, you&apos;ll select from the categories you define here</p>
           <p>• Each procedure type (Imaging, Laboratory, Heart Station) has its own set of categories</p>
           <p>
-            • Removing a category won't affect existing procedures, but it won't be available for new ones
+            • Removing a category won&apos;t affect existing procedures, but it won&apos;t be available for new ones
           </p>
           <p>
             • Changes are saved to the database and will be reflected across all users and clinics
@@ -262,7 +272,7 @@ export function CategoriesManager() {
         <AlertDialogContent>
           <AlertDialogTitle>Delete Category</AlertDialogTitle>
           <AlertDialogDescription>
-            Are you sure you want to delete the category "{deleteTarget?.category}"? This action cannot be
+            Are you sure you want to delete the category &ldquo;{deleteTarget?.category}&rdquo;? This action cannot be
             undone. Existing procedures with this category will not be affected.
           </AlertDialogDescription>
           <div className="flex gap-3 justify-end">

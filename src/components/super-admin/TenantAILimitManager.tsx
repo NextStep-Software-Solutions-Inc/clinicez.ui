@@ -273,7 +273,7 @@ export function TenantAILimitManager({ tenantId, tenantName }: TenantAILimitMana
               <Alert variant="destructive">
                 <AlertTriangle className="h-4 w-4" />
                 <AlertDescription>
-                  Changing tenant limits may affect existing clinic allocations. Ensure total clinic limits don't exceed the new tenant limit.
+                  Changing tenant limits may affect existing clinic allocations. Ensure total clinic limits don&apos;t exceed the new tenant limit.
                 </AlertDescription>
               </Alert>
             )}

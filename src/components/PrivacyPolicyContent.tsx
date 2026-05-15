@@ -8,7 +8,7 @@ export default function PrivacyPolicyContent() {
       <section className="mb-8">
         <h2 className="text-2xl font-bold text-gray-900 mb-4">1. Introduction</h2>
         <p>
-          ClinicEZ ("we," "us," "our," or "Company") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website, use our services, and interact with us in any manner.
+          ClinicEZ (&ldquo;we,&rdquo; &ldquo;us,&rdquo; &ldquo;our,&rdquo; or &ldquo;Company&rdquo;) is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website, use our services, and interact with us in any manner.
         </p>
         <p>
           Please read this Privacy Policy carefully. If you do not agree with our policies and practices, please do not use our services. By accessing and using ClinicEZ, you acknowledge that you have read and understood this Privacy Policy.
@@ -140,7 +140,7 @@ export default function PrivacyPolicyContent() {
       </section>
 
       <section className="mb-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">9. Children's Privacy</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">9. Children&apos;s Privacy</h2>
         <p>
           ClinicEZ is not intended for individuals under the age of 18. We do not knowingly collect personal information from children. If we become aware that we have collected personal information from a child without parental consent, we will take steps to delete such information promptly.
         </p>
@@ -162,7 +162,7 @@ export default function PrivacyPolicyContent() {
       <section className="mb-8">
         <h2 className="text-2xl font-bold text-gray-900 mb-4">11. Changes to This Privacy Policy</h2>
         <p>
-          We may update this Privacy Policy from time to time to reflect changes in our practices, technology, legal requirements, or other factors. We will notify you of any material changes by posting the updated Privacy Policy on our website and updating the "Last updated" date.
+          We may update this Privacy Policy from time to time to reflect changes in our practices, technology, legal requirements, or other factors. We will notify you of any material changes by posting the updated Privacy Policy on our website and updating the &ldquo;Last updated&rdquo; date.
         </p>
         <p className="mt-4">
           Your continued use of ClinicEZ following the posting of revised Privacy Policy means that you accept and agree to the changes.
@@ -178,7 +178,7 @@ export default function PrivacyPolicyContent() {
         </p>
         <ul className="list-disc pl-5 space-y-2">
           <li><strong>Data Privacy Act of 2012 (Republic Act No. 10173):</strong> We comply with all requirements regarding the collection, processing, and protection of personal information, including your right to access, correct, and object to processing of your data.</li>
-          <li><strong>Universal Health Care Act (Republic Act No. 11223):</strong> We support the UHC framework's objectives for accessible, acceptable, and affordable healthcare services while maintaining strict confidentiality and security of patient health information.</li>
+          <li><strong>Universal Health Care Act (Republic Act No. 11223):</strong> We support the UHC framework&apos;s objectives for accessible, acceptable, and affordable healthcare services while maintaining strict confidentiality and security of patient health information.</li>
           <li><strong>Health Information Standards:</strong> Patient records are maintained in compliance with Philippine healthcare standards and Department of Health guidelines.</li>
           <li><strong>National Privacy Commission:</strong> We are subject to the oversight of the National Privacy Commission (NPC) and will cooperate with all privacy investigations and inquiries.</li>
         </ul>

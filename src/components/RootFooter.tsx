@@ -77,14 +77,14 @@ const RootFooter = ({ version = "v1" }: FooterProps) => {
       <footer className="bg-slate-50 py-12">
         <div className="container mx-auto px-6">
           <div className="flex flex-col justify-center items-center space-y-8">
-            <a href="/">
+            <Link href="/">
               <Image
                 src={ClinicEzLogo}
                 width={120}
                 height={120}
                 alt="logo"
               />
-            </a>
+            </Link>
             <div className="flex flex-col sm:flex-row justify-center gap-4 sm:gap-8">
               {footerLinks.map((item, index) => {
                 return (
@@ -143,9 +143,9 @@ const RootFooter = ({ version = "v1" }: FooterProps) => {
     <footer className="py-8 bg-slate-50">
       <div className="container mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 ~text-sm/base">
         <div className="order-1 sm:order-first">
-          <a href="/" className="flex h-20">
+          <Link href="/" className="flex h-20">
             <AnimatedLogo />
-          </a>
+          </Link>
           <p className="mt-2">
             <strong>Clinic EZ</strong> is a platform that connects healthcare providers with patients. We provide a platform for healthcare providers to manage their appointments and patients to book appointments with their healthcare providers.
             Join our platform and be part of the future of healthcare.
@@ -160,16 +160,16 @@ const RootFooter = ({ version = "v1" }: FooterProps) => {
             <h5 className="mb-4 font-semibold">Links</h5>
             <ul className="mb-4 ">
               <li className="">
-                <a href="/organizations" className="hover:underline hover:text-primary">Clinics & Organizations</a>
+                <Link href="/organizations" className="hover:underline hover:text-primary">Clinics & Organizations</Link>
               </li>
               <li className="">
-                <a href="/hp" className="hover:underline hover:text-primary">Our Healthcare Providers</a>
+                <Link href="/hp" className="hover:underline hover:text-primary">Our Healthcare Providers</Link>
               </li>
               <li className="">
-                <a href="/tenants/register" className="hover:underline hover:text-primary">Be a Tenant</a>
+                <Link href="/tenants/register" className="hover:underline hover:text-primary">Be a Tenant</Link>
               </li>
               <li className="">
-                <a href="/hp/apply" className="hover:underline hover:text-primary">Apply as Healthcare Provider</a>
+                <Link href="/hp/apply" className="hover:underline hover:text-primary">Apply as Healthcare Provider</Link>
               </li>
             </ul>
           </div>

@@ -4,6 +4,7 @@
 
 @layer base {
   :root {
+    color-scheme: light;
     --background: 0 0% 100%;
     --foreground: 175 10% 3.9%;
     --card: 0 0% 100%;
@@ -64,6 +65,7 @@
   }
 
   .dark {
+    color-scheme: dark;
     --background: 220 13% 14%;
     --foreground: 0 0% 95%;
     --card: 220 11% 20%;
@@ -117,9 +119,48 @@
 @layer base {
   * {
     @apply border-border;
+    /* Remove the blue tap-highlight rectangle on iOS/Safari when tapping elements */
+    -webkit-tap-highlight-color: transparent;
+    /* Firefox scrollbar — slim style matching the ::-webkit-scrollbar rules in patient-dashboard.css */
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--color-border)) hsl(var(--color-bg-secondary));
   }
   body {
     @apply bg-background text-foreground;
+  }
+  html {
+    /*
+     * Font smoothing — makes text render crisply on macOS/iOS (Safari & Firefox).
+     * Chrome applies antialiasing by default; this brings Safari and Firefox in line.
+     */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+
+    /*
+     * Prevent iOS Safari from automatically scaling up font sizes when the
+     * device is rotated to landscape or when the viewport is narrowed.
+     * Tailwind Preflight adds the -webkit- prefix; the unprefixed property
+     * is needed for Firefox and future-proofing.
+     */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+  /*
+   * Safari renders several input types with native chrome (pill shape on
+   * search, date-picker widgets on date/time, spinner arrows on number, and
+   * OS-level dropdown on select). Reset appearance to none so every input
+   * follows our design system consistently across all browsers.
+   */
+  input[type="search"],
+  input[type="date"],
+  input[type="time"],
+  input[type="datetime-local"],
+  input[type="week"],
+  input[type="month"],
+  input[type="number"],
+  select {
+    -webkit-appearance: none;
+    appearance: none;
   }
 }
 @layer utilities {

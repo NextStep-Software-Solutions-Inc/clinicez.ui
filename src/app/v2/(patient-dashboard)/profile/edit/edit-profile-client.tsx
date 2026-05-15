@@ -430,7 +430,7 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
     setIsSavingAll(false)
   }, [sections])
 
-  //   'top-14' when headerSlot=null (below MobileHeader)
+  //   'top-14' when headerSlot=null (below PatientDashboardHeader)
   //   'top-28' when a custom headerSlot is provided (below nav + breadcrumb)
   const makeSectionNav = (topClass: string) => (
     <div className={`sticky ${topClass} z-[25] backdrop-blur-sm bg-white/80 dark:bg-slate-950/80 border-b border-slate-200/30 dark:border-slate-800/30 mb-6 md:mb-8 -mx-4 md:-mx-8 px-4 md:px-8 py-2 md:py-3`}>

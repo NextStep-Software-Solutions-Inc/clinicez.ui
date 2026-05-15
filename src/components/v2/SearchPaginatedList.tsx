@@ -118,17 +118,18 @@ function LocalSearchPaginatedList<T>(props: LocalSearchPaginatedListProps<T>) {
     return data.filter((item) => searchBy(item, search));
   }, [data, search, searchBy]);
 
-  const [visibleCount, setVisibleCount] = useState(itemsPerPage);
-
-  useEffect(() => {
-    setVisibleCount(itemsPerPage);
-  }, [itemsPerPage, search]);
+  // Track "extra" items loaded via "Load more" for the current filter key.
+  // When search or itemsPerPage changes the key changes and extra resets to 0 automatically.
+  const [loadMoreState, setLoadMoreState] = useState({ key: `${search}-${itemsPerPage}`, extra: 0 });
+  const currentKey = `${search}-${itemsPerPage}`;
+  const extra = loadMoreState.key === currentKey ? loadMoreState.extra : 0;
+  const visibleCount = itemsPerPage + extra;
 
   const visibleData = filtered.slice(0, visibleCount);
   const hasMore = visibleCount < filtered.length;
 
   const handleLoadMore = () => {
-    setVisibleCount((prev) => prev + itemsPerPage);
+    setLoadMoreState({ key: currentKey, extra: extra + itemsPerPage });
   };
 
   return (

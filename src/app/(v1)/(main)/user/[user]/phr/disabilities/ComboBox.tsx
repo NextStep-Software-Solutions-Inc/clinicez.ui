@@ -10,7 +10,6 @@ import Each from "@components/utils/Each";
 import { cn } from "@lib/utils";
 import { Check, ChevronsUpDown, Plus } from "lucide-react";
 import React from "react";
-import { useForm } from "react-hook-form";
 
 interface ComboBoxProps {
     options?: string[];
@@ -21,16 +20,18 @@ interface ComboBoxProps {
 export const ComboBox = ({value, onChange, options = []}: ComboBoxProps) => {
   
   const [open, setOpen] = React.useState(false)
-  const form = useForm({
-    defaultValues: {
-      value
-    }
-  })
- 
-  const inputValue = form.watch("value")
+  const [inputValue, setInputValue] = React.useState(value)
   
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover
+      open={open}
+      onOpenChange={(nextOpen) => {
+        setOpen(nextOpen)
+        if (nextOpen) {
+          setInputValue(value)
+        }
+      }}
+    >
       <PopoverTrigger asChild>
         <FormControl>
           <Button
@@ -49,7 +50,7 @@ export const ComboBox = ({value, onChange, options = []}: ComboBoxProps) => {
       </PopoverTrigger>
       <PopoverContent className=" p-0">
         <Command>
-          <CommandInput placeholder="Enter to search or create" onValueChange={value => form.setValue("value", value)} />
+          <CommandInput placeholder="Enter to search or create" onValueChange={setInputValue} />
           <ConditionalRender condition={inputValue?.length > 0}>
             <CommandEmpty asChild>
               <Button className="m-1 font-normal" size="sm" variant="ghost"

@@ -125,13 +125,16 @@ const VALID_TABS = [
     "xml-import",
 ] as const;
 type KonsultaTab = typeof VALID_TABS[number];
+const TAB_MIGRATIONS: Record<string, KonsultaTab> = {
+    consultations: "atc-verification",
+};
 
 export function PhilHealthReportTab({ clinicUid }: PhilHealthReportTabProps) {
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
     const rawTab = searchParams.get("konsultaTab");
-    const normalizedTab = rawTab === "consultations" ? "atc-verification" : rawTab;
+    const normalizedTab = rawTab ? (TAB_MIGRATIONS[rawTab] ?? rawTab) : rawTab;
     const activeTab: KonsultaTab = (VALID_TABS as readonly string[]).includes(normalizedTab ?? "") ? (normalizedTab as KonsultaTab) : "patients";
 
     const handleTabChange = (value: string) => {
@@ -1293,12 +1296,14 @@ function KonsultaXmlImportPanel({ clinicUid }: { clinicUid: string }) {
 
     const parse = () => {
         const nextRows = parseXmlAssignments(xmlContent);
+        const importableCount = nextRows.filter((row) => row.importable).length;
+        const rejectedCount = nextRows.length - importableCount;
         setRows(nextRows);
         setSelected(new Set(nextRows.filter((row) => row.importable).map((row) => row.key)));
         if (nextRows.length === 0) {
             toast.warning("No ASSIGNMENT entries found in XML");
         } else {
-            toast.success(`Parsed ${nextRows.length} assignment record(s)`);
+            toast.success(`Parsed ${nextRows.length} assignment record(s): ${importableCount} importable, ${rejectedCount} rejected.`);
         }
     };
 
@@ -1320,7 +1325,8 @@ function KonsultaXmlImportPanel({ clinicUid }: { clinicUid: string }) {
 
     const toggleAllImportable = () => {
         const importableKeys = rows.filter((row) => row.importable).map((row) => row.key);
-        if (selected.size === importableKeys.length) {
+        const allImportableSelected = importableKeys.length > 0 && importableKeys.every((key) => selected.has(key));
+        if (allImportableSelected) {
             setSelected(new Set());
         } else {
             setSelected(new Set(importableKeys));

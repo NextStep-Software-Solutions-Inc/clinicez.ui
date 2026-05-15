@@ -707,11 +707,16 @@ export const importKonsultaAssignmentsAction = withErrorHandling(async ({
             continue;
         }
 
-        if (assignment.effYear && assignment.effYear.trim() && assignment.effYear.trim() < currentYear) {
+        const effectiveYear = assignment.effYear?.trim();
+        if (effectiveYear && Number(effectiveYear) < Number(currentYear)) {
             rejected++;
             results.push({ pin, status: "REJECTED", reason: "Expired Konsulta membership" });
             continue;
         }
+
+        const normalizedMemberPin = assignment.patientType === "DD"
+            ? (assignment.memberPin ?? "").trim()
+            : pin;
 
         let clinicPatientId: number | null = null;
 
@@ -776,7 +781,7 @@ export const importKonsultaAssignmentsAction = withErrorHandling(async ({
             clinicPatientId,
             pin,
             patientType: assignment.patientType,
-            memberPin: assignment.patientType === "DD" ? (assignment.memberPin ?? "").trim() : pin,
+            memberPin: normalizedMemberPin,
             philSysId: null,
             tin: null,
         });

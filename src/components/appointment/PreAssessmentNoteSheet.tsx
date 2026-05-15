@@ -254,7 +254,7 @@ export default function PreAssessmentNoteSheet({ children, disabled, preAssessme
                 Notes to be taken before the actual consultation. Can be completed by any healthcare provider with the appropriate permissions.
                 {isAIEnabled() && (
                   <span className="block mt-2 text-xs text-muted-foreground">
-                    💡 Click "AI Generate" for instant AI-assisted notes using comprehensive patient data including vitals, allergies, and medical history.
+                    💡 Click &ldquo;AI Generate&rdquo; for instant AI-assisted notes using comprehensive patient data including vitals, allergies, and medical history.
                   </span>
                 )}
               </SheetDescription>
@@ -383,5 +383,4 @@ export default function PreAssessmentNoteSheet({ children, disabled, preAssessme
     </Sheet>
   );
 }
-
 

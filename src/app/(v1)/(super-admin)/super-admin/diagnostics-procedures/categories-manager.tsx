@@ -247,10 +247,10 @@ export function CategoriesManager() {
           <p>
             • Categories help organize procedures by their type and standardize terminology across the system
           </p>
-          <p>• When creating master procedures, you'll select from the categories you define here</p>
+          <p>• When creating master procedures, you&apos;ll select from the categories you define here</p>
           <p>• Each procedure type (Imaging, Laboratory, Heart Station) has its own set of categories</p>
           <p>
-            • Removing a category won't affect existing procedures, but it won't be available for new ones
+            • Removing a category won&apos;t affect existing procedures, but it won&apos;t be available for new ones
           </p>
           <p>
             • Changes are saved to the database and will be reflected across all users and clinics
@@ -262,7 +262,7 @@ export function CategoriesManager() {
         <AlertDialogContent>
           <AlertDialogTitle>Delete Category</AlertDialogTitle>
           <AlertDialogDescription>
-            Are you sure you want to delete the category "{deleteTarget?.category}"? This action cannot be
+            Are you sure you want to delete the category &ldquo;{deleteTarget?.category}&rdquo;? This action cannot be
             undone. Existing procedures with this category will not be affected.
           </AlertDialogDescription>
           <div className="flex gap-3 justify-end">

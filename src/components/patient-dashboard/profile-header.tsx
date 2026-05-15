@@ -1,17 +1,13 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useIsClient } from '@/hooks/use-is-client'
 import { Moon, Sun, LogOut, User } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { UserButton } from '@clerk/nextjs'
 
 export function ProfileHeader() {
-  const [mounted, setMounted] = useState(false)
+  const mounted = useIsClient()
   const { theme, setTheme } = useTheme()
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
 
   if (!mounted) return null
 

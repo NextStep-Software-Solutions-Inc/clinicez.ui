@@ -1,18 +1,14 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import { setLandingPageVersion, useLandingPageVersion } from "./VersionSwitcher"
 import { usePathname, useRouter } from "next/navigation"
+import { useIsClient } from "@/hooks/use-is-client"
 
 export default function ClassicButton() {
   const version = useLandingPageVersion()
   const pathname = usePathname()
   const router = useRouter()
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
+  const mounted = useIsClient()
 
   const handleClick = () => {
     // Save preference to localStorage and notify all listeners

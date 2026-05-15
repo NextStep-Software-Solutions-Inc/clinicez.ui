@@ -108,7 +108,7 @@ export function FamilyMedicalHistoryEditForm({
       {conditions.length > 0 && (
         <div className="rounded-lg bg-blue-50 p-3 dark:bg-blue-950">
           <p className="text-xs text-blue-700 dark:text-blue-200">
-            <strong>Tip:</strong> In the details field for each condition, specify the family relationship (e.g., "Father", "Maternal grandmother") and their age when diagnosed.
+            <strong>Tip:</strong> In the details field for each condition, specify the family relationship (e.g., &ldquo;Father&rdquo;, &ldquo;Maternal grandmother&rdquo;) and their age when diagnosed.
           </p>
         </div>
       )}

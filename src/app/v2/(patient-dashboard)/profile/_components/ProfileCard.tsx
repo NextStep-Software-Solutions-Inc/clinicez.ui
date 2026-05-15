@@ -52,7 +52,7 @@ export function ProfileCard({ patient, isOwner }: ProfileCardProps) {
             {patient.fullName}{patient.suffix ? ` ${patient.suffix}` : ''}
           </h2>
           {patient.nickname && (
-            <p className="text-teal-100 text-sm mt-0.5">"{patient.nickname}"</p>
+            <p className="text-teal-100 text-sm mt-0.5">&ldquo;{patient.nickname}&rdquo;</p>
           )}
           <div className="flex justify-center mt-2">
             {isOwner ? (
@@ -106,4 +106,3 @@ export function ProfileCard({ patient, isOwner }: ProfileCardProps) {
     </div>
   )
 }
-

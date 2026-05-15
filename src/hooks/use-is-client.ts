@@ -1,9 +1,9 @@
 import { useSyncExternalStore } from "react";
 
-const subscribe = () => () => {};
+const noopSubscribe = () => () => {};
 const getClientSnapshot = () => true;
 const getServerSnapshot = () => false;
 
 export function useIsClient() {
-  return useSyncExternalStore(subscribe, getClientSnapshot, getServerSnapshot);
+  return useSyncExternalStore(noopSubscribe, getClientSnapshot, getServerSnapshot);
 }

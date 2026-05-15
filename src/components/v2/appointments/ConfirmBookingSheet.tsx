@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CalendarDays, Stethoscope, Video, CalendarPlus, Info, AlertTriangle, ExternalLink } from "lucide-react";
 import {
   Sheet,
@@ -73,13 +73,13 @@ export function ConfirmBookingSheet({
   const [addToCalendar, setAddToCalendar] = useState(true);
   // User's explicit Meet preference; auto-elevated to true when virtual+calendar is on
   const [userCreateMeet, setUserCreateMeet] = useState(false);
-  const createMeet = (isVirtualMode && addToCalendar) || userCreateMeet;
 
   // Detect if selected mode is virtual
   const selectedMode = modes.find(m => String(m.id) === modeId);
   const isVirtualMode = selectedMode
     ? selectedMode.name.toUpperCase().includes("VIRTUAL")
     : false;
+  const createMeet = (isVirtualMode && addToCalendar) || userCreateMeet;
 
   useEffect(() => {
     if (!open) return;

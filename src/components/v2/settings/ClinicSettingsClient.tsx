@@ -849,7 +849,7 @@ function PhilHealthTab({
         setReferenceOptions([]);
         toast.error(
           result.message ??
-            "Unable to load PhilHealth references for this domain. Please verify your clinic settings access and try again.",
+            "Failed to load PhilHealth references. Please try again or contact support if the issue persists.",
         );
       }
       setSelectedReferenceValue(

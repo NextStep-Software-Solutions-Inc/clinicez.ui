@@ -62,6 +62,8 @@ type ClinicPatientIdentity = {
     patientType: KonsultaPatientType;
 };
 
+const MAX_DEFICIENCY_MESSAGES_TO_DISPLAY = 8;
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 async function resolveClinicId(clinicUid: string): Promise<number> {
@@ -1620,7 +1622,9 @@ export const generateBatchXmlAction = withErrorHandling(async (batchUid: string)
             resolveMappedPhysicalExamFindingsForConsultations(batch.clinicId, consultationIds),
         ]);
         if (diagnosisMappingResult.deficiencies.length > 0) {
-            const message = diagnosisMappingResult.deficiencies.slice(0, 8).join("\n");
+            const message = diagnosisMappingResult.deficiencies
+                .slice(0, MAX_DEFICIENCY_MESSAGES_TO_DISPLAY)
+                .join("\n");
             throw new Error(
                 `Konsulta library mapping is incomplete for this batch.\n${message}`,
             );

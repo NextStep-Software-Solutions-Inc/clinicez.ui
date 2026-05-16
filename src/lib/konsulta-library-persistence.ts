@@ -94,11 +94,9 @@ type DiagnosisMappingResult = {
   mappedCode: string | null;
 };
 
-const KONSULTA_LIBRARY_BASE_DIR = path.join(
-  process.cwd(),
-  "_Konsulta Development Kit v1.1",
-  "LIBRARIES",
-);
+const KONSULTA_LIBRARY_BASE_DIR =
+  process.env.KONSULTA_LIBRARY_BASE_DIR?.trim() ||
+  path.join(process.cwd(), "_Konsulta Development Kit v1.1", "LIBRARIES");
 
 function toDomainKey(fileName: string): string {
   return fileName.replace(/\.[^.]+$/, "").trim().toLowerCase();
@@ -476,7 +474,7 @@ export async function refreshPhilHealthKonsultaReferenceLibrary(): Promise<Refer
   let created = 0;
   let updated = 0;
   let total = 0;
-  const seenRowSignatures = new Set<string>();
+  const seenRowSignaturesByFile = new Map<string, string[]>();
 
   for (const definition of KONSULTA_SAMPLE_LIBRARY_DEFINITIONS) {
     const filePath = path.join(KONSULTA_LIBRARY_BASE_DIR, definition.fileName);
@@ -491,8 +489,12 @@ export async function refreshPhilHealthKonsultaReferenceLibrary(): Promise<Refer
 
     total += rows.length;
 
+    seenRowSignaturesByFile.set(
+      definition.fileName,
+      rows.map((row) => row.rowSignature),
+    );
+
     for (const row of rows) {
-      seenRowSignatures.add(row.rowSignature);
       const existing = await prisma.philHealthKonsultaReference.findUnique({
         where: {
           rowSignature: row.rowSignature,
@@ -531,29 +533,30 @@ export async function refreshPhilHealthKonsultaReferenceLibrary(): Promise<Refer
     }
   }
 
-  const retiredResult = await prisma.philHealthKonsultaReference.updateMany({
-    where: {
-      sourceFileName: {
-        in: KONSULTA_SAMPLE_LIBRARY_DEFINITIONS.map(
-          (definition) => definition.fileName,
-        ),
+  let retired = 0;
+  for (const definition of KONSULTA_SAMPLE_LIBRARY_DEFINITIONS) {
+    const seenRowSignatures = seenRowSignaturesByFile.get(definition.fileName) ?? [];
+    const retiredResult = await prisma.philHealthKonsultaReference.updateMany({
+      where: {
+        sourceFileName: definition.fileName,
+        rowSignature: {
+          notIn: seenRowSignatures,
+        },
       },
-      rowSignature: {
-        notIn: Array.from(seenRowSignatures),
+      data: {
+        isActive: false,
+        libraryStatus: "RETIRED",
       },
-    },
-    data: {
-      isActive: false,
-      libraryStatus: "RETIRED",
-    },
-  });
+    });
+    retired += retiredResult.count;
+  }
 
   await refreshPhilHealthReferenceMappingsStatus();
 
   return {
     created,
     updated,
-    retired: retiredResult.count,
+    retired,
     total,
   };
 }

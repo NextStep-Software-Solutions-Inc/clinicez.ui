@@ -526,7 +526,7 @@ export function KonsultaLibrariesConsole() {
           </Button>
           {refreshSummary && (
             <p className="text-xs text-muted-foreground">
-              Created {refreshSummary.created.toLocaleString()}, updated {refreshSummary.updated.toLocaleString()}, retired {refreshSummary.retired.toLocaleString()}, processed {refreshSummary.total.toLocaleString()} rows.
+              Created <strong aria-label={`${refreshSummary.created.toLocaleString()} references created`}>{refreshSummary.created.toLocaleString()}</strong>, updated <strong aria-label={`${refreshSummary.updated.toLocaleString()} references updated`}>{refreshSummary.updated.toLocaleString()}</strong>, retired <strong aria-label={`${refreshSummary.retired.toLocaleString()} references retired`}>{refreshSummary.retired.toLocaleString()}</strong>, processed <strong aria-label={`${refreshSummary.total.toLocaleString()} rows processed`}>{refreshSummary.total.toLocaleString()}</strong> rows.
             </p>
           )}
         </CardContent>

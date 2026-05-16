@@ -455,8 +455,11 @@ function buildHeaders(headerRow: KonsultaCellValue[]): {
     }
 
     if (duplicateCount > 0) {
-      const uniqueHeader = `${baseHeader} (${duplicateCount + 1})`;
-      warnings.push(`Duplicate header "${baseHeader}" renamed to "${uniqueHeader}".`);
+      const suffixNumber = duplicateCount + 1;
+      const uniqueHeader = `${baseHeader} (${suffixNumber})`;
+      warnings.push(
+        `Duplicate header "${baseHeader}" renamed to "${uniqueHeader}".`,
+      );
       return uniqueHeader;
     }
 
@@ -527,6 +530,7 @@ function inferColumnRole(normalizedHeader: string): KonsultaColumnRole {
 
 function uniqueSampleValues(values: KonsultaCellValue[]): KonsultaCellValue[] {
   const uniqueValues: KonsultaCellValue[] = [];
+  const seenValues = new Set<string>();
 
   values.forEach((value) => {
     if (value === null) {
@@ -534,11 +538,8 @@ function uniqueSampleValues(values: KonsultaCellValue[]): KonsultaCellValue[] {
     }
 
     const serializedValue = JSON.stringify(value);
-    if (
-      !uniqueValues.some(
-        (existingValue) => JSON.stringify(existingValue) === serializedValue,
-      )
-    ) {
+    if (!seenValues.has(serializedValue)) {
+      seenValues.add(serializedValue);
       uniqueValues.push(value);
     }
   });
@@ -717,6 +718,10 @@ function inferWorkbookCategory(
 function determineDominantStructure(
   sheets: KonsultaParsedSheet[],
 ): KonsultaSheetStructure {
+  if (sheets.length === 0) {
+    return "multi-column-reference";
+  }
+
   const structureCounts = sheets.reduce<Record<KonsultaSheetStructure, number>>(
     (counts, sheet) => {
       counts[sheet.analysis.structure] += 1;
@@ -999,6 +1004,10 @@ export async function parseKonsultaLibraryWorkbook(
     const workbook = XLSX.read(buffer, { type: "array" });
     const sampleReference = getKonsultaSampleLibraryDefinition(file.name);
     const warnings: string[] = [];
+
+    if (workbook.SheetNames.length === 0) {
+      warnings.push("Workbook has no sheets.");
+    }
 
     const sheets = workbook.SheetNames.map((sheetName) => {
       const worksheet = workbook.Sheets[sheetName];

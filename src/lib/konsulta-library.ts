@@ -1007,13 +1007,13 @@ export function isSupportedKonsultaLibraryFile(fileName: string): boolean {
   return detectFileType(fileName) !== "unknown";
 }
 
-export async function parseKonsultaLibraryWorkbook(
-  file: File,
-): Promise<KonsultaParsedWorkbook> {
+export function parseKonsultaLibraryWorkbookBuffer(
+  fileName: string,
+  buffer: ArrayBuffer | Uint8Array,
+): KonsultaParsedWorkbook {
   try {
-    const buffer = await file.arrayBuffer();
     const workbook = XLSX.read(buffer, { type: "array" });
-    const sampleReference = getKonsultaSampleLibraryDefinition(file.name);
+    const sampleReference = getKonsultaSampleLibraryDefinition(fileName);
     const warnings: string[] = [];
 
     if (workbook.SheetNames.length === 0) {
@@ -1052,11 +1052,11 @@ export async function parseKonsultaLibraryWorkbook(
     }
 
     return {
-      fileName: file.name,
-      normalizedFileName: normalizeFileName(file.name),
-      fileType: detectFileType(file.name),
+      fileName,
+      normalizedFileName: normalizeFileName(fileName),
+      fileType: detectFileType(fileName),
       sampleReference,
-      analysis: createWorkbookAnalysis(file.name, sheets, sampleReference),
+      analysis: createWorkbookAnalysis(fileName, sheets, sampleReference),
       sheetCount: sheets.length,
       sheets,
       warnings,
@@ -1067,6 +1067,13 @@ export async function parseKonsultaLibraryWorkbook(
         ? `${error.name}: ${error.message}`
         : `Unknown workbook parsing error: ${String(error)}`;
 
-    throw new Error(`Failed to parse ${file.name}: ${message}`);
+    throw new Error(`Failed to parse ${fileName}: ${message}`);
   }
+}
+
+export async function parseKonsultaLibraryWorkbook(
+  file: File,
+): Promise<KonsultaParsedWorkbook> {
+  const buffer = await file.arrayBuffer();
+  return parseKonsultaLibraryWorkbookBuffer(file.name, buffer);
 }

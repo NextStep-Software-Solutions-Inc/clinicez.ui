@@ -100,7 +100,7 @@ function addProfileSubElements(profile: XMLNode): void {
     });
 }
 
-function addSoapSubElements(soap: XMLNode): void {
+function addSoapSubElements(soap: XMLNode, icdCodes: string[] = []): void {
     soap.ele("SUBJECTIVE", {
         pIllnessHistory: "", pSignsSymptoms: "", pOtherComplaint: "", pPainSite: "",
         pReportStatus: "U", pDeficiencyRemarks: "",
@@ -108,7 +108,18 @@ function addSoapSubElements(soap: XMLNode): void {
     addPepert(soap);
     addPemiscs(soap);
     addPespecific(soap);
-    soap.ele("ICDS").ele("ICD", { pIcdCode: "", pReportStatus: "U", pDeficiencyRemarks: "" });
+    const icds = soap.ele("ICDS");
+    if (icdCodes.length > 0) {
+        for (const icdCode of icdCodes) {
+            icds.ele("ICD", {
+                pIcdCode: icdCode,
+                pReportStatus: "U",
+                pDeficiencyRemarks: "",
+            });
+        }
+    } else {
+        icds.ele("ICD", { pIcdCode: "", pReportStatus: "U", pDeficiencyRemarks: "" });
+    }
     soap.ele("DIAGNOSTICS").ele("DIAGNOSTIC", {
         pDiagnosticId: "", pOthRemarks: "", pIsPhysicianRecommendation: "",
         pPatientRemarks: "", pReportStatus: "U", pDeficiencyRemarks: "",
@@ -229,7 +240,7 @@ export function buildPcbXml(options: BuildPcbXmlOptions): string {
                 pTransDate: s.pTransDate, pReportStatus: s.pReportStatus,
                 pDeficiencyRemarks: s.pDeficiencyRemarks,
             });
-            addSoapSubElements(soap);
+            addSoapSubElements(soap, s.icdCodes ?? []);
         }
     } else {
         const soap = soapsEle.ele("SOAP", {
@@ -710,4 +721,3 @@ export function buildStagingTestPcbXml(
 
     return doc.end({ headless: true });
 }
-

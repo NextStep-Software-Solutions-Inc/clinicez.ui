@@ -267,6 +267,7 @@ export interface KonsultaSoapData {
     pTransDate: string;
     pReportStatus: KonsultaReportStatus;
     pDeficiencyRemarks: string;
+    icdCodes?: string[];
 }
 
 // ─── PCB Root ────────────────────────────────────────────────────────────────

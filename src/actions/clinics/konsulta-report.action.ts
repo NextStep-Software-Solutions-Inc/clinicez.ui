@@ -14,6 +14,7 @@ import { generateTransmittalNumber } from "@/services/konsulta/pcb-xml-builder";
 import type { KonsultaEnlistmentData, KonsultaPatientType, KonsultaSoapData, KonsultaProfileData } from "@/services/konsulta/types";
 import { formatKonsultaHciNumber } from "@/lib/format-sequence";
 import { getNextSequenceNumber } from "@/lib/sequence-generator";
+import { resolveMappedIcdCodesForConsultations } from "@/lib/konsulta-library-persistence";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -1543,6 +1544,31 @@ export const generateBatchXmlAction = withErrorHandling(async (batchUid: string)
     }
 
     const consultationIds = Array.from(entryByConsultationId.keys());
+    const diagnosisMappingResult = await resolveMappedIcdCodesForConsultations(
+        batch.clinicId,
+        consultationIds,
+    );
+    if (diagnosisMappingResult.deficiencies.length > 0) {
+        const message = diagnosisMappingResult.deficiencies.slice(0, 8).join("\n");
+        throw new Error(
+            `Konsulta library mapping is incomplete for this batch.\n${message}`,
+        );
+    }
+    const mappedIcdCodesByConsultationId = diagnosisMappingResult.mappedDiagnoses.reduce<Map<number, string[]>>(
+        (result, diagnosis) => {
+            if (!diagnosis.mappedCode) {
+                return result;
+            }
+
+            const existingCodes = result.get(diagnosis.consultationId) ?? [];
+            if (!existingCodes.includes(diagnosis.mappedCode)) {
+                existingCodes.push(diagnosis.mappedCode);
+            }
+            result.set(diagnosis.consultationId, existingCodes);
+            return result;
+        },
+        new Map<number, string[]>(),
+    );
 
     // Validate consultation records for second-tranche reports
     if (batch.reportTagging === "2" && consultationIds.length === 0) {
@@ -1657,6 +1683,7 @@ export const generateBatchXmlAction = withErrorHandling(async (batchUid: string)
                     pTransDate: transDate,
                     pReportStatus: "U",
                     pDeficiencyRemarks: "",
+                    icdCodes: mappedIcdCodesByConsultationId.get(consultation.id) ?? [],
                 };
             })
             : [];

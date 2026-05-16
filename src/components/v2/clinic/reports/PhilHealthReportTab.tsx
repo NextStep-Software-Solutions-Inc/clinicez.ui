@@ -143,7 +143,7 @@ export function PhilHealthReportTab({ clinicUid }: PhilHealthReportTabProps) {
     };
 
     return (
-        <Tabs value={activeTab} onValueChange={handleTabChange} className="mt-4">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="mt-3 sm:mt-4">
             <div className="mb-4 overflow-x-auto">
                 <TabsList className="w-max min-w-full">
                     <TabsTrigger value="patients" className="gap-2 whitespace-nowrap">
@@ -170,16 +170,16 @@ export function PhilHealthReportTab({ clinicUid }: PhilHealthReportTabProps) {
                 </TabsList>
             </div>
 
-            <TabsContent value="patients">
+            <TabsContent value="patients" className="min-w-0">
                 <PatientsPanel clinicUid={clinicUid} />
             </TabsContent>
-            <TabsContent value="consultations">
+            <TabsContent value="consultations" className="min-w-0">
                 <ConsultationsPanel clinicUid={clinicUid} />
             </TabsContent>
-            <TabsContent value="batches">
+            <TabsContent value="batches" className="min-w-0">
                 <BatchesPanel clinicUid={clinicUid} />
             </TabsContent>
-            <TabsContent value="history">
+            <TabsContent value="history" className="min-w-0">
                 <SubmissionHistoryPanel clinicUid={clinicUid} />
             </TabsContent>
             <TabsContent value="atc-verification">
@@ -435,8 +435,8 @@ function PatientsPanel({ clinicUid }: { clinicUid: string }) {
     function PatientRow({ patient, enrolled, isSelected, onToggleSelect }: { patient: ClinicPatientRow; enrolled: boolean; isSelected?: boolean; onToggleSelect?: (id: number) => void }) {
         const ph = patient.Patient.PhilHealthRecords[0];
         return (
-            <div className="border-b px-4 py-3 last:border-b-0">
-                <div className="flex items-start justify-between gap-3">
+            <div className="border-b px-3 py-3 sm:px-4 last:border-b-0">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div className="flex items-start gap-2">
                         {enrolled && onToggleSelect && (
                             <div className="mt-0.5 flex items-center">
@@ -456,17 +456,17 @@ function PatientsPanel({ clinicUid }: { clinicUid: string }) {
                             </p>
                         </div>
                     </div>
-                    <div className="flex shrink-0 flex-wrap justify-end gap-1.5">
-                        <Button variant="outline" size="sm" className="h-8 gap-1 px-2 text-xs" onClick={() => openEnrollDialog(patient)}>
+                    <div className="flex w-full flex-wrap gap-1.5 sm:w-auto sm:justify-end">
+                        <Button variant="outline" size="sm" className="h-8 min-w-[84px] justify-center gap-1 px-2 text-xs" onClick={() => openEnrollDialog(patient)}>
                             {enrolled ? <Pencil className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
                             {enrolled ? "Update" : "Enroll"}
                         </Button>
                         {enrolled && (
                             <>
-                                <Button variant="ghost" size="sm" className="h-8 gap-1 px-2 text-xs" onClick={() => void handleCheck(patient)}>
+                                <Button variant="ghost" size="sm" className="h-8 min-w-[84px] justify-center gap-1 px-2 text-xs" onClick={() => void handleCheck(patient)}>
                                     <ShieldQuestion className="h-3.5 w-3.5" />Check
                                 </Button>
-                                <Button variant="ghost" size="sm" className="h-8 gap-1 px-2 text-xs text-destructive" onClick={() => void handleUnenroll(patient)}>
+                                <Button variant="ghost" size="sm" className="h-8 min-w-[92px] justify-center gap-1 px-2 text-xs text-destructive" onClick={() => void handleUnenroll(patient)}>
                                     <UserMinus className="h-3.5 w-3.5" />Unenroll
                                 </Button>
                             </>
@@ -523,9 +523,9 @@ function PatientsPanel({ clinicUid }: { clinicUid: string }) {
         return (
             <Card>
                 <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between gap-3">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                         <CardTitle className="flex items-center gap-2 text-sm">{icon}{title}</CardTitle>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center justify-end gap-2">
                             {kind === "ENROLLED" && feed.rows.length > 0 && (
                                 <>
                                     {selectedIds && onToggleSelectAll && (
@@ -867,7 +867,7 @@ function ConsultationsPanel({ clinicUid }: { clinicUid: string }) {
                         <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
                     </Button>
                 </div>
-                <div className="flex gap-3 mt-2 items-end">
+                <div className="mt-2 flex flex-wrap items-end gap-3">
                     <div>
                         <Label className="text-xs">From</Label>
                         <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="w-36" />
@@ -891,7 +891,8 @@ function ConsultationsPanel({ clinicUid }: { clinicUid: string }) {
                         No PhilHealth consultations found in this date range.
                     </div>
                 ) : (
-                    <Table>
+                    <div className="overflow-x-auto">
+                    <Table className="min-w-[920px]">
                         <TableHeader>
                             <TableRow>
                                 <TableHead>HCI Case</TableHead>
@@ -984,6 +985,7 @@ function ConsultationsPanel({ clinicUid }: { clinicUid: string }) {
                             })}
                         </TableBody>
                     </Table>
+                    </div>
                 )}
             </CardContent>
         </Card>
@@ -1654,7 +1656,7 @@ function BatchesPanel({ clinicUid }: { clinicUid: string }) {
 
     return (
         <div className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h3 className="text-sm font-semibold flex items-center gap-2">
                         <Send className="h-4 w-4 text-primary" />Report Batches
@@ -1663,7 +1665,7 @@ function BatchesPanel({ clinicUid }: { clinicUid: string }) {
                         Group patients into a batch, generate PCB XML, encrypt, and submit to PhilHealth.
                     </p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                     <Button variant="ghost" size="sm" onClick={() => void load()} disabled={loading}>
                         <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
                     </Button>
@@ -1699,9 +1701,9 @@ function BatchesPanel({ clinicUid }: { clinicUid: string }) {
                         return (
                             <Card key={batch.batchUid}>
                                 <CardHeader className="pb-2">
-                                    <div className="flex items-center justify-between gap-3">
+                                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                                         <button
-                                            className="flex items-center gap-2 text-left"
+                                            className="flex min-w-0 items-center gap-2 text-left"
                                             onClick={() => setExpandedBatch(isExpanded ? null : batch.batchUid)}
                                         >
                                             {isExpanded
@@ -1715,12 +1717,12 @@ function BatchesPanel({ clinicUid }: { clinicUid: string }) {
                                                     {BATCH_STATUS_LABELS[batch.status] ?? batch.status}
                                                 </Badge>
                                             </span>
-                                            <span className="text-xs text-muted-foreground">
+                                            <span className="max-w-full truncate text-xs text-muted-foreground">
                                                 Tagging {batch.reportTagging} · {batch.KonsultaEntries.length} patient(s)
                                             </span>
                                         </button>
 
-                                        <div className="flex gap-1 shrink-0">
+                                        <div className="flex w-full flex-wrap gap-1 sm:w-auto sm:shrink-0 sm:justify-end">
                                             {canGenerate && (
                                                 <Button
                                                     type="button"
@@ -2556,7 +2558,8 @@ function SubmissionHistoryPanel({ clinicUid }: { clinicUid: string }) {
                         No submitted batches yet.
                     </div>
                 ) : (
-                    <Table>
+                    <div className="overflow-x-auto">
+                    <Table className="min-w-[760px]">
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Period</TableHead>
@@ -2603,6 +2606,7 @@ function SubmissionHistoryPanel({ clinicUid }: { clinicUid: string }) {
                             ))}
                         </TableBody>
                     </Table>
+                    </div>
                 )}
             </CardContent>
 

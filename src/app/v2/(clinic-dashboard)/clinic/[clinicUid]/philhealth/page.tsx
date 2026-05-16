@@ -16,7 +16,7 @@ export default async function ClinicPhilHealthPage({ params }: PhilHealthPagePro
   const { clinicUid } = await params;
 
   return (
-    <div className="p-6">
+    <div className="p-3 sm:p-6">
       <div className="mb-4">
         <h1 className="text-2xl font-bold tracking-tight">PhilHealth Konsulta</h1>
         <p className="text-muted-foreground text-sm mt-1">

@@ -251,6 +251,9 @@ export interface KonsultaProfileData {
     pTransDate: string;
     pReportStatus: KonsultaReportStatus;
     pDeficiencyRemarks: string;
+    medicalHistoryCodes?: string[];
+    immunizations?: KonsultaImmunizationData[];
+    physicalExamFindings?: KonsultaPhysicalExamFindingData[];
 }
 
 export interface KonsultaSoapData {
@@ -268,6 +271,67 @@ export interface KonsultaSoapData {
     pReportStatus: KonsultaReportStatus;
     pDeficiencyRemarks: string;
     icdCodes?: string[];
+    diagnosticCodes?: string[];
+    managementCodes?: string[];
+    physicalExamFindings?: KonsultaPhysicalExamFindingData[];
+}
+
+export interface KonsultaMedicalHistoryData {
+    pMdiseaseCode: string;
+    pReportStatus: KonsultaReportStatus;
+    pDeficiencyRemarks: string;
+}
+
+export interface KonsultaImmunizationData {
+    pChildImmcode: string;
+    pYoungwImmcode: string;
+    pPregwImmcode: string;
+    pElderlyImmcode: string;
+    pOtherImm: string;
+    pReportStatus: KonsultaReportStatus;
+    pDeficiencyRemarks: string;
+}
+
+export interface KonsultaPhysicalExamFindingData {
+    pSkinId: string;
+    pHeentId: string;
+    pChestId: string;
+    pHeartId: string;
+    pAbdomenId: string;
+    pNeuroId: string;
+    pGuId: string;
+    pRectalId: string;
+    pReportStatus: KonsultaReportStatus;
+    pDeficiencyRemarks: string;
+}
+
+export interface KonsultaMedicineData {
+    pHciCaseNo: string;
+    pHciTransNo: string;
+    pCategory: string;
+    pDrugCode: string;
+    pGenericCode: string;
+    pSaltCode: string;
+    pStrengthCode: string;
+    pFormCode: string;
+    pUnitCode: string;
+    pPackageCode: string;
+    pOtherMedicine: string;
+    pRoute: string;
+    pQuantity: string;
+    pActualUnitPrice: string;
+    pTotalAmtPrice: string;
+    pInstructionQuantity: string;
+    pInstructionStrength: string;
+    pInstructionFrequency: string;
+    pPrescribingPhysician: string;
+    pIsDispensed: string;
+    pDateDispensed: string;
+    pDispensingPersonnel: string;
+    pIsApplicable: KonsultaYN;
+    pDateAdded: string;
+    pReportStatus: KonsultaReportStatus;
+    pDeficiencyRemarks: string;
 }
 
 // ─── PCB Root ────────────────────────────────────────────────────────────────
@@ -278,4 +342,5 @@ export interface PcbXmlBuilderInput {
     enlistments: KonsultaEnlistmentData[];
     profiles: KonsultaProfileData[];
     soaps: KonsultaSoapData[];
+    medicines?: KonsultaMedicineData[];
 }

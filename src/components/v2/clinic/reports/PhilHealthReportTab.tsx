@@ -1788,6 +1788,21 @@ function BatchesPanel({ clinicUid }: { clinicUid: string }) {
 
                                 {isExpanded && (
                                     <CardContent>
+                                        {batch.errorMessage && (
+                                            <Alert className="mb-4">
+                                                <AlertCircle className="h-4 w-4" />
+                                                <AlertTitle>
+                                                    {batch.errorMessage.startsWith("Optional mapping deficiencies:")
+                                                        ? "Mapping deficiencies to review"
+                                                        : "Batch issue"}
+                                                </AlertTitle>
+                                                <AlertDescription className="space-y-1 whitespace-pre-wrap">
+                                                    {batch.errorMessage
+                                                        .replace(/^Optional mapping deficiencies:\n?/, "")
+                                                        .trim()}
+                                                </AlertDescription>
+                                            </Alert>
+                                        )}
                                         <BatchEntryTable
                                             entries={batch.KonsultaEntries}
                                             batchUid={batch.batchUid}

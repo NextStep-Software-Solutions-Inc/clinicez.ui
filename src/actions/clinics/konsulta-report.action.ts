@@ -14,7 +14,15 @@ import { generateTransmittalNumber } from "@/services/konsulta/pcb-xml-builder";
 import type { KonsultaEnlistmentData, KonsultaPatientType, KonsultaSoapData, KonsultaProfileData } from "@/services/konsulta/types";
 import { formatKonsultaHciNumber } from "@/lib/format-sequence";
 import { getNextSequenceNumber } from "@/lib/sequence-generator";
-import { resolveMappedIcdCodesForConsultations } from "@/lib/konsulta-library-persistence";
+import {
+    resolveMappedDiagnosticsForConsultations,
+    resolveMappedIcdCodesForConsultations,
+    resolveMappedImmunizationsForPatients,
+    resolveMappedManagementForConsultations,
+    resolveMappedMedicalHistoryForPatients,
+    resolveMappedMedicinesForConsultations,
+    resolveMappedPhysicalExamFindingsForConsultations,
+} from "@/lib/konsulta-library-persistence";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -105,6 +113,18 @@ function normalizePage(skip = 0, take = 30): { skip: number; take: number } {
         skip: Math.max(0, skip),
         take: Math.min(Math.max(1, take), 50),
     };
+}
+
+function pushUniqueMappedCode(result: Map<number, string[]>, key: number, nextCode: string | null): void {
+    if (!nextCode) {
+        return;
+    }
+
+    const existingCodes = result.get(key) ?? [];
+    if (!existingCodes.includes(nextCode)) {
+        existingCodes.push(nextCode);
+        result.set(key, existingCodes);
+    }
 }
 
 type MutableInputJsonObject = { [key: string]: Prisma.InputJsonValue | null };
@@ -1471,16 +1491,17 @@ export const generateBatchXmlAction = withErrorHandling(async (batchUid: string)
         }
     }
 
-    const credentials = await getClinicKonsultaCredentials(batch.clinicId);
-    const seq = Math.floor(Date.now() / 1000) % 99999;
-    const transmittalNo = generateTransmittalNumber(credentials.hciAccreNo, seq);
+    try {
+        const credentials = await getClinicKonsultaCredentials(batch.clinicId);
+        const seq = Math.floor(Date.now() / 1000) % 99999;
+        const transmittalNo = generateTransmittalNumber(credentials.hciAccreNo, seq);
 
-    const year = batch.period.slice(0, 4);
-    const monthIdx = parseInt(batch.period.slice(4, 6), 10) - 1;
-    const periodDate = new Date(parseInt(year, 10), monthIdx, 1);
-    const effYear = year;
+        const year = batch.period.slice(0, 4);
+        const monthIdx = parseInt(batch.period.slice(4, 6), 10) - 1;
+        const periodDate = new Date(parseInt(year, 10), monthIdx, 1);
+        const effYear = year;
 
-    const enlistments: KonsultaEnlistmentData[] = batch.KonsultaEntries.map((entry) => {
+        const enlistments: KonsultaEnlistmentData[] = batch.KonsultaEntries.map((entry) => {
         const p = entry.Patient;
         const dob = p.dob ? p.dob.toISOString().slice(0, 10) : "1990-01-01";
         const mobile = p.mobile ?? `09${entry.philHealthPin.slice(-9)}`;
@@ -1520,10 +1541,10 @@ export const generateBatchXmlAction = withErrorHandling(async (batchUid: string)
             pReportStatus: "U",
             pDeficiencyRemarks: "",
         };
-    });
+        });
 
     // Helper function to format age like PhilHealth expects
-    const formatAge = (dob: string): string => {
+        const formatAge = (dob: string): string => {
         if (!dob) return "0 YR(S), 0 MO(S), 0 DAY(S)";
         const d = new Date(dob);
         const now = new Date();
@@ -1533,50 +1554,149 @@ export const generateBatchXmlAction = withErrorHandling(async (batchUid: string)
         if (days < 0) { m--; days += 30; }
         if (m < 0) { y--; m += 12; }
         return `${y} YR(S), ${m} MO(S), ${days} DAY(S)`;
-    };
+        };
 
-    // For SOAPS: fetch consultation records for second-tranche reports
-    const entryByConsultationId = new Map<number, (typeof batch.KonsultaEntries)[number]>();
-    for (const entry of batch.KonsultaEntries) {
-        for (const consultationId of entry.consultationIds) {
-            entryByConsultationId.set(consultationId, entry);
+        const createPhysicalExamFindingRecord = (domainKey: string | null, mappedCode: string | null) => {
+            if (!domainKey || !mappedCode) {
+                return null;
+            }
+
+            return {
+                pSkinId: domainKey === "lib_skin_extremities" ? mappedCode : "",
+                pHeentId: domainKey === "lib_heent" ? mappedCode : "",
+                pChestId: domainKey === "lib_chest" ? mappedCode : "",
+                pHeartId: domainKey === "lib_heart" ? mappedCode : "",
+                pAbdomenId: domainKey === "lib_abdomen" ? mappedCode : "",
+                pNeuroId: domainKey === "lib_neuro" ? mappedCode : "",
+                pGuId: domainKey === "lib_genitourinary" ? mappedCode : "",
+                pRectalId: domainKey === "lib_digital_rectal" ? mappedCode : "",
+                pReportStatus: "U" as const,
+                pDeficiencyRemarks: "",
+            };
+        };
+
+        const createImmunizationRecord = (domainKey: string | null, mappedCode: string | null) => {
+            if (!domainKey || !mappedCode) {
+                return null;
+            }
+
+            return {
+                pChildImmcode: domainKey === "lib_immchild" ? mappedCode : "",
+                pYoungwImmcode: domainKey === "lib_immyoungw" ? mappedCode : "",
+                pPregwImmcode: domainKey === "lib_immpregw" ? mappedCode : "",
+                pElderlyImmcode: domainKey === "lib_immelderly" ? mappedCode : "",
+                pOtherImm: "",
+                pReportStatus: "U" as const,
+                pDeficiencyRemarks: "",
+            };
+        };
+        type KonsultaGeneratedPhysicalExamFinding = NonNullable<ReturnType<typeof createPhysicalExamFindingRecord>>;
+        type KonsultaGeneratedImmunization = NonNullable<ReturnType<typeof createImmunizationRecord>>;
+
+        // For SOAPS: fetch consultation records for second-tranche reports
+        const entryByConsultationId = new Map<number, (typeof batch.KonsultaEntries)[number]>();
+        for (const entry of batch.KonsultaEntries) {
+            for (const consultationId of entry.consultationIds) {
+                entryByConsultationId.set(consultationId, entry);
+            }
         }
-    }
-
-    const consultationIds = Array.from(entryByConsultationId.keys());
-    const diagnosisMappingResult = await resolveMappedIcdCodesForConsultations(
-        batch.clinicId,
-        consultationIds,
-    );
-    if (diagnosisMappingResult.deficiencies.length > 0) {
-        const message = diagnosisMappingResult.deficiencies.slice(0, 8).join("\n");
-        throw new Error(
-            `Konsulta library mapping is incomplete for this batch.\n${message}`,
-        );
-    }
-    const mappedIcdCodesByConsultationId = diagnosisMappingResult.mappedDiagnoses.reduce<Map<number, string[]>>(
-        (result, diagnosis) => {
-            if (!diagnosis.mappedCode) {
+        const consultationIds = Array.from(entryByConsultationId.keys());
+        const patientUserIds = batch.KonsultaEntries.map((entry) => entry.patientUserId);
+        const [
+            diagnosisMappingResult,
+            diagnosticMappingResult,
+            managementMappingResult,
+            medicineMappingResult,
+            medicalHistoryMappingResult,
+            immunizationMappingResult,
+            physicalExamMappingResult,
+        ] = await Promise.all([
+            resolveMappedIcdCodesForConsultations(batch.clinicId, consultationIds),
+            resolveMappedDiagnosticsForConsultations(batch.clinicId, consultationIds),
+            resolveMappedManagementForConsultations(batch.clinicId, consultationIds),
+            resolveMappedMedicinesForConsultations(batch.clinicId, consultationIds),
+            resolveMappedMedicalHistoryForPatients(batch.clinicId, patientUserIds),
+            resolveMappedImmunizationsForPatients(batch.clinicId, patientUserIds),
+            resolveMappedPhysicalExamFindingsForConsultations(batch.clinicId, consultationIds),
+        ]);
+        if (diagnosisMappingResult.deficiencies.length > 0) {
+            const message = diagnosisMappingResult.deficiencies.slice(0, 8).join("\n");
+            throw new Error(
+                `Konsulta library mapping is incomplete for this batch.\n${message}`,
+            );
+        }
+        const mappedIcdCodesByConsultationId = diagnosisMappingResult.mappedDiagnoses.reduce<Map<number, string[]>>(
+            (result, diagnosis) => {
+                pushUniqueMappedCode(result, diagnosis.consultationId, diagnosis.mappedCode);
                 return result;
-            }
+            },
+            new Map<number, string[]>(),
+        );
+        const mappedDiagnosticsByConsultationId = diagnosticMappingResult.mappedDiagnostics.reduce<Map<number, string[]>>(
+            (result, diagnostic) => {
+                pushUniqueMappedCode(result, diagnostic.consultationId, diagnostic.mappedCode);
+                return result;
+            },
+            new Map<number, string[]>(),
+        );
+        const mappedManagementByConsultationId = managementMappingResult.mappedManagements.reduce<Map<number, string[]>>(
+            (result, management) => {
+                pushUniqueMappedCode(result, management.consultationId, management.mappedCode);
+                return result;
+            },
+            new Map<number, string[]>(),
+        );
+        const mappedMedicalHistoryByPatientId = medicalHistoryMappingResult.mappedMedicalHistory.reduce<Map<number, string[]>>(
+            (result, history) => {
+                pushUniqueMappedCode(result, history.patientUserId, history.mappedCode);
+                return result;
+            },
+            new Map<number, string[]>(),
+        );
+        const mappedImmunizationsByPatientId = immunizationMappingResult.mappedImmunizations.reduce<Map<number, KonsultaGeneratedImmunization[]>>(
+            (result, immunization) => {
+                const record = createImmunizationRecord(immunization.domainKey, immunization.mappedCode);
+                if (!record) {
+                    return result;
+                }
+                const existing = result.get(immunization.patientUserId) ?? [];
+                existing.push(record);
+                result.set(immunization.patientUserId, existing);
+                return result;
+            },
+            new Map<number, KonsultaGeneratedImmunization[]>(),
+        );
+        const mappedPhysicalExamFindingsByConsultationId = physicalExamMappingResult.mappedFindings.reduce<Map<number, KonsultaGeneratedPhysicalExamFinding[]>>(
+            (result, finding) => {
+                const record = createPhysicalExamFindingRecord(finding.domainKey, finding.mappedCode);
+                if (!record) {
+                    return result;
+                }
+                const existing = result.get(finding.consultationId) ?? [];
+                existing.push(record);
+                result.set(finding.consultationId, existing);
+                return result;
+            },
+            new Map<number, KonsultaGeneratedPhysicalExamFinding[]>(),
+        );
+        const optionalDeficiencies = Array.from(
+            new Set([
+                ...diagnosticMappingResult.deficiencies,
+                ...managementMappingResult.deficiencies,
+                ...medicineMappingResult.deficiencies,
+                ...medicalHistoryMappingResult.deficiencies,
+                ...immunizationMappingResult.deficiencies,
+                ...physicalExamMappingResult.deficiencies,
+            ]),
+        );
 
-            const existingCodes = result.get(diagnosis.consultationId) ?? [];
-            if (!existingCodes.includes(diagnosis.mappedCode)) {
-                existingCodes.push(diagnosis.mappedCode);
-            }
-            result.set(diagnosis.consultationId, existingCodes);
-            return result;
-        },
-        new Map<number, string[]>(),
-    );
+        // Validate consultation records for second-tranche reports
+        if (batch.reportTagging === "2" && consultationIds.length === 0) {
+            throw new Error("Second-tranche reports require at least one consultation SOAP entry. Please add consultations to the patient records.");
+        }
 
-    // Validate consultation records for second-tranche reports
-    if (batch.reportTagging === "2" && consultationIds.length === 0) {
-        throw new Error("Second-tranche reports require at least one consultation SOAP entry. Please add consultations to the patient records.");
-    }
-
-    const consultationRows = batch.reportTagging === "2" && consultationIds.length > 0
-        ? await prisma.consultationTicket.findMany({
+        const consultationRows = batch.reportTagging === "2" && consultationIds.length > 0
+            ? await prisma.consultationTicket.findMany({
             where: {
                 id: { in: consultationIds },
                 clinicId: batch.clinicId,
@@ -1591,13 +1711,13 @@ export const generateBatchXmlAction = withErrorHandling(async (batchUid: string)
                 konsultaAtc: true,
                 Appointment: { select: { AppointmentAttribute: { select: { date: true, isWalkIn: true } } } },
             },
-        })
-        : [];
+            })
+            : [];
 
-    // PROFILE elements: Type 1 (ENLISTMENT) = per-entry, Type 2 (SOAP) = per-consultation
-    const profiles: KonsultaProfileData[] =
-        batch.reportTagging === "1"
-            ? batch.KonsultaEntries.map((entry) => {
+        // PROFILE elements: Type 1 (ENLISTMENT) = per-entry, Type 2 (SOAP) = per-consultation
+        const profiles: KonsultaProfileData[] =
+            batch.reportTagging === "1"
+                ? batch.KonsultaEntries.map((entry) => {
                 const p = entry.Patient;
                 const dob = p.dob ? p.dob.toISOString().slice(0, 10) : "1990-01-01";
                 const patientType = (entry.memberType ?? "").trim() as "MM" | "DD";
@@ -1620,6 +1740,8 @@ export const generateBatchXmlAction = withErrorHandling(async (batchUid: string)
                     pTransDate: periodDate.toISOString().slice(0, 10),
                     pReportStatus: "U",
                     pDeficiencyRemarks: "",
+                    medicalHistoryCodes: mappedMedicalHistoryByPatientId.get(entry.patientUserId) ?? [],
+                    immunizations: mappedImmunizationsByPatientId.get(entry.patientUserId) ?? [],
                 };
             })
             : consultationRows.map((consultation) => {
@@ -1651,12 +1773,15 @@ export const generateBatchXmlAction = withErrorHandling(async (batchUid: string)
                     pTransDate: consultation.createdAt.toISOString().slice(0, 10),
                     pReportStatus: "U",
                     pDeficiencyRemarks: "",
+                    medicalHistoryCodes: mappedMedicalHistoryByPatientId.get(entry.patientUserId) ?? [],
+                    immunizations: mappedImmunizationsByPatientId.get(entry.patientUserId) ?? [],
+                    physicalExamFindings: mappedPhysicalExamFindingsByConsultationId.get(consultation.id) ?? [],
                 };
             });
 
-    const soaps: KonsultaSoapData[] =
-        batch.reportTagging === "2"
-            ? consultationRows.map((consultation) => {
+        const soaps: KonsultaSoapData[] =
+            batch.reportTagging === "2"
+                ? consultationRows.map((consultation) => {
                 const entry = entryByConsultationId.get(consultation.id);
                 if (!entry) throw new Error("Consultation is not attached to a batch entry.");
                 const soapDate = (consultation.Appointment?.AppointmentAttribute?.date ?? consultation.createdAt)
@@ -1684,46 +1809,103 @@ export const generateBatchXmlAction = withErrorHandling(async (batchUid: string)
                     pReportStatus: "U",
                     pDeficiencyRemarks: "",
                     icdCodes: mappedIcdCodesByConsultationId.get(consultation.id) ?? [],
+                    diagnosticCodes: mappedDiagnosticsByConsultationId.get(consultation.id) ?? [],
+                    managementCodes: mappedManagementByConsultationId.get(consultation.id) ?? [],
+                    physicalExamFindings: mappedPhysicalExamFindingsByConsultationId.get(consultation.id) ?? [],
                 };
             })
             : [];
 
-    const xml = buildPcbXml({
+        const medicines = medicineMappingResult.mappedMedicines.map((medicine) => {
+            const entry = entryByConsultationId.get(medicine.consultationId);
+            if (!entry) {
+                return null;
+            }
+
+            return {
+                pHciCaseNo: entry.hciCaseNo || formatKonsultaHciNumber("T", credentials.hciAccreNo, entry.id, periodDate),
+                pHciTransNo: entry.hciTransNo || formatKonsultaHciNumber("S", credentials.hciAccreNo, medicine.consultationId, periodDate),
+                pCategory: "",
+                pDrugCode: medicine.mappedDrugCode ?? "",
+                pGenericCode: medicine.mappedGenericCode ?? "",
+                pSaltCode: "",
+                pStrengthCode: "",
+                pFormCode: "",
+                pUnitCode: "",
+                pPackageCode: "",
+                pOtherMedicine: "",
+                pRoute: "",
+                pQuantity: medicine.quantity ? String(medicine.quantity) : "",
+                pActualUnitPrice: "",
+                pTotalAmtPrice: "",
+                pInstructionQuantity: medicine.quantity ? String(medicine.quantity) : "",
+                pInstructionStrength: medicine.dosage ?? "",
+                pInstructionFrequency: medicine.frequency ?? "",
+                pPrescribingPhysician: "",
+                pIsDispensed: "N",
+                pDateDispensed: "",
+                pDispensingPersonnel: "",
+                pIsApplicable: "Y" as const,
+                pDateAdded: periodDate.toISOString().slice(0, 10),
+                pReportStatus: "U" as const,
+                pDeficiencyRemarks: "",
+            };
+        }).filter((medicine): medicine is NonNullable<typeof medicine> => medicine !== null);
+
+        const xml = buildPcbXml({
         credentials,
         transmittalNumber: transmittalNo,
         enlistments: batch.reportTagging === "1" ? enlistments : [],
         profiles,
         soaps,
-    });
+            medicines,
+        });
 
-    // Update batch with new XML and clear old validation/submission results
-    await prisma.konsultaBatch.update({
+        // Update batch with new XML and clear old validation/submission results
+        await prisma.konsultaBatch.update({
         where: { batchUid },
         data: {
             xmlPayload: xml,
             transmittalNo,
             status: "GENERATED",
-            errorMessage: null,
+            errorMessage: optionalDeficiencies.length > 0
+                ? `Optional mapping deficiencies:\n${optionalDeficiencies.join("\n")}`
+                : null,
         },
-    });
+        });
 
-    // Clear validation and submission results using raw query to handle JSON null properly
-    await prisma.$executeRaw`
+        // Clear validation and submission results using raw query to handle JSON null properly
+        await prisma.$executeRaw`
         UPDATE "KonsultaBatch" 
         SET "validateResult" = NULL, "submitResult" = NULL 
         WHERE "batchUid" = ${batchUid}
     `;
 
-    // Reset all included entries back to PENDING status so they can be re-validated
-    await prisma.konsultaEntry.updateMany({
+        // Reset all included entries back to PENDING status so they can be re-validated
+        await prisma.konsultaEntry.updateMany({
         where: { batchId: batch.id, included: true },
         data: { status: "PENDING" },
-    });
+        });
 
-    return {
+        return {
         message: "XML generated successfully",
         data: { transmittalNo, xmlLength: xml.length, xmlPayload: xml },
-    };
+        };
+    } catch (error) {
+        const message = error instanceof Error ? error.message : "Failed to generate XML.";
+        await prisma.konsultaBatch.update({
+            where: { batchUid },
+            data: {
+                status: "FAILED",
+                errorMessage: message,
+            },
+        });
+        await prisma.konsultaEntry.updateMany({
+            where: { batchId: batch.id, included: true },
+            data: { status: "FAILED" },
+        });
+        throw error;
+    }
 });
 
 // ─── Validate + Submit ────────────────────────────────────────────────────────

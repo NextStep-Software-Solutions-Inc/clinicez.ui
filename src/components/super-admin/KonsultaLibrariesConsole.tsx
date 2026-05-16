@@ -1,13 +1,15 @@
 "use client";
 
-import { useMemo, useState, type ChangeEvent } from "react";
+import { useMemo, useState, useTransition, type ChangeEvent } from "react";
 import {
   AlertCircle,
   CheckSquare,
   Database,
   FileSpreadsheet,
+  Loader2,
   Pencil,
   Plus,
+  RefreshCw,
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -72,6 +74,7 @@ import {
   type KonsultaParsedRow,
   type KonsultaParsedWorkbook,
 } from "@/lib/konsulta-library";
+import { refreshKonsultaPhilHealthReferencesAction } from "@/actions/super-admin/konsulta-library.action";
 
 const SUPPORTED_FILE_ACCEPT =
   ".xlsx,.xls,.xlsm,.xlsb,.csv,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
@@ -220,6 +223,7 @@ function getLibraryDefinitionByKey(
 }
 
 export function KonsultaLibrariesConsole() {
+  const [isRefreshingReferences, startRefreshTransition] = useTransition();
   const [libraryManagers, setLibraryManagers] = useState<LibraryManagers>(
     createInitialLibraryManagers,
   );
@@ -231,6 +235,12 @@ export function KonsultaLibrariesConsole() {
   const [deleteDialogState, setDeleteDialogState] =
     useState<DeleteDialogState | null>(null);
   const [uploadingLibraryKey, setUploadingLibraryKey] = useState<string | null>(null);
+  const [refreshSummary, setRefreshSummary] = useState<{
+    created: number;
+    updated: number;
+    retired: number;
+    total: number;
+  } | null>(null);
 
   const librarySummary = useMemo(() => {
     const librariesWithRecords = Object.values(libraryManagers).filter(
@@ -477,6 +487,50 @@ export function KonsultaLibrariesConsole() {
           database yet.
         </AlertDescription>
       </Alert>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm">Persisted PhilHealth reference refresh</CardTitle>
+          <CardDescription>
+            Refresh the bundled PhilHealth Konsulta references without touching clinic custom terms.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <Button
+            type="button"
+            variant="outline"
+            disabled={isRefreshingReferences}
+            onClick={() => {
+              startRefreshTransition(async () => {
+                const result = await refreshKonsultaPhilHealthReferencesAction();
+                if (result.status && result.data) {
+                  setRefreshSummary(result.data);
+                  toast.success(result.message);
+                } else {
+                  toast.error(result.message ?? "Failed to refresh PhilHealth references.");
+                }
+              });
+            }}
+          >
+            {isRefreshingReferences ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Refreshing…
+              </>
+            ) : (
+              <>
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Refresh PhilHealth References
+              </>
+            )}
+          </Button>
+          {refreshSummary && (
+            <p className="text-xs text-muted-foreground">
+              Created {refreshSummary.created}, updated {refreshSummary.updated}, retired {refreshSummary.retired}, processed {refreshSummary.total} rows.
+            </p>
+          )}
+        </CardContent>
+      </Card>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <Card>

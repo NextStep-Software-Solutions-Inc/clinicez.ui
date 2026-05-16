@@ -1305,7 +1305,7 @@ model Clinic {
   UserClinicAppointmentWhitelists UserClinicAppointmentWhitelist[]
   UserDefaultClinicRoles          UserDefaultClinicRole[]
   KonsultaBatches                 KonsultaBatch[]
-  ClinicKonsultaLibraryItems      ClinicKonsultaLibraryItem[]
+  ClinicKonsultaTerms             ClinicKonsultaTerm[]
 
   @@index([tenantId, clinicUid], map: "clinic_index")
 }
@@ -2946,7 +2946,7 @@ enum KonsultaBatchStatus {
 }
 
 /// Global PhilHealth reference library items imported from the bundled Konsulta kit.
-model PhilHealthKonsultaLibraryItem {
+model PhilHealthKonsultaReference {
   id                            Int                            @id @default(autoincrement())
   domainKey                     String
   title                         String
@@ -2964,16 +2964,17 @@ model PhilHealthKonsultaLibraryItem {
   isActive                      Boolean                        @default(true)
   createdAt                     DateTime                       @default(now())
   updatedAt                     DateTime                       @updatedAt
-  ClinicKonsultaLibraryItems    ClinicKonsultaLibraryItem[]    @relation("SeededFromPhilHealthReference")
-  ClinicKonsultaLibraryMappings ClinicKonsultaLibraryMapping[] @relation("MappedPhilHealthReference")
+  ClinicKonsultaTerms           ClinicKonsultaTerm[]           @relation("SeededFromPhilHealthReference")
+  ClinicKonsultaTermMappings    ClinicKonsultaTermMapping[]    @relation("MappedPhilHealthReference")
 
   @@index([domainKey, normalizedCode])
   @@index([domainKey, normalizedLabel])
   @@index([sourceFileName])
+  @@map("PhilHealthKonsultaLibraryItem")
 }
 
 /// Clinic-owned internal library items used for documentation and later mapped to PhilHealth references.
-model ClinicKonsultaLibraryItem {
+model ClinicKonsultaTerm {
   id                    Int                            @id @default(autoincrement())
   clinicId              Int
   domainKey             String
@@ -2988,31 +2989,33 @@ model ClinicKonsultaLibraryItem {
   createdAt             DateTime                       @default(now())
   updatedAt             DateTime                       @updatedAt
   seededFromReferenceId Int?
-  Clinic                Clinic                         @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  SeededFromReference   PhilHealthKonsultaLibraryItem? @relation("SeededFromPhilHealthReference", fields: [seededFromReferenceId], references: [id], onDelete: SetNull, onUpdate: NoAction)
-  Mapping               ClinicKonsultaLibraryMapping?
+  Clinic                Clinic                      @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  SeededFromReference   PhilHealthKonsultaReference? @relation("SeededFromPhilHealthReference", fields: [seededFromReferenceId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  Mapping               ClinicKonsultaTermMapping?
 
   @@unique([clinicId, domainKey, normalizedCode, normalizedLabel], map: "unique_clinic_konsulta_library_item")
   @@index([clinicId, domainKey])
   @@index([clinicId, domainKey, normalizedCode])
   @@index([clinicId, domainKey, normalizedLabel])
+  @@map("ClinicKonsultaLibraryItem")
 }
 
 /// Links one clinic internal library item to at most one PhilHealth reference row.
-model ClinicKonsultaLibraryMapping {
-  id                        Int                            @id @default(autoincrement())
-  clinicLibraryItemId       Int                            @unique
+model ClinicKonsultaTermMapping {
+  id                        Int                         @id @default(autoincrement())
+  clinicLibraryItemId       Int                         @unique
   philHealthReferenceItemId Int?
-  mappingStatus             String                         @default("UNMAPPED") // MAPPED | UNMAPPED | NEEDS_REVIEW
+  mappingStatus             String                      @default("UNMAPPED") // MAPPED | UNMAPPED | NEEDS_REVIEW
   mappingNotes              String?
   mappedAt                  DateTime?
-  createdAt                 DateTime                       @default(now())
-  updatedAt                 DateTime                       @updatedAt
-  ClinicLibraryItem         ClinicKonsultaLibraryItem      @relation(fields: [clinicLibraryItemId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  PhilHealthReferenceItem   PhilHealthKonsultaLibraryItem? @relation("MappedPhilHealthReference", fields: [philHealthReferenceItemId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  createdAt                 DateTime                    @default(now())
+  updatedAt                 DateTime                    @updatedAt
+  ClinicLibraryItem         ClinicKonsultaTerm         @relation(fields: [clinicLibraryItemId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  PhilHealthReferenceItem   PhilHealthKonsultaReference? @relation("MappedPhilHealthReference", fields: [philHealthReferenceItemId], references: [id], onDelete: SetNull, onUpdate: NoAction)
 
   @@index([mappingStatus])
   @@index([philHealthReferenceItemId])
+  @@map("ClinicKonsultaLibraryMapping")
 }
 
 /// Represents a single PCB XML submission batch for a reporting period.

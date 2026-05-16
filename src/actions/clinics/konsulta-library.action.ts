@@ -13,7 +13,7 @@ import {
   getClinicKonsultaLibraryDomainItems,
   getClinicKonsultaLibrarySummary,
   searchPhilHealthKonsultaReferenceItems,
-  updateClinicKonsultaLibraryMapping,
+  updateClinicKonsultaTermMapping,
 } from "@/lib/konsulta-library-persistence";
 
 type ActionResult<T> = {
@@ -233,7 +233,7 @@ export async function updateClinicKonsultaLibraryMappingAction(
 ): Promise<ActionResult<null>> {
   try {
     await requireClinicSettingsAccess(clinicUid);
-    await updateClinicKonsultaLibraryMapping(
+    await updateClinicKonsultaTermMapping(
       payload.clinicItemId,
       payload.philHealthReferenceItemId,
     );

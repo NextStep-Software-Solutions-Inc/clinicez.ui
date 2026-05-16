@@ -847,7 +847,10 @@ function PhilHealthTab({
         setReferenceOptions(result.data);
       } else {
         setReferenceOptions([]);
-        toast.error(result.message ?? "Failed to load PhilHealth references.");
+        toast.error(
+          result.message ??
+            "Unable to load PhilHealth references for this domain. Please verify your clinic settings access and try again.",
+        );
       }
       setSelectedReferenceValue(
         item.mappedReferenceId ? String(item.mappedReferenceId) : "__UNMAPPED__",

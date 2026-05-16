@@ -526,7 +526,7 @@ export function KonsultaLibrariesConsole() {
           </Button>
           {refreshSummary && (
             <p className="text-xs text-muted-foreground">
-              Created {refreshSummary.created}, updated {refreshSummary.updated}, retired {refreshSummary.retired}, processed {refreshSummary.total} rows.
+              Created {refreshSummary.created.toLocaleString()}, updated {refreshSummary.updated.toLocaleString()}, retired {refreshSummary.retired.toLocaleString()}, processed {refreshSummary.total.toLocaleString()} rows.
             </p>
           )}
         </CardContent>

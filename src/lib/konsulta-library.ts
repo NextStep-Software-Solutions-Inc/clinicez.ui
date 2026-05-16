@@ -66,6 +66,7 @@ export interface KonsultaParsedSheet {
   sheetName: string;
   headers: string[];
   rowCount: number;
+  rows: KonsultaParsedRow[];
   previewRows: KonsultaParsedRow[];
   warnings: string[];
   analysis: KonsultaSheetAnalysis;
@@ -470,10 +471,16 @@ function buildHeaders(headerRow: KonsultaCellValue[]): {
 }
 
 function createPreviewRows(
+  rows: KonsultaParsedRow[],
+): KonsultaParsedRow[] {
+  return rows.slice(0, PREVIEW_ROW_LIMIT);
+}
+
+function createParsedRows(
   rows: KonsultaCellValue[][],
   headers: string[],
 ): KonsultaParsedRow[] {
-  return rows.slice(0, PREVIEW_ROW_LIMIT).map((row) =>
+  return rows.map((row) =>
     headers.reduce<KonsultaParsedRow>((record, header, columnIndex) => {
       record[header] = row[columnIndex] ?? null;
       return record;
@@ -898,6 +905,7 @@ function createEmptySheet(sheetName: string, warning: string): KonsultaParsedShe
     sheetName,
     headers: [],
     rowCount: 0,
+    rows: [],
     previewRows: [],
     warnings: [warning],
     analysis: {
@@ -929,6 +937,7 @@ function parseWorksheet(
       sheetName,
       headers: [],
       rowCount: 0,
+      rows: [],
       previewRows: [],
       warnings: [],
       analysis: {
@@ -945,12 +954,14 @@ function parseWorksheet(
   const [headerRow, ...dataRows] = normalizedRows;
   const { headers, warnings } = buildHeaders(headerRow);
   const contentRows = dataRows.filter(hasRowContent);
-  const previewRows = createPreviewRows(contentRows, headers);
+  const rows = createParsedRows(contentRows, headers);
+  const previewRows = createPreviewRows(rows);
 
   return {
     sheetName,
     headers,
     rowCount: contentRows.length,
+    rows,
     previewRows,
     warnings,
     analysis: analyzeSheet(headers, previewRows),

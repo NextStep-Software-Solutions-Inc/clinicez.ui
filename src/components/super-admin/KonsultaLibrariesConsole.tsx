@@ -3,11 +3,12 @@
 import { useMemo, useState, type ChangeEvent } from "react";
 import {
   AlertCircle,
+  CheckSquare,
   Database,
   FileSpreadsheet,
-  Search,
-  Shapes,
-  Upload,
+  Pencil,
+  Plus,
+  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -15,7 +16,18 @@ import {
   AlertDescription,
   AlertTitle,
 } from "@/components/ui/alert";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -23,7 +35,17 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Table,
   TableBody,
@@ -38,326 +60,264 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
 import {
   KONSULTA_SAMPLE_LIBRARY_DEFINITIONS,
   getKonsultaCategoryLabel,
   getKonsultaStructureLabel,
   isSupportedKonsultaLibraryFile,
   parseKonsultaLibraryWorkbook,
+  type KonsultaCellValue,
   type KonsultaLibraryCategory,
-  type KonsultaParsedSheet,
+  type KonsultaLibraryDefinition,
+  type KonsultaParsedRow,
   type KonsultaParsedWorkbook,
 } from "@/lib/konsulta-library";
 
 const SUPPORTED_FILE_ACCEPT =
   ".xlsx,.xls,.xlsm,.xlsb,.csv,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
-function formatFileType(fileType: KonsultaParsedWorkbook["fileType"]): string {
-  return fileType.toUpperCase();
+interface LibraryRecord {
+  id: string;
+  values: KonsultaParsedRow;
+  source: "import" | "manual";
+  workbookName: string | null;
+  sheetName: string | null;
 }
 
-function SheetPreviewTable({ sheet }: { sheet: KonsultaParsedSheet }) {
-  const jsonPreview = JSON.stringify(sheet.previewRows, null, 2);
+interface LibraryManagerState {
+  columns: string[];
+  records: LibraryRecord[];
+  selectedRecordIds: string[];
+  uploadedWorkbooks: KonsultaParsedWorkbook[];
+}
 
-  return (
-    <Card>
-      <CardHeader className="pb-3">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <CardTitle className="text-base">{sheet.sheetName}</CardTitle>
-            <CardDescription>
-              {sheet.rowCount} parsed row(s). Preview limited to the first 15 row(s).
-            </CardDescription>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Badge variant="secondary">
-              {getKonsultaStructureLabel(sheet.analysis.structure)}
-            </Badge>
-            {sheet.analysis.keyColumns.map((column) => (
-              <Badge key={`${sheet.sheetName}-${column}`} variant="outline">
-                Key: {column}
-              </Badge>
-            ))}
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid gap-4 xl:grid-cols-3">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm">Detected columns</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm text-muted-foreground">
-              {sheet.analysis.columns.length > 0 ? (
-                sheet.analysis.columns.map((column) => (
-                  <div
-                    key={`${sheet.sheetName}-${column.header}`}
-                    className="rounded-md border p-2"
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="font-medium text-foreground">{column.header}</span>
-                      <Badge variant="outline">{column.role}</Badge>
-                    </div>
-                    <p className="mt-1 text-xs">
-                      Samples:{" "}
-                      {column.sampleValues.length > 0
-                        ? column.sampleValues
-                            .map((value) => String(value))
-                            .join(", ")
-                        : "—"}
-                    </p>
-                  </div>
-                ))
-              ) : (
-                <p>No column analysis available.</p>
-              )}
-            </CardContent>
-          </Card>
+interface RowDialogState {
+  mode: "create" | "edit";
+  libraryKey: string;
+  recordId: string | null;
+}
 
-          <Card className="xl:col-span-2">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm">Sheet modeling notes</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm text-muted-foreground">
-              <p>
-                Description columns:{" "}
-                {sheet.analysis.descriptionColumns.length > 0
-                  ? sheet.analysis.descriptionColumns.join(", ")
-                  : "none detected"}
-              </p>
-              <p>
-                Status columns:{" "}
-                {sheet.analysis.statusColumns.length > 0
-                  ? sheet.analysis.statusColumns.join(", ")
-                  : "none detected"}
-              </p>
-              <ul className="list-disc space-y-1 pl-4">
-                {sheet.analysis.notes.map((note, noteIndex) => (
-                  <li key={`${sheet.sheetName}-note-${noteIndex}`}>{note}</li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
-        </div>
+interface DeleteDialogState {
+  libraryKey: string;
+  recordIds: string[];
+}
 
-        <div className="overflow-x-auto rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                {sheet.headers.map((header) => (
-                  <TableHead key={header} className="whitespace-nowrap">
-                    {header}
-                  </TableHead>
-                ))}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sheet.previewRows.length > 0 ? (
-                sheet.previewRows.map((row, rowIndex) => (
-                  <TableRow key={`${sheet.sheetName}-${rowIndex}`}>
-                    {sheet.headers.map((header) => (
-                      <TableCell
-                        key={`${sheet.sheetName}-${rowIndex}-${header}`}
-                        className="align-top text-xs"
-                      >
-                        {row[header] === null ? "—" : String(row[header])}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell
-                    colSpan={Math.max(sheet.headers.length, 1)}
-                    className="text-center text-muted-foreground"
-                  >
-                    No preview rows available.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
+type LibraryManagers = Record<string, LibraryManagerState>;
+type RowDraft = Record<string, string>;
 
-        <div className="space-y-2">
-          <p className="text-sm font-medium">JSON preview</p>
-          <Textarea
-            readOnly
-            value={jsonPreview}
-            className="min-h-40 font-mono text-xs"
-          />
-        </div>
-      </CardContent>
-    </Card>
+const DEFAULT_LIBRARY_COLUMNS: Record<KonsultaLibraryCategory, string[]> = {
+  "clinical-reference": ["Code", "Description", "Status"],
+  "physical-exam": ["Code", "Description", "Status"],
+  immunization: ["Code", "Description", "Status"],
+  medication: ["Code", "Description", "Form", "Strength", "Status"],
+  screening: ["Code", "Description", "Group", "Status"],
+};
+
+function createInitialLibraryManagers(): LibraryManagers {
+  return KONSULTA_SAMPLE_LIBRARY_DEFINITIONS.reduce<LibraryManagers>(
+    (managers, definition) => {
+      managers[definition.fileName] = {
+        columns: [],
+        records: [],
+        selectedRecordIds: [],
+        uploadedWorkbooks: [],
+      };
+      return managers;
+    },
+    {},
   );
 }
 
-function WorkbookPreview({ workbook }: { workbook: KonsultaParsedWorkbook }) {
-  const totalRows = workbook.sheets.reduce(
-    (rowCount, sheet) => rowCount + sheet.rowCount,
-    0,
+function createRecordId(): string {
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function formatCellValue(value: KonsultaCellValue): string {
+  if (value === null) {
+    return "—";
+  }
+
+  if (typeof value === "boolean") {
+    return value ? "Yes" : "No";
+  }
+
+  return String(value);
+}
+
+function toDraftValue(value: KonsultaCellValue): string {
+  return value === null ? "" : String(value);
+}
+
+function mergeColumns(existingColumns: string[], nextColumns: string[]): string[] {
+  return [...new Set([...existingColumns, ...nextColumns])];
+}
+
+function getLibraryColumns(
+  definition: KonsultaLibraryDefinition,
+  manager: LibraryManagerState,
+): string[] {
+  return manager.columns.length > 0
+    ? manager.columns
+    : DEFAULT_LIBRARY_COLUMNS[definition.category];
+}
+
+function createEmptyDraft(columns: string[]): RowDraft {
+  return columns.reduce<RowDraft>((draft, column) => {
+    draft[column] = "";
+    return draft;
+  }, {});
+}
+
+function buildDraftFromRecord(columns: string[], record: LibraryRecord): RowDraft {
+  return columns.reduce<RowDraft>((draft, column) => {
+    draft[column] = toDraftValue(record.values[column] ?? null);
+    return draft;
+  }, {});
+}
+
+function buildRowValues(columns: string[], draft: RowDraft): KonsultaParsedRow {
+  return columns.reduce<KonsultaParsedRow>((values, column) => {
+    const nextValue = draft[column]?.trim() ?? "";
+    values[column] = nextValue.length > 0 ? nextValue : null;
+    return values;
+  }, {});
+}
+
+function isRowEmpty(values: KonsultaParsedRow): boolean {
+  return Object.values(values).every((value) => value === null);
+}
+
+function flattenImportedRecords(workbooks: KonsultaParsedWorkbook[]): {
+  importedColumns: string[];
+  importedRecords: LibraryRecord[];
+} {
+  const importedColumns = workbooks.flatMap((workbook) =>
+    workbook.sheets.flatMap((sheet) => sheet.headers),
+  );
+  const importedRecords = workbooks.flatMap((workbook) =>
+    workbook.sheets.flatMap((sheet) =>
+      sheet.rows.map((row) => ({
+        id: createRecordId(),
+        values: row,
+        source: "import" as const,
+        workbookName: workbook.fileName,
+        sheetName: sheet.sheetName,
+      })),
+    ),
   );
 
+  return { importedColumns, importedRecords };
+}
+
+function getLibraryDefinitionByKey(
+  libraryKey: string,
+): KonsultaLibraryDefinition | null {
   return (
-    <div className="space-y-4">
-      <Card>
-        <CardHeader className="pb-4">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-            <div className="space-y-2">
-              <CardTitle className="flex items-center gap-2 text-xl">
-                <FileSpreadsheet className="h-5 w-5 text-primary" />
-                {workbook.analysis.title}
-              </CardTitle>
-              <CardDescription>{workbook.fileName}</CardDescription>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Badge variant="secondary">{formatFileType(workbook.fileType)}</Badge>
-              <Badge variant="secondary">{workbook.sheetCount} sheet(s)</Badge>
-              <Badge variant="secondary">{totalRows} parsed row(s)</Badge>
-              <Badge>{getKonsultaCategoryLabel(workbook.analysis.category)}</Badge>
-              <Badge variant="outline">
-                {getKonsultaStructureLabel(workbook.analysis.structure)}
-              </Badge>
-              {workbook.sampleReference ? (
-                <Badge variant="outline">Matched sample reference</Badge>
-              ) : (
-                <Badge variant="outline">Production upload</Badge>
-              )}
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 xl:grid-cols-3">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm">What this upload looks like</CardTitle>
-              </CardHeader>
-              <CardContent className="text-sm text-muted-foreground">
-                {workbook.analysis.summary}
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm">Where it likely integrates</CardTitle>
-              </CardHeader>
-              <CardContent className="text-sm text-muted-foreground">
-                {workbook.analysis.clinicIntegration}
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm">How to use it later</CardTitle>
-              </CardHeader>
-              <CardContent className="text-sm text-muted-foreground">
-                {workbook.analysis.suggestedUsage}
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="grid gap-4 xl:grid-cols-2">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-sm">
-                  <Database className="h-4 w-4 text-primary" />
-                  Suggested future modeling
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="list-disc space-y-2 pl-4 text-sm text-muted-foreground">
-                  {workbook.analysis.modelingRecommendations.map(
-                    (recommendation, recommendationIndex) => (
-                      <li key={`${workbook.fileName}-model-${recommendationIndex}`}>
-                        {recommendation}
-                      </li>
-                    ),
-                  )}
-                </ul>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-sm">
-                  <Shapes className="h-4 w-4 text-primary" />
-                  Sample reference context
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2 text-sm text-muted-foreground">
-                {workbook.sampleReference ? (
-                  <>
-                    <p>
-                      This filename matches the sample reference catalog entry{" "}
-                      <span className="font-medium text-foreground">
-                        {workbook.sampleReference.title}
-                      </span>
-                      .
-                    </p>
-                    <p>{workbook.sampleReference.description}</p>
-                  </>
-                ) : (
-                  <p>
-                    No sample filename match was found, which is expected for production
-                    uploads. The preview and inferred modeling guidance still work for
-                    arbitrary admin-provided spreadsheets.
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-
-          {workbook.warnings.length > 0 ? (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Parsing notes</AlertTitle>
-              <AlertDescription>
-                <ul className="list-disc space-y-1 pl-4 text-xs">
-                  {workbook.warnings.map((warning, warningIndex) => (
-                    <li key={`${workbook.fileName}-warning-${warningIndex}`}>
-                      {warning}
-                    </li>
-                  ))}
-                </ul>
-              </AlertDescription>
-            </Alert>
-          ) : null}
-        </CardContent>
-      </Card>
-
-      {workbook.sheets.map((sheet) => (
-        <SheetPreviewTable key={`${workbook.fileName}-${sheet.sheetName}`} sheet={sheet} />
-      ))}
-    </div>
+    KONSULTA_SAMPLE_LIBRARY_DEFINITIONS.find(
+      (definition) => definition.fileName === libraryKey,
+    ) ?? null
   );
 }
 
 export function KonsultaLibrariesConsole() {
-  const [parsedWorkbooks, setParsedWorkbooks] = useState<KonsultaParsedWorkbook[]>([]);
-  const [activeWorkbook, setActiveWorkbook] = useState("");
-  const [isParsing, setIsParsing] = useState(false);
+  const [libraryManagers, setLibraryManagers] = useState<LibraryManagers>(
+    createInitialLibraryManagers,
+  );
+  const [activeLibraryKey, setActiveLibraryKey] = useState(
+    KONSULTA_SAMPLE_LIBRARY_DEFINITIONS[0]?.fileName ?? "",
+  );
+  const [rowDialogState, setRowDialogState] = useState<RowDialogState | null>(null);
+  const [rowDraft, setRowDraft] = useState<RowDraft>({});
+  const [deleteDialogState, setDeleteDialogState] =
+    useState<DeleteDialogState | null>(null);
+  const [uploadingLibraryKey, setUploadingLibraryKey] = useState<string | null>(null);
 
-  const categoryCounts = useMemo(() => {
-    const counts: Record<KonsultaLibraryCategory, number> = {
-      "clinical-reference": 0,
-      "physical-exam": 0,
-      immunization: 0,
-      medication: 0,
-      screening: 0,
+  const librarySummary = useMemo(() => {
+    const librariesWithRecords = Object.values(libraryManagers).filter(
+      (manager) => manager.records.length > 0,
+    ).length;
+    const totalRecords = Object.values(libraryManagers).reduce(
+      (count, manager) => count + manager.records.length,
+      0,
+    );
+    const totalUploads = Object.values(libraryManagers).reduce(
+      (count, manager) => count + manager.uploadedWorkbooks.length,
+      0,
+    );
+
+    return {
+      totalLibraries: KONSULTA_SAMPLE_LIBRARY_DEFINITIONS.length,
+      librariesWithRecords,
+      totalRecords,
+      totalUploads,
     };
+  }, [libraryManagers]);
 
-    KONSULTA_SAMPLE_LIBRARY_DEFINITIONS.forEach((definition) => {
-      counts[definition.category] += 1;
+  const rowDialogColumns =
+    rowDialogState === null
+      ? []
+      : (() => {
+          const definition = getLibraryDefinitionByKey(rowDialogState.libraryKey);
+
+          return definition
+            ? getLibraryColumns(
+                definition,
+                libraryManagers[rowDialogState.libraryKey],
+              )
+            : [];
+        })();
+
+  const rowDialogRecord =
+    rowDialogState?.mode === "edit" && rowDialogState.recordId !== null
+      ? libraryManagers[rowDialogState.libraryKey].records.find(
+          (record) => record.id === rowDialogState.recordId,
+        ) ?? null
+      : null;
+
+  const setLibraryManager = (
+    libraryKey: string,
+    updater: (manager: LibraryManagerState) => LibraryManagerState,
+  ) => {
+    setLibraryManagers((currentManagers) => ({
+      ...currentManagers,
+      [libraryKey]: updater(currentManagers[libraryKey]),
+    }));
+  };
+
+  const openCreateDialog = (definition: KonsultaLibraryDefinition) => {
+    const manager = libraryManagers[definition.fileName];
+    const columns = getLibraryColumns(definition, manager);
+    setRowDialogState({
+      mode: "create",
+      libraryKey: definition.fileName,
+      recordId: null,
     });
+    setRowDraft(createEmptyDraft(columns));
+  };
 
-    return counts;
-  }, []);
+  const openEditDialog = (
+    definition: KonsultaLibraryDefinition,
+    record: LibraryRecord,
+  ) => {
+    const manager = libraryManagers[definition.fileName];
+    const columns = getLibraryColumns(definition, manager);
+    setRowDialogState({
+      mode: "edit",
+      libraryKey: definition.fileName,
+      recordId: record.id,
+    });
+    setRowDraft(buildDraftFromRecord(columns, record));
+  };
 
-  const activeWorkbookData =
-    parsedWorkbooks.find((workbook) => workbook.fileName === activeWorkbook) ??
-    parsedWorkbooks[0] ??
-    null;
+  const closeRowDialog = () => {
+    setRowDialogState(null);
+    setRowDraft({});
+  };
 
-  const handleUpload = async (event: ChangeEvent<HTMLInputElement>) => {
+  const handleUpload = async (
+    libraryKey: string,
+    event: ChangeEvent<HTMLInputElement>,
+  ) => {
     try {
       const selectedFiles = Array.from(event.target.files ?? []);
 
@@ -371,44 +331,128 @@ export function KonsultaLibrariesConsole() {
 
       if (workbookFiles.length === 0) {
         toast.error(
-          "Upload at least one spreadsheet library file (.xlsx, .xls, .xlsm, .xlsb, or .csv).",
+          "Upload at least one spreadsheet file (.xlsx, .xls, .xlsm, .xlsb, or .csv).",
         );
-        event.target.value = "";
         return;
       }
 
       if (workbookFiles.length !== selectedFiles.length) {
         toast.error(
-          "Skipped unsupported files. Only spreadsheet library files are supported.",
+          "Skipped unsupported files. Only spreadsheet library files are accepted.",
         );
       }
 
-      setIsParsing(true);
+      setUploadingLibraryKey(libraryKey);
 
-      const nextParsedWorkbooks = await Promise.all(
+      const parsedWorkbooks = await Promise.all(
         workbookFiles.map((file) => parseKonsultaLibraryWorkbook(file)),
       );
+      const { importedColumns, importedRecords } =
+        flattenImportedRecords(parsedWorkbooks);
 
-      setParsedWorkbooks(nextParsedWorkbooks);
-      setActiveWorkbook(nextParsedWorkbooks[0]?.fileName ?? "");
+      if (importedRecords.length === 0) {
+        toast.error("The uploaded workbook has no rows to add to this library.");
+        return;
+      }
 
-      const matchedSampleReferences = nextParsedWorkbooks.filter(
-        (workbook) => workbook.sampleReference !== null,
-      ).length;
-      const workbookLabel =
-        nextParsedWorkbooks.length === 1 ? "library file" : "library files";
+      setLibraryManager(libraryKey, (manager) => ({
+        ...manager,
+        columns: mergeColumns(manager.columns, importedColumns),
+        records: [...manager.records, ...importedRecords],
+        selectedRecordIds: [],
+        uploadedWorkbooks: parsedWorkbooks,
+      }));
 
       toast.success(
-        `Parsed ${nextParsedWorkbooks.length} ${workbookLabel}. ${matchedSampleReferences} matched the sample reference catalog.`,
+        `Imported ${importedRecords.length} row(s) into this library from ${parsedWorkbooks.length} workbook(s).`,
       );
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to parse the uploaded workbook.",
+        error instanceof Error
+          ? error.message
+          : "Failed to parse the uploaded workbook.",
       );
     } finally {
-      setIsParsing(false);
+      setUploadingLibraryKey(null);
       event.target.value = "";
     }
+  };
+
+  const handleSaveRow = () => {
+    if (rowDialogState === null) {
+      return;
+    }
+
+    const definition = getLibraryDefinitionByKey(rowDialogState.libraryKey);
+
+    if (!definition) {
+      return;
+    }
+
+    const columns = getLibraryColumns(
+      definition,
+      libraryManagers[rowDialogState.libraryKey],
+    );
+    const rowValues = buildRowValues(columns, rowDraft);
+
+    if (isRowEmpty(rowValues)) {
+      toast.error("Add at least one value before saving this row.");
+      return;
+    }
+
+    if (rowDialogState.mode === "create") {
+      setLibraryManager(rowDialogState.libraryKey, (manager) => ({
+        ...manager,
+        columns: mergeColumns(manager.columns, columns),
+        records: [
+          {
+            id: createRecordId(),
+            values: rowValues,
+            source: "manual",
+            workbookName: null,
+            sheetName: null,
+          },
+          ...manager.records,
+        ],
+      }));
+      toast.success("Library row added.");
+    } else if (rowDialogState.recordId !== null) {
+      setLibraryManager(rowDialogState.libraryKey, (manager) => ({
+        ...manager,
+        columns: mergeColumns(manager.columns, columns),
+        records: manager.records.map((record) =>
+          record.id === rowDialogState.recordId
+            ? { ...record, values: rowValues }
+            : record,
+        ),
+      }));
+      toast.success("Library row updated.");
+    }
+
+    closeRowDialog();
+  };
+
+  const confirmDelete = () => {
+    if (deleteDialogState === null) {
+      return;
+    }
+
+    setLibraryManager(deleteDialogState.libraryKey, (manager) => ({
+      ...manager,
+      records: manager.records.filter(
+        (record) => !deleteDialogState.recordIds.includes(record.id),
+      ),
+      selectedRecordIds: manager.selectedRecordIds.filter(
+        (recordId) => !deleteDialogState.recordIds.includes(recordId),
+      ),
+    }));
+
+    toast.success(
+      deleteDialogState.recordIds.length === 1
+        ? "Library row deleted."
+        : `Deleted ${deleteDialogState.recordIds.length} rows.`,
+    );
+    setDeleteDialogState(null);
   };
 
   return (
@@ -418,179 +462,496 @@ export function KonsultaLibrariesConsole() {
           PhilHealth Konsulta Libraries
         </h1>
         <p className="mt-2 max-w-3xl text-muted-foreground">
-          Upload real production library spreadsheets from admins, parse them
-          client-side, preview the normalized rows, and review inferred future
-          modeling guidance before any database design or persistence is added.
+          Manage each library in its own Super Admin tab with bulk Excel import,
+          manual row entry, edit dialogs, single delete confirmation, and
+          multi-select delete without saving to the database yet.
         </p>
       </div>
 
       <Alert>
-        <Search className="h-4 w-4" />
-        <AlertTitle>Production uploads are the source of truth</AlertTitle>
+        <Database className="h-4 w-4" />
+        <AlertTitle>Prototype-only library management</AlertTitle>
         <AlertDescription>
-          The <span className="font-medium">LIBRARIES</span> folder is treated only as
-          a sample reference catalog. This console supports arbitrary
-          admin-provided spreadsheet files and does not require production
-          filenames to match the sample kit.
+          This console simulates the future CRUD workflow in memory only. Uploads,
+          adds, edits, and deletes stay in the browser and do not persist to the
+          database yet.
         </AlertDescription>
       </Alert>
 
-      <Tabs defaultValue="upload" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="upload">Upload and analyze</TabsTrigger>
-          <TabsTrigger value="catalog">Sample reference catalog</TabsTrigger>
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Libraries</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-semibold">{librarySummary.totalLibraries}</p>
+            <p className="text-xs text-muted-foreground">available library tabs</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Managed tabs</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-semibold">
+              {librarySummary.librariesWithRecords}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              libraries with imported or manual rows
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Working rows</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-semibold">{librarySummary.totalRecords}</p>
+            <p className="text-xs text-muted-foreground">
+              in-memory rows across all libraries
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Upload batches</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-semibold">{librarySummary.totalUploads}</p>
+            <p className="text-xs text-muted-foreground">
+              parsed workbook batch previews
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Tabs
+        value={activeLibraryKey}
+        onValueChange={setActiveLibraryKey}
+        className="space-y-4"
+      >
+        <TabsList className="flex h-auto w-full flex-wrap justify-start gap-2 bg-transparent p-0">
+          {KONSULTA_SAMPLE_LIBRARY_DEFINITIONS.map((definition) => {
+            const manager = libraryManagers[definition.fileName];
+
+            return (
+              <TabsTrigger
+                key={definition.fileName}
+                value={definition.fileName}
+                className="border data-[state=active]:border-primary"
+              >
+                <span>{definition.title}</span>
+                {manager.records.length > 0 ? (
+                  <Badge variant="secondary" className="ml-2">
+                    {manager.records.length}
+                  </Badge>
+                ) : null}
+              </TabsTrigger>
+            );
+          })}
         </TabsList>
 
-        <TabsContent value="upload" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Upload className="h-5 w-5 text-primary" />
-                Upload production library files
-              </CardTitle>
-              <CardDescription>
-                Accepts spreadsheet files from admins: .xlsx, .xls, .xlsm, .xlsb,
-                and .csv.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Input
-                type="file"
-                accept={SUPPORTED_FILE_ACCEPT}
-                multiple
-                onChange={(event) => void handleUpload(event)}
-                disabled={isParsing}
-              />
-              <p className="text-xs text-muted-foreground">
-                {isParsing
-                  ? "Parsing library files..."
-                  : "Preview stays in the browser only. No server upload, no DB writes, and no schema changes happen here."}
-              </p>
-            </CardContent>
-          </Card>
+        {KONSULTA_SAMPLE_LIBRARY_DEFINITIONS.map((definition) => {
+          const manager = libraryManagers[definition.fileName];
+          const columns = getLibraryColumns(definition, manager);
+          const latestWorkbook = manager.uploadedWorkbooks[0] ?? null;
+          const uploadWarnings = manager.uploadedWorkbooks.flatMap((workbook) =>
+            workbook.warnings.map((warning) => `${workbook.fileName}: ${warning}`),
+          );
+          const allSelected =
+            manager.records.length > 0 &&
+            manager.selectedRecordIds.length === manager.records.length;
+          const hasPartialSelection =
+            manager.selectedRecordIds.length > 0 && !allSelected;
 
-          {parsedWorkbooks.length > 0 ? (
-            <Tabs
-              value={activeWorkbookData?.fileName ?? ""}
-              onValueChange={setActiveWorkbook}
+          return (
+            <TabsContent
+              key={definition.fileName}
+              value={definition.fileName}
               className="space-y-4"
             >
-              <TabsList className="flex h-auto w-full flex-wrap justify-start gap-2 bg-transparent p-0">
-                {parsedWorkbooks.map((workbook) => (
-                  <TabsTrigger
-                    key={workbook.fileName}
-                    value={workbook.fileName}
-                    className="border data-[state=active]:border-primary"
-                  >
-                    {workbook.fileName}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
+              <div className="grid gap-4 xl:grid-cols-[2fr_1fr]">
+                <Card>
+                  <CardHeader>
+                    <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                      <div className="space-y-2">
+                        <CardTitle className="flex items-center gap-2 text-xl">
+                          <FileSpreadsheet className="h-5 w-5 text-primary" />
+                          {definition.title}
+                        </CardTitle>
+                        <CardDescription>{definition.description}</CardDescription>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <Badge>{getKonsultaCategoryLabel(definition.category)}</Badge>
+                        <Badge variant="secondary">
+                          {manager.records.length} working row(s)
+                        </Badge>
+                        <Badge variant="outline">
+                          {manager.uploadedWorkbooks.length} upload batch(es)
+                        </Badge>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2 text-sm text-muted-foreground">
+                      <p className="font-medium text-foreground">
+                        Clinic integration
+                      </p>
+                      <p>{definition.clinicIntegration}</p>
+                    </div>
+                    <div className="space-y-2 text-sm text-muted-foreground">
+                      <p className="font-medium text-foreground">Suggested usage</p>
+                      <p>{definition.suggestedUsage}</p>
+                    </div>
+                  </CardContent>
+                </Card>
 
-              {parsedWorkbooks.map((workbook) => (
-                <TabsContent
-                  key={`${workbook.fileName}-content`}
-                  value={workbook.fileName}
-                  className="space-y-4"
-                >
-                  <WorkbookPreview workbook={workbook} />
-                </TabsContent>
-              ))}
-            </Tabs>
-          ) : (
-            <Card>
-              <CardContent className="flex min-h-48 flex-col items-center justify-center gap-3 py-10 text-center">
-                <FileSpreadsheet className="h-10 w-10 text-muted-foreground" />
-                <div className="space-y-1">
-                  <p className="font-medium">No production library uploaded yet</p>
-                  <p className="max-w-xl text-sm text-muted-foreground">
-                    Upload any production Konsulta spreadsheet library from the admin
-                    source to inspect its structure, identify column roles, and decide
-                    how it should be modeled later.
-                  </p>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Manage this library</CardTitle>
+                    <CardDescription>
+                      Upload Excel for bulk import or add individual rows manually.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="space-y-2">
+                      <Label htmlFor={`${definition.fileName}-upload`}>
+                        Bulk import spreadsheet
+                      </Label>
+                      <Input
+                        id={`${definition.fileName}-upload`}
+                        type="file"
+                        accept={SUPPORTED_FILE_ACCEPT}
+                        multiple
+                        disabled={uploadingLibraryKey === definition.fileName}
+                        onChange={(event) =>
+                          void handleUpload(definition.fileName, event)
+                        }
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        {uploadingLibraryKey === definition.fileName
+                          ? "Parsing uploaded workbook..."
+                          : "Accepted formats: .xlsx, .xls, .xlsm, .xlsb, and .csv."}
+                      </p>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      <Button onClick={() => openCreateDialog(definition)}>
+                        <Plus className="mr-2 h-4 w-4" />
+                        Add row
+                      </Button>
+                      <Button
+                        variant="outline"
+                        disabled={manager.selectedRecordIds.length === 0}
+                        onClick={() =>
+                          setDeleteDialogState({
+                            libraryKey: definition.fileName,
+                            recordIds: manager.selectedRecordIds,
+                          })
+                        }
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete selected
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {latestWorkbook ? (
+                <div className="grid gap-4 xl:grid-cols-3">
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm">Latest upload</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2 text-sm text-muted-foreground">
+                      <p className="font-medium text-foreground">
+                        {latestWorkbook.fileName}
+                      </p>
+                      <p>{latestWorkbook.analysis.summary}</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm">Detected structure</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2 text-sm text-muted-foreground">
+                      <Badge variant="secondary">
+                        {getKonsultaStructureLabel(
+                          latestWorkbook.analysis.structure,
+                        )}
+                      </Badge>
+                      <p>{latestWorkbook.analysis.suggestedUsage}</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm">Modeling guidance</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2 text-sm text-muted-foreground">
+                      {latestWorkbook.analysis.modelingRecommendations
+                        .slice(0, 2)
+                        .map((recommendation) => (
+                          <p key={recommendation}>{recommendation}</p>
+                        ))}
+                    </CardContent>
+                  </Card>
                 </div>
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
+              ) : null}
 
-        <TabsContent value="catalog" className="space-y-4">
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Sample catalog only</AlertTitle>
-            <AlertDescription>
-              These entries summarize the sample files shipped with the Konsulta kit.
-              They are helpful for comparison, but production imports can use different
-              filenames and still be analyzed by the upload tab.
-            </AlertDescription>
-          </Alert>
+              {uploadWarnings.length > 0 ? (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Import notes</AlertTitle>
+                  <AlertDescription>
+                    <ul className="list-disc space-y-1 pl-4 text-xs">
+                      {uploadWarnings.map((warning) => (
+                        <li key={warning}>{warning}</li>
+                      ))}
+                    </ul>
+                  </AlertDescription>
+                </Alert>
+              ) : null}
 
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-            {(
-              Object.keys(categoryCounts) as KonsultaLibraryCategory[]
-            ).map((category) => (
-              <Card key={category}>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm">
-                    {getKonsultaCategoryLabel(category)}
-                  </CardTitle>
+              <Card>
+                <CardHeader>
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                    <div>
+                      <CardTitle className="text-lg">Working library rows</CardTitle>
+                      <CardDescription>
+                        Use checkboxes for multi-delete, or edit individual rows in
+                        the dialog form.
+                      </CardDescription>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Badge variant="secondary">
+                        {manager.records.length} total row(s)
+                      </Badge>
+                      <Badge variant="outline">
+                        <CheckSquare className="mr-1 h-3 w-3" />
+                        {manager.selectedRecordIds.length} selected
+                      </Badge>
+                    </div>
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-2xl font-semibold">{categoryCounts[category]}</p>
-                  <p className="text-xs text-muted-foreground">sample workbook(s)</p>
+                  <div className="overflow-x-auto rounded-md border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-12">
+                            <Checkbox
+                              checked={
+                                allSelected
+                                  ? true
+                                  : hasPartialSelection
+                                    ? "indeterminate"
+                                    : false
+                              }
+                              onCheckedChange={(checked) =>
+                                setLibraryManager(definition.fileName, (current) => ({
+                                  ...current,
+                                  selectedRecordIds:
+                                    checked === true
+                                      ? current.records.map((record) => record.id)
+                                      : [],
+                                }))
+                              }
+                              aria-label={`Select all rows for ${definition.title}`}
+                            />
+                          </TableHead>
+                          <TableHead>Source</TableHead>
+                          {columns.map((column) => (
+                            <TableHead key={`${definition.fileName}-${column}`}>
+                              {column}
+                            </TableHead>
+                          ))}
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {manager.records.length === 0 ? (
+                          <TableRow>
+                            <TableCell
+                              colSpan={columns.length + 3}
+                              className="py-10 text-center text-muted-foreground"
+                            >
+                              Upload a workbook or add a row manually to start managing
+                              this library.
+                            </TableCell>
+                          </TableRow>
+                        ) : (
+                          manager.records.map((record) => (
+                            <TableRow key={record.id}>
+                              <TableCell>
+                                <Checkbox
+                                  checked={manager.selectedRecordIds.includes(
+                                    record.id,
+                                  )}
+                                  onCheckedChange={(checked) =>
+                                    setLibraryManager(
+                                      definition.fileName,
+                                      (current) => ({
+                                        ...current,
+                                        selectedRecordIds:
+                                          checked === true
+                                            ? [
+                                                ...current.selectedRecordIds,
+                                                record.id,
+                                              ]
+                                            : current.selectedRecordIds.filter(
+                                                (selectedId) =>
+                                                  selectedId !== record.id,
+                                              ),
+                                      }),
+                                    )
+                                  }
+                                  aria-label={`Select row ${record.id}`}
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <div className="space-y-1">
+                                  <Badge
+                                    variant={
+                                      record.source === "import"
+                                        ? "secondary"
+                                        : "outline"
+                                    }
+                                  >
+                                    {record.source === "import"
+                                      ? "Imported"
+                                      : "Manual"}
+                                  </Badge>
+                                  {record.workbookName ? (
+                                    <p className="text-xs text-muted-foreground">
+                                      {record.workbookName}
+                                      {record.sheetName
+                                        ? ` • ${record.sheetName}`
+                                        : ""}
+                                    </p>
+                                  ) : null}
+                                </div>
+                              </TableCell>
+                              {columns.map((column) => (
+                                <TableCell
+                                  key={`${record.id}-${column}`}
+                                  className="max-w-56 align-top text-sm"
+                                >
+                                  {formatCellValue(record.values[column] ?? null)}
+                                </TableCell>
+                              ))}
+                              <TableCell className="text-right">
+                                <div className="flex justify-end gap-2">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => openEditDialog(definition, record)}
+                                  >
+                                    <Pencil className="mr-2 h-4 w-4" />
+                                    Edit
+                                  </Button>
+                                  <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={() =>
+                                      setDeleteDialogState({
+                                        libraryKey: definition.fileName,
+                                        recordIds: [record.id],
+                                      })
+                                    }
+                                  >
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Delete
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
                 </CardContent>
               </Card>
+            </TabsContent>
+          );
+        })}
+      </Tabs>
+
+      <Dialog open={rowDialogState !== null} onOpenChange={closeRowDialog}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              {rowDialogState?.mode === "edit" ? "Edit library row" : "Add library row"}
+            </DialogTitle>
+            <DialogDescription>
+              {rowDialogState?.mode === "edit"
+                ? "Update the selected library row in the browser-only working table."
+                : "Create a manual library row for this tab without saving to the database yet."}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            {rowDialogColumns.map((column) => (
+              <div key={column} className="space-y-2">
+                <Label htmlFor={`row-field-${column}`}>{column}</Label>
+                <Input
+                  id={`row-field-${column}`}
+                  value={rowDraft[column] ?? ""}
+                  onChange={(event) =>
+                    setRowDraft((currentDraft) => ({
+                      ...currentDraft,
+                      [column]: event.target.value,
+                    }))
+                  }
+                />
+              </div>
             ))}
           </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Sample Konsulta library reference</CardTitle>
-              <CardDescription>
-                This catalog summarizes the sample kit workbooks and where they appear
-                to fit in clinic workflows.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Workbook</TableHead>
-                      <TableHead>Library</TableHead>
-                      <TableHead>Category</TableHead>
-                      <TableHead>Clinic integration</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {KONSULTA_SAMPLE_LIBRARY_DEFINITIONS.map((definition) => (
-                      <TableRow key={definition.fileName}>
-                        <TableCell className="font-mono text-xs">
-                          {definition.fileName}
-                        </TableCell>
-                        <TableCell>
-                          <div className="space-y-1">
-                            <p className="font-medium">{definition.title}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {definition.description}
-                            </p>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {getKonsultaCategoryLabel(definition.category)}
-                        </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {definition.clinicIntegration}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+          {rowDialogRecord?.workbookName ? (
+            <p className="text-xs text-muted-foreground">
+              Original source: {rowDialogRecord.workbookName}
+              {rowDialogRecord.sheetName ? ` • ${rowDialogRecord.sheetName}` : ""}
+            </p>
+          ) : null}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={closeRowDialog}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveRow}>
+              {rowDialogState?.mode === "edit" ? "Save changes" : "Add row"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog
+        open={deleteDialogState !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeleteDialogState(null);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete selected library row(s)?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteDialogState?.recordIds.length === 1
+                ? "This removes the selected row from the in-memory working table."
+                : "This removes all selected rows from the in-memory working table."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

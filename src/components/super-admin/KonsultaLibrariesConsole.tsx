@@ -331,7 +331,7 @@ export function KonsultaLibrariesConsole() {
 
       if (workbookFiles.length === 0) {
         toast.error(
-          "Upload at least one spreadsheet file (.xlsx, .xls, .xlsm, .xlsb, or .csv).",
+          "Please select at least one spreadsheet file (.xlsx, .xls, .xlsm, .xlsb, or .csv).",
         );
         return;
       }
@@ -370,7 +370,7 @@ export function KonsultaLibrariesConsole() {
       toast.error(
         error instanceof Error
           ? error.message
-          : "Failed to parse the uploaded workbook.",
+          : "Failed to parse the uploaded workbook. Verify that the file is a valid spreadsheet and try again.",
       );
     } finally {
       setUploadingLibraryKey(null);

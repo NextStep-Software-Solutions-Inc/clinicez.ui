@@ -1063,7 +1063,9 @@ export async function parseKonsultaLibraryWorkbook(
     };
   } catch (error) {
     const message =
-      error instanceof Error ? error.message : "Unknown workbook parsing error.";
+      error instanceof Error
+        ? `${error.name}: ${error.message}`
+        : `Unknown workbook parsing error: ${String(error)}`;
 
     throw new Error(`Failed to parse ${file.name}: ${message}`);
   }

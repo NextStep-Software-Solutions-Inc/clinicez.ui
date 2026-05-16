@@ -27,6 +27,10 @@ const sidebarNavItems = [
     href: "/super-admin/diagnostics-procedures",
   },
   {
+    title: "Konsulta Libraries",
+    href: "/super-admin/konsulta-libraries",
+  },
+  {
     title: "Location Management",
     href: "/super-admin/locations",
   },

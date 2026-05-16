@@ -405,52 +405,59 @@ export function getKonsultaLibraryDefinition(
 export async function parseKonsultaLibraryWorkbook(
   file: File,
 ): Promise<KonsultaParsedWorkbook> {
-  const buffer = await file.arrayBuffer();
-  const workbook = XLSX.read(buffer, { type: "array" });
-  const definition = getKonsultaLibraryDefinition(file.name);
-  const warnings: string[] = [];
+  try {
+    const buffer = await file.arrayBuffer();
+    const workbook = XLSX.read(buffer, { type: "array" });
+    const definition = getKonsultaLibraryDefinition(file.name);
+    const warnings: string[] = [];
 
-  const sheets = workbook.SheetNames.map((sheetName) => {
-    const worksheet = workbook.Sheets[sheetName];
-    if (!worksheet) {
-      warnings.push(`Sheet "${sheetName}" could not be loaded from the workbook.`);
+    const sheets = workbook.SheetNames.map((sheetName) => {
+      const worksheet = workbook.Sheets[sheetName];
+      if (!worksheet) {
+        warnings.push(`Sheet "${sheetName}" could not be loaded from the workbook.`);
 
-      return {
-        sheetName,
-        headers: [],
-        rowCount: 0,
-        previewRows: [],
-        warnings: [`Sheet "${sheetName}" could not be loaded from the workbook.`],
-      };
-    }
+        return {
+          sheetName,
+          headers: [],
+          rowCount: 0,
+          previewRows: [],
+          warnings: [`Sheet "${sheetName}" could not be loaded from the workbook.`],
+        };
+      }
 
-    const parsedSheet = parseWorksheet(worksheet, sheetName);
+      const parsedSheet = parseWorksheet(worksheet, sheetName);
 
-    if (parsedSheet.rowCount === 0) {
-      warnings.push(`Sheet "${sheetName}" has no data rows after the header row.`);
-    }
+      if (parsedSheet.rowCount === 0) {
+        warnings.push(`Sheet "${sheetName}" has no data rows after the header row.`);
+      }
 
-    parsedSheet.warnings.forEach((warning) => {
-      warnings.push(`Sheet "${sheetName}": ${warning}`);
+      parsedSheet.warnings.forEach((warning) => {
+        warnings.push(`Sheet "${sheetName}": ${warning}`);
+      });
+
+      return parsedSheet;
     });
 
-    return parsedSheet;
-  });
+    if (definition === null) {
+      warnings.push("File name did not match a known Konsulta library reference.");
+    }
 
-  if (definition === null) {
-    warnings.push("File name did not match a known Konsulta library reference.");
+    if (sheets.every((sheet) => sheet.rowCount === 0)) {
+      warnings.push("No non-empty rows were parsed from this workbook.");
+    }
+
+    return {
+      fileName: file.name,
+      normalizedFileName: normalizeFileName(file.name),
+      definition,
+      sheetCount: sheets.length,
+      sheets,
+      warnings,
+    };
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Unknown workbook parsing error.";
+
+    throw new Error(`Failed to parse ${file.name}: ${message}`);
   }
-
-  if (sheets.every((sheet) => sheet.rowCount === 0)) {
-    warnings.push("No non-empty rows were parsed from this workbook.");
-  }
-
-  return {
-    fileName: file.name,
-    normalizedFileName: normalizeFileName(file.name),
-    definition,
-    sheetCount: sheets.length,
-    sheets,
-    warnings,
-  };
 }

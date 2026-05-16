@@ -260,9 +260,11 @@ export function KonsultaLibrariesConsole() {
       const recognizedWorkbooks = nextParsedWorkbooks.filter(
         (workbook) => workbook.definition !== null,
       ).length;
+      const workbookLabel =
+        nextParsedWorkbooks.length === 1 ? "workbook" : "workbooks";
 
       toast.success(
-        `Parsed ${nextParsedWorkbooks.length} workbook(s). ${recognizedWorkbooks} matched the built-in Konsulta catalog.`,
+        `Parsed ${nextParsedWorkbooks.length} ${workbookLabel}. ${recognizedWorkbooks} matched the built-in Konsulta catalog.`,
       );
     } catch (error) {
       toast.error(

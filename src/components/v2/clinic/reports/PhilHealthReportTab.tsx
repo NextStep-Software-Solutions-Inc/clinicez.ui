@@ -2055,9 +2055,6 @@ function BatchEntryTable({
     onToggle: (entryId: number, included: boolean, batchUid: string) => void;
     deficiencies: GeneratedBatchDeficiency[];
 }) {
-    if (entries.length === 0) {
-        return <p className="text-sm text-muted-foreground">No entries in this batch.</p>;
-    }
     const deficiencyCountByEntryId = deficiencies.reduce<Map<number, number>>((counts, deficiency) => {
         counts.set(
             deficiency.batchEntryId,
@@ -2065,6 +2062,9 @@ function BatchEntryTable({
         );
         return counts;
     }, new Map());
+    if (entries.length === 0) {
+        return <p className="text-sm text-muted-foreground">No entries in this batch.</p>;
+    }
     return (
         <Table className="text-sm">
             <TableHeader>

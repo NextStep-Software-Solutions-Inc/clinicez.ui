@@ -23,6 +23,11 @@ import {
     resolveMappedMedicinesForConsultations,
     resolveMappedPhysicalExamFindingsForConsultations,
 } from "@/lib/konsulta-library-persistence";
+import {
+    extractGeneratedKonsultaBatchDeficiencies,
+    summarizeGeneratedKonsultaBatchDeficiencies,
+    type StructuredKonsultaBatchDeficiency,
+} from "@/lib/konsulta-batch-deficiencies";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -63,6 +68,33 @@ type ClinicPatientIdentity = {
 };
 
 const MAX_DEFICIENCY_MESSAGES_TO_DISPLAY = 8;
+const GENERATED_DEFICIENCY_DOMAIN_LABELS = {
+    diagnostics: "Diagnostics",
+    management: "Management",
+    medicines: "Medicines",
+    medicalHistory: "Medical history",
+    immunizations: "Immunizations",
+    physicalExam: "Physical exam findings",
+} as const;
+
+type BatchEntryWithPatient = {
+    id: number;
+    patientUserId: number;
+    philHealthPin: string;
+    Patient: {
+        firstName: string | null;
+        lastName: string | null;
+    };
+};
+
+function formatBatchEntryPatientName(entry: BatchEntryWithPatient): string {
+    return [
+        entry.Patient.firstName ?? "",
+        entry.Patient.lastName ?? "",
+    ]
+        .join(" ")
+        .trim() || "Unknown patient";
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -1597,7 +1629,9 @@ export const generateBatchXmlAction = withErrorHandling(async (batchUid: string)
 
         // For SOAPS: fetch consultation records for second-tranche reports
         const entryByConsultationId = new Map<number, (typeof batch.KonsultaEntries)[number]>();
+        const entryByPatientUserId = new Map<number, (typeof batch.KonsultaEntries)[number]>();
         for (const entry of batch.KonsultaEntries) {
+            entryByPatientUserId.set(entry.patientUserId, entry);
             for (const consultationId of entry.consultationIds) {
                 entryByConsultationId.set(consultationId, entry);
             }
@@ -1683,15 +1717,121 @@ export const generateBatchXmlAction = withErrorHandling(async (batchUid: string)
             },
             new Map<number, KonsultaGeneratedPhysicalExamFinding[]>(),
         );
+        const generatedDeficiencies: StructuredKonsultaBatchDeficiency[] = [];
+        const pushConsultationDeficiency = (
+            domainKey: keyof typeof GENERATED_DEFICIENCY_DOMAIN_LABELS,
+            consultationId: number,
+            itemLabel: string,
+            message: string,
+        ) => {
+            const entry = entryByConsultationId.get(consultationId);
+            if (!entry) {
+                return;
+            }
+
+            generatedDeficiencies.push({
+                domainKey,
+                domainLabel: GENERATED_DEFICIENCY_DOMAIN_LABELS[domainKey],
+                batchEntryId: entry.id,
+                patientUserId: entry.patientUserId,
+                patientName: formatBatchEntryPatientName(entry),
+                philHealthPin: entry.philHealthPin,
+                consultationId,
+                itemLabel,
+                message,
+            });
+        };
+        const pushPatientDeficiency = (
+            domainKey: keyof typeof GENERATED_DEFICIENCY_DOMAIN_LABELS,
+            patientUserId: number,
+            itemLabel: string,
+            message: string,
+        ) => {
+            const entry = entryByPatientUserId.get(patientUserId);
+            if (!entry) {
+                return;
+            }
+
+            generatedDeficiencies.push({
+                domainKey,
+                domainLabel: GENERATED_DEFICIENCY_DOMAIN_LABELS[domainKey],
+                batchEntryId: entry.id,
+                patientUserId: entry.patientUserId,
+                patientName: formatBatchEntryPatientName(entry),
+                philHealthPin: entry.philHealthPin,
+                consultationId: null,
+                itemLabel,
+                message,
+            });
+        };
+
+        diagnosticMappingResult.mappedDiagnostics
+            .filter((diagnostic) => diagnostic.mappedCode === null)
+            .forEach((diagnostic) => {
+                pushConsultationDeficiency(
+                    "diagnostics",
+                    diagnostic.consultationId,
+                    diagnostic.inputValue,
+                    `Diagnostic "${diagnostic.inputValue}" is not mapped to an active PhilHealth reference.`,
+                );
+            });
+        managementMappingResult.mappedManagements
+            .filter((management) => management.mappedCode === null)
+            .forEach((management) => {
+                pushConsultationDeficiency(
+                    "management",
+                    management.consultationId,
+                    management.inputValue,
+                    `Management item "${management.inputValue}" is not mapped to an active PhilHealth reference.`,
+                );
+            });
+        medicineMappingResult.mappedMedicines
+            .filter(
+                (medicine) =>
+                    medicine.mappedDrugCode === null &&
+                    medicine.mappedGenericCode === null,
+            )
+            .forEach((medicine) => {
+                pushConsultationDeficiency(
+                    "medicines",
+                    medicine.consultationId,
+                    medicine.sourceName,
+                    `Medicine "${medicine.sourceName}" is not mapped to a PhilHealth medicine or generic reference.`,
+                );
+            });
+        medicalHistoryMappingResult.mappedMedicalHistory
+            .filter((history) => history.mappedCode === null)
+            .forEach((history) => {
+                pushPatientDeficiency(
+                    "medicalHistory",
+                    history.patientUserId,
+                    history.inputValue,
+                    `Medical history entry "${history.inputValue}" is not mapped to an active PhilHealth reference.`,
+                );
+            });
+        immunizationMappingResult.mappedImmunizations
+            .filter((immunization) => immunization.mappedCode === null)
+            .forEach((immunization) => {
+                pushPatientDeficiency(
+                    "immunizations",
+                    immunization.patientUserId,
+                    immunization.inputValue,
+                    `Immunization "${immunization.inputValue}" is not mapped to an active PhilHealth reference.`,
+                );
+            });
+        physicalExamMappingResult.mappedFindings
+            .filter((finding) => finding.mappedCode === null)
+            .forEach((finding) => {
+                pushConsultationDeficiency(
+                    "physicalExam",
+                    finding.consultationId,
+                    finding.inputValue,
+                    `Physical exam finding "${finding.inputValue}" is not mapped to an active PhilHealth reference.`,
+                );
+            });
+
         const optionalDeficiencies = Array.from(
-            new Set([
-                ...diagnosticMappingResult.deficiencies,
-                ...managementMappingResult.deficiencies,
-                ...medicineMappingResult.deficiencies,
-                ...medicalHistoryMappingResult.deficiencies,
-                ...immunizationMappingResult.deficiencies,
-                ...physicalExamMappingResult.deficiencies,
-            ]),
+            new Set(generatedDeficiencies.map((deficiency) => deficiency.message)),
         );
 
         // Validate consultation records for second-tranche reports
@@ -1872,9 +2012,9 @@ export const generateBatchXmlAction = withErrorHandling(async (batchUid: string)
             xmlPayload: xml,
             transmittalNo,
             status: "GENERATED",
-            errorMessage: optionalDeficiencies.length > 0
-                ? `Optional mapping deficiencies:\n${optionalDeficiencies.join("\n")}`
-                : null,
+            errorMessage: summarizeGeneratedKonsultaBatchDeficiencies(
+                generatedDeficiencies,
+            ),
         },
         });
 
@@ -1884,6 +2024,17 @@ export const generateBatchXmlAction = withErrorHandling(async (batchUid: string)
         SET "validateResult" = NULL, "submitResult" = NULL 
         WHERE "batchUid" = ${batchUid}
     `;
+
+        if (generatedDeficiencies.length > 0) {
+            await prisma.konsultaBatch.update({
+                where: { batchUid },
+                data: {
+                    validateResult: toInputJsonObject({
+                        generatedDeficiencies,
+                    }),
+                },
+            });
+        }
 
         // Reset all included entries back to PENDING status so they can be re-validated
         await prisma.konsultaEntry.updateMany({
@@ -1923,6 +2074,7 @@ export const validateKonsultaBatchAction = withErrorHandling(async (batchUid: st
         select: {
             id: true, clinicId: true, xmlPayload: true,
             transmittalNo: true, reportTagging: true, status: true,
+            validateResult: true,
         },
     });
     if (!batch) throw new Error("Batch not found");
@@ -1930,6 +2082,9 @@ export const validateKonsultaBatchAction = withErrorHandling(async (batchUid: st
         throw new Error("Generate the XML first before validating.");
     }
     if (batch.status === "SUBMITTED") throw new Error("Batch already submitted.");
+    const generatedDeficiencies = extractGeneratedKonsultaBatchDeficiencies(
+        batch.validateResult,
+    );
 
     const credentials = await getClinicKonsultaCredentials(batch.clinicId);
     const encryptedPayload = encryptXmlPayload(batch.xmlPayload, credentials.cipherKey);
@@ -1997,10 +2152,19 @@ export const validateKonsultaBatchAction = withErrorHandling(async (batchUid: st
         validateResult = toInputJsonObject({
             ...parsed,
             ...(decryptedErrors ? { decryptedErrors } : {}),
+            ...(generatedDeficiencies.length > 0
+                ? { generatedDeficiencies }
+                : {}),
         });
     } catch (parseErr) {
         const errMsg = parseErr instanceof Error ? parseErr.message : String(parseErr);
-        validateResult = { raw: validateRaw.return, parseError: errMsg };
+        validateResult = toInputJsonObject({
+            raw: validateRaw.return,
+            parseError: errMsg,
+            ...(generatedDeficiencies.length > 0
+                ? { generatedDeficiencies }
+                : {}),
+        });
     }
 
     if (!validationPassed) {

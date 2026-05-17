@@ -22,6 +22,8 @@ import {
 import type { GetPatientConsultationDetail } from "@/actions/consultation/patient-consultations.action";
 import type { GetHPsType } from "@/actions/hp.actions";
 import DownloadPrescriptionAction from "@/components/clinic/clinical-records/prescription/DownloadPrescriptionAction";
+import ClinicKonsultaLibraryPicker from "./ClinicKonsultaLibraryPicker";
+import type { SearchClinicKonsultaTermSuggestions } from "@/actions/clinics/konsulta-library.action";
 
 type Detail = NonNullable<GetPatientConsultationDetail["data"]>;
 type Prescription = NonNullable<Detail["Prescriptions"]>[number];
@@ -54,6 +56,15 @@ interface NewMedicineForm {
   qty: string;
   notes: string;
 }
+
+type KonsultaSuggestion = NonNullable<
+  SearchClinicKonsultaTermSuggestions["data"]
+>[number];
+
+const MEDICINE_LIBRARY_DOMAIN_KEYS = [
+  "lib_medicine",
+  "lib_medicine_generic",
+] as const;
 
 const emptyMedicine: NewMedicineForm = {
   name: "",
@@ -95,6 +106,24 @@ export default function ConsultationPrescriptions({
   };
   const removeMedicineRow = (index: number) => {
     setMedicines((prev) => prev.filter((_, i) => i !== index));
+  };
+  const applyLibrarySuggestion = (index: number, suggestion: KonsultaSuggestion) => {
+    setMedicines((prev) =>
+      prev.map((medicine, medicineIndex) => {
+        if (medicineIndex !== index) {
+          return medicine;
+        }
+
+        const isGenericSelection = suggestion.domainKey === "lib_medicine_generic";
+        return {
+          ...medicine,
+          name: suggestion.displayLabel,
+          genericName: isGenericSelection ? suggestion.displayLabel : medicine.genericName,
+          brandName: isGenericSelection ? medicine.brandName : suggestion.displayLabel,
+          isGeneric: isGenericSelection,
+        };
+      }),
+    );
   };
 
   const openReplaceForm = (rxId: number) => {
@@ -255,12 +284,23 @@ export default function ConsultationPrescriptions({
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   <div className="sm:col-span-2 space-y-1">
                     <Label className="text-xs">Drug Name *</Label>
+                    <ClinicKonsultaLibraryPicker
+                      clinicUid={clinicUid}
+                      domainKeys={[...MEDICINE_LIBRARY_DOMAIN_KEYS]}
+                      value={med.name}
+                      placeholder="Search clinic medicine library"
+                      className="h-7 text-xs"
+                      onSelect={(suggestion) => applyLibrarySuggestion(idx, suggestion)}
+                    />
                     <Input
                       placeholder="e.g. Amoxicillin"
                       value={med.name}
                       onChange={(e) => updateMedicine(idx, "name", e.target.value)}
                       className="h-7 text-xs"
                     />
+                    <p className="text-[11px] text-muted-foreground">
+                      Pick from the mapped clinic medicine library, then fine-tune the label if needed.
+                    </p>
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs">Dosage</Label>

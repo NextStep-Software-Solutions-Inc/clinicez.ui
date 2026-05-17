@@ -69,6 +69,18 @@ export type PhilHealthKonsultaReferenceOption = {
   domainKey: string;
 };
 
+export type ClinicKonsultaTermSuggestion = {
+  id: number;
+  domainKey: string;
+  domainTitle: string;
+  displayLabel: string;
+  internalCode: string | null;
+  sourceType: string;
+  mappingStatus: string;
+  mappedReferenceCode: string | null;
+  mappedReferenceLabel: string | null;
+};
+
 type ParsedReferenceRow = {
   domainKey: string;
   title: string;
@@ -815,6 +827,71 @@ export async function getClinicKonsultaLibrarySummary(
         .length,
     },
   };
+}
+
+export async function searchClinicKonsultaTermSuggestions(
+  clinicId: number,
+  domainKeys: string[],
+  query = "",
+): Promise<ClinicKonsultaTermSuggestion[]> {
+  if (domainKeys.length === 0) {
+    return [];
+  }
+
+  await bootstrapClinicKonsultaLibraries(clinicId);
+  const normalizedQuery = normalizeLibraryText(query);
+
+  const items = await prisma.clinicKonsultaTerm.findMany({
+    where: {
+      clinicId,
+      domainKey: { in: domainKeys },
+      isActive: true,
+      ...(normalizedQuery
+        ? {
+            OR: [
+              { normalizedLabel: { contains: normalizedQuery } },
+              { normalizedCode: { contains: normalizedQuery } },
+              { displayLabel: { contains: query.trim(), mode: "insensitive" } },
+            ],
+          }
+        : {}),
+    },
+    orderBy: [{ sourceType: "asc" }, { displayLabel: "asc" }],
+    take: 25,
+    select: {
+      id: true,
+      domainKey: true,
+      displayLabel: true,
+      internalCode: true,
+      sourceType: true,
+      Mapping: {
+        select: {
+          mappingStatus: true,
+          PhilHealthReferenceItem: {
+            select: {
+              externalCode: true,
+              displayLabel: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  return items.map((item) => ({
+    id: item.id,
+    domainKey: item.domainKey,
+    domainTitle:
+      getKonsultaLibraryDomainDefinition(item.domainKey)?.title ?? item.domainKey,
+    displayLabel: item.displayLabel,
+    internalCode: item.internalCode,
+    sourceType: item.sourceType,
+    mappingStatus: item.Mapping?.mappingStatus ?? "UNMAPPED",
+    mappedReferenceCode:
+      item.Mapping?.PhilHealthReferenceItem?.externalCode ?? null,
+    mappedReferenceLabel:
+      item.Mapping?.PhilHealthReferenceItem?.displayLabel ?? null,
+  }));
 }
 
 export async function getClinicKonsultaLibraryDomainItems(

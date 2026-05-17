@@ -123,8 +123,11 @@ import {
   bootstrapClinicKonsultaLibrariesAction,
   createClinicKonsultaLibraryItemAction,
   getClinicKonsultaLibraryDomainItemsAction,
+  getClinicKonsultaMappingAuditHistoryAction,
   getClinicKonsultaLibrarySummaryAction,
   searchPhilHealthKonsultaReferencesAction,
+  type GetClinicKonsultaMappingAuditHistory,
+  type GetClinicKonsultaLibrarySummary,
   updateClinicKonsultaLibraryMappingAction,
 } from "@/actions/clinics/konsulta-library.action";
 import { upsertClinicAppointmentConfigAction } from "@/actions/appointments/appointment-config.action";
@@ -198,7 +201,6 @@ import type { CalendarEventItem } from "@/actions/google/auth.action";
 import type { GetSystems } from "@/actions/system.action";
 import type {
   GetClinicKonsultaLibraryDomainItems,
-  GetClinicKonsultaLibrarySummary,
   SearchPhilHealthKonsultaReferences,
 } from "@/actions/clinics/konsulta-library.action";
 
@@ -226,6 +228,9 @@ type KonsultaLibraryDomainItemsData = NonNullable<
 >;
 type PhilHealthKonsultaReferenceOptions = NonNullable<
   SearchPhilHealthKonsultaReferences["data"]
+>;
+type KonsultaMappingAuditHistoryData = NonNullable<
+  GetClinicKonsultaMappingAuditHistory["data"]
 >;
 
 interface ClinicSettingsClientProps {
@@ -794,6 +799,9 @@ function PhilHealthTab({
     useState<PhilHealthKonsultaReferenceOptions>([]);
   const [selectedReferenceValue, setSelectedReferenceValue] =
     useState<string>("__UNMAPPED__");
+  const [mappingAuditHistory, setMappingAuditHistory] =
+    useState<KonsultaMappingAuditHistoryData>([]);
+  const [mappingAuditError, setMappingAuditError] = useState<string | null>(null);
 
   const refreshLibrarySummary = useCallback(async () => {
     const result = await getClinicKonsultaLibrarySummaryAction(clinicUid);
@@ -801,6 +809,21 @@ function PhilHealthTab({
       setLibrarySummary(result.data);
     }
   }, [clinicUid]);
+  const loadMappingAuditHistory = useCallback(async () => {
+    const result = await getClinicKonsultaMappingAuditHistoryAction(clinicUid);
+    if (result.status && result.data) {
+      setMappingAuditHistory(result.data);
+      setMappingAuditError(null);
+      return;
+    }
+
+    setMappingAuditHistory([]);
+    setMappingAuditError(result.message ?? "Failed to load mapping history.");
+  }, [clinicUid]);
+
+  useEffect(() => {
+    void loadMappingAuditHistory();
+  }, [loadMappingAuditHistory]);
 
   const loadDomainItems = useCallback(
     async (domainKey: string, query = "") => {
@@ -1119,6 +1142,7 @@ function PhilHealthTab({
           await loadDomainItems(selectedDomainKey, domainQuery);
         }
         await refreshLibrarySummary();
+        await loadMappingAuditHistory();
       } else {
         toast.error(result.message ?? "Failed to save mapping.");
       }
@@ -1341,6 +1365,76 @@ function PhilHealthTab({
                 </AlertDescription>
               </Alert>
             )}
+
+            <div className="rounded-lg border p-4">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold">
+                    Recent Konsulta mapping activity
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Audit trail for internal term to PhilHealth reference mapping changes.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => void loadMappingAuditHistory()}
+                >
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Refresh
+                </Button>
+              </div>
+              {mappingAuditError ? (
+                <p className="text-xs text-muted-foreground">{mappingAuditError}</p>
+              ) : mappingAuditHistory.length === 0 ? (
+                <p className="text-xs text-muted-foreground">
+                  No mapping changes have been audited yet.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {mappingAuditHistory.map((log) => {
+                    const metadata =
+                      log.metadata && typeof log.metadata === "object"
+                        ? (log.metadata as {
+                            clinicItemLabel?: string;
+                            domainKey?: string;
+                          })
+                        : null;
+
+                    return (
+                      <div
+                        key={log.id}
+                        className="rounded-md border border-border/70 bg-muted/20 p-3"
+                      >
+                        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                          <div className="text-sm font-medium">
+                            {metadata?.clinicItemLabel ?? log.reason ?? "Mapping updated"}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {new Date(log.performedAt).toLocaleString("en-PH")} ·{" "}
+                            {log.performerName}
+                          </div>
+                        </div>
+                        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                          {metadata?.domainKey && (
+                            <Badge variant="outline">{metadata.domainKey}</Badge>
+                          )}
+                          <span className="text-muted-foreground">
+                            {log.previousValue ?? "Unmapped"}
+                          </span>
+                          <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                          <span className="font-medium text-foreground">
+                            {log.newValue ?? "Unmapped"}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
 
             <div className="rounded-lg border">
               <Table>

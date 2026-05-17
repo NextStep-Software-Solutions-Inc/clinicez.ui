@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition, type ChangeEvent } from "react";
+import { useEffect, useMemo, useState, useTransition, type ChangeEvent } from "react";
 import {
   AlertCircle,
   CheckSquare,
@@ -74,7 +74,10 @@ import {
   type KonsultaParsedRow,
   type KonsultaParsedWorkbook,
 } from "@/lib/konsulta-library";
-import { refreshKonsultaPhilHealthReferencesAction } from "@/actions/super-admin/konsulta-library.action";
+import {
+  getKonsultaReferenceRefreshAuditHistoryAction,
+  refreshKonsultaPhilHealthReferencesAction,
+} from "@/actions/super-admin/konsulta-library.action";
 
 const SUPPORTED_FILE_ACCEPT =
   ".xlsx,.xls,.xlsm,.xlsb,.csv,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
@@ -241,6 +244,26 @@ export function KonsultaLibrariesConsole() {
     retired: number;
     total: number;
   } | null>(null);
+  const [refreshAuditHistory, setRefreshAuditHistory] = useState<
+    Array<{
+      id: number;
+      performedAt: Date;
+      reason: string | null;
+      metadata: unknown;
+      performerName: string;
+    }>
+  >([]);
+
+  const loadRefreshAuditHistory = useCallback(async () => {
+    const result = await getKonsultaReferenceRefreshAuditHistoryAction();
+    if (result.status && result.data) {
+      setRefreshAuditHistory(result.data);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadRefreshAuditHistory();
+  }, [loadRefreshAuditHistory]);
 
   const librarySummary = useMemo(() => {
     const librariesWithRecords = Object.values(libraryManagers).filter(
@@ -505,6 +528,7 @@ export function KonsultaLibrariesConsole() {
                 const result = await refreshKonsultaPhilHealthReferencesAction();
                 if (result.status && result.data) {
                   setRefreshSummary(result.data);
+                  await loadRefreshAuditHistory();
                   toast.success(result.message);
                 } else {
                   toast.error(result.message ?? "Failed to refresh PhilHealth references.");
@@ -529,6 +553,64 @@ export function KonsultaLibrariesConsole() {
               Created <strong aria-label={`${refreshSummary.created.toLocaleString()} references created`}>{refreshSummary.created.toLocaleString()}</strong>, updated <strong aria-label={`${refreshSummary.updated.toLocaleString()} references updated`}>{refreshSummary.updated.toLocaleString()}</strong>, retired <strong aria-label={`${refreshSummary.retired.toLocaleString()} references retired`}>{refreshSummary.retired.toLocaleString()}</strong>, processed <strong aria-label={`${refreshSummary.total.toLocaleString()} rows processed`}>{refreshSummary.total.toLocaleString()}</strong> rows.
             </p>
           )}
+          <div className="space-y-2 rounded-md border border-border/70 p-3">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Recent refresh history
+              </p>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => void loadRefreshAuditHistory()}
+              >
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Reload
+              </Button>
+            </div>
+            {refreshAuditHistory.length === 0 ? (
+              <p className="text-xs text-muted-foreground">
+                No refresh runs have been audited yet.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {refreshAuditHistory.map((log) => {
+                  const metadata =
+                    log.metadata && typeof log.metadata === "object"
+                      ? (log.metadata as {
+                          created?: number;
+                          updated?: number;
+                          retired?: number;
+                          total?: number;
+                        })
+                      : null;
+
+                  return (
+                    <div
+                      key={log.id}
+                      className="rounded-md border border-border/70 bg-muted/20 p-3 text-xs"
+                    >
+                      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                        <span className="font-medium text-foreground">
+                          {log.reason ?? "PhilHealth reference refresh"}
+                        </span>
+                        <span className="text-muted-foreground">
+                          {new Date(log.performedAt).toLocaleString("en-PH")} ·{" "}
+                          {log.performerName}
+                        </span>
+                      </div>
+                      {metadata && (
+                        <p className="mt-1 text-muted-foreground">
+                          Created {metadata.created ?? 0}, updated {metadata.updated ?? 0},
+                          retired {metadata.retired ?? 0}, processed {metadata.total ?? 0}.
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
 

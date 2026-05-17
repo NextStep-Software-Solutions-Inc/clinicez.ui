@@ -557,7 +557,10 @@ export function KonsultaLibrariesConsole() {
           </Button>
           {refreshSummary && (
             <p className="text-xs text-muted-foreground">
-              Created <strong aria-label={`${refreshSummary.created.toLocaleString()} references created`}>{refreshSummary.created.toLocaleString()}</strong>, updated <strong aria-label={`${refreshSummary.updated.toLocaleString()} references updated`}>{refreshSummary.updated.toLocaleString()}</strong>, retired <strong aria-label={`${refreshSummary.retired.toLocaleString()} references retired`}>{refreshSummary.retired.toLocaleString()}</strong>, processed <strong aria-label={`${refreshSummary.total.toLocaleString()} rows processed`}>{refreshSummary.total.toLocaleString()}</strong> rows.
+              Created <strong>{refreshSummary.created.toLocaleString()}</strong>, updated{" "}
+              <strong>{refreshSummary.updated.toLocaleString()}</strong>, retired{" "}
+              <strong>{refreshSummary.retired.toLocaleString()}</strong>, processed{" "}
+              <strong>{refreshSummary.total.toLocaleString()}</strong> rows.
             </p>
           )}
           <div className="space-y-2 rounded-md border border-border/70 p-3">

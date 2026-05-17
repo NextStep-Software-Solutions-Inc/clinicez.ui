@@ -4,6 +4,7 @@ import "server-only";
 
 import { revalidatePath } from "next/cache";
 import prisma from "@lib/prisma";
+import { $Enums } from "@prisma/client";
 import { getCachedSession } from "@actions/session.action";
 import { getPermissionsAction } from "@actions/permission.action";
 import { PERMISSIONS } from "@lib/permissions";
@@ -394,9 +395,9 @@ export async function updateClinicKonsultaLibraryMappingAction(
         : "Unmapped";
 
       await createAuditLog({
-        entityType: "PHILHEALTH_RECORD",
+        entityType: $Enums.AuditEntityType.CLINIC,
         entityId: clinicId,
-        action: "UPDATE",
+        action: $Enums.AuditAction.UPDATE,
         fieldName: "konsulta_library_mapping",
         previousValue,
         newValue,
@@ -480,7 +481,7 @@ export async function getClinicKonsultaMappingAuditHistoryAction(
 
     const logs = await prisma.auditLog.findMany({
       where: {
-        entityType: "PHILHEALTH_RECORD",
+        entityType: $Enums.AuditEntityType.CLINIC,
         entityId: clinic.id,
         fieldName: "konsulta_library_mapping",
       },
@@ -488,7 +489,13 @@ export async function getClinicKonsultaMappingAuditHistoryAction(
         performedAt: "desc",
       },
       take: 10,
-      include: {
+      select: {
+        id: true,
+        performedAt: true,
+        previousValue: true,
+        newValue: true,
+        reason: true,
+        metadata: true,
         Performer: {
           select: {
             firstName: true,

@@ -3,6 +3,7 @@
 import "server-only";
 
 import { revalidatePath } from "next/cache";
+import { $Enums } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { getCachedSession } from "@/actions/session.action";
 import { createAuditLog } from "@/actions/audit.action";
@@ -40,9 +41,9 @@ export async function refreshKonsultaPhilHealthReferencesAction(): Promise<
       : null;
 
     await createAuditLog({
-      entityType: "PHILHEALTH_RECORD",
+      entityType: $Enums.AuditEntityType.CLINIC,
       entityId: 0,
-      action: "UPDATE",
+      action: $Enums.AuditAction.UPDATE,
       fieldName: "philhealth_konsulta_reference_refresh",
       reason: "Refreshed PhilHealth Konsulta reference library",
       metadata: result,
@@ -86,7 +87,7 @@ export async function getKonsultaReferenceRefreshAuditHistoryAction(): Promise<
 
     const logs = await prisma.auditLog.findMany({
       where: {
-        entityType: "PHILHEALTH_RECORD",
+        entityType: $Enums.AuditEntityType.CLINIC,
         entityId: 0,
         fieldName: "philhealth_konsulta_reference_refresh",
       },
@@ -94,7 +95,11 @@ export async function getKonsultaReferenceRefreshAuditHistoryAction(): Promise<
         performedAt: "desc",
       },
       take: 10,
-      include: {
+      select: {
+        id: true,
+        performedAt: true,
+        reason: true,
+        metadata: true,
         Performer: {
           select: {
             firstName: true,

@@ -62,7 +62,7 @@ import {
   sharePatientFileWithClinicAction,
   unsharePatientFileFromClinicAction,
 } from "@/actions/patient/patient-files.action";
-import { heic2Jpeg } from "@/lib/file-manipulation";
+import { heic2Jpeg, isHeicFile, PATIENT_FILE_ACCEPT } from "@/lib/file-manipulation";
 
 type Clinic = { id: number; clinicUid: string; name: string; logo: string | null };
 type FileType = { id: number; name: string };
@@ -179,16 +179,6 @@ export function PatientFilesClient({
   const [isConvertingFile, setIsConvertingFile] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const isHeicFile = (file: File): boolean => {
-    const type = file.type.toLowerCase();
-    const name = file.name.toLowerCase();
-    return (
-      type === "image/heic" ||
-      type === "image/heif" ||
-      (type === "" && (name.endsWith(".heic") || name.endsWith(".heif")))
-    );
-  };
-
   const handleFileSelect = async (file: File) => {
     if (isHeicFile(file)) {
       setIsConvertingFile(true);
@@ -196,8 +186,7 @@ export function PatientFilesClient({
         const converted = await heic2Jpeg(file);
         setUploadFile(converted);
       } catch {
-        toast.error("Failed to convert HEIC image. Please try a different format.");
-        setUploadFile(file);
+        toast.error("Could not convert HEIC image — please convert it to JPEG or PNG first and try again.");
       } finally {
         setIsConvertingFile(false);
       }
@@ -981,7 +970,7 @@ export function PatientFilesClient({
                 ref={fileInputRef}
                 type="file"
                 className="hidden"
-                accept="image/*,.heic,.heif,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.zip"
+                accept={PATIENT_FILE_ACCEPT}
                 capture="environment"
                 onChange={(e) => {
                   const file = e.target.files?.[0];

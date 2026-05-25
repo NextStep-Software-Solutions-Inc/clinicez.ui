@@ -24,6 +24,27 @@ export const heic2Jpeg = async (image: File): Promise<File> => {
   return formatFileName(blob, image.name);
 };
 
+/**
+ * Returns true for HEIC / HEIF files regardless of whether the browser
+ * populates file.type (many do not for these proprietary formats).
+ */
+export const isHeicFile = (file: File): boolean => {
+  const type = file.type.toLowerCase();
+  const name = file.name.toLowerCase();
+  return (
+    type === "image/heic" ||
+    type === "image/heif" ||
+    (type === "" && (name.endsWith(".heic") || name.endsWith(".heif")))
+  );
+};
+
+/**
+ * Common `accept` string for patient file upload inputs.
+ * Covers images (including HEIC), PDFs and common document formats.
+ */
+export const PATIENT_FILE_ACCEPT =
+  "image/*,.heic,.heif,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.zip";
+
 export const formatFileName = (blob: Blob, originalName: string): File => {
   const formattedName = uniqueFileName(originalName);
   return new File([blob], formattedName, {

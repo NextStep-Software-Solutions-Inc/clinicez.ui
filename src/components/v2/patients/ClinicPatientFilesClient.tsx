@@ -55,6 +55,7 @@ import {
   renamePatientFolderAction,
   renamePatientFileAction,
 } from "@/actions/patient/patient-files.action";
+import { heic2Jpeg } from "@/lib/file-manipulation";
 
 type FileType = { id: number; name: string };
 
@@ -143,7 +144,35 @@ export function ClinicPatientFilesClient({
   const [uploadFileTypeId, setUploadFileTypeId] = useState<string>("");
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [isConvertingFile, setIsConvertingFile] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const isHeicFile = (file: File): boolean => {
+    const type = file.type.toLowerCase();
+    const name = file.name.toLowerCase();
+    return (
+      type === "image/heic" ||
+      type === "image/heif" ||
+      (type === "" && (name.endsWith(".heic") || name.endsWith(".heif")))
+    );
+  };
+
+  const handleFileSelect = async (file: File) => {
+    if (isHeicFile(file)) {
+      setIsConvertingFile(true);
+      try {
+        const converted = await heic2Jpeg(file);
+        setUploadFile(converted);
+      } catch {
+        toast.error("Failed to convert HEIC image. Please try a different format.");
+        setUploadFile(file);
+      } finally {
+        setIsConvertingFile(false);
+      }
+    } else {
+      setUploadFile(file);
+    }
+  };
 
   const refreshFolders = () => {
     startTransition(async () => {
@@ -674,10 +703,17 @@ export function ClinicPatientFilesClient({
                   e.preventDefault();
                   setIsDragOver(false);
                   const dropped = e.dataTransfer.files[0];
-                  if (dropped) setUploadFile(dropped);
+                  if (dropped) void handleFileSelect(dropped);
                 }}
               >
-                {uploadFile ? (
+                {isConvertingFile ? (
+                  <div className="flex flex-col items-center justify-center py-8 px-4 gap-3">
+                    <div className="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                      <Upload className="w-7 h-7 text-slate-400 animate-pulse" />
+                    </div>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">Converting image…</p>
+                  </div>
+                ) : uploadFile ? (
                   <div className="flex items-center gap-3 p-4">
                     <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center shrink-0">
                       <File className="w-5 h-5 text-blue-600 dark:text-blue-400" />
@@ -712,7 +748,14 @@ export function ClinicPatientFilesClient({
                 ref={fileInputRef}
                 type="file"
                 className="hidden"
-                onChange={(e) => setUploadFile(e.target.files?.[0] ?? null)}
+                accept="image/*,.heic,.heif,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.zip"
+                capture="environment"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) void handleFileSelect(file);
+                  // Reset input so the same file can be re-selected after clear
+                  e.target.value = "";
+                }}
               />
             </div>
           </div>
@@ -722,9 +765,9 @@ export function ClinicPatientFilesClient({
             </Button>
             <Button
               onClick={handleUploadFile}
-              disabled={!uploadFile || !uploadFileTypeId || isPending}
+              disabled={!uploadFile || !uploadFileTypeId || isPending || isConvertingFile}
             >
-              {isPending ? "Uploading..." : "Upload"}
+              {isPending ? "Uploading..." : isConvertingFile ? "Converting..." : "Upload"}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -815,6 +815,60 @@ export const checkEnrolledPatientsRegistrationBatchAction = withErrorHandling(
     },
 );
 
+type ImportKonsultaProfileInput = {
+    profDate?: string;
+    // Vitals (PEPERT)
+    systolic?: string;
+    diastolic?: string;
+    hr?: string;
+    rr?: string;
+    temp?: string;
+    height?: string;
+    weight?: string;
+    bmi?: string;
+    zScore?: string;
+    leftVision?: string;
+    rightVision?: string;
+    // Pediatric measurements (PEPERT)
+    length?: string;
+    headCirc?: string;
+    skinfoldThickness?: string;
+    waist?: string;
+    hip?: string;
+    limbs?: string;
+    midUpperArmCirc?: string;
+    // Social history (SOCHIST)
+    isSmoker?: string;
+    noCigpk?: string;
+    isAdrinker?: string;
+    noBottles?: string;
+    illDrugUser?: string;
+    isSexuallyActive?: string;
+    // Menstrual history (MENSHIST)
+    mensIsApplicable?: string;
+    menarchePeriod?: string;
+    lastMensPeriod?: string;
+    periodDuration?: string;
+    mensInterval?: string;
+    padsPerDay?: string;
+    onsetSexIc?: string;
+    birthCtrlMethod?: string;
+    isMenopause?: string;
+    menopauseAge?: string;
+    // Pregnancy history (PREGHIST)
+    pregIsApplicable?: string;
+    pregCnt?: string;
+    deliveryCnt?: string;
+    deliveryTyp?: string;
+    fullTermCnt?: string;
+    prematureCnt?: string;
+    abortionCnt?: string;
+    livChildrenCnt?: string;
+    wPregIndhyp?: string;
+    // Surgical histories (SURGHISTS)
+    surgHists?: Array<{ desc: string; date: string }>;
+};
+
 type ImportKonsultaAssignmentInput = {
     pin: string;
     patientType: "MM" | "DD";
@@ -823,7 +877,144 @@ type ImportKonsultaAssignmentInput = {
     lastName: string;
     middleName?: string | null;
     effYear?: string | null;
+    profileData?: ImportKonsultaProfileInput | null;
 };
+
+/**
+ * After a patient is successfully enrolled, reverse-map the parsed PROFILE
+ * data back into the database (vitals, social history, ob-gyne, surgical hx,
+ * pediatric measurements).  Non-blocking — errors are swallowed so they
+ * don't roll back the enrollment.
+ */
+async function upsertPatientProfileFromXml(
+    userId: number,
+    profile: ImportKonsultaProfileInput,
+): Promise<void> {
+    const toFloat = (v?: string): number | undefined => {
+        const n = parseFloat(v ?? "");
+        return Number.isNaN(n) || n === 0 ? undefined : n;
+    };
+    const toInt = (v?: string): number | undefined => {
+        const n = parseInt(v ?? "", 10);
+        return Number.isNaN(n) || n === 0 ? undefined : n;
+    };
+    const yesNo = (v?: string) => (v ?? "").toUpperCase() === "Y";
+
+    const profDate = profile.profDate ? new Date(profile.profDate) : new Date();
+
+    // ── VitalSign ──────────────────────────────────────────────────────────
+    const hasSomeVital = [
+        profile.systolic, profile.diastolic, profile.hr, profile.rr,
+        profile.temp, profile.height, profile.weight,
+    ].some((v) => v && v.trim() !== "" && v.trim() !== "0");
+
+    if (hasSomeVital) {
+        await prisma.vitalSign.create({
+            data: {
+                userId,
+                dateTaken: profDate,
+                bpSystolic: toInt(profile.systolic),
+                bpDiastolic: toInt(profile.diastolic),
+                pulseRate: toInt(profile.hr),
+                respRate: toInt(profile.rr),
+                temp: toFloat(profile.temp),
+                height: toFloat(profile.height),
+                weight: toFloat(profile.weight),
+                bmi: toFloat(profile.bmi),
+            },
+        });
+    }
+
+    // ── PediatricMeasurement ───────────────────────────────────────────────
+    const hasPediatric = [
+        profile.length, profile.headCirc, profile.skinfoldThickness,
+        profile.waist, profile.hip, profile.limbs, profile.midUpperArmCirc,
+    ].some((v) => v && v.trim() !== "" && v.trim() !== "0");
+
+    if (hasPediatric) {
+        await prisma.pediatricMeasurement.create({
+            data: {
+                userId,
+                dateTaken: profDate,
+                length: toFloat(profile.length) ?? null,
+                headCircumference: toFloat(profile.headCirc) ?? null,
+                skinfoldThickness: toFloat(profile.skinfoldThickness) ?? null,
+                waistCircumference: toFloat(profile.waist) ?? null,
+                hipCircumference: toFloat(profile.hip) ?? null,
+                limbCircumference: toFloat(profile.limbs) ?? null,
+                midUpperArmCircumference: toFloat(profile.midUpperArmCirc) ?? null,
+            },
+        });
+    }
+
+    // ── PersonalHistory (social history — upsert) ──────────────────────────
+    const hasPersonal = [
+        profile.isSmoker, profile.isAdrinker,
+        profile.illDrugUser, profile.isSexuallyActive,
+    ].some((v) => v && v.trim() !== "");
+
+    if (hasPersonal) {
+        const personalData = {
+            smokingStatus: profile.isSmoker || null,
+            numberOfPacksPerYear: toInt(profile.noCigpk),
+            alcoholStatus: profile.isAdrinker || null,
+            numberOfBottlesPerDay: toInt(profile.noBottles),
+            illicitDrugUse: profile.illDrugUser || null,
+            sexuallyActive: profile.isSexuallyActive || null,
+        };
+        await prisma.personalHistory.upsert({
+            where: { userId },
+            create: { userId, ...personalData },
+            update: personalData,
+        });
+    }
+
+    // ── ObGyneHistory (upsert) ─────────────────────────────────────────────
+    const menApplicable = yesNo(profile.mensIsApplicable);
+    const pregApplicable = yesNo(profile.pregIsApplicable);
+    if (menApplicable || pregApplicable) {
+        const lmpDate = profile.lastMensPeriod ? new Date(profile.lastMensPeriod) : undefined;
+        const obData = {
+            menarche: toInt(profile.menarchePeriod),
+            lastMenstrualPeriod: lmpDate,
+            menopauseAge: toInt(profile.menopauseAge),
+            menopauseStatus: profile.isMenopause || null,
+            ageAtFirstSexualIntercourse: toInt(profile.onsetSexIc),
+            birthControlMethod: profile.birthCtrlMethod || null,
+            menstrualPeriodDuration: toInt(profile.periodDuration),
+            menstrualCycleInterval: toInt(profile.mensInterval),
+            numberOfPadsPerDay: toInt(profile.padsPerDay),
+            gravidity: toInt(profile.pregCnt),
+            parity: toInt(profile.deliveryCnt),
+            fullTerm: toInt(profile.fullTermCnt),
+            premature: toInt(profile.prematureCnt),
+            abortion: toInt(profile.abortionCnt),
+            livingChildren: toInt(profile.livChildrenCnt),
+            typeOfDelivery: profile.deliveryTyp || null,
+            hasPreEclampsia: yesNo(profile.wPregIndhyp),
+        };
+        await prisma.obGyneHistory.upsert({
+            where: { userId },
+            create: { userId, ...obData },
+            update: obData,
+        });
+    }
+
+    // ── SurgicalHistory ────────────────────────────────────────────────────
+    if (profile.surgHists && profile.surgHists.length > 0) {
+        for (const sh of profile.surgHists) {
+            if (!sh.desc) continue;
+            const surgDate = sh.date ? new Date(sh.date) : undefined;
+            await prisma.surgicalHistory.create({
+                data: {
+                    userId,
+                    operationName: sh.desc,
+                    operationDate: surgDate,
+                },
+            });
+        }
+    }
+}
 
 export const importKonsultaAssignmentsAction = withErrorHandling(
     async ({
@@ -917,8 +1108,10 @@ export const importKonsultaAssignmentsAction = withErrorHandling(
                         },
                     },
                 },
-                select: { id: true, isActive: true, deletedAt: true },
+                select: { id: true, isActive: true, deletedAt: true, patientId: true },
             });
+
+            let enrolledUserId: number | null = null;
 
             if (existingClinicPatient) {
                 if (
@@ -931,6 +1124,7 @@ export const importKonsultaAssignmentsAction = withErrorHandling(
                     });
                 }
                 clinicPatientId = existingClinicPatient.id;
+                enrolledUserId = existingClinicPatient.patientId;
             } else {
                 const philHealthRecord = await prisma.philHealthRecord.findFirst({
                     where: { pin, deletedAt: null, User: { isActive: true } },
@@ -962,6 +1156,7 @@ export const importKonsultaAssignmentsAction = withErrorHandling(
                 });
 
                 clinicPatientId = addedClinicPatient.id;
+                enrolledUserId = philHealthRecord.userId;
             }
 
             const enrollment = await enrollPatientPhilHealthAction({
@@ -981,6 +1176,17 @@ export const importKonsultaAssignmentsAction = withErrorHandling(
                     status: "IMPORTED",
                     reason: "Imported and enrolled",
                 });
+
+                // Reverse-map PROFILE data into the patient's health records.
+                // Run outside the main try/catch so a profile-write failure
+                // doesn't roll back the successful enrollment.
+                if (assignment.profileData && enrolledUserId !== null) {
+                    try {
+                        await upsertPatientProfileFromXml(enrolledUserId, assignment.profileData);
+                    } catch {
+                        // Profile sync failure is non-fatal — enrollment still counts.
+                    }
+                }
             } else {
                 rejected++;
                 results.push({

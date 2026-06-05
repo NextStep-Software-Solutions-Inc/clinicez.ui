@@ -31,7 +31,6 @@ import {
 	useCallback,
 	useEffect,
 	useLayoutEffect,
-	useMemo,
 	useRef,
 	useState,
 	useTransition,
@@ -55,6 +54,7 @@ import {
 	getKonsultaBatchesAction,
 	getPhilHealthConsultationsAction,
 	getPhilHealthPatientsAction,
+	importKonsultaAssignmentsAction,
 	submitKonsultaBatchAction,
 	toggleKonsultaEntryAction,
 	unenrollKonsultaPatientAction,
@@ -279,7 +279,7 @@ export function PhilHealthReportTab({ clinicUid }: PhilHealthReportTabProps) {
 				<KonsultaValidationPanel clinicUid={clinicUid} />
 			</TabsContent>
 			<TabsContent value="xml-import">
-				<KonsultaXmlImportPanel />
+				<KonsultaXmlImportPanel clinicUid={clinicUid} />
 			</TabsContent>
 		</Tabs>
 	);
@@ -1705,54 +1705,514 @@ function KonsultaValidationPanel({ clinicUid }: { clinicUid: string }) {
 
 type XmlImportTrancheType = "FIRST_TRANCHE" | "SECOND_TRANCHE";
 
+type ParsedSurgicalHist = { desc: string; date: string };
+
+/** All data that can be reverse-mapped from a PCB PROFILE block. */
+type ParsedProfileData = {
+	// PROFILE element attributes
+	profDate: string;
+	patientAge: string;
+	atc: string;
+	isWalkedIn: string;
+	// PEPERT — vitals + physical measurements
+	systolic: string;
+	diastolic: string;
+	hr: string;
+	rr: string;
+	temp: string;
+	height: string;
+	weight: string;
+	bmi: string;
+	zScore: string;
+	leftVision: string;
+	rightVision: string;
+	// Pediatric measurements
+	length: string;
+	headCirc: string;
+	skinfoldThickness: string;
+	waist: string;
+	hip: string;
+	limbs: string;
+	midUpperArmCirc: string;
+	// BLOODTYPE
+	bloodType: string;
+	// SOCHIST — social history
+	isSmoker: string;
+	noCigpk: string;
+	isAdrinker: string;
+	noBottles: string;
+	illDrugUser: string;
+	isSexuallyActive: string;
+	// MENSHIST
+	menarchePeriod: string;
+	lastMensPeriod: string;
+	periodDuration: string;
+	mensInterval: string;
+	padsPerDay: string;
+	onsetSexIc: string;
+	birthCtrlMethod: string;
+	isMenopause: string;
+	menopauseAge: string;
+	mensIsApplicable: string;
+	// PREGHIST
+	pregCnt: string;
+	deliveryCnt: string;
+	deliveryTyp: string;
+	fullTermCnt: string;
+	prematureCnt: string;
+	abortionCnt: string;
+	livChildrenCnt: string;
+	wPregIndhyp: string;
+	wFamPlan: string;
+	pregIsApplicable: string;
+	// PESPECIFIC — physical exam findings
+	skinRem: string;
+	heentRem: string;
+	chestRem: string;
+	heartRem: string;
+	abdomenRem: string;
+	neuroRem: string;
+	rectalRem: string;
+	guRem: string;
+	// Arrayed histories
+	medHistCodes: string[];
+	famHistCodes: string[];
+	surgHists: ParsedSurgicalHist[];
+};
+
 type ParsedXmlRow = {
 	key: string;
+	// Patient info
 	pin: string;
-	memberPin: string;
 	firstName: string;
 	middleName: string;
 	lastName: string;
+	suffix: string;
+	dob: string;
+	sex: string;
+	mobile: string;
+	landline: string;
 	patientType: "MM" | "DD";
+	// Member info (for DD, member is the primary; for MM member == patient)
+	memberPin: string;
+	memberFirstName: string;
+	memberMiddleName: string;
+	memberLastName: string;
+	memberSuffix: string;
+	memberDob: string;
+	// Enlistment info
+	hciCaseNo: string;
+	hciTransNo: string;
 	effYear: string;
+	enlistStat: string;
+	enlistDate: string;
+	packageType: string;
+	withConsent: string;
+	transDate: string;
+	createdBy: string;
+	reportStatus: string;
 	selected: boolean;
+	// Profile data (optional — only present if PROFILING section exists in XML)
+	profile?: ParsedProfileData;
 };
 
-function parseAssignmentRowsFromXml(xml: string): ParsedXmlRow[] {
-	const assignmentMatches = [
-		...xml.matchAll(/<ASSIGNMENT\s([\s\S]*?)(?:\/>|>)/gi),
-	];
+type ImportResult = {
+	pin: string;
+	status: "IMPORTED" | "REJECTED";
+	reason: string;
+};
 
-	return assignmentMatches.map((match, index) => {
+/** Extract the value of a named XML attribute from a string of attribute text. */
+function getXmlAttr(name: string, attrs: string): string {
+	return new RegExp(`${name}="([^"]*)"`, "i").exec(attrs)?.[1]?.trim() ?? "";
+}
+
+/**
+ * Parse all PROFILE blocks from the PCB XML and return a map keyed by
+ * pHciCaseNo (primary) and pPatientPin (fallback) so ENLISTMENTs can look
+ * up their corresponding profile.
+ */
+function parseProfilesFromXml(xml: string): Map<string, ParsedProfileData> {
+	const profileMap = new Map<string, ParsedProfileData>();
+	const blocks = [...xml.matchAll(/<PROFILE\s([\s\S]*?)>([\s\S]*?)<\/PROFILE>/gi)];
+
+	for (const block of blocks) {
+		const tagAttrs = block[1];
+		const innerXml = block[2];
+
+		const pepertAttrs = /<PEPERT\s([\s\S]*?)\/>/i.exec(innerXml)?.[1] ?? "";
+		const bloodAttrs = /<BLOODTYPE\s([\s\S]*?)\/>/i.exec(innerXml)?.[1] ?? "";
+		const socAttrs = /<SOCHIST\s([\s\S]*?)\/>/i.exec(innerXml)?.[1] ?? "";
+		const mensAttrs = /<MENSHIST\s([\s\S]*?)\/>/i.exec(innerXml)?.[1] ?? "";
+		const pregAttrs = /<PREGHIST\s([\s\S]*?)\/>/i.exec(innerXml)?.[1] ?? "";
+		const pespecAttrs = /<PESPECIFIC\s([\s\S]*?)\/>/i.exec(innerXml)?.[1] ?? "";
+
+		const medHistCodes: string[] = [];
+		for (const m of innerXml.matchAll(/<MEDHIST\s([\s\S]*?)\/>/gi)) {
+			const code = getXmlAttr("pMdiseaseCode", m[1]);
+			if (code) medHistCodes.push(code);
+		}
+		const famHistCodes: string[] = [];
+		for (const m of innerXml.matchAll(/<FAMHIST\s([\s\S]*?)\/>/gi)) {
+			const code = getXmlAttr("pMdiseaseCode", m[1]);
+			if (code) famHistCodes.push(code);
+		}
+		const surgHists: ParsedSurgicalHist[] = [];
+		for (const m of innerXml.matchAll(/<SURGHIST\s([\s\S]*?)\/>/gi)) {
+			surgHists.push({
+				desc: getXmlAttr("pSurgDesc", m[1]),
+				date: getXmlAttr("pSurgDate", m[1]),
+			});
+		}
+
+		const profile: ParsedProfileData = {
+			profDate: getXmlAttr("pProfDate", tagAttrs),
+			patientAge: getXmlAttr("pPatientAge", tagAttrs),
+			atc: getXmlAttr("pATC", tagAttrs),
+			isWalkedIn: getXmlAttr("pIsWalkedIn", tagAttrs),
+			systolic: getXmlAttr("pSystolic", pepertAttrs),
+			diastolic: getXmlAttr("pDiastolic", pepertAttrs),
+			hr: getXmlAttr("pHr", pepertAttrs),
+			rr: getXmlAttr("pRr", pepertAttrs),
+			temp: getXmlAttr("pTemp", pepertAttrs),
+			height: getXmlAttr("pHeight", pepertAttrs),
+			weight: getXmlAttr("pWeight", pepertAttrs),
+			bmi: getXmlAttr("pBMI", pepertAttrs),
+			zScore: getXmlAttr("pZScore", pepertAttrs),
+			leftVision: getXmlAttr("pLeftVision", pepertAttrs),
+			rightVision: getXmlAttr("pRightVision", pepertAttrs),
+			length: getXmlAttr("pLength", pepertAttrs),
+			headCirc: getXmlAttr("pHeadCirc", pepertAttrs),
+			skinfoldThickness: getXmlAttr("pSkinfoldThickness", pepertAttrs),
+			waist: getXmlAttr("pWaist", pepertAttrs),
+			hip: getXmlAttr("pHip", pepertAttrs),
+			limbs: getXmlAttr("pLimbs", pepertAttrs),
+			midUpperArmCirc: getXmlAttr("pMidUpperArmCirc", pepertAttrs),
+			bloodType: getXmlAttr("pBloodType", bloodAttrs),
+			isSmoker: getXmlAttr("pIsSmoker", socAttrs),
+			noCigpk: getXmlAttr("pNoCigpk", socAttrs),
+			isAdrinker: getXmlAttr("pIsAdrinker", socAttrs),
+			noBottles: getXmlAttr("pNoBottles", socAttrs),
+			illDrugUser: getXmlAttr("pIllDrugUser", socAttrs),
+			isSexuallyActive: getXmlAttr("pIsSexuallyActive", socAttrs),
+			menarchePeriod: getXmlAttr("pMenarchePeriod", mensAttrs),
+			lastMensPeriod: getXmlAttr("pLastMensPeriod", mensAttrs),
+			periodDuration: getXmlAttr("pPeriodDuration", mensAttrs),
+			mensInterval: getXmlAttr("pMensInterval", mensAttrs),
+			padsPerDay: getXmlAttr("pPadsPerDay", mensAttrs),
+			onsetSexIc: getXmlAttr("pOnsetSexIc", mensAttrs),
+			birthCtrlMethod: getXmlAttr("pBirthCtrlMethod", mensAttrs),
+			isMenopause: getXmlAttr("pIsMenopause", mensAttrs),
+			menopauseAge: getXmlAttr("pMenopauseAge", mensAttrs),
+			mensIsApplicable: getXmlAttr("pIsApplicable", mensAttrs),
+			pregCnt: getXmlAttr("pPregCnt", pregAttrs),
+			deliveryCnt: getXmlAttr("pDeliveryCnt", pregAttrs),
+			deliveryTyp: getXmlAttr("pDeliveryTyp", pregAttrs),
+			fullTermCnt: getXmlAttr("pFullTermCnt", pregAttrs),
+			prematureCnt: getXmlAttr("pPrematureCnt", pregAttrs),
+			abortionCnt: getXmlAttr("pAbortionCnt", pregAttrs),
+			livChildrenCnt: getXmlAttr("pLivChildrenCnt", pregAttrs),
+			wPregIndhyp: getXmlAttr("pWPregIndhyp", pregAttrs),
+			wFamPlan: getXmlAttr("pWFamPlan", pregAttrs),
+			pregIsApplicable: getXmlAttr("pIsApplicable", pregAttrs),
+			skinRem: getXmlAttr("pSkinRem", pespecAttrs),
+			heentRem: getXmlAttr("pHeentRem", pespecAttrs),
+			chestRem: getXmlAttr("pChestRem", pespecAttrs),
+			heartRem: getXmlAttr("pHeartRem", pespecAttrs),
+			abdomenRem: getXmlAttr("pAbdomenRem", pespecAttrs),
+			neuroRem: getXmlAttr("pNeuroRem", pespecAttrs),
+			rectalRem: getXmlAttr("pRectalRem", pespecAttrs),
+			guRem: getXmlAttr("pGuRem", pespecAttrs),
+			medHistCodes,
+			famHistCodes,
+			surgHists,
+		};
+
+		const caseNo = getXmlAttr("pHciCaseNo", tagAttrs);
+		const pin = getXmlAttr("pPatientPin", tagAttrs);
+		if (caseNo) profileMap.set(caseNo, profile);
+		if (pin && !profileMap.has(pin)) profileMap.set(pin, profile);
+	}
+
+	return profileMap;
+}
+
+function parseEnlistmentRowsFromXml(xml: string): ParsedXmlRow[] {
+	const profileMap = parseProfilesFromXml(xml);
+	const matches = [...xml.matchAll(/<ENLISTMENT\s([\s\S]*?)(?:\/>|>)/gi)];
+
+	return matches.map((match, index) => {
 		const attributes = match[1];
-		const getValue = (name: string): string =>
-			new RegExp(`${name}="([^"]*)"`, "i").exec(attributes)?.[1]?.trim() ?? "";
 
-		const pin = getValue("pAssignedPin");
-		const memberPin = getValue("pPrimaryPIN");
+		const pin = getXmlAttr("pPatientPin", attributes);
+		const memberPin = getXmlAttr("pMemPin", attributes);
 		const patientType: "MM" | "DD" =
-			getValue("pAssignedType") === "DD" ? "DD" : "MM";
+			getXmlAttr("pPatientType", attributes) === "DD" ? "DD" : "MM";
+		const hciCaseNo = getXmlAttr("pHciCaseNo", attributes);
 		const rowKey = `${pin || "unknown"}-${index}`;
+
+		// Match to profile: prefer by HCI case number, fall back to PIN
+		const profile = profileMap.get(hciCaseNo) ?? profileMap.get(pin);
 
 		return {
 			key: rowKey,
 			pin,
-			memberPin: memberPin || pin,
-			firstName: getValue("pAssignedFirstName"),
-			middleName: getValue("pAssignedMiddleName"),
-			lastName: getValue("pAssignedLastName"),
+			firstName: getXmlAttr("pPatientFname", attributes),
+			middleName: getXmlAttr("pPatientMname", attributes),
+			lastName: getXmlAttr("pPatientLname", attributes),
+			suffix: getXmlAttr("pPatientExtname", attributes),
+			dob: getXmlAttr("pPatientDob", attributes),
+			sex: getXmlAttr("pPatientSex", attributes),
+			mobile: getXmlAttr("pPatientMobileNo", attributes),
+			landline: getXmlAttr("pPatientLandlineNo", attributes),
 			patientType,
-			effYear: getValue("pEffYear"),
+			memberPin: memberPin || pin,
+			memberFirstName: getXmlAttr("pMemFname", attributes),
+			memberMiddleName: getXmlAttr("pMemMname", attributes),
+			memberLastName: getXmlAttr("pMemLname", attributes),
+			memberSuffix: getXmlAttr("pMemExtname", attributes),
+			memberDob: getXmlAttr("pMemDob", attributes),
+			hciCaseNo,
+			hciTransNo: getXmlAttr("pHciTransNo", attributes),
+			effYear: getXmlAttr("pEffYear", attributes),
+			enlistStat: getXmlAttr("pEnlistStat", attributes),
+			enlistDate: getXmlAttr("pEnlistDate", attributes),
+			packageType: getXmlAttr("pPackageType", attributes),
+			withConsent: getXmlAttr("pWithConsent", attributes),
+			transDate: getXmlAttr("pTransDate", attributes),
+			createdBy: getXmlAttr("pCreatedBy", attributes),
+			reportStatus: getXmlAttr("pReportStatus", attributes),
 			selected: true,
+			profile,
 		};
 	});
 }
 
-function KonsultaXmlImportPanel() {
+/** Renders a labelled value; shows "—" when the value is empty or "0". */
+function InfoField({
+	label,
+	value,
+	mono = false,
+}: {
+	label: string;
+	value: string;
+	mono?: boolean;
+}) {
+	const display =
+		!value || value === "0" ? (
+			<span className="text-muted-foreground">—</span>
+		) : (
+			<span className={mono ? "font-mono" : undefined}>{value}</span>
+		);
+	return (
+		<div className="flex flex-col gap-0.5">
+			<span className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</span>
+			<span className="text-xs">{display}</span>
+		</div>
+	);
+}
+
+/** Expandable detail panel showing all parsed PROFILE data for one row. */
+function ProfileDetailPanel({ profile }: { profile: ParsedProfileData }) {
+	const yn = (v: string) =>
+		v.toUpperCase() === "Y" ? "Yes" : v.toUpperCase() === "N" ? "No" : v || "—";
+
+	const hasVitals = [
+		profile.systolic, profile.diastolic, profile.hr, profile.rr,
+		profile.temp, profile.height, profile.weight,
+	].some((v) => v && v !== "0");
+
+	const hasPediatric = [
+		profile.length, profile.headCirc, profile.skinfoldThickness,
+		profile.waist, profile.hip, profile.limbs, profile.midUpperArmCirc,
+	].some((v) => v && v !== "0");
+
+	const hasSocial = [
+		profile.isSmoker, profile.isAdrinker, profile.illDrugUser, profile.isSexuallyActive,
+	].some((v) => v);
+
+	const hasMens = profile.mensIsApplicable?.toUpperCase() === "Y";
+	const hasPreg = profile.pregIsApplicable?.toUpperCase() === "Y";
+
+	const hasPhysExam = [
+		profile.skinRem, profile.heentRem, profile.chestRem, profile.heartRem,
+		profile.abdomenRem, profile.neuroRem, profile.rectalRem, profile.guRem,
+	].some((v) => v && v !== "0");
+
+	return (
+		<div className="p-4 bg-muted/30 space-y-4 text-sm">
+			{/* ── Profile header ── */}
+			<div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+				<InfoField label="Profile Date" value={profile.profDate} />
+				<InfoField label="Patient Age" value={profile.patientAge} />
+				<InfoField label="ATC" value={profile.atc} mono />
+				<InfoField label="Walk-in" value={yn(profile.isWalkedIn)} />
+			</div>
+
+			{/* ── Vitals ── */}
+			{hasVitals && (
+				<div className="space-y-1.5">
+					<p className="text-xs font-semibold text-primary">Vitals (PEPERT)</p>
+					<div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
+						<InfoField label="BP Systolic" value={profile.systolic} />
+						<InfoField label="BP Diastolic" value={profile.diastolic} />
+						<InfoField label="Heart Rate" value={profile.hr} />
+						<InfoField label="Resp Rate" value={profile.rr} />
+						<InfoField label="Temp (°C)" value={profile.temp} />
+						<InfoField label="BMI" value={profile.bmi} />
+					</div>
+					<div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
+						<InfoField label="Height (cm)" value={profile.height} />
+						<InfoField label="Weight (kg)" value={profile.weight} />
+						<InfoField label="Z-Score" value={profile.zScore} />
+						<InfoField label="Vision L" value={profile.leftVision} />
+						<InfoField label="Vision R" value={profile.rightVision} />
+						<InfoField label="Blood Type" value={profile.bloodType} />
+					</div>
+				</div>
+			)}
+
+			{/* ── Pediatric measurements ── */}
+			{hasPediatric && (
+				<div className="space-y-1.5">
+					<p className="text-xs font-semibold text-primary">Pediatric Measurements</p>
+					<div className="grid grid-cols-3 gap-3 sm:grid-cols-7">
+						<InfoField label="Length (cm)" value={profile.length} />
+						<InfoField label="Head Circ." value={profile.headCirc} />
+						<InfoField label="Skinfold" value={profile.skinfoldThickness} />
+						<InfoField label="Waist" value={profile.waist} />
+						<InfoField label="Hip" value={profile.hip} />
+						<InfoField label="Limbs" value={profile.limbs} />
+						<InfoField label="Mid-Upper Arm" value={profile.midUpperArmCirc} />
+					</div>
+				</div>
+			)}
+
+			{/* ── Social history ── */}
+			{hasSocial && (
+				<div className="space-y-1.5">
+					<p className="text-xs font-semibold text-primary">Social History</p>
+					<div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
+						<InfoField label="Smoker" value={yn(profile.isSmoker)} />
+						<InfoField label="Packs/year" value={profile.noCigpk} />
+						<InfoField label="Drinker" value={yn(profile.isAdrinker)} />
+						<InfoField label="Bottles/day" value={profile.noBottles} />
+						<InfoField label="Illicit Drugs" value={yn(profile.illDrugUser)} />
+						<InfoField label="Sexually Active" value={yn(profile.isSexuallyActive)} />
+					</div>
+				</div>
+			)}
+
+			{/* ── Menstrual & OB-Gyne history ── */}
+			{(hasMens || hasPreg) && (
+				<div className="space-y-2">
+					{hasMens && (
+						<div className="space-y-1.5">
+							<p className="text-xs font-semibold text-primary">Menstrual History</p>
+							<div className="grid grid-cols-3 gap-3 sm:grid-cols-5">
+								<InfoField label="Menarche" value={profile.menarchePeriod} />
+								<InfoField label="Last Mens Period" value={profile.lastMensPeriod} />
+								<InfoField label="Duration (days)" value={profile.periodDuration} />
+								<InfoField label="Interval (days)" value={profile.mensInterval} />
+								<InfoField label="Pads/day" value={profile.padsPerDay} />
+							</div>
+							<div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+								<InfoField label="Onset Sex. Activity" value={profile.onsetSexIc} />
+								<InfoField label="Birth Control" value={profile.birthCtrlMethod} />
+								<InfoField label="Menopause" value={yn(profile.isMenopause)} />
+								<InfoField label="Menopause Age" value={profile.menopauseAge} />
+							</div>
+						</div>
+					)}
+					{hasPreg && (
+						<div className="space-y-1.5">
+							<p className="text-xs font-semibold text-primary">Pregnancy History</p>
+							<div className="grid grid-cols-3 gap-3 sm:grid-cols-5">
+								<InfoField label="Gravidity" value={profile.pregCnt} />
+								<InfoField label="Parity" value={profile.deliveryCnt} />
+								<InfoField label="Delivery Type" value={profile.deliveryTyp} />
+								<InfoField label="Full Term" value={profile.fullTermCnt} />
+								<InfoField label="Premature" value={profile.prematureCnt} />
+							</div>
+							<div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+								<InfoField label="Abortion" value={profile.abortionCnt} />
+								<InfoField label="Living Children" value={profile.livChildrenCnt} />
+								<InfoField label="Pre-eclampsia Hx" value={yn(profile.wPregIndhyp)} />
+								<InfoField label="Family Planning" value={yn(profile.wFamPlan)} />
+							</div>
+						</div>
+					)}
+				</div>
+			)}
+
+			{/* ── Medical / Family / Surgical histories ── */}
+			{(profile.medHistCodes.length > 0 || profile.famHistCodes.length > 0 || profile.surgHists.length > 0) && (
+				<div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+					{profile.medHistCodes.length > 0 && (
+						<div className="space-y-1">
+							<p className="text-xs font-semibold text-primary">Medical History Codes</p>
+							<div className="flex flex-wrap gap-1">
+								{profile.medHistCodes.map((code) => (
+									<Badge key={code} variant="outline" className="text-xs font-mono">{code}</Badge>
+								))}
+							</div>
+						</div>
+					)}
+					{profile.famHistCodes.length > 0 && (
+						<div className="space-y-1">
+							<p className="text-xs font-semibold text-primary">Family History Codes</p>
+							<div className="flex flex-wrap gap-1">
+								{profile.famHistCodes.map((code) => (
+									<Badge key={code} variant="outline" className="text-xs font-mono">{code}</Badge>
+								))}
+							</div>
+						</div>
+					)}
+					{profile.surgHists.length > 0 && (
+						<div className="space-y-1">
+							<p className="text-xs font-semibold text-primary">Surgical Histories</p>
+							<ul className="space-y-0.5 text-xs">
+								{profile.surgHists.map((sh) => (
+									<li key={`${sh.date}-${sh.desc}`} className="flex gap-2">
+										<span className="font-mono text-muted-foreground">{sh.date || "—"}</span>
+										<span>{sh.desc || "—"}</span>
+									</li>
+								))}
+							</ul>
+						</div>
+					)}
+				</div>
+			)}
+
+			{/* ── Physical Exam findings ── */}
+			{hasPhysExam && (
+				<div className="space-y-1.5">
+					<p className="text-xs font-semibold text-primary">Physical Examination Findings</p>
+					<div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+						<InfoField label="Skin" value={profile.skinRem} />
+						<InfoField label="HEENT" value={profile.heentRem} />
+						<InfoField label="Chest / Lungs" value={profile.chestRem} />
+						<InfoField label="Heart" value={profile.heartRem} />
+						<InfoField label="Abdomen" value={profile.abdomenRem} />
+						<InfoField label="Neuro" value={profile.neuroRem} />
+						<InfoField label="GU" value={profile.guRem} />
+						<InfoField label="Rectal" value={profile.rectalRem} />
+					</div>
+				</div>
+			)}
+		</div>
+	);
+}
+
+function KonsultaXmlImportPanel({ clinicUid }: { clinicUid: string }) {
 	const [trancheType, setTrancheType] =
 		useState<XmlImportTrancheType>("FIRST_TRANCHE");
 	const [xmlInput, setXmlInput] = useState("");
 	const [rows, setRows] = useState<ParsedXmlRow[]>([]);
 	const [warnings, setWarnings] = useState<string[]>([]);
+	const [isImporting, startImportTransition] = useTransition();
+	const [importResults, setImportResults] = useState<ImportResult[] | null>(null);
+	const [expandedKey, setExpandedKey] = useState<string | null>(null);
 
 	const onFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
 		const selectedFile = event.target.files?.[0];
@@ -1767,18 +2227,21 @@ function KonsultaXmlImportPanel() {
 			return;
 		}
 
-		const parsedRows = parseAssignmentRowsFromXml(xmlInput);
+		const parsedRows = parseEnlistmentRowsFromXml(xmlInput);
 		const nextWarnings: string[] = [];
 
 		if (parsedRows.length === 0) {
-			nextWarnings.push("No ASSIGNMENT records found in the XML.");
+			nextWarnings.push("No ENLISTMENT records found in the XML.");
 		}
 
 		const missingPinCount = parsedRows.filter((row) => !row.pin).length;
 		if (missingPinCount > 0) {
-			nextWarnings.push(
-				`${missingPinCount} record(s) have missing assigned PIN.`,
-			);
+			nextWarnings.push(`${missingPinCount} record(s) have missing patient PIN.`);
+		}
+
+		const withProfile = parsedRows.filter((r) => r.profile).length;
+		if (parsedRows.length > 0 && withProfile === 0) {
+			nextWarnings.push("No PROFILE data found — only enlistment info is available.");
 		}
 
 		if (
@@ -1800,30 +2263,112 @@ function KonsultaXmlImportPanel() {
 
 		setRows(parsedRows);
 		setWarnings(nextWarnings);
+		setImportResults(null);
+		setExpandedKey(null);
 		toast.success(
-			`Parsed ${parsedRows.length} record(s) from XML and converted to JSON.`,
+			`Parsed ${parsedRows.length} ENLISTMENT record(s)${withProfile > 0 ? ` with ${withProfile} PROFILE(s)` : ""}.`,
 		);
 	};
 
+	const allSelected = rows.length > 0 && rows.every((r) => r.selected);
+	const someSelected = rows.some((r) => r.selected) && !allSelected;
+
 	const toggleAll = (checked: boolean) => {
-		setRows((prevRows) =>
-			prevRows.map((row) => ({ ...row, selected: checked })),
-		);
+		setRows((prev) => prev.map((row) => ({ ...row, selected: checked })));
 	};
 
 	const toggleRow = (key: string, checked: boolean) => {
-		setRows((prevRows) =>
-			prevRows.map((row) =>
-				row.key === key ? { ...row, selected: checked } : row,
-			),
+		setRows((prev) =>
+			prev.map((row) => (row.key === key ? { ...row, selected: checked } : row)),
 		);
 	};
 
-	const selectedCount = rows.filter((row) => row.selected).length;
-	const parsedJsonPreview = useMemo(
-		() => JSON.stringify(rows, null, 2),
-		[rows],
-	);
+	const toggleExpand = (key: string) => {
+		setExpandedKey((prev) => (prev === key ? null : key));
+	};
+
+	const selectedRows = rows.filter((r) => r.selected);
+
+	const handleImport = () => {
+		if (selectedRows.length === 0) {
+			toast.error("Select at least one record to import.");
+			return;
+		}
+		startImportTransition(async () => {
+			const res = await importKonsultaAssignmentsAction({
+				clinicUid,
+				assignments: selectedRows.map((r) => ({
+					pin: r.pin,
+					patientType: r.patientType,
+					memberPin: r.patientType === "DD" ? r.memberPin : undefined,
+					firstName: r.firstName,
+					lastName: r.lastName,
+					middleName: r.middleName || undefined,
+					effYear: r.effYear || undefined,
+					profileData: r.profile
+						? {
+								profDate: r.profile.profDate || undefined,
+								systolic: r.profile.systolic || undefined,
+								diastolic: r.profile.diastolic || undefined,
+								hr: r.profile.hr || undefined,
+								rr: r.profile.rr || undefined,
+								temp: r.profile.temp || undefined,
+								height: r.profile.height || undefined,
+								weight: r.profile.weight || undefined,
+								bmi: r.profile.bmi || undefined,
+								zScore: r.profile.zScore || undefined,
+								leftVision: r.profile.leftVision || undefined,
+								rightVision: r.profile.rightVision || undefined,
+								length: r.profile.length || undefined,
+								headCirc: r.profile.headCirc || undefined,
+								skinfoldThickness: r.profile.skinfoldThickness || undefined,
+								waist: r.profile.waist || undefined,
+								hip: r.profile.hip || undefined,
+								limbs: r.profile.limbs || undefined,
+								midUpperArmCirc: r.profile.midUpperArmCirc || undefined,
+								isSmoker: r.profile.isSmoker || undefined,
+								noCigpk: r.profile.noCigpk || undefined,
+								isAdrinker: r.profile.isAdrinker || undefined,
+								noBottles: r.profile.noBottles || undefined,
+								illDrugUser: r.profile.illDrugUser || undefined,
+								isSexuallyActive: r.profile.isSexuallyActive || undefined,
+								mensIsApplicable: r.profile.mensIsApplicable || undefined,
+								menarchePeriod: r.profile.menarchePeriod || undefined,
+								lastMensPeriod: r.profile.lastMensPeriod || undefined,
+								periodDuration: r.profile.periodDuration || undefined,
+								mensInterval: r.profile.mensInterval || undefined,
+								padsPerDay: r.profile.padsPerDay || undefined,
+								onsetSexIc: r.profile.onsetSexIc || undefined,
+								birthCtrlMethod: r.profile.birthCtrlMethod || undefined,
+								isMenopause: r.profile.isMenopause || undefined,
+								menopauseAge: r.profile.menopauseAge || undefined,
+								pregIsApplicable: r.profile.pregIsApplicable || undefined,
+								pregCnt: r.profile.pregCnt || undefined,
+								deliveryCnt: r.profile.deliveryCnt || undefined,
+								deliveryTyp: r.profile.deliveryTyp || undefined,
+								fullTermCnt: r.profile.fullTermCnt || undefined,
+								prematureCnt: r.profile.prematureCnt || undefined,
+								abortionCnt: r.profile.abortionCnt || undefined,
+								livChildrenCnt: r.profile.livChildrenCnt || undefined,
+								wPregIndhyp: r.profile.wPregIndhyp || undefined,
+								surgHists: r.profile.surgHists,
+							}
+						: undefined,
+				})),
+			});
+			if (res.status && res.data) {
+				setImportResults(res.data.results);
+				toast.success(
+					`Import complete — ${res.data.imported} imported, ${res.data.rejected} rejected.`,
+				);
+			} else {
+				toast.error(res.message ?? "Import failed.");
+			}
+		});
+	};
+
+	// Column count = expand + select + 16 data cols = 18
+	const COL_SPAN = 18;
 
 	return (
 		<Card>
@@ -1833,12 +2378,13 @@ function KonsultaXmlImportPanel() {
 					Konsulta XML Import
 				</CardTitle>
 				<CardDescription className="mt-1">
-					Upload or paste XML, choose tranche type, parse to JSON, then select
-					which records will proceed to import.
+					Upload or paste a PCB XML file. Both ENLISTMENT and PROFILE data will
+					be parsed and reverse-mapped to the database on import.
 				</CardDescription>
 			</CardHeader>
 			<CardContent className="space-y-4">
-				<div className="space-y-3">
+				{/* ── Tranche type ── */}
+				<div className="space-y-2">
 					<Label>XML Tranche Type</Label>
 					<div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
 						<label className="flex items-center gap-2 text-sm">
@@ -1848,7 +2394,7 @@ function KonsultaXmlImportPanel() {
 								checked={trancheType === "FIRST_TRANCHE"}
 								onChange={() => setTrancheType("FIRST_TRANCHE")}
 							/>
-							First Tranche
+							First Tranche (Enlistment + Profile)
 						</label>
 						<label className="flex items-center gap-2 text-sm">
 							<input
@@ -1857,22 +2403,24 @@ function KonsultaXmlImportPanel() {
 								checked={trancheType === "SECOND_TRANCHE"}
 								onChange={() => setTrancheType("SECOND_TRANCHE")}
 							/>
-							Second Tranche
+							Second Tranche (SOAP / Consultation)
 						</label>
 					</div>
 				</div>
 
+				{/* ── File upload + parse ── */}
 				<div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto]">
 					<Input
 						type="file"
 						accept=".xml,text/xml"
 						onChange={(event) => void onFileUpload(event)}
 					/>
-					<Button onClick={handleParse} className="w-full sm:w-auto">
+					<Button type="button" onClick={handleParse} className="w-full sm:w-auto">
 						Parse XML
 					</Button>
 				</div>
 
+				{/* ── Paste area ── */}
 				<div className="space-y-2">
 					<Label htmlFor="konsulta-xml-input">Paste XML</Label>
 					<Textarea
@@ -1880,10 +2428,11 @@ function KonsultaXmlImportPanel() {
 						value={xmlInput}
 						onChange={(event) => setXmlInput(event.target.value)}
 						className="min-h-36 font-mono text-xs"
-						placeholder="Paste XML payload here..."
+						placeholder="Paste PCB XML payload here..."
 					/>
 				</div>
 
+				{/* ── Parse warnings ── */}
 				{warnings.length > 0 && (
 					<Alert variant="destructive">
 						<AlertCircle className="h-4 w-4" />
@@ -1898,27 +2447,38 @@ function KonsultaXmlImportPanel() {
 					</Alert>
 				)}
 
+				{/* ── Parsed records table ── */}
 				{rows.length > 0 && (
-					<>
-						<div className="flex items-center justify-between gap-3">
+					<div className="space-y-3">
+						{/* Toolbar */}
+						<div className="flex flex-wrap items-center justify-between gap-3">
 							<p className="text-sm text-muted-foreground">
-								Parsed {rows.length} record(s) • {selectedCount} selected for
-								import
+								<span className="font-medium text-foreground">{rows.length}</span> record(s) parsed
+								{" · "}
+								<span className="font-medium text-foreground">
+									{rows.filter((r) => r.profile).length}
+								</span> with profile
+								{" · "}
+								<span className="font-medium text-foreground">{selectedRows.length}</span> selected
 							</p>
 							<div className="flex gap-2">
-								<Button
-									size="sm"
-									variant="outline"
-									onClick={() => toggleAll(true)}
-								>
-									Select all
+								<Button type="button" size="sm" variant="outline" onClick={() => toggleAll(true)}>
+									<CheckSquare className="h-3.5 w-3.5 mr-1" />Select all
+								</Button>
+								<Button type="button" size="sm" variant="outline" onClick={() => toggleAll(false)}>
+									<Square className="h-3.5 w-3.5 mr-1" />Clear all
 								</Button>
 								<Button
+									type="button"
 									size="sm"
-									variant="outline"
-									onClick={() => toggleAll(false)}
+									onClick={handleImport}
+									disabled={isImporting || selectedRows.length === 0}
+									className="gap-1"
 								>
-									Clear all
+									{isImporting
+										? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+										: <Upload className="h-3.5 w-3.5" />}
+									Import {selectedRows.length > 0 ? `(${selectedRows.length})` : ""}
 								</Button>
 							</div>
 						</div>
@@ -1926,56 +2486,183 @@ function KonsultaXmlImportPanel() {
 						<div className="overflow-x-auto rounded-md border">
 							<Table>
 								<TableHeader>
-									<TableRow>
-										<TableHead className="w-12">Pick</TableHead>
-										<TableHead>PIN</TableHead>
-										<TableHead>Name</TableHead>
-										<TableHead>Type</TableHead>
-										<TableHead>Member PIN</TableHead>
-										<TableHead>Eff Year</TableHead>
+									<TableRow className="bg-muted/40">
+										{/* expand toggle placeholder */}
+										<TableHead className="w-8 px-1" />
+										{/* select-all checkbox */}
+										<TableHead className="w-10 px-3">
+											<Checkbox
+												checked={allSelected}
+												data-state={someSelected ? "indeterminate" : undefined}
+												onCheckedChange={(checked) => toggleAll(checked === true)}
+												aria-label="Select all"
+											/>
+										</TableHead>
+										<TableHead className="whitespace-nowrap">Patient PIN</TableHead>
+										<TableHead className="whitespace-nowrap">Patient Name</TableHead>
+										<TableHead className="whitespace-nowrap">DOB</TableHead>
+										<TableHead className="whitespace-nowrap">Sex</TableHead>
+										<TableHead className="whitespace-nowrap">Type</TableHead>
+										<TableHead className="whitespace-nowrap">Mobile</TableHead>
+										<TableHead className="whitespace-nowrap">Member PIN</TableHead>
+										<TableHead className="whitespace-nowrap">Member Name</TableHead>
+										<TableHead className="whitespace-nowrap">Member DOB</TableHead>
+										<TableHead className="whitespace-nowrap">HCI Case No</TableHead>
+										<TableHead className="whitespace-nowrap">HCI Trans No</TableHead>
+										<TableHead className="whitespace-nowrap">Package</TableHead>
+										<TableHead className="whitespace-nowrap">Enlist Date</TableHead>
+										<TableHead className="whitespace-nowrap">Eff Year</TableHead>
+										<TableHead className="whitespace-nowrap">Status</TableHead>
+										<TableHead className="whitespace-nowrap">Profile</TableHead>
 									</TableRow>
 								</TableHeader>
 								<TableBody>
-									{rows.map((row) => (
-										<TableRow key={row.key}>
-											<TableCell>
-												<Checkbox
-													checked={row.selected}
-													onCheckedChange={(checked) =>
-														toggleRow(row.key, checked === true)
+									{rows.map((row) => {
+										const importResult = importResults?.find((r) => r.pin === row.pin);
+										const isExpanded = expandedKey === row.key;
+
+										return (
+											<>
+												<TableRow
+													key={row.key}
+													data-state={row.selected ? "selected" : undefined}
+													className={
+														importResult?.status === "IMPORTED"
+															? "bg-green-50"
+															: importResult?.status === "REJECTED"
+																? "bg-red-50"
+																: undefined
 													}
-												/>
-											</TableCell>
-											<TableCell className="font-mono text-xs">
-												{row.pin || "—"}
-											</TableCell>
-											<TableCell className="text-sm">
-												{row.lastName}, {row.firstName}
-												{row.middleName ? ` ${row.middleName}` : ""}
-											</TableCell>
-											<TableCell>
-												{row.patientType === "DD" ? "Dependent" : "Member"}
-											</TableCell>
-											<TableCell className="font-mono text-xs">
-												{row.memberPin || "—"}
-											</TableCell>
-											<TableCell>{row.effYear || "—"}</TableCell>
-										</TableRow>
-									))}
+												>
+													{/* Expand toggle */}
+													<TableCell className="px-1">
+														{row.profile && (
+															<Button
+																type="button"
+																size="icon"
+																variant="ghost"
+																className="h-6 w-6"
+																onClick={() => toggleExpand(row.key)}
+																aria-label={isExpanded ? "Collapse profile" : "Expand profile"}
+															>
+																{isExpanded
+																	? <ChevronDown className="h-3.5 w-3.5" />
+																	: <ChevronRight className="h-3.5 w-3.5" />}
+															</Button>
+														)}
+													</TableCell>
+													<TableCell className="px-3">
+														<Checkbox
+															checked={row.selected}
+															onCheckedChange={(checked) =>
+																toggleRow(row.key, checked === true)
+															}
+														/>
+													</TableCell>
+													<TableCell className="font-mono text-xs whitespace-nowrap">
+														{row.pin || "—"}
+													</TableCell>
+													<TableCell className="whitespace-nowrap text-sm">
+														<span className="font-medium">
+															{[row.lastName, row.firstName, row.middleName].filter(Boolean).join(", ")}
+														</span>
+														{row.suffix ? <span className="text-muted-foreground ml-1 text-xs">{row.suffix}</span> : null}
+														{importResult ? (
+															<div className={`text-xs mt-0.5 ${importResult.status === "IMPORTED" ? "text-green-700" : "text-red-600"}`}>
+																{importResult.status === "IMPORTED" ? "✓ Imported" : `✗ ${importResult.reason}`}
+															</div>
+														) : null}
+													</TableCell>
+													<TableCell className="font-mono text-xs whitespace-nowrap">
+														{row.dob || "—"}
+													</TableCell>
+													<TableCell className="whitespace-nowrap">
+														{row.sex === "M" ? "Male" : row.sex === "F" ? "Female" : row.sex || "—"}
+													</TableCell>
+													<TableCell className="whitespace-nowrap">
+														<Badge variant={row.patientType === "DD" ? "secondary" : "outline"} className="text-xs">
+															{row.patientType === "DD" ? "Dependent" : "Member"}
+														</Badge>
+													</TableCell>
+													<TableCell className="font-mono text-xs whitespace-nowrap">
+														{row.mobile || "—"}
+													</TableCell>
+													<TableCell className="font-mono text-xs whitespace-nowrap">
+														{row.memberPin || "—"}
+													</TableCell>
+													<TableCell className="whitespace-nowrap text-sm">
+														{row.patientType === "DD"
+															? [row.memberLastName, row.memberFirstName, row.memberMiddleName].filter(Boolean).join(", ")
+															: <span className="text-muted-foreground text-xs">—</span>}
+														{row.memberSuffix ? <span className="text-muted-foreground ml-1 text-xs">{row.memberSuffix}</span> : null}
+													</TableCell>
+													<TableCell className="font-mono text-xs whitespace-nowrap">
+														{row.memberDob || "—"}
+													</TableCell>
+													<TableCell className="font-mono text-xs whitespace-nowrap">
+														{row.hciCaseNo || "—"}
+													</TableCell>
+													<TableCell className="font-mono text-xs whitespace-nowrap">
+														{row.hciTransNo || "—"}
+													</TableCell>
+													<TableCell className="text-xs whitespace-nowrap">
+														{row.packageType || "—"}
+													</TableCell>
+													<TableCell className="font-mono text-xs whitespace-nowrap">
+														{row.enlistDate || "—"}
+													</TableCell>
+													<TableCell className="text-xs whitespace-nowrap">
+														{row.effYear || "—"}
+													</TableCell>
+													<TableCell className="text-xs whitespace-nowrap">
+														{row.reportStatus || "—"}
+													</TableCell>
+													<TableCell className="text-xs whitespace-nowrap">
+														{row.profile
+															? <Badge variant="secondary" className="text-xs">Available</Badge>
+															: <span className="text-muted-foreground">—</span>}
+													</TableCell>
+												</TableRow>
+
+												{/* ── Expandable profile detail row ── */}
+												{isExpanded && row.profile && (
+													<TableRow key={`${row.key}-profile`} className="hover:bg-transparent">
+														<TableCell colSpan={COL_SPAN} className="p-0">
+															<ProfileDetailPanel profile={row.profile} />
+														</TableCell>
+													</TableRow>
+												)}
+											</>
+										);
+									})}
 								</TableBody>
 							</Table>
 						</div>
 
-						<div className="space-y-2">
-							<Label htmlFor="parsed-json-preview">Parsed JSON Preview</Label>
-							<Textarea
-								id="parsed-json-preview"
-								value={parsedJsonPreview}
-								readOnly
-								className="min-h-36 font-mono text-xs"
-							/>
-						</div>
-					</>
+						{/* ── Import results summary ── */}
+						{importResults && (
+							<div className="rounded-md border p-3 space-y-2">
+								<p className="text-sm font-semibold">Import Results</p>
+								<div className="flex gap-4 text-sm">
+									<span className="text-green-700 font-medium">
+										✓ {importResults.filter((r) => r.status === "IMPORTED").length} imported
+									</span>
+									<span className="text-red-600 font-medium">
+										✗ {importResults.filter((r) => r.status === "REJECTED").length} rejected
+									</span>
+								</div>
+								{importResults.some((r) => r.status === "REJECTED") && (
+									<ul className="text-xs text-red-600 space-y-0.5 list-disc pl-4">
+										{importResults
+											.filter((r) => r.status === "REJECTED")
+											.map((r) => (
+												<li key={r.pin}><span className="font-mono">{r.pin}</span> — {r.reason}</li>
+											))}
+									</ul>
+								)}
+							</div>
+						)}
+					</div>
 				)}
 			</CardContent>
 		</Card>

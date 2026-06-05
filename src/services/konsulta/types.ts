@@ -237,6 +237,245 @@ export interface KonsultaPePertData {
     pDeficiencyRemarks: string;
 }
 
+// ─── PROFILE Sub-Element Data ─────────────────────────────────────────────────
+
+/** Medical history item. Use PhilHealth disease codes (e.g. "011") or "999" for Other. */
+export interface KonsultaMedHistItem {
+    /** PhilHealth disease code (e.g. "001", "011") or "999" for Other */
+    code: string;
+    /** Specific description for MHSPECIFICS/MHSPECIFIC element */
+    specificDesc?: string;
+}
+
+export interface KonsultaSurgHistItem {
+    desc: string;
+    /** yyyy-mm-dd or empty string */
+    date: string;
+}
+
+/** Family history item. Use PhilHealth disease codes or "999" for Other. */
+export interface KonsultaFamHistItem {
+    /** PhilHealth disease code or "999" for Other */
+    code: string;
+    /** Specific description for FHSPECIFICS/FHSPECIFIC element */
+    specificDesc?: string;
+}
+
+export interface KonsultaImmunizationItem {
+    pChildImmcode?: string;
+    pYoungwImmcode?: string;
+    pPregwImmcode?: string;
+    pElderlyImmcode?: string;
+    pOtherImm?: string;
+}
+
+export interface KonsultaPeMiscItem {
+    pSkinId?: string;
+    pHeentId?: string;
+    pChestId?: string;
+    pHeartId?: string;
+    pAbdomenId?: string;
+    pNeuroId?: string;
+    pGuId?: string;
+    pRectalId?: string;
+}
+
+/** Optional patient-history data used to populate PROFILE sub-elements. */
+export interface KonsultaProfileSubData {
+    // ── SOCHIST ──────────────────────────────────────────────────────────────
+    isSmoker?: KonsultaYN;
+    noCigpk?: string;
+    isAdrinker?: KonsultaYN;
+    noBottles?: string;
+    illDrugUser?: KonsultaYN;
+    isSexuallyActive?: KonsultaYN;
+
+    // ── BLOODTYPE ─────────────────────────────────────────────────────────────
+    bloodType?: string;
+
+    // ── PEPERT (physical exam vitals) ─────────────────────────────────────────
+    systolic?: string;
+    diastolic?: string;
+    hr?: string;
+    rr?: string;
+    temp?: string;
+    height?: string;
+    weight?: string;
+    bmi?: string;
+    zScore?: string;
+    leftVision?: string;
+    rightVision?: string;
+    length?: string;
+    headCirc?: string;
+    skinfoldThickness?: string;
+    waist?: string;
+    hip?: string;
+    limbs?: string;
+    midUpperArmCirc?: string;
+
+    // ── MENSHIST ──────────────────────────────────────────────────────────────
+    isMenshApplicable?: KonsultaYN;
+    menarchePeriod?: string;
+    lastMensPeriod?: string;
+    periodDuration?: string;
+    mensInterval?: string;
+    padsPerDay?: string;
+    onsetSexIc?: string;
+    birthCtrlMethod?: string;
+    isMenopause?: string;
+    menopauseAge?: string;
+
+    // ── PREGHIST ──────────────────────────────────────────────────────────────
+    isPreghApplicable?: KonsultaYN;
+    pregCnt?: string;
+    deliveryCnt?: string;
+    /** "N"=Normal, "C"=Caesarean, "X"=Not applicable */
+    deliveryTyp?: string;
+    fullTermCnt?: string;
+    prematureCnt?: string;
+    abortionCnt?: string;
+    livChildrenCnt?: string;
+    /** "Y" if pregnancy-induced hypertension */
+    wPregIndhyp?: string;
+    /** "Y" if using family planning */
+    wFamPlan?: string;
+
+    // ── Medical + family history codes with specifics ──────────────────────────
+    medHistItems?: KonsultaMedHistItem[];
+    surgHistItems?: KonsultaSurgHistItem[];
+    famHistItems?: KonsultaFamHistItem[];
+
+    // ── IMMUNIZATIONS ─────────────────────────────────────────────────────────
+    immunizations?: KonsultaImmunizationItem[];
+
+    // ── PEGENSURVEY ───────────────────────────────────────────────────────────
+    genSurveyId?: string;
+    genSurveyRem?: string;
+
+    // ── PEMISCS (physical exam miscellaneous finding codes) ───────────────────
+    pemiscItems?: KonsultaPeMiscItem[];
+
+    // ── PESPECIFIC (physical exam specific remarks) ───────────────────────────
+    skinRem?: string;
+    heentRem?: string;
+    chestRem?: string;
+    heartRem?: string;
+    abdomenRem?: string;
+    neuroRem?: string;
+    rectalRem?: string;
+    guRem?: string;
+
+    // ── NCDQANS (Non-Communicable Disease questionnaire answers) ───────────────
+    ncdQans?: {
+        pQid1_Yn?: string;
+        pQid2_Yn?: string;
+        pQid3_Yn?: string;
+        pQid4_Yn?: string;
+        pQid5_Ynx?: string;
+        pQid6_Yn?: string;
+        pQid7_Yn?: string;
+        pQid8_Yn?: string;
+        pQid9_Yn?: string;
+        pQid10_Yn?: string;
+        pQid11_Yn?: string;
+        pQid12_Yn?: string;
+        pQid13_Yn?: string;
+        pQid14_Yn?: string;
+        pQid15_Yn?: string;
+        pQid16_Yn?: string;
+        pQid17_Abcde?: string;
+        pQid18_Yn?: string;
+        pQid19_Yn?: string;
+        pQid19_Fbsmg?: string;
+        pQid19_Fbsmmol?: string;
+        pQid19_Fbsdate?: string;
+        pQid20_Yn?: string;
+        pQid20_Choleval?: string;
+        pQid20_Choledate?: string;
+        pQid21_Yn?: string;
+        pQid21_Ketonval?: string;
+        pQid21_Ketondate?: string;
+        pQid22_Yn?: string;
+        pQid22_Proteinval?: string;
+        pQid22_Proteindate?: string;
+        pQid23_Yn?: string;
+        pQid24_Yn?: string;
+    };
+}
+
+// ─── SOAP Sub-Element Data ────────────────────────────────────────────────────
+
+export interface KonsultaDiagnosticItem {
+    /** PhilHealth diagnostic ID (1–19) or "99" for Other */
+    id: string;
+    othRemarks?: string;
+    /** "Y"=yes, "N"=no, "X"=not applicable */
+    isPhysicianRecommendation?: string;
+    /** "RQ"=requested, "RF"=refused, "XX"=not applicable */
+    patientRemarks?: string;
+}
+
+export interface KonsultaManagementItem {
+    /** PhilHealth management ID (1–10) or "X" for Other */
+    id: string;
+    othRemarks?: string;
+}
+
+/** Optional consultation-specific data used to populate SOAP sub-elements. */
+export interface KonsultaSoapSubData {
+    // ── SUBJECTIVE ────────────────────────────────────────────────────────────
+    illnessHistory?: string;
+    /** Semicolon-separated PhilHealth symptom codes (e.g. "37;38;X") */
+    signsSymptoms?: string;
+    otherComplaint?: string;
+    painSite?: string;
+
+    // ── PEPERT (vital signs taken at consultation) ────────────────────────────
+    systolic?: string;
+    diastolic?: string;
+    hr?: string;
+    rr?: string;
+    temp?: string;
+    height?: string;
+    weight?: string;
+    bmi?: string;
+    zScore?: string;
+    leftVision?: string;
+    rightVision?: string;
+    length?: string;
+    headCirc?: string;
+    skinfoldThickness?: string;
+    waist?: string;
+    hip?: string;
+    limbs?: string;
+    midUpperArmCirc?: string;
+
+    // ── PEMISCS ───────────────────────────────────────────────────────────────
+    pemiscItems?: KonsultaPeMiscItem[];
+
+    // ── PESPECIFIC ────────────────────────────────────────────────────────────
+    skinRem?: string;
+    heentRem?: string;
+    chestRem?: string;
+    heartRem?: string;
+    abdomenRem?: string;
+    neuroRem?: string;
+    rectalRem?: string;
+    guRem?: string;
+
+    // ── ICDS (ICD-10 codes from ConsultationDiagnoses) ────────────────────────
+    icdCodes?: string[];
+
+    // ── DIAGNOSTICS (PhilHealth diagnostic test IDs) ──────────────────────────
+    diagnostics?: KonsultaDiagnosticItem[];
+
+    // ── MANAGEMENTS (PhilHealth management procedure IDs) ─────────────────────
+    managements?: KonsultaManagementItem[];
+
+    // ── ADVICE (from consultation plan/assessment notes) ──────────────────────
+    advice?: string;
+}
+
 export interface KonsultaProfileData {
     pHciTransNo: string;
     pHciCaseNo: string;
@@ -251,6 +490,8 @@ export interface KonsultaProfileData {
     pTransDate: string;
     pReportStatus: KonsultaReportStatus;
     pDeficiencyRemarks: string;
+    /** Optional enriched patient-history data for PROFILE sub-elements */
+    subData?: KonsultaProfileSubData;
 }
 
 export interface KonsultaSoapData {
@@ -267,6 +508,8 @@ export interface KonsultaSoapData {
     pTransDate: string;
     pReportStatus: KonsultaReportStatus;
     pDeficiencyRemarks: string;
+    /** Optional enriched consultation data for SOAP sub-elements */
+    subData?: KonsultaSoapSubData;
 }
 
 // ─── PCB Root ────────────────────────────────────────────────────────────────

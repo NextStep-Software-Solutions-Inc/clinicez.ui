@@ -57,7 +57,7 @@ async function withRetry<T>(
       }
 
       // Exponential backoff with jitter
-      const delay = Math.min(baseDelay * Math.pow(2, attempt), 5000);
+      const delay = Math.min(baseDelay * 2 ** attempt, 5000);
       const jitter = Math.random() * 100;
       await new Promise(resolve => setTimeout(resolve, delay + jitter));
     }

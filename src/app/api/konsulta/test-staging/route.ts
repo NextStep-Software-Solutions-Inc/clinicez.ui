@@ -12,6 +12,8 @@
  * Pass `resetClient: true` in the body to force a WSDL re-fetch.
  */
 
+import http from "node:http";
+import https from "node:https";
 import { auth } from "@clerk/nextjs/server";
 import prisma from "@lib/prisma";
 import {
@@ -44,8 +46,6 @@ import {
     decryptXmlPayload,
     encryptXmlPayload,
 } from "@services/konsulta/xml-encryption.service";
-import http from "http";
-import https from "https";
 import { type NextRequest, NextResponse } from "next/server";
 
 type TestAction =

@@ -13,6 +13,9 @@ const withPWAConfig = withPWA({
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   serverExternalPackages: ['@prisma/client', '@prisma/adapter-pg', 'pg'],
+  serverActions: {
+    bodySizeLimit: '25mb',
+  },
   turbopack: {},
   async headers() {
     return [

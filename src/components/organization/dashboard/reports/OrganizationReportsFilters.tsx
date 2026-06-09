@@ -140,7 +140,7 @@ const generateAndExportOrganizationReport = async (
     "Date Registered",
   ];
 
-  exportXLSX(columns, xlsxData, {
+  await exportXLSX(columns, xlsxData, {
     filename: DEFAULT_FILENAME,
     sheetName: "Members",
   });

@@ -466,7 +466,7 @@ export function OrgReportsClient({
     setPrintOpen(false);
   };
 
-  const handleDownloadExcel = () => {
+  const handleDownloadExcel = async () => {
     const { rows, requirementColumns } = buildExcelRows(data);
     const columns = [
       "Membership Status",
@@ -504,7 +504,7 @@ export function OrgReportsClient({
     const filename = `organization_report_${sanitizeFilenamePart(data.org.name)}_${reportFrom}_to_${reportTo}`;
 
     try {
-      exportXLSX(columns, rows, {
+      await exportXLSX(columns, rows, {
         filename,
         sheetName: "Organization Report",
       });

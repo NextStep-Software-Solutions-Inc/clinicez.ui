@@ -297,7 +297,7 @@ async function generateAndExportConsultationReport(
 
   const filename = `consultation_reports_${format(new Date(), "yyyy-MM-dd")}`
 
-  exportXLSX(columns, xlsxData, {
+  await exportXLSX(columns, xlsxData, {
     filename,
     sheetName: "Consultations",
   })

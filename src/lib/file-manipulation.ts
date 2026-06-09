@@ -1,5 +1,4 @@
 import heic2any from "heic2any";
-import * as XLSX from "xlsx";
 
 function uniqueFileName(originalName: string) {
   const baseName = originalName.substring(0, originalName.lastIndexOf('.'));
@@ -159,11 +158,11 @@ interface XLSXExportOptions {
   sheetName?: string
 }
 
-export const exportXLSX = (
+export const exportXLSX = async (
   columns: string[],
   data: XLSXExportData[],
   options: XLSXExportOptions = {}
-): void => {
+): Promise<void> => {
   const {
     filename = `export_${new Date().toISOString().split('T')[0]}_${Date.now()}`,
     includeHeaders = true,
@@ -171,6 +170,8 @@ export const exportXLSX = (
   } = options
 
   try {
+    const XLSX = await import("xlsx");
+
     const sanitizeValue = (value: string | number | boolean | null | undefined): string | number => {
       if (value === null || value === undefined) return ""
       if (typeof value === "number") return Number.isFinite(value) ? value : ""

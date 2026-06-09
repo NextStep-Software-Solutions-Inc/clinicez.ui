@@ -86,6 +86,14 @@ const SAMPLE_VALUE_LOOKUP: Record<string, unknown> = {
   // `tests` is a nested property of laboratory's diagnostics objects — providing a realistic
   // array here ensures inner {% for test in group.tests %} loops render correctly in the preview.
   tests: ["CBC", "Platelet Count", "Urinalysis"],
+
+  // Imaging diagnosticItems — each entry carries a procedure name, the body part to image,
+  // and any special technologist instructions for that study.
+  diagnosticItems: [
+    { name: "X-RAY", bodyPart: "Chest (PA view)", notes: "Patient must remove all metallic objects. Full deep inspiration required during exposure." },
+    { name: "ULTRASOUND", bodyPart: "Whole Abdomen", notes: "NPO for at least 6 hours prior to examination. Full bladder required." },
+    { name: "MRI", bodyPart: "Left Knee", notes: "Inform radiologic technologist of any metallic implants, pacemakers, or claustrophobia." },
+  ],
   history: "Hypertension for 5 years. No previous cardiac workup.",
   requestFor: "R/O Ischemic Heart Disease",
 

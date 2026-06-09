@@ -466,7 +466,7 @@ export function OrgReportsClient({
     setPrintOpen(false);
   };
 
-  const handleDownloadExcel = () => {
+  const handleDownloadExcel = async () => {
     const { rows, requirementColumns } = buildExcelRows(data);
     const columns = [
       "Membership Status",

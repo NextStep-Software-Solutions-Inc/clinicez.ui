@@ -64,6 +64,7 @@ import {
   unsharePatientFileFromClinicAction,
 } from "@/actions/patient/patient-files.action";
 import { heic2Jpeg, isHeicFile, PATIENT_FILE_ACCEPT } from "@/lib/file-manipulation";
+import { compressImageAsync } from "@/lib/image-compression";
 
 type Clinic = { id: number; clinicUid: string; name: string; logo: string | null };
 type FileType = { id: number; name: string };
@@ -286,11 +287,16 @@ export function PatientFilesClient({
   const handleUploadFile = () => {
     if (!selectedFolder || !uploadFile || !uploadFileTypeId) return;
     startTransition(async () => {
+      let fileToUpload = uploadFile;
+      if (fileToUpload.type.startsWith("image/")) {
+        fileToUpload = await compressImageAsync(fileToUpload);
+      }
+
       const sasResult = await generatePatientUploadSasAction({
         folderId: selectedFolder.id,
-        fileName: uploadFile.name,
-        mimeType: uploadFile.type || "application/octet-stream",
-        size: uploadFile.size,
+        fileName: fileToUpload.name,
+        mimeType: fileToUpload.type || "application/octet-stream",
+        size: fileToUpload.size,
         fileTypeId: Number(uploadFileTypeId),
       });
       if (!sasResult.status || !sasResult.data) {
@@ -302,9 +308,9 @@ export function PatientFilesClient({
         method: "PUT",
         headers: {
           "x-ms-blob-type": "BlockBlob",
-          "Content-Type": uploadFile.type || "application/octet-stream",
+          "Content-Type": fileToUpload.type || "application/octet-stream",
         },
-        body: uploadFile,
+        body: fileToUpload,
       });
       if (!putRes.ok) {
         toast.error(`Failed to upload file to storage (status: ${putRes.status})`);
@@ -313,9 +319,9 @@ export function PatientFilesClient({
       const result = await registerPatientFileUploadAction({
         folderId: selectedFolder.id,
         fileTypeId: Number(uploadFileTypeId),
-        fileName: uploadFile.name,
-        mimeType: uploadFile.type || "application/octet-stream",
-        size: uploadFile.size,
+        fileName: fileToUpload.name,
+        mimeType: fileToUpload.type || "application/octet-stream",
+        size: fileToUpload.size,
         blobUrl,
       });
       if (result.status) {

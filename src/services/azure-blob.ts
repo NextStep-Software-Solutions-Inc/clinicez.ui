@@ -1,5 +1,6 @@
 "use server";
 
+import sharp from 'sharp';
 import { BlobServiceClient, ContainerClient, StorageSharedKeyCredential, BlobDownloadResponseModel, BlobSASPermissions } from '@azure/storage-blob';
 
 let cachedContainerClient: ContainerClient | null = null;
@@ -44,11 +45,32 @@ async function getFile(blobName: string): Promise<Buffer | null> {
   }
 }
 
+async function compressImage(data: ArrayBuffer, fileType: string): Promise<Buffer> {
+  const buf = Buffer.from(data);
+  try {
+    const instance = sharp(buf);
+    if (fileType === 'image/jpeg' || fileType === 'image/jpg') {
+      return await instance.jpeg({ quality: 80 }).toBuffer();
+    } else if (fileType === 'image/png') {
+      return await instance.png({ quality: 80 }).toBuffer();
+    } else if (fileType === 'image/webp') {
+      return await instance.webp({ quality: 80 }).toBuffer();
+    }
+  } catch (error) {
+    console.error('[IMAGE_COMPRESSION_ERROR]', error);
+  }
+  return buf;
+}
+
 async function uploadFile(blobName: string, data: ArrayBuffer, fileType?: string): Promise<{ url: string }> {
   const blobClient = getContainerClient().getBlockBlobClient(blobName);
 
   try {
-    await blobClient.uploadData(data, {
+    const uploadData = fileType?.startsWith('image/')
+      ? await compressImage(data, fileType)
+      : data;
+
+    await blobClient.uploadData(uploadData, {
       blobHTTPHeaders: {
         blobContentType: fileType || 'application/octet-stream' // Replace with the appropriate content type if known
       }

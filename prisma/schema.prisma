@@ -2265,6 +2265,8 @@ model ClinicImagingRequestProcedure {
   id                       Int                    @id @default(autoincrement())
   clinicImagingRequestId   Int
   clinicImagingProcedureId Int
+  bodyPart                 String?
+  notes                    String?
   ImagingProcedure         ClinicImagingProcedure @relation(fields: [clinicImagingProcedureId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   ImagingRequest           ClinicImagingRequest   @relation(fields: [clinicImagingRequestId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 

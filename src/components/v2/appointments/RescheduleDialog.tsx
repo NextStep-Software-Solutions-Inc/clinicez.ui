@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { CalendarDays, Stethoscope, User } from "lucide-react";
+import dayjs from "@/lib/day-utils";
 import {
   Sheet,
   SheetContent,
@@ -41,7 +42,7 @@ export function RescheduleDialog({
   const [isPending, setIsPending] = useState(false);
   const [date, setDate] = useState(
     appointment.AppointmentAttribute?.date
-      ? new Date(appointment.AppointmentAttribute.date).toISOString().split("T")[0]
+      ? dayjs.utc(appointment.AppointmentAttribute.date).format("YYYY-MM-DD")
       : ""
   );
   const [timeStart, setTimeStart] = useState(appointment.AppointmentAttribute?.timeStart ?? "");

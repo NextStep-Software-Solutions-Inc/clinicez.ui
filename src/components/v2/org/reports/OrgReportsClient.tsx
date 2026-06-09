@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
+import dayjs from "@/lib/day-utils";
 import type { GetOrgReports } from "@/actions/organizations/org-reports.action";
 import { getOrgReportsAction } from "@/actions/organizations/org-reports.action";
 import {
@@ -68,11 +69,11 @@ function formatDate(iso: string) {
 }
 
 function getDateStamp(date: Date): string {
-  return date.toISOString().slice(0, 10);
+  return dayjs(date).format("YYYY-MM-DD");
 }
 
 function toInputDate(d: Date) {
-  return getDateStamp(d);
+  return dayjs(d).format("YYYY-MM-DD");
 }
 
 /* ──────────────────────────────────────── */
@@ -429,9 +430,9 @@ export function OrgReportsClient({
         let fromDate: Date;
         let toDate: Date;
         if (newPeriod === "custom" && from && to) {
-          fromDate = new Date(from);
+          fromDate = new Date(from + "T00:00:00");
           fromDate.setHours(0, 0, 0, 0);
-          toDate = new Date(to);
+          toDate = new Date(to + "T00:00:00");
           toDate.setHours(23, 59, 59, 999);
         } else {
           const range = getDateRangeForPeriod(newPeriod as ReportPeriod);

@@ -2,6 +2,12 @@ import dayjs from "@lib/day-utils";
 import { capitalize } from "./utils";
 import { renderLiquidTemplate } from "./liquid-template";
 
+export type ImagingDiagnosticItem = {
+  name: string;
+  bodyPart?: string;
+  notes?: string;
+};
+
 type PrepareImagingStudyPayload = {
   template: string;
   patient: {
@@ -19,7 +25,7 @@ type PrepareImagingStudyPayload = {
     eSignatureBase64?: string;
   };
   study: {
-    diagnostics: string[];
+    diagnostics: (string | ImagingDiagnosticItem)[];
     history: string;
     impression: string;
     requestFor: string;
@@ -36,6 +42,14 @@ export const prepareImagingStudy = (payload: PrepareImagingStudyPayload): string
   const requestDate = dayjs(createdAt).format("MM/DD/YYYY");
   const createdDateTime = dayjs(createdAt).format("MM/DD/YYYY h:mm A");
 
+  // Normalise diagnostics: support both plain strings and objects with body part / notes
+  const diagnosticItems: ImagingDiagnosticItem[] = diagnostics.map(d =>
+    typeof d === "string" ? { name: d } : d
+  );
+
+  // Flat list of procedure name strings for backward-compatible {{ diagnostics }} loops
+  const diagnosticNames = diagnosticItems.map(d => d.name);
+
   const variables = {
     name,
     age,
@@ -43,7 +57,8 @@ export const prepareImagingStudy = (payload: PrepareImagingStudyPayload): string
     address,
     birthdate,
     requestDate,
-    diagnostics,
+    diagnostics: diagnosticNames,
+    diagnosticItems,
     history: history || "No history provided.",
     impression: impression || "No impression provided.",
     requestFor: requestFor || "No request reason provided.",
@@ -71,7 +86,18 @@ export const TEMPLATE_VARIABLE_SCHEMA: TemplateVariableSchema & { key: string } 
     { variable: "birthdate", description: "Patient's date of birth" },
     { variable: "requestDate", description: "Request date (MM/DD/YYYY)" },
     { variable: "createdDateTime", description: "Full date and time (MM/DD/YYYY h:mm A)" },
-    { variable: "diagnostics", type: "array-of-strings" as const, description: "Requested imaging procedures" },
+    { variable: "diagnostics", type: "array-of-strings" as const, description: "Requested imaging procedure names (plain strings)" },
+    {
+      variable: "diagnosticItems",
+      type: "array-of-objects" as const,
+      loopVar: "item",
+      description: "Requested procedures with body part and technologist notes — iterate with {% for item in diagnosticItems %}",
+      properties: [
+        { variable: "name", description: "Imaging procedure name" },
+        { variable: "bodyPart", description: "Body part to image (e.g. Chest, Left Knee)" },
+        { variable: "notes", description: "Technologist instructions / special notes" },
+      ],
+    },
     { variable: "history", description: "Patient's relevant medical history" },
     { variable: "impression", description: "Clinical impression / diagnosis" },
     { variable: "requestFor", description: "Reason for the imaging request" },

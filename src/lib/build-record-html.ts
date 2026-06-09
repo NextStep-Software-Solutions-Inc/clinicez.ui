@@ -148,11 +148,16 @@ export async function buildImagingStudyHtml(id: number): Promise<string> {
       const proc = item.ImagingProcedure;
       const masterName = proc.MasterProcedure?.name;
       const clinicName = proc.name;
-      return masterName && clinicName && masterName !== clinicName
+      const procName = masterName && clinicName && masterName !== clinicName
         ? `${masterName} (${clinicName})`
-        : masterName ?? clinicName;
+        : (masterName ?? clinicName);
+      return {
+        name: procName ?? "",
+        bodyPart: item.bodyPart ?? "",
+        notes: item.notes ?? "",
+      };
     })
-      .filter((name): name is string => !!name) ?? [];
+      .filter((item): item is { name: string; bodyPart: string; notes: string } => !!item.name) ?? [];
 
   return prepareImagingStudy({
     template: data.DocumentTemplate?.htmlContent ?? "",

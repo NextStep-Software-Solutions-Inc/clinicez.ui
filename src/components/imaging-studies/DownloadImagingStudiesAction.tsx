@@ -51,13 +51,14 @@ const DownloadImagingStudiesAction = React.forwardRef<
             const proc = item.ImagingProcedure;
             const masterName = proc.MasterProcedure?.name;
             const clinicName = proc.name;
-
-            if (masterName && clinicName && masterName !== clinicName) {
-              return `${masterName} (${clinicName})`;
-            }
-            return masterName ?? clinicName;
+            const procName = (masterName && clinicName && masterName !== clinicName)
+              ? `${masterName} (${clinicName})`
+              : (masterName ?? clinicName);
+            const bodyPart = item.bodyPart ?? "";
+            const notes = item.notes ?? "";
+            return { name: procName ?? "", bodyPart, notes };
           })
-          .filter((name): name is string => !!name) ?? [];
+          .filter((item): item is { name: string; bodyPart: string; notes: string } => !!item.name) ?? [];
 
         const template = prepareImagingStudy({
           template: data.DocumentTemplate?.htmlContent ?? "",

@@ -279,7 +279,7 @@ export function ClinicPatientFilesClient({
         body: uploadFile,
       });
       if (!putRes.ok) {
-        toast.error("Failed to upload file to storage");
+        toast.error(`Failed to upload file to storage (status: ${putRes.status})`);
         return;
       }
       const result = await registerClinicPatientFileUploadAction({

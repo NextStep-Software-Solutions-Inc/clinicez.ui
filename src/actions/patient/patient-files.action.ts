@@ -1175,6 +1175,18 @@ export const uploadFileForPatientAction = withErrorHandling(
 
 // ─── Client-side upload helpers (SAS URL flow) ───────────────────────────────
 
+const MAX_FILE_SIZE_MB = 25;
+
+function validateUploadFileSize(size: number) {
+  if (size / 1024 / 1024 > MAX_FILE_SIZE_MB) {
+    throw new Error(`File size must not exceed ${MAX_FILE_SIZE_MB}MB`);
+  }
+}
+
+function sanitizeBlobFileName(fileName: string): string {
+  return fileName.replace(/[^a-zA-Z0-9_-]/g, "_");
+}
+
 /**
  * Step 1 of 2 — patient self-upload.
  * Validates folder ownership and returns a short-lived SAS URL so the browser
@@ -1200,8 +1212,7 @@ export const generatePatientUploadSasAction = withErrorHandling(
     if (!fileTypeId) throw new Error("File type is required");
     if (!fileName) throw new Error("File name is required");
 
-    const sizeMB = size / 1024 / 1024;
-    if (sizeMB > 25) throw new Error("File size must not exceed 25MB");
+    validateUploadFileSize(size);
 
     const folder = await prismaClient.folder.findFirst({
       where: { id: folderId, userId: user.id, isActive: true },
@@ -1209,8 +1220,7 @@ export const generatePatientUploadSasAction = withErrorHandling(
     });
     if (!folder) throw new Error("Folder not found");
 
-    const sanitizedName = fileName.replace(/[^a-zA-Z0-9_-]/g, "_");
-    const blobPath = `patient-files/${user.id}/${folderId}/${Date.now()}-${sanitizedName}`;
+    const blobPath = `patient-files/${user.id}/${folderId}/${Date.now()}-${sanitizeBlobFileName(fileName)}`;
     const effectiveMimeType = mimeType || "application/octet-stream";
     const { sasUrl, blobUrl } = await generateUploadSasUrl(blobPath, effectiveMimeType);
 
@@ -1333,8 +1343,7 @@ export const generateClinicPatientUploadSasAction = withErrorHandling(
     if (!fileTypeId) throw new Error("File type is required");
     if (!fileName) throw new Error("File name is required");
 
-    const sizeMB = size / 1024 / 1024;
-    if (sizeMB > 25) throw new Error("File size must not exceed 25MB");
+    validateUploadFileSize(size);
 
     await requireClinicPatientAccess(session.user.sub, clinicUid, patientId);
 
@@ -1344,8 +1353,7 @@ export const generateClinicPatientUploadSasAction = withErrorHandling(
     });
     if (!folder) throw new Error("Folder not found");
 
-    const sanitizedName = fileName.replace(/[^a-zA-Z0-9_-]/g, "_");
-    const blobPath = `patient-files/${patientId}/${folderId}/${Date.now()}-${sanitizedName}`;
+    const blobPath = `patient-files/${patientId}/${folderId}/${Date.now()}-${sanitizeBlobFileName(fileName)}`;
     const effectiveMimeType = mimeType || "application/octet-stream";
     const { sasUrl, blobUrl } = await generateUploadSasUrl(blobPath, effectiveMimeType);
 

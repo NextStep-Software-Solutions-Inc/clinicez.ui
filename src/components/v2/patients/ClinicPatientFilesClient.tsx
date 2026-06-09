@@ -49,7 +49,8 @@ import { ThemeToggle } from "@/components/patient-dashboard-v2/ThemeToggle";
 import type { GetPatientFolders, PatientFolder } from "@/actions/patient/patient-files.action";
 import {
   createFolderForPatientAction,
-  uploadFileForPatientAction,
+  generateClinicPatientUploadSasAction,
+  registerClinicPatientFileUploadAction,
   deletePatientFolderAction,
   deletePatientFileAction,
   renamePatientFolderAction,
@@ -255,13 +256,42 @@ export function ClinicPatientFilesClient({
   const handleUploadFile = () => {
     if (!uploadFile || !uploadFileTypeId || !selectedFolder) return;
     startTransition(async () => {
-      const formData = new FormData();
-      formData.append("file", uploadFile);
-      formData.append("folderId", String(selectedFolder.id));
-      formData.append("fileTypeId", uploadFileTypeId);
-      formData.append("patientId", String(patientId));
-      formData.append("clinicUid", clinicUid);
-      const result = await uploadFileForPatientAction(formData);
+      const sasResult = await generateClinicPatientUploadSasAction({
+        patientId,
+        clinicUid,
+        folderId: selectedFolder.id,
+        fileName: uploadFile.name,
+        mimeType: uploadFile.type || "application/octet-stream",
+        size: uploadFile.size,
+        fileTypeId: Number(uploadFileTypeId),
+      });
+      if (!sasResult.status || !sasResult.data) {
+        toast.error(sasResult.message || "Failed to prepare upload");
+        return;
+      }
+      const { sasUrl, blobUrl } = sasResult.data;
+      const putRes = await fetch(sasUrl, {
+        method: "PUT",
+        headers: {
+          "x-ms-blob-type": "BlockBlob",
+          "Content-Type": uploadFile.type || "application/octet-stream",
+        },
+        body: uploadFile,
+      });
+      if (!putRes.ok) {
+        toast.error("Failed to upload file to storage");
+        return;
+      }
+      const result = await registerClinicPatientFileUploadAction({
+        patientId,
+        clinicUid,
+        folderId: selectedFolder.id,
+        fileTypeId: Number(uploadFileTypeId),
+        fileName: uploadFile.name,
+        mimeType: uploadFile.type || "application/octet-stream",
+        size: uploadFile.size,
+        blobUrl,
+      });
       if (result.status && result.data) {
         refreshFolders();
         setShowUpload(false);

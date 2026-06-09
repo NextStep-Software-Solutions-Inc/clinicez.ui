@@ -54,7 +54,8 @@ import {
   deletePatientFolderAction,
   renamePatientFolderAction,
   updatePatientFolderPrivacyAction,
-  uploadPatientFileAction,
+  generatePatientUploadSasAction,
+  registerPatientFileUploadAction,
   deletePatientFileAction,
   updatePatientFilePrivacyAction,
   sharePatientFolderWithClinicAction,
@@ -285,11 +286,38 @@ export function PatientFilesClient({
   const handleUploadFile = () => {
     if (!selectedFolder || !uploadFile || !uploadFileTypeId) return;
     startTransition(async () => {
-      const fd = new FormData();
-      fd.append("file", uploadFile);
-      fd.append("folderId", String(selectedFolder.id));
-      fd.append("fileTypeId", uploadFileTypeId);
-      const result = await uploadPatientFileAction(fd);
+      const sasResult = await generatePatientUploadSasAction({
+        folderId: selectedFolder.id,
+        fileName: uploadFile.name,
+        mimeType: uploadFile.type || "application/octet-stream",
+        size: uploadFile.size,
+        fileTypeId: Number(uploadFileTypeId),
+      });
+      if (!sasResult.status || !sasResult.data) {
+        toast.error(sasResult.message || "Failed to prepare upload");
+        return;
+      }
+      const { sasUrl, blobUrl } = sasResult.data;
+      const putRes = await fetch(sasUrl, {
+        method: "PUT",
+        headers: {
+          "x-ms-blob-type": "BlockBlob",
+          "Content-Type": uploadFile.type || "application/octet-stream",
+        },
+        body: uploadFile,
+      });
+      if (!putRes.ok) {
+        toast.error("Failed to upload file to storage");
+        return;
+      }
+      const result = await registerPatientFileUploadAction({
+        folderId: selectedFolder.id,
+        fileTypeId: Number(uploadFileTypeId),
+        fileName: uploadFile.name,
+        mimeType: uploadFile.type || "application/octet-stream",
+        size: uploadFile.size,
+        blobUrl,
+      });
       if (result.status) {
         refreshFolders();
         setShowUpload(false);

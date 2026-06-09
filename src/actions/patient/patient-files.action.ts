@@ -4,7 +4,7 @@ import "server-only";
 import prismaClient from "@/lib/prisma";
 import { getCachedSession } from "@/actions/session.action";
 import { withErrorHandling } from "@/lib/with-error-handling";
-import { uploadFile } from "@/services/azure-blob";
+import { uploadFile, generateUploadSasUrl } from "@/services/azure-blob";
 import { FilePrivacy } from "@prisma/client";
 
 // Helper: get the authenticated user's DB record
@@ -1167,6 +1167,291 @@ export const uploadFileForPatientAction = withErrorHandling(
         },
       });
       return created;
+    });
+
+    return { message: "File uploaded successfully", data: newFile };
+  }
+);
+
+// ─── Client-side upload helpers (SAS URL flow) ───────────────────────────────
+
+/**
+ * Step 1 of 2 — patient self-upload.
+ * Validates folder ownership and returns a short-lived SAS URL so the browser
+ * can PUT the file directly to Azure Blob Storage.
+ */
+export const generatePatientUploadSasAction = withErrorHandling(
+  async ({
+    folderId,
+    fileName,
+    mimeType,
+    size,
+    fileTypeId,
+  }: {
+    folderId: number;
+    fileName: string;
+    mimeType: string;
+    size: number;
+    fileTypeId: number;
+  }) => {
+    const user = await getAuthenticatedUser();
+
+    if (!folderId) throw new Error("Folder ID is required");
+    if (!fileTypeId) throw new Error("File type is required");
+    if (!fileName) throw new Error("File name is required");
+
+    const sizeMB = size / 1024 / 1024;
+    if (sizeMB > 25) throw new Error("File size must not exceed 25MB");
+
+    const folder = await prismaClient.folder.findFirst({
+      where: { id: folderId, userId: user.id, isActive: true },
+      select: { id: true },
+    });
+    if (!folder) throw new Error("Folder not found");
+
+    const sanitizedName = fileName.replace(/[^a-zA-Z0-9_-]/g, "_");
+    const blobPath = `patient-files/${user.id}/${folderId}/${Date.now()}-${sanitizedName}`;
+    const effectiveMimeType = mimeType || "application/octet-stream";
+    const { sasUrl, blobUrl } = await generateUploadSasUrl(blobPath, effectiveMimeType);
+
+    return { message: "SAS URL generated", data: { sasUrl, blobUrl } };
+  }
+);
+
+/**
+ * Step 2 of 2 — patient self-upload.
+ * Called after the browser has successfully PUT the file to Azure Blob Storage.
+ * Creates the database record for the uploaded file.
+ */
+export const registerPatientFileUploadAction = withErrorHandling(
+  async ({
+    folderId,
+    fileTypeId,
+    fileName,
+    mimeType,
+    size,
+    blobUrl,
+    dateTaken,
+  }: {
+    folderId: number;
+    fileTypeId: number;
+    fileName: string;
+    mimeType: string;
+    size: number;
+    blobUrl: string;
+    dateTaken?: string | null;
+  }) => {
+    const user = await getAuthenticatedUser();
+
+    const folder = await prismaClient.folder.findFirst({
+      where: { id: folderId, userId: user.id, isActive: true },
+      select: { id: true },
+    });
+    if (!folder) throw new Error("Folder not found");
+
+    const uniqueDisplayName = generateUniqueDisplayName(fileName);
+
+    const newFile = await prismaClient.$transaction(async (tx) => {
+      return tx.file.create({
+        data: {
+          folderId,
+          fileTypeId,
+          name: uniqueDisplayName,
+          size,
+          url: blobUrl,
+          mimeType: mimeType || null,
+          dateTaken: dateTaken ? new Date(dateTaken) : null,
+          createdByUserId: user.id,
+          FileSetting: {
+            create: {
+              privacy: "PRIVATE",
+              isPublic: false,
+            },
+          },
+        },
+        select: {
+          id: true,
+          name: true,
+          size: true,
+          url: true,
+          mimeType: true,
+          dateTaken: true,
+          createdAt: true,
+          updatedAt: true,
+          createdByUserId: true,
+          CreatedByUser: { select: { firstName: true, lastName: true } },
+          FileType: { select: { id: true, name: true } },
+          FileSetting: {
+            select: {
+              id: true,
+              privacy: true,
+              isPublic: true,
+              FileClinicShares: {
+                select: {
+                  id: true,
+                  clinicId: true,
+                  Clinic: { select: { id: true, clinicUid: true, name: true } },
+                },
+              },
+            },
+          },
+        },
+      });
+    });
+
+    return { message: "File uploaded successfully", data: newFile };
+  }
+);
+
+/**
+ * Step 1 of 2 — clinic uploads a file for a patient.
+ * Validates clinic membership and patient registration, then returns a SAS URL.
+ */
+export const generateClinicPatientUploadSasAction = withErrorHandling(
+  async ({
+    patientId,
+    clinicUid,
+    folderId,
+    fileName,
+    mimeType,
+    size,
+    fileTypeId,
+  }: {
+    patientId: number;
+    clinicUid: string;
+    folderId: number;
+    fileName: string;
+    mimeType: string;
+    size: number;
+    fileTypeId: number;
+  }) => {
+    const session = await getCachedSession();
+    if (!session?.user?.sub) throw new Error("Unauthorized");
+
+    if (!clinicUid) throw new Error("Clinic UID is required");
+    if (!folderId) throw new Error("Folder ID is required");
+    if (!fileTypeId) throw new Error("File type is required");
+    if (!fileName) throw new Error("File name is required");
+
+    const sizeMB = size / 1024 / 1024;
+    if (sizeMB > 25) throw new Error("File size must not exceed 25MB");
+
+    await requireClinicPatientAccess(session.user.sub, clinicUid, patientId);
+
+    const folder = await prismaClient.folder.findFirst({
+      where: { id: folderId, userId: patientId, isActive: true },
+      select: { id: true },
+    });
+    if (!folder) throw new Error("Folder not found");
+
+    const sanitizedName = fileName.replace(/[^a-zA-Z0-9_-]/g, "_");
+    const blobPath = `patient-files/${patientId}/${folderId}/${Date.now()}-${sanitizedName}`;
+    const effectiveMimeType = mimeType || "application/octet-stream";
+    const { sasUrl, blobUrl } = await generateUploadSasUrl(blobPath, effectiveMimeType);
+
+    return { message: "SAS URL generated", data: { sasUrl, blobUrl } };
+  }
+);
+
+/**
+ * Step 2 of 2 — clinic uploads a file for a patient.
+ * Called after the browser has successfully PUT the file to Azure Blob Storage.
+ * Creates the database record and auto-shares it with the clinic.
+ */
+export const registerClinicPatientFileUploadAction = withErrorHandling(
+  async ({
+    patientId,
+    clinicUid,
+    folderId,
+    fileTypeId,
+    fileName,
+    mimeType,
+    size,
+    blobUrl,
+    dateTaken,
+  }: {
+    patientId: number;
+    clinicUid: string;
+    folderId: number;
+    fileTypeId: number;
+    fileName: string;
+    mimeType: string;
+    size: number;
+    blobUrl: string;
+    dateTaken?: string | null;
+  }) => {
+    const session = await getCachedSession();
+    if (!session?.user?.sub) throw new Error("Unauthorized");
+
+    const { clinicId } = await requireClinicPatientAccess(
+      session.user.sub,
+      clinicUid,
+      patientId
+    );
+
+    const callerUser = await prismaClient.user.findUnique({
+      where: { userId: session.user.sub, isActive: true },
+      select: { id: true },
+    });
+    if (!callerUser) throw new Error("Unauthorized");
+
+    const folder = await prismaClient.folder.findFirst({
+      where: { id: folderId, userId: patientId, isActive: true },
+      select: { id: true },
+    });
+    if (!folder) throw new Error("Folder not found");
+
+    const uniqueDisplayName = generateUniqueDisplayName(fileName);
+
+    const newFile = await prismaClient.$transaction(async (tx) => {
+      return tx.file.create({
+        data: {
+          folderId,
+          fileTypeId,
+          name: uniqueDisplayName,
+          size,
+          url: blobUrl,
+          mimeType: mimeType || null,
+          dateTaken: dateTaken ? new Date(dateTaken) : null,
+          createdByUserId: callerUser.id,
+          FileSetting: {
+            create: {
+              privacy: "CLINIC",
+              isPublic: false,
+              scopeClinicId: clinicId,
+              FileClinicShares: { create: { clinicId } },
+            },
+          },
+        },
+        select: {
+          id: true,
+          name: true,
+          size: true,
+          url: true,
+          mimeType: true,
+          dateTaken: true,
+          createdAt: true,
+          updatedAt: true,
+          createdByUserId: true,
+          CreatedByUser: { select: { firstName: true, lastName: true } },
+          FileType: { select: { id: true, name: true } },
+          FileSetting: {
+            select: {
+              id: true,
+              privacy: true,
+              isPublic: true,
+              scopeClinicId: true,
+              FileClinicShares: {
+                select: {
+                  id: true,
+                  clinicId: true,
+                  Clinic: { select: { id: true, clinicUid: true, name: true } },
+                },
+              },
+            },
+          },
+        },
+      });
     });
 
     return { message: "File uploaded successfully", data: newFile };

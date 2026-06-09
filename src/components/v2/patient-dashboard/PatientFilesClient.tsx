@@ -54,7 +54,8 @@ import {
   deletePatientFolderAction,
   renamePatientFolderAction,
   updatePatientFolderPrivacyAction,
-  uploadPatientFileAction,
+  generatePatientUploadSasAction,
+  registerPatientFileUploadAction,
   deletePatientFileAction,
   updatePatientFilePrivacyAction,
   sharePatientFolderWithClinicAction,
@@ -62,6 +63,8 @@ import {
   sharePatientFileWithClinicAction,
   unsharePatientFileFromClinicAction,
 } from "@/actions/patient/patient-files.action";
+import { heic2Jpeg, isHeicFile, PATIENT_FILE_ACCEPT } from "@/lib/file-manipulation";
+import { compressImageAsync } from "@/lib/image-compression";
 
 type Clinic = { id: number; clinicUid: string; name: string; logo: string | null };
 type FileType = { id: number; name: string };
@@ -175,7 +178,24 @@ export function PatientFilesClient({
   const [uploadFileTypeId, setUploadFileTypeId] = useState<string>("");
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [isConvertingFile, setIsConvertingFile] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileSelect = async (file: File) => {
+    if (isHeicFile(file)) {
+      setIsConvertingFile(true);
+      try {
+        const converted = await heic2Jpeg(file);
+        setUploadFile(converted);
+      } catch {
+        toast.error("Could not convert HEIC image — please convert it to JPEG or PNG first and try again.");
+      } finally {
+        setIsConvertingFile(false);
+      }
+    } else {
+      setUploadFile(file);
+    }
+  };
 
   // Refresh folders from server
   const refreshFolders = () => {
@@ -267,11 +287,43 @@ export function PatientFilesClient({
   const handleUploadFile = () => {
     if (!selectedFolder || !uploadFile || !uploadFileTypeId) return;
     startTransition(async () => {
-      const fd = new FormData();
-      fd.append("file", uploadFile);
-      fd.append("folderId", String(selectedFolder.id));
-      fd.append("fileTypeId", uploadFileTypeId);
-      const result = await uploadPatientFileAction(fd);
+      let fileToUpload = uploadFile;
+      if (fileToUpload.type.startsWith("image/")) {
+        fileToUpload = await compressImageAsync(fileToUpload);
+      }
+
+      const sasResult = await generatePatientUploadSasAction({
+        folderId: selectedFolder.id,
+        fileName: fileToUpload.name,
+        mimeType: fileToUpload.type || "application/octet-stream",
+        size: fileToUpload.size,
+        fileTypeId: Number(uploadFileTypeId),
+      });
+      if (!sasResult.status || !sasResult.data) {
+        toast.error(sasResult.message || "Failed to prepare upload");
+        return;
+      }
+      const { sasUrl, blobUrl } = sasResult.data;
+      const putRes = await fetch(sasUrl, {
+        method: "PUT",
+        headers: {
+          "x-ms-blob-type": "BlockBlob",
+          "Content-Type": fileToUpload.type || "application/octet-stream",
+        },
+        body: fileToUpload,
+      });
+      if (!putRes.ok) {
+        toast.error(`Failed to upload file to storage (status: ${putRes.status})`);
+        return;
+      }
+      const result = await registerPatientFileUploadAction({
+        folderId: selectedFolder.id,
+        fileTypeId: Number(uploadFileTypeId),
+        fileName: fileToUpload.name,
+        mimeType: fileToUpload.type || "application/octet-stream",
+        size: fileToUpload.size,
+        blobUrl,
+      });
       if (result.status) {
         refreshFolders();
         setShowUpload(false);
@@ -907,10 +959,17 @@ export function PatientFilesClient({
                   e.preventDefault();
                   setIsDragOver(false);
                   const dropped = e.dataTransfer.files[0];
-                  if (dropped) setUploadFile(dropped);
+                  if (dropped) void handleFileSelect(dropped);
                 }}
               >
-                {uploadFile ? (
+                {isConvertingFile ? (
+                  <div className="flex flex-col items-center justify-center py-8 px-4 gap-3">
+                    <div className="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                      <Upload className="w-7 h-7 text-slate-400 animate-pulse" />
+                    </div>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">Converting image…</p>
+                  </div>
+                ) : uploadFile ? (
                   <div className="flex items-center gap-3 p-4">
                     <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center shrink-0">
                       <File className="w-5 h-5 text-blue-600 dark:text-blue-400" />
@@ -945,7 +1004,14 @@ export function PatientFilesClient({
                 ref={fileInputRef}
                 type="file"
                 className="hidden"
-                onChange={(e) => setUploadFile(e.target.files?.[0] ?? null)}
+                accept={PATIENT_FILE_ACCEPT}
+                capture="environment"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) void handleFileSelect(file);
+                  // Reset input so the same file can be re-selected after clear
+                  e.target.value = "";
+                }}
               />
             </div>
           </div>
@@ -955,9 +1021,9 @@ export function PatientFilesClient({
             </Button>
             <Button
               onClick={handleUploadFile}
-              disabled={!uploadFile || !uploadFileTypeId || isPending}
+              disabled={!uploadFile || !uploadFileTypeId || isPending || isConvertingFile}
             >
-              {isPending ? "Uploading..." : "Upload"}
+              {isPending ? "Uploading..." : isConvertingFile ? "Converting..." : "Upload"}
             </Button>
           </DialogFooter>
         </DialogContent>

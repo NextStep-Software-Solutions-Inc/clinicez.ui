@@ -383,7 +383,6 @@ function LabRequestForm({
   );
 }
 
-/* ── Imaging Request Form ── */
 function ImagingRequestForm({
   clinicUid,
   patient,
@@ -404,6 +403,7 @@ function ImagingRequestForm({
   const [search, setSearch] = useState("");
   const [results, setResults] = useState<ImagingProc[]>([]);
   const [selected, setSelected] = useState<ImagingProc[]>([]);
+  const [procedureDetails, setProcedureDetails] = useState<Record<number, { bodyPart: string; notes: string }>>({});
   const [impression, setImpression] = useState("");
   const [history, setHistory] = useState("");
   const [reason, setReason] = useState("");
@@ -418,11 +418,25 @@ function ImagingRequestForm({
   );
 
   const toggle = (proc: ImagingProc) => {
-    setSelected((prev) =>
-      prev.some((p) => p.id === proc.id)
-        ? prev.filter((p) => p.id !== proc.id)
-        : [...prev, proc]
-    );
+    setSelected((prev) => {
+      const isSelected = prev.some((p) => p.id === proc.id);
+      if (isSelected) {
+        setProcedureDetails((d) => {
+          const next = { ...d };
+          delete next[proc.id];
+          return next;
+        });
+        return prev.filter((p) => p.id !== proc.id);
+      }
+      return [...prev, proc];
+    });
+  };
+
+  const updateProcedureDetail = (id: number, field: "bodyPart" | "notes", value: string) => {
+    setProcedureDetails((prev) => {
+      const existing = prev[id] ?? { bodyPart: "", notes: "" };
+      return { ...prev, [id]: { ...existing, [field]: value } };
+    });
   };
 
   const handleSubmit = () => {
@@ -440,6 +454,11 @@ function ImagingRequestForm({
         patientId: patient.clinicPatientId,
         hpIds: [hpId],
         diagnosticIds: selected.map((p) => p.id),
+        procedureDetails: selected.map((p) => ({
+          id: p.id,
+          bodyPart: procedureDetails[p.id]?.bodyPart || undefined,
+          notes: procedureDetails[p.id]?.notes || undefined,
+        })),
         consultationTicketId: consultation.id,
         impression: impression || undefined,
         history: history || undefined,
@@ -497,13 +516,43 @@ function ImagingRequestForm({
         </div>
       )}
 
+      {/* Per-procedure body part and notes */}
       {selected.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
+        <div className="space-y-2">
           {selected.map((p) => (
-            <Badge key={p.id} variant="secondary" className="text-xs gap-1 cursor-pointer" onClick={() => toggle(p)}>
-              {p.name}
-              <X className="h-2.5 w-2.5" />
-            </Badge>
+            <div key={p.id} className="rounded-md border border-border/40 bg-background p-2.5 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-foreground">{p.name}</span>
+                <button
+                  type="button"
+                  onClick={() => toggle(p)}
+                  className="text-muted-foreground hover:text-destructive transition-colors"
+                  aria-label="Remove procedure"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <Label className="text-[10px] text-muted-foreground uppercase tracking-wide">Body Part</Label>
+                  <Input
+                    placeholder="e.g. Chest, Left knee…"
+                    value={procedureDetails[p.id]?.bodyPart ?? ""}
+                    onChange={(e) => updateProcedureDetail(p.id, "bodyPart", e.target.value)}
+                    className="h-7 text-xs"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[10px] text-muted-foreground uppercase tracking-wide">Technologist Notes</Label>
+                  <Input
+                    placeholder="Special instructions…"
+                    value={procedureDetails[p.id]?.notes ?? ""}
+                    onChange={(e) => updateProcedureDetail(p.id, "notes", e.target.value)}
+                    className="h-7 text-xs"
+                  />
+                </div>
+              </div>
+            </div>
           ))}
         </div>
       )}

@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useRef } from "react";
 import { UserPlus, Search, X, User, Mail, AlertCircle } from "lucide-react";
+import dayjs from "@/lib/day-utils";
 import {
   Sheet,
   SheetContent,
@@ -361,7 +362,7 @@ export function AddPatientSheet({
                     type="date"
                     value={newDob}
                     onChange={(e) => setNewDob(e.target.value)}
-                    max={new Date().toISOString().split("T")[0]}
+                    max={dayjs().format("YYYY-MM-DD")}
                   />
                 </div>
               </div>

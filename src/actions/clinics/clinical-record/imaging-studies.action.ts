@@ -229,6 +229,8 @@ export const getImagingStudyAction = withErrorHandling(async (id: number) => {
       },
       ImagingRequestProcedures: {
         select: {
+          bodyPart: true,
+          notes: true,
           ImagingProcedure: {
             select: {
               id: true,
@@ -261,6 +263,7 @@ type CreateImagingStudyInput = {
   reason?: string;
   impression?: string;
   diagnosticIds: number[];
+  procedureDetails?: { id: number; bodyPart?: string; notes?: string }[];
   consultationTicketId: number;
 }
 
@@ -269,7 +272,7 @@ export const createImagingStudyAction = withErrorHandling(async (input: CreateIm
   const session = await getCachedSession();
   if (!session) throw new Error("Unauthorized");
 
-  const { clinicUid, patientId, hpIds, history, reason, impression, diagnosticIds, consultationTicketId } = input;
+  const { clinicUid, patientId, hpIds, history, reason, impression, diagnosticIds, procedureDetails, consultationTicketId } = input;
   const serialNumber = generateSerialNumber();
 
   const result = await prisma.$transaction(async (prisma) => {
@@ -318,9 +321,14 @@ export const createImagingStudyAction = withErrorHandling(async (input: CreateIm
         DocumentTemplate: { connect: { id: imagingTemplate.id } },
         CreatedBy: { connect: { id: createdBy } },
         ImagingRequestProcedures: {
-          create: diagnosticIds.map(diagnosticId => ({
-            clinicImagingProcedureId: diagnosticId,
-          })),
+          create: diagnosticIds.map(diagnosticId => {
+            const detail = procedureDetails?.find(d => d.id === diagnosticId);
+            return {
+              clinicImagingProcedureId: diagnosticId,
+              bodyPart: detail?.bodyPart || undefined,
+              notes: detail?.notes || undefined,
+            };
+          }),
         },
         isActive: true,
       },

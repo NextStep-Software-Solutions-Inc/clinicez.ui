@@ -629,7 +629,7 @@ function ConsultationAppointmentReportCard({ clinicUid }: { clinicUid: string })
         return;
       }
 
-      exportXLSX(columns, rows, { filename, sheetName });
+      await exportXLSX(columns, rows, { filename, sheetName });
       toast.success(`Report downloaded successfully (${rows.length} records)`);
     } catch (error) {
       toast.error(getActionErrorMessage(error, "Failed to download report"));

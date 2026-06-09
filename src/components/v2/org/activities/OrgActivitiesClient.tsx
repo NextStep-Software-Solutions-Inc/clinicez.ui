@@ -31,6 +31,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
+import dayjs from "@/lib/day-utils";
 import { $Enums } from "@prisma/client";
 import {
   getOrgActivitiesAction,
@@ -74,7 +75,7 @@ function formatFull(date: Date | string): string {
 }
 
 function toInputDate(d: Date): string {
-  return d.toISOString().slice(0, 10);
+  return dayjs(d).format("YYYY-MM-DD");
 }
 
 // ─── Action config ────────────────────────────────────────────────────────────

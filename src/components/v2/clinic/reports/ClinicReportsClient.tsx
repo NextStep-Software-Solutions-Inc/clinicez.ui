@@ -48,6 +48,7 @@ import {
 } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
+import dayjs from "@/lib/day-utils";
 import type { GetClinicReports } from "@/actions/clinics/clinic-reports.action";
 import { getClinicReportsAction } from "@/actions/clinics/clinic-reports.action";
 import {
@@ -77,7 +78,7 @@ function formatDate(iso: string) {
 }
 
 function toInputDate(d: Date) {
-  return d.toISOString().slice(0, 10);
+  return dayjs(d).format("YYYY-MM-DD");
 }
 
 /* ──────────────────────────────────────── */
@@ -538,8 +539,8 @@ export function ClinicReportsClient({
       toast.error("Please select both start and end dates");
       return;
     }
-    const from = new Date(customFrom);
-    const to = new Date(customTo);
+    const from = new Date(customFrom + "T00:00:00");
+    const to = new Date(customTo + "T00:00:00");
     if (from > to) {
       toast.error("Start date must be before end date");
       return;

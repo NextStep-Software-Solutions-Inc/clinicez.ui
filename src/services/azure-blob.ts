@@ -52,12 +52,15 @@ async function compressImage(data: ArrayBuffer, fileType: string): Promise<Buffe
     if (fileType === 'image/jpeg' || fileType === 'image/jpg') {
       return await instance.jpeg({ quality: 80 }).toBuffer();
     } else if (fileType === 'image/png') {
-      return await instance.png({ quality: 80 }).toBuffer();
+      // PNG is lossless; use maximum zlib compression level to reduce file size
+      return await instance.png({ compressionLevel: 9 }).toBuffer();
     } else if (fileType === 'image/webp') {
       return await instance.webp({ quality: 80 }).toBuffer();
     }
+    // Unsupported image type – upload original without compression
+    console.warn(`[IMAGE_COMPRESSION] Skipping compression for unsupported type: ${fileType}`);
   } catch (error) {
-    console.error('[IMAGE_COMPRESSION_ERROR]', error);
+    console.error(`[IMAGE_COMPRESSION_ERROR] Failed to compress image of type ${fileType}:`, error);
   }
   return buf;
 }

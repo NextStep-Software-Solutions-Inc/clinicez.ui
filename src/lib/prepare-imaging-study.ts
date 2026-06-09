@@ -87,7 +87,17 @@ export const TEMPLATE_VARIABLE_SCHEMA: TemplateVariableSchema & { key: string } 
     { variable: "requestDate", description: "Request date (MM/DD/YYYY)" },
     { variable: "createdDateTime", description: "Full date and time (MM/DD/YYYY h:mm A)" },
     { variable: "diagnostics", type: "array-of-strings" as const, description: "Requested imaging procedure names (plain strings)" },
-    { variable: "diagnosticItems", type: "array-of-strings" as const, description: "Requested procedures with bodyPart and notes fields (objects: { name, bodyPart, notes })" },
+    {
+      variable: "diagnosticItems",
+      type: "array-of-objects" as const,
+      loopVar: "item",
+      description: "Requested procedures with body part and technologist notes — iterate with {% for item in diagnosticItems %}",
+      properties: [
+        { variable: "name", description: "Imaging procedure name" },
+        { variable: "bodyPart", description: "Body part to image (e.g. Chest, Left Knee)" },
+        { variable: "notes", description: "Technologist instructions / special notes" },
+      ],
+    },
     { variable: "history", description: "Patient's relevant medical history" },
     { variable: "impression", description: "Clinical impression / diagnosis" },
     { variable: "requestFor", description: "Reason for the imaging request" },

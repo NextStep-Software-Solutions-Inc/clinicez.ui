@@ -429,7 +429,7 @@ export function YakapLibraryDetail({ libraryId, initialPage = 1, initialPageSize
               <h2 className="text-2xl font-bold tracking-tight">{library.name}</h2>
               <Badge variant={library.isActive ? "default" : "secondary"}>{library.isActive ? "Active" : "Inactive"}</Badge>
               <Button variant="ghost" size="sm" onClick={() => setIsEditingInfo(true)}>
-                Edit Info sdsd
+                Edit Info
               </Button>
             </div>
           )}

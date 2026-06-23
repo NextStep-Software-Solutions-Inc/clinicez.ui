@@ -23,6 +23,7 @@ import {
   Crown,
   Trash2,
   ChevronDown,
+  RefreshCw,
   ShieldCheck,
   ShieldX,
   Shield,
@@ -48,6 +49,19 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "@/components/ui/alert";
 import {
   Form,
   FormControl,
@@ -106,6 +120,17 @@ import {
 
 import { updateClinicAction } from "@/actions/clinics/clinic.action";
 import { updatePhilHealthSettingsAction } from "@/actions/clinics/clinic-setting.action";
+import {
+  bootstrapClinicKonsultaLibrariesAction,
+  createClinicKonsultaLibraryItemAction,
+  getClinicKonsultaLibraryDomainItemsAction,
+  getClinicKonsultaMappingAuditHistoryAction,
+  getClinicKonsultaLibrarySummaryAction,
+  searchPhilHealthKonsultaReferencesAction,
+  type GetClinicKonsultaMappingAuditHistory,
+  type GetClinicKonsultaLibrarySummary,
+  updateClinicKonsultaLibraryMappingAction,
+} from "@/actions/clinics/konsulta-library.action";
 import { upsertClinicAppointmentConfigAction } from "@/actions/appointments/appointment-config.action";
 import {
   addClinicMemberAction,
@@ -175,6 +200,10 @@ import { GoogleCalendarIntegration } from "@/components/v2/integrations/GoogleCa
 import { CalendarEventsList } from "@/components/v2/integrations/CalendarEventsList";
 import type { CalendarEventItem } from "@/actions/google/auth.action";
 import type { GetSystems } from "@/actions/system.action";
+import type {
+  GetClinicKonsultaLibraryDomainItems,
+  SearchPhilHealthKonsultaReferences,
+} from "@/actions/clinics/konsulta-library.action";
 
 /* ─────────────────────────────────────────────────────────────────── */
 /*  Types                                                              */
@@ -194,6 +223,16 @@ type RolesWithPermissionsData = NonNullable<GetClinicRolesWithPermissions>;
 type ClinicAppointmentTabsData = NonNullable<GetClinicAppointmentTabs["data"]>;
 type AllAppointmentTabsData = NonNullable<GetAppointmentTabs>;
 type SystemsData = NonNullable<GetSystems>;
+type KonsultaLibrarySummaryData = NonNullable<GetClinicKonsultaLibrarySummary["data"]>;
+type KonsultaLibraryDomainItemsData = NonNullable<
+  GetClinicKonsultaLibraryDomainItems["data"]
+>;
+type PhilHealthKonsultaReferenceOptions = NonNullable<
+  SearchPhilHealthKonsultaReferences["data"]
+>;
+type KonsultaMappingAuditHistoryData = NonNullable<
+  GetClinicKonsultaMappingAuditHistory["data"]
+>;
 
 interface ClinicSettingsClientProps {
   clinicUid: string;
@@ -214,6 +253,7 @@ interface ClinicSettingsClientProps {
   googleCalendarEvents?: CalendarEventItem[];
   initialSystems: SystemsData;
   canUpdateSettings?: boolean;
+  konsultaLibrarySummary: KonsultaLibrarySummaryData | null;
 }
 
 /* ─────────────────────────────────────────────────────────────────── */
@@ -731,13 +771,127 @@ function AppointmentsTab({
 function PhilHealthTab({
   clinicUid,
   clinicSetting,
+  initialKonsultaLibrarySummary,
 }: {
   clinicUid: string;
   clinicSetting: ClinicSettingData | null;
+  initialKonsultaLibrarySummary: KonsultaLibrarySummaryData | null;
 }) {
   const [isPending, startTransition] = useTransition();
+  const [isLibraryPending, startLibraryTransition] = useTransition();
   const [testResult, setTestResult] = useState<string | null>(null);
   const [isTesting, setIsTesting] = useState(false);
+  const [librarySummary, setLibrarySummary] = useState<KonsultaLibrarySummaryData | null>(
+    initialKonsultaLibrarySummary,
+  );
+  const [domainItems, setDomainItems] = useState<KonsultaLibraryDomainItemsData>([]);
+  const [isDomainDialogOpen, setIsDomainDialogOpen] = useState(false);
+  const [selectedDomainKey, setSelectedDomainKey] = useState<string | null>(null);
+  const [selectedDomainTitle, setSelectedDomainTitle] = useState<string>("");
+  const [domainQuery, setDomainQuery] = useState("");
+  const [isLoadingDomainItems, setIsLoadingDomainItems] = useState(false);
+  const [newItemLabel, setNewItemLabel] = useState("");
+  const [newItemCode, setNewItemCode] = useState("");
+  const [mappingItem, setMappingItem] = useState<
+    KonsultaLibraryDomainItemsData[number] | null
+  >(null);
+  const [referenceQuery, setReferenceQuery] = useState("");
+  const [referenceOptions, setReferenceOptions] =
+    useState<PhilHealthKonsultaReferenceOptions>([]);
+  const [selectedReferenceValue, setSelectedReferenceValue] =
+    useState<string>("__UNMAPPED__");
+  const [mappingAuditHistory, setMappingAuditHistory] =
+    useState<KonsultaMappingAuditHistoryData>([]);
+  const [mappingAuditError, setMappingAuditError] = useState<string | null>(null);
+
+  const refreshLibrarySummary = useCallback(async () => {
+    const result = await getClinicKonsultaLibrarySummaryAction(clinicUid);
+    if (result.status && result.data) {
+      setLibrarySummary(result.data);
+    }
+  }, [clinicUid]);
+  const loadMappingAuditHistory = useCallback(async () => {
+    const result = await getClinicKonsultaMappingAuditHistoryAction(clinicUid);
+    if (result.status && result.data) {
+      setMappingAuditHistory(result.data);
+      setMappingAuditError(null);
+      return;
+    }
+
+    setMappingAuditHistory([]);
+    setMappingAuditError(result.message ?? "Failed to load mapping history.");
+  }, [clinicUid]);
+
+  useEffect(() => {
+    void loadMappingAuditHistory();
+  }, [loadMappingAuditHistory]);
+
+  const loadDomainItems = useCallback(
+    async (domainKey: string, query = "") => {
+      setIsLoadingDomainItems(true);
+      const result = await getClinicKonsultaLibraryDomainItemsAction(
+        clinicUid,
+        domainKey,
+        query,
+      );
+      if (result.status && result.data) {
+        setDomainItems(result.data);
+      } else {
+        toast.error(result.message ?? "Failed to load domain items.");
+      }
+      setIsLoadingDomainItems(false);
+    },
+    [clinicUid],
+  );
+
+  const openDomainDialog = useCallback(
+    async (domainKey: string, title: string) => {
+      setSelectedDomainKey(domainKey);
+      setSelectedDomainTitle(title);
+      setDomainQuery("");
+      setNewItemCode("");
+      setNewItemLabel("");
+      setIsDomainDialogOpen(true);
+      await loadDomainItems(domainKey, "");
+    },
+    [loadDomainItems],
+  );
+
+  const openMappingDialog = useCallback(
+    async (item: KonsultaLibraryDomainItemsData[number]) => {
+      setMappingItem(item);
+      const initialQuery = item.displayLabel;
+      setReferenceQuery(initialQuery);
+      const result = await searchPhilHealthKonsultaReferencesAction(
+        clinicUid,
+        item.domainKey,
+        initialQuery,
+      );
+      if (result.status && result.data) {
+        setReferenceOptions(result.data);
+      } else {
+        setReferenceOptions([]);
+        toast.error(
+          result.message ??
+            "Failed to load PhilHealth references. Please try again or contact support if the issue persists.",
+        );
+      }
+      setSelectedReferenceValue(
+        item.mappedReferenceId ? String(item.mappedReferenceId) : "__UNMAPPED__",
+      );
+    },
+    [clinicUid],
+  );
+
+  const selectedDomainSummary = useMemo(
+    () =>
+      selectedDomainKey
+        ? librarySummary?.domains.find(
+            (domain) => domain.domainKey === selectedDomainKey,
+          ) ?? null
+        : null,
+    [librarySummary?.domains, selectedDomainKey],
+  );
 
   const form = useForm<PhilHealthFormValues>({
     resolver: zodResolver(philhealthSchema),
@@ -896,6 +1050,106 @@ function PhilHealthTab({
     }
   };
 
+  const handleBootstrapLibraries = () => {
+    startLibraryTransition(async () => {
+      const result = await bootstrapClinicKonsultaLibrariesAction(clinicUid);
+      if (result.status) {
+        toast.success(result.message ?? "Clinic libraries bootstrapped.");
+        await refreshLibrarySummary();
+        if (selectedDomainKey) {
+          await loadDomainItems(selectedDomainKey, domainQuery);
+        }
+      } else {
+        toast.error(result.message ?? "Failed to bootstrap clinic libraries.");
+      }
+    });
+  };
+
+  const handleRefreshDomainItems = () => {
+    if (!selectedDomainKey) {
+      return;
+    }
+
+    startLibraryTransition(async () => {
+      await loadDomainItems(selectedDomainKey, domainQuery);
+      await refreshLibrarySummary();
+    });
+  };
+
+  const handleCreateInternalItem = () => {
+    if (!selectedDomainKey) {
+      return;
+    }
+
+    startLibraryTransition(async () => {
+      const result = await createClinicKonsultaLibraryItemAction(clinicUid, {
+        domainKey: selectedDomainKey,
+        internalCode: newItemCode.trim() || undefined,
+        displayLabel: newItemLabel,
+      });
+
+      if (result.status) {
+        toast.success(result.message ?? "Internal library item created.");
+        setNewItemCode("");
+        setNewItemLabel("");
+        await loadDomainItems(selectedDomainKey, domainQuery);
+        await refreshLibrarySummary();
+      } else {
+        toast.error(result.message ?? "Failed to create internal library item.");
+      }
+    });
+  };
+
+  const handleSearchReferences = () => {
+    if (!mappingItem) {
+      return;
+    }
+
+    startLibraryTransition(async () => {
+      const result = await searchPhilHealthKonsultaReferencesAction(
+        clinicUid,
+        mappingItem.domainKey,
+        referenceQuery,
+      );
+      if (result.status && result.data) {
+        setReferenceOptions(result.data);
+      } else {
+        toast.error(result.message ?? "Failed to search references.");
+      }
+    });
+  };
+
+  const handleSaveMapping = () => {
+    if (!mappingItem) {
+      return;
+    }
+
+    startLibraryTransition(async () => {
+      const nextReferenceId =
+        selectedReferenceValue === "__UNMAPPED__"
+          ? null
+          : Number(selectedReferenceValue);
+      const result = await updateClinicKonsultaLibraryMappingAction(clinicUid, {
+        clinicItemId: mappingItem.id,
+        philHealthReferenceItemId: nextReferenceId,
+      });
+
+      if (result.status) {
+        toast.success(result.message ?? "Mapping saved.");
+        setMappingItem(null);
+        setReferenceOptions([]);
+        setSelectedReferenceValue("__UNMAPPED__");
+        if (selectedDomainKey) {
+          await loadDomainItems(selectedDomainKey, domainQuery);
+        }
+        await refreshLibrarySummary();
+        await loadMappingAuditHistory();
+      } else {
+        toast.error(result.message ?? "Failed to save mapping.");
+      }
+    });
+  };
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -1030,6 +1284,222 @@ function PhilHealthTab({
           </CardContent>
         </Card>
 
+        <Card>
+          <CardHeader>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Layers className="h-4 w-4 text-primary" />
+                  Konsulta Library Bootstrap &amp; Mapping
+                </CardTitle>
+                <CardDescription>
+                  Clinic-owned internal libraries are bootstrapped from the bundled
+                  PhilHealth reference kit, then mapped back to PhilHealth values for
+                  export-safe XML generation.
+                </CardDescription>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={isLibraryPending}
+                onClick={handleBootstrapLibraries}
+              >
+                {isLibraryPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Bootstrapping…
+                  </>
+                ) : (
+                  <>
+                    <Package className="mr-2 h-4 w-4" />
+                    Bootstrap Internal Libraries
+                  </>
+                )}
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            <div className="grid gap-3 md:grid-cols-4">
+              <div className="rounded-lg border p-4">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                  PhilHealth references
+                </p>
+                <p className="mt-2 text-2xl font-semibold">
+                  {librarySummary?.totals.philHealthReferenceCount ?? 0}
+                </p>
+              </div>
+              <div className="rounded-lg border p-4">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                  Clinic items
+                </p>
+                <p className="mt-2 text-2xl font-semibold">
+                  {librarySummary?.totals.clinicItemCount ?? 0}
+                </p>
+              </div>
+              <div className="rounded-lg border p-4">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                  Mapped
+                </p>
+                <p className="mt-2 text-2xl font-semibold">
+                  {librarySummary?.totals.mappedCount ?? 0}
+                </p>
+              </div>
+              <div className="rounded-lg border p-4">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                  Needs work
+                </p>
+                <p className="mt-2 text-2xl font-semibold">
+                  {(librarySummary?.totals.unmappedCount ?? 0) +
+                    (librarySummary?.totals.needsReviewCount ?? 0)}
+                </p>
+              </div>
+            </div>
+
+            {(librarySummary?.totals.missingDomains ?? 0) > 0 && (
+              <Alert>
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>Some Konsulta domains still need bootstrap</AlertTitle>
+                <AlertDescription>
+                  Use the bootstrap button to create clinic-owned internal libraries
+                  first, then review mappings before relying on those domains for
+                  export.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            <div className="rounded-lg border p-4">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold">
+                    Recent Konsulta mapping activity
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Audit trail for internal term to PhilHealth reference mapping changes.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => void loadMappingAuditHistory()}
+                >
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Refresh
+                </Button>
+              </div>
+              {mappingAuditError ? (
+                <p className="text-xs text-muted-foreground">{mappingAuditError}</p>
+              ) : mappingAuditHistory.length === 0 ? (
+                <p className="text-xs text-muted-foreground">
+                  No mapping changes have been audited yet.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {mappingAuditHistory.map((log) => {
+                    const metadata =
+                      log.metadata && typeof log.metadata === "object"
+                        ? (log.metadata as {
+                            clinicItemLabel?: string;
+                            domainKey?: string;
+                          })
+                        : null;
+
+                    return (
+                      <div
+                        key={log.id}
+                        className="rounded-md border border-border/70 bg-muted/20 p-3"
+                      >
+                        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                          <div className="text-sm font-medium">
+                            {metadata?.clinicItemLabel ?? log.reason ?? "Mapping updated"}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {new Date(log.performedAt).toLocaleString("en-PH")} ·{" "}
+                            {log.performerName}
+                          </div>
+                        </div>
+                        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                          {metadata?.domainKey && (
+                            <Badge variant="outline">{metadata.domainKey}</Badge>
+                          )}
+                          <span className="text-muted-foreground">
+                            {log.previousValue ?? "Unmapped"}
+                          </span>
+                          <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                          <span className="font-medium text-foreground">
+                            {log.newValue ?? "Unmapped"}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div className="rounded-lg border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Domain</TableHead>
+                    <TableHead>Refs</TableHead>
+                    <TableHead>Clinic</TableHead>
+                    <TableHead>Mapped</TableHead>
+                    <TableHead>Unmapped</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(librarySummary?.domains ?? []).map((domain) => (
+                    <TableRow key={domain.domainKey}>
+                      <TableCell>
+                        <div className="space-y-1">
+                          <p className="font-medium">{domain.title}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {domain.domainKey}
+                          </p>
+                        </div>
+                      </TableCell>
+                      <TableCell>{domain.philHealthReferenceCount}</TableCell>
+                      <TableCell>{domain.clinicItemCount}</TableCell>
+                      <TableCell>{domain.mappedCount}</TableCell>
+                      <TableCell>
+                        {domain.unmappedCount + domain.needsReviewCount}
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={
+                            domain.bootstrapStatus === "READY"
+                              ? "secondary"
+                              : "destructive"
+                          }
+                        >
+                          {domain.bootstrapStatus === "READY"
+                            ? "Ready"
+                            : "Missing"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() =>
+                            openDomainDialog(domain.domainKey, domain.title)
+                          }
+                        >
+                          Manage
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+
         <div className="flex justify-end">
           <Button type="submit" disabled={isPending} className="min-w-[120px]">
             {isPending ? (
@@ -1045,6 +1515,231 @@ function PhilHealthTab({
             )}
           </Button>
         </div>
+
+        <Dialog
+          open={isDomainDialogOpen}
+          onOpenChange={(open) => {
+            setIsDomainDialogOpen(open);
+            if (!open) {
+              setDomainItems([]);
+              setSelectedDomainKey(null);
+              setSelectedDomainTitle("");
+            }
+          }}
+        >
+          <DialogContent className="max-w-5xl">
+            <DialogHeader>
+              <DialogTitle>{selectedDomainTitle || "Konsulta domain"}</DialogTitle>
+              <DialogDescription>
+                Review clinic-owned internal items, add custom values, and inspect
+                current PhilHealth mapping status for this domain.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <div className="grid gap-3 lg:grid-cols-[2fr,auto]">
+                <div className="flex gap-2">
+                  <Input
+                    value={domainQuery}
+                    onChange={(event) => setDomainQuery(event.target.value)}
+                    placeholder="Search internal code or label"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleRefreshDomainItems}
+                    disabled={!selectedDomainKey || isLibraryPending}
+                  >
+                    <Search className="mr-2 h-4 w-4" />
+                    Search
+                  </Button>
+                </div>
+                <div className="flex items-center justify-end gap-2">
+                  <Badge variant="secondary">
+                    {selectedDomainSummary?.mappedCount ?? 0} mapped
+                  </Badge>
+                  <Badge variant="outline">
+                    {(selectedDomainSummary?.unmappedCount ?? 0) +
+                      (selectedDomainSummary?.needsReviewCount ?? 0)}{" "}
+                    pending
+                  </Badge>
+                </div>
+              </div>
+
+              <div className="grid gap-3 rounded-lg border p-4 md:grid-cols-[1fr,1fr,auto]">
+                <Input
+                  value={newItemCode}
+                  onChange={(event) => setNewItemCode(event.target.value)}
+                  placeholder="Optional internal code"
+                />
+                <Input
+                  value={newItemLabel}
+                  onChange={(event) => setNewItemLabel(event.target.value)}
+                  placeholder="New clinic-only internal label"
+                />
+                <Button
+                  type="button"
+                  onClick={handleCreateInternalItem}
+                  disabled={!selectedDomainKey || !newItemLabel.trim() || isLibraryPending}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add internal item
+                </Button>
+              </div>
+
+              <div className="max-h-[420px] overflow-y-auto rounded-lg border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Internal item</TableHead>
+                      <TableHead>Source</TableHead>
+                      <TableHead>Mapping</TableHead>
+                      <TableHead className="text-right">Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {isLoadingDomainItems ? (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center text-muted-foreground">
+                          Loading internal items…
+                        </TableCell>
+                      </TableRow>
+                    ) : domainItems.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center text-muted-foreground">
+                          No internal items found for this domain.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      domainItems.map((item) => (
+                        <TableRow key={item.id}>
+                          <TableCell>
+                            <div className="space-y-1">
+                              <p className="font-medium">{item.displayLabel}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {item.internalCode ?? "No internal code"}
+                              </p>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{item.sourceType}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="space-y-1">
+                              <Badge
+                                variant={
+                                  item.mappingStatus === "MAPPED"
+                                    ? "secondary"
+                                    : "destructive"
+                                }
+                              >
+                                {item.mappingStatus}
+                              </Badge>
+                              <p className="text-xs text-muted-foreground">
+                                {item.mappedReferenceCode
+                                  ? `${item.mappedReferenceCode} — ${item.mappedReferenceLabel}`
+                                  : "No PhilHealth reference assigned"}
+                              </p>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openMappingDialog(item)}
+                            >
+                              {item.mappingStatus === "MAPPED" ? "Remap" : "Map"}
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog
+          open={mappingItem !== null}
+          onOpenChange={(open) => {
+            if (!open) {
+              setMappingItem(null);
+              setReferenceOptions([]);
+              setSelectedReferenceValue("__UNMAPPED__");
+            }
+          }}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Map to PhilHealth reference</DialogTitle>
+              <DialogDescription>
+                {mappingItem
+                  ? `Choose the PhilHealth-compliant reference for "${mappingItem.displayLabel}".`
+                  : "Choose a PhilHealth reference."}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <div className="flex gap-2">
+                <Input
+                  value={referenceQuery}
+                  onChange={(event) => setReferenceQuery(event.target.value)}
+                  placeholder="Search PhilHealth code or label"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleSearchReferences}
+                  disabled={!mappingItem || isLibraryPending}
+                >
+                  <Search className="mr-2 h-4 w-4" />
+                  Search
+                </Button>
+              </div>
+
+              <Select
+                value={selectedReferenceValue}
+                onValueChange={setSelectedReferenceValue}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a PhilHealth reference" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__UNMAPPED__">
+                    Leave unmapped
+                  </SelectItem>
+                  {referenceOptions.map((option) => (
+                    <SelectItem key={option.id} value={String(option.id)}>
+                      {option.externalCode
+                        ? `${option.externalCode} — ${option.displayLabel}`
+                        : option.displayLabel}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setMappingItem(null);
+                  setReferenceOptions([]);
+                  setSelectedReferenceValue("__UNMAPPED__");
+                }}
+              >
+                Cancel
+              </Button>
+              <Button type="button" onClick={handleSaveMapping} disabled={isLibraryPending}>
+                Save mapping
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </form>
     </Form>
   );
@@ -3332,6 +4027,7 @@ export function ClinicSettingsClient({
   googleCalendarEvents = [],
   initialSystems,
   canUpdateSettings = false,
+  konsultaLibrarySummary,
 }: ClinicSettingsClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -3459,7 +4155,11 @@ export function ClinicSettingsClient({
         </TabsContent>
 
         <TabsContent value="philhealth" className="mt-6">
-          <PhilHealthTab clinicUid={clinicUid} clinicSetting={clinicSetting} />
+          <PhilHealthTab
+            clinicUid={clinicUid}
+            clinicSetting={clinicSetting}
+            initialKonsultaLibrarySummary={konsultaLibrarySummary}
+          />
         </TabsContent>
 
         <TabsContent value="members" className="mt-6">

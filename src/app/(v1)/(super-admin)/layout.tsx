@@ -27,6 +27,10 @@ const sidebarNavItems = [
     href: "/super-admin/diagnostics-procedures",
   },
   {
+    title: "PhilHealth Yakap Libraries",
+    href: "/super-admin/yakap-libraries",
+  },
+  {
     title: "Location Management",
     href: "/super-admin/locations",
   },

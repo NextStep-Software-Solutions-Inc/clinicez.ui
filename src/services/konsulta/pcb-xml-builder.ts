@@ -9,18 +9,19 @@
 import { create } from "xmlbuilder2";
 
 type XMLNode = ReturnType<typeof create>;
-
 import type {
     ErlAssignment,
     KonsultaEnlistmentData,
     KonsultaHciCredentials,
+    KonsultaImmunizationData,
+    KonsultaMedicineData,
     KonsultaPeMiscItem,
+    KonsultaPhysicalExamFindingData,
     KonsultaProfileData,
     KonsultaProfileSubData,
     KonsultaSoapData,
     KonsultaSoapSubData,
 } from "./types";
-
 function today(): string {
     return new Date().toISOString().slice(0, 10);
 }
@@ -80,8 +81,29 @@ function addPepert(parent: XMLNode, v?: VitalsInput): void {
     });
 }
 
-function addPemiscs(parent: XMLNode, items?: KonsultaPeMiscItem[]): void {
+function addPemiscs(
+    parent: XMLNode,
+    items?: KonsultaPeMiscItem[],
+    findings?: KonsultaPhysicalExamFindingData[],
+): void {
     const pemiscsEle = parent.ele("PEMISCS");
+    if (findings && findings.length > 0) {
+        for (const finding of findings) {
+            pemiscsEle.ele("PEMISC", {
+                pSkinId: finding.pSkinId ?? "",
+                pHeentId: finding.pHeentId ?? "",
+                pChestId: finding.pChestId ?? "",
+                pHeartId: finding.pHeartId ?? "",
+                pAbdomenId: finding.pAbdomenId ?? "",
+                pNeuroId: finding.pNeuroId ?? "",
+                pGuId: finding.pGuId ?? "",
+                pRectalId: finding.pRectalId ?? "",
+                pReportStatus: finding.pReportStatus ?? "U",
+                pDeficiencyRemarks: finding.pDeficiencyRemarks ?? "",
+            });
+        }
+        return;
+    }
     const rows: KonsultaPeMiscItem[] = (items && items.length > 0) ? items : [{}];
     for (const item of rows) {
         pemiscsEle.ele("PEMISC", {
@@ -120,14 +142,19 @@ function addPespecific(parent: XMLNode, d?: PespecificInput): void {
     });
 }
 
-function addProfileSubElements(profile: XMLNode, data?: KonsultaProfileSubData): void {
+function addProfileSubElements(profile: XMLNode, profileData: KonsultaProfileData): void {
+    const data = profileData.subData;
     console.log("Adding profile sub-elements", { data });
+
     // ── MEDHISTS ────────────────────────────────────────────────────────────────────
-    const medItems = data?.medHistItems;
     const medHistsEle = profile.ele("MEDHISTS");
-    if (medItems && medItems.length > 0) {
-        for (const item of medItems) {
+    if (data?.medHistItems && data.medHistItems.length > 0) {
+        for (const item of data.medHistItems) {
             medHistsEle.ele("MEDHIST", { pMdiseaseCode: item.code, pReportStatus: "U", pDeficiencyRemarks: "" });
+        }
+    } else if (profileData.medicalHistoryCodes && profileData.medicalHistoryCodes.length > 0) {
+        for (const code of profileData.medicalHistoryCodes) {
+            medHistsEle.ele("MEDHIST", { pMdiseaseCode: code, pReportStatus: "U", pDeficiencyRemarks: "" });
         }
     } else {
         medHistsEle.ele("MEDHIST", { pMdiseaseCode: "001", pReportStatus: "U", pDeficiencyRemarks: "" });
@@ -135,7 +162,7 @@ function addProfileSubElements(profile: XMLNode, data?: KonsultaProfileSubData):
 
     // ── MHSPECIFICS ────────────────────────────────────────────────────────────
     const mhSpecificsEle = profile.ele("MHSPECIFICS");
-    const withSpecifics = medItems?.filter(i => i.specificDesc) ?? [];
+    const withSpecifics = data?.medHistItems?.filter(i => i.specificDesc) ?? [];
     if (withSpecifics.length > 0) {
         for (const item of withSpecifics) {
             mhSpecificsEle.ele("MHSPECIFIC", {
@@ -146,8 +173,9 @@ function addProfileSubElements(profile: XMLNode, data?: KonsultaProfileSubData):
             });
         }
     } else {
+        const defaultDiseaseCode = data?.medHistItems?.[0]?.code ?? profileData.medicalHistoryCodes?.[0] ?? "001";
         mhSpecificsEle.ele("MHSPECIFIC", {
-            pMdiseaseCode: medItems?.[0]?.code ?? "001",
+            pMdiseaseCode: defaultDiseaseCode,
             pSpecificDesc: "",
             pReportStatus: "U",
             pDeficiencyRemarks: "",
@@ -205,10 +233,9 @@ function addProfileSubElements(profile: XMLNode, data?: KonsultaProfileSubData):
     });
 
     // ── IMMUNIZATIONS ──────────────────────────────────────────────────────────
-    const immunItems = data?.immunizations;
     const immunizationsEle = profile.ele("IMMUNIZATIONS");
-    if (immunItems && immunItems.length > 0) {
-        for (const item of immunItems) {
+    if (data?.immunizations && data.immunizations.length > 0) {
+        for (const item of data.immunizations) {
             immunizationsEle.ele("IMMUNIZATION", {
                 pChildImmcode: item.pChildImmcode ?? "",
                 pYoungwImmcode: item.pYoungwImmcode ?? "",
@@ -217,6 +244,18 @@ function addProfileSubElements(profile: XMLNode, data?: KonsultaProfileSubData):
                 pOtherImm: item.pOtherImm ?? "",
                 pReportStatus: "U",
                 pDeficiencyRemarks: "",
+            });
+        }
+    } else if (profileData.immunizations && profileData.immunizations.length > 0) {
+        for (const item of profileData.immunizations) {
+            immunizationsEle.ele("IMMUNIZATION", {
+                pChildImmcode: item.pChildImmcode ?? "",
+                pYoungwImmcode: item.pYoungwImmcode ?? "",
+                pPregwImmcode: item.pPregwImmcode ?? "",
+                pElderlyImmcode: item.pElderlyImmcode ?? "",
+                pOtherImm: item.pOtherImm ?? "",
+                pReportStatus: item.pReportStatus ?? "U",
+                pDeficiencyRemarks: item.pDeficiencyRemarks ?? "",
             });
         }
     } else {
@@ -277,7 +316,7 @@ function addProfileSubElements(profile: XMLNode, data?: KonsultaProfileSubData):
     });
 
     // ── PEMISCS + PESPECIFIC ────────────────────────────────────────────────────
-    addPemiscs(profile, data?.pemiscItems);
+    addPemiscs(profile, data?.pemiscItems, profileData.physicalExamFindings);
     addPespecific(profile, data);
 
     // ── NCDQANS ─────────────────────────────────────────────────────────────────────
@@ -321,7 +360,9 @@ function addProfileSubElements(profile: XMLNode, data?: KonsultaProfileSubData):
     });
 }
 
-function addSoapSubElements(soap: XMLNode, data?: KonsultaSoapSubData): void {
+function addSoapSubElements(soap: XMLNode, soapData: KonsultaSoapData): void {
+    const data = soapData.subData;
+
     // ── SUBJECTIVE ──────────────────────────────────────────────────────────────────
     soap.ele("SUBJECTIVE", {
         pIllnessHistory: data?.illnessHistory ?? "",
@@ -334,13 +375,17 @@ function addSoapSubElements(soap: XMLNode, data?: KonsultaSoapSubData): void {
 
     // ── PEPERT + PEMISCS + PESPECIFIC ───────────────────────────────────────────
     addPepert(soap, data);
-    addPemiscs(soap, data?.pemiscItems);
+    addPemiscs(soap, data?.pemiscItems, soapData.physicalExamFindings);
     addPespecific(soap, data);
 
     // ── ICDS ───────────────────────────────────────────────────────────────────────
     const icdsEle = soap.ele("ICDS");
     if (data?.icdCodes && data.icdCodes.length > 0) {
         for (const code of data.icdCodes) {
+            icdsEle.ele("ICD", { pIcdCode: code, pReportStatus: "U", pDeficiencyRemarks: "" });
+        }
+    } else if (soapData.icdCodes && soapData.icdCodes.length > 0) {
+        for (const code of soapData.icdCodes) {
             icdsEle.ele("ICD", { pIcdCode: code, pReportStatus: "U", pDeficiencyRemarks: "" });
         }
     } else {
@@ -360,10 +405,25 @@ function addSoapSubElements(soap: XMLNode, data?: KonsultaSoapSubData): void {
                 pDeficiencyRemarks: "",
             });
         }
+    } else if (soapData.diagnosticCodes && soapData.diagnosticCodes.length > 0) {
+        for (const diagnosticCode of soapData.diagnosticCodes) {
+            diagnosticsEle.ele("DIAGNOSTIC", {
+                pDiagnosticId: diagnosticCode,
+                pOthRemarks: "",
+                pIsPhysicianRecommendation: "",
+                pPatientRemarks: "",
+                pReportStatus: "U",
+                pDeficiencyRemarks: "",
+            });
+        }
     } else {
         diagnosticsEle.ele("DIAGNOSTIC", {
-            pDiagnosticId: "", pOthRemarks: "", pIsPhysicianRecommendation: "",
-            pPatientRemarks: "", pReportStatus: "U", pDeficiencyRemarks: "",
+            pDiagnosticId: "",
+            pOthRemarks: "",
+            pIsPhysicianRecommendation: "",
+            pPatientRemarks: "",
+            pReportStatus: "U",
+            pDeficiencyRemarks: "",
         });
     }
 
@@ -378,9 +438,21 @@ function addSoapSubElements(soap: XMLNode, data?: KonsultaSoapSubData): void {
                 pDeficiencyRemarks: "",
             });
         }
+    } else if (soapData.managementCodes && soapData.managementCodes.length > 0) {
+        for (const managementCode of soapData.managementCodes) {
+            managementsEle.ele("MANAGEMENT", {
+                pManagementId: managementCode,
+                pOthRemarks: "",
+                pReportStatus: "U",
+                pDeficiencyRemarks: "",
+            });
+        }
     } else {
         managementsEle.ele("MANAGEMENT", {
-            pManagementId: "", pOthRemarks: "", pReportStatus: "U", pDeficiencyRemarks: "",
+            pManagementId: "",
+            pOthRemarks: "",
+            pReportStatus: "U",
+            pDeficiencyRemarks: "",
         });
     }
 
@@ -400,6 +472,7 @@ export interface BuildPcbXmlOptions {
     enlistments?: KonsultaEnlistmentData[];
     profiles?: KonsultaProfileData[];
     soaps?: KonsultaSoapData[];
+    medicines?: KonsultaMedicineData[];
 }
 
 /**
@@ -415,6 +488,7 @@ export function buildPcbXml(options: BuildPcbXmlOptions): string {
         enlistments = [],
         profiles = [],
         soaps = [],
+        medicines = [],
     } = options;
 
     const doc = create({ version: "1.0", encoding: "UTF-8" });
@@ -515,8 +589,7 @@ export function buildPcbXml(options: BuildPcbXmlOptions): string {
                 pReportStatus: p.pReportStatus,
                 pDeficiencyRemarks: p.pDeficiencyRemarks,
             });
-            console.log("Adding profile sub-elements", { data: p.subData });
-            addProfileSubElements(profile, p.subData);
+            addProfileSubElements(profile, p);
         }
     } else {
         const profile = profilingEle.ele("PROFILE", {
@@ -534,7 +607,7 @@ export function buildPcbXml(options: BuildPcbXmlOptions): string {
             pReportStatus: "U",
             pDeficiencyRemarks: "",
         });
-        addProfileSubElements(profile, undefined);
+        addProfileSubElements(profile, {} as KonsultaProfileData);
     }
 
     // ── SOAPS ────────────────────────────────────────────────────────────────
@@ -556,7 +629,7 @@ export function buildPcbXml(options: BuildPcbXmlOptions): string {
                 pReportStatus: s.pReportStatus,
                 pDeficiencyRemarks: s.pDeficiencyRemarks,
             });
-            addSoapSubElements(soap, s.subData);
+            addSoapSubElements(soap, s);
         }
     } else {
         const soap = soapsEle.ele("SOAP", {
@@ -574,41 +647,30 @@ export function buildPcbXml(options: BuildPcbXmlOptions): string {
             pReportStatus: "U",
             pDeficiencyRemarks: "",
         });
-        addSoapSubElements(soap, undefined);
+        addSoapSubElements(soap, {} as KonsultaSoapData);
     }
 
     // ── DIAGNOSTICEXAMRESULTS (omitted when empty — DTD requires DIAGNOSTICEXAMRESULT+ if present)
     // pcb.ele("DIAGNOSTICEXAMRESULTS") is intentionally skipped
 
     // ── MEDICINES ────────────────────────────────────────────────────────────
-    pcb.ele("MEDICINES").ele("MEDICINE", {
-        pHciCaseNo: "",
-        pHciTransNo: "",
-        pCategory: "",
-        pDrugCode: "",
-        pGenericCode: "",
-        pSaltCode: "",
-        pStrengthCode: "",
-        pFormCode: "",
-        pUnitCode: "",
-        pPackageCode: "",
-        pOtherMedicine: "",
-        pRoute: "",
-        pQuantity: "",
-        pActualUnitPrice: "",
-        pTotalAmtPrice: "",
-        pInstructionQuantity: "",
-        pInstructionStrength: "",
-        pInstructionFrequency: "",
-        pPrescribingPhysician: "",
-        pIsDispensed: "",
-        pDateDispensed: "",
-        pDispensingPersonnel: "",
-        pIsApplicable: "N",
-        pDateAdded: "",
-        pReportStatus: "U",
-        pDeficiencyRemarks: "",
-    });
+    const medicinesNode = pcb.ele("MEDICINES");
+    if (medicines.length > 0) {
+        for (const medicine of medicines) {
+            medicinesNode.ele("MEDICINE", medicine);
+        }
+    } else {
+        medicinesNode.ele("MEDICINE", {
+            pHciCaseNo: "", pHciTransNo: "", pCategory: "", pDrugCode: "",
+            pGenericCode: "", pSaltCode: "", pStrengthCode: "", pFormCode: "",
+            pUnitCode: "", pPackageCode: "", pOtherMedicine: "", pRoute: "",
+            pQuantity: "", pActualUnitPrice: "", pTotalAmtPrice: "",
+            pInstructionQuantity: "", pInstructionStrength: "", pInstructionFrequency: "",
+            pPrescribingPhysician: "", pIsDispensed: "", pDateDispensed: "",
+            pDispensingPersonnel: "", pIsApplicable: "N", pDateAdded: "",
+            pReportStatus: "U", pDeficiencyRemarks: "",
+        });
+    }
 
     // ── DOCUMENTS ────────────────────────────────────────────────────────────
     pcb.ele("DOCUMENTS").ele("DOCUMENT", {

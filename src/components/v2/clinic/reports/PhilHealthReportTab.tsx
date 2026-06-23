@@ -31,6 +31,7 @@ import {
 	useCallback,
 	useEffect,
 	useLayoutEffect,
+	useMemo,
 	useRef,
 	useState,
 	useTransition,
@@ -63,6 +64,10 @@ import {
 	verifyKonsultaAtcByPinAction,
 	verifyKonsultaMemberDependentRegistrationAction,
 } from "@/actions/clinics/konsulta-report.action";
+import {
+    extractGeneratedKonsultaBatchDeficiencies,
+    type StructuredKonsultaBatchDeficiency,
+} from "@/lib/konsulta-batch-deficiencies";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -147,6 +152,51 @@ const BATCH_STATUS_VARIANTS: Record<
 	SUBMITTED: "default",
 	FAILED: "destructive",
 };
+
+type GeneratedBatchDeficiency = StructuredKonsultaBatchDeficiency;
+
+function groupGeneratedDeficiencies(deficiencies: GeneratedBatchDeficiency[]) {
+    return Array.from(
+        deficiencies.reduce<
+            Map<
+                string,
+                {
+                    domainKey: string;
+                    domainLabel: string;
+                    entries: Map<
+                        number,
+                        {
+                            batchEntryId: number;
+                            patientName: string;
+                            philHealthPin: string;
+                            items: GeneratedBatchDeficiency[];
+                        }
+                    >;
+                }
+            >
+        >((groups, deficiency) => {
+            const domainGroup = groups.get(deficiency.domainKey) ?? {
+                domainKey: deficiency.domainKey,
+                domainLabel: deficiency.domainLabel,
+                entries: new Map(),
+            };
+            const entryGroup = domainGroup.entries.get(deficiency.batchEntryId) ?? {
+                batchEntryId: deficiency.batchEntryId,
+                patientName: deficiency.patientName,
+                philHealthPin: deficiency.philHealthPin,
+                items: [],
+            };
+
+            entryGroup.items.push(deficiency);
+            domainGroup.entries.set(deficiency.batchEntryId, entryGroup);
+            groups.set(deficiency.domainKey, domainGroup);
+            return groups;
+        }, new Map()),
+    ).map(([, domainGroup]) => ({
+        ...domainGroup,
+        entries: Array.from(domainGroup.entries.values()),
+    }));
+}
 
 function formatPeriod(period: string): string {
 	if (period.length !== 6) return period;
@@ -2891,6 +2941,9 @@ function BatchesPanel({ clinicUid }: { clinicUid: string }) {
 						const canValidate = ["GENERATED", "FAILED"].includes(batch.status);
 						const canSubmit = batch.status === "VALIDATED";
 						const canDelete = batch.status !== "SUBMITTED";
+						const generatedDeficiencies = extractGeneratedKonsultaBatchDeficiencies(
+							batch.validateResult,
+						);
 
 						return (
 							<Card key={batch.batchUid}>
@@ -3030,11 +3083,30 @@ function BatchesPanel({ clinicUid }: { clinicUid: string }) {
 
 								{isExpanded && (
 									<CardContent>
+										{batch.errorMessage && (
+											<Alert className="mb-4">
+												<AlertCircle className="h-4 w-4" />
+												<AlertTitle>
+													{generatedDeficiencies.length > 0
+														? "Mapping deficiencies to review"
+														: "Batch issue"}
+												</AlertTitle>
+												<AlertDescription className="space-y-1 whitespace-pre-wrap">
+													{batch.errorMessage.trim()}
+												</AlertDescription>
+											</Alert>
+										)}
+										{generatedDeficiencies.length > 0 && (
+											<BatchDeficiencyPanel
+												deficiencies={generatedDeficiencies}
+											/>
+										)}
 										<BatchEntryTable
 											entries={batch.KonsultaEntries}
 											batchUid={batch.batchUid}
 											readOnly={batch.status === "SUBMITTED"}
 											onToggle={handleToggleEntry}
+											deficiencies={generatedDeficiencies}
 										/>
 										{batch.xmlPayload &&
 											!batch.validateResult &&
@@ -3100,17 +3172,156 @@ function BatchesPanel({ clinicUid }: { clinicUid: string }) {
 
 type EntryRow = Batch["KonsultaEntries"][number];
 
+function BatchDeficiencyPanel({
+    deficiencies,
+}: {
+    deficiencies: GeneratedBatchDeficiency[];
+}) {
+    const [selectedDomain, setSelectedDomain] = useState<string>("all");
+    const [patientQuery, setPatientQuery] = useState("");
+
+    const groupedDeficiencies = useMemo(() => {
+        const normalizedPatientQuery = patientQuery.trim().toLowerCase();
+        const filtered = deficiencies.filter((deficiency) => {
+            const matchesDomain =
+                selectedDomain === "all" || deficiency.domainKey === selectedDomain;
+            const matchesPatient =
+                normalizedPatientQuery.length === 0 ||
+                deficiency.patientName.toLowerCase().includes(normalizedPatientQuery) ||
+                deficiency.philHealthPin.toLowerCase().includes(normalizedPatientQuery);
+            return matchesDomain && matchesPatient;
+        });
+        return groupGeneratedDeficiencies(filtered);
+    }, [deficiencies, patientQuery, selectedDomain]);
+
+    return (
+        <div className="mb-4 rounded-lg border bg-muted/20 p-4">
+            <div className="mb-3 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+                <div>
+                    <h4 className="text-sm font-semibold text-foreground">
+                        Grouped mapping deficiencies
+                    </h4>
+                    <p className="text-xs text-muted-foreground">
+                        Review missing mappings by domain and affected batch entry before validation.
+                    </p>
+                </div>
+                <div className="grid gap-2 sm:grid-cols-2">
+                    <div className="space-y-1">
+                        <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                            Domain
+                        </Label>
+                        <Select value={selectedDomain} onValueChange={setSelectedDomain}>
+                            <SelectTrigger className="h-8 text-xs">
+                                <SelectValue placeholder="All domains" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All domains</SelectItem>
+                                {Array.from(
+                                    new Map(
+                                        deficiencies.map((deficiency) => [
+                                            deficiency.domainKey,
+                                            deficiency.domainLabel,
+                                        ]),
+                                    ).entries(),
+                                ).map(([domainKey, domainLabel]) => (
+                                    <SelectItem key={domainKey} value={domainKey}>
+                                        {domainLabel}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="space-y-1">
+                        <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                            Patient / PIN
+                        </Label>
+                        <Input
+                            value={patientQuery}
+                            onChange={(event) => setPatientQuery(event.target.value)}
+                            placeholder="Filter by patient or PIN"
+                            className="h-8 text-xs"
+                        />
+                    </div>
+                </div>
+            </div>
+
+            {groupedDeficiencies.length === 0 ? (
+                <p className="text-xs text-muted-foreground">
+                    No deficiencies match the current filters.
+                </p>
+            ) : (
+                <div className="space-y-3">
+                    {groupedDeficiencies.map((group: any) => (
+                        <div key={group.domainKey} className="rounded-md border bg-background">
+                            <div className="flex items-center justify-between border-b px-3 py-2">
+                                <div className="text-sm font-medium">{group.domainLabel}</div>
+                                <Badge variant="secondary" className="text-[10px]">
+                                    {group.entries.reduce(
+                                        (count: number, entry: any) => count + entry.items.length,
+                                        0,
+                                    )}{" "}
+                                    issue(s)
+                                </Badge>
+                            </div>
+                            <div className="divide-y">
+                                {group.entries.map((entry: any) => (
+                                    <div key={entry.batchEntryId} className="space-y-2 px-3 py-3">
+                                        <div className="flex flex-wrap items-center gap-2 text-xs">
+                                            <span className="font-medium text-foreground">
+                                                {entry.patientName}
+                                            </span>
+                                            <code className="rounded bg-muted px-1.5 py-0.5 text-[11px]">
+                                                {entry.philHealthPin}
+                                            </code>
+                                            <Badge variant="outline" className="text-[10px]">
+                                                Entry #{entry.batchEntryId}
+                                            </Badge>
+                                        </div>
+                                        <ul className="space-y-1 text-xs text-muted-foreground">
+                                            {entry.items.map((item: any, index: number) => (
+                                                <li key={`${item.batchEntryId}-${index}`}>
+                                                    <span className="font-medium text-foreground">
+                                                        {item.itemLabel}
+                                                    </span>
+                                                    {": "}
+                                                    {item.message}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
+
 function BatchEntryTable({
 	entries,
 	batchUid,
 	readOnly,
 	onToggle,
+	deficiencies,
 }: {
 	entries: EntryRow[];
 	batchUid: string;
 	readOnly: boolean;
 	onToggle: (entryId: number, included: boolean, batchUid: string) => void;
+	deficiencies: GeneratedBatchDeficiency[];
 }) {
+	const deficiencyCountByEntryId = deficiencies.reduce<Map<number, number>>(
+		(counts, deficiency) => {
+			counts.set(
+				deficiency.batchEntryId,
+				(counts.get(deficiency.batchEntryId) ?? 0) + 1,
+			);
+			return counts;
+		},
+		new Map(),
+	);
 	if (entries.length === 0) {
 		return (
 			<p className="text-sm text-muted-foreground">No entries in this batch.</p>
@@ -3136,6 +3347,7 @@ function BatchEntryTable({
 							.filter(Boolean)
 							.join(" ") || "—";
 					const consultCount = e.consultationIds?.length ?? 0;
+					const deficiencyCount = deficiencyCountByEntryId.get(e.id) ?? 0;
 					return (
 						<TableRow key={e.id} className={e.included ? "" : "opacity-50"}>
 							<TableCell>
@@ -3148,9 +3360,20 @@ function BatchEntryTable({
 							</TableCell>
 							<TableCell>
 								<div className="font-medium text-sm">{name}</div>
-								<code className="text-xs text-muted-foreground">
-									{e.philHealthPin}
-								</code>
+								<div className="flex flex-wrap items-center gap-2">
+									<code className="text-xs text-muted-foreground">
+										{e.philHealthPin}
+									</code>
+									{deficiencyCount > 0 && (
+										<Badge
+											variant="outline"
+											className="text-[10px] text-amber-700"
+										>
+											{deficiencyCount} mapping issue
+											{deficiencyCount !== 1 ? "s" : ""}
+										</Badge>
+									)}
+								</div>
 							</TableCell>
 							<TableCell>
 								<Badge variant="outline" className="text-xs">
@@ -3955,6 +4178,13 @@ function SubmissionHistoryPanel({ clinicUid }: { clinicUid: string }) {
 	const [batches, setBatches] = useState<Batch[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [selected, setSelected] = useState<Batch | null>(null);
+	const selectedGeneratedDeficiencies = useMemo(
+		() =>
+			selected
+				? extractGeneratedKonsultaBatchDeficiencies(selected.validateResult)
+				: [],
+		[selected],
+	);
 
 	const load = useCallback(async () => {
 		setLoading(true);
@@ -4078,6 +4308,11 @@ function SubmissionHistoryPanel({ clinicUid }: { clinicUid: string }) {
 							</DialogDescription>
 						</DialogHeader>
 						<div className="space-y-3 max-h-[60vh] overflow-y-auto">
+							{selectedGeneratedDeficiencies.length > 0 && (
+								<BatchDeficiencyPanel
+									deficiencies={selectedGeneratedDeficiencies}
+								/>
+							)}
 							{selected.validateResult && (
 								<BatchResultSummary
 									label="Validation Response"

@@ -1,10 +1,10 @@
 "use server";
 
 import "server-only";
-import prisma from "@/lib/prisma";
 import { getCachedSession } from "@/actions/session.action";
 import { requireClinicPermission } from "@/lib/permission-checker";
 import { PERMISSIONS } from "@/lib/permissions";
+import prisma from "@/lib/prisma";
 import type { SerializedPatientHealthRecordsResponse } from "@/types/patient-profile";
 
 /**
@@ -29,7 +29,7 @@ export async function getClinicPatientProfileAction({
             session.user.sub,
             clinicUid,
             PERMISSIONS.CLINIC["READ:CLINIC:PATIENT:ALL"].name,
-            "view patient record"
+            "view patient record",
         );
 
         // Verify clinic<->patient link is active
@@ -245,7 +245,8 @@ export async function getClinicPatientProfileAction({
             firstName: patient.firstName,
             lastName: patient.lastName,
             middleName: patient.middleName,
-            fullName: `${patient.firstName ?? ""} ${patient.middleName ? patient.middleName + " " : ""}${patient.lastName ?? ""}`.trim(),
+            fullName:
+                `${patient.firstName ?? ""} ${patient.middleName ? `${patient.middleName} ` : ""}${patient.lastName ?? ""}`.trim(),
             picture: patient.picture,
             email: patient.email,
             mobile: patient.mobile,
@@ -253,8 +254,8 @@ export async function getClinicPatientProfileAction({
             dob: patient.dob ? patient.dob.toISOString() : null,
             age: patient.dob
                 ? Math.floor(
-                    (new Date().getTime() - new Date(patient.dob).getTime()) /
-                    (365.25 * 24 * 60 * 60 * 1000)
+                    (Date.now() - new Date(patient.dob).getTime()) /
+                    (365.25 * 24 * 60 * 60 * 1000),
                 )
                 : null,
             gender: patient.gender,
@@ -308,7 +309,9 @@ export async function getClinicPatientProfileAction({
                     dateTaken: vitals[0].dateTaken.toISOString(),
                     createdAt: vitals[0].createdAt.toISOString(),
                     updatedAt: vitals[0].updatedAt.toISOString(),
-                    deletedAt: vitals[0].deletedAt ? vitals[0].deletedAt.toISOString() : null,
+                    deletedAt: vitals[0].deletedAt
+                        ? vitals[0].deletedAt.toISOString()
+                        : null,
                 }
                 : null,
 
@@ -336,11 +339,21 @@ export async function getClinicPatientProfileAction({
                 userId: p.userId,
                 dateTaken: p.dateTaken.toISOString(),
                 length: p.length ? Number(p.length) : null,
-                headCircumference: p.headCircumference ? Number(p.headCircumference) : null,
-                skinfoldThickness: p.skinfoldThickness ? Number(p.skinfoldThickness) : null,
-                waistCircumference: p.waistCircumference ? Number(p.waistCircumference) : null,
-                hipCircumference: p.hipCircumference ? Number(p.hipCircumference) : null,
-                limbCircumference: p.limbCircumference ? Number(p.limbCircumference) : null,
+                headCircumference: p.headCircumference
+                    ? Number(p.headCircumference)
+                    : null,
+                skinfoldThickness: p.skinfoldThickness
+                    ? Number(p.skinfoldThickness)
+                    : null,
+                waistCircumference: p.waistCircumference
+                    ? Number(p.waistCircumference)
+                    : null,
+                hipCircumference: p.hipCircumference
+                    ? Number(p.hipCircumference)
+                    : null,
+                limbCircumference: p.limbCircumference
+                    ? Number(p.limbCircumference)
+                    : null,
                 midUpperArmCircumference: p.midUpperArmCircumference
                     ? Number(p.midUpperArmCircumference)
                     : null,
@@ -356,7 +369,9 @@ export async function getClinicPatientProfileAction({
                     ...personal,
                     createdAt: personal.createdAt.toISOString(),
                     updatedAt: personal.updatedAt.toISOString(),
-                    deletedAt: personal.deletedAt ? personal.deletedAt.toISOString() : null,
+                    deletedAt: personal.deletedAt
+                        ? personal.deletedAt.toISOString()
+                        : null,
                 }
                 : null,
 

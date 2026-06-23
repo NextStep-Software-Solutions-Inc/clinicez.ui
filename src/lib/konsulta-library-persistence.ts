@@ -1,5 +1,3 @@
-"use server";
-
 import "server-only";
 
 import { promises as fs } from "node:fs";

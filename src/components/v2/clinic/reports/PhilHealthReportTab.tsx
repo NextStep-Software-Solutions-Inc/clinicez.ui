@@ -47,6 +47,7 @@ import {
 	checkEnrolledPatientsRegistrationBatchAction,
 	checkKonsultaPatientRegistrationAction,
 	createKonsultaBatchAction,
+    extractRegistrationListAction,
 	deleteKonsultaBatchAction,
 	enrollPatientPhilHealthAction,
 	generateBatchXmlAction,
@@ -106,6 +107,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { ExtractRegistrationPanel } from "./ExtractRegistrationPanel";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -239,6 +241,7 @@ const VALID_TABS = [
 	"consultations",
 	"batches",
 	"history",
+	"extract-registration",
 	"atc-verification",
 	"konsulta-validation",
 	"xml-import",
@@ -290,6 +293,13 @@ export function PhilHealthReportTab({ clinicUid }: PhilHealthReportTabProps) {
 						Submission History
 					</TabsTrigger>
 					<TabsTrigger
+						value="extract-registration"
+						className="gap-2 whitespace-nowrap"
+					>
+						<RefreshCw className="h-4 w-4" />
+						Extract Registration List
+					</TabsTrigger>
+					<TabsTrigger
 						value="atc-verification"
 						className="gap-2 whitespace-nowrap"
 					>
@@ -321,6 +331,9 @@ export function PhilHealthReportTab({ clinicUid }: PhilHealthReportTabProps) {
 			</TabsContent>
 			<TabsContent value="history" className="min-w-0">
 				<SubmissionHistoryPanel clinicUid={clinicUid} />
+			</TabsContent>
+			<TabsContent value="extract-registration">
+				<ExtractRegistrationPanel clinicUid={clinicUid} />
 			</TabsContent>
 			<TabsContent value="atc-verification">
 				<AtcVerificationPanel clinicUid={clinicUid} />
@@ -1082,9 +1095,12 @@ function ConsultationsPanel({ clinicUid }: { clinicUid: string }) {
 	const [atcTarget, setAtcTarget] = useState<Consultation | null>(null);
 	const [atc, setAtc] = useState("");
 	const [atcLoading, setAtcLoading] = useState(false);
+	const [isWalkIn, setIsWalkIn] = useState(false);
 	const [generateTarget, setGenerateTarget] = useState<Consultation | null>(
 		null,
 	);
+
+	console.log({atcTarget})
 	const [generateLoading, setGenerateLoading] = useState(false);
 	const [from, setFrom] = useState(() => {
 		const d = new Date();
@@ -1111,15 +1127,15 @@ function ConsultationsPanel({ clinicUid }: { clinicUid: string }) {
 
 	async function handleValidateAtc() {
 		if (!atcTarget) return;
-		if (!atc.trim()) {
-			toast.error("ATC is required");
+		if (!isWalkIn && !atc.trim()) {
+			toast.error("ATC code is required if not a walk-in patient");
 			return;
 		}
 		setAtcLoading(true);
 		const res = await validateKonsultaAtcAction({
 			clinicUid,
 			consultationTicketId: atcTarget.id,
-			atc,
+			atc: isWalkIn ? "WALKEDIN" : atc.trim(),
 		});
 		setAtcLoading(false);
 		if (res.status) {
@@ -1248,10 +1264,12 @@ function ConsultationsPanel({ clinicUid }: { clinicUid: string }) {
 										const patient =
 											c.ClinicPatient?.Patient ??
 											c.Appointment?.Requesters[0]?.User;
-										const pin = patient?.PhilHealthRecords[0]?.pin;
+										const cp = c.ClinicPatient ?? c.Appointment?.Requesters[0]?.User?.ClinicPatients?.[0];
+										const pin = cp?.konsultaPatientPin || patient?.PhilHealthRecords[0]?.pin;
 										const primary = c.ConsultationDiagnoses.find(
 											(d) => d.type === "PRIMARY",
 										);
+										console.log({patient, pin, c})
 										const hp =
 											c.ConsultationTicketHPs[0]?.HealthCareProvider?.User;
 										const ready =
@@ -1300,16 +1318,20 @@ function ConsultationsPanel({ clinicUid }: { clinicUid: string }) {
 												<TableCell>
 													<Badge
 														variant={
-															c.konsultaAtcValidationStatus === "VALID"
+															c.konsultaIsWalkedIn
 																? "default"
-																: c.konsultaAtcValidationStatus === "INVALID"
-																	? "destructive"
-																	: "outline"
+																: c.konsultaAtcValidationStatus === "VALID"
+																	? "default"
+																	: c.konsultaAtcValidationStatus === "INVALID"
+																		? "destructive"
+																		: "outline"
 														}
 														className="text-xs"
 													>
-														{c.konsultaAtcValidationStatus ??
-															(c.konsultaAtc ? "Pending" : "No ATC")}
+														{c.konsultaIsWalkedIn
+															? "Walked In"
+															: c.konsultaAtcValidationStatus ??
+																(c.konsultaAtc ? "Pending" : "No ATC")}
 													</Badge>
 												</TableCell>
 												<TableCell>
@@ -1336,11 +1358,13 @@ function ConsultationsPanel({ clinicUid }: { clinicUid: string }) {
 															variant="outline"
 															className="h-8 text-xs"
 															onClick={() => {
+																console.log({c})
 																setAtcTarget(c);
-																setAtc(c.konsultaAtc ?? "");
+																setAtc(c.konsultaAtc === "WALKEDIN" ? "" : (c.konsultaAtc ?? ""));
+																setIsWalkIn(c.konsultaIsWalkedIn || c.Appointment?.AppointmentAttribute?.isWalkIn || false);
 															}}
 														>
-															Validate ATC
+															Validate
 														</Button>
 													)}
 												</TableCell>
@@ -1367,14 +1391,57 @@ function ConsultationsPanel({ clinicUid }: { clinicUid: string }) {
 							appointment date.
 						</DialogDescription>
 					</DialogHeader>
-					<div className="space-y-2 py-2">
-						<Label htmlFor="konsulta-atc">ATC</Label>
-						<Input
-							id="konsulta-atc"
-							value={atc}
-							onChange={(e) => setAtc(e.target.value.toUpperCase())}
-							placeholder="12-character ATC"
-						/>
+					{(() => {
+						const cp = atcTarget?.ClinicPatient ?? atcTarget?.Appointment?.Requesters[0]?.User?.ClinicPatients?.[0];
+						if (cp?.konsultaPatientType) {
+							const isDependent = cp.konsultaPatientType === "DD";
+							const patientPin = cp.konsultaPatientPin || atcTarget?.Appointment?.Requesters[0]?.User?.PhilHealthRecords?.[0]?.pin || atcTarget?.ClinicPatient?.Patient?.PhilHealthRecords?.[0]?.pin || "Not specified";
+							return (
+								<div className="rounded-md border p-3 bg-muted/50 text-sm space-y-1 mt-2">
+									{isDependent && (
+										<div className="flex justify-between items-center">
+											<span className="text-muted-foreground">Dependent PIN:</span>
+											<span className="font-mono font-medium">{patientPin}</span>
+										</div>
+									)}
+									<div className="flex justify-between items-center">
+										<span className="text-muted-foreground">{isDependent ? "Primary/Member PIN:" : "Member PIN:"}</span>
+										<span className="font-mono font-medium">{cp.konsultaMemberPin || (!isDependent ? patientPin : "Not specified")}</span>
+									</div>
+								</div>
+							);
+						}
+						return null;
+					})()}
+					<div className="space-y-4 py-2">
+						<div className="flex items-center space-x-2">
+							<Checkbox
+								id="walkin-patient"
+								checked={isWalkIn}
+								onCheckedChange={(checked) => {
+									setIsWalkIn(!!checked);
+									if (checked) setAtc("");
+								}}
+							/>
+							<Label htmlFor="walkin-patient" className="font-medium">
+								Patient is a Walk-in (No ATC)
+							</Label>
+						</div>
+						<div className="space-y-2">
+							<Label
+								htmlFor="konsulta-atc"
+								className={isWalkIn ? "text-muted-foreground" : ""}
+							>
+								ATC Code
+							</Label>
+							<Input
+								id="konsulta-atc"
+								value={atc}
+								onChange={(e) => setAtc(e.target.value.toUpperCase())}
+								placeholder="12-character ATC"
+								disabled={isWalkIn}
+							/>
+						</div>
 					</div>
 					<DialogFooter>
 						<Button
@@ -1520,13 +1587,13 @@ function AtcVerificationPanel({ clinicUid }: { clinicUid: string }) {
 	};
 
 	return (
-		<Card>
-			<CardHeader className="pb-3">
-				<CardTitle className="text-sm flex items-center gap-2">
-					<ShieldCheck className="h-4 w-4 text-primary" />
+		<Card className="border-primary/20 shadow-sm backdrop-blur-sm bg-background/95">
+			<CardHeader>
+				<CardTitle className="text-xl flex items-center gap-2">
+					<ShieldCheck className="h-5 w-5 text-primary" />
 					ATC Verification
 				</CardTitle>
-				<CardDescription className="mt-1">
+				<CardDescription>
 					Verify ATC using Konsulta Kit 1.1 SOAP method{" "}
 					<code>isATCValid(pPIN, pATC, pEffectivityDate)</code>.
 				</CardDescription>
@@ -1534,47 +1601,50 @@ function AtcVerificationPanel({ clinicUid }: { clinicUid: string }) {
 			<CardContent>
 				<form
 					onSubmit={handleSubmit}
-					className="mx-auto w-full max-w-2xl space-y-4"
+					className="flex flex-col md:flex-row items-end gap-4 max-w-4xl"
 				>
-					<div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-						<div className="space-y-2 sm:col-span-2">
-							<Label htmlFor="atc-pin">Patient PIN</Label>
+					<div className="flex flex-col md:flex-row items-end gap-4 w-full flex-1">
+						<div className="space-y-1.5 flex-1 w-full">
+							<Label htmlFor="atc-pin" className="text-muted-foreground font-medium">Patient PIN</Label>
 							<Input
 								id="atc-pin"
 								value={pin}
 								onChange={(event) => setPin(event.target.value)}
 								placeholder="Enter patient PIN"
+								className="w-full shadow-sm"
 							/>
 						</div>
-						<div className="space-y-2">
-							<Label htmlFor="atc-code">ATC</Label>
+						<div className="space-y-1.5 flex-1 w-full">
+							<Label htmlFor="atc-code" className="text-muted-foreground font-medium">ATC</Label>
 							<Input
 								id="atc-code"
 								value={atc}
 								onChange={(event) => setAtc(event.target.value.toUpperCase())}
 								placeholder="Enter ATC code"
+								className="w-full shadow-sm"
 							/>
 						</div>
-						<div className="space-y-2">
-							<Label htmlFor="atc-validity">Validity Date</Label>
+						<div className="space-y-1.5 flex-1 w-full">
+							<Label htmlFor="atc-validity" className="text-muted-foreground font-medium">Validity Date</Label>
 							<Input
 								id="atc-validity"
 								type="date"
 								value={validityDate}
 								onChange={(event) => setValidityDate(event.target.value)}
+								className="w-full shadow-sm"
 							/>
 						</div>
 					</div>
 					<Button
 						type="submit"
-						className="w-full sm:w-auto"
+						className="w-full md:w-auto min-w-[140px] shadow-sm"
 						disabled={isVerifying}
 					>
 						{isVerifying ? (
-							<span className="inline-flex items-center">
+							<>
 								<Loader2 className="mr-2 h-4 w-4 animate-spin" />
 								Verifying...
-							</span>
+							</>
 						) : (
 							"Verify"
 						)}
@@ -1659,13 +1729,13 @@ function KonsultaValidationPanel({ clinicUid }: { clinicUid: string }) {
 	};
 
 	return (
-		<Card>
-			<CardHeader className="pb-3">
-				<CardTitle className="text-sm flex items-center gap-2">
-					<ShieldCheck className="h-4 w-4 text-primary" />
+		<Card className="border-primary/20 shadow-sm backdrop-blur-sm bg-background/95">
+			<CardHeader>
+				<CardTitle className="text-xl flex items-center gap-2">
+					<ShieldCheck className="h-5 w-5 text-primary" />
 					Konsulta Registration Validation
 				</CardTitle>
-				<CardDescription className="mt-1">
+				<CardDescription>
 					Verify registration using Konsulta Kit 1.1 SOAP method{" "}
 					<code>isMemberDependentRegistered(pPin, pType)</code>.
 				</CardDescription>
@@ -1673,16 +1743,16 @@ function KonsultaValidationPanel({ clinicUid }: { clinicUid: string }) {
 			<CardContent>
 				<form
 					onSubmit={handleSubmit}
-					className="mx-auto w-full max-w-2xl space-y-4"
+					className="flex flex-col md:flex-row items-end gap-4 max-w-4xl"
 				>
-					<div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-						<div className="space-y-2 sm:col-span-2">
-							<Label htmlFor="konsulta-member-type">Member Type</Label>
+					<div className="flex flex-col md:flex-row items-end gap-4 w-full flex-1">
+						<div className="space-y-1.5 flex-1 w-full">
+							<Label htmlFor="konsulta-member-type" className="text-muted-foreground font-medium">Member Type</Label>
 							<Select
 								value={memberType}
 								onValueChange={(value: "MM" | "DD") => setMemberType(value)}
 							>
-								<SelectTrigger id="konsulta-member-type">
+								<SelectTrigger id="konsulta-member-type" className="w-full shadow-sm">
 									<SelectValue />
 								</SelectTrigger>
 								<SelectContent>
@@ -1691,37 +1761,39 @@ function KonsultaValidationPanel({ clinicUid }: { clinicUid: string }) {
 								</SelectContent>
 							</Select>
 						</div>
-						<div className="space-y-2">
-							<Label htmlFor="konsulta-member-pin">Member PIN</Label>
+						<div className="space-y-1.5 flex-1 w-full">
+							<Label htmlFor="konsulta-member-pin" className="text-muted-foreground font-medium">Member PIN</Label>
 							<Input
 								id="konsulta-member-pin"
 								value={memberPin}
 								onChange={(event) => setMemberPin(event.target.value)}
 								placeholder="Enter member PIN"
+								className="w-full shadow-sm"
 							/>
 						</div>
 						{memberType === "DD" && (
-							<div className="space-y-2">
-								<Label htmlFor="konsulta-dependent-pin">Dependent PIN</Label>
+							<div className="space-y-1.5 flex-1 w-full">
+								<Label htmlFor="konsulta-dependent-pin" className="text-muted-foreground font-medium">Dependent PIN</Label>
 								<Input
 									id="konsulta-dependent-pin"
 									value={dependentPin}
 									onChange={(event) => setDependentPin(event.target.value)}
 									placeholder="Enter dependent PIN"
+									className="w-full shadow-sm"
 								/>
 							</div>
 						)}
 					</div>
 					<Button
 						type="submit"
-						className="w-full sm:w-auto"
+						className="w-full md:w-auto min-w-[140px] shadow-sm"
 						disabled={isVerifying}
 					>
 						{isVerifying ? (
-							<span className="inline-flex items-center">
+							<>
 								<Loader2 className="mr-2 h-4 w-4 animate-spin" />
 								Verifying...
-							</span>
+							</>
 						) : (
 							"Verify"
 						)}

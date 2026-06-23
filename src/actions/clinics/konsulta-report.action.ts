@@ -563,6 +563,7 @@ export const enrollPatientPhilHealthAction = withErrorHandling(
                     where: { id: clinicPatient.id },
                     data: {
                         konsultaPatientType: patientType,
+                        konsultaPatientPin: normalizedPin,
                         konsultaMemberPin:
                             patientType === "MM" ? normalizedPin : memberPin?.trim() || null,
                         konsultaEffYear: effYear,
@@ -1328,6 +1329,7 @@ export const getPhilHealthConsultationsAction = withErrorHandling(
                 konsultaHciCaseNo: true,
                 konsultaHciTransNo: true,
                 konsultaAtc: true,
+                konsultaIsWalkedIn: true,
                 konsultaAtcValidationStatus: true,
                 konsultaAtcValidatedAt: true,
                 createdAt: true,
@@ -1353,6 +1355,19 @@ export const getPhilHealthConsultationsAction = withErrorHandling(
                                             },
                                             take: 1,
                                         },
+                                        ClinicPatients: {
+                                            where: {
+                                                clinicId,
+                                                konsultaEffYear: effYear,
+                                                isActive: true,
+                                            },
+                                            select: {
+                                                konsultaPatientType: true,
+                                                konsultaPatientPin: true,
+                                                konsultaMemberPin: true,
+                                            },
+                                            take: 1,
+                                        },
                                     },
                                 },
                             },
@@ -1366,6 +1381,7 @@ export const getPhilHealthConsultationsAction = withErrorHandling(
                         konsultaEffYear: true,
                         konsultaRegistrationStatus: true,
                         konsultaPatientType: true,
+                        konsultaPatientPin: true,
                         konsultaMemberPin: true,
                         Patient: {
                             select: {
@@ -1457,10 +1473,28 @@ export const validateKonsultaAtcAction = withErrorHandling(
                 id: true,
                 createdAt: true,
                 Appointment: {
-                    select: { AppointmentAttribute: { select: { date: true } } },
+                    select: { 
+                        AppointmentAttribute: { select: { date: true } },
+                        Requesters: {
+                            select: {
+                                User: {
+                                    select: {
+                                        PhilHealthRecords: {
+                                            where: { deletedAt: null },
+                                            select: { pin: true },
+                                            take: 1,
+                                        },
+                                    },
+                                },
+                            },
+                            take: 1,
+                        },
+                    },
                 },
                 ClinicPatient: {
                     select: {
+                        konsultaPatientPin: true,
+                        konsultaMemberPin: true,
                         Patient: {
                             select: {
                                 PhilHealthRecords: {
@@ -1475,11 +1509,34 @@ export const validateKonsultaAtcAction = withErrorHandling(
             },
         });
         if (!consultation) throw new Error("Consultation not found");
-        const pin = consultation.ClinicPatient?.Patient.PhilHealthRecords[0]?.pin;
-        if (!pin) throw new Error("Patient has no PhilHealth PIN.");
-        // Konsulta Kit 1.1 examples and service usage expect ATC token values in uppercase form.
+
         const normalizedAtc = atc.trim().toUpperCase();
         if (!normalizedAtc) throw new Error("ATC is required.");
+
+        if (normalizedAtc === "WALKEDIN") {
+            await prisma.consultationTicket.update({
+                where: { id: consultation.id },
+                data: {
+                    konsultaAtc: "WALKEDIN",
+                    konsultaIsWalkedIn: true,
+                    konsultaAtcValidationStatus: "VALID",
+                    konsultaAtcValidatedAt: new Date(),
+                    konsultaAtcValidationResult: { result: "Walk-in patient (No ATC verification required)" },
+                },
+            });
+            return {
+                message: "Walk-in patient saved",
+                data: { validationStatus: "VALID", validationResult: { result: "Walk-in patient (No ATC verification required)" } },
+            };
+        }
+
+        const pin =
+            consultation.ClinicPatient?.konsultaPatientPin ||
+            consultation.ClinicPatient?.Patient.PhilHealthRecords[0]?.pin ||
+            consultation.ClinicPatient?.konsultaMemberPin ||
+            consultation.Appointment?.Requesters[0]?.User.PhilHealthRecords[0]?.pin;
+            
+        if (!pin) throw new Error("Patient has no PhilHealth PIN.");
 
         const effectivityDate = (
             consultation.Appointment?.AppointmentAttribute?.date ??
@@ -1504,6 +1561,7 @@ export const validateKonsultaAtcAction = withErrorHandling(
             where: { id: consultation.id },
             data: {
                 konsultaAtc: normalizedAtc,
+                konsultaIsWalkedIn: false,
                 konsultaAtcValidationStatus: validationStatus,
                 konsultaAtcValidatedAt: new Date(),
                 konsultaAtcValidationResult: validationResult,
@@ -1785,6 +1843,7 @@ export const createKonsultaBatchAction = withErrorHandling(
                 id: true,
                 patientId: true,
                 konsultaPatientType: true,
+                konsultaPatientPin: true,
                 konsultaMemberPin: true,
                 Patient: {
                     select: {
@@ -1878,7 +1937,7 @@ export const createKonsultaBatchAction = withErrorHandling(
 
             // Build entries
             const entries = eligiblePatients.map((patient) => {
-                const pin = patient.Patient.PhilHealthRecords[0]?.pin ?? "";
+                const pin = patient.konsultaPatientPin || patient.Patient.PhilHealthRecords[0]?.pin || "";
                 const memberType = (
                     patient.konsultaPatientType === "DD" ? "DD" : "MM"
                 ) as KonsultaPatientType;
@@ -2048,967 +2107,970 @@ export const generateBatchXmlAction = withErrorHandling(
                 },
             },
         });
-    if (!batch) throw new Error("Batch not found");
-    if (batch.status === "SUBMITTED") throw new Error("Batch already submitted.");
+        if (!batch) throw new Error("Batch not found");
+        if (batch.status === "SUBMITTED") throw new Error("Batch already submitted.");
 
-    // Validate that entries exist
-    if (batch.KonsultaEntries.length === 0) {
-        throw new Error("No patients selected for this batch.");
-    }
-
-    // Validate patient profiles have required information
-    for (const entry of batch.KonsultaEntries) {
-        const p = entry.Patient;
-        if (!p.firstName || !p.lastName) {
-            throw new Error(`Patient ${p.id} is missing required name information (First Name and Last Name).`);
+        // Validate that entries exist
+        if (batch.KonsultaEntries.length === 0) {
+            throw new Error("No patients selected for this batch.");
         }
-        if (!p.dob) {
-            throw new Error(`Patient ${p.firstName} ${p.lastName} is missing date of birth.`);
-        }
-        if (!p.gender) {
-            throw new Error(`Patient ${p.firstName} ${p.lastName} is missing gender information.`);
-        }
-        if (!entry.philHealthPin) {
-            throw new Error(`Patient ${p.firstName} ${p.lastName} is missing PhilHealth PIN.`);
-        }
-        if (!entry.memberType || (entry.memberType !== "MM" && entry.memberType !== "DD")) {
-            throw new Error(`Patient ${p.firstName} ${p.lastName} is missing or has invalid member type. Must be MM or DD.`);
-        }
-    }
 
-    try {
-        const credentials = await getClinicKonsultaCredentials(batch.clinicId);
-        const seq = Math.floor(Date.now() / 1000) % 99999;
-        const transmittalNo = generateTransmittalNumber(
-            credentials.hciAccreNo,
-            seq,
-        );
+        // Validate patient profiles have required information
+        for (const entry of batch.KonsultaEntries) {
+            const p = entry.Patient;
+            if (!p.firstName || !p.lastName) {
+                throw new Error(`Patient ${p.id} is missing required name information (First Name and Last Name).`);
+            }
+            if (!p.dob) {
+                throw new Error(`Patient ${p.firstName} ${p.lastName} is missing date of birth.`);
+            }
+            if (!p.gender) {
+                throw new Error(`Patient ${p.firstName} ${p.lastName} is missing gender information.`);
+            }
+            if (!entry.philHealthPin) {
+                throw new Error(`Patient ${p.firstName} ${p.lastName} is missing PhilHealth PIN.`);
+            }
+            if (!entry.memberType || (entry.memberType !== "MM" && entry.memberType !== "DD")) {
+                throw new Error(`Patient ${p.firstName} ${p.lastName} is missing or has invalid member type. Must be MM or DD.`);
+            }
+        }
 
-        const year = batch.period.slice(0, 4);
-        const monthIdx = parseInt(batch.period.slice(4, 6), 10) - 1;
-        const periodDate = new Date(parseInt(year, 10), monthIdx, 1);
-        const effYear = year;
+        try {
+            const credentials = await getClinicKonsultaCredentials(batch.clinicId);
+            const seq = Math.floor(Date.now() / 1000) % 99999;
+            const transmittalNo = generateTransmittalNumber(
+                credentials.hciAccreNo,
+                seq,
+            );
 
-        const enlistments: KonsultaEnlistmentData[] = batch.KonsultaEntries.map(
-            (entry) => {
-                const p = entry.Patient;
-                const dob = p.dob ? p.dob.toISOString().slice(0, 10) : "1990-01-01";
-                const mobile = p.mobile ?? `09${entry.philHealthPin.slice(-9)}`;
-                const transDate = periodDate.toISOString().slice(0, 10);
-                const patientType = (entry.memberType ?? "").trim() as "MM" | "DD";
+            const year = batch.period.slice(0, 4);
+            const monthIdx = parseInt(batch.period.slice(4, 6), 10) - 1;
+            const periodDate = new Date(parseInt(year, 10), monthIdx, 1);
+            const effYear = year;
 
-                // For MM (member): pMemPin is the patient's own PIN
-                // For DD (dependent): pMemPin is the member's PIN that they're dependent under
-                const memberPin =
-                    patientType === "MM"
-                        ? entry.philHealthPin
-                        : entry.memberPin || entry.philHealthPin;
+            const enlistments: KonsultaEnlistmentData[] = batch.KonsultaEntries.map(
+                (entry) => {
+                    const p = entry.Patient;
+                    const dob = p.dob ? p.dob.toISOString().slice(0, 10) : "1990-01-01";
+                    const mobile = p.mobile ?? `09${entry.philHealthPin.slice(-9)}`;
+                    const transDate = periodDate.toISOString().slice(0, 10);
+                    const patientType = (entry.memberType ?? "").trim() as "MM" | "DD";
+
+                    // For MM (member): pMemPin is the patient's own PIN
+                    // For DD (dependent): pMemPin is the member's PIN that they're dependent under
+                    const memberPin =
+                        patientType === "MM"
+                            ? entry.philHealthPin
+                            : entry.memberPin || entry.philHealthPin;
+
+                    return {
+                        pHciCaseNo:
+                            entry.hciCaseNo ||
+                            formatKonsultaHciNumber(
+                                "T",
+                                credentials.hciAccreNo,
+                                entry.id,
+                                periodDate,
+                            ),
+                        pHciTransNo:
+                            entry.hciTransNo ||
+                            formatKonsultaHciNumber(
+                                "E",
+                                credentials.hciAccreNo,
+                                entry.id,
+                                periodDate,
+                            ),
+                        pEffYear: effYear,
+                        pEnlistStat: "1",
+                        pEnlistDate: transDate,
+                        pPackageType: "K",
+                        pMemPin: memberPin,
+                        pMemFname: p.firstName ?? "",
+                        pMemMname: p.middleName ?? "",
+                        pMemLname: p.lastName ?? "",
+                        pMemExtname: p.suffix ?? "",
+                        pMemDob: dob,
+                        pPatientPin: entry.philHealthPin,
+                        pPatientFname: p.firstName ?? "",
+                        pPatientMname: p.middleName ?? "",
+                        pPatientLname: p.lastName ?? "",
+                        pPatientExtname: p.suffix ?? "",
+                        pPatientSex: (p.gender === "FEMALE" ? "F" : "M") as "M" | "F",
+                        pPatientDob: dob,
+                        pPatientType: patientType,
+                        pPatientMobileNo: mobile,
+                        pPatientLandlineNo: "",
+                        pWithConsent: "Y",
+                        pTransDate: transDate,
+                        pCreatedBy: "ClinicEZ",
+                        pReportStatus: "U",
+                        pDeficiencyRemarks: "",
+                    };
+                },
+            );
+
+            // Helper function to format age like PhilHealth expects
+            const formatAge = (dob: string): string => {
+                if (!dob) return "0 YR(S), 0 MO(S), 0 DAY(S)";
+                const d = new Date(dob);
+                const now = new Date();
+                let y = now.getFullYear() - d.getFullYear();
+                let m = now.getMonth() - d.getMonth();
+                let days = now.getDate() - d.getDate();
+                if (days < 0) {
+                    m--;
+                    days += 30;
+                }
+                if (m < 0) {
+                    y--;
+                    m += 12;
+                }
+                return `${y} YR(S), ${m} MO(S), ${days} DAY(S)`;
+            };
+
+            const createPhysicalExamFindingRecord = (
+                domainKey: string | null,
+                mappedCode: string | null,
+            ) => {
+                if (!domainKey || !mappedCode) {
+                    return null;
+                }
 
                 return {
-                    pHciCaseNo:
-                        entry.hciCaseNo ||
-                        formatKonsultaHciNumber(
-                            "T",
-                            credentials.hciAccreNo,
-                            entry.id,
-                            periodDate,
-                        ),
-                    pHciTransNo:
-                        entry.hciTransNo ||
-                        formatKonsultaHciNumber(
-                            "E",
-                            credentials.hciAccreNo,
-                            entry.id,
-                            periodDate,
-                        ),
-                    pEffYear: effYear,
-                    pEnlistStat: "1",
-                    pEnlistDate: transDate,
-                    pPackageType: "K",
-                    pMemPin: memberPin,
-                    pMemFname: p.firstName ?? "",
-                    pMemMname: p.middleName ?? "",
-                    pMemLname: p.lastName ?? "",
-                    pMemExtname: p.suffix ?? "",
-                    pMemDob: dob,
-                    pPatientPin: entry.philHealthPin,
-                    pPatientFname: p.firstName ?? "",
-                    pPatientMname: p.middleName ?? "",
-                    pPatientLname: p.lastName ?? "",
-                    pPatientExtname: p.suffix ?? "",
-                    pPatientSex: (p.gender === "FEMALE" ? "F" : "M") as "M" | "F",
-                    pPatientDob: dob,
-                    pPatientType: patientType,
-                    pPatientMobileNo: mobile,
-                    pPatientLandlineNo: "",
-                    pWithConsent: "Y",
-                    pTransDate: transDate,
-                    pCreatedBy: "ClinicEZ",
-                    pReportStatus: "U",
+                    pSkinId: domainKey === "lib_skin_extremities" ? mappedCode : "",
+                    pHeentId: domainKey === "lib_heent" ? mappedCode : "",
+                    pChestId: domainKey === "lib_chest" ? mappedCode : "",
+                    pHeartId: domainKey === "lib_heart" ? mappedCode : "",
+                    pAbdomenId: domainKey === "lib_abdomen" ? mappedCode : "",
+                    pNeuroId: domainKey === "lib_neuro" ? mappedCode : "",
+                    pGuId: domainKey === "lib_genitourinary" ? mappedCode : "",
+                    pRectalId: domainKey === "lib_digital_rectal" ? mappedCode : "",
+                    pReportStatus: "U" as const,
                     pDeficiencyRemarks: "",
                 };
-            },
-        );
-
-        // Helper function to format age like PhilHealth expects
-        const formatAge = (dob: string): string => {
-            if (!dob) return "0 YR(S), 0 MO(S), 0 DAY(S)";
-            const d = new Date(dob);
-            const now = new Date();
-            let y = now.getFullYear() - d.getFullYear();
-            let m = now.getMonth() - d.getMonth();
-            let days = now.getDate() - d.getDate();
-            if (days < 0) {
-                m--;
-                days += 30;
-            }
-            if (m < 0) {
-                y--;
-                m += 12;
-            }
-            return `${y} YR(S), ${m} MO(S), ${days} DAY(S)`;
-        };
-
-        const createPhysicalExamFindingRecord = (
-            domainKey: string | null,
-            mappedCode: string | null,
-        ) => {
-            if (!domainKey || !mappedCode) {
-                return null;
-            }
-
-            return {
-                pSkinId: domainKey === "lib_skin_extremities" ? mappedCode : "",
-                pHeentId: domainKey === "lib_heent" ? mappedCode : "",
-                pChestId: domainKey === "lib_chest" ? mappedCode : "",
-                pHeartId: domainKey === "lib_heart" ? mappedCode : "",
-                pAbdomenId: domainKey === "lib_abdomen" ? mappedCode : "",
-                pNeuroId: domainKey === "lib_neuro" ? mappedCode : "",
-                pGuId: domainKey === "lib_genitourinary" ? mappedCode : "",
-                pRectalId: domainKey === "lib_digital_rectal" ? mappedCode : "",
-                pReportStatus: "U" as const,
-                pDeficiencyRemarks: "",
             };
-        };
 
-        const createImmunizationRecord = (
-            domainKey: string | null,
-            mappedCode: string | null,
-        ) => {
-            if (!domainKey || !mappedCode) {
-                return null;
-            }
+            const createImmunizationRecord = (
+                domainKey: string | null,
+                mappedCode: string | null,
+            ) => {
+                if (!domainKey || !mappedCode) {
+                    return null;
+                }
 
-            return {
-                pChildImmcode: domainKey === "lib_immchild" ? mappedCode : "",
-                pYoungwImmcode: domainKey === "lib_immyoungw" ? mappedCode : "",
-                pPregwImmcode: domainKey === "lib_immpregw" ? mappedCode : "",
-                pElderlyImmcode: domainKey === "lib_immelderly" ? mappedCode : "",
-                pOtherImm: "",
-                pReportStatus: "U" as const,
-                pDeficiencyRemarks: "",
+                return {
+                    pChildImmcode: domainKey === "lib_immchild" ? mappedCode : "",
+                    pYoungwImmcode: domainKey === "lib_immyoungw" ? mappedCode : "",
+                    pPregwImmcode: domainKey === "lib_immpregw" ? mappedCode : "",
+                    pElderlyImmcode: domainKey === "lib_immelderly" ? mappedCode : "",
+                    pOtherImm: "",
+                    pReportStatus: "U" as const,
+                    pDeficiencyRemarks: "",
+                };
             };
-        };
-        type KonsultaGeneratedPhysicalExamFinding = NonNullable<
-            ReturnType<typeof createPhysicalExamFindingRecord>
-        >;
-        type KonsultaGeneratedImmunization = NonNullable<
-            ReturnType<typeof createImmunizationRecord>
-        >;
+            type KonsultaGeneratedPhysicalExamFinding = NonNullable<
+                ReturnType<typeof createPhysicalExamFindingRecord>
+            >;
+            type KonsultaGeneratedImmunization = NonNullable<
+                ReturnType<typeof createImmunizationRecord>
+            >;
 
-        // For SOAPS: fetch consultation records for second-tranche reports
-        const entryByConsultationId = new Map<
-            number,
-            (typeof batch.KonsultaEntries)[number]
-        >();
-        const entryByPatientUserId = new Map<
-            number,
-            (typeof batch.KonsultaEntries)[number]
-        >();
-        for (const entry of batch.KonsultaEntries) {
-            entryByPatientUserId.set(entry.patientUserId, entry);
-            for (const consultationId of entry.consultationIds) {
-                entryByConsultationId.set(consultationId, entry);
+            // For SOAPS: fetch consultation records for second-tranche reports
+            const entryByConsultationId = new Map<
+                number,
+                (typeof batch.KonsultaEntries)[number]
+            >();
+            const entryByPatientUserId = new Map<
+                number,
+                (typeof batch.KonsultaEntries)[number]
+            >();
+            for (const entry of batch.KonsultaEntries) {
+                entryByPatientUserId.set(entry.patientUserId, entry);
+                for (const consultationId of entry.consultationIds) {
+                    entryByConsultationId.set(consultationId, entry);
+                }
             }
-        }
-        const consultationIds = Array.from(entryByConsultationId.keys());
-        const patientUserIds = batch.KonsultaEntries.map(
-            (entry) => entry.patientUserId,
-        );
-
-        const [
-            diagnosisMappingResult,
-            diagnosticMappingResult,
-            managementMappingResult,
-            medicineMappingResult,
-            medicalHistoryMappingResult,
-            immunizationMappingResult,
-            physicalExamMappingResult,
-            patientProfiles,
-        ] = await Promise.all([
-            resolveMappedIcdCodesForConsultations(batch.clinicId, consultationIds),
-            resolveMappedDiagnosticsForConsultations(batch.clinicId, consultationIds),
-            resolveMappedManagementForConsultations(batch.clinicId, consultationIds),
-            resolveMappedMedicinesForConsultations(batch.clinicId, consultationIds),
-            resolveMappedMedicalHistoryForPatients(batch.clinicId, patientUserIds),
-            resolveMappedImmunizationsForPatients(batch.clinicId, patientUserIds),
-            resolveMappedPhysicalExamFindingsForConsultations(
-                batch.clinicId,
-                consultationIds,
-            ),
-            prisma.user.findMany({
-                where: { id: { in: patientUserIds } },
-                select: {
-                    id: true,
-                    bloodType: true,
-                    PersonalHistory: {
-                        select: {
-                            smokingStatus: true,
-                            numberOfPacksPerYear: true,
-                            alcoholStatus: true,
-                            numberOfBottlesPerDay: true,
-                            illicitDrugUse: true,
-                            sexuallyActive: true,
-                        },
-                    },
-                    ObGyneHistory: {
-                        select: {
-                            menarche: true,
-                            lastMenstrualPeriod: true,
-                            menopauseAge: true,
-                            menopauseStatus: true,
-                            ageAtFirstSexualIntercourse: true,
-                            birthControlMethod: true,
-                            menstrualPeriodDuration: true,
-                            menstrualCycleInterval: true,
-                            numberOfPadsPerDay: true,
-                            gravidity: true,
-                            parity: true,
-                            fullTerm: true,
-                            premature: true,
-                            abortion: true,
-                            livingChildren: true,
-                            typeOfDelivery: true,
-                            hasPreEclampsia: true,
-                        },
-                    },
-                    MedicalHistories: {
-                        select: {
-                            details: true,
-                            Condition: { select: { name: true } },
-                        },
-                    },
-                    SurgicalHistories: {
-                        where: { deletedAt: null },
-                        select: { operationName: true, operationDate: true },
-                    },
-                    FamilyMedicalHistories: {
-                        where: { deletedAt: null },
-                        select: {
-                            details: true,
-                            Condition: { select: { name: true } },
-                        },
-                    },
-                    VitalSigns: {
-                        where: { deletedAt: null, isActive: true },
-                        orderBy: { dateTaken: "desc" },
-                        take: 5,
-                        select: {
-                            dateTaken: true,
-                            bpSystolic: true,
-                            bpDiastolic: true,
-                            pulseRate: true,
-                            respRate: true,
-                            temp: true,
-                            height: true,
-                            weight: true,
-                            bmi: true,
-                        },
-                    },
-                    PhysicalExaminations: {
-                        where: { deletedAt: null },
-                        orderBy: { createdAt: "desc" },
-                        take: 1,
-                        select: { visualAcuityLeft: true, visualAcuityRight: true },
-                    },
-                    PediatricMeasurements: {
-                        where: { deletedAt: null },
-                        orderBy: { dateTaken: "desc" },
-                        take: 5,
-                        select: {
-                            dateTaken: true,
-                            length: true,
-                            headCircumference: true,
-                            skinfoldThickness: true,
-                            waistCircumference: true,
-                            hipCircumference: true,
-                            limbCircumference: true,
-                            midUpperArmCircumference: true,
-                        },
-                    },
-                },
-            }),
-        ]);
-
-        const patientProfileMap = new Map(patientProfiles.map((p) => [p.id, p]));
-
-        if (diagnosisMappingResult.deficiencies.length > 0) {
-            const message = diagnosisMappingResult.deficiencies
-                .slice(0, MAX_DEFICIENCY_MESSAGES_TO_DISPLAY)
-                .join("\n");
-            throw new Error(
-                `Konsulta library mapping is incomplete for this batch.\n${message}`,
+            const consultationIds = Array.from(entryByConsultationId.keys());
+            const patientUserIds = batch.KonsultaEntries.map(
+                (entry) => entry.patientUserId,
             );
-        }
 
-        const mappedIcdCodesByConsultationId =
-            diagnosisMappingResult.mappedDiagnoses.reduce<Map<number, string[]>>(
-                (result, diagnosis) => {
-                    pushUniqueMappedCode(
-                        result,
-                        diagnosis.consultationId,
-                        diagnosis.mappedCode,
+            const [
+                diagnosisMappingResult,
+                diagnosticMappingResult,
+                managementMappingResult,
+                medicineMappingResult,
+                medicalHistoryMappingResult,
+                immunizationMappingResult,
+                physicalExamMappingResult,
+                patientProfiles,
+            ] = await Promise.all([
+                resolveMappedIcdCodesForConsultations(batch.clinicId, consultationIds),
+                resolveMappedDiagnosticsForConsultations(batch.clinicId, consultationIds),
+                resolveMappedManagementForConsultations(batch.clinicId, consultationIds),
+                resolveMappedMedicinesForConsultations(batch.clinicId, consultationIds),
+                resolveMappedMedicalHistoryForPatients(batch.clinicId, patientUserIds),
+                resolveMappedImmunizationsForPatients(batch.clinicId, patientUserIds),
+                resolveMappedPhysicalExamFindingsForConsultations(
+                    batch.clinicId,
+                    consultationIds,
+                ),
+                prisma.user.findMany({
+                    where: { id: { in: patientUserIds } },
+                    select: {
+                        id: true,
+                        bloodType: true,
+                        PersonalHistory: {
+                            select: {
+                                smokingStatus: true,
+                                numberOfPacksPerYear: true,
+                                alcoholStatus: true,
+                                numberOfBottlesPerDay: true,
+                                illicitDrugUse: true,
+                                sexuallyActive: true,
+                            },
+                        },
+                        ObGyneHistory: {
+                            select: {
+                                menarche: true,
+                                lastMenstrualPeriod: true,
+                                menopauseAge: true,
+                                menopauseStatus: true,
+                                ageAtFirstSexualIntercourse: true,
+                                birthControlMethod: true,
+                                menstrualPeriodDuration: true,
+                                menstrualCycleInterval: true,
+                                numberOfPadsPerDay: true,
+                                gravidity: true,
+                                parity: true,
+                                fullTerm: true,
+                                premature: true,
+                                abortion: true,
+                                livingChildren: true,
+                                typeOfDelivery: true,
+                                hasPreEclampsia: true,
+                            },
+                        },
+                        MedicalHistories: {
+                            select: {
+                                details: true,
+                                Condition: { select: { name: true } },
+                            },
+                        },
+                        SurgicalHistories: {
+                            where: { deletedAt: null },
+                            select: { operationName: true, operationDate: true },
+                        },
+                        FamilyMedicalHistories: {
+                            where: { deletedAt: null },
+                            select: {
+                                details: true,
+                                Condition: { select: { name: true } },
+                            },
+                        },
+                        VitalSigns: {
+                            where: { deletedAt: null, isActive: true },
+                            orderBy: { dateTaken: "desc" },
+                            take: 5,
+                            select: {
+                                dateTaken: true,
+                                bpSystolic: true,
+                                bpDiastolic: true,
+                                pulseRate: true,
+                                respRate: true,
+                                temp: true,
+                                height: true,
+                                weight: true,
+                                bmi: true,
+                            },
+                        },
+                        PhysicalExaminations: {
+                            where: { deletedAt: null },
+                            orderBy: { createdAt: "desc" },
+                            take: 1,
+                            select: { visualAcuityLeft: true, visualAcuityRight: true },
+                        },
+                        PediatricMeasurements: {
+                            where: { deletedAt: null },
+                            orderBy: { dateTaken: "desc" },
+                            take: 5,
+                            select: {
+                                dateTaken: true,
+                                length: true,
+                                headCircumference: true,
+                                skinfoldThickness: true,
+                                waistCircumference: true,
+                                hipCircumference: true,
+                                limbCircumference: true,
+                                midUpperArmCircumference: true,
+                            },
+                        },
+                    },
+                }),
+            ]);
+
+            const patientProfileMap = new Map(patientProfiles.map((p) => [p.id, p]));
+
+            if (diagnosisMappingResult.deficiencies.length > 0) {
+                const message = diagnosisMappingResult.deficiencies
+                    .slice(0, MAX_DEFICIENCY_MESSAGES_TO_DISPLAY)
+                    .join("\n");
+                throw new Error(
+                    `Konsulta library mapping is incomplete for this batch.\n${message}`,
+                );
+            }
+
+            const mappedIcdCodesByConsultationId =
+                diagnosisMappingResult.mappedDiagnoses.reduce<Map<number, string[]>>(
+                    (result, diagnosis) => {
+                        pushUniqueMappedCode(
+                            result,
+                            diagnosis.consultationId,
+                            diagnosis.mappedCode,
+                        );
+                        return result;
+                    },
+                    new Map<number, string[]>(),
+                );
+            const mappedDiagnosticsByConsultationId =
+                diagnosticMappingResult.mappedDiagnostics.reduce<Map<number, string[]>>(
+                    (result, diagnostic) => {
+                        pushUniqueMappedCode(
+                            result,
+                            diagnostic.consultationId,
+                            diagnostic.mappedCode,
+                        );
+                        return result;
+                    },
+                    new Map<number, string[]>(),
+                );
+            const mappedManagementByConsultationId =
+                managementMappingResult.mappedManagements.reduce<Map<number, string[]>>(
+                    (result, management) => {
+                        pushUniqueMappedCode(
+                            result,
+                            management.consultationId,
+                            management.mappedCode,
+                        );
+                        return result;
+                    },
+                    new Map<number, string[]>(),
+                );
+            const mappedMedicalHistoryByPatientId =
+                medicalHistoryMappingResult.mappedMedicalHistory.reduce<Map<number, string[]>>(
+                    (result, history) => {
+                        pushUniqueMappedCode(
+                            result,
+                            history.patientUserId,
+                            history.mappedCode,
+                        );
+                        return result;
+                    },
+                    new Map<number, string[]>(),
+                );
+            const mappedImmunizationsByPatientId =
+                immunizationMappingResult.mappedImmunizations.reduce<
+                    Map<number, KonsultaGeneratedImmunization[]>
+                >((result, immunization) => {
+                    const record = createImmunizationRecord(
+                        immunization.domainKey,
+                        immunization.mappedCode,
                     );
+                    if (!record) {
+                        return result;
+                    }
+                    const existing = result.get(immunization.patientUserId) ?? [];
+                    existing.push(record);
+                    result.set(immunization.patientUserId, existing);
                     return result;
-                },
-                new Map<number, string[]>(),
-            );
-        const mappedDiagnosticsByConsultationId =
-            diagnosticMappingResult.mappedDiagnostics.reduce<Map<number, string[]>>(
-                (result, diagnostic) => {
-                    pushUniqueMappedCode(
-                        result,
+                }, new Map<number, KonsultaGeneratedImmunization[]>());
+            const mappedPhysicalExamFindingsByConsultationId =
+                physicalExamMappingResult.mappedFindings.reduce<
+                    Map<number, KonsultaGeneratedPhysicalExamFinding[]>
+                >((result, finding) => {
+                    const record = createPhysicalExamFindingRecord(
+                        finding.domainKey,
+                        finding.mappedCode,
+                    );
+                    if (!record) {
+                        return result;
+                    }
+                    const existing = result.get(finding.consultationId) ?? [];
+                    existing.push(record);
+                    result.set(finding.consultationId, existing);
+                    return result;
+                }, new Map<number, KonsultaGeneratedPhysicalExamFinding[]>());
+
+            const generatedDeficiencies: StructuredKonsultaBatchDeficiency[] = [];
+            const pushConsultationDeficiency = (
+                domainKey: keyof typeof GENERATED_DEFICIENCY_DOMAIN_LABELS,
+                consultationId: number,
+                itemLabel: string,
+                message: string,
+            ) => {
+                const entry = entryByConsultationId.get(consultationId);
+                if (!entry) {
+                    return;
+                }
+
+                generatedDeficiencies.push({
+                    domainKey,
+                    domainLabel: GENERATED_DEFICIENCY_DOMAIN_LABELS[domainKey],
+                    batchEntryId: entry.id,
+                    patientUserId: entry.patientUserId,
+                    patientName: formatBatchEntryPatientName(entry),
+                    philHealthPin: entry.philHealthPin,
+                    consultationId,
+                    itemLabel,
+                    message,
+                });
+            };
+            const pushPatientDeficiency = (
+                domainKey: keyof typeof GENERATED_DEFICIENCY_DOMAIN_LABELS,
+                patientUserId: number,
+                itemLabel: string,
+                message: string,
+            ) => {
+                const entry = entryByPatientUserId.get(patientUserId);
+                if (!entry) {
+                    return;
+                }
+
+                generatedDeficiencies.push({
+                    domainKey,
+                    domainLabel: GENERATED_DEFICIENCY_DOMAIN_LABELS[domainKey],
+                    batchEntryId: entry.id,
+                    patientUserId: entry.patientUserId,
+                    patientName: formatBatchEntryPatientName(entry),
+                    philHealthPin: entry.philHealthPin,
+                    consultationId: null,
+                    itemLabel,
+                    message,
+                });
+            };
+
+            diagnosticMappingResult.mappedDiagnostics
+                .filter((diagnostic) => diagnostic.mappedCode === null)
+                .forEach((diagnostic) => {
+                    pushConsultationDeficiency(
+                        "diagnostics",
                         diagnostic.consultationId,
-                        diagnostic.mappedCode,
+                        diagnostic.inputValue,
+                        `Diagnostic "${diagnostic.inputValue}" is not mapped to an active PhilHealth reference.`,
                     );
-                    return result;
-                },
-                new Map<number, string[]>(),
-            );
-        const mappedManagementByConsultationId =
-            managementMappingResult.mappedManagements.reduce<Map<number, string[]>>(
-                (result, management) => {
-                    pushUniqueMappedCode(
-                        result,
+                });
+            managementMappingResult.mappedManagements
+                .filter((management) => management.mappedCode === null)
+                .forEach((management) => {
+                    pushConsultationDeficiency(
+                        "management",
                         management.consultationId,
-                        management.mappedCode,
+                        management.inputValue,
+                        `Management item "${management.inputValue}" is not mapped to an active PhilHealth reference.`,
                     );
-                    return result;
-                },
-                new Map<number, string[]>(),
-            );
-        const mappedMedicalHistoryByPatientId =
-            medicalHistoryMappingResult.mappedMedicalHistory.reduce<Map<number, string[]>>(
-                (result, history) => {
-                    pushUniqueMappedCode(
-                        result,
+                });
+            medicineMappingResult.mappedMedicines
+                .filter(
+                    (medicine) =>
+                        medicine.mappedDrugCode === null &&
+                        medicine.mappedGenericCode === null,
+                )
+                .forEach((medicine) => {
+                    pushConsultationDeficiency(
+                        "medicines",
+                        medicine.consultationId,
+                        medicine.sourceName,
+                        `Medicine "${medicine.sourceName}" is not mapped to a PhilHealth medicine or generic reference.`,
+                    );
+                });
+            medicalHistoryMappingResult.mappedMedicalHistory
+                .filter((history) => history.mappedCode === null)
+                .forEach((history) => {
+                    pushPatientDeficiency(
+                        "medicalHistory",
                         history.patientUserId,
-                        history.mappedCode,
+                        history.inputValue,
+                        `Medical history entry "${history.inputValue}" is not mapped to an active PhilHealth reference.`,
                     );
-                    return result;
-                },
-                new Map<number, string[]>(),
-            );
-        const mappedImmunizationsByPatientId =
-            immunizationMappingResult.mappedImmunizations.reduce<
-                Map<number, KonsultaGeneratedImmunization[]>
-            >((result, immunization) => {
-                const record = createImmunizationRecord(
-                    immunization.domainKey,
-                    immunization.mappedCode,
-                );
-                if (!record) {
-                    return result;
-                }
-                const existing = result.get(immunization.patientUserId) ?? [];
-                existing.push(record);
-                result.set(immunization.patientUserId, existing);
-                return result;
-            }, new Map<number, KonsultaGeneratedImmunization[]>());
-        const mappedPhysicalExamFindingsByConsultationId =
-            physicalExamMappingResult.mappedFindings.reduce<
-                Map<number, KonsultaGeneratedPhysicalExamFinding[]>
-            >((result, finding) => {
-                const record = createPhysicalExamFindingRecord(
-                    finding.domainKey,
-                    finding.mappedCode,
-                );
-                if (!record) {
-                    return result;
-                }
-                const existing = result.get(finding.consultationId) ?? [];
-                existing.push(record);
-                result.set(finding.consultationId, existing);
-                return result;
-            }, new Map<number, KonsultaGeneratedPhysicalExamFinding[]>());
+                });
+            immunizationMappingResult.mappedImmunizations
+                .filter((immunization) => immunization.mappedCode === null)
+                .forEach((immunization) => {
+                    pushPatientDeficiency(
+                        "immunizations",
+                        immunization.patientUserId,
+                        immunization.inputValue,
+                        `Immunization "${immunization.inputValue}" is not mapped to an active PhilHealth reference.`,
+                    );
+                });
+            physicalExamMappingResult.mappedFindings
+                .filter((finding) => finding.mappedCode === null)
+                .forEach((finding) => {
+                    pushConsultationDeficiency(
+                        "physicalExam",
+                        finding.consultationId,
+                        finding.inputValue,
+                        `Physical exam finding "${finding.inputValue}" is not mapped to an active PhilHealth reference.`,
+                    );
+                });
 
-        const generatedDeficiencies: StructuredKonsultaBatchDeficiency[] = [];
-        const pushConsultationDeficiency = (
-            domainKey: keyof typeof GENERATED_DEFICIENCY_DOMAIN_LABELS,
-            consultationId: number,
-            itemLabel: string,
-            message: string,
-        ) => {
-            const entry = entryByConsultationId.get(consultationId);
-            if (!entry) {
-                return;
+            const optionalDeficiencies = Array.from(
+                new Set(generatedDeficiencies.map((deficiency) => deficiency.message)),
+            );
+
+            // Validate consultation records for second-tranche reports
+            if (batch.reportTagging === "2" && consultationIds.length === 0) {
+                throw new Error(
+                    "Second-tranche reports require at least one consultation SOAP entry. Please add consultations to the patient records.",
+                );
             }
 
-            generatedDeficiencies.push({
-                domainKey,
-                domainLabel: GENERATED_DEFICIENCY_DOMAIN_LABELS[domainKey],
-                batchEntryId: entry.id,
-                patientUserId: entry.patientUserId,
-                patientName: formatBatchEntryPatientName(entry),
-                philHealthPin: entry.philHealthPin,
-                consultationId,
-                itemLabel,
-                message,
-            });
-        };
-        const pushPatientDeficiency = (
-            domainKey: keyof typeof GENERATED_DEFICIENCY_DOMAIN_LABELS,
-            patientUserId: number,
-            itemLabel: string,
-            message: string,
-        ) => {
-            const entry = entryByPatientUserId.get(patientUserId);
-            if (!entry) {
-                return;
-            }
+            const consultationRows =
+                batch.reportTagging === "2" && consultationIds.length > 0
+                    ? await prisma.consultationTicket.findMany({
+                        where: {
+                            id: { in: consultationIds },
+                            clinicId: batch.clinicId,
+                            isActive: true,
+                            isArchived: false,
+                        },
+                        select: {
+                            id: true,
+                            createdAt: true,
+                            subject: true,
+                            konsultaHciCaseNo: true,
+                            konsultaHciTransNo: true,
+                            konsultaAtc: true,
+                            konsultaIsWalkedIn: true,
+                            Appointment: {
+                                select: {
+                                    AppointmentAttribute: {
+                                        select: { date: true, isWalkIn: true },
+                                    },
+                                },
+                            },
+                            ConsultationNotes: {
+                                select: { section: true, content: true },
+                            },
+                            ConsultationDiagnoses: {
+                                select: { icd10Code: true, type: true },
+                            },
+                            Interventions: {
+                                where: { deletedAt: null, isActive: true },
+                                select: {
+                                    Action: { select: { name: true } },
+                                    details: true,
+                                },
+                            },
+                            ClinicPatient: {
+                                select: { patientId: true },
+                            },
+                        },
+                    })
+                    : [];
 
-            generatedDeficiencies.push({
-                domainKey,
-                domainLabel: GENERATED_DEFICIENCY_DOMAIN_LABELS[domainKey],
-                batchEntryId: entry.id,
-                patientUserId: entry.patientUserId,
-                patientName: formatBatchEntryPatientName(entry),
-                philHealthPin: entry.philHealthPin,
-                consultationId: null,
-                itemLabel,
-                message,
-            });
-        };
+            // ── Helper: build KonsultaProfileSubData from patient history ──────────────
+            const buildProfileSubData = (
+                patientId: number,
+                gender: string | null,
+            ): KonsultaProfileSubData => {
+                const hp = patientProfileMap.get(patientId);
+                if (!hp) return {};
 
-        diagnosticMappingResult.mappedDiagnostics
-            .filter((diagnostic) => diagnostic.mappedCode === null)
-            .forEach((diagnostic) => {
-                pushConsultationDeficiency(
-                    "diagnostics",
-                    diagnostic.consultationId,
-                    diagnostic.inputValue,
-                    `Diagnostic "${diagnostic.inputValue}" is not mapped to an active PhilHealth reference.`,
-                );
-            });
-        managementMappingResult.mappedManagements
-            .filter((management) => management.mappedCode === null)
-            .forEach((management) => {
-                pushConsultationDeficiency(
-                    "management",
-                    management.consultationId,
-                    management.inputValue,
-                    `Management item "${management.inputValue}" is not mapped to an active PhilHealth reference.`,
-                );
-            });
-        medicineMappingResult.mappedMedicines
-            .filter(
-                (medicine) =>
-                    medicine.mappedDrugCode === null &&
-                    medicine.mappedGenericCode === null,
-            )
-            .forEach((medicine) => {
-                pushConsultationDeficiency(
-                    "medicines",
-                    medicine.consultationId,
-                    medicine.sourceName,
-                    `Medicine "${medicine.sourceName}" is not mapped to a PhilHealth medicine or generic reference.`,
-                );
-            });
-        medicalHistoryMappingResult.mappedMedicalHistory
-            .filter((history) => history.mappedCode === null)
-            .forEach((history) => {
-                pushPatientDeficiency(
-                    "medicalHistory",
-                    history.patientUserId,
-                    history.inputValue,
-                    `Medical history entry "${history.inputValue}" is not mapped to an active PhilHealth reference.`,
-                );
-            });
-        immunizationMappingResult.mappedImmunizations
-            .filter((immunization) => immunization.mappedCode === null)
-            .forEach((immunization) => {
-                pushPatientDeficiency(
-                    "immunizations",
-                    immunization.patientUserId,
-                    immunization.inputValue,
-                    `Immunization "${immunization.inputValue}" is not mapped to an active PhilHealth reference.`,
-                );
-            });
-        physicalExamMappingResult.mappedFindings
-            .filter((finding) => finding.mappedCode === null)
-            .forEach((finding) => {
-                pushConsultationDeficiency(
-                    "physicalExam",
-                    finding.consultationId,
-                    finding.inputValue,
-                    `Physical exam finding "${finding.inputValue}" is not mapped to an active PhilHealth reference.`,
-                );
-            });
+                const ph = hp.PersonalHistory;
+                const ob = hp.ObGyneHistory;
+                const vs = hp.VitalSigns[0];
+                const pe = hp.PhysicalExaminations[0];
+                const pm = hp.PediatricMeasurements[0];
+                const isFemale = gender === "FEMALE";
 
-        const optionalDeficiencies = Array.from(
-            new Set(generatedDeficiencies.map((deficiency) => deficiency.message)),
-        );
+                return {
+                    // SOCHIST
+                    isSmoker: mapSmokerStatus(ph?.smokingStatus),
+                    noCigpk:
+                        ph?.numberOfPacksPerYear != null
+                            ? String(ph.numberOfPacksPerYear)
+                            : "",
+                    isAdrinker: mapDrinkerStatus(ph?.alcoholStatus),
+                    noBottles:
+                        ph?.numberOfBottlesPerDay != null
+                            ? String(ph.numberOfBottlesPerDay)
+                            : "",
+                    illDrugUser: mapDrugStatus(ph?.illicitDrugUse),
+                    isSexuallyActive: mapSexuallyActiveStatus(ph?.sexuallyActive),
 
-        // Validate consultation records for second-tranche reports
-        if (batch.reportTagging === "2" && consultationIds.length === 0) {
-            throw new Error(
-                "Second-tranche reports require at least one consultation SOAP entry. Please add consultations to the patient records.",
-            );
-        }
+                    // BLOODTYPE
+                    bloodType: mapBloodType(hp.bloodType),
 
-        const consultationRows =
-            batch.reportTagging === "2" && consultationIds.length > 0
-                ? await prisma.consultationTicket.findMany({
-                      where: {
-                          id: { in: consultationIds },
-                          clinicId: batch.clinicId,
-                          isActive: true,
-                          isArchived: false,
-                      },
-                      select: {
-                          id: true,
-                          createdAt: true,
-                          subject: true,
-                          konsultaHciCaseNo: true,
-                          konsultaHciTransNo: true,
-                          konsultaAtc: true,
-                          Appointment: {
-                              select: {
-                                  AppointmentAttribute: {
-                                      select: { date: true, isWalkIn: true },
-                                  },
-                              },
-                          },
-                          ConsultationNotes: {
-                              select: { section: true, content: true },
-                          },
-                          ConsultationDiagnoses: {
-                              select: { icd10Code: true, type: true },
-                          },
-                          Interventions: {
-                              where: { deletedAt: null, isActive: true },
-                              select: {
-                                  Action: { select: { name: true } },
-                                  details: true,
-                              },
-                          },
-                          ClinicPatient: {
-                              select: { patientId: true },
-                          },
-                      },
-                  })
-                : [];
+                    // PEPERT
+                    systolic: vs?.bpSystolic != null ? String(vs.bpSystolic) : "",
+                    diastolic: vs?.bpDiastolic != null ? String(vs.bpDiastolic) : "",
+                    hr: vs?.pulseRate != null ? String(vs.pulseRate) : "",
+                    rr: vs?.respRate != null ? String(vs.respRate) : "",
+                    temp: vs?.temp != null ? String(vs.temp) : "",
+                    height: vs?.height != null ? String(vs.height) : "",
+                    weight: vs?.weight != null ? String(vs.weight) : "",
+                    bmi: vs?.bmi != null ? String(vs.bmi) : "",
+                    leftVision: pe?.visualAcuityLeft ?? "",
+                    rightVision: pe?.visualAcuityRight ?? "",
+                    // Pediatric measurements (PEPERT)
+                    length: pm?.length != null ? String(pm.length) : "",
+                    headCirc:
+                        pm?.headCircumference != null
+                            ? String(pm.headCircumference)
+                            : "",
+                    skinfoldThickness:
+                        pm?.skinfoldThickness != null
+                            ? String(pm.skinfoldThickness)
+                            : "",
+                    waist:
+                        pm?.waistCircumference != null
+                            ? String(pm.waistCircumference)
+                            : "",
+                    hip: pm?.hipCircumference != null ? String(pm.hipCircumference) : "",
+                    limbs:
+                        pm?.limbCircumference != null ? String(pm.limbCircumference) : "",
+                    midUpperArmCirc:
+                        pm?.midUpperArmCircumference != null
+                            ? String(pm.midUpperArmCircumference)
+                            : "",
 
-        // ── Helper: build KonsultaProfileSubData from patient history ──────────────
-        const buildProfileSubData = (
-            patientId: number,
-            gender: string | null,
-        ): KonsultaProfileSubData => {
-            const hp = patientProfileMap.get(patientId);
-            if (!hp) return {};
-
-            const ph = hp.PersonalHistory;
-            const ob = hp.ObGyneHistory;
-            const vs = hp.VitalSigns[0];
-            const pe = hp.PhysicalExaminations[0];
-            const pm = hp.PediatricMeasurements[0];
-            const isFemale = gender === "FEMALE";
-
-            return {
-                // SOCHIST
-                isSmoker: mapSmokerStatus(ph?.smokingStatus),
-                noCigpk:
-                    ph?.numberOfPacksPerYear != null
-                        ? String(ph.numberOfPacksPerYear)
+                    // MENSHIST (only applicable for female patients)
+                    isMenshApplicable: isFemale && ob != null ? "Y" : "N",
+                    menarchePeriod: ob?.menarche != null ? String(ob.menarche) : "",
+                    lastMensPeriod: ob?.lastMenstrualPeriod
+                        ? ob.lastMenstrualPeriod.toISOString().slice(0, 10)
                         : "",
-                isAdrinker: mapDrinkerStatus(ph?.alcoholStatus),
-                noBottles:
-                    ph?.numberOfBottlesPerDay != null
-                        ? String(ph.numberOfBottlesPerDay)
+                    periodDuration:
+                        ob?.menstrualPeriodDuration != null
+                            ? String(ob.menstrualPeriodDuration)
+                            : "",
+                    mensInterval:
+                        ob?.menstrualCycleInterval != null
+                            ? String(ob.menstrualCycleInterval)
+                            : "",
+                    padsPerDay:
+                        ob?.numberOfPadsPerDay != null ? String(ob.numberOfPadsPerDay) : "",
+                    onsetSexIc:
+                        ob?.ageAtFirstSexualIntercourse != null
+                            ? String(ob.ageAtFirstSexualIntercourse)
+                            : "",
+                    birthCtrlMethod: ob?.birthControlMethod ?? "",
+                    isMenopause: ob?.menopauseStatus
+                        ? ob.menopauseStatus === "MENOPAUSAL"
+                            ? "Y"
+                            : "N"
                         : "",
-                illDrugUser: mapDrugStatus(ph?.illicitDrugUse),
-                isSexuallyActive: mapSexuallyActiveStatus(ph?.sexuallyActive),
+                    menopauseAge: ob?.menopauseAge != null ? String(ob.menopauseAge) : "",
 
-                // BLOODTYPE
-                bloodType: mapBloodType(hp.bloodType),
+                    // PREGHIST (only applicable for female patients)
+                    isPreghApplicable:
+                        isFemale && ob != null && (ob.gravidity != null || ob.parity != null)
+                            ? "Y"
+                            : "N",
+                    pregCnt: ob?.gravidity != null ? String(ob.gravidity) : "",
+                    deliveryCnt: ob?.parity != null ? String(ob.parity) : "",
+                    deliveryTyp: ob?.typeOfDelivery ?? "",
+                    fullTermCnt: ob?.fullTerm != null ? String(ob.fullTerm) : "",
+                    prematureCnt: ob?.premature != null ? String(ob.premature) : "",
+                    abortionCnt: ob?.abortion != null ? String(ob.abortion) : "",
+                    livChildrenCnt:
+                        ob?.livingChildren != null ? String(ob.livingChildren) : "",
+                    wPregIndhyp:
+                        ob?.hasPreEclampsia != null ? (ob.hasPreEclampsia ? "Y" : "N") : "",
+                    wFamPlan: "N",
 
-                // PEPERT
-                systolic: vs?.bpSystolic != null ? String(vs.bpSystolic) : "",
-                diastolic: vs?.bpDiastolic != null ? String(vs.bpDiastolic) : "",
-                hr: vs?.pulseRate != null ? String(vs.pulseRate) : "",
-                rr: vs?.respRate != null ? String(vs.respRate) : "",
-                temp: vs?.temp != null ? String(vs.temp) : "",
-                height: vs?.height != null ? String(vs.height) : "",
-                weight: vs?.weight != null ? String(vs.weight) : "",
-                bmi: vs?.bmi != null ? String(vs.bmi) : "",
-                leftVision: pe?.visualAcuityLeft ?? "",
-                rightVision: pe?.visualAcuityRight ?? "",
-                // Pediatric measurements (PEPERT)
-                length: pm?.length != null ? String(pm.length) : "",
-                headCirc:
-                    pm?.headCircumference != null
-                        ? String(pm.headCircumference)
-                        : "",
-                skinfoldThickness:
-                    pm?.skinfoldThickness != null
-                        ? String(pm.skinfoldThickness)
-                        : "",
-                waist:
-                    pm?.waistCircumference != null
-                        ? String(pm.waistCircumference)
-                        : "",
-                hip: pm?.hipCircumference != null ? String(pm.hipCircumference) : "",
-                limbs:
-                    pm?.limbCircumference != null ? String(pm.limbCircumference) : "",
-                midUpperArmCirc:
-                    pm?.midUpperArmCircumference != null
-                        ? String(pm.midUpperArmCircumference)
-                        : "",
+                    // MEDHISTS + MHSPECIFICS: use "999" (Other) with condition name as description
+                    medHistItems:
+                        hp.MedicalHistories.length > 0
+                            ? hp.MedicalHistories.map((h) => ({
+                                code: "999",
+                                specificDesc: [h.Condition.name, h.details]
+                                    .filter(Boolean)
+                                    .join(": "),
+                            }))
+                            : undefined,
 
-                // MENSHIST (only applicable for female patients)
-                isMenshApplicable: isFemale && ob != null ? "Y" : "N",
-                menarchePeriod: ob?.menarche != null ? String(ob.menarche) : "",
-                lastMensPeriod: ob?.lastMenstrualPeriod
-                    ? ob.lastMenstrualPeriod.toISOString().slice(0, 10)
-                    : "",
-                periodDuration:
-                    ob?.menstrualPeriodDuration != null
-                        ? String(ob.menstrualPeriodDuration)
-                        : "",
-                mensInterval:
-                    ob?.menstrualCycleInterval != null
-                        ? String(ob.menstrualCycleInterval)
-                        : "",
-                padsPerDay:
-                    ob?.numberOfPadsPerDay != null ? String(ob.numberOfPadsPerDay) : "",
-                onsetSexIc:
-                    ob?.ageAtFirstSexualIntercourse != null
-                        ? String(ob.ageAtFirstSexualIntercourse)
-                        : "",
-                birthCtrlMethod: ob?.birthControlMethod ?? "",
-                isMenopause: ob?.menopauseStatus
-                    ? ob.menopauseStatus === "MENOPAUSAL"
-                        ? "Y"
-                        : "N"
-                    : "",
-                menopauseAge: ob?.menopauseAge != null ? String(ob.menopauseAge) : "",
+                    // SURGHISTS
+                    surgHistItems:
+                        hp.SurgicalHistories.length > 0
+                            ? hp.SurgicalHistories.map((s) => ({
+                                desc: s.operationName,
+                                date: s.operationDate
+                                    ? s.operationDate.toISOString().slice(0, 10)
+                                    : "",
+                            }))
+                            : undefined,
 
-                // PREGHIST (only applicable for female patients)
-                isPreghApplicable:
-                    isFemale && ob != null && (ob.gravidity != null || ob.parity != null)
-                        ? "Y"
-                        : "N",
-                pregCnt: ob?.gravidity != null ? String(ob.gravidity) : "",
-                deliveryCnt: ob?.parity != null ? String(ob.parity) : "",
-                deliveryTyp: ob?.typeOfDelivery ?? "",
-                fullTermCnt: ob?.fullTerm != null ? String(ob.fullTerm) : "",
-                prematureCnt: ob?.premature != null ? String(ob.premature) : "",
-                abortionCnt: ob?.abortion != null ? String(ob.abortion) : "",
-                livChildrenCnt:
-                    ob?.livingChildren != null ? String(ob.livingChildren) : "",
-                wPregIndhyp:
-                    ob?.hasPreEclampsia != null ? (ob.hasPreEclampsia ? "Y" : "N") : "",
-                wFamPlan: "N",
-
-                // MEDHISTS + MHSPECIFICS: use "999" (Other) with condition name as description
-                medHistItems:
-                    hp.MedicalHistories.length > 0
-                        ? hp.MedicalHistories.map((h) => ({
-                              code: "999",
-                              specificDesc: [h.Condition.name, h.details]
-                                  .filter(Boolean)
-                                  .join(": "),
-                          }))
-                        : undefined,
-
-                // SURGHISTS
-                surgHistItems:
-                    hp.SurgicalHistories.length > 0
-                        ? hp.SurgicalHistories.map((s) => ({
-                              desc: s.operationName,
-                              date: s.operationDate
-                                  ? s.operationDate.toISOString().slice(0, 10)
-                                  : "",
-                          }))
-                        : undefined,
-
-                // FAMHISTS + FHSPECIFICS: use "999" (Other) with condition name as description
-                famHistItems:
-                    hp.FamilyMedicalHistories.length > 0
-                        ? hp.FamilyMedicalHistories.map((h) => ({
-                              code: "999",
-                              specificDesc: [h.Condition.name, h.details]
-                                  .filter(Boolean)
-                                  .join(": "),
-                          }))
-                        : undefined,
+                    // FAMHISTS + FHSPECIFICS: use "999" (Other) with condition name as description
+                    famHistItems:
+                        hp.FamilyMedicalHistories.length > 0
+                            ? hp.FamilyMedicalHistories.map((h) => ({
+                                code: "999",
+                                specificDesc: [h.Condition.name, h.details]
+                                    .filter(Boolean)
+                                    .join(": "),
+                            }))
+                            : undefined,
+                };
             };
-        };
 
-        // PROFILE elements: Type 1 (ENLISTMENT) = per-entry, Type 2 (SOAP) = per-consultation
-        const profiles: KonsultaProfileData[] =
-            batch.reportTagging === "1"
-                ? batch.KonsultaEntries.map((entry) => {
-                      const p = entry.Patient;
-                      const dob = p.dob ? p.dob.toISOString().slice(0, 10) : "1990-01-01";
-                      const patientType = (entry.memberType ?? "").trim() as "MM" | "DD";
-                      // For MM (member): pMemPin is the patient's own PIN
-                      // For DD (dependent): pMemPin is the member's PIN that they're dependent under
-                      const memberPin =
-                          patientType === "MM"
-                              ? entry.philHealthPin
-                              : entry.memberPin || entry.philHealthPin;
-                      const patientAge = formatAge(dob);
+            // PROFILE elements: Type 1 (ENLISTMENT) = per-entry, Type 2 (SOAP) = per-consultation
+            const profiles: KonsultaProfileData[] =
+                batch.reportTagging === "1"
+                    ? batch.KonsultaEntries.map((entry) => {
+                        const p = entry.Patient;
+                        const dob = p.dob ? p.dob.toISOString().slice(0, 10) : "1990-01-01";
+                        const patientType = (entry.memberType ?? "").trim() as "MM" | "DD";
+                        // For MM (member): pMemPin is the patient's own PIN
+                        // For DD (dependent): pMemPin is the member's PIN that they're dependent under
+                        const memberPin =
+                            patientType === "MM"
+                                ? entry.philHealthPin
+                                : entry.memberPin || entry.philHealthPin;
+                        const patientAge = formatAge(dob);
 
-                      return {
-                          pHciCaseNo:
-                              entry.hciCaseNo ||
-                              formatKonsultaHciNumber(
-                                  "T",
-                                  credentials.hciAccreNo,
-                                  entry.id,
-                                  periodDate,
-                              ),
-                          pHciTransNo: formatKonsultaHciNumber(
-                              "P",
-                              credentials.hciAccreNo,
-                              entry.id,
-                              periodDate,
-                          ),
-                          pProfDate: periodDate.toISOString().slice(0, 10),
-                          pPatientPin: entry.philHealthPin,
-                          pPatientType: patientType,
-                          pPatientAge: patientAge,
-                          pMemPin: memberPin,
-                          pEffYear: effYear,
-                          pATC: "",
-                          pIsWalkedIn: "N",
-                          pTransDate: periodDate.toISOString().slice(0, 10),
-                          pReportStatus: "U",
-                          pDeficiencyRemarks: "",
-                          medicalHistoryCodes:
-                              mappedMedicalHistoryByPatientId.get(entry.patientUserId) ??
-                              [],
-                          immunizations:
-                              mappedImmunizationsByPatientId.get(entry.patientUserId) ??
-                              [],
-                          subData: buildProfileSubData(p.id, p.gender ?? null),
-                      };
-                  })
-                : consultationRows.map((consultation) => {
-                      const entry = entryByConsultationId.get(consultation.id);
-                      if (!entry)
-                          throw new Error("Consultation is not attached to a batch entry.");
-                      const p = entry.Patient;
-                      const dob = p.dob ? p.dob.toISOString().slice(0, 10) : "1990-01-01";
-                      const patientType = (entry.memberType ?? "").trim() as "MM" | "DD";
-                      // For MM (member): pMemPin is the patient's own PIN
-                      // For DD (dependent): pMemPin is the member's PIN that they're dependent under
-                      const memberPin =
-                          patientType === "MM"
-                              ? entry.philHealthPin
-                              : entry.memberPin || entry.philHealthPin;
-                      const patientAge = formatAge(dob);
-                      const profDate = (
-                          consultation.Appointment?.AppointmentAttribute?.date ??
-                          consultation.createdAt
-                      )
-                          .toISOString()
-                          .slice(0, 10);
-                      const isWalkIn = consultation.Appointment?.AppointmentAttribute
-                          ?.isWalkIn
-                          ? "Y"
-                          : "N";
+                        return {
+                            pHciCaseNo:
+                                entry.hciCaseNo ||
+                                formatKonsultaHciNumber(
+                                    "T",
+                                    credentials.hciAccreNo,
+                                    entry.id,
+                                    periodDate,
+                                ),
+                            pHciTransNo: formatKonsultaHciNumber(
+                                "P",
+                                credentials.hciAccreNo,
+                                entry.id,
+                                periodDate,
+                            ),
+                            pProfDate: periodDate.toISOString().slice(0, 10),
+                            pPatientPin: entry.philHealthPin,
+                            pPatientType: patientType,
+                            pPatientAge: patientAge,
+                            pMemPin: memberPin,
+                            pEffYear: effYear,
+                            pATC: "",
+                            pIsWalkedIn: "N",
+                            pTransDate: periodDate.toISOString().slice(0, 10),
+                            pReportStatus: "U",
+                            pDeficiencyRemarks: "",
+                            medicalHistoryCodes:
+                                mappedMedicalHistoryByPatientId.get(entry.patientUserId) ??
+                                [],
+                            immunizations:
+                                mappedImmunizationsByPatientId.get(entry.patientUserId) ??
+                                [],
+                            subData: buildProfileSubData(p.id, p.gender ?? null),
+                        };
+                    })
+                    : consultationRows.map((consultation) => {
+                        const entry = entryByConsultationId.get(consultation.id);
+                        if (!entry)
+                            throw new Error("Consultation is not attached to a batch entry.");
+                        const p = entry.Patient;
+                        const dob = p.dob ? p.dob.toISOString().slice(0, 10) : "1990-01-01";
+                        const patientType = (entry.memberType ?? "").trim() as "MM" | "DD";
+                        // For MM (member): pMemPin is the patient's own PIN
+                        // For DD (dependent): pMemPin is the member's PIN that they're dependent under
+                        const memberPin =
+                            patientType === "MM"
+                                ? entry.philHealthPin
+                                : entry.memberPin || entry.philHealthPin;
+                        const patientAge = formatAge(dob);
+                        const profDate = (
+                            consultation.Appointment?.AppointmentAttribute?.date ??
+                            consultation.createdAt
+                        )
+                            .toISOString()
+                            .slice(0, 10);
+                        const isWalkIn =
+                            consultation.konsultaIsWalkedIn ||
+                            consultation.Appointment?.AppointmentAttribute?.isWalkIn
+                                ? "Y"
+                                : "N";
 
-                      return {
-                          pHciCaseNo:
-                              consultation.konsultaHciCaseNo ||
-                              entry.hciCaseNo ||
-                              formatKonsultaHciNumber(
-                                  "T",
-                                  credentials.hciAccreNo,
-                                  entry.id,
-                                  periodDate,
-                              ),
-                          pHciTransNo:
-                              consultation.konsultaHciTransNo ||
-                              formatKonsultaHciNumber(
-                                  "P",
-                                  credentials.hciAccreNo,
-                                  consultation.id,
-                                  consultation.createdAt,
-                              ),
-                          pProfDate: profDate,
-                          pPatientPin: entry.philHealthPin,
-                          pPatientType: patientType,
-                          pPatientAge: patientAge,
-                          pMemPin: memberPin,
-                          pEffYear: effYear,
-                          pATC:
-                              consultation.konsultaAtc ||
-                              (isWalkIn === "Y" ? "WALKEDIN" : ""),
-                          pIsWalkedIn: isWalkIn,
-                          pTransDate: consultation.createdAt.toISOString().slice(0, 10),
-                          pReportStatus: "U",
-                          pDeficiencyRemarks: "",
-                          medicalHistoryCodes:
-                              mappedMedicalHistoryByPatientId.get(entry.patientUserId) ??
-                              [],
-                          immunizations:
-                              mappedImmunizationsByPatientId.get(entry.patientUserId) ??
-                              [],
-                          physicalExamFindings:
-                              mappedPhysicalExamFindingsByConsultationId.get(
-                                  consultation.id,
-                              ) ?? [],
-                          subData: buildProfileSubData(p.id, p.gender ?? null),
-                      };
-                  });
+                        return {
+                            pHciCaseNo:
+                                consultation.konsultaHciCaseNo ||
+                                entry.hciCaseNo ||
+                                formatKonsultaHciNumber(
+                                    "T",
+                                    credentials.hciAccreNo,
+                                    entry.id,
+                                    periodDate,
+                                ),
+                            pHciTransNo:
+                                consultation.konsultaHciTransNo ||
+                                formatKonsultaHciNumber(
+                                    "P",
+                                    credentials.hciAccreNo,
+                                    consultation.id,
+                                    consultation.createdAt,
+                                ),
+                            pProfDate: profDate,
+                            pPatientPin: entry.philHealthPin,
+                            pPatientType: patientType,
+                            pPatientAge: patientAge,
+                            pMemPin: memberPin,
+                            pEffYear: effYear,
+                            pATC:
+                                consultation.konsultaAtc ||
+                                (isWalkIn === "Y" ? "WALKEDIN" : ""),
+                            pIsWalkedIn: isWalkIn,
+                            pTransDate: consultation.createdAt.toISOString().slice(0, 10),
+                            pReportStatus: "U",
+                            pDeficiencyRemarks: "",
+                            medicalHistoryCodes:
+                                mappedMedicalHistoryByPatientId.get(entry.patientUserId) ??
+                                [],
+                            immunizations:
+                                mappedImmunizationsByPatientId.get(entry.patientUserId) ??
+                                [],
+                            physicalExamFindings:
+                                mappedPhysicalExamFindingsByConsultationId.get(
+                                    consultation.id,
+                                ) ?? [],
+                            subData: buildProfileSubData(p.id, p.gender ?? null),
+                        };
+                    });
 
-        const soaps: KonsultaSoapData[] =
-            batch.reportTagging === "2"
-                ? consultationRows.map((consultation) => {
-                      const entry = entryByConsultationId.get(consultation.id);
-                      if (!entry)
-                          throw new Error("Consultation is not attached to a batch entry.");
-                      const soapDate = (
-                          consultation.Appointment?.AppointmentAttribute?.date ??
-                          consultation.createdAt
-                      )
-                          .toISOString()
-                          .slice(0, 10);
-                      const isWalkIn = consultation.Appointment?.AppointmentAttribute
-                          ?.isWalkIn
-                          ? "Y"
-                          : "N";
-                      const transDate = consultation.createdAt.toISOString().slice(0, 10);
-                      const patientType = (
-                          entry.memberType ?? ""
-                      ).trim() as KonsultaPatientType;
-                      // For MM (member): pMemPin is the patient's own PIN
-                      // For DD (dependent): pMemPin is the member's PIN that they're dependent under
-                      const memberPin =
-                          patientType === "MM"
-                              ? entry.philHealthPin
-                              : entry.memberPin || entry.philHealthPin;
+            const soaps: KonsultaSoapData[] =
+                batch.reportTagging === "2"
+                    ? consultationRows.map((consultation) => {
+                        const entry = entryByConsultationId.get(consultation.id);
+                        if (!entry)
+                            throw new Error("Consultation is not attached to a batch entry.");
+                        const soapDate = (
+                            consultation.Appointment?.AppointmentAttribute?.date ??
+                            consultation.createdAt
+                        )
+                            .toISOString()
+                            .slice(0, 10);
+                        const isWalkIn =
+                            consultation.konsultaIsWalkedIn ||
+                            consultation.Appointment?.AppointmentAttribute?.isWalkIn
+                                ? "Y"
+                                : "N";
+                        const transDate = consultation.createdAt.toISOString().slice(0, 10);
+                        const patientType = (
+                            entry.memberType ?? ""
+                        ).trim() as KonsultaPatientType;
+                        // For MM (member): pMemPin is the patient's own PIN
+                        // For DD (dependent): pMemPin is the member's PIN that they're dependent under
+                        const memberPin =
+                            patientType === "MM"
+                                ? entry.philHealthPin
+                                : entry.memberPin || entry.philHealthPin;
 
-                      // Build SOAP subData from consultation clinical data
-                      const subjNote = consultation.ConsultationNotes?.find(
-                          (n) => n.section === "subjective",
-                      );
-                      const planNote = consultation.ConsultationNotes?.find(
-                          (n) => n.section === "plan",
-                      );
-                      const assessmentNote = consultation.ConsultationNotes?.find(
-                          (n) => n.section === "assessment",
-                      );
+                        // Build SOAP subData from consultation clinical data
+                        const subjNote = consultation.ConsultationNotes?.find(
+                            (n) => n.section === "subjective",
+                        );
+                        const planNote = consultation.ConsultationNotes?.find(
+                            (n) => n.section === "plan",
+                        );
+                        const assessmentNote = consultation.ConsultationNotes?.find(
+                            (n) => n.section === "assessment",
+                        );
 
-                      // Vitals: find the most recent vital sign for this patient on or before consultation date
-                      const consultPatientId = consultation.ClinicPatient?.patientId;
-                      const patientProfileEntry = consultPatientId
-                          ? patientProfileMap.get(consultPatientId)
-                          : undefined;
-                      const patientVitals = patientProfileEntry
-                          ? patientProfileEntry.VitalSigns.find(
+                        // Vitals: find the most recent vital sign for this patient on or before consultation date
+                        const consultPatientId = consultation.ClinicPatient?.patientId;
+                        const patientProfileEntry = consultPatientId
+                            ? patientProfileMap.get(consultPatientId)
+                            : undefined;
+                        const patientVitals = patientProfileEntry
+                            ? patientProfileEntry.VitalSigns.find(
                                 (v) => v.dateTaken <= consultation.createdAt,
                             ) ?? patientProfileEntry.VitalSigns[0]
-                          : undefined;
-                      // Pediatric measurements: find the closest on or before the consultation date
-                      const patientPediatric = patientProfileEntry
-                          ? patientProfileEntry.PediatricMeasurements.find(
+                            : undefined;
+                        // Pediatric measurements: find the closest on or before the consultation date
+                        const patientPediatric = patientProfileEntry
+                            ? patientProfileEntry.PediatricMeasurements.find(
                                 (pm) => pm.dateTaken <= consultation.createdAt,
                             ) ?? patientProfileEntry.PediatricMeasurements[0]
-                          : undefined;
+                            : undefined;
 
-                      const soapSubData: KonsultaSoapSubData = {
-                          // SUBJECTIVE
-                          illnessHistory: subjNote?.content ?? "",
-                          otherComplaint: consultation.subject ?? "",
+                        const soapSubData: KonsultaSoapSubData = {
+                            // SUBJECTIVE
+                            illnessHistory: subjNote?.content ?? "",
+                            otherComplaint: consultation.subject ?? "",
 
-                          // PEPERT from vitals
-                          systolic:
-                              patientVitals?.bpSystolic != null
-                                  ? String(patientVitals.bpSystolic)
-                                  : "",
-                          diastolic:
-                              patientVitals?.bpDiastolic != null
-                                  ? String(patientVitals.bpDiastolic)
-                                  : "",
-                          hr:
-                              patientVitals?.pulseRate != null
-                                  ? String(patientVitals.pulseRate)
-                                  : "",
-                          rr:
-                              patientVitals?.respRate != null
-                                  ? String(patientVitals.respRate)
-                                  : "",
-                          temp:
-                              patientVitals?.temp != null
-                                  ? String(patientVitals.temp)
-                                  : "",
-                          height:
-                              patientVitals?.height != null
-                                  ? String(patientVitals.height)
-                                  : "",
-                          weight:
-                              patientVitals?.weight != null
-                                  ? String(patientVitals.weight)
-                                  : "",
-                          bmi:
-                              patientVitals?.bmi != null
-                                  ? String(patientVitals.bmi)
-                                  : "",
-                          // Pediatric measurements
-                          length:
-                              patientPediatric?.length != null
-                                  ? String(patientPediatric.length)
-                                  : "",
-                          headCirc:
-                              patientPediatric?.headCircumference != null
-                                  ? String(patientPediatric.headCircumference)
-                                  : "",
-                          skinfoldThickness:
-                              patientPediatric?.skinfoldThickness != null
-                                  ? String(patientPediatric.skinfoldThickness)
-                                  : "",
-                          waist:
-                              patientPediatric?.waistCircumference != null
-                                  ? String(patientPediatric.waistCircumference)
-                                  : "",
-                          hip:
-                              patientPediatric?.hipCircumference != null
-                                  ? String(patientPediatric.hipCircumference)
-                                  : "",
-                          limbs:
-                              patientPediatric?.limbCircumference != null
-                                  ? String(patientPediatric.limbCircumference)
-                                  : "",
-                          midUpperArmCirc:
-                              patientPediatric?.midUpperArmCircumference != null
-                                  ? String(patientPediatric.midUpperArmCircumference)
-                                  : "",
+                            // PEPERT from vitals
+                            systolic:
+                                patientVitals?.bpSystolic != null
+                                    ? String(patientVitals.bpSystolic)
+                                    : "",
+                            diastolic:
+                                patientVitals?.bpDiastolic != null
+                                    ? String(patientVitals.bpDiastolic)
+                                    : "",
+                            hr:
+                                patientVitals?.pulseRate != null
+                                    ? String(patientVitals.pulseRate)
+                                    : "",
+                            rr:
+                                patientVitals?.respRate != null
+                                    ? String(patientVitals.respRate)
+                                    : "",
+                            temp:
+                                patientVitals?.temp != null
+                                    ? String(patientVitals.temp)
+                                    : "",
+                            height:
+                                patientVitals?.height != null
+                                    ? String(patientVitals.height)
+                                    : "",
+                            weight:
+                                patientVitals?.weight != null
+                                    ? String(patientVitals.weight)
+                                    : "",
+                            bmi:
+                                patientVitals?.bmi != null
+                                    ? String(patientVitals.bmi)
+                                    : "",
+                            // Pediatric measurements
+                            length:
+                                patientPediatric?.length != null
+                                    ? String(patientPediatric.length)
+                                    : "",
+                            headCirc:
+                                patientPediatric?.headCircumference != null
+                                    ? String(patientPediatric.headCircumference)
+                                    : "",
+                            skinfoldThickness:
+                                patientPediatric?.skinfoldThickness != null
+                                    ? String(patientPediatric.skinfoldThickness)
+                                    : "",
+                            waist:
+                                patientPediatric?.waistCircumference != null
+                                    ? String(patientPediatric.waistCircumference)
+                                    : "",
+                            hip:
+                                patientPediatric?.hipCircumference != null
+                                    ? String(patientPediatric.hipCircumference)
+                                    : "",
+                            limbs:
+                                patientPediatric?.limbCircumference != null
+                                    ? String(patientPediatric.limbCircumference)
+                                    : "",
+                            midUpperArmCirc:
+                                patientPediatric?.midUpperArmCircumference != null
+                                    ? String(patientPediatric.midUpperArmCircumference)
+                                    : "",
 
-                          // ICDS from ConsultationDiagnoses
-                          icdCodes:
-                              consultation.ConsultationDiagnoses?.map(
-                                  (d) => d.icd10Code,
-                              ) ?? [],
+                            // ICDS from ConsultationDiagnoses
+                            icdCodes:
+                                consultation.ConsultationDiagnoses?.map(
+                                    (d) => d.icd10Code,
+                                ) ?? [],
 
-                          // MANAGEMENTS from Interventions (mapped to code "X" = Other)
-                          managements:
-                              consultation.Interventions &&
-                              consultation.Interventions.length > 0
-                                  ? consultation.Interventions.map((i) => ({
+                            // MANAGEMENTS from Interventions (mapped to code "X" = Other)
+                            managements:
+                                consultation.Interventions &&
+                                    consultation.Interventions.length > 0
+                                    ? consultation.Interventions.map((i) => ({
                                         id: "X",
                                         othRemarks:
                                             `${i.Action.name}${i.details ? `: ${i.details}` : ""}`.slice(
@@ -3016,187 +3078,187 @@ export const generateBatchXmlAction = withErrorHandling(
                                                 200,
                                             ),
                                     }))
-                                  : undefined,
+                                    : undefined,
 
-                          // ADVICE from plan or assessment note
-                          advice: (
-                              planNote?.content ??
-                              assessmentNote?.content ??
-                              ""
-                          ).slice(0, 500),
-                      };
+                            // ADVICE from plan or assessment note
+                            advice: (
+                                planNote?.content ??
+                                assessmentNote?.content ??
+                                ""
+                            ).slice(0, 500),
+                        };
 
-                      return {
-                          pHciCaseNo:
-                              consultation.konsultaHciCaseNo ||
-                              entry.hciCaseNo ||
-                              formatKonsultaHciNumber(
-                                  "T",
-                                  credentials.hciAccreNo,
-                                  entry.id,
-                                  periodDate,
-                              ),
-                          pHciTransNo:
-                              consultation.konsultaHciTransNo ||
-                              formatKonsultaHciNumber(
-                                  "S",
-                                  credentials.hciAccreNo,
-                                  consultation.id,
-                                  consultation.createdAt,
-                              ),
-                          pSoapDate: soapDate,
-                          pPatientPin: entry.philHealthPin,
-                          pPatientType: patientType,
-                          pMemPin: memberPin,
-                          pEffYear: effYear,
-                          pATC:
-                              consultation.konsultaAtc ||
-                              (isWalkIn === "Y" ? "WALKEDIN" : ""),
-                          pIsWalkedIn: isWalkIn,
-                          pCoPay: "0",
-                          pTransDate: transDate,
-                          pReportStatus: "U",
-                          pDeficiencyRemarks: "",
-                          icdCodes:
-                              mappedIcdCodesByConsultationId.get(consultation.id) ??
-                              [],
-                          diagnosticCodes:
-                              mappedDiagnosticsByConsultationId.get(consultation.id) ??
-                              [],
-                          managementCodes:
-                              mappedManagementByConsultationId.get(consultation.id) ??
-                              [],
-                          physicalExamFindings:
-                              mappedPhysicalExamFindingsByConsultationId.get(
-                                  consultation.id,
-                              ) ?? [],
-                          subData: soapSubData,
-                      };
-                  })
-                : [];
+                        return {
+                            pHciCaseNo:
+                                consultation.konsultaHciCaseNo ||
+                                entry.hciCaseNo ||
+                                formatKonsultaHciNumber(
+                                    "T",
+                                    credentials.hciAccreNo,
+                                    entry.id,
+                                    periodDate,
+                                ),
+                            pHciTransNo:
+                                consultation.konsultaHciTransNo ||
+                                formatKonsultaHciNumber(
+                                    "S",
+                                    credentials.hciAccreNo,
+                                    consultation.id,
+                                    consultation.createdAt,
+                                ),
+                            pSoapDate: soapDate,
+                            pPatientPin: entry.philHealthPin,
+                            pPatientType: patientType,
+                            pMemPin: memberPin,
+                            pEffYear: effYear,
+                            pATC:
+                                consultation.konsultaAtc ||
+                                (isWalkIn === "Y" ? "WALKEDIN" : ""),
+                            pIsWalkedIn: isWalkIn,
+                            pCoPay: "0",
+                            pTransDate: transDate,
+                            pReportStatus: "U",
+                            pDeficiencyRemarks: "",
+                            icdCodes:
+                                mappedIcdCodesByConsultationId.get(consultation.id) ??
+                                [],
+                            diagnosticCodes:
+                                mappedDiagnosticsByConsultationId.get(consultation.id) ??
+                                [],
+                            managementCodes:
+                                mappedManagementByConsultationId.get(consultation.id) ??
+                                [],
+                            physicalExamFindings:
+                                mappedPhysicalExamFindingsByConsultationId.get(
+                                    consultation.id,
+                                ) ?? [],
+                            subData: soapSubData,
+                        };
+                    })
+                    : [];
 
-        const medicines = medicineMappingResult.mappedMedicines
-            .map((medicine) => {
-                const entry = entryByConsultationId.get(medicine.consultationId);
-                if (!entry) {
-                    return null;
-                }
+            const medicines = medicineMappingResult.mappedMedicines
+                .map((medicine) => {
+                    const entry = entryByConsultationId.get(medicine.consultationId);
+                    if (!entry) {
+                        return null;
+                    }
 
-                return {
-                    pHciCaseNo:
-                        entry.hciCaseNo ||
-                        formatKonsultaHciNumber(
-                            "T",
-                            credentials.hciAccreNo,
-                            entry.id,
-                            periodDate,
-                        ),
-                    pHciTransNo:
-                        entry.hciTransNo ||
-                        formatKonsultaHciNumber(
-                            "S",
-                            credentials.hciAccreNo,
-                            medicine.consultationId,
-                            periodDate,
-                        ),
-                    pCategory: "",
-                    pDrugCode: medicine.mappedDrugCode ?? "",
-                    pGenericCode: medicine.mappedGenericCode ?? "",
-                    pSaltCode: "",
-                    pStrengthCode: "",
-                    pFormCode: "",
-                    pUnitCode: "",
-                    pPackageCode: "",
-                    pOtherMedicine: "",
-                    pRoute: "",
-                    pQuantity: medicine.quantity ? String(medicine.quantity) : "",
-                    pActualUnitPrice: "",
-                    pTotalAmtPrice: "",
-                    pInstructionQuantity: medicine.quantity ? String(medicine.quantity) : "",
-                    pInstructionStrength: medicine.dosage ?? "",
-                    pInstructionFrequency: medicine.frequency ?? "",
-                    pPrescribingPhysician: "",
-                    pIsDispensed: "N",
-                    pDateDispensed: "",
-                    pDispensingPersonnel: "",
-                    pIsApplicable: "Y" as const,
-                    pDateAdded: periodDate.toISOString().slice(0, 10),
-                    pReportStatus: "U" as const,
-                    pDeficiencyRemarks: "",
-                };
-            })
-            .filter(
-                (medicine): medicine is NonNullable<typeof medicine> =>
-                    medicine !== null,
-            );
+                    return {
+                        pHciCaseNo:
+                            entry.hciCaseNo ||
+                            formatKonsultaHciNumber(
+                                "T",
+                                credentials.hciAccreNo,
+                                entry.id,
+                                periodDate,
+                            ),
+                        pHciTransNo:
+                            entry.hciTransNo ||
+                            formatKonsultaHciNumber(
+                                "S",
+                                credentials.hciAccreNo,
+                                medicine.consultationId,
+                                periodDate,
+                            ),
+                        pCategory: "",
+                        pDrugCode: medicine.mappedDrugCode ?? "",
+                        pGenericCode: medicine.mappedGenericCode ?? "",
+                        pSaltCode: "",
+                        pStrengthCode: "",
+                        pFormCode: "",
+                        pUnitCode: "",
+                        pPackageCode: "",
+                        pOtherMedicine: "",
+                        pRoute: "",
+                        pQuantity: medicine.quantity ? String(medicine.quantity) : "",
+                        pActualUnitPrice: "",
+                        pTotalAmtPrice: "",
+                        pInstructionQuantity: medicine.quantity ? String(medicine.quantity) : "",
+                        pInstructionStrength: medicine.dosage ?? "",
+                        pInstructionFrequency: medicine.frequency ?? "",
+                        pPrescribingPhysician: "",
+                        pIsDispensed: "N",
+                        pDateDispensed: "",
+                        pDispensingPersonnel: "",
+                        pIsApplicable: "Y" as const,
+                        pDateAdded: periodDate.toISOString().slice(0, 10),
+                        pReportStatus: "U" as const,
+                        pDeficiencyRemarks: "",
+                    };
+                })
+                .filter(
+                    (medicine): medicine is NonNullable<typeof medicine> =>
+                        medicine !== null,
+                );
 
-        const xml = buildPcbXml({
-            credentials,
-            transmittalNumber: transmittalNo,
-            enlistments: batch.reportTagging === "1" ? enlistments : [],
-            profiles,
-            soaps,
-            medicines,
-        });
+            const xml = buildPcbXml({
+                credentials,
+                transmittalNumber: transmittalNo,
+                enlistments: batch.reportTagging === "1" ? enlistments : [],
+                profiles,
+                soaps,
+                medicines,
+            });
 
-        // Update batch with new XML and clear old validation/submission results
-        await prisma.konsultaBatch.update({
-            where: { batchUid },
-            data: {
-                xmlPayload: xml,
-                transmittalNo,
-                status: "GENERATED",
-                errorMessage: summarizeGeneratedKonsultaBatchDeficiencies(
-                    generatedDeficiencies,
-                ),
-            },
-        });
+            // Update batch with new XML and clear old validation/submission results
+            await prisma.konsultaBatch.update({
+                where: { batchUid },
+                data: {
+                    xmlPayload: xml,
+                    transmittalNo,
+                    status: "GENERATED",
+                    errorMessage: summarizeGeneratedKonsultaBatchDeficiencies(
+                        generatedDeficiencies,
+                    ),
+                },
+            });
 
-        // Clear validation and submission results using raw query to handle JSON null properly
-        await prisma.$executeRaw`
+            // Clear validation and submission results using raw query to handle JSON null properly
+            await prisma.$executeRaw`
             UPDATE "KonsultaBatch" 
             SET "validateResult" = NULL, "submitResult" = NULL 
             WHERE "batchUid" = ${batchUid}
         `;
 
-        if (generatedDeficiencies.length > 0) {
+            if (generatedDeficiencies.length > 0) {
+                await prisma.konsultaBatch.update({
+                    where: { batchUid },
+                    data: {
+                        validateResult: toInputJsonObject({
+                            generatedDeficiencies,
+                        }),
+                    },
+                });
+            }
+
+            // Reset all included entries back to PENDING status so they can be re-validated
+            await prisma.konsultaEntry.updateMany({
+                where: { batchId: batch.id, included: true },
+                data: { status: "PENDING" },
+            });
+
+            return {
+                message: "XML generated successfully",
+                data: { transmittalNo, xmlLength: xml.length, xmlPayload: xml },
+            };
+        } catch (error) {
+            const message =
+                error instanceof Error ? error.message : "Failed to generate XML.";
             await prisma.konsultaBatch.update({
                 where: { batchUid },
                 data: {
-                    validateResult: toInputJsonObject({
-                        generatedDeficiencies,
-                    }),
+                    status: "FAILED",
+                    errorMessage: message,
                 },
             });
+            await prisma.konsultaEntry.updateMany({
+                where: { batchId: batch.id, included: true },
+                data: { status: "FAILED" },
+            });
+            throw error;
         }
-
-        // Reset all included entries back to PENDING status so they can be re-validated
-        await prisma.konsultaEntry.updateMany({
-            where: { batchId: batch.id, included: true },
-            data: { status: "PENDING" },
-        });
-
-        return {
-            message: "XML generated successfully",
-            data: { transmittalNo, xmlLength: xml.length, xmlPayload: xml },
-        };
-    } catch (error) {
-        const message =
-            error instanceof Error ? error.message : "Failed to generate XML.";
-        await prisma.konsultaBatch.update({
-            where: { batchUid },
-            data: {
-                status: "FAILED",
-                errorMessage: message,
-            },
-        });
-        await prisma.konsultaEntry.updateMany({
-            where: { batchId: batch.id, included: true },
-            data: { status: "FAILED" },
-        });
-        throw error;
-    }
-});
+    });
 
 // ─── Validate + Submit ────────────────────────────────────────────────────────
 
@@ -3687,3 +3749,68 @@ export const generateConsultationCaseTransNumbersAction = withErrorHandling(
         };
     },
 );
+
+export const extractRegistrationListAction = withErrorHandling(
+    async ({
+        clinicUid,
+        startDate,
+        endDate,
+    }: {
+        clinicUid: string;
+        startDate: string; // MM/DD/YYYY
+        endDate: string; // MM/DD/YYYY
+    }) => {
+        const session = await getCachedSession();
+        if (!session) throw new Error("Unauthorized");
+
+        const clinicId = await resolveClinicId(clinicUid);
+        const token = await getKonsultaTokenForClinic(clinicId);
+        const credentials = await getClinicKonsultaCredentials(clinicId);
+
+        const { extractRegistrationList } = await import(
+            "@/services/konsulta/konsulta-soap.service"
+        );
+        const { parseErlXmlList } = await import(
+            "@/services/konsulta/erl-parser"
+        );
+
+        const params = { pStartDate: startDate, pEndDate: endDate };
+        console.log("[ERL] Request Params:", params);
+
+        const raw = await extractRegistrationList(params, token);
+
+        let xmlPayload = raw.return;
+
+        try {
+            if (credentials.cipherKey) {
+                // PhilHealth may return XML as a string inside JSON, or a direct JSON with cipher payload.
+                // We attempt to decrypt the raw string or the parsed result.
+                let toDecrypt = raw.return;
+                try {
+                    const parsed = JSON.parse(raw.return);
+                    if (parsed.result) toDecrypt = parsed.result;
+                    // Note: If the actual encrypted payload is a JSON object like {"cipherText": "..."},
+                    // then we might need to stringify it before passing to decryptXmlPayload.
+                    // But usually, PhilHealth returns JSON stringified inside result, or directly returns the cipher object.
+                    // Let's pass the raw return if it looks like JSON to decryptXmlPayload, 
+                    // which expects a JSON string containing the cipher data.
+                    toDecrypt = raw.return;
+                } catch { }
+
+                const decrypted = decryptXmlPayload(toDecrypt, credentials.cipherKey);
+                if (decrypted) {
+                    xmlPayload = decrypted;
+                }
+            }
+        } catch (error) {
+            console.log("[ERL] Decryption failed, processing as plain text. Error:", error);
+        }
+        const assignments = parseErlXmlList(xmlPayload);
+
+        return {
+            message: `Extracted ${assignments.length} registration records`,
+            data: assignments,
+        };
+    },
+);
+

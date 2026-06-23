@@ -74,10 +74,15 @@ export function parseErlXml(raw: string, pinFilter?: string): ErlAssignment | nu
             pPrimaryMiddleName: get("pPrimaryMiddleName"),
             pPrimaryExtName: get("pPrimaryExtName"),
             pPrimaryDateOfBirth: get("pPrimaryDateOfBirth"),
+            pPrimarySex: get("pPrimarySex"),
             pMobileNumber: get("pMobileNumber"),
+            pLandlineNumber: get("pLandlineNumber"),
+            pMemberNewCat: get("pMemberNewCat"),
+            pMemberNewCatDesc: get("pMemberNewCatDesc"),
             pPackageType: (get("pPackageType") || "K") as "E" | "K",
             pEffYear: get("pEffYear"),
             pAssignedDate: get("pAssignedDate"),
+            pAssignedStatus: get("pAssignedStatus"),
         };
     };
 
@@ -97,6 +102,60 @@ export function parseErlXml(raw: string, pinFilter?: string): ErlAssignment | nu
         candidates.find(m => /pAssignedStatus="1"/i.test(m[1])) ?? candidates[0];
     return makeAssignment(active[1]);
 }
+
+/**
+ * Extract a list of ASSIGNMENT elements from an extractRegistrationList
+ * SOAP response.
+ *
+ * @param raw     The raw `{return}` value from the SOAP call.
+ * @returns       An array of matching assignments.
+ */
+export function parseErlXmlList(raw: string): ErlAssignment[] {
+    let xml = raw;
+
+    try {
+        const parsed = JSON.parse(raw) as { result?: string; success?: boolean };
+        if (!parsed.success) return [];
+        if (parsed.result) xml = parsed.result;
+    } catch {
+        /* not JSON — raw string is the XML */
+    }
+
+    const candidates = [...xml.matchAll(/<ASSIGNMENT\s([\s\S]*?)(?:\/>|>)/g)];
+    
+    return candidates.map(m => {
+        const attrStr = m[1];
+        const get = (name: string): string =>
+            new RegExp(`${name}="([^"]*)"`, "i").exec(attrStr)?.[1] ?? "";
+        
+        return {
+            pAssignedPin: get("pAssignedPin"),
+            pAssignedLastName: get("pAssignedLastName"),
+            pAssignedFirstName: get("pAssignedFirstName"),
+            pAssignedMiddleName: get("pAssignedMiddleName"),
+            pAssignedExtName: get("pAssignedExtName"),
+            pAssignedDateOfBirth: get("pAssignedDateOfBirth"),
+            pAssignedSex: get("pAssignedSex") as "M" | "F",
+            pAssignedType: get("pAssignedType") as "MM" | "DD",
+            pPrimaryPIN: get("pPrimaryPIN"),
+            pPrimaryLastName: get("pPrimaryLastName"),
+            pPrimaryFirstName: get("pPrimaryFirstName"),
+            pPrimaryMiddleName: get("pPrimaryMiddleName"),
+            pPrimaryExtName: get("pPrimaryExtName"),
+            pPrimaryDateOfBirth: get("pPrimaryDateOfBirth"),
+            pPrimarySex: get("pPrimarySex"),
+            pMobileNumber: get("pMobileNumber"),
+            pLandlineNumber: get("pLandlineNumber"),
+            pMemberNewCat: get("pMemberNewCat"),
+            pMemberNewCatDesc: get("pMemberNewCatDesc"),
+            pPackageType: get("pPackageType") || "K",
+            pEffYear: get("pEffYear"),
+            pAssignedDate: get("pAssignedDate"),
+            pAssignedStatus: get("pAssignedStatus"),
+        };
+    });
+}
+
 
 /**
  * Normalise a name string: trim, uppercase, remove diacritics, collapse spaces.

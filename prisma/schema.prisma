@@ -240,7 +240,8 @@ model ClinicPatient {
   profileCompletionStatus       ProfileCompletionStatus     @default(INCOMPLETE)
   konsultaPatientType           String? // "MM" member | "DD" dependent
   konsultaEffYear               String?
-  konsultaMemberPin             String?
+  konsultaPatientPin            String? // Snapshot of the patient's own PIN at enrollment
+  konsultaMemberPin             String? // Snapshot of the principal's PIN (if dependent)
   konsultaRegistrationStatus    String? // REGISTERED | NOT_REGISTERED | FAILED | UNENROLLED
   konsultaRegisteredAt          DateTime?
   konsultaRegistrationCheckedAt DateTime?
@@ -1323,8 +1324,8 @@ model ClinicSetting {
   konsultaUsername              String?
   konsultaPassword              String?
   pmccNumber                    String?
-  konsultaCipherKey           String?
-  konsultaCertificationId     String?
+  konsultaCipherKey             String?
+  konsultaCertificationId       String?
   Clinic                        Clinic  @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
@@ -1662,6 +1663,7 @@ model ConsultationTicket {
   konsultaHciCaseNo           String?                      @unique
   konsultaHciTransNo          String?                      @unique
   konsultaAtc                 String?
+  konsultaIsWalkedIn          Boolean                      @default(false)
   konsultaAtcValidationStatus String? // VALID | INVALID | FAILED
   konsultaAtcValidatedAt      DateTime?
   konsultaAtcValidationResult Json?
@@ -2948,25 +2950,25 @@ enum KonsultaBatchStatus {
 
 /// Global PhilHealth reference library items imported from the bundled Konsulta kit.
 model PhilHealthKonsultaReference {
-  id                            Int                            @id @default(autoincrement())
-  domainKey                     String
-  title                         String
-  category                      String
-  sourceFileName                String
-  sheetName                     String
-  rowSignature                  String                         @unique
-  externalCode                  String?
-  displayLabel                  String
-  normalizedCode                String?
-  normalizedLabel               String
-  libraryStatus                 String?
-  metadata                      Json?
-  rawRow                        Json?
-  isActive                      Boolean                        @default(true)
-  createdAt                     DateTime                       @default(now())
-  updatedAt                     DateTime                       @updatedAt
-  ClinicKonsultaTerms           ClinicKonsultaTerm[]           @relation("SeededFromPhilHealthReference")
-  ClinicKonsultaTermMappings    ClinicKonsultaTermMapping[]    @relation("MappedPhilHealthReference")
+  id                         Int                         @id @default(autoincrement())
+  domainKey                  String
+  title                      String
+  category                   String
+  sourceFileName             String
+  sheetName                  String
+  rowSignature               String                      @unique
+  externalCode               String?
+  displayLabel               String
+  normalizedCode             String?
+  normalizedLabel            String
+  libraryStatus              String?
+  metadata                   Json?
+  rawRow                     Json?
+  isActive                   Boolean                     @default(true)
+  createdAt                  DateTime                    @default(now())
+  updatedAt                  DateTime                    @updatedAt
+  ClinicKonsultaTerms        ClinicKonsultaTerm[]        @relation("SeededFromPhilHealthReference")
+  ClinicKonsultaTermMappings ClinicKonsultaTermMapping[] @relation("MappedPhilHealthReference")
 
   @@index([domainKey, normalizedCode])
   @@index([domainKey, normalizedLabel])
@@ -2976,7 +2978,7 @@ model PhilHealthKonsultaReference {
 
 /// Clinic-owned internal library items used for documentation and later mapped to PhilHealth references.
 model ClinicKonsultaTerm {
-  id                    Int                            @id @default(autoincrement())
+  id                    Int                          @id @default(autoincrement())
   clinicId              Int
   domainKey             String
   title                 String
@@ -2984,13 +2986,13 @@ model ClinicKonsultaTerm {
   displayLabel          String
   normalizedCode        String?
   normalizedLabel       String
-  sourceType            String                         @default("CUSTOM") // SEEDED | CUSTOM
+  sourceType            String                       @default("CUSTOM") // SEEDED | CUSTOM
   metadata              Json?
-  isActive              Boolean                        @default(true)
-  createdAt             DateTime                       @default(now())
-  updatedAt             DateTime                       @updatedAt
+  isActive              Boolean                      @default(true)
+  createdAt             DateTime                     @default(now())
+  updatedAt             DateTime                     @updatedAt
   seededFromReferenceId Int?
-  Clinic                Clinic                      @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  Clinic                Clinic                       @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   SeededFromReference   PhilHealthKonsultaReference? @relation("SeededFromPhilHealthReference", fields: [seededFromReferenceId], references: [id], onDelete: SetNull, onUpdate: NoAction)
   Mapping               ClinicKonsultaTermMapping?
 
@@ -3003,15 +3005,15 @@ model ClinicKonsultaTerm {
 
 /// Links one clinic internal library item to at most one PhilHealth reference row.
 model ClinicKonsultaTermMapping {
-  id                        Int                         @id @default(autoincrement())
-  clinicLibraryItemId       Int                         @unique
+  id                        Int                          @id @default(autoincrement())
+  clinicLibraryItemId       Int                          @unique
   philHealthReferenceItemId Int?
-  mappingStatus             String                      @default("UNMAPPED") // MAPPED | UNMAPPED | NEEDS_REVIEW
+  mappingStatus             String                       @default("UNMAPPED") // MAPPED | UNMAPPED | NEEDS_REVIEW
   mappingNotes              String?
   mappedAt                  DateTime?
-  createdAt                 DateTime                    @default(now())
-  updatedAt                 DateTime                    @updatedAt
-  ClinicLibraryItem         ClinicKonsultaTerm         @relation(fields: [clinicLibraryItemId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  createdAt                 DateTime                     @default(now())
+  updatedAt                 DateTime                     @updatedAt
+  ClinicLibraryItem         ClinicKonsultaTerm           @relation(fields: [clinicLibraryItemId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   PhilHealthReferenceItem   PhilHealthKonsultaReference? @relation("MappedPhilHealthReference", fields: [philHealthReferenceItemId], references: [id], onDelete: SetNull, onUpdate: NoAction)
 
   @@index([mappingStatus])
@@ -3074,22 +3076,22 @@ model PhilHealthYakapLibrary {
   id          String   @id @default(uuid())
   name        String   @unique
   description String?
-  columns     Json     // Array of column names e.g., ["CODE", "DESCRIPTION"]
+  columns     Json // Array of column names e.g., ["CODE", "DESCRIPTION"]
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  Rows        PhilHealthYakapLibraryRow[]
+  Rows PhilHealthYakapLibraryRow[]
 }
 
 /// Dynamic table for storing rows of a Yakap Lookup Library
 model PhilHealthYakapLibraryRow {
-  id          String   @id @default(uuid())
-  libraryId   String
-  data        Json     // The actual row data e.g., { "CODE": "123", "DESCRIPTION": "Test" }
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(uuid())
+  libraryId String
+  data      Json // The actual row data e.g., { "CODE": "123", "DESCRIPTION": "Test" }
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  Library     PhilHealthYakapLibrary @relation(fields: [libraryId], references: [id], onDelete: Cascade)
+  Library PhilHealthYakapLibrary @relation(fields: [libraryId], references: [id], onDelete: Cascade)
 }

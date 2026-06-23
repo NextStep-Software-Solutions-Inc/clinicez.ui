@@ -142,10 +142,15 @@ export interface ErlAssignment {
     pPrimaryMiddleName: string;
     pPrimaryExtName: string;
     pPrimaryDateOfBirth: string;
+    pPrimarySex: "M" | "F" | string;
     pMobileNumber: string;
-    pPackageType: "E" | "K";
+    pLandlineNumber: string;
+    pMemberNewCat: string;
+    pMemberNewCatDesc: string;
+    pPackageType: "E" | "K" | string;
     pEffYear: string;
     pAssignedDate: string;
+    pAssignedStatus: "1" | "2" | string;
 }
 
 // ─── Deprecated aliases (kept for backwards-compat during migration) ─────────

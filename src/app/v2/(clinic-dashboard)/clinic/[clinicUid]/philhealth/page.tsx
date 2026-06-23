@@ -18,7 +18,7 @@ export default async function ClinicPhilHealthPage({ params }: PhilHealthPagePro
   return (
     <div className="p-3 sm:p-6">
       <div className="mb-4">
-        <h1 className="text-2xl font-bold tracking-tight">PhilHealth Konsulta</h1>
+        <h1 className="text-2xl font-bold tracking-tight">PhilHealth Konsulta/Yakap</h1>
         <p className="text-muted-foreground text-sm mt-1">
           Manage enrolled patients, generate PCB reports, and submit to PhilHealth.
         </p>

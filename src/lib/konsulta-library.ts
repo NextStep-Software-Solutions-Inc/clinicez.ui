@@ -932,7 +932,19 @@ function parseWorksheet(
 
   const normalizedRows = rawRows.map((row) => row.map(normalizeCellValue));
 
-  if (normalizedRows.length === 0) {
+  let processedRows = normalizedRows;
+  if (normalizedRows.length > 0) {
+    const firstRow = normalizedRows[0];
+    const col3Value = firstRow[2];
+    const col3Normalized = typeof col3Value === "string" ? col3Value.toLowerCase().trim() : "";
+    if (col3Normalized.includes("status") || col3Normalized.includes("stat")) {
+      processedRows = normalizedRows.map((row) =>
+        row.filter((_, index) => index !== 3 && index !== 4)
+      );
+    }
+  }
+
+  if (processedRows.length === 0) {
     return {
       sheetName,
       headers: [],
@@ -951,7 +963,7 @@ function parseWorksheet(
     };
   }
 
-  const [headerRow, ...dataRows] = normalizedRows;
+  const [headerRow, ...dataRows] = processedRows;
   const { headers, warnings } = buildHeaders(headerRow);
   const contentRows = dataRows.filter(hasRowContent);
   const rows = createParsedRows(contentRows, headers);

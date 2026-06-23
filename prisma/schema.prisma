@@ -1323,7 +1323,8 @@ model ClinicSetting {
   konsultaUsername              String?
   konsultaPassword              String?
   pmccNumber                    String?
-  // Removed: konsultaCipherKey and konsultaCertificationId (now sourced from environment variables)
+  konsultaCipherKey           String?
+  konsultaCertificationId     String?
   Clinic                        Clinic  @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
@@ -3066,4 +3067,29 @@ model KonsultaEntry {
   @@unique([batchId, patientUserId], name: "unique_batch_patient")
   @@index([batchId])
   @@index([philHealthPin])
+}
+
+/// Dynamic table for storing PhilHealth Yakap Lookup Library names and columns
+model PhilHealthYakapLibrary {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  columns     Json     // Array of column names e.g., ["CODE", "DESCRIPTION"]
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  Rows        PhilHealthYakapLibraryRow[]
+}
+
+/// Dynamic table for storing rows of a Yakap Lookup Library
+model PhilHealthYakapLibraryRow {
+  id          String   @id @default(uuid())
+  libraryId   String
+  data        Json     // The actual row data e.g., { "CODE": "123", "DESCRIPTION": "Test" }
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  Library     PhilHealthYakapLibrary @relation(fields: [libraryId], references: [id], onDelete: Cascade)
 }

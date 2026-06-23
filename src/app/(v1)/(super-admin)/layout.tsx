@@ -27,8 +27,8 @@ const sidebarNavItems = [
     href: "/super-admin/diagnostics-procedures",
   },
   {
-    title: "Konsulta Libraries",
-    href: "/super-admin/konsulta-libraries",
+    title: "PhilHealth Yakap Libraries",
+    href: "/super-admin/yakap-libraries",
   },
   {
     title: "Location Management",

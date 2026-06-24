@@ -105,10 +105,10 @@ const GENERATED_DEFICIENCY_DOMAIN_LABELS = {
 type BatchEntryWithPatient = {
     id: number;
     patientUserId: number;
-    philHealthPin: string;
     Patient: {
         firstName: string | null;
         lastName: string | null;
+        PhilHealthRecords: { pin: string }[];
     };
 };
 
@@ -298,13 +298,22 @@ async function resolveDefaultMemberTypeId(
 
 const KONSULTA_PATIENT_SELECT = {
     id: true,
-    konsultaPatientType: true,
-    konsultaEffYear: true,
-    konsultaMemberPin: true,
-    konsultaRegistrationStatus: true,
-    konsultaRegisteredAt: true,
-    konsultaRegistrationCheckedAt: true,
-    konsultaRegistrationResult: true,
+    patientPin: true,
+    memberPin: true,
+    YakapRegistrations: {
+        select: {
+            id: true,
+            effYear: true,
+            patientType: true,
+            registrationStatus: true,
+            registeredAt: true,
+            registrationCheckedAt: true,
+            registrationResult: true,
+            hciCaseNo: true,
+            hciEnlistmentTransNo: true,
+            hciProfilingTransNo: true,
+        }
+    },
     Patient: {
         select: {
             id: true,
@@ -363,8 +372,12 @@ export const getPhilHealthPatientsAction = withErrorHandling(
                 clinicId,
                 isActive: true,
                 deletedAt: null,
-                konsultaEffYear: effYear,
-                konsultaRegistrationStatus: "REGISTERED",
+                YakapRegistrations: {
+                    some: {
+                        effYear,
+                        registrationStatus: "REGISTERED",
+                    },
+                },
             },
             select: KONSULTA_PATIENT_SELECT,
             orderBy: [
@@ -398,14 +411,11 @@ export const getAllClinicPatientsWithPhilHealthStatusAction = withErrorHandling(
         const patientSearch = buildPatientSearch(search);
         const registrationFilter: Prisma.ClinicPatientWhereInput =
             kind === "ENROLLED"
-                ? { konsultaEffYear: effYear, konsultaRegistrationStatus: "REGISTERED" }
+                ? { YakapRegistrations: { some: { effYear, registrationStatus: "REGISTERED" } } }
                 : {
-                    OR: [
-                        { konsultaEffYear: null },
-                        { konsultaEffYear: { not: effYear } },
-                        { konsultaRegistrationStatus: null },
-                        { konsultaRegistrationStatus: { not: "REGISTERED" } },
-                    ],
+                    YakapRegistrations: {
+                        none: { effYear, registrationStatus: "REGISTERED" }
+                    }
                 };
 
         const where: Prisma.ClinicPatientWhereInput = {
@@ -496,10 +506,11 @@ export const enrollPatientPhilHealthAction = withErrorHandling(
                     where: {
                         id: { not: clinicPatient.id },
                         patientId: clinicPatient.patientId,
-                        konsultaEffYear: effYear,
-                        konsultaRegistrationStatus: "REGISTERED",
                         isActive: true,
                         deletedAt: null,
+                        YakapRegistrations: {
+                            some: { effYear, registrationStatus: "REGISTERED" }
+                        }
                     },
                     select: { Clinic: { select: { name: true } } },
                 });
@@ -562,16 +573,35 @@ export const enrollPatientPhilHealthAction = withErrorHandling(
                 await tx.clinicPatient.update({
                     where: { id: clinicPatient.id },
                     data: {
-                        konsultaPatientType: patientType,
-                        konsultaPatientPin: normalizedPin,
-                        konsultaMemberPin:
-                            patientType === "MM" ? normalizedPin : memberPin?.trim() || null,
-                        konsultaEffYear: effYear,
-                        konsultaRegistrationStatus: "PENDING",
-                        konsultaRegistrationCheckedAt: null,
-                        konsultaRegistrationResult: Prisma.DbNull,
-                        konsultaUnenrolledAt: null,
+                        patientPin: normalizedPin,
+                        memberPin: patientType === "MM" ? normalizedPin : memberPin?.trim() || null,
                     },
+                });
+
+                await tx.yakapRegistration.upsert({
+                    where: {
+                        unique_patient_yakap_registration_year: {
+                            clinicPatientId: clinicPatient.id,
+                            effYear,
+                        }
+                    },
+                    create: {
+                        clinicPatientId: clinicPatient.id,
+                        effYear,
+                        patientType,
+                        patientPin: normalizedPin,
+                        memberPin: patientType === "MM" ? normalizedPin : memberPin?.trim() || null,
+                        registrationStatus: "PENDING",
+                    },
+                    update: {
+                        patientType,
+                        patientPin: normalizedPin,
+                        memberPin: patientType === "MM" ? normalizedPin : memberPin?.trim() || null,
+                        registrationStatus: "PENDING",
+                        registrationCheckedAt: null,
+                        registrationResult: Prisma.DbNull,
+                        unEnrolledAt: null,
+                    }
                 });
 
                 return {
@@ -610,14 +640,19 @@ export const enrollPatientPhilHealthAction = withErrorHandling(
             };
         }
 
-        await prisma.clinicPatient.update({
-            where: { id: identity.clinicPatientId },
+        await prisma.yakapRegistration.update({
+            where: {
+                unique_patient_yakap_registration_year: {
+                    clinicPatientId: identity.clinicPatientId,
+                    effYear: currentEffYear(),
+                }
+            },
             data: {
-                konsultaRegistrationStatus: registrationStatus,
-                konsultaRegisteredAt:
+                registrationStatus,
+                registeredAt:
                     registrationStatus === "REGISTERED" ? new Date() : null,
-                konsultaRegistrationCheckedAt: new Date(),
-                konsultaRegistrationResult: registrationResult,
+                registrationCheckedAt: new Date(),
+                registrationResult,
             },
         });
 
@@ -643,12 +678,13 @@ export const unenrollKonsultaPatientAction = withErrorHandling(
         if (!session) throw new Error("Unauthorized");
 
         const clinicId = await resolveClinicId(clinicUid);
-        await prisma.clinicPatient.updateMany({
-            where: { id: clinicPatientId, clinicId, isActive: true, deletedAt: null },
+        const effYear = currentEffYear();
+        await prisma.yakapRegistration.updateMany({
+            where: { clinicPatientId, effYear },
             data: {
-                konsultaRegistrationStatus: "UNENROLLED",
-                konsultaRegisteredAt: null,
-                konsultaUnenrolledAt: new Date(),
+                registrationStatus: "UNENROLLED",
+                registeredAt: null,
+                unEnrolledAt: new Date(),
             },
         });
 
@@ -671,11 +707,16 @@ export const checkKonsultaPatientRegistrationAction = withErrorHandling(
         if (!session) throw new Error("Unauthorized");
 
         const clinicId = await resolveClinicId(clinicUid);
+        const effYear = currentEffYear();
         const patient = await prisma.clinicPatient.findFirst({
             where: { id: clinicPatientId, clinicId, isActive: true, deletedAt: null },
             select: {
                 id: true,
-                konsultaPatientType: true,
+                YakapRegistrations: {
+                    select: { id: true, patientType: true },
+                    where: { effYear, registrationStatus: "REGISTERED" },
+                    take: 1
+                },
                 Patient: {
                     select: {
                         PhilHealthRecords: {
@@ -689,9 +730,10 @@ export const checkKonsultaPatientRegistrationAction = withErrorHandling(
         });
         if (!patient) throw new Error("Patient not found in this clinic");
         const pin = patient.Patient.PhilHealthRecords[0]?.pin;
-        const patientType =
-            patient.konsultaPatientType as KonsultaPatientType | null;
-        if (!pin || !patientType)
+        const patientType = patient.YakapRegistrations?.[0]?.patientType as KonsultaPatientType | null;
+        const yakapId = patient.YakapRegistrations?.[0]?.id;
+
+        if (!pin || !patientType || !yakapId)
             throw new Error(
                 "PhilHealth PIN and patient type are required before checking registration.",
             );
@@ -709,15 +751,14 @@ export const checkKonsultaPatientRegistrationAction = withErrorHandling(
             ? "REGISTERED"
             : "NOT_REGISTERED";
 
-        await prisma.clinicPatient.update({
-            where: { id: patient.id },
+        await prisma.yakapRegistration.update({
+            where: { id: yakapId },
             data: {
-                konsultaEffYear: currentEffYear(),
-                konsultaRegistrationStatus: registrationStatus,
-                konsultaRegisteredAt:
+                registrationStatus,
+                registeredAt:
                     registrationStatus === "REGISTERED" ? new Date() : null,
-                konsultaRegistrationCheckedAt: new Date(),
-                konsultaRegistrationResult: registrationResult,
+                registrationCheckedAt: new Date(),
+                registrationResult,
             },
         });
 
@@ -748,13 +789,18 @@ export const checkEnrolledPatientsRegistrationBatchAction = withErrorHandling(
                 clinicId,
                 isActive: true,
                 deletedAt: null,
-                konsultaEffYear: effYear,
-                konsultaRegistrationStatus: "REGISTERED",
+                YakapRegistrations: {
+                    some: { effYear, registrationStatus: "REGISTERED" }
+                },
                 ...(clinicPatientIds ? { id: { in: clinicPatientIds } } : {}),
             },
             select: {
                 id: true,
-                konsultaPatientType: true,
+                YakapRegistrations: {
+                    select: { id: true, patientType: true },
+                    where: { effYear, registrationStatus: "REGISTERED" },
+                    take: 1
+                },
                 Patient: {
                     select: {
                         id: true,
@@ -795,10 +841,10 @@ export const checkEnrolledPatientsRegistrationBatchAction = withErrorHandling(
         for (const patient of enrolledPatients) {
             try {
                 const pin = patient.Patient.PhilHealthRecords[0]?.pin;
-                const patientType =
-                    patient.konsultaPatientType as KonsultaPatientType | null;
+                const patientType = patient.YakapRegistrations?.[0]?.patientType as KonsultaPatientType | null;
+                const yakapId = patient.YakapRegistrations?.[0]?.id;
 
-                if (!pin || !patientType) {
+                if (!pin || !patientType || !yakapId) {
                     failedCount++;
                     results.push({
                         clinicPatientId: patient.id,
@@ -819,14 +865,13 @@ export const checkEnrolledPatientsRegistrationBatchAction = withErrorHandling(
                     ? "REGISTERED"
                     : "NOT_REGISTERED";
 
-                await prisma.clinicPatient.update({
-                    where: { id: patient.id },
+                await prisma.yakapRegistration.update({
+                    where: { id: yakapId },
                     data: {
-                        konsultaRegistrationStatus: registrationStatus,
-                        konsultaRegisteredAt:
-                            registrationStatus === "REGISTERED" ? new Date() : null,
-                        konsultaRegistrationCheckedAt: new Date(),
-                        konsultaRegistrationResult: registrationResult,
+                        registrationStatus,
+                        registeredAt: registrationStatus === "REGISTERED" ? new Date() : null,
+                        registrationCheckedAt: new Date(),
+                        registrationResult,
                     },
                 });
 
@@ -1206,7 +1251,6 @@ export const importKonsultaAssignmentsAction = withErrorHandling(
                     data: {
                         clinicId,
                         patientId: philHealthRecord.userId,
-                        konsultaEffYear: currentYear,
                     },
                     select: { id: true },
                 });
@@ -1285,8 +1329,9 @@ export const getPhilHealthConsultationsAction = withErrorHandling(
                 clinicId,
                 isActive: true,
                 deletedAt: null,
-                konsultaEffYear: effYear,
-                konsultaRegistrationStatus: "REGISTERED",
+                YakapRegistrations: {
+                    some: { effYear, registrationStatus: "REGISTERED" },
+                },
             },
             select: { id: true, patientId: true },
         });
@@ -1325,9 +1370,7 @@ export const getPhilHealthConsultationsAction = withErrorHandling(
             },
             select: {
                 id: true,
-                caseNumber: true,
-                konsultaHciCaseNo: true,
-                konsultaHciTransNo: true,
+                soapTransNo: true,
                 konsultaAtc: true,
                 konsultaIsWalkedIn: true,
                 konsultaAtcValidationStatus: true,
@@ -1337,6 +1380,7 @@ export const getPhilHealthConsultationsAction = withErrorHandling(
                 Appointment: {
                     select: {
                         id: true,
+                        caseNumber: true,
                         AppointmentAttribute: { select: { date: true, isWalkIn: true } },
                         Requesters: {
                             select: {
@@ -1358,13 +1402,26 @@ export const getPhilHealthConsultationsAction = withErrorHandling(
                                         ClinicPatients: {
                                             where: {
                                                 clinicId,
-                                                konsultaEffYear: effYear,
+                                                YakapRegistrations: {
+                                                    some: { effYear, registrationStatus: "REGISTERED" },
+                                                },
                                                 isActive: true,
                                             },
                                             select: {
-                                                konsultaPatientType: true,
-                                                konsultaPatientPin: true,
-                                                konsultaMemberPin: true,
+                                                id: true,
+                                                patientPin: true,
+                                                memberPin: true,
+                                                YakapRegistrations: {
+                                                    select: {
+                                                        id: true,
+                                                        effYear: true,
+                                                        registrationStatus: true,
+                                                        patientType: true,
+                                                        hciCaseNo: true,
+                                                        hciEnlistmentTransNo: true,
+                                                        hciProfilingTransNo: true,
+                                                    }
+                                                }
                                             },
                                             take: 1,
                                         },
@@ -1378,11 +1435,19 @@ export const getPhilHealthConsultationsAction = withErrorHandling(
                 ClinicPatient: {
                     select: {
                         id: true,
-                        konsultaEffYear: true,
-                        konsultaRegistrationStatus: true,
-                        konsultaPatientType: true,
-                        konsultaPatientPin: true,
-                        konsultaMemberPin: true,
+                        patientPin: true,
+                        memberPin: true,
+                        YakapRegistrations: {
+                            select: {
+                                id: true,
+                                effYear: true,
+                                registrationStatus: true,
+                                patientType: true,
+                                hciCaseNo: true,
+                                hciEnlistmentTransNo: true,
+                                hciProfilingTransNo: true,
+                            }
+                        },
                         Patient: {
                             select: {
                                 id: true,
@@ -1431,9 +1496,8 @@ export const getPhilHealthConsultationsAction = withErrorHandling(
         const filteredConsultations = consultations.filter((c) => {
             if (c.clinicPatientId && c.ClinicPatient) {
                 // Direct clinicPatientId path: verify enrollment
-                return (
-                    c.ClinicPatient.konsultaEffYear === effYear &&
-                    c.ClinicPatient.konsultaRegistrationStatus === "REGISTERED"
+                return !!c.ClinicPatient.YakapRegistrations?.some(
+                    (yr) => yr.effYear === effYear && yr.registrationStatus === "REGISTERED"
                 );
             }
             // For appointment path, the WHERE clause already verified the patient is enrolled
@@ -1441,9 +1505,23 @@ export const getPhilHealthConsultationsAction = withErrorHandling(
             return true;
         });
 
+        const resolved = filteredConsultations.map((c) => {
+            const cp = c.ClinicPatient || c.Appointment?.Requesters?.[0]?.User?.ClinicPatients?.[0];
+            const activeReg = cp?.YakapRegistrations?.find(
+                (r: any) => r.effYear === effYear && r.registrationStatus === "REGISTERED"
+            ) || cp?.YakapRegistrations?.[0];
+
+            return {
+                ...c,
+                caseNumber: c.Appointment?.caseNumber || null,
+                konsultaHciCaseNo: activeReg?.hciCaseNo || null,
+                konsultaHciTransNo: c.soapTransNo || null,
+            };
+        });
+
         return {
             message: "PhilHealth consultations retrieved",
-            data: filteredConsultations,
+            data: resolved,
         };
     },
 );
@@ -1493,8 +1571,8 @@ export const validateKonsultaAtcAction = withErrorHandling(
                 },
                 ClinicPatient: {
                     select: {
-                        konsultaPatientPin: true,
-                        konsultaMemberPin: true,
+                        patientPin: true,
+                        memberPin: true,
                         Patient: {
                             select: {
                                 PhilHealthRecords: {
@@ -1531,9 +1609,9 @@ export const validateKonsultaAtcAction = withErrorHandling(
         }
 
         const pin =
-            consultation.ClinicPatient?.konsultaPatientPin ||
+            consultation.ClinicPatient?.patientPin ||
             consultation.ClinicPatient?.Patient.PhilHealthRecords[0]?.pin ||
-            consultation.ClinicPatient?.konsultaMemberPin ||
+            consultation.ClinicPatient?.memberPin ||
             consultation.Appointment?.Requesters[0]?.User.PhilHealthRecords[0]?.pin;
             
         if (!pin) throw new Error("Patient has no PhilHealth PIN.");
@@ -1719,16 +1797,29 @@ export const getKonsultaBatchesAction = withErrorHandling(
                 KonsultaEntries: {
                     select: {
                         id: true,
-                        philHealthPin: true,
-                        memberPin: true,
-                        memberType: true,
-                        hciCaseNo: true,
-                        hciTransNo: true,
                         status: true,
                         included: true,
                         consultationIds: true,
+                        patientUserId: true,
                         Patient: {
-                            select: { firstName: true, lastName: true },
+                            select: { 
+                                firstName: true, 
+                                lastName: true,
+                                PhilHealthRecords: {
+                                    where: { deletedAt: null },
+                                    select: { pin: true },
+                                },
+                                ClinicPatients: {
+                                    select: {
+                                        clinicId: true,
+                                        YakapRegistrations: {
+                                            select: { patientType: true, hciCaseNo: true, hciEnlistmentTransNo: true, hciProfilingTransNo: true },
+                                            orderBy: { effYear: "desc" },
+                                            take: 1,
+                                        }
+                                    }
+                                }
+                            },
                         },
                     },
                 },
@@ -1768,11 +1859,6 @@ export const getKonsultaBatchAction = withErrorHandling(
                     select: {
                         id: true,
                         patientUserId: true,
-                        philHealthPin: true,
-                        memberPin: true,
-                        memberType: true,
-                        hciCaseNo: true,
-                        hciTransNo: true,
                         consultationIds: true,
                         included: true,
                         status: true,
@@ -1783,6 +1869,20 @@ export const getKonsultaBatchAction = withErrorHandling(
                                 lastName: true,
                                 dob: true,
                                 gender: true,
+                                PhilHealthRecords: {
+                                    where: { deletedAt: null },
+                                    select: { pin: true },
+                                },
+                                ClinicPatients: {
+                                    select: {
+                                        clinicId: true,
+                                        YakapRegistrations: {
+                                            select: { patientType: true, hciCaseNo: true, hciEnlistmentTransNo: true, hciProfilingTransNo: true },
+                                            orderBy: { effYear: "desc" },
+                                            take: 1,
+                                        }
+                                    }
+                                }
                             },
                         },
                     },
@@ -1835,16 +1935,27 @@ export const createKonsultaBatchAction = withErrorHandling(
                 patientId: { in: patientUserIds },
                 isActive: true,
                 deletedAt: null,
-                konsultaEffYear: effYear,
-                konsultaRegistrationStatus: "REGISTERED",
+                YakapRegistrations: {
+                    some: {
+                        effYear,
+                        registrationStatus: "REGISTERED",
+                    }
+                },
                 Patient: { PhilHealthRecords: { some: { deletedAt: null } } },
             },
             select: {
                 id: true,
                 patientId: true,
-                konsultaPatientType: true,
-                konsultaPatientPin: true,
-                konsultaMemberPin: true,
+                patientPin: true,
+                memberPin: true,
+                YakapRegistrations: {
+                    select: {
+                        id: true,
+                        patientType: true,
+                    },
+                    where: { effYear, registrationStatus: "REGISTERED" },
+                    take: 1
+                },
                 Patient: {
                     select: {
                         PhilHealthRecords: {
@@ -1937,29 +2048,10 @@ export const createKonsultaBatchAction = withErrorHandling(
 
             // Build entries
             const entries = eligiblePatients.map((patient) => {
-                const pin = patient.konsultaPatientPin || patient.Patient.PhilHealthRecords[0]?.pin || "";
-                const memberType = (
-                    patient.konsultaPatientType === "DD" ? "DD" : "MM"
-                ) as KonsultaPatientType;
-                const sequence = entrySequences.get(patient.id);
+                const pin = patient.patientPin || patient.Patient.PhilHealthRecords[0]?.pin || "";
                 return {
                     batchId: created.id,
                     patientUserId: patient.patientId,
-                    philHealthPin: pin,
-                    memberPin: memberType === "MM" ? pin : patient.konsultaMemberPin,
-                    memberType,
-                    hciCaseNo: formatKonsultaHciNumber(
-                        "T",
-                        credentials.hciAccreNo,
-                        sequence?.caseSequence ?? patient.id,
-                        periodStart,
-                    ),
-                    hciTransNo: formatKonsultaHciNumber(
-                        reportTagging === "1" ? "E" : "S",
-                        credentials.hciAccreNo,
-                        sequence?.transSequence ?? patient.id,
-                        periodStart,
-                    ),
                     consultationIds: consultationsByPatient.get(patient.patientId) ?? [],
                     included: true,
                     status: pin ? "PENDING" : "FAILED",
@@ -2026,7 +2118,7 @@ export const getConsultationsForEntryAction = withErrorHandling(
             },
             select: {
                 id: true,
-                caseNumber: true,
+                soapTransNo: true,
                 createdAt: true,
                 subject: true,
                 ConsultationKonsultaData: { select: { id: true } }
@@ -2124,11 +2216,7 @@ export const generateBatchXmlAction = withErrorHandling(
                         id: true,
                         batchId: true,
                         patientUserId: true,
-                        philHealthPin: true,
-                        memberPin: true,
-                        memberType: true,
-                        hciCaseNo: true,
-                        hciTransNo: true,
+
                         consultationIds: true,
                         status: true,
                         included: true,
@@ -2144,6 +2232,38 @@ export const generateBatchXmlAction = withErrorHandling(
                                 gender: true,
                                 mobile: true,
                                 email: true,
+                                PhilHealthRecords: {
+                                    where: { deletedAt: null },
+                                    select: { pin: true },
+                                },
+                                ClinicPatients: {
+                                    select: {
+                                        id: true,
+                                        clinicId: true,
+                                        patientPin: true,
+                                        memberPin: true,
+                                        YakapRegistrations: {
+                                            select: {
+                                                id: true,
+                                                effYear: true,
+                                                registrationStatus: true,
+                                                hciCaseNo: true,
+                                                hciEnlistmentTransNo: true,
+                                                hciProfilingTransNo: true,
+                                                patientType: true,
+                                                patientPin: true,
+                                                memberPin: true,
+                                            }
+                                        },
+                                        ConsultationTickets: {
+                                            select: {
+                                                id: true,
+                                                soapTransNo: true,
+                                                createdAt: true,
+                                            }
+                                        }
+                                    }
+                                }
                             },
                         },
                     },
@@ -2158,6 +2278,8 @@ export const generateBatchXmlAction = withErrorHandling(
             throw new Error("No patients selected for this batch.");
         }
 
+        const effYear = batch.period.slice(0, 4);
+
         // Validate patient profiles have required information
         for (const entry of batch.KonsultaEntries) {
             const p = entry.Patient;
@@ -2170,10 +2292,19 @@ export const generateBatchXmlAction = withErrorHandling(
             if (!p.gender) {
                 throw new Error(`Patient ${p.firstName} ${p.lastName} is missing gender information.`);
             }
-            if (!entry.philHealthPin) {
+
+            const clinicPatient = p.ClinicPatients?.find((cp: any) => cp.clinicId === batch.clinicId);
+            const activeReg = clinicPatient?.YakapRegistrations?.find(
+                (r: any) => r.effYear === effYear && r.registrationStatus === "REGISTERED"
+            ) || clinicPatient?.YakapRegistrations?.[0];
+
+            const patientPin = activeReg?.patientPin || clinicPatient?.patientPin || p.PhilHealthRecords?.[0]?.pin;
+            const patientType = activeReg?.patientType;
+
+            if (!patientPin) {
                 throw new Error(`Patient ${p.firstName} ${p.lastName} is missing PhilHealth PIN.`);
             }
-            if (!entry.memberType || (entry.memberType !== "MM" && entry.memberType !== "DD")) {
+            if (!patientType || (patientType !== "MM" && patientType !== "DD")) {
                 throw new Error(`Patient ${p.firstName} ${p.lastName} is missing or has invalid member type. Must be MM or DD.`);
             }
         }
@@ -2194,21 +2325,28 @@ export const generateBatchXmlAction = withErrorHandling(
             const enlistments: KonsultaEnlistmentData[] = batch.KonsultaEntries.map(
                 (entry) => {
                     const p = entry.Patient;
+                    const clinicPatient = p.ClinicPatients?.find((cp: any) => cp.clinicId === batch.clinicId);
+                    const activeReg = clinicPatient?.YakapRegistrations?.find(
+                        (r: any) => r.effYear === effYear && r.registrationStatus === "REGISTERED"
+                    ) || clinicPatient?.YakapRegistrations?.[0];
+
+                    const patientPin = activeReg?.patientPin || clinicPatient?.patientPin || p.PhilHealthRecords?.[0]?.pin || "";
+                    const patientType = (activeReg?.patientType ?? "MM").trim() as "MM" | "DD";
+
                     const dob = p.dob ? p.dob.toISOString().slice(0, 10) : "1990-01-01";
-                    const mobile = p.mobile ?? `09${entry.philHealthPin.slice(-9)}`;
+                    const mobile = p.mobile ?? `09${patientPin.slice(-9)}`;
                     const transDate = periodDate.toISOString().slice(0, 10);
-                    const patientType = (entry.memberType ?? "").trim() as "MM" | "DD";
 
                     // For MM (member): pMemPin is the patient's own PIN
                     // For DD (dependent): pMemPin is the member's PIN that they're dependent under
                     const memberPin =
                         patientType === "MM"
-                            ? entry.philHealthPin
-                            : entry.memberPin || entry.philHealthPin;
+                            ? patientPin
+                            : activeReg?.memberPin || clinicPatient?.memberPin || patientPin;
 
                     return {
                         pHciCaseNo:
-                            entry.hciCaseNo ||
+                            activeReg?.hciCaseNo ||
                             formatKonsultaHciNumber(
                                 "T",
                                 credentials.hciAccreNo,
@@ -2216,7 +2354,7 @@ export const generateBatchXmlAction = withErrorHandling(
                                 periodDate,
                             ),
                         pHciTransNo:
-                            entry.hciTransNo ||
+                            activeReg?.hciEnlistmentTransNo ||
                             formatKonsultaHciNumber(
                                 "E",
                                 credentials.hciAccreNo,
@@ -2233,7 +2371,7 @@ export const generateBatchXmlAction = withErrorHandling(
                         pMemLname: p.lastName ?? "",
                         pMemExtname: p.suffix ?? "",
                         pMemDob: dob,
-                        pPatientPin: entry.philHealthPin,
+                        pPatientPin: patientPin,
                         pPatientFname: p.firstName ?? "",
                         pPatientMname: p.middleName ?? "",
                         pPatientLname: p.lastName ?? "",
@@ -2562,7 +2700,7 @@ export const generateBatchXmlAction = withErrorHandling(
                     batchEntryId: entry.id,
                     patientUserId: entry.patientUserId,
                     patientName: formatBatchEntryPatientName(entry),
-                    philHealthPin: entry.philHealthPin,
+                    philHealthPin: entry.Patient.PhilHealthRecords?.[0]?.pin || "",
                     consultationId,
                     itemLabel,
                     message,
@@ -2585,7 +2723,7 @@ export const generateBatchXmlAction = withErrorHandling(
                     batchEntryId: entry.id,
                     patientUserId: entry.patientUserId,
                     patientName: formatBatchEntryPatientName(entry),
-                    philHealthPin: entry.philHealthPin,
+                    philHealthPin: entry.Patient.PhilHealthRecords?.[0]?.pin || "",
                     consultationId: null,
                     itemLabel,
                     message,
@@ -2681,8 +2819,7 @@ export const generateBatchXmlAction = withErrorHandling(
                             id: true,
                             createdAt: true,
                             subject: true,
-                            konsultaHciCaseNo: true,
-                            konsultaHciTransNo: true,
+                            soapTransNo: true,
                             konsultaAtc: true,
                             konsultaIsWalkedIn: true,
                             Appointment: {
@@ -2863,33 +3000,39 @@ export const generateBatchXmlAction = withErrorHandling(
                 batch.reportTagging === "1"
                     ? batch.KonsultaEntries.map((entry) => {
                         const p = entry.Patient;
+                        const clinicPatient = p.ClinicPatients?.find((cp: any) => cp.clinicId === batch.clinicId);
+                        const activeReg = clinicPatient?.YakapRegistrations?.find(
+                            (r: any) => r.effYear === effYear && r.registrationStatus === "REGISTERED"
+                        ) || clinicPatient?.YakapRegistrations?.[0];
+
                         const dob = p.dob ? p.dob.toISOString().slice(0, 10) : "1990-01-01";
-                        const patientType = (entry.memberType ?? "").trim() as "MM" | "DD";
-                        // For MM (member): pMemPin is the patient's own PIN
-                        // For DD (dependent): pMemPin is the member's PIN that they're dependent under
+                        const patientType = (activeReg?.patientType ?? "MM").trim() as "MM" | "DD";
+                        const patientPin = activeReg?.patientPin || clinicPatient?.patientPin || p.PhilHealthRecords?.[0]?.pin;
                         const memberPin =
                             patientType === "MM"
-                                ? entry.philHealthPin
-                                : entry.memberPin || entry.philHealthPin;
+                                ? patientPin
+                                : activeReg?.memberPin || clinicPatient?.memberPin || patientPin;
                         const patientAge = formatAge(dob);
 
                         return {
                             pHciCaseNo:
-                                entry.hciCaseNo ||
+                                activeReg?.hciCaseNo ||
                                 formatKonsultaHciNumber(
                                     "T",
                                     credentials.hciAccreNo,
                                     entry.id,
                                     periodDate,
                                 ),
-                            pHciTransNo: formatKonsultaHciNumber(
-                                "P",
-                                credentials.hciAccreNo,
-                                entry.id,
-                                periodDate,
-                            ),
+                            pHciTransNo:
+                                activeReg?.hciProfilingTransNo ||
+                                formatKonsultaHciNumber(
+                                    "P",
+                                    credentials.hciAccreNo,
+                                    entry.id,
+                                    periodDate,
+                                ),
                             pProfDate: periodDate.toISOString().slice(0, 10),
-                            pPatientPin: entry.philHealthPin,
+                            pPatientPin: patientPin,
                             pPatientType: patientType,
                             pPatientAge: patientAge,
                             pMemPin: memberPin,
@@ -2913,14 +3056,18 @@ export const generateBatchXmlAction = withErrorHandling(
                         if (!entry)
                             throw new Error("Consultation is not attached to a batch entry.");
                         const p = entry.Patient;
+                        const clinicPatient = p.ClinicPatients?.find((cp: any) => cp.clinicId === batch.clinicId);
+                        const activeReg = clinicPatient?.YakapRegistrations?.find(
+                            (r: any) => r.effYear === effYear && r.registrationStatus === "REGISTERED"
+                        ) || clinicPatient?.YakapRegistrations?.[0];
+
                         const dob = p.dob ? p.dob.toISOString().slice(0, 10) : "1990-01-01";
-                        const patientType = (entry.memberType ?? "").trim() as "MM" | "DD";
-                        // For MM (member): pMemPin is the patient's own PIN
-                        // For DD (dependent): pMemPin is the member's PIN that they're dependent under
+                        const patientType = (activeReg?.patientType ?? "MM").trim() as "MM" | "DD";
+                        const patientPin = activeReg?.patientPin || clinicPatient?.patientPin || p.PhilHealthRecords?.[0]?.pin;
                         const memberPin =
                             patientType === "MM"
-                                ? entry.philHealthPin
-                                : entry.memberPin || entry.philHealthPin;
+                                ? patientPin
+                                : activeReg?.memberPin || clinicPatient?.memberPin || patientPin;
                         const patientAge = formatAge(dob);
                         const profDate = (
                             consultation.Appointment?.AppointmentAttribute?.date ??
@@ -2936,8 +3083,7 @@ export const generateBatchXmlAction = withErrorHandling(
 
                         return {
                             pHciCaseNo:
-                                consultation.konsultaHciCaseNo ||
-                                entry.hciCaseNo ||
+                                activeReg?.hciCaseNo ||
                                 formatKonsultaHciNumber(
                                     "T",
                                     credentials.hciAccreNo,
@@ -2945,7 +3091,7 @@ export const generateBatchXmlAction = withErrorHandling(
                                     periodDate,
                                 ),
                             pHciTransNo:
-                                consultation.konsultaHciTransNo ||
+                                activeReg?.hciProfilingTransNo ||
                                 formatKonsultaHciNumber(
                                     "P",
                                     credentials.hciAccreNo,
@@ -2953,7 +3099,7 @@ export const generateBatchXmlAction = withErrorHandling(
                                     consultation.createdAt,
                                 ),
                             pProfDate: profDate,
-                            pPatientPin: entry.philHealthPin,
+                            pPatientPin: patientPin,
                             pPatientType: patientType,
                             pPatientAge: patientAge,
                             pMemPin: memberPin,
@@ -2985,6 +3131,12 @@ export const generateBatchXmlAction = withErrorHandling(
                         const entry = entryByConsultationId.get(consultation.id);
                         if (!entry)
                             throw new Error("Consultation is not attached to a batch entry.");
+                        const p = entry.Patient;
+                        const clinicPatient = p.ClinicPatients?.find((cp: any) => cp.clinicId === batch.clinicId);
+                        const activeReg = clinicPatient?.YakapRegistrations?.find(
+                            (r: any) => r.effYear === effYear && r.registrationStatus === "REGISTERED"
+                        ) || clinicPatient?.YakapRegistrations?.[0];
+
                         const soapDate = (
                             consultation.Appointment?.AppointmentAttribute?.date ??
                             consultation.createdAt
@@ -2997,15 +3149,12 @@ export const generateBatchXmlAction = withErrorHandling(
                                 ? "Y"
                                 : "N";
                         const transDate = consultation.createdAt.toISOString().slice(0, 10);
-                        const patientType = (
-                            entry.memberType ?? ""
-                        ).trim() as KonsultaPatientType;
-                        // For MM (member): pMemPin is the patient's own PIN
-                        // For DD (dependent): pMemPin is the member's PIN that they're dependent under
+                        const patientType = (activeReg?.patientType ?? "MM").trim() as "MM" | "DD";
+                        const patientPin = activeReg?.patientPin || clinicPatient?.patientPin || p.PhilHealthRecords?.[0]?.pin;
                         const memberPin =
                             patientType === "MM"
-                                ? entry.philHealthPin
-                                : entry.memberPin || entry.philHealthPin;
+                                ? patientPin
+                                : activeReg?.memberPin || clinicPatient?.memberPin || patientPin;
 
                         // Build SOAP subData from consultation clinical data
                         const subjNote = consultation.ConsultationNotes?.find(
@@ -3133,8 +3282,7 @@ export const generateBatchXmlAction = withErrorHandling(
 
                         return {
                             pHciCaseNo:
-                                consultation.konsultaHciCaseNo ||
-                                entry.hciCaseNo ||
+                                activeReg?.hciCaseNo ||
                                 formatKonsultaHciNumber(
                                     "T",
                                     credentials.hciAccreNo,
@@ -3142,7 +3290,7 @@ export const generateBatchXmlAction = withErrorHandling(
                                     periodDate,
                                 ),
                             pHciTransNo:
-                                consultation.konsultaHciTransNo ||
+                                consultation.soapTransNo ||
                                 formatKonsultaHciNumber(
                                     "S",
                                     credentials.hciAccreNo,
@@ -3150,7 +3298,7 @@ export const generateBatchXmlAction = withErrorHandling(
                                     consultation.createdAt,
                                 ),
                             pSoapDate: soapDate,
-                            pPatientPin: entry.philHealthPin,
+                            pPatientPin: patientPin,
                             pPatientType: patientType,
                             pMemPin: memberPin,
                             pEffYear: effYear,
@@ -3187,9 +3335,18 @@ export const generateBatchXmlAction = withErrorHandling(
                         return null;
                     }
 
+                    const p = entry.Patient;
+                    const clinicPatient = p.ClinicPatients?.find((cp: any) => cp.clinicId === batch.clinicId);
+                    const activeReg = clinicPatient?.YakapRegistrations?.find(
+                        (r: any) => r.effYear === effYear && r.registrationStatus === "REGISTERED"
+                    ) || clinicPatient?.YakapRegistrations?.[0];
+
+                    const consult = consultationRows.find((c) => c.id === medicine.consultationId);
+                    const soapTransNo = consult?.soapTransNo || activeReg?.hciEnlistmentTransNo || "";
+
                     return {
                         pHciCaseNo:
-                            entry.hciCaseNo ||
+                            activeReg?.hciCaseNo ||
                             formatKonsultaHciNumber(
                                 "T",
                                 credentials.hciAccreNo,
@@ -3197,7 +3354,7 @@ export const generateBatchXmlAction = withErrorHandling(
                                 periodDate,
                             ),
                         pHciTransNo:
-                            entry.hciTransNo ||
+                            soapTransNo ||
                             formatKonsultaHciNumber(
                                 "S",
                                 credentials.hciAccreNo,
@@ -3670,127 +3827,81 @@ export const submitKonsultaBatchAction = withErrorHandling(
 
 // ─── Generate Consultation Case/Trans Numbers ─────────────────────────────────
 
-export const generateConsultationCaseTransNumbersAction = withErrorHandling(
-    async ({ consultationTicketId }: { consultationTicketId: number }) => {
+export const generateYakapEnlistmentNumbersAction = withErrorHandling(
+    async ({ clinicUid, clinicPatientId }: { clinicUid: string; clinicPatientId: number }) => {
         const session = await getCachedSession();
         if (!session) throw new Error("Unauthorized");
 
-        // Get consultation with clinic info
-        const consultation = await prisma.consultationTicket.findUnique({
-            where: { id: consultationTicketId },
-            include: {
-                ClinicPatient: true,
-                Appointment: {
-                    include: {
-                        Requesters: {
-                            include: {
-                                User: true,
-                            },
-                            take: 1,
-                        },
-                    },
+        const clinicId = await resolveClinicId(clinicUid);
+        const effYear = currentEffYear();
+
+        const yakapReg = await prisma.yakapRegistration.findFirst({
+            where: {
+                ClinicPatient: {
+                    id: clinicPatientId,
+                    clinicId,
                 },
+                effYear,
             },
         });
 
-        if (!consultation) {
-            throw new Error("Consultation not found");
+        if (!yakapReg) {
+            throw new Error("Patient is not registered for the current year");
         }
 
-        // Check if already has both numbers
-        if (consultation.konsultaHciCaseNo && consultation.konsultaHciTransNo) {
+        if (yakapReg.hciCaseNo && yakapReg.hciEnlistmentTransNo) {
             return {
-                message: "Consultation already has case and transaction numbers",
+                message: "Patient already has enlistment numbers",
                 data: {
-                    konsultaHciCaseNo: consultation.konsultaHciCaseNo,
-                    konsultaHciTransNo: consultation.konsultaHciTransNo,
+                    hciCaseNo: yakapReg.hciCaseNo,
+                    hciEnlistmentTransNo: yakapReg.hciEnlistmentTransNo,
                 },
             };
         }
 
-        // Verify consultation is for a registered patient (support both direct and old paths)
-        let clinicPatientRegistrationStatus: string | null = null;
+        const credentials = await getClinicKonsultaCredentials(clinicId);
 
-        // Path 1: Direct clinic patient link
-        if (consultation.ClinicPatient) {
-            clinicPatientRegistrationStatus =
-                consultation.ClinicPatient.konsultaRegistrationStatus;
-        }
-        // Path 2: Old path through appointment requester - look up clinic patient for this patient
-        else if (consultation.Appointment?.Requesters[0]?.User?.id) {
-            const requesterUserId = consultation.Appointment.Requesters[0].User.id;
-            const clinicPatient = await prisma.clinicPatient.findFirst({
-                where: {
-                    clinicId: consultation.clinicId,
-                    patientId: requesterUserId,
-                },
-                select: { konsultaRegistrationStatus: true },
-            });
-            if (clinicPatient) {
-                clinicPatientRegistrationStatus =
-                    clinicPatient.konsultaRegistrationStatus;
-            }
-        }
-
-        if (clinicPatientRegistrationStatus !== "REGISTERED") {
-            throw new Error(
-                "Consultation is not linked to a registered PhilHealth patient",
-            );
-        }
-
-        // Get clinic credentials for HCI accreditation number
-        const credentials = await getClinicKonsultaCredentials(
-            consultation.clinicId,
-        );
-
-        // Get next sequence numbers for this clinic on this date
         const caseSequence = await getNextSequenceNumber(
             "KONSULTA_HCI_CASE",
-            consultation.clinicId,
-            consultation.createdAt,
+            clinicId,
+            new Date(),
         );
         const transSequence = await getNextSequenceNumber(
             "KONSULTA_HCI_TRANS",
-            consultation.clinicId,
-            consultation.createdAt,
+            clinicId,
+            new Date(),
         );
 
-        // Format the HCI numbers
-        const konsultaHciCaseNo = formatKonsultaHciNumber(
+        const hciCaseNo = formatKonsultaHciNumber(
             "T",
             credentials.hciAccreNo,
             caseSequence,
-            consultation.createdAt,
+            new Date(),
         );
-        const konsultaHciTransNo = formatKonsultaHciNumber(
+        const hciEnlistmentTransNo = formatKonsultaHciNumber(
             "E",
             credentials.hciAccreNo,
             transSequence,
-            consultation.createdAt,
+            new Date(),
         );
 
-        // Update consultation with generated numbers
-        const updated = await prisma.consultationTicket.update({
-            where: { id: consultationTicketId },
+        const updated = await prisma.yakapRegistration.update({
+            where: { id: yakapReg.id },
             data: {
-                konsultaHciCaseNo,
-                konsultaHciTransNo,
+                hciCaseNo,
+                hciEnlistmentTransNo,
             },
             select: {
-                konsultaHciCaseNo: true,
-                konsultaHciTransNo: true,
-                caseNumber: true,
+                hciCaseNo: true,
+                hciEnlistmentTransNo: true,
             },
         });
 
         return {
             message: "Case and transaction numbers generated successfully",
-            data: {
-                konsultaHciCaseNo: updated.konsultaHciCaseNo,
-                konsultaHciTransNo: updated.konsultaHciTransNo,
-            },
+            data: updated,
         };
-    },
+    }
 );
 
 export const extractRegistrationListAction = withErrorHandling(

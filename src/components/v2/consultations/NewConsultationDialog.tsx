@@ -157,7 +157,7 @@ export default function NewConsultationDialog({
           createdAt: new Date(),
           updatedAt: new Date(),
           isArchived: false,
-          caseNumber: null,
+          soapTransNo: null,
           ConsultationTicketAttribute: { status: "PROCESSING", droppedAt: null, dropReason: null },
           ConsultationTicketHPs: hp
             ? [

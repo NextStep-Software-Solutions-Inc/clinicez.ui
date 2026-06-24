@@ -40,7 +40,18 @@ export async function getClinicPatientProfileAction({
                 isActive: true,
                 deletedAt: null,
             },
-            include: {
+            select: {
+                id: true,
+                clinicId: true,
+                patientId: true,
+                YakapRegistrations: {
+                    where: { effYear: new Date().getFullYear().toString() },
+                    take: 1,
+                    select: {
+                        hciCaseNo: true,
+                        hciProfilingTransNo: true,
+                    }
+                },
                 Clinic: { select: { id: true, name: true } },
             },
         });
@@ -271,6 +282,8 @@ export async function getClinicPatientProfileAction({
             createdAt: patient.createdAt.toISOString(),
             updatedAt: patient.updatedAt.toISOString(),
             clinic: clinicPatientRecord.Clinic ?? null,
+            konsultaHciCaseNo: clinicPatientRecord.YakapRegistrations?.[0]?.hciCaseNo ?? null,
+            konsultaHciProfilingTransNo: clinicPatientRecord.YakapRegistrations?.[0]?.hciProfilingTransNo ?? null,
 
             // Medical Profile
             medicalHistories: medical.map((h) => ({

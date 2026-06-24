@@ -133,31 +133,26 @@ async function resolveCredentials(
         });
 
         if (
-            setting?.konsultaUsername &&
-            setting.konsultaPassword &&
-            setting.philhealthAccreditationNumber &&
-            setting.pmccNumber
+            setting?.philhealthAccreditationNumber &&
+            setting?.pmccNumber
         ) {
             return {
-                username: setting.konsultaUsername,
-                password: setting.konsultaPassword,
+                username: setting.konsultaUsername || "",
+                password: setting.konsultaPassword || "",
                 hciAccreNo: setting.philhealthAccreditationNumber,
                 pmccNumber: setting.pmccNumber,
-                certificationId: `KON-DUMMYCERTS-${setting.pmccNumber}`,
-                cipherKey:
-                    process.env.PHILHEALTH_KONSULTA_CIPHER_KEY ?? "PHilheaLthDuMmyZ15445",
+                certificationId: process.env.PHILHEALTH_KONSULTA_CERT_ID ?? `KON-DUMMYCERTS-${setting.pmccNumber}`,
+                cipherKey: process.env.PHILHEALTH_KONSULTA_CIPHER_KEY ?? "PHilheaLthDuMmyZ15445",
             };
         }
     }
     return {
-        username: process.env.PHILHEALTH_KONSULTA_USERNAME ?? "",
-        password: process.env.PHILHEALTH_KONSULTA_PASSWORD ?? "",
-        hciAccreNo: process.env.PHILHEALTH_KONSULTA_HCI_ACCRE_NO ?? "P10038831",
-        pmccNumber: process.env.PHILHEALTH_KONSULTA_PMCC_NO ?? "Z15445",
-        certificationId:
-            process.env.PHILHEALTH_KONSULTA_CERT_ID ?? "KON-DUMMYCERTS-Z15445",
-        cipherKey:
-            process.env.PHILHEALTH_KONSULTA_CIPHER_KEY ?? "PHilheaLthDuMmyZ15445",
+        username: "",
+        password: "",
+        hciAccreNo: "P10038831",
+        pmccNumber: "Z15445",
+        certificationId: "KON-DUMMYCERTS-Z15445",
+        cipherKey: "PHilheaLthDuMmyZ15445",
     };
 }
 

@@ -202,9 +202,9 @@ export default function ConsultationWorkspace({
               {status === "RESOLVED" ? <CheckCircle2 className="h-3 w-3" /> : isDropped ? <Ban className="h-3 w-3" /> : <AlertCircle className="h-3 w-3" />}
               {status === "RESOLVED" ? "Resolved" : isDropped ? "Dropped" : "In Progress"}
             </div>
-            {consultation.caseNumber && (
+            {consultation.soapTransNo && (
               <span className="shrink-0 text-xs text-muted-foreground font-mono">
-                #{consultation.caseNumber}
+                #{consultation.soapTransNo}
               </span>
             )}
           </div>

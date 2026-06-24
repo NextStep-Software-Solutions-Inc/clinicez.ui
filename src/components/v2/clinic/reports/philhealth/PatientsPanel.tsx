@@ -11,9 +11,11 @@ import {
 	Eye,
 	EyeOff,
 	FileCode2,
+	Hash,
 	History,
 	Loader2,
 	Lock,
+	MoreHorizontal,
 	Pencil,
 	Plus,
 	RefreshCw,
@@ -25,7 +27,9 @@ import {
 	Upload,
 	UserMinus,
 	Users,
+	Wand2,
 } from "lucide-react";
+import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
 	useCallback,
@@ -47,7 +51,6 @@ import {
 	checkEnrolledPatientsRegistrationBatchAction,
 	checkKonsultaPatientRegistrationAction,
 	enrollPatientPhilHealthAction,
-	generateConsultationCaseTransNumbersAction,
 	getAllClinicPatientsWithPhilHealthStatusAction,
 	getKonsultaBatchesAction,
 	getPhilHealthConsultationsAction,
@@ -62,6 +65,7 @@ import {
 	verifyKonsultaMemberDependentRegistrationAction,
     deleteKonsultaBatchAction,
     extractRegistrationListAction,
+    generateYakapEnlistmentNumbersAction,
 } from "@/actions/clinics/konsulta-report.action";
 import {
 	createKonsultaBatchV2Action,
@@ -107,6 +111,13 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -309,6 +320,7 @@ export function PatientsPanel({ clinicUid }: { clinicUid: string }) {
 	const [selectedEnrolledIds, setSelectedEnrolledIds] = useState<Set<number>>(
 		new Set(),
 	);
+	const [detailPatient, setDetailPatient] = useState<ClinicPatientRow | null>(null);
 
 	const loadFeed = useCallback(
 		async (kind: "ENROLLED" | "UNENROLLED", skip: number, replace: boolean) => {
@@ -364,8 +376,8 @@ export function PatientsPanel({ clinicUid }: { clinicUid: string }) {
 		setEnrollTarget(patient);
 		setEnrollForm({
 			pin: ph?.pin ?? "",
-			patientType: patient.konsultaPatientType === "DD" ? "DD" : "MM",
-			memberPin: patient.konsultaMemberPin ?? ph?.pin ?? "",
+			patientType: patient.YakapRegistrations?.[0]?.patientType === "DD" ? "DD" : "MM",
+			memberPin: patient.memberPin ?? ph?.pin ?? "",
 			philSysId: "",
 			tin: "",
 		});
@@ -542,6 +554,53 @@ export function PatientsPanel({ clinicUid }: { clinicUid: string }) {
 		});
 	}
 
+	function GenerateNumbersButton({
+		clinicUid,
+		patient,
+		onSuccess,
+	}: {
+		clinicUid: string;
+		patient: ClinicPatientRow;
+		onSuccess: (updated: { konsultaHciCaseNo: string | null; konsultaHciTransNo: string | null }) => void;
+	}) {
+		const [loading, setLoading] = useState(false);
+
+		async function handleGenerate() {
+			setLoading(true);
+			const res = await generateYakapEnlistmentNumbersAction({
+				clinicUid,
+				clinicPatientId: patient.id,
+			});
+			setLoading(false);
+			if (res.status && res.data) {
+				toast.success("Enlistment numbers generated.");
+				onSuccess({
+					konsultaHciCaseNo: res.data.hciCaseNo,
+					konsultaHciTransNo: res.data.hciEnlistmentTransNo,
+				});
+			} else {
+				toast.error(res.message ?? "Failed to generate numbers.");
+			}
+		}
+
+		return (
+			<Button
+				size="sm"
+				variant="secondary"
+				className="gap-1.5"
+				disabled={loading}
+				onClick={() => void handleGenerate()}
+			>
+				{loading ? (
+					<Loader2 className="h-3.5 w-3.5 animate-spin" />
+				) : (
+					<Wand2 className="h-3.5 w-3.5" />
+				)}
+				Generate Numbers
+			</Button>
+		);
+	}
+
 	function PatientRow({
 		patient,
 		enrolled,
@@ -556,74 +615,108 @@ export function PatientsPanel({ clinicUid }: { clinicUid: string }) {
 		const ph = patient.Patient.PhilHealthRecords[0];
 		return (
 			<div className="border-b px-3 py-3 sm:px-4 last:border-b-0">
-				<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-					<div className="flex items-start gap-2">
+				<div className="flex items-center justify-between gap-2">
+					<div className="flex items-center gap-2 min-w-0">
 						{enrolled && onToggleSelect && (
-							<div className="mt-0.5 flex items-center">
-								<Checkbox
-									checked={isSelected ?? false}
-									onCheckedChange={() => onToggleSelect(patient.id)}
-								/>
+							<Checkbox
+								checked={isSelected ?? false}
+								onCheckedChange={() => onToggleSelect(patient.id)}
+								className="shrink-0"
+							/>
+						)}
+						{/* Enroll button for unenrolled; name-as-button for enrolled */}
+						{!enrolled ? (
+							<div className="min-w-0">
+								<p className="font-medium text-sm truncate">
+									{patientDisplayName(patient.Patient)}
+								</p>
+								<div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+									<code className="rounded bg-muted px-1.5 py-0.5">
+										{ph?.pin ?? "No PIN"}
+									</code>
+									{patient.Patient.dob && (
+										<span>{new Date(patient.Patient.dob).toLocaleDateString("en-PH")}</span>
+									)}
+								</div>
+							</div>
+						) : (
+							<div className="min-w-0">
+								{/* Clickable name → navigates to patient profile */}
+								<Link
+									href={`/v2/clinic/${clinicUid}/patients/${patient.Patient.id}`}
+									target="_blank"
+									rel="noopener noreferrer"
+									className="font-medium text-sm truncate text-left hover:underline hover:text-primary transition-colors"
+								>
+									{patientDisplayName(patient.Patient)}
+								</Link>
+								<div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+									<code className="rounded bg-muted px-1.5 py-0.5">
+										{ph?.pin ?? "No PIN"}
+									</code>
+									<Badge variant="outline" className="text-xs">
+										{patient.YakapRegistrations?.[0]?.patientType === "DD" ? "Dependent" : "Member"}
+									</Badge>
+									{registrationBadge(patient.YakapRegistrations?.[0]?.registrationStatus)}
+								</div>
+								{/* Generate button when numbers are missing */}
+								{(!patient.YakapRegistrations?.[0]?.hciCaseNo || !patient.YakapRegistrations?.[0]?.hciEnlistmentTransNo) && (
+									<button
+										type="button"
+										className="mt-1.5 flex items-center gap-1 text-[11px] text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300 transition-colors"
+										onClick={() => setDetailPatient(patient)}
+									>
+										<Hash className="h-3 w-3" />
+										No enlistment numbers — click to generate
+									</button>
+								)}
 							</div>
 						)}
-						<div className="min-w-0">
-							<p className="font-medium text-sm truncate">
-								{patientDisplayName(patient.Patient)}
-							</p>
-							<div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-								<code className="rounded bg-muted px-1.5 py-0.5">
-									{ph?.pin ?? "No PIN"}
-								</code>
-								<Badge variant="outline" className="text-xs">
-									{patient.konsultaPatientType === "DD"
-										? "Dependent"
-										: "Member"}
-								</Badge>
-								{registrationBadge(patient.konsultaRegistrationStatus)}
-							</div>
-							<p className="mt-1 text-xs text-muted-foreground">
-								{patient.Patient.dob
-									? new Date(patient.Patient.dob).toLocaleDateString("en-PH")
-									: "No DOB"}
-								{patient.Patient.mobile ? ` • ${patient.Patient.mobile}` : ""}
-							</p>
-						</div>
 					</div>
-					<div className="flex w-full flex-wrap gap-1.5 sm:w-auto sm:justify-end">
-						<Button
-							variant="outline"
-							size="sm"
-							className="h-8 min-w-[84px] justify-center gap-1 px-2 text-xs"
-							onClick={() => openEnrollDialog(patient)}
-						>
-							{enrolled ? (
-								<Pencil className="h-3.5 w-3.5" />
-							) : (
+
+					{/* Actions */}
+					<div className="shrink-0">
+						{enrolled ? (
+							<DropdownMenu>
+								<DropdownMenuTrigger asChild>
+									<Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+										<MoreHorizontal className="h-4 w-4" />
+										<span className="sr-only">Actions</span>
+									</Button>
+								</DropdownMenuTrigger>
+								<DropdownMenuContent align="end" className="w-44">
+									<DropdownMenuItem onClick={() => setDetailPatient(patient)}>
+										<ClipboardList className="mr-2 h-3.5 w-3.5" />
+										View Details
+									</DropdownMenuItem>
+									<DropdownMenuItem onClick={() => openEnrollDialog(patient)}>
+										<Pencil className="mr-2 h-3.5 w-3.5" />
+										Update Enrollment
+									</DropdownMenuItem>
+									<DropdownMenuItem onClick={() => void handleCheck(patient)}>
+										<ShieldQuestion className="mr-2 h-3.5 w-3.5" />
+										Check Registration
+									</DropdownMenuItem>
+									<DropdownMenuSeparator />
+									<DropdownMenuItem
+										className="text-destructive focus:text-destructive"
+										onClick={() => void handleUnenroll(patient)}
+									>
+										<UserMinus className="mr-2 h-3.5 w-3.5" />
+										Unenroll
+									</DropdownMenuItem>
+								</DropdownMenuContent>
+							</DropdownMenu>
+						) : (
+							<Button
+								variant="outline"
+								size="sm"
+								className="h-8 gap-1 px-3 text-xs"
+								onClick={() => openEnrollDialog(patient)}
+							>
 								<Plus className="h-3.5 w-3.5" />
-							)}
-							{enrolled ? "Update" : "Enroll"}
-						</Button>
-						{enrolled && (
-							<>
-								<Button
-									variant="ghost"
-									size="sm"
-									className="h-8 min-w-[84px] justify-center gap-1 px-2 text-xs"
-									onClick={() => void handleCheck(patient)}
-								>
-									<ShieldQuestion className="h-3.5 w-3.5" />
-									Check
-								</Button>
-								<Button
-									variant="ghost"
-									size="sm"
-									className="h-8 min-w-[92px] justify-center gap-1 px-2 text-xs text-destructive"
-									onClick={() => void handleUnenroll(patient)}
-								>
-									<UserMinus className="h-3.5 w-3.5" />
-									Unenroll
-								</Button>
-							</>
+								Enroll
+							</Button>
 						)}
 					</div>
 				</div>
@@ -849,7 +942,7 @@ export function PatientsPanel({ clinicUid }: { clinicUid: string }) {
 					<DialogHeader>
 						<DialogTitle className="flex items-center gap-2">
 							<ShieldCheck className="h-4 w-4 text-primary" />
-							{enrollTarget?.konsultaRegistrationStatus === "REGISTERED"
+							{enrollTarget?.YakapRegistrations?.[0]?.registrationStatus === "REGISTERED"
 								? "Update Konsulta Enrollment"
 								: "Enroll for Konsulta"}
 						</DialogTitle>
@@ -967,6 +1060,124 @@ export function PatientsPanel({ clinicUid }: { clinicUid: string }) {
 							) : (
 								"Enroll Patient"
 							)}
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+
+			{/* ── Enlistment Detail Dialog ── */}
+			<Dialog open={!!detailPatient} onOpenChange={(o) => { if (!o) setDetailPatient(null); }}>
+				<DialogContent className="max-w-sm">
+					<DialogHeader>
+						<DialogTitle className="flex items-center gap-2">
+							<ClipboardList className="h-4 w-4 text-primary" />
+							Enlistment Details
+						</DialogTitle>
+						<DialogDescription>
+							{detailPatient ? patientDisplayName(detailPatient.Patient) : ""}
+						</DialogDescription>
+					</DialogHeader>
+
+					{detailPatient && (() => {
+						const ph = detailPatient.Patient.PhilHealthRecords[0];
+						const yr = detailPatient.YakapRegistrations?.[0];
+						return (
+							<div className="space-y-3 py-1 text-sm">
+								<div className="grid grid-cols-[120px_1fr] gap-y-2.5 gap-x-3 items-start">
+									<span className="text-muted-foreground text-xs pt-0.5">PhilHealth PIN</span>
+									<code className="rounded bg-muted px-2 py-0.5 text-xs font-mono break-all">
+										{ph?.pin ?? "—"}
+									</code>
+
+									<span className="text-muted-foreground text-xs pt-0.5">Patient Type</span>
+									<span>
+										<Badge variant="outline" className="text-xs">
+											{yr?.patientType === "DD" ? "Dependent" : "Member"}
+										</Badge>
+									</span>
+
+									{yr?.patientType === "DD" && detailPatient.memberPin && (
+										<>
+											<span className="text-muted-foreground text-xs pt-0.5">Member PIN</span>
+											<code className="rounded bg-muted px-2 py-0.5 text-xs font-mono break-all">
+												{detailPatient.memberPin}
+											</code>
+										</>
+									)}
+
+									<span className="text-muted-foreground text-xs pt-0.5">Registration</span>
+									<span>{registrationBadge(yr?.registrationStatus)}</span>
+
+									<span className="text-muted-foreground text-xs pt-0.5">Eff. Year</span>
+									<span className="font-medium">{yr?.effYear ?? "—"}</span>
+
+									{yr?.registeredAt && (
+										<>
+											<span className="text-muted-foreground text-xs pt-0.5">Enrolled At</span>
+											<span>{new Date(yr.registeredAt).toLocaleString("en-PH")}</span>
+										</>
+									)}
+
+									{yr?.hciCaseNo && (
+										<>
+											<span className="text-muted-foreground text-xs pt-0.5">Case No.</span>
+											<code className="rounded bg-muted px-2 py-0.5 text-xs font-mono break-all">
+												{yr.hciCaseNo}
+											</code>
+										</>
+									)}
+
+									{yr?.hciEnlistmentTransNo && (
+										<>
+											<span className="text-muted-foreground text-xs pt-0.5">Enlistment Trans No.</span>
+											<code className="rounded bg-muted px-2 py-0.5 text-xs font-mono break-all">
+												{yr.hciEnlistmentTransNo}
+											</code>
+										</>
+									)}
+
+									{yr?.hciProfilingTransNo && (
+										<>
+											<span className="text-muted-foreground text-xs pt-0.5">Profiling Trans No.</span>
+											<code className="rounded bg-muted px-2 py-0.5 text-xs font-mono break-all">
+												{yr.hciProfilingTransNo}
+											</code>
+										</>
+									)}
+								</div>
+							</div>
+						);
+					})()}
+
+					<DialogFooter className="gap-2 pt-2 flex-wrap">
+						{/* Generate button — only shown when numbers are missing */}
+						{detailPatient && (!detailPatient.YakapRegistrations?.[0]?.hciCaseNo || !detailPatient.YakapRegistrations?.[0]?.hciEnlistmentTransNo) && (
+							<GenerateNumbersButton
+								clinicUid={clinicUid}
+								patient={detailPatient}
+								onSuccess={(updated) => {
+									setDetailPatient((prev) => {
+										if (!prev) return prev;
+										const yrs = prev.YakapRegistrations ? [...prev.YakapRegistrations] : [];
+										if (yrs.length > 0) {
+											yrs[0] = {
+												...yrs[0],
+												hciCaseNo: updated.konsultaHciCaseNo,
+												hciEnlistmentTransNo: updated.konsultaHciTransNo,
+											};
+										}
+										return { ...prev, YakapRegistrations: yrs };
+									});
+									void reload();
+								}}
+							/>
+						)}
+						<Button variant="outline" size="sm" onClick={() => { setDetailPatient(null); openEnrollDialog(detailPatient!); }}>
+							<Pencil className="mr-1.5 h-3.5 w-3.5" />
+							Update Enrollment
+						</Button>
+						<Button size="sm" variant="ghost" onClick={() => setDetailPatient(null)}>
+							Close
 						</Button>
 					</DialogFooter>
 				</DialogContent>

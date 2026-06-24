@@ -241,6 +241,11 @@ export interface DisabilitiesTabData {
 }
 
 export interface InsuranceTabData {
+    clinicPatientId: number | null
+    clinicUid: string | null
+    isClinicStaffView: boolean          // true = clinic staff viewing a patient; false = patient self-view
+    konsultaHciCaseNo: string | null
+    konsultaHciProfilingTransNo: string | null
     philHealthRecords: SerializedPhilHealthRecord[]
     medicalCertificates: CertificateData[]
     referralSlips: ReferralData[]

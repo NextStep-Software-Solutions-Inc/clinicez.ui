@@ -85,6 +85,10 @@ export interface SerializedPatientHealthRecordsResponse {
   updatedAt: string  // ISO string
   clinic: ClinicInfo | null
 
+  // Konsulta numbers (stored on ClinicPatient)
+  konsultaHciCaseNo: string | null
+  konsultaHciProfilingTransNo: string | null
+
   // Medical Profile
   medicalHistories: MedicalHistoryData[]
   familyMedicalHistories: MedicalHistoryData[]

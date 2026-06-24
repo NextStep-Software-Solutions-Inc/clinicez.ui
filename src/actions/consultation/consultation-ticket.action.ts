@@ -44,9 +44,6 @@ export const createConsultationTicketAction = withErrorHandling(async ({ systemI
   });
   const hciAccreNo = clinicForKonsulta?.ClinicSetting?.philhealthAccreditationNumber ?? null;
   const clinicIdForKonsulta = clinicForKonsulta?.id ?? null;
-  const caseSequence = hciAccreNo && clinicIdForKonsulta
-    ? await getNextSequenceNumber("KONSULTA_HCI_CASE", clinicIdForKonsulta)
-    : null;
   const soapSequence = hciAccreNo && clinicIdForKonsulta
     ? await getNextSequenceNumber("KONSULTA_SOAP_TRANSACTION", clinicIdForKonsulta)
     : null;
@@ -81,9 +78,8 @@ export const createConsultationTicketAction = withErrorHandling(async ({ systemI
         Clinic: {
           connect: { clinicUid }
         },
-        ...(hciAccreNo && caseSequence && soapSequence ? {
-          konsultaHciCaseNo: formatKonsultaHciNumber("T", hciAccreNo, caseSequence, now),
-          konsultaHciTransNo: formatKonsultaHciNumber("S", hciAccreNo, soapSequence, now),
+        ...(hciAccreNo && soapSequence ? {
+          soapTransNo: formatKonsultaHciNumber("S", hciAccreNo, soapSequence, now),
         } : {}),
         ConsultationTicketHPs: {
           createMany: {

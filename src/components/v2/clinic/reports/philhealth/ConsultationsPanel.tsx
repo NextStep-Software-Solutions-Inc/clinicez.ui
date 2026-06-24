@@ -47,7 +47,7 @@ import {
 	checkEnrolledPatientsRegistrationBatchAction,
 	checkKonsultaPatientRegistrationAction,
 	enrollPatientPhilHealthAction,
-	generateConsultationCaseTransNumbersAction,
+	generateYakapEnlistmentNumbersAction,
 	getAllClinicPatientsWithPhilHealthStatusAction,
 	getKonsultaBatchesAction,
 	getPhilHealthConsultationsAction,
@@ -305,12 +305,15 @@ export function ConsultationsPanel({ clinicUid }: { clinicUid: string }) {
 		if (!generateTarget) return;
 		setGenerateLoading(true);
 		try {
-			const res = await generateConsultationCaseTransNumbersAction({
-				consultationTicketId: generateTarget.id,
+			const cp = generateTarget.ClinicPatient ?? generateTarget.Appointment?.Requesters[0]?.User?.ClinicPatients?.[0];
+			if (!cp) throw new Error("No clinic patient found");
+			const res = await generateYakapEnlistmentNumbersAction({
+				clinicUid,
+				clinicPatientId: cp.id,
 			});
 			if (res.status && res.data) {
 				toast.success(
-					`Generated: ${res.data.konsultaHciCaseNo} / ${res.data.konsultaHciTransNo}`,
+					`Generated: ${res.data.hciCaseNo} / ${res.data.hciEnlistmentTransNo}`,
 				);
 				setGenerateTarget(null);
 				void load();
@@ -414,7 +417,8 @@ export function ConsultationsPanel({ clinicUid }: { clinicUid: string }) {
 											c.ClinicPatient?.Patient ??
 											c.Appointment?.Requesters[0]?.User;
 										const cp = c.ClinicPatient ?? c.Appointment?.Requesters[0]?.User?.ClinicPatients?.[0];
-										const pin = cp?.konsultaPatientPin || patient?.PhilHealthRecords[0]?.pin;
+										const pin = cp?.patientPin || patient?.PhilHealthRecords[0]?.pin;
+										const yr = cp?.YakapRegistrations?.[0];
 										const primary = c.ConsultationDiagnoses.find(
 											(d) => d.type === "PRIMARY",
 										);
@@ -422,11 +426,11 @@ export function ConsultationsPanel({ clinicUid }: { clinicUid: string }) {
 										const hp =
 											c.ConsultationTicketHPs[0]?.HealthCareProvider?.User;
 										const ready =
-											!!c.konsultaHciCaseNo &&
-											!!c.konsultaHciTransNo &&
+											!!yr?.hciCaseNo &&
+											!!yr?.hciEnlistmentTransNo &&
 											c.konsultaAtcValidationStatus === "VALID";
 										const hasValidCaseAndTrans =
-											!!c.konsultaHciCaseNo && !!c.konsultaHciTransNo;
+											!!yr?.hciCaseNo && !!yr?.hciEnlistmentTransNo;
 										return (
 											<TableRow key={c.id}>
 												<TableCell className="font-mono text-xs">
@@ -542,9 +546,10 @@ export function ConsultationsPanel({ clinicUid }: { clinicUid: string }) {
 					</DialogHeader>
 					{(() => {
 						const cp = atcTarget?.ClinicPatient ?? atcTarget?.Appointment?.Requesters[0]?.User?.ClinicPatients?.[0];
-						if (cp?.konsultaPatientType) {
-							const isDependent = cp.konsultaPatientType === "DD";
-							const patientPin = cp.konsultaPatientPin || atcTarget?.Appointment?.Requesters[0]?.User?.PhilHealthRecords?.[0]?.pin || atcTarget?.ClinicPatient?.Patient?.PhilHealthRecords?.[0]?.pin || "Not specified";
+						const yr = cp?.YakapRegistrations?.[0];
+						if (yr?.patientType) {
+							const isDependent = yr.patientType === "DD";
+							const patientPin = cp?.patientPin || atcTarget?.Appointment?.Requesters[0]?.User?.PhilHealthRecords?.[0]?.pin || atcTarget?.ClinicPatient?.Patient?.PhilHealthRecords?.[0]?.pin || "Not specified";
 							return (
 								<div className="rounded-md border p-3 bg-muted/50 text-sm space-y-1 mt-2">
 									{isDependent && (
@@ -555,7 +560,7 @@ export function ConsultationsPanel({ clinicUid }: { clinicUid: string }) {
 									)}
 									<div className="flex justify-between items-center">
 										<span className="text-muted-foreground">{isDependent ? "Primary/Member PIN:" : "Member PIN:"}</span>
-										<span className="font-mono font-medium">{cp.konsultaMemberPin || (!isDependent ? patientPin : "Not specified")}</span>
+										<span className="font-mono font-medium">{cp?.memberPin || (!isDependent ? patientPin : "Not specified")}</span>
 									</div>
 								</div>
 							);

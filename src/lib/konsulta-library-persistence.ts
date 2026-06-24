@@ -698,7 +698,6 @@ export async function bootstrapClinicKonsultaLibraries(
 export async function getClinicKonsultaLibrarySummary(
   clinicId: number,
 ): Promise<ClinicKonsultaLibrarySummary> {
-  await bootstrapClinicKonsultaLibraries(clinicId);
 
   const [referenceItems, clinicItems] = await Promise.all([
     prisma.philHealthKonsultaReference.findMany({

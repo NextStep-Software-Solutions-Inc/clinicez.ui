@@ -153,35 +153,7 @@ export const downloadConsultationAction = withErrorHandling(async (userId?: stri
     }
   }
 
-  // Get case number (lazy generation: generate once, store, reuse)
-  let caseNumber: string | null = null;
-
-  if (consultation) {
-    // Check if number already exists in database
-    caseNumber = consultation.caseNumber;
-
-    // If not, generate once and store
-    if (!caseNumber) {
-      caseNumber = await generateTimestampCaseNumber(
-        "CONSULTATION",
-        consultation.clinicId
-      );
-
-      // Store it in the database for future use
-      try {
-        await prisma.consultationTicket.update({
-          where: { id: consultation.id },
-          data: {
-            caseNumber,
-            caseNumberGeneratedAt: new Date()
-          }
-        });
-      } catch (error) {
-        // If update fails (e.g., duplicate), still use the generated number
-        console.warn("Failed to store case number, but continuing:", error);
-      }
-    }
-  }
+  const caseNumber = consultation?.soapTransNo || "";
 
   // Extract ICD-10 codes from imaging diagnostics
   const icd10Codes = consultation?.ImagingRequests

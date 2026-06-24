@@ -8,6 +8,7 @@ import {
 	ChevronRight,
 	ClipboardList,
 	Clock,
+	ExternalLink,
 	Eye,
 	EyeOff,
 	FileCode2,
@@ -47,7 +48,6 @@ import {
 	checkEnrolledPatientsRegistrationBatchAction,
 	checkKonsultaPatientRegistrationAction,
 	enrollPatientPhilHealthAction,
-	generateConsultationCaseTransNumbersAction,
 	getAllClinicPatientsWithPhilHealthStatusAction,
 	getKonsultaBatchesAction,
 	getPhilHealthConsultationsAction,
@@ -901,6 +901,8 @@ function BatchEntryRow({
 	const [toggling, setToggling] = useState(false);
 
 	const isTagging2 = reportTagging === "2";
+	const pathname = usePathname();
+	const clinicUid = pathname.split("/")[3];
 
 	const handleExpand = async () => {
 		if (expanded) {
@@ -971,7 +973,7 @@ function BatchEntryRow({
 					<div className="font-medium text-sm">{name}</div>
 					<div className="flex flex-wrap items-center gap-2">
 						<code className="text-xs text-muted-foreground">
-							{e.philHealthPin}
+							{e.Patient.PhilHealthRecords?.[0]?.pin ?? "No PIN"}
 						</code>
 						{deficiencyCount > 0 && (
 							<Badge
@@ -986,14 +988,14 @@ function BatchEntryRow({
 				</TableCell>
 				<TableCell>
 					<Badge variant="outline" className="text-xs">
-						{e.memberType}
+						{e.Patient.ClinicPatients?.[0]?.YakapRegistrations?.[0]?.patientType === "DD" ? "Dependent" : "Member"}
 					</Badge>
 				</TableCell>
 				<TableCell>
-					<code className="text-xs">{e.hciCaseNo ?? "—"}</code>
+					<code className="text-xs">{e.Patient.ClinicPatients?.[0]?.YakapRegistrations?.[0]?.hciCaseNo ?? "—"}</code>
 				</TableCell>
 				<TableCell>
-					<code className="text-xs">{e.hciTransNo ?? "—"}</code>
+					<code className="text-xs">{e.Patient.ClinicPatients?.[0]?.YakapRegistrations?.[0]?.hciEnlistmentTransNo ?? "—"}</code>
 				</TableCell>
 				{reportTagging !== "1" && (
 					<TableCell className="text-xs">
@@ -1054,6 +1056,15 @@ function BatchEntryRow({
 															</p>
 														)}
 													</div>
+													<a
+														href={`/v2/clinic/${clinicUid}/consultations/${c.id}`}
+														target="_blank"
+														rel="noopener noreferrer"
+														onClick={(e) => e.stopPropagation()}
+														className="text-xs font-medium text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1 shrink-0 ml-4"
+													>
+														Open Workspace <ExternalLink className="h-3 w-3" />
+													</a>
 												</label>
 											);
 										})}
@@ -1806,7 +1817,7 @@ function CreateBatchDialog({
 											{ph?.pin ?? "No PIN"}
 										</span>
 										<Badge variant="outline" className="text-xs">
-											{p.konsultaPatientType === "DD" || p.konsultaPatientType === "DEPENDENT" ? "Dependent" : "Member"}
+											{p.YakapRegistrations?.[0]?.patientType === "DD" || p.YakapRegistrations?.[0]?.patientType === "DEPENDENT" ? "Dependent" : "Member"}
 										</Badge>
 									</label>
 								);
@@ -1836,4 +1847,4 @@ function CreateBatchDialog({
 		</Dialog>
 	);
 }
-
+

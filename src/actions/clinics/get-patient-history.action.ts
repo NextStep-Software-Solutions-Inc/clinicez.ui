@@ -141,7 +141,7 @@ export const getPatientHistoryAction = withErrorHandling(
         ConsultationTickets: {
           where: { isActive: true },
           take: 1,
-          select: { id: true, caseNumber: true },
+          select: { id: true, soapTransNo: true },
         },
       },
     });
@@ -175,7 +175,7 @@ export const getPatientHistoryAction = withErrorHandling(
         createdAt: true,
         updatedAt: true,
         isArchived: true,
-        caseNumber: true,
+        soapTransNo: true,
         ConsultationTicketAttribute: {
           select: {
             status: true,

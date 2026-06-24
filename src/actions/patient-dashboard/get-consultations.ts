@@ -96,7 +96,7 @@ export async function getRecentConsultations(
       return ({
         ticketId: ticket.id,
         subject: ticket.subject,
-        caseNumber: ticket.caseNumber,
+        caseNumber: ticket.Appointment?.caseNumber || null,
         status: ticket.isArchived ? 'archived' : 'active',
         notes: ticket.ConsultationNotes.map((note: (typeof ticket.ConsultationNotes)[0]) => {
           // Get the label for this section - handle both numeric IDs and string names

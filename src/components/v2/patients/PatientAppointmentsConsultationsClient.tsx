@@ -158,9 +158,9 @@ function ConsultationTimelineEntry({
                 <span className="text-xs font-semibold text-primary uppercase tracking-wide">
                   Consultation
                 </span>
-                {ticket.caseNumber && (
-                  <span className="text-xs text-muted-foreground">
-                    · Case #{ticket.caseNumber}
+                {ticket.soapTransNo && (
+                  <span className="text-xs text-muted-foreground font-mono">
+                    · Trans #{ticket.soapTransNo}
                   </span>
                 )}
               </div>

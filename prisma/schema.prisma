@@ -240,17 +240,8 @@ model ClinicPatient {
   claimedBy                     Int?
   onboardingStatus              OnboardingStatus            @default(NOT_STARTED)
   profileCompletionStatus       ProfileCompletionStatus     @default(INCOMPLETE)
-  konsultaPatientType           String? // "MM" member | "DD" dependent
-  konsultaEffYear               String?
-  konsultaPatientPin            String? // Snapshot of the patient's own PIN at enrollment
-  konsultaMemberPin             String? // Snapshot of the principal's PIN (if dependent)
-  konsultaRegistrationStatus    String? // REGISTERED | NOT_REGISTERED | FAILED | UNENROLLED
-  konsultaRegisteredAt          DateTime?
-  konsultaRegistrationCheckedAt DateTime?
-  konsultaRegistrationResult    Json?
-  konsultaUnenrolledAt          DateTime?
-  konsultaWithConsent           Boolean                     @default(false)
-  konsultaPackageType           String?                     // "P"|"E"|"K"
+  patientPin                    String? // Snapshot of the patient's own PIN at enrollment
+  memberPin                     String? // Snapshot of the principal's PIN (if dependent)
   HeartStationRequests          ClinicHeartStationRequest[]
   ImagingRequests               ClinicImagingRequest[]
   LaboratoryRequests            ClinicLaboratoryRequest[]
@@ -262,9 +253,37 @@ model ClinicPatient {
   Prescriptions                 Prescription[]
   ProcedureUsageHistory         ProcedureUsageHistory[]
   ConsultationTickets           ConsultationTicket[]
+  YakapRegistrations            YakapRegistration[]
 
   @@unique([clinicId, patientId], name: "unique_clinic_patient")
-  @@index([clinicId, konsultaEffYear, konsultaRegistrationStatus])
+}
+
+model YakapRegistration {
+  id                            Int            @id @default(autoincrement())
+  clinicPatientId               Int
+  effYear                       String         // e.g. "2026"
+  patientType           String?        // "MM" member | "DD" dependent
+  patientPin            String?        // Snapshot of the patient's own PIN at enrollment
+  memberPin             String?        // Snapshot of the principal's PIN (if dependent)
+  registrationStatus    String?        // REGISTERED | NOT_REGISTERED | FAILED | UNENROLLED
+  registeredAt          DateTime?
+  registrationCheckedAt DateTime?
+  registrationResult    Json?
+  unEnrolledAt          DateTime?
+  withConsent           Boolean        @default(false)
+  packageType           String?        // "P"|"E"|"K"
+  hciCaseNo             String?
+  hciEnlistmentTransNo  String?        // Enlistment transaction (E-prefix)
+  hciProfilingTransNo   String?        // Profiling transaction (P-prefix)
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+
+  ClinicPatient                 ClinicPatient  @relation(fields: [clinicPatientId], references: [id], onDelete: Cascade)
+
+  @@unique([clinicPatientId, effYear], name: "unique_patient_yakap_registration_year")
+  @@index([clinicPatientId])
+  @@index([effYear])
+  @@index([clinicPatientId, effYear, registrationStatus])
 }
 
 model ClinicPatientPermission {
@@ -1669,13 +1688,7 @@ model ConsultationTicket {
   updatedAt                   DateTime                     @updatedAt
   isActive                    Boolean                      @default(true)
   isArchived                  Boolean                      @default(false)
-  caseNumberGeneratedAt       DateTime?
-  ekasAuthorizationCode       String?
-  ekasTransactionGeneratedAt  DateTime?
-  ekasTransactionNumber       String?                      @unique
-  caseNumber                  String?                      @unique
-  konsultaHciCaseNo           String?                      @unique
-  konsultaHciTransNo          String?                      @unique
+  soapTransNo                 String?                      @unique
   konsultaAtc                 String?
   konsultaIsWalkedIn          Boolean                      @default(false)
   konsultaCoPay               Decimal?                     @db.Decimal(10, 2)
@@ -1702,10 +1715,6 @@ model ConsultationTicket {
   KonsultaDiagnosticResults   KonsultaDiagnosticResult[]
   KonsultaNcdQuestionnaires   KonsultaNcdQuestionnaire[]
 
-  @@index([caseNumber])
-  @@index([ekasTransactionNumber])
-  @@index([konsultaHciCaseNo])
-  @@index([konsultaHciTransNo])
   @@index([clinicPatientId])
 }
 
@@ -3092,11 +3101,6 @@ model KonsultaEntry {
   id              Int           @id @default(autoincrement())
   batchId         Int
   patientUserId   Int
-  philHealthPin   String
-  memberPin       String?
-  memberType      String // "MM" | "DD"
-  hciCaseNo       String?
-  hciTransNo      String?
   consultationIds Int[]         @default([])
   included        Boolean       @default(true)
   status          String        @default("PENDING") // PENDING | INCLUDED | EXCLUDED | FAILED
@@ -3106,9 +3110,8 @@ model KonsultaEntry {
   KonsultaBatch   KonsultaBatch @relation(fields: [batchId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   Patient         User          @relation("KonsultaEntryPatient", fields: [patientUserId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
-  @@unique([batchId, patientUserId], name: "unique_batch_patient")
   @@index([batchId])
-  @@index([philHealthPin])
+  @@index([batchId, patientUserId])
 }
 
 /// Dynamic table for storing PhilHealth Yakap Lookup Library names and columns

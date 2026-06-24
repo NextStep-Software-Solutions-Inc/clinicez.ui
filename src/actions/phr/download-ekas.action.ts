@@ -32,7 +32,7 @@ export const downloadEKASAction = withErrorHandling(async (
   const user = userRes.data
   if (!user) throw new Error("User profile not found. Please ensure you have a valid account.")
 
-  // Get case number from consultation ticket if provided (lazy generation with storage)
+  // Get case number from consultation ticket if provided (dynamic generation on-the-fly)
   let finalCaseNumber: string | null = null
   let consultationTicket = null
 
@@ -41,11 +41,6 @@ export const downloadEKASAction = withErrorHandling(async (
       where: { id: consultationTicketId },
       select: {
         clinicId: true,
-        caseNumber: true,
-        konsultaHciCaseNo: true,
-        konsultaHciTransNo: true,
-        ekasTransactionNumber: true,
-        ekasAuthorizationCode: true,
         Clinic: {
           select: {
             ClinicSetting: { select: { philhealthAccreditationNumber: true } }
@@ -59,91 +54,22 @@ export const downloadEKASAction = withErrorHandling(async (
       }
     })
 
-    // Use stored case number if available
-    finalCaseNumber = consultationTicket?.caseNumber || null
-
     // Use clinic from consultation if not provided
     if (!clinicId && consultationTicket?.clinicId) {
       clinicId = consultationTicket.clinicId
     }
-
-    if (consultationTicket) {
-      const hciAccreNo = consultationTicket.Clinic?.ClinicSetting?.philhealthAccreditationNumber ?? null
-      if (hciAccreNo && (!consultationTicket.konsultaHciCaseNo || !consultationTicket.konsultaHciTransNo)) {
-        const hciCaseSeq = await getNextSequenceNumber('KONSULTA_HCI_CASE', consultationTicket.clinicId)
-        const hciTransSeq = await getNextSequenceNumber('KONSULTA_SCREENING_TRANSACTION', consultationTicket.clinicId)
-        await prisma.consultationTicket.update({
-          where: { id: consultationTicketId },
-          data: {
-            konsultaHciCaseNo: consultationTicket.konsultaHciCaseNo ?? formatKonsultaHciNumber("T", hciAccreNo, hciCaseSeq),
-            konsultaHciTransNo: consultationTicket.konsultaHciTransNo ?? formatKonsultaHciNumber("P", hciAccreNo, hciTransSeq),
-          }
-        })
-      }
-    }
   }
 
-  // If no case number yet, generate one
-  if (!finalCaseNumber) {
-    const { generateTimestampCaseNumber } = await import("@/services/sequence-generator.service");
-    finalCaseNumber = await generateTimestampCaseNumber("HEALTH_ASSESSMENT", clinicId || undefined);
+  // Generate case number dynamically
+  const { generateTimestampCaseNumber } = await import("@/services/sequence-generator.service");
+  finalCaseNumber = await generateTimestampCaseNumber("HEALTH_ASSESSMENT", clinicId || undefined);
 
-    // Store it in the consultation ticket if linked
-    if (consultationTicketId && consultationTicket) {
-      try {
-        await prisma.consultationTicket.update({
-          where: { id: consultationTicketId },
-          data: {
-            caseNumber: finalCaseNumber,
-            caseNumberGeneratedAt: new Date()
-          }
-        });
-      } catch (error) {
-        // If update fails, still use the generated number
-        console.warn("Failed to store case number, but continuing:", error);
-      }
-    }
-  }
+  // Get transaction number and authorization code dynamically
+  const transactionSeq = await getNextSequenceNumber('EKAS_TRANSACTION', clinicId || null)
+  const authSeq = await getNextSequenceNumber('EKAS_AUTH_CODE', clinicId || null)
 
-  // Get transaction number and authorization code (lazy generation: generate once, store, reuse)
-  let finalTransactionNumber: string | null = null
-  let finalAuthCode: string | null = null
-
-  if (consultationTicketId && consultationTicket) {
-    // Check if already generated and stored
-    finalTransactionNumber = consultationTicket.ekasTransactionNumber || null
-    finalAuthCode = consultationTicket.ekasAuthorizationCode || null
-
-    // If not, generate once and store
-    if (!finalTransactionNumber || !finalAuthCode) {
-      const transactionSeq = await getNextSequenceNumber('EKAS_TRANSACTION', clinicId || null)
-      const authSeq = await getNextSequenceNumber('EKAS_AUTH_CODE', clinicId || null)
-
-      finalTransactionNumber = formatTransactionNumber(clinicId || null, transactionSeq)
-      finalAuthCode = formatAuthorizationCode(clinicId || null, authSeq)
-
-      // Store in database for future use
-      try {
-        await prisma.consultationTicket.update({
-          where: { id: consultationTicketId },
-          data: {
-            ekasTransactionNumber: finalTransactionNumber,
-            ekasAuthorizationCode: finalAuthCode,
-            ekasTransactionGeneratedAt: new Date()
-          }
-        })
-      } catch (error) {
-        console.warn("Failed to store EKAS transaction number, but continuing:", error)
-      }
-    }
-  } else {
-    // No consultation ticket - generate fresh (can't store)
-    const transactionSeq = await getNextSequenceNumber('EKAS_TRANSACTION', clinicId || null)
-    const authSeq = await getNextSequenceNumber('EKAS_AUTH_CODE', clinicId || null)
-
-    finalTransactionNumber = formatTransactionNumber(clinicId || null, transactionSeq)
-    finalAuthCode = formatAuthorizationCode(clinicId || null, authSeq)
-  }
+  const finalTransactionNumber = formatTransactionNumber(clinicId || null, transactionSeq)
+  const finalAuthCode = formatAuthorizationCode(clinicId || null, authSeq)
 
   // Get PhilHealth record
   let phr: PhilHealthRecordLite | undefined = hasPhilHealthRecord(user) ? user.PhilHealthRecord?.[0] : undefined

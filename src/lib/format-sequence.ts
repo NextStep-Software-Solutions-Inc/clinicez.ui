@@ -66,7 +66,7 @@ export function formatKonsultaHciNumber(
   const d = date || new Date();
   const year = d.getFullYear();
   const month = String(d.getMonth() + 1).padStart(2, "0");
-  const accre = hciAccreNo.replace(/\D/g, "").padStart(9, "0").slice(-9);
+  const accre = hciAccreNo.padStart(9, "0").slice(-9);
   const paddedSequence = String(sequenceNumber).padStart(5, "0").slice(-5);
 
   return `${prefix}${accre}${year}${month}${paddedSequence}`;

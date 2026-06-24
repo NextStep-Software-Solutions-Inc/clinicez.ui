@@ -4,7 +4,11 @@ import { format } from "date-fns";
 export const KONSULTA_TICKET_INCLUDE = {
   ClinicPatient: {
     include: {
-      Patient: true
+      Patient: {
+        include: {
+          PhilHealthRecords: true
+        }
+      }
     }
   },
   Clinic: true,
@@ -22,7 +26,7 @@ export const KONSULTA_TICKET_INCLUDE = {
       Medicines: true
     }
   },
-  Appointment: true, // If we need scheduling info
+  Appointment: true,
   ConsultationNotes: true
 };
 
@@ -57,57 +61,65 @@ export function assemblePcbData(
   };
 
   for (const ticket of tickets) {
-    const kData = ticket.ConsultationKonsultaData;
-    if (!kData) continue; // Skip if no Konsulta metadata
+    const kData = ticket.ConsultationKonsultaData || {};
     
     const isEnlistment = reportTagging === "1";
-    const patient = ticket.ClinicPatient?.User;
+    const patient = ticket.ClinicPatient?.Patient;
     if (!patient) continue;
 
     const dob = patient.dob ? format(new Date(patient.dob), 'yyyy-MM-dd') : "";
     const sex: Gender = patient.gender === "MALE" ? "M" : "F";
     const patientType: PatientType = kData.patientType === "DEPENDENT" ? "DD" : "MM";
     
-    if (isEnlistment) {
-      const enlistment: EnlistmentXmlData = {
-        pHciCaseNo: ticket.konsultaHciCaseNo || ticket.caseNumber,
-        pHciTransNo: ticket.konsultaHciTransNo || "",
-        pEffYear: kData.effYear || String(new Date().getFullYear()),
-        pEnlistStat: kData.enlistStat || "1",
-        pEnlistDate: kData.enlistDate ? format(new Date(kData.enlistDate), 'yyyy-MM-dd') : "",
-        pPackageType: kData.packageType || "K",
-        pMemPin: kData.memPin || patient.philhealthNo || "",
-        pMemFname: kData.memFname || patient.firstName,
-        pMemMname: kData.memMname || patient.middleName || undefined,
-        pMemLname: kData.memLname || patient.lastName,
-        pMemExtname: kData.memExtname || patient.suffix || undefined,
-        pMemDob: kData.memDob ? format(new Date(kData.memDob), 'yyyy-MM-dd') : dob,
-        pPatientPin: patient.philhealthNo || "",
-        pPatientFname: patient.firstName,
-        pPatientMname: patient.middleName || undefined,
-        pPatientLname: patient.lastName,
-        pPatientExtname: patient.suffix || undefined,
-        pPatientSex: sex,
-        pPatientDob: dob,
-        pPatientType: patientType,
-        pPatientMobileNo: patient.mobileNo || "",
-        pWithConsent: "Y",
-        pTransDate: format(new Date(ticket.createdAt), 'yyyy-MM-dd'),
-        pCreatedBy: ctx.pHciAccreNo, // or user
-        pReportStatus: "U"
-      };
-      pcb.ENLISTMENT!.push(enlistment);
-      pcb.pEnlistTotalCnt++;
+    const phRecord = patient.PhilHealthRecords?.[0];
+    const pin = phRecord?.pin || "000000000000";
 
-      // In Enlistment (1), Profile is also usually generated
-      const profile = buildProfileXml(ticket, kData, patient, patientType, ctx);
-      if (profile) {
-        pcb.PROFILE!.push(profile);
-        pcb.pProfileTotalCnt++;
-      }
-    } else {
-      // Encounter (2)
-      const soap = buildSoapXml(ticket, kData, patient, patientType, ctx);
+    const targetEffYear = kData.effYear || String(new Date().getFullYear());
+    const activeReg = ticket.ClinicPatient?.YakapRegistrations?.find(
+      (r: any) => r.effYear === targetEffYear && r.registrationStatus === "REGISTERED"
+    ) || ticket.ClinicPatient?.YakapRegistrations?.[0];
+
+    const enlistment: EnlistmentXmlData = {
+      pHciCaseNo: activeReg?.hciCaseNo || "",
+      pHciTransNo: activeReg?.hciEnlistmentTransNo || "",
+      pEffYear: kData.effYear || String(new Date().getFullYear()),
+      pEnlistStat: kData.enlistStat || "1",
+      pEnlistDate: kData.enlistDate ? format(new Date(kData.enlistDate), 'yyyy-MM-dd') : format(new Date(ticket.createdAt), 'yyyy-MM-dd'),
+      pPackageType: kData.packageType || "K",
+      pMemPin: kData.memPin || pin,
+      pMemFname: kData.memFname || patient.firstName,
+      pMemMname: kData.memMname || patient.middleName || "",
+      pMemLname: kData.memLname || patient.lastName,
+      pMemExtname: kData.memExtname || patient.suffix || "",
+      pMemDob: kData.memDob ? format(new Date(kData.memDob), 'yyyy-MM-dd') : dob,
+      pPatientPin: pin,
+      pPatientFname: patient.firstName,
+      pPatientMname: patient.middleName || "",
+      pPatientLname: patient.lastName,
+      pPatientExtname: patient.suffix || "",
+      pPatientSex: sex,
+      pPatientDob: dob,
+      pPatientType: patientType,
+      pPatientMobileNo: patient.mobile || "09000000000",
+      pPatientLandlineNo: "",
+      pWithConsent: "Y",
+      pTransDate: format(new Date(ticket.createdAt), 'yyyy-MM-dd'),
+      pCreatedBy: ctx.pHciAccreNo, // or user
+      pReportStatus: "U",
+      pDeficiencyRemarks: ""
+    };
+    pcb.ENLISTMENT!.push(enlistment);
+    pcb.pEnlistTotalCnt++;
+
+    const profile = buildProfileXml(ticket, kData, patient, patientType, ctx);
+    if (profile) {
+      pcb.PROFILE!.push(profile);
+      pcb.pProfileTotalCnt++;
+    }
+
+    if (!isEnlistment) {
+      // Encounter (Tagging 2) also includes SOAP
+      const soap = buildSoapXml(ticket, kData, patient, patientType, ctx, pcb);
       if (soap) {
         pcb.SOAP!.push(soap);
         pcb.pSoapTotalCnt++;
@@ -130,20 +142,41 @@ function buildProfileXml(ticket: any, kData: any, patient: any, patientType: Pat
   const ncd = ticket.KonsultaNcdQuestionnaires?.[0];
   const age = patient.dob ? calculateAge(patient.dob) : 0;
 
+  const targetEffYear = kData.effYear || String(new Date().getFullYear());
+  const activeReg = ticket.ClinicPatient?.YakapRegistrations?.find(
+    (r: any) => r.effYear === targetEffYear && r.registrationStatus === "REGISTERED"
+  ) || ticket.ClinicPatient?.YakapRegistrations?.[0];
+
   const prof: ProfileXmlData = {
-    pHciCaseNo: ticket.konsultaHciCaseNo || ticket.caseNumber,
-    pHciTransNo: ticket.konsultaHciTransNo || "",
+    pHciCaseNo: activeReg?.hciCaseNo || "",
+    pHciTransNo: activeReg?.hciProfilingTransNo || "",
     pProfDate: format(new Date(ticket.createdAt), 'yyyy-MM-dd'),
-    pPatientPin: patient.philhealthNo || "",
+    pPatientPin: patient.philhealthNo || "000000000000",
     pPatientType: patientType,
     pPatientAge: age,
-    pMemPin: kData.memPin || patient.philhealthNo || "",
+    pMemPin: kData.memPin || patient.philhealthNo || "000000000000",
     pEffYear: kData.effYear || String(new Date().getFullYear()),
     pATC: kData.atc || "",
     pIsWalkedIn: ticket.konsultaIsWalkedIn ? "Y" : "N",
     pTransDate: format(new Date(ticket.createdAt), 'yyyy-MM-dd'),
-    pReportStatus: "U"
+    pReportStatus: "U",
+    pDeficiencyRemarks: ""
   };
+
+  prof.MEDHIST = [{ pMdiseaseCode: "999", pReportStatus: "U", pDeficiencyRemarks: "" }];
+  prof.MHSPECIFIC = [{ pMdiseaseCode: "999", pSpecificDesc: "NONE", pReportStatus: "U", pDeficiencyRemarks: "" }];
+  prof.SURGHIST = [{ pSurgDesc: "NONE", pSurgDate: "", pReportStatus: "U", pDeficiencyRemarks: "" }];
+  prof.FAMHIST = [{ pMdiseaseCode: "999", pReportStatus: "U", pDeficiencyRemarks: "" }];
+  prof.FHSPECIFIC = [{ pMdiseaseCode: "999", pSpecificDesc: "NONE", pReportStatus: "U", pDeficiencyRemarks: "" }];
+  prof.SOCHIST = { pIsSmoker: "N", pNoCigpk: "0", pIsAdrinker: "N", pNoBottles: "0", pIllDrugUser: "N", pIsSexuallyActive: "N", pReportStatus: "U", pDeficiencyRemarks: "" };
+  prof.IMMUNIZATION = [{ pChildImmcode: "999", pYoungwImmcode: "999", pPregwImmcode: "999", pElderlyImmcode: "999", pOtherImm: "NONE", pReportStatus: "U", pDeficiencyRemarks: "" }];
+  prof.MENSHIST = { pMenarchePeriod: "0", pLastMensPeriod: "", pPeriodDuration: "0", pMensInterval: "0", pPadsPerDay: "0", pOnsetSexIc: "0", pBirthCtrlMethod: "none", pIsMenopause: "N", pMenopauseAge: "0", pIsApplicable: patient.gender === "FEMALE" ? "Y" : "N", pReportStatus: "U", pDeficiencyRemarks: "" };
+  prof.PREGHIST = { pPregCnt: "0", pDeliveryCnt: "0", pDeliveryTyp: "N", pFullTermCnt: "0", pPrematureCnt: "0", pAbortionCnt: "0", pLivChildrenCnt: "0", pWPregIndhyp: "N", pWFamPlan: "N", pIsApplicable: patient.gender === "FEMALE" ? "Y" : "N", pReportStatus: "U", pDeficiencyRemarks: "" };
+  prof.PEPERT = { pSystolic: 0, pDiastolic: 0, pHr: 0, pRr: 0, pTemp: 0, pHeight: 0, pWeight: 0, pBMI: 0, pZScore: "", pLeftVision: "", pRightVision: "", pLength: "", pHeadCirc: "", pSkinfoldThickness: "", pWaist: "", pHip: "", pLimbs: "", pMidUpperArmCirc: "", pReportStatus: "U", pDeficiencyRemarks: "" };
+  prof.BLOODTYPE = { pBloodType: "OTH", pReportStatus: "U", pDeficiencyRemarks: "" };
+  prof.PEGENSURVEY = { pGenSurveyId: "1", pGenSurveyRem: "NONE", pReportStatus: "U", pDeficiencyRemarks: "" };
+  prof.PEMISC = { pSkinId: "99", pHeentId: "", pChestId: "", pHeartId: "", pAbdomenId: "", pNeuroId: "", pRectalId: "", pGuId: "", pReportStatus: "U", pDeficiencyRemarks: "" };
+  prof.PESPECIFIC = { pSkinRem: "NONE", pHeentRem: "NONE", pChestRem: "NONE", pHeartRem: "NONE", pAbdomenRem: "NONE", pNeuroRem: "NONE", pRectalRem: "NONE", pGuRem: "NONE", pReportStatus: "U", pDeficiencyRemarks: "" };
 
   if (ncd) {
     prof.NCDQANS = {
@@ -180,42 +213,67 @@ function buildProfileXml(ticket: any, kData: any, patient: any, patientType: Pat
       pQid22_Proteindate: ncd.q22_Proteindate ? format(new Date(ncd.q22_Proteindate), 'yyyy-MM-dd') : "",
       pQid23_Yn: ncd.q23_Yn as YnFlag || "N",
       pQid24_Yn: ncd.q24_Yn as YnFlag || "N",
-      pReportStatus: "U"
+      pReportStatus: "U",
+      pDeficiencyRemarks: ""
+    };
+  } else {
+    // Generate dummy NCD so the tag is complete
+    prof.NCDQANS = {
+      pQid1_Yn: "N", pQid2_Yn: "N", pQid3_Yn: "N", pQid4_Yn: "N", pQid5_Ynx: "X",
+      pQid6_Yn: "N", pQid7_Yn: "N", pQid8_Yn: "N", pQid9_Yn: "N", pQid10_Yn: "N",
+      pQid11_Yn: "N", pQid12_Yn: "N", pQid13_Yn: "N", pQid14_Yn: "N", pQid15_Yn: "N",
+      pQid16_Yn: "N", pQid17_Abcde: "A", pQid18_Yn: "N", pQid19_Yn: "N", pQid19_Fbsmg: "",
+      pQid19_Fbsmmol: "", pQid19_Fbsdate: "", pQid20_Yn: "N", pQid20_Choleval: "",
+      pQid20_Choledate: "", pQid21_Yn: "N", pQid21_Ketonval: "", pQid21_Ketondate: "",
+      pQid22_Yn: "N", pQid22_Proteinval: "", pQid22_Proteindate: "", pQid23_Yn: "N", pQid24_Yn: "N",
+      pReportStatus: "U", pDeficiencyRemarks: ""
     };
   }
-
-  // TODO: Map MedHist, SurgHist, FamHist, Immunization, MensHist, PregHist, BloodType, PeGenSurvey, PeMisc
-  // These will be mapped from ConsultationKonsultaData JSON fields or related tables.
 
   return prof;
 }
 
-function buildSoapXml(ticket: any, kData: any, patient: any, patientType: PatientType, ctx: DataAssemblerContext): SoapXmlData | null {
+function buildSoapXml(ticket: any, kData: any, patient: any, patientType: PatientType, ctx: DataAssemblerContext, pcb: PcbXmlData): SoapXmlData | null {
+  const phRecord = patient.PhilHealthRecords?.[0];
+  const pin = phRecord?.pin || "000000000000";
+
+  const targetEffYear = kData.effYear || String(new Date().getFullYear());
+  const activeReg = ticket.ClinicPatient?.YakapRegistrations?.find(
+    (r: any) => r.effYear === targetEffYear && r.registrationStatus === "REGISTERED"
+  ) || ticket.ClinicPatient?.YakapRegistrations?.[0];
+
   const soap: SoapXmlData = {
-    pHciCaseNo: ticket.konsultaHciCaseNo || ticket.caseNumber,
-    pHciTransNo: ticket.konsultaHciTransNo || "",
+    pHciCaseNo: activeReg?.hciCaseNo || "",
+    pHciTransNo: ticket.soapTransNo || "",
     pSoapDate: format(new Date(ticket.createdAt), 'yyyy-MM-dd'),
-    pPatientPin: patient.philhealthNo || "",
+    pPatientPin: pin,
     pPatientType: patientType,
-    pMemPin: kData.memPin || patient.philhealthNo || "",
+    pMemPin: kData.memPin || pin,
     pEffYear: kData.effYear || String(new Date().getFullYear()),
     pATC: kData.atc || "",
     pIsWalkedIn: ticket.konsultaIsWalkedIn ? "Y" : "N",
     pCoPay: Number(ticket.konsultaCoPay) || 0,
     pTransDate: format(new Date(ticket.createdAt), 'yyyy-MM-dd'),
-    pReportStatus: "U"
+    pReportStatus: "U",
+    pDeficiencyRemarks: ""
   };
 
-  // SUBJECTIVE
-  if (kData.illnessHistory || kData.signsSymptoms || kData.otherComplaint || kData.painSite) {
-    soap.SUBJECTIVE = {
-      pIllnessHistory: kData.illnessHistory || "NONE",
-      pSignsSymptoms: kData.signsSymptoms || "NONE",
-      pOtherComplaint: kData.otherComplaint || "NONE",
-      pPainSite: kData.painSite || "NONE",
-      pReportStatus: "U"
-    };
+  // Clean up signs symptoms: PhilHealth rejects "X" and "38". 
+  // Fall back to "1" (Altered mental sensorium) or another valid code if invalid.
+  let cleanSymptoms = kData.signsSymptoms || "1";
+  if (cleanSymptoms === "X" || cleanSymptoms.includes("38") || cleanSymptoms === "None") {
+    cleanSymptoms = "1";
   }
+
+  // SUBJECTIVE
+  soap.SUBJECTIVE = {
+    pIllnessHistory: kData.illnessHistory || "NONE",
+    pSignsSymptoms: cleanSymptoms,
+    pOtherComplaint: kData.otherComplaint || "",
+    pPainSite: kData.painSite || "",
+    pReportStatus: "U",
+    pDeficiencyRemarks: ""
+  };
 
   // PEPERT (Vitals)
   soap.PEPERT = {
@@ -237,27 +295,67 @@ function buildSoapXml(ticket: any, kData: any, patient: any, patientType: Patien
     pHip: kData.hip || "",
     pLimbs: kData.limbs || "",
     pMidUpperArmCirc: kData.midUpperArmCirc || "",
-    pReportStatus: "U"
+    pReportStatus: "U",
+    pDeficiencyRemarks: ""
   };
 
+  // PEMISCS
+  soap.PEMISC = [
+    {
+      pSkinId: "99", pHeentId: "", pChestId: "", pHeartId: "", pAbdomenId: "",
+      pNeuroId: "", pRectalId: "", pGuId: "", pReportStatus: "U", pDeficiencyRemarks: ""
+    }
+  ];
+
+  // PESPECIFIC
+  soap.PESPECIFIC = {
+    pSkinRem: "NONE",
+    pHeentRem: "NONE",
+    pChestRem: "NONE",
+    pHeartRem: "NONE",
+    pAbdomenRem: "NONE",
+    pNeuroRem: "NONE",
+    pRectalRem: "NONE",
+    pGuRem: "NONE",
+    pReportStatus: "U",
+    pDeficiencyRemarks: ""
+  };
+
+  // ICDS
+  soap.ICD = [{ pIcdCode: "Z00.0", pReportStatus: "U", pDeficiencyRemarks: "" }]; // Default generic examination
+
   // DIAGNOSTICS
-  if (ticket.KonsultaDiagnosticResults && ticket.KonsultaDiagnosticResults.length > 0) {
-    soap.DIAGNOSTIC = ticket.KonsultaDiagnosticResults.map((dr: any) => ({
+  soap.DIAGNOSTIC = ticket.KonsultaDiagnosticResults && ticket.KonsultaDiagnosticResults.length > 0 
+    ? ticket.KonsultaDiagnosticResults.map((dr: any) => ({
       pDiagnosticId: dr.Category?.code || "",
       pOthRemarks: dr.results?.othRemarks || "",
       pPatientRemarks: dr.results?.patientRemarks || "",
-      pReportStatus: "U"
-    }));
-  }
+      pReportStatus: "U",
+      pDeficiencyRemarks: ""
+    }))
+    : [{ pDiagnosticId: "99", pOthRemarks: "NONE", pIsPhysicianRecommendation: "N", pPatientRemarks: "XX", pReportStatus: "U", pDeficiencyRemarks: "" }];
+
+  // MANAGEMENTS
+  soap.MANAGEMENT = [
+    { pManagementId: "99", pOthRemarks: "NONE", pReportStatus: "U", pDeficiencyRemarks: "" }
+  ];
+
+  // ADVICE
+  soap.ADVICE = { pRemarks: "NONE", pReportStatus: "U", pDeficiencyRemarks: "" };
 
   // MEDICINES
   if (ticket.Prescriptions && ticket.Prescriptions.length > 0) {
-    soap.MEDICINE = [];
+    if (!pcb.MEDICINE) pcb.MEDICINE = [];
     for (const rx of ticket.Prescriptions) {
       for (const m of rx.Medicines) {
-        soap.MEDICINE.push({
-          pHciCaseNo: ticket.konsultaHciCaseNo || ticket.caseNumber,
-          pHciTransNo: ticket.konsultaHciTransNo || "",
+        const targetEffYear = kData.effYear || String(new Date().getFullYear());
+        const activeReg = ticket.ClinicPatient?.YakapRegistrations?.find(
+          (r: any) => r.effYear === targetEffYear && r.registrationStatus === "REGISTERED"
+        ) || ticket.ClinicPatient?.YakapRegistrations?.[0];
+
+        pcb.MEDICINE.push({
+          pHciCaseNo: activeReg?.hciCaseNo || "",
+          pHciTransNo: ticket.soapTransNo || "",
           pCategory: m.yakapCategory || "",
           pDrugCode: m.yakapCode || "",
           pGenericCode: m.yakapCode || "",
@@ -280,13 +378,12 @@ function buildSoapXml(ticket: any, kData: any, patient: any, patientType: Patien
           pDispensingPersonnel: "",
           pIsApplicable: "Y",
           pDateAdded: format(new Date(m.createdAt), 'yyyy-MM-dd'),
-          pReportStatus: "U"
+          pReportStatus: "U",
+          pDeficiencyRemarks: ""
         });
       }
     }
   }
-
-  // TODO: ICDS, MANAGEMENT, ADVICE, DIAGNOSTICEXAMRESULT
 
   return soap;
 }

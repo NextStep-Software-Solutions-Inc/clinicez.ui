@@ -301,6 +301,8 @@ export async function getPatientHealthRecords(): Promise<SerializedPatientHealth
       createdAt: patient.createdAt.toISOString(),
       updatedAt: patient.updatedAt.toISOString(),
       clinic: clinicPatients[0]?.Clinic || null,
+      konsultaHciCaseNo: null,
+      konsultaHciProfilingTransNo: null,
 
       // Medical Profile
       medicalHistories: medical.map((h) => ({

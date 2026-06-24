@@ -94,7 +94,7 @@ export const getPatientSelfHistoryAction = withErrorHandling(async () => {
       ConsultationTickets: {
         where: { isActive: true },
         take: 1,
-        select: { id: true, caseNumber: true },
+        select: { id: true, soapTransNo: true },
       },
     },
   })
@@ -127,7 +127,7 @@ export const getPatientSelfHistoryAction = withErrorHandling(async () => {
       createdAt: true,
       updatedAt: true,
       isArchived: true,
-      caseNumber: true,
+      soapTransNo: true,
       Clinic: {
         select: { id: true, name: true, clinicUid: true },
       },

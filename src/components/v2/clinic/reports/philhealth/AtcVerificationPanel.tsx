@@ -47,7 +47,6 @@ import {
 	checkEnrolledPatientsRegistrationBatchAction,
 	checkKonsultaPatientRegistrationAction,
 	enrollPatientPhilHealthAction,
-	generateConsultationCaseTransNumbersAction,
 	getAllClinicPatientsWithPhilHealthStatusAction,
 	getKonsultaBatchesAction,
 	getPhilHealthConsultationsAction,

@@ -474,13 +474,26 @@ export async function getPatientDisabilitiesData(userId?: string): Promise<Disab
 
 /** Fetches PhilHealth records, certificates, referrals, and procedures for the Insurance tab. */
 export async function getPatientInsuranceData(userId?: string): Promise<InsuranceTabData | null> {
+    const isClinicStaffView = !!userId
     try {
         const patientId = await resolvePatientId(userId)
         if (!patientId) return null
 
         const clinicPatient = await prisma.clinicPatient.findFirst({
             where: { patientId, isActive: true, deletedAt: null },
-            select: { id: true, clinicId: true },
+            select: {
+                id: true,
+                clinicId: true,
+                YakapRegistrations: {
+                    where: { effYear: new Date().getFullYear().toString() },
+                    take: 1,
+                    select: {
+                        hciCaseNo: true,
+                        hciProfilingTransNo: true,
+                    }
+                },
+                Clinic: { select: { clinicUid: true } },
+            },
         })
 
         const [philHealth, procedures, certs, slips] = await Promise.all([
@@ -515,6 +528,11 @@ export async function getPatientInsuranceData(userId?: string): Promise<Insuranc
         ])
 
         return {
+            clinicPatientId: clinicPatient?.id ?? null,
+            clinicUid: clinicPatient?.Clinic?.clinicUid ?? null,
+            isClinicStaffView,
+            konsultaHciCaseNo: clinicPatient?.YakapRegistrations?.[0]?.hciCaseNo ?? null,
+            konsultaHciProfilingTransNo: clinicPatient?.YakapRegistrations?.[0]?.hciProfilingTransNo ?? null,
             philHealthRecords: philHealth.map(r => ({
                 ...serializeDateFields(r),
                 PhilHealthMemberType: r.PhilHealthMemberType

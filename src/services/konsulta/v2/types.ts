@@ -19,6 +19,9 @@ export interface PcbXmlData {
   ENLISTMENT?: EnlistmentXmlData[];
   PROFILE?: ProfileXmlData[];
   SOAP?: SoapXmlData[];
+  MEDICINE?: MedicineXmlData[];
+  DIAGNOSTICEXAMRESULT?: DiagnosticExamResultXmlData[];
+  DOCUMENT?: DocumentXmlData[];
 }
 
 export interface EnlistmentXmlData {
@@ -78,6 +81,8 @@ export interface ProfileXmlData {
   BLOODTYPE?: BloodTypeXmlData;
   PEGENSURVEY?: PeGenSurveyXmlData;
   PEMISC?: PeMiscXmlData;
+  PESPECIFIC?: PeSpecificXmlData;
+  PEPERT?: PePertXmlData;
   NCDQANS?: NcdQAnsXmlData;
 }
 
@@ -246,13 +251,12 @@ export interface SoapXmlData {
 
   SUBJECTIVE?: SubjectiveXmlData;
   PEPERT?: PePertXmlData;
+  PEMISC?: PeMiscXmlData[];
   PESPECIFIC?: PeSpecificXmlData;
   ICD?: IcdXmlData[];
   DIAGNOSTIC?: DiagnosticXmlData[];
   MANAGEMENT?: ManagementXmlData[];
   ADVICE?: AdviceXmlData;
-  MEDICINE?: MedicineXmlData[];
-  DIAGNOSTICEXAMRESULT?: DiagnosticExamResultXmlData;
 }
 
 export interface SubjectiveXmlData {
@@ -582,5 +586,19 @@ export interface FobtXmlData {
   pStatus: string;
   pDiagnosticLabFee: string;
   pReportStatus: ReportStatus;
+  pDeficiencyRemarks?: string;
+}
+
+// DTD: DOCUMENT EMPTY — all attributes #IMPLIED (optional)
+export interface DocumentXmlData {
+  pHciCaseNo?: string;
+  pHciTransNo?: string;
+  pPatientPin?: string;
+  pPatientType?: string;
+  pMemPin?: string;
+  pDocumentType?: string; // "EKAS" | "EPRESS" | "OTH"
+  pDocumentUrl?: string;
+  pTransDate?: string;
+  pReportStatus?: string;
   pDeficiencyRemarks?: string;
 }

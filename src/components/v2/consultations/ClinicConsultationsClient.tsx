@@ -316,7 +316,7 @@ export default function ClinicConsultationsClient({
       ? `${cp.firstName ?? ""} ${cp.lastName ?? ""}`.toLowerCase()
       : "";
     const subject = (item.subject ?? item.Appointment?.subject ?? "").toLowerCase();
-    const caseNum = (item.caseNumber ?? "").toLowerCase();
+    const caseNum = (item.soapTransNo ?? "").toLowerCase();
     return patientName.includes(q) || subject.includes(q) || caseNum.includes(q);
   });
 

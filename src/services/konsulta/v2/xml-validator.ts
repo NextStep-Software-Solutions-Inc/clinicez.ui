@@ -12,8 +12,6 @@ export interface XmlValidationError {
 export function validatePcbXmlData(data: PcbXmlData): XmlValidationError[] {
   const errors: XmlValidationError[] = [];
 
-  if (!data.pUsername) errors.push({ path: "PCB.pUsername", message: "Required" });
-  if (!data.pPassword) errors.push({ path: "PCB.pPassword", message: "Required" });
   if (!data.pHciAccreNo) errors.push({ path: "PCB.pHciAccreNo", message: "Required" });
   if (!data.pCertificationId) errors.push({ path: "PCB.pCertificationId", message: "Required" });
   if (!data.pHciTransmittalNumber) errors.push({ path: "PCB.pHciTransmittalNumber", message: "Required" });

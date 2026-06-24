@@ -171,7 +171,8 @@
     "ts-jest": "^29.4.6",
     "ts-node": "^10.9.2",
     "tsx": "^4.21.0",
-    "typescript": "~5.4.5"
+    "typescript": "~5.4.5",
+    "vitest": "^4.1.9"
   },
   "pnpm": {
     "peerDependencyRules": {

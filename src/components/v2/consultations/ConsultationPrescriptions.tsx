@@ -22,7 +22,7 @@ import {
 import type { GetPatientConsultationDetail } from "@/actions/consultation/patient-consultations.action";
 import type { GetHPsType } from "@/actions/hp.actions";
 import DownloadPrescriptionAction from "@/components/clinic/clinical-records/prescription/DownloadPrescriptionAction";
-import ClinicKonsultaLibraryPicker from "./ClinicKonsultaLibraryPicker";
+
 import type { SearchClinicKonsultaTermSuggestions } from "@/actions/clinics/konsulta-library.action";
 
 type Detail = NonNullable<GetPatientConsultationDetail["data"]>;
@@ -284,14 +284,7 @@ export default function ConsultationPrescriptions({
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   <div className="sm:col-span-2 space-y-1">
                     <Label className="text-xs">Drug Name *</Label>
-                    <ClinicKonsultaLibraryPicker
-                      clinicUid={clinicUid}
-                      domainKeys={[...MEDICINE_LIBRARY_DOMAIN_KEYS]}
-                      value={med.name}
-                      placeholder="Search clinic medicine library"
-                      className="h-7 text-xs"
-                      onSelect={(suggestion) => applyLibrarySuggestion(idx, suggestion)}
-                    />
+
                     <Input
                       placeholder="e.g. Amoxicillin"
                       value={med.name}

@@ -132,7 +132,7 @@ async function resolveClinicId(clinicUid: string): Promise<number> {
     return clinic.id;
 }
 
-async function getClinicKonsultaCredentials(clinicId: number) {
+export const getClinicKonsultaCredentials = async (clinicId: number) => {
     const setting = await prisma.clinicSetting.findFirst({
         where: { clinicId },
         select: {
@@ -1982,17 +1982,60 @@ export const createKonsultaBatchAction = withErrorHandling(
 // ─── Toggle Entry Inclusion ───────────────────────────────────────────────────
 
 export const toggleKonsultaEntryAction = withErrorHandling(
-    async ({ entryId, included }: { entryId: number; included: boolean }) => {
+    async ({ entryId, included, consultationIds }: { entryId: number; included: boolean; consultationIds?: number[] }) => {
         const session = await getCachedSession();
         if (!session) throw new Error("Unauthorized");
 
+        const data: any = { included };
+        if (consultationIds) data.consultationIds = consultationIds;
+
         await prisma.konsultaEntry.update({
             where: { id: entryId },
-            data: { included },
+            data,
         });
 
         return { message: "Entry updated", data: null };
     },
+);
+
+export const getConsultationsForEntryAction = withErrorHandling(
+    async ({ entryId }: { entryId: number }) => {
+        const session = await getCachedSession();
+        if (!session) throw new Error("Unauthorized");
+
+        const entry = await prisma.konsultaEntry.findUnique({
+            where: { id: entryId },
+            select: { consultationIds: true, patientUserId: true, KonsultaBatch: { select: { clinicId: true, period: true } } }
+        });
+
+        if (!entry) return { message: "No entry found", data: { consultations: [], selectedIds: [] } };
+
+        // Fetch ALL consultations for this patient in this period (so the UI can show which ones are selected vs unselected)
+        const year = parseInt(entry.KonsultaBatch.period.slice(0, 4), 10);
+        const month = parseInt(entry.KonsultaBatch.period.slice(4, 6), 10) - 1;
+        const periodStart = new Date(year, month, 1);
+        const periodEnd = new Date(year, month + 1, 0, 23, 59, 59);
+
+        const consultations = await prisma.consultationTicket.findMany({
+            where: {
+                clinicId: entry.KonsultaBatch.clinicId,
+                isActive: true,
+                isArchived: false,
+                createdAt: { gte: periodStart, lte: periodEnd },
+                ClinicPatient: { patientId: entry.patientUserId }
+            },
+            select: {
+                id: true,
+                caseNumber: true,
+                createdAt: true,
+                subject: true,
+                ConsultationKonsultaData: { select: { id: true } }
+            },
+            orderBy: { createdAt: "desc" }
+        });
+
+        return { message: "Success", data: { consultations, selectedIds: (entry.consultationIds as number[]) || [] } };
+    }
 );
 
 // ─── Delete Batch ─────────────────────────────────────────────────────────────

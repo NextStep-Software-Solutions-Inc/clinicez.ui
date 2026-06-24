@@ -343,28 +343,7 @@ export default function ConsultationNotesEditor({
 
           {expanded[section.name] && (
             <div className="px-4 pb-4 space-y-2">
-              {getSectionDomainKeys(section.label || section.name).length > 0 && (
-                <div className="rounded-md border border-dashed border-border/70 bg-muted/20 p-2">
-                  <div className="mb-2 flex items-center justify-between gap-2">
-                    <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                      Internal library assist
-                    </p>
-                    <span className="text-[11px] text-muted-foreground">
-                      Inserts mapped terms while keeping free-text editing available.
-                    </span>
-                  </div>
-                  <ClinicKonsultaLibraryPicker
-                    clinicUid={clinicUid}
-                    domainKeys={getSectionDomainKeys(section.label || section.name)}
-                    placeholder={`Search ${section.label || section.name} library terms`}
-                    className="h-8 text-xs"
-                    disabled={isResolved}
-                    onSelect={(suggestion) =>
-                      insertLibrarySuggestion(section.name, suggestion)
-                    }
-                  />
-                </div>
-              )}
+
               <MarkdownEditor
                 value={noteValues[section.name] ?? ""}
                 onChange={(v) => handleNoteChange(section.name, v)}

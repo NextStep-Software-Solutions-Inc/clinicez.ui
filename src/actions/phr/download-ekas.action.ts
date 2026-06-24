@@ -50,6 +50,11 @@ export const downloadEKASAction = withErrorHandling(async (
           select: {
             ClinicSetting: { select: { philhealthAccreditationNumber: true } }
           }
+        },
+        KonsultaDiagnosticResults: {
+          select: {
+            Category: { select: { code: true } }
+          }
         }
       }
     })
@@ -195,9 +200,21 @@ export const downloadEKASAction = withErrorHandling(async (
     { field: 'authorizationTransactionCode', value: finalAuthCode },
   ]
 
+  const diagnosticCodes = new Set(consultationTicket?.KonsultaDiagnosticResults?.map((r: { Category: { code: string } }) => r.Category.code) || [])
+
   const checkboxMappings: PdfCheckboxMapping[] = [
     { field: 'checkboxTypeMember', condition: isMember },
     { field: 'checkboxTypeDependent', condition: isDependent },
+    { field: 'dropdownServicesCBC', condition: diagnosticCodes.has('CBC') },
+    { field: 'dropdownServicesLP', condition: diagnosticCodes.has('LIPIDPROFILE') },
+    { field: 'dropdownServicesFBS', condition: diagnosticCodes.has('FBS') },
+    { field: 'dropdownServicesOGTT', condition: diagnosticCodes.has('OGTT') },
+    { field: 'dropdownServicesSputumMicroscopy', condition: diagnosticCodes.has('SPUTUM') },
+    { field: 'dropdownServicesECG', condition: diagnosticCodes.has('ECG') },
+    { field: 'dropdownServicesUrinalysis', condition: diagnosticCodes.has('URINALYSIS') },
+    { field: 'dropdownServicesPapsmear', condition: diagnosticCodes.has('PAPSMEAR') },
+    { field: 'dropdownServicesFecalysis', condition: diagnosticCodes.has('FECALYSIS') },
+    { field: 'dropdownServicesFOBT', condition: diagnosticCodes.has('FOBT') },
   ]
 
   logger.info("Generating Electronic Konsulta Availment Slip PDF", {

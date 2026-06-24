@@ -35,6 +35,10 @@ import ConsultationMedCerts from "./ConsultationMedCerts";
 import ConsultationDiagnostics from "./ConsultationDiagnostics";
 import ConsultationReferrals from "./ConsultationReferrals";
 import ConsultationDiagnoses from "./ConsultationDiagnoses";
+import ConsultationDiagnosticResults from "./ConsultationDiagnosticResults";
+import ConsultationManagementPlan from "./ConsultationManagementPlan";
+import ConsultationNcdAssessment from "./ConsultationNcdAssessment";
+import ConsultationPhilhealthSoap from "./ConsultationPhilhealthSoap";
 import { PatientAIInsightButton } from "@/components/v2/patients/PatientAIInsightButton";
 import AddCoCreatorDialog from "./AddCoCreatorDialog";
 import { MarkdownRenderer } from "@/components/markdown/MarkdownRenderer";
@@ -410,10 +414,10 @@ export default function ConsultationWorkspace({
             </TabsTrigger>
             <TabsTrigger
               value="diagnostics"
-              className="flex items-center gap-1.5 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary h-full px-3 text-xs"
+              className="flex items-center gap-1.5 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary h-full px-3 text-xs whitespace-nowrap"
             >
               <FlaskConical className="h-3.5 w-3.5" />
-              Diagnostics
+              Diagnostic Requests
               {(labCount + imgCount + hsCount) > 0 && (
                 <span className="ml-1 bg-primary/10 text-primary text-[10px] px-1.5 rounded-full">
                   {labCount + imgCount + hsCount}
@@ -421,8 +425,15 @@ export default function ConsultationWorkspace({
               )}
             </TabsTrigger>
             <TabsTrigger
+              value="diagnostic-results"
+              className="flex items-center gap-1.5 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary h-full px-3 text-xs whitespace-nowrap"
+            >
+              <ClipboardList className="h-3.5 w-3.5" />
+              Diagnostic Results
+            </TabsTrigger>
+            <TabsTrigger
               value="referrals"
-              className="flex items-center gap-1.5 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary h-full px-3 text-xs"
+              className="flex items-center gap-1.5 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary h-full px-3 text-xs whitespace-nowrap"
             >
               <GitFork className="h-3.5 w-3.5" />
               Referrals
@@ -434,7 +445,7 @@ export default function ConsultationWorkspace({
             </TabsTrigger>
             <TabsTrigger
               value="diagnoses"
-              className="flex items-center gap-1.5 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary h-full px-3 text-xs"
+              className="flex items-center gap-1.5 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary h-full px-3 text-xs whitespace-nowrap"
             >
               <ClipboardList className="h-3.5 w-3.5" />
               Diagnoses
@@ -443,6 +454,27 @@ export default function ConsultationWorkspace({
                   {diagnosesCount}
                 </span>
               )}
+            </TabsTrigger>
+            <TabsTrigger
+              value="management-plan"
+              className="flex items-center gap-1.5 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary h-full px-3 text-xs whitespace-nowrap"
+            >
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              Management Plan
+            </TabsTrigger>
+            <TabsTrigger
+              value="ncd-assessment"
+              className="flex items-center gap-1.5 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary h-full px-3 text-xs whitespace-nowrap"
+            >
+              <AlertCircle className="h-3.5 w-3.5" />
+              NCD Assessment
+            </TabsTrigger>
+            <TabsTrigger
+              value="philhealth-soap"
+              className="flex items-center gap-1.5 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary h-full px-3 text-xs whitespace-nowrap"
+            >
+              <Award className="h-3.5 w-3.5" />
+              PhilHealth SOAP
             </TabsTrigger>
           </TabsList>
 
@@ -499,6 +531,39 @@ export default function ConsultationWorkspace({
             ) : (
               <NoPatientPlaceholder />
             )}
+          </TabsContent>
+
+
+          <TabsContent value="diagnostic-results" className="mt-0 p-4 sm:p-6">
+            <ConsultationDiagnosticResults
+              clinicUid={clinicUid}
+              consultation={consultation}
+              onPatchDetail={onPatchDetail}
+            />
+          </TabsContent>
+
+          <TabsContent value="management-plan" className="mt-0 p-4 sm:p-6">
+            <ConsultationManagementPlan
+              clinicUid={clinicUid}
+              consultation={consultation}
+              onPatchDetail={onPatchDetail}
+            />
+          </TabsContent>
+
+          <TabsContent value="ncd-assessment" className="mt-0 p-4 sm:p-6">
+            <ConsultationNcdAssessment
+              clinicUid={clinicUid}
+              consultation={consultation}
+              onPatchDetail={onPatchDetail}
+            />
+          </TabsContent>
+
+          <TabsContent value="philhealth-soap" className="mt-0 p-4 sm:p-6">
+            <ConsultationPhilhealthSoap
+              clinicUid={clinicUid}
+              consultation={consultation}
+              onPatchDetail={onPatchDetail}
+            />
           </TabsContent>
 
           <TabsContent value="referrals" className="mt-0 p-4 sm:p-6">

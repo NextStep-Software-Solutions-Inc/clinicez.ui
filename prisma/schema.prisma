@@ -159,6 +159,8 @@ model User {
   VitalSigns                       VitalSign[]
   Notifications                    Notification[]
   PatientInsights                  PatientInsight[]
+  KonsultaDiagnosticResults        KonsultaDiagnosticResult[]
+  KonsultaNcdQuestionnaires        KonsultaNcdQuestionnaire[]
   VerificationRequests             VerificationRequest[]
   ReviewedVerifications            VerificationRequest[]            @relation("VerificationReviewer")
   verificationStatus               VerificationStatus               @default(UNVERIFIED)
@@ -247,6 +249,8 @@ model ClinicPatient {
   konsultaRegistrationCheckedAt DateTime?
   konsultaRegistrationResult    Json?
   konsultaUnenrolledAt          DateTime?
+  konsultaWithConsent           Boolean                     @default(false)
+  konsultaPackageType           String?                     // "P"|"E"|"K"
   HeartStationRequests          ClinicHeartStationRequest[]
   ImagingRequests               ClinicImagingRequest[]
   LaboratoryRequests            ClinicLaboratoryRequest[]
@@ -847,6 +851,10 @@ model Vaccine {
   deletedAt        DateTime?
   isActive         Boolean           @default(true)
   type             String
+  yakapCode        String?
+  yakapDescription String?
+  yakapStatus      Int?
+  yakapLibraryName String?
   UserVaccinations UserVaccination[]
   VaccineAttribute VaccineAttribute?
   VaccineDoses     VaccineDose[]
@@ -954,6 +962,9 @@ model HealthCondition {
   updatedAt              DateTime               @updatedAt
   deletedAt              DateTime?
   isActive               Boolean                @default(true)
+  yakapCode              String?
+  yakapDescription       String?
+  yakapStatus            Int?
   FamilyMedicalHistories FamilyMedicalHistory[] @relation("FamilyMedicalHistoryCondition")
   MedicalHistories       MedicalHistory[]       @relation("MedicalHistoryCondition")
   UserHealthConditions   UserHealthCondition[]  @relation("UserHealthCondition")
@@ -1307,6 +1318,9 @@ model Clinic {
   UserDefaultClinicRoles          UserDefaultClinicRole[]
   KonsultaBatches                 KonsultaBatch[]
   ClinicKonsultaTerms             ClinicKonsultaTerm[]
+  KonsultaDiagnosticResults       KonsultaDiagnosticResult[]
+  KonsultaNcdQuestionnaires       KonsultaNcdQuestionnaire[]
+  ConsultationKonsultaData        ConsultationKonsultaData[]
 
   @@index([tenantId, clinicUid], map: "clinic_index")
 }
@@ -1664,6 +1678,7 @@ model ConsultationTicket {
   konsultaHciTransNo          String?                      @unique
   konsultaAtc                 String?
   konsultaIsWalkedIn          Boolean                      @default(false)
+  konsultaCoPay               Decimal?                     @db.Decimal(10, 2)
   konsultaAtcValidationStatus String? // VALID | INVALID | FAILED
   konsultaAtcValidatedAt      DateTime?
   konsultaAtcValidationResult Json?
@@ -1683,6 +1698,9 @@ model ConsultationTicket {
   Interventions               Intervention[]
   Medications                 Medication[]
   Prescriptions               Prescription[]
+  ConsultationKonsultaData    ConsultationKonsultaData?
+  KonsultaDiagnosticResults   KonsultaDiagnosticResult[]
+  KonsultaNcdQuestionnaires   KonsultaNcdQuestionnaire[]
 
   @@index([caseNumber])
   @@index([ekasTransactionNumber])
@@ -1789,6 +1807,7 @@ model Intervention {
   consultationTicketId Int
   actionId             Int
   details              String
+  othRemarks           String?
   createdAt            DateTime           @default(now())
   updatedAt            DateTime           @updatedAt
   deletedAt            DateTime?
@@ -1800,12 +1819,15 @@ model Intervention {
 }
 
 model Action {
-  id            Int            @id @default(autoincrement())
-  name          String
-  description   String?
-  deletedAt     DateTime?
-  isActive      Boolean        @default(true)
-  Interventions Intervention[]
+  id               Int            @id @default(autoincrement())
+  name             String
+  description      String?
+  deletedAt        DateTime?
+  isActive         Boolean        @default(true)
+  yakapCode        String?
+  yakapDescription String?
+  yakapStatus      Int?
+  Interventions    Intervention[]
 }
 
 model Prescription {
@@ -1842,28 +1864,37 @@ model Prescription {
 }
 
 model Medicine {
-  id             Int           @id @default(autoincrement())
-  name           String
-  brandName      String?
-  genericName    String?
-  isGeneric      Boolean       @default(false)
-  description    String?
-  dosage         String?
-  frequency      String?
-  unit           String?
-  notes          String?
-  prescriptionId Int?
-  duration       Int           @default(1)
-  isActive       Boolean       @default(true)
-  createdById    Int
-  createdAt      DateTime      @default(now())
-  updatedBy      Int?
-  updatedAt      DateTime      @updatedAt
-  deletedAt      DateTime?
-  qty            Int?
-  CreatedBy      User          @relation("MedicineCreatedBy", fields: [createdById], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  Prescription   Prescription? @relation(fields: [prescriptionId], references: [id])
-  UpdatedBy      User?         @relation("MedicineUpdatedBy", fields: [updatedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  id               Int           @id @default(autoincrement())
+  name             String
+  brandName        String?
+  genericName      String?
+  isGeneric        Boolean       @default(false)
+  description      String?
+  dosage           String?
+  frequency        String?
+  unit             String?
+  notes            String?
+  prescriptionId   Int?
+  duration         Int           @default(1)
+  isActive         Boolean       @default(true)
+  createdById      Int
+  createdAt        DateTime      @default(now())
+  updatedBy        Int?
+  updatedAt        DateTime      @updatedAt
+  deletedAt        DateTime?
+  qty              Int?
+  yakapCode        String?
+  yakapDescription String?
+  yakapStatus      Int?
+  yakapCategory    String?
+  yakapRoute       String?
+  route            String?
+  unitPrice        Decimal?      @db.Decimal(10, 2)
+  dispensedBy      String?
+  dispensedAt      DateTime?
+  CreatedBy        User          @relation("MedicineCreatedBy", fields: [createdById], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Prescription     Prescription? @relation(fields: [prescriptionId], references: [id])
+  UpdatedBy        User?         @relation("MedicineUpdatedBy", fields: [updatedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([prescriptionId], map: "medicine_prescription_index")
 }
@@ -2043,6 +2074,9 @@ model ImagingProcedure {
   isActive                Boolean                  @default(true)
   category                String
   rvsCode                 String?
+  yakapCode               String?
+  yakapDescription        String?
+  yakapStatus             Int?
   createdAt               DateTime                 @default(now())
   updatedAt               DateTime                 @updatedAt
   ClinicImagingProcedures ClinicImagingProcedure[]
@@ -2057,6 +2091,9 @@ model LaboratoryProcedure {
   isActive                   Boolean                     @default(true)
   category                   String
   rvsCode                    String?
+  yakapCode                  String?
+  yakapDescription           String?
+  yakapStatus                Int?
   createdAt                  DateTime                    @default(now())
   updatedAt                  DateTime                    @updatedAt
   ClinicLaboratoryProcedures ClinicLaboratoryProcedure[]
@@ -2071,6 +2108,9 @@ model HeartStationProcedure {
   isActive                     Boolean                       @default(true)
   category                     String
   rvsCode                      String?
+  yakapCode                    String?
+  yakapDescription             String?
+  yakapStatus                  Int?
   createdAt                    DateTime                      @default(now())
   updatedAt                    DateTime                      @updatedAt
   ClinicHeartStationProcedures ClinicHeartStationProcedure[]
@@ -3094,4 +3134,263 @@ model PhilHealthYakapLibraryRow {
   updatedAt DateTime @updatedAt
 
   Library PhilHealthYakapLibrary @relation(fields: [libraryId], references: [id], onDelete: Cascade)
+}
+
+// ----------------------------------------------------------------------
+// NEW MODELS FOR PHILHEALTH KONSULTA V2
+// ----------------------------------------------------------------------
+
+model KonsultaPeSkinExtremity {
+  id          Int      @id @default(autoincrement())
+  code        String   @unique
+  description String
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model KonsultaPeHeent {
+  id          Int      @id @default(autoincrement())
+  code        String   @unique
+  description String
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model KonsultaPeChest {
+  id          Int      @id @default(autoincrement())
+  code        String   @unique
+  description String
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model KonsultaPeHeart {
+  id          Int      @id @default(autoincrement())
+  code        String   @unique
+  description String
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model KonsultaPeAbdomen {
+  id          Int      @id @default(autoincrement())
+  code        String   @unique
+  description String
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model KonsultaPeNeuro {
+  id          Int      @id @default(autoincrement())
+  code        String   @unique
+  description String
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model KonsultaPeGenitourinary {
+  id          Int      @id @default(autoincrement())
+  code        String   @unique
+  description String
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model KonsultaPeDigitalRectal {
+  id          Int      @id @default(autoincrement())
+  code        String   @unique
+  description String
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model KonsultaSignSymptom {
+  id          Int      @id @default(autoincrement())
+  code        String   @unique
+  description String
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model KonsultaChestXrayFinding {
+  id          Int      @id @default(autoincrement())
+  code        String   @unique
+  description String
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model KonsultaChestXrayObservation {
+  id          Int      @id @default(autoincrement())
+  code        String   @unique
+  description String
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model KonsultaMedicineReference {
+  id                 Int      @id @default(autoincrement())
+  drugCode           String   @unique
+  genericName        String
+  brandName          String?
+  saltDescription    String?
+  strengthDescription String?
+  formDescription    String?
+  unitDescription    String?
+  packageDescription String?
+  category           String?
+  route              String?
+  isActive           Boolean  @default(true)
+  sortOrder          Int      @default(0)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model KonsultaDiagnosticCategory {
+  id          Int      @id @default(autoincrement())
+  code        String   @unique
+  name        String
+  description String?
+  fields      Json
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  Results     KonsultaDiagnosticResult[]
+}
+
+model KonsultaDiagnosticResult {
+  id                   Int                        @id @default(autoincrement())
+  userId               Int
+  consultationTicketId Int?
+  clinicId             Int
+  categoryId           Int
+  referralFacility     String?
+  labDate              DateTime?
+  dateAdded            DateTime?
+  status               String   @default("D")
+  diagnosticLabFee     Decimal? @db.Decimal(10, 2)
+  results              Json
+
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  Category             KonsultaDiagnosticCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  User                 User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ConsultationTicket   ConsultationTicket?        @relation(fields: [consultationTicketId], references: [id], onDelete: Cascade)
+  Clinic               Clinic                     @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+
+  @@index([userId, clinicId, categoryId])
+  @@index([consultationTicketId])
+}
+
+model ConsultationKonsultaData {
+  id                   Int    @id @default(autoincrement())
+  consultationTicketId Int    @unique
+  clinicId             Int
+
+  illnessHistory       String?
+  signsSymptomCodes    String?
+  signsSymptomLabels   String?
+  otherComplaint       String?
+  painSite             String?
+
+  diagnosticEntries    Json?
+
+  adviceRemarks        String?
+
+  peSkinId             String?
+  peHeentId            String?
+  peChestId            String?
+  peHeartId            String?
+  peAbdomenId          String?
+  peNeuroId            String?
+  peGuId               String?
+  peRectalId           String?
+
+  peSkinRem            String?
+  peHeentRem           String?
+  peChestRem           String?
+  peHeartRem           String?
+  peAbdomenRem         String?
+  peNeuroRem           String?
+  peGuRem              String?
+  peRectalRem          String?
+
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  ConsultationTicket   ConsultationTicket @relation(fields: [consultationTicketId], references: [id], onDelete: Cascade)
+  Clinic               Clinic             @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+}
+
+model KonsultaNcdQuestionnaire {
+  id                   Int      @id @default(autoincrement())
+  userId               Int
+  consultationTicketId Int?
+  clinicId             Int
+  qid1Yn               String?
+  qid2Yn               String?
+  qid3Yn               String?
+  qid4Yn               String?
+  qid5Ynx              String?
+  qid6Yn               String?
+  qid7Yn               String?
+  qid8Yn               String?
+  qid9Yn               String?
+  qid10Yn              String?
+  qid11Yn              String?
+  qid12Yn              String?
+  qid13Yn              String?
+  qid14Yn              String?
+  qid15Yn              String?
+  qid16Yn              String?
+  qid17Abcde           String?
+  qid18Yn              String?
+  qid19Yn              String?
+  qid19Fbsmg           String?
+  qid19Fbsmmol         String?
+  qid19Fbsdate         DateTime?
+  qid20Yn              String?
+  qid20Choleval        String?
+  qid20Choledate       DateTime?
+  qid21Yn              String?
+  qid21Ketonval        String?
+  qid21Ketondate       DateTime?
+  qid22Yn              String?
+  qid22Proteinval      String?
+  qid22Proteindate     DateTime?
+  qid23Yn              String?
+  qid24Yn              String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  User                 User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ConsultationTicket   ConsultationTicket? @relation(fields: [consultationTicketId], references: [id], onDelete: Cascade)
+  Clinic               Clinic              @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, consultationTicketId, clinicId])
 }

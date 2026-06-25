@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import {
   getYakapTokenAction,
   isMemberDependentRegisteredAction,
-  extractRegistrationListAction,
+  extractRegistrationListLegacyAction as extractRegistrationListAction,
   isATCValidAction,
   validateReportAction,
   submitReportAction

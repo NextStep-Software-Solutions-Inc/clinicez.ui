@@ -162,6 +162,7 @@ model User {
   verificationStatus               VerificationStatus               @default(UNVERIFIED)
   verifiedAt                       DateTime?
   lastProfileUpdateAt              DateTime?
+  KonsultaBatchReports             KonsultaBatchReport[]            @relation("KonsultaBatchReportCreator")
 
   @@index([caseNumber])
 }
@@ -252,6 +253,7 @@ model ClinicPatient {
   ProcedureUsageHistory    ProcedureUsageHistory[]
   ConsultationTickets      ConsultationTicket[]
   PhilHealthKonsultaEnlistments PhilHealthKonsultaEnlistment[]
+  KonsultaBatchPatients         KonsultaBatchPatient[]
 
   @@unique([clinicId, patientId], name: "unique_clinic_patient")
 }
@@ -1298,6 +1300,7 @@ model Clinic {
   Systems                         System[]
   UserClinicAppointmentWhitelists UserClinicAppointmentWhitelist[]
   UserDefaultClinicRoles          UserDefaultClinicRole[]
+  KonsultaBatchReports            KonsultaBatchReport[]
 
   @@index([tenantId, clinicUid], map: "clinic_index")
 }
@@ -2929,4 +2932,42 @@ model PhBarangay {
   @@index([code])
   @@index([municipalityCode])
   @@index([isActive])
+}
+
+/// PhilHealth Konsulta batch report for XML generation and submission
+model KonsultaBatchReport {
+  id                   String    @id @default(uuid())
+  clinicId             Int
+  title                String
+  tagging              String    // "1" or "2"
+  transmittalNo        String?   @unique
+  xmlPayload           String?   @db.Text
+  status               String    @default("DRAFT") // DRAFT, VALIDATED, SUBMITTED
+  validationResult     String?   @db.Text
+  submissionResult     String?   @db.Text
+  validatedAt          DateTime?
+  submittedAt          DateTime?
+  isPaid               Boolean   @default(false)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  createdBy            Int
+
+  Clinic               Clinic    @relation(fields: [clinicId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Creator              User      @relation("KonsultaBatchReportCreator", fields: [createdBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  BatchPatients        KonsultaBatchPatient[]
+}
+
+/// Patient entry within a PhilHealth Konsulta batch report
+model KonsultaBatchPatient {
+  id                   String    @id @default(uuid())
+  batchId              String
+  clinicPatientId      Int
+  tagging              String    // "1" or "2"
+  isSelected           Boolean   @default(true)
+  selectedTicketIds    Int[]     @default([])
+
+  Batch                KonsultaBatchReport   @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  ClinicPatient        ClinicPatient         @relation(fields: [clinicPatientId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([batchId, clinicPatientId])
 }

@@ -140,6 +140,7 @@
     "tailwindcss-animate": "^1.0.7",
     "use-sound": "^4.0.4",
     "xlsx": "^0.18.5",
+    "xmlbuilder2": "^4.0.3",
     "zod": "^3.25.76"
   },
   "devDependencies": {
@@ -196,5 +197,21 @@
       "unrs-resolver",
       "utf-8-validate"
     ]
-  }
+  },
+  "description": "A comprehensive healthcare management platform that streamlines appointment booking, patient records, and clinic operations.",
+  "main": "cleanup-migrations.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Pointers-Bit-Inc/clinicez.ui.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Pointers-Bit-Inc/clinicez.ui/issues"
+  },
+  "homepage": "https://github.com/Pointers-Bit-Inc/clinicez.ui#readme"
 }

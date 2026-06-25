@@ -1,6 +1,6 @@
 import prisma from "@/lib/prisma";
 
-export type EntityType = "HEALTH_ASSESSMENT" | "CONSULTATION" | "PHILHEALTH_KONSULTA_T" | "PHILHEALTH_KONSULTA_E" | "PHILHEALTH_KONSULTA_P" | "PHILHEALTH_KONSULTA_S";
+export type EntityType = "HEALTH_ASSESSMENT" | "CONSULTATION" | "PHILHEALTH_KONSULTA_T" | "PHILHEALTH_KONSULTA_E" | "PHILHEALTH_KONSULTA_P" | "PHILHEALTH_KONSULTA_S" | "PHILHEALTH_KONSULTA_R";
 
 /**
  * Custom error for sequence generation failures
@@ -36,7 +36,7 @@ function validateSequenceInput(
   entityType: string,
   clinicId?: number
 ): void {
-  const validEntityTypes: EntityType[] = ["HEALTH_ASSESSMENT", "CONSULTATION", "PHILHEALTH_KONSULTA_T", "PHILHEALTH_KONSULTA_E", "PHILHEALTH_KONSULTA_P", "PHILHEALTH_KONSULTA_S"];
+  const validEntityTypes: EntityType[] = ["HEALTH_ASSESSMENT", "CONSULTATION", "PHILHEALTH_KONSULTA_T", "PHILHEALTH_KONSULTA_E", "PHILHEALTH_KONSULTA_P", "PHILHEALTH_KONSULTA_S", "PHILHEALTH_KONSULTA_R"];
   if (!validEntityTypes.includes(entityType as EntityType)) {
     throw new SequenceGenerationError(
       `Invalid entity type: ${entityType}`,
@@ -174,7 +174,7 @@ export async function generateTimestampCaseNumber(
   }, maxRetries);
 }
 
-export type PhilHealthTransType = "CASE" | "ENLISTMENT" | "PROFILING" | "SOAP";
+export type PhilHealthTransType = "CASE" | "ENLISTMENT" | "PROFILING" | "SOAP" | "TRANSMITTAL";
 
 /**
  * Generate a unique timestamp-based transaction number for PhilHealth Konsulta
@@ -202,6 +202,7 @@ export async function generatePhilHealthKonsultaTransactionNumber(
     case "ENLISTMENT": entityType = "PHILHEALTH_KONSULTA_E"; prefixChar = "E"; break;
     case "PROFILING": entityType = "PHILHEALTH_KONSULTA_P"; prefixChar = "P"; break;
     case "SOAP": entityType = "PHILHEALTH_KONSULTA_S"; prefixChar = "S"; break;
+    case "TRANSMITTAL": entityType = "PHILHEALTH_KONSULTA_R"; prefixChar = "R"; break;
   }
 
   // Validate input

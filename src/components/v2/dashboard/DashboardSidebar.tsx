@@ -36,6 +36,7 @@ import {
   ClipboardList,
   Heart,
   Stethoscope,
+  ShieldCheck,
   type LucideIcon,
 } from "lucide-react";
 
@@ -76,6 +77,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   clipboard: ClipboardList,
   heart: Heart,
   stethoscope: Stethoscope,
+  shield: ShieldCheck,
 };
 
 function resolveIcon(name: string): LucideIcon {

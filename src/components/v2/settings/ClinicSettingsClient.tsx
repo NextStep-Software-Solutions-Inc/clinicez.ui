@@ -246,6 +246,9 @@ type AppointmentFormValues = z.infer<typeof appointmentSchema>;
 const philhealthSchema = z.object({
   philhealthAccreditationNumber: z.string().optional(),
   facilityName: z.string().optional(),
+  philhealthYakapUsername: z.string().optional(),
+  philhealthYakapPassword: z.string().optional(),
+  philhealthYakapPmccNumber: z.string().optional(),
 });
 type PhilHealthFormValues = z.infer<typeof philhealthSchema>;
 
@@ -739,6 +742,9 @@ function PhilHealthTab({
     defaultValues: {
       philhealthAccreditationNumber: clinicSetting?.philhealthAccreditationNumber ?? "",
       facilityName: clinicSetting?.facilityName ?? "",
+      philhealthYakapUsername: clinicSetting?.philhealthYakapUsername ?? "",
+      philhealthYakapPassword: clinicSetting?.philhealthYakapPassword ?? "",
+      philhealthYakapPmccNumber: clinicSetting?.philhealthYakapPmccNumber ?? "",
     },
   });
 
@@ -747,6 +753,9 @@ function PhilHealthTab({
       const result = await updatePhilHealthSettingsAction(clinicUid, {
         philhealthAccreditationNumber: values.philhealthAccreditationNumber || undefined,
         facilityName: values.facilityName || undefined,
+        philhealthYakapUsername: values.philhealthYakapUsername || undefined,
+        philhealthYakapPassword: values.philhealthYakapPassword || undefined,
+        philhealthYakapPmccNumber: values.philhealthYakapPmccNumber || undefined,
       });
 
       if (result.status) {
@@ -798,6 +807,48 @@ function PhilHealthTab({
                   </FormControl>
                   <FormDescription>
                     Printed on all PhilHealth-related documents issued by this clinic.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="philhealthYakapUsername"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>PhilHealth Yakap Username</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Username for PhilHealth SOAP API" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="philhealthYakapPassword"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>PhilHealth Yakap Password</FormLabel>
+                  <FormControl>
+                    <Input type="password" placeholder="Password for PhilHealth SOAP API" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="philhealthYakapPmccNumber"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>PhilHealth PMCC Number</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. Z15445" {...field} />
+                  </FormControl>
+                  <FormDescription>
+                    PMCC Number required for Yakap Integration
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

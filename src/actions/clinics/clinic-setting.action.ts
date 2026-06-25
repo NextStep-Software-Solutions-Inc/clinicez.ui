@@ -102,6 +102,9 @@ export const updateClinicSettingsAction = async (clinicSettingId: number, { enab
 type UpdatePhilHealthSettings = {
   philhealthAccreditationNumber?: string;
   facilityName?: string;
+  philhealthYakapUsername?: string;
+  philhealthYakapPassword?: string;
+  philhealthYakapPmccNumber?: string;
 }
 export const updatePhilHealthSettingsAction = async (clinicUid: string, data: UpdatePhilHealthSettings) => {
 
@@ -135,10 +138,16 @@ export const updatePhilHealthSettingsAction = async (clinicUid: string, data: Up
         clinicId: clinic.id,
         philhealthAccreditationNumber: data.philhealthAccreditationNumber,
         facilityName: data.facilityName,
+        philhealthYakapUsername: data.philhealthYakapUsername,
+        philhealthYakapPassword: data.philhealthYakapPassword,
+        philhealthYakapPmccNumber: data.philhealthYakapPmccNumber,
       },
       update: {
         philhealthAccreditationNumber: data.philhealthAccreditationNumber,
         facilityName: data.facilityName,
+        philhealthYakapUsername: data.philhealthYakapUsername,
+        philhealthYakapPassword: data.philhealthYakapPassword,
+        philhealthYakapPmccNumber: data.philhealthYakapPmccNumber,
       }
     });
     return { status: true, message, data: clinicSetting }

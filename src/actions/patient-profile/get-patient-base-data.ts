@@ -59,6 +59,17 @@ export async function getPatientBaseData(): Promise<PatientBaseData | null> {
                                 ClinicReferralSlips: { where: { isActive: true } },
                             },
                         },
+                        PhilHealthKonsultaEnlistments: {
+                            where: {
+                                year: new Date().getFullYear(),
+                                status: 'ACTIVE'
+                            },
+                            select: {
+                                id: true,
+                                hciCaseNo: true,
+                                profilingTransNo: true
+                            }
+                        }
                     },
                     take: 1,
                 },
@@ -110,6 +121,11 @@ export async function getPatientBaseData(): Promise<PatientBaseData | null> {
                 philHealthRecordsCount: patient._count.PhilHealthRecords,
                 totalDocumentsCount: certCount + referralCount + procedureCount,
             },
+            yakapEnlistment: clinicPatient?.PhilHealthKonsultaEnlistments?.[0] ? {
+                id: clinicPatient.PhilHealthKonsultaEnlistments[0].id,
+                hciCaseNo: clinicPatient.PhilHealthKonsultaEnlistments[0].hciCaseNo,
+                profilingTransNo: clinicPatient.PhilHealthKonsultaEnlistments[0].profilingTransNo
+            } : undefined
         }
     } catch (error) {
         console.error('[GET_PATIENT_BASE_DATA]', error)

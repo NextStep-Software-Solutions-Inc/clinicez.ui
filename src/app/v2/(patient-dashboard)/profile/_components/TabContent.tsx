@@ -50,13 +50,13 @@ export function TabSkeleton() {
 // ---------------------------------------------------------------------------
 function createTabLoader<T extends keyof PatientTabDataMap>(
   tabId: T,
-  TabComponent: React.ComponentType<{ data: PatientTabDataMap[T] }>,
-): React.ComponentType<{ userId?: string }> {
-  function TabLoader({ userId }: { userId?: string }) {
+  TabComponent: React.ComponentType<{ data: PatientTabDataMap[T], isClinicMode: boolean, patientId?: number, clinicPatientId?: number | null }>,
+): React.ComponentType<{ userId?: string, patientId?: number, clinicPatientId?: number | null, isClinicMode?: boolean }> {
+  function TabLoader({ userId, patientId, clinicPatientId, isClinicMode = false }: { userId?: string, patientId?: number, clinicPatientId?: number | null, isClinicMode?: boolean }) {
     const { data, isLoading } = usePatientTab(tabId, { suspense: false, userId })
     if (isLoading) return <TabSkeleton />
     if (!data) return null
-    return <TabComponent data={data as PatientTabDataMap[T]} />
+    return <TabComponent data={data as PatientTabDataMap[T]} isClinicMode={isClinicMode} patientId={patientId} clinicPatientId={clinicPatientId} />
   }
   TabLoader.displayName = `${String(tabId)}TabLoader`
   return TabLoader
@@ -65,20 +65,20 @@ function createTabLoader<T extends keyof PatientTabDataMap>(
 // ---------------------------------------------------------------------------
 // Map of tab id → lazy loader component
 // ---------------------------------------------------------------------------
-const TAB_LOADERS: Record<keyof PatientTabDataMap, React.ComponentType<{ userId?: string }>> = {
-  overview:     createTabLoader('overview',     OverviewTab),
-  medical:      createTabLoader('medical',      MedicalTab),
-  vitals:       createTabLoader('vitals',       VitalsTab),
-  exams:        createTabLoader('exams',        ExamsTab),
-  obgyn:        createTabLoader('obgyn',        ObGynTab),
-  pediatric:    createTabLoader('pediatric',    PediatricTab),
-  addresses:    createTabLoader('addresses',    AddressesTab),
-  contacts:     createTabLoader('contacts',     ContactsTab),
-  lifestyle:    createTabLoader('lifestyle',    LifestyleTab),
-  allergies:    createTabLoader('allergies',    AllergiesTab),
-  vaccinations: createTabLoader('vaccinations', VaccinationsTab),
-  disabilities: createTabLoader('disabilities', DisabilitiesTab),
-  insurance:    createTabLoader('insurance',    InsuranceTab),
+const TAB_LOADERS: Record<keyof PatientTabDataMap, React.ComponentType<{ userId?: string, patientId?: number, clinicPatientId?: number | null, isClinicMode?: boolean }>> = {
+  overview:     createTabLoader('overview',     OverviewTab as unknown as React.ComponentType<{ data: PatientTabDataMap['overview'], isClinicMode: boolean, patientId?: number, clinicPatientId?: number | null }>),
+  medical:      createTabLoader('medical',      MedicalTab as unknown as React.ComponentType<{ data: PatientTabDataMap['medical'], isClinicMode: boolean, patientId?: number, clinicPatientId?: number | null }>),
+  vitals:       createTabLoader('vitals',       VitalsTab as unknown as React.ComponentType<{ data: PatientTabDataMap['vitals'], isClinicMode: boolean, patientId?: number, clinicPatientId?: number | null }>),
+  exams:        createTabLoader('exams',        ExamsTab as unknown as React.ComponentType<{ data: PatientTabDataMap['exams'], isClinicMode: boolean, patientId?: number, clinicPatientId?: number | null }>),
+  obgyn:        createTabLoader('obgyn',        ObGynTab as unknown as React.ComponentType<{ data: PatientTabDataMap['obgyn'], isClinicMode: boolean, patientId?: number, clinicPatientId?: number | null }>),
+  pediatric:    createTabLoader('pediatric',    PediatricTab as unknown as React.ComponentType<{ data: PatientTabDataMap['pediatric'], isClinicMode: boolean, patientId?: number, clinicPatientId?: number | null }>),
+  addresses:    createTabLoader('addresses',    AddressesTab as unknown as React.ComponentType<{ data: PatientTabDataMap['addresses'], isClinicMode: boolean, patientId?: number, clinicPatientId?: number | null }>),
+  contacts:     createTabLoader('contacts',     ContactsTab as unknown as React.ComponentType<{ data: PatientTabDataMap['contacts'], isClinicMode: boolean, patientId?: number, clinicPatientId?: number | null }>),
+  lifestyle:    createTabLoader('lifestyle',    LifestyleTab as unknown as React.ComponentType<{ data: PatientTabDataMap['lifestyle'], isClinicMode: boolean, patientId?: number, clinicPatientId?: number | null }>),
+  allergies:    createTabLoader('allergies',    AllergiesTab as unknown as React.ComponentType<{ data: PatientTabDataMap['allergies'], isClinicMode: boolean, patientId?: number, clinicPatientId?: number | null }>),
+  vaccinations: createTabLoader('vaccinations', VaccinationsTab as unknown as React.ComponentType<{ data: PatientTabDataMap['vaccinations'], isClinicMode: boolean, patientId?: number, clinicPatientId?: number | null }>),
+  disabilities: createTabLoader('disabilities', DisabilitiesTab as unknown as React.ComponentType<{ data: PatientTabDataMap['disabilities'], isClinicMode: boolean, patientId?: number, clinicPatientId?: number | null }>),
+  insurance:    createTabLoader('insurance',    InsuranceTab as unknown as React.ComponentType<{ data: PatientTabDataMap['insurance'], isClinicMode: boolean, patientId?: number, clinicPatientId?: number | null }>),
 }
 
 // ---------------------------------------------------------------------------
@@ -86,16 +86,13 @@ const TAB_LOADERS: Record<keyof PatientTabDataMap, React.ComponentType<{ userId?
 // ---------------------------------------------------------------------------
 interface TabContentProps {
   tab: keyof PatientTabDataMap
-  /**
-   * Clerk userId of the patient whose data should be loaded.
-   * When omitted the authenticated user's own data is loaded.
-   * Required when clinic staff view a specific patient's profile so that
-   * the lazy-loaded tabs fetch that patient's data, not the viewer's.
-   */
   userId?: string
+  patientId?: number
+  clinicPatientId?: number | null
+  isClinicMode?: boolean
 }
 
-export function TabContent({ tab, userId }: TabContentProps) {
+export function TabContent({ tab, userId, patientId, clinicPatientId, isClinicMode = false }: TabContentProps) {
   const Loader = TAB_LOADERS[tab]
-  return <Loader userId={userId} />
+  return <Loader userId={userId} patientId={patientId} clinicPatientId={clinicPatientId} isClinicMode={isClinicMode} />
 }

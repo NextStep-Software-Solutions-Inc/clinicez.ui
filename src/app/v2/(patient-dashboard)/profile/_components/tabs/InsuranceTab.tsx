@@ -2,14 +2,30 @@
 
 import { FileText, ClipboardList, Stethoscope } from 'lucide-react'
 import { PhilHealthRecords } from '@/components/patient-dashboard-v2/PhilHealthRecords'
+import { PhilHealthYakapCard } from '@/components/patient-dashboard-v2/PhilHealthYakapCard'
 import type { InsuranceTabData } from '@/types/patient-profile-tabs'
 
-type Props = { data: InsuranceTabData }
+type Props = { 
+  data: InsuranceTabData
+  isClinicMode?: boolean
+  patientId?: number 
+  clinicPatientId?: number | null
+}
 
-export function InsuranceTab({ data }: Props) {
+export function InsuranceTab({ data, isClinicMode = false, patientId, clinicPatientId }: Props) {
+  const philHealthRecord = data.philHealthRecords?.[0] as any
+
   return (
     <div className="space-y-6">
-      <PhilHealthRecords records={(data.philHealthRecords?.filter(r => r.PhilHealthMemberType) || []) as never} />
+      <PhilHealthRecords records={(data.philHealthRecords?.filter(r => r.memberType) || []) as never} />
+      
+      {clinicPatientId && (
+        <PhilHealthYakapCard 
+          clinicPatientId={clinicPatientId} 
+          isClinicMode={isClinicMode} 
+          philHealthRecord={philHealthRecord}
+        />
+      )}
 
       <div className="glassmorphic-card p-6">
         <h3 className="flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-white mb-4"><FileText className="w-5 h-5 text-teal-500" /> Medical Certificates</h3>

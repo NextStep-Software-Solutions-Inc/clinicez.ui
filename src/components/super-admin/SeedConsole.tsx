@@ -10,7 +10,6 @@ import { Loader2, Database, Shield, Stethoscope, Heart, Syringe, MapPin, Play } 
 import {
   seedPermissionsAction,
   seedProceduresAction,
-  seedPhilHealthAction,
   seedVaccinesAction,
   seedLocationsAction,
   seedAllAction,
@@ -39,13 +38,6 @@ const seedConfigs: Array<{
     description: "Seed imaging procedures, laboratory procedures, and heart station procedures (idempotent upsert).",
     icon: <Stethoscope className="h-5 w-5" />,
     action: seedProceduresAction,
-  },
-  {
-    key: "philhealth",
-    title: "PhilHealth Member Types",
-    description: "Seed PhilHealth member types hierarchy: Direct and Indirect contributors with subcategories.",
-    icon: <Heart className="h-5 w-5" />,
-    action: seedPhilHealthAction,
   },
   {
     key: "vaccines",

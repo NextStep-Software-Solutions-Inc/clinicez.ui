@@ -7,7 +7,6 @@ import type {
   PediatricMeasurement,
   PersonalHistory,
   PhilHealthRecord,
-  PhilHealthMemberType,
   PhilHealthDependent,
   ProcedureUsageHistory,
   ClinicMedicalCertificate,
@@ -108,6 +107,13 @@ export interface SerializedPatientHealthRecordsResponse {
   // OB/Gyn History
   obGyneHistory: (Omit<ObGyneHistory, 'createdAt' | 'updatedAt' | 'deletedAt'> & { createdAt: string; updatedAt: string; deletedAt: string | null }) | null
 
+  // Yakap
+  yakapEnlistment?: {
+    id: number
+    hciCaseNo: string | null
+    profilingTransNo: string | null
+  }
+
   // Pediatric Measurements
   pediatricMeasurements: Array<{
     id: number
@@ -197,7 +203,6 @@ export interface SerializedPatientHealthRecordsResponse {
     createdAt: string
     updatedAt: string
     deletedAt: string | null
-    PhilHealthMemberType?: (Omit<PhilHealthMemberType, 'createdAt' | 'updatedAt'> & { createdAt: string; updatedAt: string }) | null
     PhilHealthDependents?: PhilHealthDependent[]
   }>
 

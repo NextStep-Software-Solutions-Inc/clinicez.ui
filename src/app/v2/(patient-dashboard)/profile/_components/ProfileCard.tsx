@@ -6,6 +6,16 @@ import type { PatientBaseData } from '@/types/patient-profile-tabs'
 import { VerificationStatusBadge } from './VerificationStatusBadge'
 import { DownloadPHRButton } from '@/components/v2/phr/DownloadPHRButton'
 import { ProfileAvatarCamera } from './ProfileAvatarCamera'
+import { CheckCircle2 } from 'lucide-react'
+
+function YakapBadge({ isProfiled }: { isProfiled: boolean }) {
+  return (
+    <span className="inline-flex items-center gap-1 text-[10px] sm:text-xs font-semibold text-teal-100 bg-teal-900/30 px-2 py-0.5 rounded-md border border-teal-500/30 backdrop-blur-sm ml-2">
+      <CheckCircle2 className="h-3.5 w-3.5 flex-shrink-0" />
+      <span>Yakap {isProfiled ? 'Profiled' : 'Enlisted'}</span>
+    </span>
+  );
+}
 
 interface ProfileCardProps {
   patient: PatientBaseData
@@ -15,7 +25,6 @@ interface ProfileCardProps {
 
 export function ProfileCard({ patient, isOwner }: ProfileCardProps) {
   const initials = (`${patient.firstName?.[0] ?? ''}${patient.lastName?.[0] ?? ''}`).toUpperCase() || '?'
-
   return (
     <div className="rounded-2xl overflow-hidden mb-5 shadow-lg">
       {/* Gradient hero band */}
@@ -48,13 +57,16 @@ export function ProfileCard({ patient, isOwner }: ProfileCardProps) {
 
         {/* Name + Verification */}
         <div className="text-center relative z-10">
-          <h2 className="text-white text-xl font-bold leading-tight">
+          <h2 className="text-white text-xl font-bold leading-tight flex items-center justify-center flex-wrap gap-y-1">
             {patient.fullName}{patient.suffix ? ` ${patient.suffix}` : ''}
           </h2>
           {patient.nickname && (
             <p className="text-teal-100 text-sm mt-0.5">&ldquo;{patient.nickname}&rdquo;</p>
           )}
-          <div className="flex justify-center mt-2">
+          <div className="flex justify-center mt-2 gap-x-2">
+            {patient.yakapEnlistment && (
+              <YakapBadge isProfiled={!!patient.yakapEnlistment.profilingTransNo} />
+            )}
             {isOwner ? (
               <Link href="/v2/profile/verification" className="hover:opacity-80 transition-opacity">
                 <VerificationStatusBadge status={patient.verificationStatus} />

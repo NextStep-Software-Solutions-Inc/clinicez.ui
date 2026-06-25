@@ -727,7 +727,7 @@ export function PHRPdfDocument({ patient, sections, generatedAt, theme = 'colorf
                   {patient.philHealthRecords.map((r, i) => (
                     <View key={r.id} style={i % 2 === 0 ? s.tableRow : s.tableRowAlt}>
                       <Td flex={1.5} alt={i % 2 !== 0}>{v(r.pin)}</Td>
-                      <Td flex={1.5} alt={i % 2 !== 0}>{r.PhilHealthMemberType?.name ?? '—'}</Td>
+                      <Td flex={1.5} alt={i % 2 !== 0}>{r.memberType === 'MM' ? 'Principal' : r.memberType === 'DD' ? 'Dependent' : '-'}</Td>
                       <Td flex={0.6} alt={i % 2 !== 0}>{r.isActive ? 'Yes' : 'No'}</Td>
                       <Td flex={1} alt={i % 2 !== 0}>{fmtDate(r.createdAt)}</Td>
                     </View>

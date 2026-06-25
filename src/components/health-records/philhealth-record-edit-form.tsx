@@ -4,9 +4,11 @@ import React, { useState, useMemo, useEffect } from 'react'
 import { updatePhilhealthRecord } from '@/actions/patient-profile'
 import { addPhilHealthDependent, removePhilHealthDependent, updatePhilHealthDependent } from '@/actions/patient-profile/manage-philhealth-dependents'
 import { uploadMediaAction } from '@/actions/blob.action'
-import { philHealthRecordSchema, philHealthRecordLabels, philHealthMemberTypes, type PhilHealthRecordFormInput, type PhilHealthDependentFormInput } from '@/schemas'
+import { philHealthRecordSchema, philHealthRecordLabels, type PhilHealthRecordFormInput, type PhilHealthDependentFormInput } from '@/schemas'
 import { FormModal, FormField, EditButton } from './index'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { X, Upload, Loader2 } from 'lucide-react'
@@ -52,9 +54,10 @@ export function PhilHealthRecordEditForm({
       // Sync all form fields
       setFormData({
         pin: currentData.pin,
+        dependentPin: currentData.dependentPin,
         tin: currentData.tin,
         philSysId: currentData.philSysId,
-        memberTypeId: currentData.memberTypeId,
+        memberType: currentData.memberType || 'MM',
         photoUrl: currentData.photoUrl,
       })
       
@@ -115,12 +118,7 @@ export function PhilHealthRecordEditForm({
     if (saveErrorMessage) throw new Error(saveErrorMessage)
   }
 
-  const handleFieldChange = (field: keyof PhilHealthRecordFormInput, value: any) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value === '' ? null : value,
-    }))
-  }
+
 
   const handleAddDependent = async () => {
     if (!newDependent.firstName) {
@@ -244,45 +242,107 @@ export function PhilHealthRecordEditForm({
     onDirtyChange?.(hasChanges)
   })
 
-  const formContent = (
-    <div className="space-y-6 dark:text-gray-400">
-      {/* Required Information */}
-      <div className="space-y-4 border-b pb-4">
-        <h3 className="text-sm font-semibold">Required Information</h3>
+  const formatPhilHealthPIN = (val: string) => {
+    const digits = val.replace(/\D/g, '').substring(0, 12);
+    let formatted = '';
+    if (digits.length > 0) {
+      formatted = digits.substring(0, 2);
+    }
+    if (digits.length > 2) {
+      formatted += '-' + digits.substring(2, 11);
+    }
+    if (digits.length > 11) {
+      formatted += '-' + digits.substring(11, 12);
+    }
+    return formatted;
+  }
 
-        <FormField label="PhilHealth ID Number (PIN)" required htmlFor="pin" helpText={philHealthRecordLabels.pin}>
+  const formatTIN = (val: string) => {
+    const digits = val.replace(/\D/g, '').substring(0, 12);
+    let formatted = '';
+    if (digits.length > 0) {
+      formatted = digits.substring(0, 3);
+    }
+    if (digits.length > 3) {
+      formatted += '-' + digits.substring(3, 6);
+    }
+    if (digits.length > 6) {
+      formatted += '-' + digits.substring(6, 9);
+    }
+    if (digits.length > 9) {
+      formatted += '-' + digits.substring(9, 12);
+    }
+    return formatted;
+  }
+
+  const formatPhilSysID = (val: string) => {
+    const digits = val.replace(/\D/g, '').substring(0, 12);
+    let formatted = '';
+    if (digits.length > 0) {
+      formatted = digits.substring(0, 4);
+    }
+    if (digits.length > 4) {
+      formatted += ' ' + digits.substring(4, 8);
+    }
+    if (digits.length > 8) {
+      formatted += ' ' + digits.substring(8, 12);
+    }
+    return formatted;
+  }
+
+  const handleFieldChange = (field: keyof PhilHealthRecordFormInput, value: any) => {
+    setFormData((prev) => ({ ...prev, [field]: value }))
+  }
+
+  const formContent = (
+    <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-2 pb-8">
+      {/* Required Information */}
+      <div className="space-y-4 border-b py-4">
+        <h3 className="text-sm font-semibold">Primary Information</h3>
+        
+        <div className="space-y-2">
+          <Label>Member Category</Label>
+          <RadioGroup 
+            value={formData.memberType || 'MM'} 
+            onValueChange={(v) => handleFieldChange('memberType', v)}
+            className="flex items-center gap-6"
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="MM" id="member-mm" />
+              <Label htmlFor="member-mm">Principal Member</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="DD" id="member-dd" />
+              <Label htmlFor="member-dd">Dependent</Label>
+            </div>
+          </RadioGroup>
+        </div>
+
+        <FormField label={formData.memberType === 'DD' ? "Principal Member PIN" : "Your PhilHealth PIN"} htmlFor="pin" helpText={philHealthRecordLabels.pin}>
           <Input
             id="pin"
-            type="text"
-            maxLength={50}
             value={formData.pin || ''}
-            onChange={(e) => handleFieldChange('pin', e.target.value)}
-            placeholder="e.g., 00-123456789-0"
+            onChange={(e) => handleFieldChange('pin', formatPhilHealthPIN(e.target.value))}
+            placeholder="00-000000000-0"
+            maxLength={14}
+            className="font-mono"
+            required
           />
         </FormField>
-      </div>
 
-      {/* Member Type */}
-      <div className="space-y-4 border-b py-4">
-        <h3 className="text-sm font-semibold">Member Category</h3>
-
-        <FormField label="Member Type" htmlFor="memberTypeId" helpText={philHealthRecordLabels.memberTypeId}>
-          <Select
-            value={formData.memberTypeId?.toString() || ''}
-            onValueChange={(value) => handleFieldChange('memberTypeId', parseInt(value))}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select member type" />
-            </SelectTrigger>
-            <SelectContent>
-              {philHealthMemberTypes.map((type) => (
-                <SelectItem key={type.id} value={type.id.toString()}>
-                  {type.name} - {type.description}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </FormField>
+        {formData.memberType === 'DD' && (
+          <FormField label="Your Dependent PIN" htmlFor="dependentPin" helpText={philHealthRecordLabels.dependentPin}>
+            <Input
+              id="dependentPin"
+              value={formData.dependentPin || ''}
+              onChange={(e) => handleFieldChange('dependentPin', formatPhilHealthPIN(e.target.value))}
+              placeholder="00-000000000-0"
+              maxLength={14}
+              className="font-mono"
+              required
+            />
+          </FormField>
+        )}
       </div>
 
       {/* Optional Information */}
@@ -293,10 +353,11 @@ export function PhilHealthRecordEditForm({
           <Input
             id="tin"
             type="text"
-            maxLength={50}
+            maxLength={15}
             value={formData.tin || ''}
-            onChange={(e) => handleFieldChange('tin', e.target.value || null)}
-            placeholder="e.g., 123-456-789-000"
+            onChange={(e) => handleFieldChange('tin', formatTIN(e.target.value) || null)}
+            placeholder="000-000-000-000"
+            className="font-mono"
           />
         </FormField>
 
@@ -304,10 +365,11 @@ export function PhilHealthRecordEditForm({
           <Input
             id="philSysId"
             type="text"
-            maxLength={50}
+            maxLength={14}
             value={formData.philSysId || ''}
-            onChange={(e) => handleFieldChange('philSysId', e.target.value || null)}
-            placeholder="e.g., PS-1234567890-0"
+            onChange={(e) => handleFieldChange('philSysId', formatPhilSysID(e.target.value) || null)}
+            placeholder="0000 0000 0000"
+            className="font-mono"
           />
         </FormField>
 

@@ -8,7 +8,6 @@ import type {
     ObGyneHistory,
     PersonalHistory,
     PhilHealthRecord,
-    PhilHealthMemberType,
     PhilHealthDependent,
     VerificationStatus,
 } from '@prisma/client'
@@ -45,7 +44,6 @@ export type SerializedPhilHealthRecord = Omit<PhilHealthRecord, 'createdAt' | 'u
     createdAt: string
     updatedAt: string
     deletedAt: string | null
-    PhilHealthMemberType?: (Omit<PhilHealthMemberType, 'createdAt' | 'updatedAt'> & { createdAt: string; updatedAt: string }) | null
     PhilHealthDependents?: PhilHealthDependent[]
 }
 
@@ -92,6 +90,11 @@ export interface PatientBaseData {
     suffix: string | null
     verificationStatus: VerificationStatus
     badges: PatientBadgeCounts
+    yakapEnlistment?: {
+        id: number
+        hciCaseNo: string | null
+        profilingTransNo: string | null
+    }
 }
 
 // ---------------------------------------------------------------------------

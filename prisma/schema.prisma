@@ -170,9 +170,10 @@ model PhilHealthRecord {
   id                   Int                   @id @default(autoincrement())
   userId               Int
   pin                  String                @unique
+  dependentPin         String?               
   tin                  String?               @unique
   philSysId            String?               @unique
-  memberTypeId         Int
+  memberType           String                @default("MM")
   isActive             Boolean               @default(true)
   createdAt            DateTime              @default(now())
   updatedAt            DateTime              @updatedAt
@@ -184,23 +185,29 @@ model PhilHealthRecord {
   PhilHealthDependents PhilHealthDependent[]
   createdByUser        User?                 @relation("PhilHealthRecordsCreatedBy", fields: [createdBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
   deletedByUser        User?                 @relation("PhilHealthRecordsDeletedBy", fields: [deletedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  PhilHealthMemberType PhilHealthMemberType  @relation(fields: [memberTypeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   updatedByUser        User?                 @relation("PhilHealthRecordsUpdatedBy", fields: [updatedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
   User                 User                  @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
-model PhilHealthMemberType {
-  id                Int                      @id @default(autoincrement())
-  name              String                   @unique
-  category          PhilHealthMemberCategory @default(DIRECT)
-  parentId          Int?
-  createdAt         DateTime                 @default(now())
-  updatedAt         DateTime                 @updatedAt
-  isActive          Boolean                  @default(true)
-  Parent            PhilHealthMemberType?    @relation("PhilHealthMemberTypeParent", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  Children          PhilHealthMemberType[]   @relation("PhilHealthMemberTypeParent")
-  PhilHealthRecords PhilHealthRecord[]
+model PhilHealthKonsultaEnlistment {
+  id                Int           @id @default(autoincrement())
+  clinicPatientId   Int
+  year              Int           // e.g., 2024
+  hciCaseNo         String        // The T-prefix case number
+  enlistmentTransNo String        // The E-prefix transaction number
+  profilingTransNo  String?       // The P-prefix transaction number (generated during First Patient Encounter)
+  memberPin         String?       // Snapshot of the member PIN used at enlistment
+  dependentPin      String?       // Snapshot of the dependent PIN (if applicable)
+  status            String        @default("ACTIVE") // ACTIVE, CANCELLED, TRANSFERRED
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  ClinicPatient     ClinicPatient @relation(fields: [clinicPatientId], references: [id], onDelete: Cascade)
+  
+  @@unique([clinicPatientId, year], name: "unique_enlistment_year")
 }
+
+
 
 model PhilHealthDependent {
   id                    Int              @id @default(autoincrement())
@@ -244,6 +251,7 @@ model ClinicPatient {
   Prescriptions            Prescription[]
   ProcedureUsageHistory    ProcedureUsageHistory[]
   ConsultationTickets      ConsultationTicket[]
+  PhilHealthKonsultaEnlistments PhilHealthKonsultaEnlistment[]
 
   @@unique([clinicId, patientId], name: "unique_clinic_patient")
 }
@@ -1641,6 +1649,7 @@ model ConsultationTicket {
   ekasTransactionGeneratedAt  DateTime?
   ekasTransactionNumber       String?                      @unique
   caseNumber                  String?                      @unique
+  soapTransNo                 String?                      @unique
   HeartStationRequests        ClinicHeartStationRequest[]
   ImagingRequests             ClinicImagingRequest[]
   LaboratoryRequests          ClinicLaboratoryRequest[]
@@ -1836,8 +1845,21 @@ model Medicine {
   CreatedBy      User          @relation("MedicineCreatedBy", fields: [createdById], references: [id], onDelete: NoAction, onUpdate: NoAction)
   Prescription   Prescription? @relation(fields: [prescriptionId], references: [id])
   UpdatedBy      User?         @relation("MedicineUpdatedBy", fields: [updatedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  MedicineDispenseRecord MedicineDispenseRecord?
 
   @@index([prescriptionId], map: "medicine_prescription_index")
+}
+
+model MedicineDispenseRecord {
+  id                  Int       @id @default(autoincrement())
+  medicineId          Int       @unique
+  isDispensed         Boolean   @default(false)
+  dateDispensed       DateTime?
+  dispensingPersonnel String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  Medicine            Medicine  @relation(fields: [medicineId], references: [id], onDelete: Cascade)
 }
 
 model Drug {
@@ -2642,10 +2664,7 @@ enum ReceiptCodeStatus {
   EXPIRED
 }
 
-enum PhilHealthMemberCategory {
-  DIRECT
-  INDIRECT
-}
+
 
 enum OnboardingStatus {
   NOT_STARTED

@@ -1036,7 +1036,7 @@ export function PHRPrintContent({ patient, sections, generatedAt, theme = 'color
                     {patient.philHealthRecords.map((r, i) => (
                       <tr key={r.id}>
                         <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{val(r.pin)}</td>
-                        <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{r.PhilHealthMemberType?.name ?? '—'}</td>
+                        <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{r.memberType === 'MM' ? 'Principal' : r.memberType === 'DD' ? 'Dependent' : '-'}</td>
                         <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{r.isActive ? 'Yes' : 'No'}</td>
                         <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{formatDate(r.createdAt)}</td>
                       </tr>

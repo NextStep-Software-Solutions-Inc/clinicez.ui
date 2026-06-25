@@ -30,7 +30,7 @@ export const downloadHAFAction = withErrorHandling(async (userId: string) => {
         take: 1,
         select: {
           pin: true,
-          PhilHealthMemberType: { select: { name: true } },
+          memberType: true,
         }
       },
       VitalSigns: {
@@ -175,7 +175,7 @@ export const downloadHAFAction = withErrorHandling(async (userId: string) => {
     { field: "memberAge", value: phr?.dob ? (calculateAge(phr?.dob)?.toString() || "") : "" },
     { field: "memberDateOfBirth", value: formatDate(phr?.dob) },
     { field: "memberSex", value: capitalize(phr?.gender ?? "") },
-    { field: "memberType", value: phr?.PhilHealthRecords?.[0]?.PhilHealthMemberType?.name || "" },
+    { field: "memberType", value: phr?.PhilHealthRecords?.[0]?.memberType === 'MM' ? 'Principal' : phr?.PhilHealthRecords?.[0]?.memberType === 'DD' ? 'Dependent' : "" },
 
     // Past Medical History Section
     { field: "pastMedicalHistorySpecifyAllergy", value: phr.UserAllergies.map(ua => ua.Allergen.name).join(", ") || "" },

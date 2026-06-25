@@ -121,9 +121,10 @@ export async function updatePhilhealthRecord(
 
     const updateData = {
       pin: validatedInput.pin,
+      dependentPin: validatedInput.dependentPin,
       tin: validatedInput.tin,
       philSysId: validatedInput.philSysId,
-      memberTypeId: validatedInput.memberTypeId,
+      memberType: validatedInput.memberType,
       photoUrl: validatedInput.photoUrl,
     }
 
@@ -132,14 +133,14 @@ export async function updatePhilhealthRecord(
       action = AuditAction.UPDATE
       await prisma.philHealthRecord.update({
         where: { id: currentRecord.id },
-        data: updateData as any,
+        data: updateData,
       })
     } else {
       await prisma.philHealthRecord.create({
         data: {
           userId: targetUser.id,
           ...updateData,
-        } as any,
+        },
       })
     }
 

@@ -42,6 +42,17 @@ export async function getClinicPatientProfileAction({
             },
             include: {
                 Clinic: { select: { id: true, name: true } },
+                PhilHealthKonsultaEnlistments: {
+                    where: {
+                        year: new Date().getFullYear(),
+                        status: 'ACTIVE'
+                    },
+                    select: {
+                        id: true,
+                        hciCaseNo: true,
+                        profilingTransNo: true
+                    }
+                }
             },
         });
 
@@ -137,7 +148,6 @@ export async function getClinicPatientProfileAction({
                 where: { userId: patient.id, isActive: true },
                 include: {
                     PhilHealthDependents: true,
-                    PhilHealthMemberType: true,
                 },
                 orderBy: { createdAt: "desc" },
                 take: 10,
@@ -431,14 +441,12 @@ export async function getClinicPatientProfileAction({
                 createdAt: p.createdAt.toISOString(),
                 updatedAt: p.updatedAt.toISOString(),
                 deletedAt: p.deletedAt ? p.deletedAt.toISOString() : null,
-                PhilHealthMemberType: p.PhilHealthMemberType
-                    ? {
-                        ...p.PhilHealthMemberType,
-                        createdAt: p.PhilHealthMemberType.createdAt.toISOString(),
-                        updatedAt: p.PhilHealthMemberType.updatedAt.toISOString(),
-                    }
-                    : null,
             })),
+            yakapEnlistment: clinicPatientRecord.PhilHealthKonsultaEnlistments?.[0] ? {
+                id: clinicPatientRecord.PhilHealthKonsultaEnlistments[0].id,
+                hciCaseNo: clinicPatientRecord.PhilHealthKonsultaEnlistments[0].hciCaseNo,
+                profilingTransNo: clinicPatientRecord.PhilHealthKonsultaEnlistments[0].profilingTransNo
+            } : undefined,
 
             // Procedure History
             procedureHistory: procedures.map((p) => ({

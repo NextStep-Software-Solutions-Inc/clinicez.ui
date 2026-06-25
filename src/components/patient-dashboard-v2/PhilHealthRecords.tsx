@@ -100,6 +100,7 @@ export function PhilHealthRecords({ records }: PhilHealthRecordsProps) {
             </div>
 
             {/* Details Section */}
+            {(p.philSysId || p.tin || (p.PhilHealthDependents && p.PhilHealthDependents.length > 0)) && (
             <div className="p-4">
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
                 {/* PhilSys ID */}
@@ -150,6 +151,7 @@ export function PhilHealthRecords({ records }: PhilHealthRecordsProps) {
                 </div>
               )}
             </div>
+            )}
           </div>
         ))}
       </div>

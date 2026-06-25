@@ -23,7 +23,7 @@ type PrimaryAddress = {
 function hasUserAddresses(u: unknown): u is { UserAddresses?: PrimaryAddress[] } {
   return !!u && typeof u === "object" && "UserAddresses" in (u as Record<string, unknown>)
 }
-type PhilHealthRecordLite = { id: number; memberTypeId: number; pin?: string | null; philSysId?: string | null; tin?: string | null }
+type PhilHealthRecordLite = { id: number; memberType: string; pin?: string | null; philSysId?: string | null; tin?: string | null }
 function hasPhilHealthRecord(u: unknown): u is { PhilHealthRecord: PhilHealthRecordLite[] } {
   return !!u && typeof u === "object" && "PhilHealthRecord" in (u as Record<string, unknown>)
 }
@@ -45,7 +45,7 @@ export const downloadPMRFAction = withErrorHandling(async (userId: string) => {
     const fetched = await prisma.philHealthRecord.findFirst({
       where: { userId: user.id, isActive: true, deletedAt: null },
       orderBy: { id: 'asc' },
-      select: { id: true, memberTypeId: true, pin: true, philSysId: true, tin: true },
+      select: { id: true, memberType: true, pin: true, philSysId: true, tin: true },
     })
     phr = fetched ?? undefined
   }
@@ -167,51 +167,16 @@ export const downloadPMRFAction = withErrorHandling(async (userId: string) => {
     logger.error("Failed to map dependents:", error)
   }
 
-  // Member type checkbox mapping (supports parent-child hierarchy)
-  try {
-    if (phr) {
-      const memberType = await prisma.philHealthMemberType.findUnique({ where: { id: phr.memberTypeId }, include: { Parent: true } })
-      if (memberType?.name) {
-        const memberTypeCheckboxMap: Record<string, string> = {
-          'EMPLOYED PRIVATE': 'memberTypeEmployedPrivate',
-          'KASAMBAHAY': 'memberTypeKasambahay',
-          'FAMILY DRIVER': 'memberTypeFamilyDriver',
-          'EMPLOYED GOVERNMENT': 'memberTypeEmployedGovernment',
-          // Hierarchical groups
-          'MIGRANT WORKER': 'memberTypeMigrantWorker',
-          'SEA-BASED': 'memberTypeSeaBased',
-          'LAND-BASED': 'memberTypeLandbased', // match actual PDF field name
-          'PROFESSIONAL PRACTITIONER': 'memberTypeProfessionalPractitioner',
-          'LIFETIME MEMBER': 'memberTypeLifetimeMember',
-          'SELF-EARNING INDIVIDUAL': 'memberTypeSelfEarningIndividual',
-          'FILIPINO DUAL CITIZENSHIP': 'memberTypeFilipinoDualCitizenship',
-          // Children of SELF-EARNING INDIVIDUAL
-          'INDIVIDUAL': 'memberTypeIndividual',
-          'SOLE PROPRIETOR': 'memberTypeSoleProprietor',
-          'GROUP ENROLLMENT SCHEME': 'memberTypeGroupEnrollmentScheme',
-          'FOREIGN NATIONAL': 'memberTypeForeignNational',
-        }
-        const toMark = new Set<string>()
-        const childUpper = memberType.name.toUpperCase()
-        toMark.add(childUpper)
-        if (memberType.Parent?.name) {
-          toMark.add(memberType.Parent.name.toUpperCase())
-        }
-        // Special case: If selected is LAND-BASED or SEA-BASED ensure MIGRANT WORKER also checked (already handled by Parent, but fallback)
-        if (childUpper === 'LAND-BASED' || childUpper === 'SEA-BASED') toMark.add('MIGRANT WORKER')
-        // Self-earning individual children ensure parent also marked
-        if (['INDIVIDUAL', 'SOLE PROPRIETOR', 'GROUP ENROLLMENT SCHEME'].includes(childUpper)) toMark.add('SELF-EARNING INDIVIDUAL')
-
-        toMark.forEach(name => {
-          const field = memberTypeCheckboxMap[name]
-          if (field) checkboxMappings.push({ field, condition: true })
-        })
+    // Member type checkbox mapping
+    // We simplified our schema to just use 'MM' or 'DD' for Member/Dependent, 
+    // so we no longer map to the specific detailed employment types in PMRF automatically.
+    try {
+      if (phr && phr.memberType) {
+        // Here you could add mappings if PMRF had generic MM/DD checkboxes
       }
+    } catch (error: unknown) {
+      logger.error("Failed to map member type:", error)
     }
-  } catch (error: unknown) {
-    // log member type retrieval errors for debugging
-    logger.error("Failed to map member type:", error)
-  }
 
   const pdf = await generatePdf('PhilHealth_Member_Registration_Form.pdf', textMappings, checkboxMappings, `PHR_Form_${user.firstName || 'Member'}_${user.lastName || ''}`)
   return { message: 'PDF generated successfully', data: pdf }

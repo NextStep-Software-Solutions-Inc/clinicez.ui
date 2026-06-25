@@ -485,9 +485,9 @@ export async function getPatientInsuranceData(userId?: string): Promise<Insuranc
 
         const [philHealth, procedures, certs, slips] = await Promise.all([
             prisma.philHealthRecord.findMany({
-                where: { userId: patientId, isActive: true },
-                include: { PhilHealthDependents: true, PhilHealthMemberType: true },
-                orderBy: { createdAt: 'desc' },
+                  where: { userId: patientId, isActive: true },
+                  include: { PhilHealthDependents: true },
+                  orderBy: { createdAt: 'desc' },
                 take: 10,
             }),
             prisma.procedureUsageHistory.findMany({
@@ -514,14 +514,11 @@ export async function getPatientInsuranceData(userId?: string): Promise<Insuranc
                 : Promise.resolve([]),
         ])
 
-        return {
-            philHealthRecords: philHealth.map(r => ({
-                ...serializeDateFields(r),
-                PhilHealthMemberType: r.PhilHealthMemberType
-                    ? { ...r.PhilHealthMemberType, createdAt: r.PhilHealthMemberType.createdAt.toISOString(), updatedAt: r.PhilHealthMemberType.updatedAt.toISOString() }
-                    : null,
-                PhilHealthDependents: r.PhilHealthDependents,
-            })),
+          return {
+              philHealthRecords: philHealth.map(r => ({
+                  ...serializeDateFields(r),
+                  PhilHealthDependents: r.PhilHealthDependents,
+              })),
             medicalCertificates: certs.map(c => ({
                 id: c.id,
                 serialNumber: c.serialNumber,

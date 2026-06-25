@@ -359,7 +359,7 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
         pin: record.pin,
         tin: record.tin || undefined,
         philSysId: record.philSysId || undefined,
-        memberTypeId: record.memberTypeId || undefined,
+        memberType: (record.memberType as 'MM' | 'DD') || 'MM',
         photoUrl: record.photoUrl || undefined,
         dependents: recordWithDependents.PhilHealthDependents || [],
         id: record.id,

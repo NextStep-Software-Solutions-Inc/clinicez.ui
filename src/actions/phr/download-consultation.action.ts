@@ -38,9 +38,7 @@ export const downloadConsultationAction = withErrorHandling(async (userId?: stri
       PhilHealthRecords: {
         where: { isActive: true },
         select: {
-          PhilHealthMemberType: {
-            select: { name: true }
-          },
+          memberType: true,
           pin: true,
         },
         orderBy: { createdAt: "desc" },
@@ -205,7 +203,7 @@ export const downloadConsultationAction = withErrorHandling(async (userId?: stri
     { field: "memberAge", value: phr?.dob ? (calculateAge(phr?.dob)?.toString() || "") : "" },
     { field: "memberDateOfBirth", value: formatDate(phr?.dob) },
     { field: "memberSex", value: phr?.gender ? capitalize(phr.gender) : "" },
-    { field: "memberType", value: phr?.PhilHealthRecords?.[0]?.PhilHealthMemberType?.name || "" },
+    { field: "memberType", value: phr?.PhilHealthRecords?.[0]?.memberType === 'MM' ? 'Principal' : phr?.PhilHealthRecords?.[0]?.memberType === 'DD' ? 'Dependent' : "" },
     { field: "chiefComplaint", value: phr?.AppointmentRequesters?.[0]?.Appointment?.complaint || "" },
     { field: "historyOfPresentIllness", value: "" },
     { field: "heightCM", value: phr?.VitalSigns?.[0]?.height?.toString() || "" },

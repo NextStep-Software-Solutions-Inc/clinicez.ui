@@ -1,6 +1,6 @@
 import prisma from "@/lib/prisma";
 
-export type EntityType = "HEALTH_ASSESSMENT" | "CONSULTATION";
+export type EntityType = "HEALTH_ASSESSMENT" | "CONSULTATION" | "PHILHEALTH_KONSULTA_T" | "PHILHEALTH_KONSULTA_E" | "PHILHEALTH_KONSULTA_P" | "PHILHEALTH_KONSULTA_S";
 
 /**
  * Custom error for sequence generation failures
@@ -36,7 +36,7 @@ function validateSequenceInput(
   entityType: string,
   clinicId?: number
 ): void {
-  const validEntityTypes: EntityType[] = ["HEALTH_ASSESSMENT", "CONSULTATION"];
+  const validEntityTypes: EntityType[] = ["HEALTH_ASSESSMENT", "CONSULTATION", "PHILHEALTH_KONSULTA_T", "PHILHEALTH_KONSULTA_E", "PHILHEALTH_KONSULTA_P", "PHILHEALTH_KONSULTA_S"];
   if (!validEntityTypes.includes(entityType as EntityType)) {
     throw new SequenceGenerationError(
       `Invalid entity type: ${entityType}`,
@@ -171,6 +171,102 @@ export async function generateTimestampCaseNumber(
     const paddedNumber = String(sequence.currentValue).padStart(5, "0");
 
     return `${prefix}-${dateKey}-${paddedNumber}`;
+  }, maxRetries);
+}
+
+export type PhilHealthTransType = "CASE" | "ENLISTMENT" | "PROFILING" | "SOAP";
+
+/**
+ * Generate a unique timestamp-based transaction number for PhilHealth Konsulta
+ * Format: 
+ * CASE (T): T + ACCRE_NO + YYYYMM + 4-digit seq
+ * ENLISTMENT (E): E + ACCRE_NO + YYYYMM + 5-digit seq
+ * PROFILING (P): P + ACCRE_NO + YYYYMM + 5-digit seq
+ * SOAP (S): S + ACCRE_NO + YYYYMM + 5-digit seq
+ */
+export async function generatePhilHealthKonsultaTransactionNumber(
+  transType: PhilHealthTransType,
+  accreNo: string,
+  clinicId?: number,
+  options?: {
+    maxRetries?: number;
+    createdAt?: Date;
+  }
+): Promise<string> {
+  let entityType: EntityType;
+  let prefixChar: string;
+  let isCaseNo = false;
+
+  switch(transType) {
+    case "CASE": entityType = "PHILHEALTH_KONSULTA_T"; prefixChar = "T"; isCaseNo = true; break;
+    case "ENLISTMENT": entityType = "PHILHEALTH_KONSULTA_E"; prefixChar = "E"; break;
+    case "PROFILING": entityType = "PHILHEALTH_KONSULTA_P"; prefixChar = "P"; break;
+    case "SOAP": entityType = "PHILHEALTH_KONSULTA_S"; prefixChar = "S"; break;
+  }
+
+  // Validate input
+  validateSequenceInput(entityType, clinicId);
+
+  if (!accreNo || accreNo.length !== 9) {
+    throw new Error(`Invalid Accreditation Number: ${accreNo}. Must be exactly 9 characters.`);
+  }
+
+  const maxRetries = options?.maxRetries ?? 3;
+  const date = options?.createdAt || new Date();
+  
+  // PhilHealth uses YYYYMM for resetting sequence numbers
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const dateKey = `${year}${month}`;
+
+  // T uses 4 digits, E/P/S use 5 digits
+  const MAX_SEQUENCE_VALUE = isCaseNo ? 9999 : 99999;
+  const padding = isCaseNo ? 4 : 5;
+
+  return withRetry(async () => {
+    // Use transaction to ensure atomicity
+    const sequence = await prisma.$transaction(async (tx) => {
+      // Try to find existing sequence for this YYYYMM
+      let seq = await tx.sequenceGenerator.findFirst({
+        where: {
+          entityType,
+          clinicId: clinicId ?? null,
+          date: dateKey, // This resets every month
+        },
+      });
+
+      // Create if doesn't exist
+      if (!seq) {
+        seq = await tx.sequenceGenerator.create({
+          data: {
+            entityType,
+            clinicId: clinicId ?? null,
+            date: dateKey,
+            currentValue: 1,
+          },
+        });
+        return seq;
+      }
+
+      // Check if we've exceeded the limit
+      if (seq.currentValue >= MAX_SEQUENCE_VALUE) {
+        throw new SequenceGenerationError(
+          `Sequence limit exceeded for ${entityType} on ${dateKey}: ${seq.currentValue}/${MAX_SEQUENCE_VALUE}`,
+          entityType,
+          dateKey,
+          clinicId
+        );
+      }
+
+      // Increment and return
+      return await tx.sequenceGenerator.update({
+        where: { id: seq.id },
+        data: { currentValue: { increment: 1 } },
+      });
+    });
+
+    const paddedNumber = String(sequence.currentValue).padStart(padding, "0");
+    return `${prefixChar}${accreNo}${dateKey}${paddedNumber}`;
   }, maxRetries);
 }
 

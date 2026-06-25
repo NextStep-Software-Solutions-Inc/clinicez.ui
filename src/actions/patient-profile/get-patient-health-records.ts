@@ -118,7 +118,6 @@ export async function getPatientHealthRecords(): Promise<SerializedPatientHealth
         where: { userId: patient.id, isActive: true },
         include: {
           PhilHealthDependents: true,
-          PhilHealthMemberType: true,
         },
         orderBy: { createdAt: 'desc' },
         take: 10,
@@ -452,11 +451,6 @@ export async function getPatientHealthRecords(): Promise<SerializedPatientHealth
         createdAt: p.createdAt.toISOString(),
         updatedAt: p.updatedAt.toISOString(),
         deletedAt: p.deletedAt ? p.deletedAt.toISOString() : null,
-        PhilHealthMemberType: p.PhilHealthMemberType ? {
-          ...p.PhilHealthMemberType,
-          createdAt: p.PhilHealthMemberType.createdAt.toISOString(),
-          updatedAt: p.PhilHealthMemberType.updatedAt.toISOString(),
-        } : null,
       })),
 
       // Procedure History

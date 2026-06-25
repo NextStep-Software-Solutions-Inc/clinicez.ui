@@ -29,6 +29,7 @@ import dayjs from "@/lib/day-utils";
 import type { GetPatientConsultationDetail } from "@/actions/consultation/patient-consultations.action";
 import type { GetHPsType } from "@/actions/hp.actions";
 import { resolveConsultationTicket, dropConsultationTicketAction } from "@/actions/consultation/consultation-ticket.action";
+import { generateConsultationSoapTransNoAction } from "@/actions/philhealth-yakap.actions";
 import ConsultationNotesEditor from "./ConsultationNotesEditor";
 import ConsultationPrescriptions from "./ConsultationPrescriptions";
 import ConsultationMedCerts from "./ConsultationMedCerts";
@@ -76,10 +77,12 @@ export default function ConsultationWorkspace({
 }: ConsultationWorkspaceProps) {
   const [activeTab, setActiveTab] = useState("notes");
   const [resolving, startResolveTransition] = useTransition();
+  const [dropping, startDropTransition] = useTransition();
+  const [generatingYakap, startGeneratingYakap] = useTransition();
+  
   const [addCoCreatorOpen, setAddCoCreatorOpen] = useState(false);
   const [showDropForm, setShowDropForm] = useState(false);
   const [dropReason, setDropReason] = useState("");
-  const [dropping, startDropTransition] = useTransition();
 
   const status = consultation.ConsultationTicketAttribute?.status;
   const apt = consultation.Appointment;
@@ -99,6 +102,18 @@ export default function ConsultationWorkspace({
         onReloadDetail?.();
       } else {
         toast.error(result.message ?? "Failed to resolve consultation");
+      }
+    });
+  };
+
+  const handleGenerateYakap = () => {
+    startGeneratingYakap(async () => {
+      const result = await generateConsultationSoapTransNoAction(clinicUid, consultation.id);
+      if (result.success) {
+        toast.success("Yakap No. generated");
+        onReloadDetail?.();
+      } else {
+        toast.error(result.message ?? "Failed to generate Yakap No.");
       }
     });
   };
@@ -206,11 +221,27 @@ export default function ConsultationWorkspace({
           </div>
           {canBeResolved && myHPs.length > 0 && (
             <div className="flex items-center gap-1.5 shrink-0">
+              {consultation.soapTransNo ? (
+                <Badge variant="outline" className="h-8 text-[10px] sm:text-xs font-mono bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950/40 dark:text-teal-400 dark:border-teal-800">
+                  SOAP: {consultation.soapTransNo}
+                </Badge>
+              ) : (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-1.5 h-8 text-xs border-teal-300 text-teal-700 hover:bg-teal-50 hover:text-teal-800 dark:border-teal-700 dark:text-teal-400 dark:hover:bg-teal-950/30"
+                  disabled={generatingYakap}
+                  onClick={handleGenerateYakap}
+                >
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  {generatingYakap ? "Generating..." : "Generate Yakap No."}
+                </Button>
+              )}
               <Button
                 size="sm"
                 variant="outline"
                 className="gap-1.5 h-8 text-xs border-emerald-300 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 dark:border-emerald-700 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
-                disabled={resolving || dropping}
+                disabled={resolving || dropping || generatingYakap}
                 onClick={handleResolve}
               >
                 <CheckCircle2 className="h-3.5 w-3.5" />
@@ -221,7 +252,7 @@ export default function ConsultationWorkspace({
                   size="sm"
                   variant="outline"
                   className="gap-1.5 h-8 text-xs border-gray-300 text-gray-600 hover:bg-gray-100 hover:text-gray-800 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-800/30"
-                  disabled={resolving || dropping}
+                  disabled={resolving || dropping || generatingYakap}
                   onClick={() => setShowDropForm(true)}
                 >
                   <Ban className="h-3.5 w-3.5" />

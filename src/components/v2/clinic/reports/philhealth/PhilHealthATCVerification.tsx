@@ -119,40 +119,36 @@ export default function PhilHealthATCVerification({ clinicUid }: PhilHealthATCVe
         </Card>
 
         {/* Verification Result */}
+        {result && (
         <Card>
           <CardHeader>
             <CardTitle className="text-sm">Response Data</CardTitle>
           </CardHeader>
           <CardContent>
-            {result ? (
-              <div className={`p-5 rounded-xl border flex items-start gap-4 shadow-sm transition-all ${
-                result.valid
-                  ? "bg-gradient-to-br from-emerald-50 to-teal-50 border-emerald-200 text-emerald-900 dark:from-emerald-950/40 dark:to-teal-950/40 dark:border-emerald-800 dark:text-emerald-100"
-                  : "bg-gradient-to-br from-red-50 to-rose-50 border-red-200 text-red-900 dark:from-red-950/40 dark:to-rose-950/40 dark:border-red-800 dark:text-red-100"
-              }`}>
-                <div className={`p-2 rounded-full ${result.valid ? 'bg-emerald-100 dark:bg-emerald-900/50' : 'bg-red-100 dark:bg-red-900/50'}`}>
-                  {result.valid ? (
-                    <Check className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
-                  ) : (
-                    <X className="h-6 w-6 text-red-600 dark:text-red-400" />
-                  )}
-                </div>
-                <div className="pt-0.5">
-                  <p className="text-lg font-bold mb-1 tracking-tight">
-                    {result.valid ? "Authorization Transaction Code is valid" : "Authorization Transaction Code is invalid"}
-                  </p>
-                  <p className="text-sm font-medium opacity-90 leading-relaxed">
-                    {result.message}
-                  </p>
-                </div>
+            <div className={`p-5 rounded-xl border flex items-start gap-4 shadow-sm transition-all ${
+              result.valid
+                ? "bg-gradient-to-br from-emerald-50 to-teal-50 border-emerald-200 text-emerald-900 dark:from-emerald-950/40 dark:to-teal-950/40 dark:border-emerald-800 dark:text-emerald-100"
+                : "bg-gradient-to-br from-red-50 to-rose-50 border-red-200 text-red-900 dark:from-red-950/40 dark:to-rose-950/40 dark:border-red-800 dark:text-red-100"
+            }`}>
+              <div className={`p-2 rounded-full ${result.valid ? 'bg-emerald-100 dark:bg-emerald-900/50' : 'bg-red-100 dark:bg-red-900/50'}`}>
+                {result.valid ? (
+                  <Check className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+                ) : (
+                  <X className="h-6 w-6 text-red-600 dark:text-red-400" />
+                )}
               </div>
-            ) : (
-              <div className="h-40 flex items-center justify-center border-2 border-dashed rounded-xl text-sm text-muted-foreground bg-muted/10">
-                Run a verification to see results here
+              <div className="pt-0.5">
+                <p className="text-lg font-bold mb-1 tracking-tight">
+                  {result.valid ? "Authorization Transaction Code is valid" : "Authorization Transaction Code is invalid"}
+                </p>
+                <p className="text-sm font-medium opacity-90 leading-relaxed">
+                  {result.message}
+                </p>
               </div>
-            )}
+            </div>
           </CardContent>
         </Card>
+        )}
       </div>
     </div>
   );

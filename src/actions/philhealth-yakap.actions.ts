@@ -961,16 +961,52 @@ export async function extractRegistrationListAction(clinicUid: string, startDate
   }
 }
 
-export async function parseXmlImportAction(xmlString: string) {
+export async function validateTransferredXmlAction(clinicUid: string, xmlString: string, tagging: string) {
   try {
+    const session = await getCachedSession();
+    if (!session?.user) return { status: false, message: "Unauthorized" };
+
+    const credentials = await getClinicCredentials(clinicUid);
+    const client = new YakapApiClient();
+    
+    const tokenRes = await client.getToken(
+      credentials.pUsername,
+      credentials.pUserPassword,
+      credentials.pSoftwareCertificationId,
+      credentials.pHospitalCode
+    );
+
+    const token = (tokenRes as any)?.result || (tokenRes as any)?.token || "";
+
+    if (!token || typeof token !== 'string') {
+      const errMsg = typeof tokenRes === 'object' && tokenRes !== null ? (tokenRes as any).message : "Failed to authenticate with PhilHealth";
+      return { status: false, message: errMsg || "Failed to authenticate with PhilHealth" };
+    }
+    
+    // validateReport takes the raw XML, encrypts it internally using the cipherKey, and calls SOAP
+    const result = await client.validateReport(xmlString, tagging, token, credentials.cipherKey);
+    return { status: true, data: result };
+  } catch (error: any) {
+    console.error("[validateTransferredXmlAction]", error);
+    return { status: false, message: error?.message || "Failed to validate XML" };
+  }
+}
+
+export async function parseXmlImportAction(clinicUid: string, xmlString: string) {
+  try {
+    let finalXml = xmlString;
+    
+    // Check if the input is an encrypted JSON string
+    if (xmlString.trim().startsWith('{') && xmlString.includes('"iv"') && xmlString.includes('"doc"')) {
+      const { decryptReport } = await import("@/lib/philhealth-yakap/api");
+      const credentials = await getClinicCredentials(clinicUid);
+      finalXml = decryptReport(xmlString, credentials.cipherKey);
+    }
+
     // Dynamic import of xmlbuilder2 for parsing
     const { convert } = await import("xmlbuilder2");
 
-    const parsed = convert(xmlString, { format: "object" }) as Record<string, unknown>;
-
-    // Flatten into records for display
-    const records: { type: string; attributes: Record<string, string>; children?: { type: string; attributes: Record<string, string> }[] }[] = [];
-
+    const parsed = convert(finalXml, { format: "object" }) as Record<string, unknown>;    // Helper to process an xmlbuilder2 element into a cleaner object
     const processElement = (element: Record<string, unknown>, type: string) => {
       const attrs: Record<string, string> = {};
       const children: { type: string; attributes: Record<string, string> }[] = [];
@@ -979,7 +1015,6 @@ export async function parseXmlImportAction(xmlString: string) {
         if (key.startsWith("@")) {
           attrs[key.slice(1)] = String(value ?? "");
         } else if (typeof value === "object" && value !== null) {
-          // It's a child element
           const childEntries = Array.isArray(value) ? value : [value];
           for (const child of childEntries) {
             if (typeof child === "object" && child !== null) {
@@ -993,31 +1028,264 @@ export async function parseXmlImportAction(xmlString: string) {
         }
       }
 
-      records.push({ type, attributes: attrs, children: children.length > 0 ? children : undefined });
+      return { type, attributes: attrs, children: children.length > 0 ? children : undefined };
+    };
+
+    const groupedData: Record<string, any> = {};
+    const getPatient = (caseNo: string) => {
+      if (!groupedData[caseNo]) {
+        groupedData[caseNo] = { pHciCaseNo: caseNo, enlistment: null, profiles: [], soaps: [], diagnostics: [], medicines: [] };
+      }
+      return groupedData[caseNo];
     };
 
     const pcb = (parsed as Record<string, unknown>).PCB as Record<string, unknown>;
     if (pcb) {
-      // Process top-level collections
-      const collections = ["ENLISTMENTS", "PROFILING", "SOAPS", "DIAGNOSTICEXAMRESULTS", "MEDICINES", "DOCUMENTS"];
-      for (const collName of collections) {
-        const coll = pcb[collName] as Record<string, unknown> | undefined;
-        if (coll) {
-          for (const [elementName, elements] of Object.entries(coll)) {
-            if (elementName.startsWith("@")) continue;
-            const arr = Array.isArray(elements) ? elements : [elements];
-            for (const el of arr) {
-              if (typeof el === "object" && el !== null) {
-                processElement(el as Record<string, unknown>, elementName);
-              }
-            }
+      // 1. ENLISTMENTS
+      if (pcb.ENLISTMENTS) {
+        const enlistments = (pcb.ENLISTMENTS as any).ENLISTMENT;
+        const arr = Array.isArray(enlistments) ? enlistments : enlistments ? [enlistments] : [];
+        for (const item of arr) {
+          const processed = processElement(item, "ENLISTMENT");
+          const caseNo = processed.attributes.pHciCaseNo;
+          if (caseNo) getPatient(caseNo).enlistment = processed;
+        }
+      }
+
+      // 2. PROFILING
+      if (pcb.PROFILING) {
+        const profiles = (pcb.PROFILING as any).PROFILE;
+        const arr = Array.isArray(profiles) ? profiles : profiles ? [profiles] : [];
+        for (const item of arr) {
+          const processed = processElement(item, "PROFILE");
+          const caseNo = processed.attributes.pHciCaseNo;
+          if (caseNo) getPatient(caseNo).profiles.push(processed);
+        }
+      }
+
+      // 3. SOAPS
+      if (pcb.SOAPS) {
+        const soaps = (pcb.SOAPS as any).SOAP;
+        const arr = Array.isArray(soaps) ? soaps : soaps ? [soaps] : [];
+        for (const item of arr) {
+          const processed = processElement(item, "SOAP");
+          const caseNo = processed.attributes.pHciCaseNo;
+          if (caseNo) getPatient(caseNo).soaps.push(processed);
+        }
+      }
+
+      // 4. DIAGNOSTICEXAMRESULTS
+      if (pcb.DIAGNOSTICEXAMRESULTS) {
+        const diagnostics = (pcb.DIAGNOSTICEXAMRESULTS as any).DIAGNOSTICEXAMRESULT;
+        const arr = Array.isArray(diagnostics) ? diagnostics : diagnostics ? [diagnostics] : [];
+        for (const item of arr) {
+          const processed = processElement(item, "DIAGNOSTICEXAMRESULT");
+          const caseNo = processed.attributes.pHciCaseNo;
+          if (caseNo) getPatient(caseNo).diagnostics.push(processed);
+        }
+      }
+
+      // 5. MEDICINES
+      if (pcb.MEDICINES) {
+        const medicines = (pcb.MEDICINES as any).MEDICINE;
+        const arr = Array.isArray(medicines) ? medicines : medicines ? [medicines] : [];
+        for (const item of arr) {
+          const processed = processElement(item, "MEDICINE");
+          const caseNo = processed.attributes.pHciCaseNo;
+          if (caseNo) {
+             getPatient(caseNo).medicines.push(processed);
+          } else {
+             // Fallback if missing pHciCaseNo
+             getPatient("UNKNOWN").medicines.push(processed);
           }
         }
       }
     }
 
-    return { status: true, data: records };
+    return { status: true, data: Object.values(groupedData) };
   } catch (error: any) {
     return { status: false, message: error?.message || "Failed to parse XML" };
+  }
+}
+
+export async function importKonsultaDataAction(clinicUid: string, records: any[], selectedItems: string[]) {
+  try {
+    const session = await getCachedSession();
+    if (!session?.user) return { status: false, message: "Unauthorized" };
+    
+    const clinic = await prisma.clinic.findUnique({ where: { clinicUid } });
+    if (!clinic) return { status: false, message: "Clinic not found" };
+
+    const selected = new Set(selectedItems);
+    
+    // Group selected items
+    const patientsToImport = records.filter(p => selected.has(`patient-${p.pHciCaseNo}`));
+
+    if (patientsToImport.length === 0) {
+       return { status: false, message: "No patients selected for import." };
+    }
+
+    // Process everything in a transaction
+    await prisma.$transaction(async (tx) => {
+      for (const patient of patientsToImport) {
+        const caseNo = patient.pHciCaseNo;
+        const pin = patient.enlistment?.attributes?.pMemPin 
+                 || patient.enlistment?.attributes?.pPatientPin 
+                 || patient.profiles?.[0]?.attributes?.pPatientPin 
+                 || patient.soaps?.[0]?.attributes?.pPatientPin 
+                 || `UNKNOWN-${caseNo}`;
+
+        const enlistmentSelected = selected.has(`enlistment-${caseNo}`);
+        
+        let clinicPatientId: number | undefined;
+
+        // 1. Try to find existing patient by PIN
+        const existingRecord = await tx.philHealthRecord.findFirst({
+          where: { pin },
+          include: { User: { include: { ClinicPatients: { where: { clinicId: clinic.id } } } } }
+        });
+
+        let userId: number;
+        if (existingRecord) {
+          userId = existingRecord.userId;
+          if (existingRecord.User.ClinicPatients.length > 0) {
+            clinicPatientId = existingRecord.User.ClinicPatients[0].id;
+          } else {
+            const cp = await tx.clinicPatient.create({ data: { clinicId: clinic.id, patientId: userId } });
+            clinicPatientId = cp.id;
+          }
+        } else {
+          // Create new user (using dummy email if needed)
+          const dummyEmail = `ph-${pin}-${Date.now()}@imported.clinicez.com`;
+          const attrs = patient.enlistment?.attributes || {};
+          
+          const newUser = await tx.user.create({
+            data: {
+              email: dummyEmail,
+              userId: `auth0|${pin}-${Date.now()}`,
+              firstName: attrs.pMemFname || "Imported",
+              lastName: attrs.pMemLname || "Patient",
+              middleName: attrs.pMemMname || "",
+              suffix: attrs.pMemExtname || "",
+              dob: attrs.pPatientDob ? new Date(attrs.pPatientDob) : undefined,
+              gender: attrs.pPatientSex === "M" ? "MALE" : (attrs.pPatientSex === "F" ? "FEMALE" : undefined),
+              mobile: attrs.pPatientMobileNo || "",
+            }
+          });
+          userId = newUser.id;
+
+          await tx.philHealthRecord.create({
+            data: {
+              userId,
+              pin,
+              memberType: attrs.pPatientType || "MM"
+            }
+          });
+
+          const cp = await tx.clinicPatient.create({ data: { clinicId: clinic.id, patientId: userId } });
+          clinicPatientId = cp.id;
+        }
+
+        // 2. Import Enlistment
+        if (enlistmentSelected && patient.enlistment) {
+          const attrs = patient.enlistment.attributes;
+          // Ensure no duplicate enlistment year for this patient
+          const year = parseInt(attrs.pEffYear || String(new Date().getFullYear()));
+          
+          const existingEnlistment = await tx.philHealthKonsultaEnlistment.findFirst({
+            where: { clinicPatientId, year }
+          });
+
+          if (!existingEnlistment) {
+            await tx.philHealthKonsultaEnlistment.create({
+              data: {
+                clinicPatientId,
+                year,
+                hciCaseNo: attrs.pHciCaseNo || "",
+                enlistmentTransNo: attrs.pHciTransNo || "",
+                profilingTransNo: "", // Extracted later if needed
+                memberPin: attrs.pMemPin || pin,
+                status: "ACTIVE"
+              }
+            });
+          }
+        }
+
+        // 3. Import SOAPs
+        const importedSoaps = new Map<string, number>(); // Map pHciTransNo to consultationTicketId
+        
+        for (let i = 0; i < patient.soaps.length; i++) {
+          if (selected.has(`soap-${caseNo}-${i}`)) {
+            const soap = patient.soaps[i];
+            const attrs = soap.attributes;
+            const transNo = attrs.pHciTransNo;
+            
+            // Avoid duplicate soap trans numbers
+            const existingSoap = await tx.consultationTicket.findFirst({ where: { soapTransNo: transNo } });
+            
+            let ticketId: number;
+            if (existingSoap) {
+              ticketId = existingSoap.id;
+            } else {
+              const ticket = await tx.consultationTicket.create({
+                data: {
+                  clinicId: clinic.id,
+                  clinicPatientId,
+                  subject: "Imported Konsulta Encounter",
+                  soapTransNo: transNo,
+                  caseNumber: attrs.pHciCaseNo,
+                  createdAt: attrs.pSoapDate ? new Date(attrs.pSoapDate) : new Date()
+                }
+              });
+              ticketId = ticket.id;
+
+              // Import ICD Codes
+              const icds = soap.children?.find((c: any) => c.type === "ICDS")?.children || [];
+              for (const icd of icds) {
+                if (icd.attributes?.pIcdCode) {
+                   await tx.consultationDiagnosis.create({
+                     data: {
+                       consultationTicketId: ticketId,
+                       hpId: 1, // Defaulting to an admin HP or dummy for imported records?
+                       icd10Code: icd.attributes.pIcdCode,
+                       description: "Imported Diagnosis",
+                       type: "PRIMARY"
+                     }
+                   });
+                }
+              }
+            }
+            importedSoaps.set(transNo, ticketId);
+          }
+        }
+
+        // 4. Import Medicines
+        for (let i = 0; i < patient.medicines.length; i++) {
+          if (selected.has(`medicine-${caseNo}-${i}`)) {
+            const med = patient.medicines[i];
+            const attrs = med.attributes;
+            const transNo = attrs.pHciTransNo;
+            const ticketId = importedSoaps.get(transNo);
+            
+            if (ticketId) {
+              await tx.medication.create({
+                data: {
+                  clinicId: clinic.id,
+                  patientId: userId,
+                  hpId: 1,
+                  consultationTicketId: ticketId,
+                  name: attrs.pDrugCode || "Imported Medicine",
+                }
+              });
+            }
+          }
+        }
+      }
+    });
+
+    return { status: true, message: `Successfully imported records into the database for ${patientsToImport.length} patients!` };
+  } catch (error: any) {
+    console.error("[importKonsultaDataAction]", error);
+    return { status: false, message: error?.message || "Failed to import data" };
   }
 }

@@ -116,12 +116,13 @@ export default function PhilHealthMemberRegistration({ clinicUid }: PhilHealthMe
         </Card>
 
         {/* Verification Result */}
+        {result && (
         <Card>
           <CardHeader>
             <CardTitle className="text-sm">Response Data</CardTitle>
           </CardHeader>
           <CardContent>
-            {result ? (() => {
+            {(() => {
               const isErrorObj = !!result?.error;
               const isYes = result === "YES" || result?.result === "YES" || result?.success === true;
               const isNo = result === "NO" || result?.result === "NO";
@@ -180,13 +181,10 @@ export default function PhilHealthMemberRegistration({ clinicUid }: PhilHealthMe
                   )}
                 </div>
               );
-            })() : (
-              <div className="h-40 flex items-center justify-center border-2 border-dashed rounded-xl text-sm text-muted-foreground bg-muted/10">
-                Run a verification to see results here
-              </div>
-            )}
+            })()}
           </CardContent>
         </Card>
+        )}
       </div>
     </div>
   );

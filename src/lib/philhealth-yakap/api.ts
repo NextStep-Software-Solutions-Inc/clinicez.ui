@@ -272,7 +272,12 @@ export class YakapApiClient {
     const client = await this.getClient();
     this.setToken(client, token);
 
-    const pReport = encryptReport(pReportXml, cipherKey);
+    let pReport = "";
+    if (pReportXml.trim().startsWith('{') && pReportXml.includes('"iv"') && pReportXml.includes('"doc"')) {
+      pReport = pReportXml; // already encrypted
+    } else {
+      pReport = encryptReport(pReportXml, cipherKey);
+    }
     const result = await new Promise<Record<string, unknown>>((resolve, reject) => {
       client.validateReport({ pReport, pReportTagging }, (err: Error | null, res: Record<string, unknown>) => {
         if (err) return reject(err);
@@ -288,7 +293,12 @@ export class YakapApiClient {
     const client = await this.getClient();
     this.setToken(client, token);
 
-    const pReport = encryptReport(pReportXml, cipherKey);
+    let pReport = "";
+    if (pReportXml.trim().startsWith('{') && pReportXml.includes('"iv"') && pReportXml.includes('"doc"')) {
+      pReport = pReportXml; // already encrypted
+    } else {
+      pReport = encryptReport(pReportXml, cipherKey);
+    }
     const result = await new Promise<Record<string, unknown>>((resolve, reject) => {
       client.submitReport({ pTransmittalID, pReport, pReportTagging }, (err: Error | null, res: Record<string, unknown>) => {
         if (err) return reject(err);

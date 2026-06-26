@@ -10,9 +10,9 @@ import type {
   SurgicalHistoryInput,
   PersonalHistoryInput,
   ObGyneHistoryInput,
-  PediatricMeasurementInput,
   ActionResponse
 } from "@/types/health-history.types";
+import type { PediatricMeasurementFormInput } from "@/schemas";
 import type { Prisma } from "@prisma/client";
 
 // Define the return type for getHealthHistoryAction based on Prisma select
@@ -33,8 +33,7 @@ type HealthHistoryResult = Prisma.UserGetPayload<{
     SurgicalHistories: true;
     PersonalHistory: true;
     ObGyneHistory: true;
-    PhysicalExaminations: true;
-    PediatricMeasurements: true;
+    VitalSigns: true;
     UserVaccinations: {
       include: {
         Vaccine: true;
@@ -67,8 +66,23 @@ export const getHealthHistoryAction = withErrorHandling(async (userId: string) =
       SurgicalHistories: { where: { deletedAt: null }, orderBy: { operationDate: 'desc' } },
       PersonalHistory: true,
       ObGyneHistory: true,
-      PhysicalExaminations: { where: { deletedAt: null }, orderBy: { createdAt: 'desc' }, take: 1 },
-      PediatricMeasurements: { where: { deletedAt: null }, orderBy: { dateTaken: 'desc' }, take: 5 },
+      VitalSigns: {
+        where: {
+          isActive: true,
+          deletedAt: null,
+          OR: [
+            { length: { not: null } },
+            { headCircumference: { not: null } },
+            { skinfoldThickness: { not: null } },
+            { waistCircumference: { not: null } },
+            { hipCircumference: { not: null } },
+            { limbCircumference: { not: null } },
+            { midUpperArmCircumference: { not: null } },
+          ],
+        },
+        orderBy: { dateTaken: 'desc' },
+        take: 5,
+      },
       UserVaccinations: {
         where: { isActive: true, deletedAt: null },
         include: {
@@ -337,7 +351,7 @@ export const upsertObGyneHistoryAction = withErrorHandling(async (
 
 export const createPediatricMeasurementAction = withErrorHandling(async (
   userId: string,
-  data: PediatricMeasurementInput
+  data: PediatricMeasurementFormInput
 ) => {
   const user = await prisma.user.findUnique({
     where: { userId, isActive: true },
@@ -346,8 +360,14 @@ export const createPediatricMeasurementAction = withErrorHandling(async (
 
   if (!user) throw new Error("User not found");
 
-  const result = await prisma.pediatricMeasurement.create({
-    data: { userId: user.id, ...data }
+  const { remarks, ...restData } = data as any;
+  const result = await prisma.vitalSign.create({
+    data: {
+      userId: user.id,
+      ...restData,
+      notes: remarks,
+      isActive: true,
+    }
   });
 
   return { status: true, message: "Pediatric measurement added successfully", data: result };
@@ -355,18 +375,22 @@ export const createPediatricMeasurementAction = withErrorHandling(async (
 
 export const updatePediatricMeasurementAction = withErrorHandling(async (
   id: number,
-  data: Partial<PediatricMeasurementInput>
+  data: Partial<PediatricMeasurementFormInput>
 ) => {
-  const result = await prisma.pediatricMeasurement.update({
+  const { remarks: dataRemarks, ...restData } = data as any;
+  const result = await prisma.vitalSign.update({
     where: { id },
-    data
+    data: {
+      ...restData,
+      ...(dataRemarks !== undefined ? { notes: dataRemarks } : {}),
+    }
   });
 
   return { status: true, message: "Pediatric measurement updated successfully", data: result };
 });
 
 export const deletePediatricMeasurementAction = withErrorHandling(async (id: number) => {
-  await prisma.pediatricMeasurement.update({
+  await prisma.vitalSign.update({
     where: { id },
     data: { deletedAt: new Date() }
   });

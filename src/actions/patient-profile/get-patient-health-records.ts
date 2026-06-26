@@ -64,7 +64,7 @@ export async function getPatientHealthRecords(): Promise<SerializedPatientHealth
     }
 
     // Fetch related data in separate queries
-    const [medical, familyMedical, vitals, exams, obGyne, pediatric, personal, philHealth, procedures, clinicPatients, allergies, emergencyContacts, vaccinations, disabilities, addresses, surgical] = await Promise.all([
+    const [medical, familyMedical, vitals, obGyne, pediatric, personal, philHealth, procedures, clinicPatients, allergies, emergencyContacts, vaccinations, disabilities, addresses, surgical] = await Promise.all([
       // Medical Histories
       prisma.medicalHistory.findMany({
         where: { userId: patient.id },
@@ -93,19 +93,27 @@ export async function getPatientHealthRecords(): Promise<SerializedPatientHealth
         orderBy: { dateTaken: 'desc' },
         take: 5,
       }),
-      // Physical Examinations
-      prisma.physicalExamination.findMany({
-        where: { userId: patient.id },
-        orderBy: { createdAt: 'desc' },
-        take: 10,
-      }),
+
       // OB/Gyn History
       prisma.obGyneHistory.findFirst({
         where: { userId: patient.id },
       }),
       // Pediatric Measurements
-      prisma.pediatricMeasurement.findMany({
-        where: { userId: patient.id },
+      prisma.vitalSign.findMany({
+        where: {
+          userId: patient.id,
+          isActive: true,
+          deletedAt: null,
+          OR: [
+            { length: { not: null } },
+            { headCircumference: { not: null } },
+            { skinfoldThickness: { not: null } },
+            { waistCircumference: { not: null } },
+            { hipCircumference: { not: null } },
+            { limbCircumference: { not: null } },
+            { midUpperArmCircumference: { not: null } },
+          ],
+        },
         orderBy: { dateTaken: 'asc' },
         take: 100,
       }),
@@ -340,13 +348,7 @@ export async function getPatientHealthRecords(): Promise<SerializedPatientHealth
         deletedAt: vitals[0].deletedAt ? vitals[0].deletedAt.toISOString() : null,
       } : null,
 
-      // Physical Examinations
-      physicalExaminations: exams.map(e => ({
-        ...e,
-        createdAt: e.createdAt.toISOString(),
-        updatedAt: e.updatedAt.toISOString(),
-        deletedAt: e.deletedAt ? e.deletedAt.toISOString() : null,
-      })),
+
 
       // OB/Gyn History
       obGyneHistory: obGyne ? {
@@ -368,7 +370,7 @@ export async function getPatientHealthRecords(): Promise<SerializedPatientHealth
         hipCircumference: p.hipCircumference ? Number(p.hipCircumference) : null,
         limbCircumference: p.limbCircumference ? Number(p.limbCircumference) : null,
         midUpperArmCircumference: p.midUpperArmCircumference ? Number(p.midUpperArmCircumference) : null,
-        remarks: p.remarks,
+        notes: p.notes,
         createdAt: p.createdAt.toISOString(),
         updatedAt: p.updatedAt.toISOString(),
         deletedAt: p.deletedAt ? p.deletedAt.toISOString() : null,

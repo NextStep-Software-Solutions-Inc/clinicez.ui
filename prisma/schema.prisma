@@ -115,13 +115,13 @@ model User {
   OnboardingStepLogs               OnboardingStepLog[]
   AcceptedOrganizationApplications OrganizationMember[]             @relation("AcceptedBy")
   OrganizationMembers              OrganizationMember[]             @relation("User")
-  PediatricMeasurements            PediatricMeasurement[]
+
   PersonalHistory                  PersonalHistory?
   PhilHealthRecordsCreated         PhilHealthRecord[]               @relation("PhilHealthRecordsCreatedBy")
   PhilHealthRecordsDeleted         PhilHealthRecord[]               @relation("PhilHealthRecordsDeletedBy")
   PhilHealthRecordsUpdated         PhilHealthRecord[]               @relation("PhilHealthRecordsUpdatedBy")
   PhilHealthRecords                PhilHealthRecord[]
-  PhysicalExaminations             PhysicalExamination[]
+
   PreAssessmentNotes               PreAssessmentNote[]
   PrescriptionsCreated             Prescription[]                   @relation("PrescriptionCreatedBy")
   PrescriptionsUpdated             Prescription[]                   @relation("PrescriptionUpdatedBy")
@@ -200,6 +200,8 @@ model PhilHealthKonsultaEnlistment {
   memberPin         String?       // Snapshot of the member PIN used at enlistment
   dependentPin      String?       // Snapshot of the dependent PIN (if applicable)
   status            String        @default("ACTIVE") // ACTIVE, CANCELLED, TRANSFERRED
+  atcCode           String?       // ATC code for profiling; auto-set to "WALKEDIN" when isWalkedIn
+  isWalkedIn        Boolean       @default(false)
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
 
@@ -254,6 +256,7 @@ model ClinicPatient {
   ConsultationTickets      ConsultationTicket[]
   PhilHealthKonsultaEnlistments PhilHealthKonsultaEnlistment[]
   KonsultaBatchPatients         KonsultaBatchPatient[]
+  KonsultaDiagnosticResults     KonsultaDiagnosticResult[]
 
   @@unique([clinicId, patientId], name: "unique_clinic_patient")
 }
@@ -945,6 +948,8 @@ model UserAllergy {
 model HealthCondition {
   id                     Int                    @id @default(autoincrement())
   name                   String                 @unique
+  code                   String?                @unique
+  libraryStatus          Int                    @default(1)
   createdAt              DateTime               @default(now())
   updatedAt              DateTime               @updatedAt
   deletedAt              DateTime?
@@ -1001,25 +1006,36 @@ model UserDisability {
 }
 
 model VitalSign {
-  id                   Int                   @id @default(autoincrement())
-  userId               Int
-  dateTaken            DateTime
-  height               Float?
-  weight               Float?
-  bmi                  Float?
-  bpSystolic           Int?
-  bpDiastolic          Int?
-  pulseRate            Int?
-  temp                 Float?
-  spo2                 Float?
-  respRate             Int?
-  notes                String?
-  createdAt            DateTime              @default(now())
-  updatedAt            DateTime              @updatedAt
-  deletedAt            DateTime?
-  isActive             Boolean               @default(true)
-  PhysicalExaminations PhysicalExamination[]
-  User                 User                  @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  id                       Int       @id @default(autoincrement())
+  userId                   Int
+  dateTaken                DateTime
+  height                   Float?
+  weight                   Float?
+  bmi                      Float?
+  bpSystolic               Int?
+  bpDiastolic              Int?
+  pulseRate                Int?
+  temp                     Float?
+  spo2                     Float?
+  respRate                 Int?
+  notes                    String?
+  // Vision (consolidated from PhysicalExamination)
+  visualAcuityLeft         String?
+  visualAcuityRight        String?
+  // Anthropometrics (consolidated from PediatricMeasurement)
+  length                   Decimal?  @db.Decimal(5, 2)
+  headCircumference        Decimal?  @db.Decimal(5, 2)
+  skinfoldThickness        Decimal?  @db.Decimal(5, 2)
+  waistCircumference       Decimal?  @db.Decimal(5, 2)
+  hipCircumference         Decimal?  @db.Decimal(5, 2)
+  limbCircumference        Decimal?  @db.Decimal(5, 2)
+  midUpperArmCircumference Decimal?  @db.Decimal(5, 2)
+  zScore                   Float?
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
+  deletedAt                DateTime?
+  isActive                 Boolean   @default(true)
+  User                     User      @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model OrganizationDepartment {
@@ -1301,6 +1317,7 @@ model Clinic {
   UserClinicAppointmentWhitelists UserClinicAppointmentWhitelist[]
   UserDefaultClinicRoles          UserDefaultClinicRole[]
   KonsultaBatchReports            KonsultaBatchReport[]
+  KonsultaDiagnosticResults       KonsultaDiagnosticResult[]
 
   @@index([tenantId, clinicUid], map: "clinic_index")
 }
@@ -1653,6 +1670,12 @@ model ConsultationTicket {
   ekasTransactionNumber       String?                      @unique
   caseNumber                  String?                      @unique
   soapTransNo                 String?                      @unique
+  isPhilHealthKonsulta        Boolean                      @default(false)
+  konsultaAtcCode             String?
+  konsultaIsWalkedIn          Boolean?
+  konsultaCoPay               Decimal?                     @db.Decimal(10, 2)
+  ConsultationManagements     ConsultationManagement[]
+  konsultaAdvice              Json?                        // {advice, followUpDate, referredTo, reasonForReferral, referredToOther}
   HeartStationRequests        ClinicHeartStationRequest[]
   ImagingRequests             ClinicImagingRequest[]
   LaboratoryRequests          ClinicLaboratoryRequest[]
@@ -1669,6 +1692,7 @@ model ConsultationTicket {
   Interventions               Intervention[]
   Medications                 Medication[]
   Prescriptions               Prescription[]
+  KonsultaDiagnosticResults   KonsultaDiagnosticResult[]
 
   @@index([caseNumber])
   @@index([ekasTransactionNumber])
@@ -1733,6 +1757,7 @@ model ConsultationNote {
   hpId                 Int
   content              String
   showOnPatient        Boolean            @default(false)
+  structuredData       Json?
   createdAt            DateTime           @default(now())
   updatedAt            DateTime           @updatedAt
   ConsultationTicket   ConsultationTicket @relation(fields: [consultationTicketId], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -1849,6 +1874,7 @@ model Medicine {
   Prescription   Prescription? @relation(fields: [prescriptionId], references: [id])
   UpdatedBy      User?         @relation("MedicineUpdatedBy", fields: [updatedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
   MedicineDispenseRecord MedicineDispenseRecord?
+  PhilHealthData MedicinePhilHealthData?
 
   @@index([prescriptionId], map: "medicine_prescription_index")
 }
@@ -2395,42 +2421,6 @@ model ObGyneHistory {
   User                        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-model PhysicalExamination {
-  id                Int        @id @default(autoincrement())
-  userId            Int
-  vitalSignId       Int?
-  visualAcuityLeft  String?
-  visualAcuityRight String?
-  status            String?
-  createdAt         DateTime   @default(now())
-  updatedAt         DateTime   @updatedAt
-  deletedAt         DateTime?
-  User              User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  VitalSign         VitalSign? @relation(fields: [vitalSignId], references: [id])
-
-  @@index([userId])
-  @@index([vitalSignId])
-}
-
-model PediatricMeasurement {
-  id                       Int       @id @default(autoincrement())
-  userId                   Int
-  dateTaken                DateTime  @db.Date
-  length                   Decimal?  @db.Decimal(5, 2)
-  headCircumference        Decimal?  @db.Decimal(5, 2)
-  skinfoldThickness        Decimal?  @db.Decimal(5, 2)
-  waistCircumference       Decimal?  @db.Decimal(5, 2)
-  hipCircumference         Decimal?  @db.Decimal(5, 2)
-  limbCircumference        Decimal?  @db.Decimal(5, 2)
-  midUpperArmCircumference Decimal?  @db.Decimal(5, 2)
-  remarks                  String?
-  createdAt                DateTime  @default(now())
-  updatedAt                DateTime  @updatedAt
-  deletedAt                DateTime?
-  User                     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId, dateTaken])
-}
 
 model AppointmentTag {
   id                   Int                @id @default(autoincrement())
@@ -2970,4 +2960,84 @@ model KonsultaBatchPatient {
   ClinicPatient        ClinicPatient         @relation(fields: [clinicPatientId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@unique([batchId, clinicPatientId])
+}
+
+/// PhilHealth Konsulta coded medicine data (1:1 extension of Medicine)
+model MedicinePhilHealthData {
+  id                     String    @id @default(uuid())
+  medicineId             Int       @unique
+  category               String?   // e.g., "E" essential, "NE" non-essential
+  drugCode               String?   // PhilHealth Drug Library code or NOMED...
+  genericCode            String?
+  saltCode               String?
+  strengthCode           String?
+  formCode               String?
+  unitCode               String?
+  packageCode            String?
+  otherMedicine          String?   // Generic name when drugCode is NOMED
+  othMedDrugGrouping     String?
+  route                  String?
+  actualUnitPrice        Decimal?  @db.Decimal(10, 2)
+  totalAmtPrice          Decimal?  @db.Decimal(10, 2)
+  instructionQuantity    String?
+  instructionStrength    String?
+  instructionFrequency   String?
+  isApplicable           String?   @default("Y")
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+
+  Medicine               Medicine  @relation(fields: [medicineId], references: [id], onDelete: Cascade)
+}
+
+/// PhilHealth Konsulta diagnostic exam result — linked to either a Profile (P-prefix) or SOAP (S-prefix)
+model KonsultaDiagnosticResult {
+  id                     String             @id @default(uuid())
+  consultationTicketId   Int?               // NULL for profiling results (Tagging 1)
+  clinicPatientId        Int
+  clinicId               Int
+  hciCaseNo              String             // T-prefix case number (FK to Enlistment)
+  hciTransNo             String             // P-prefix (profiling) or S-prefix (consultation)
+  resultType             String             // "FBS", "CBC", "URINALYSIS", "CHESTXRAY", "ECG", etc.
+  resultData             Json               // Structured result values per type
+  transDate              String?
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+
+  ConsultationTicket     ConsultationTicket? @relation(fields: [consultationTicketId], references: [id], onDelete: Cascade)
+  ClinicPatient          ClinicPatient       @relation(fields: [clinicPatientId], references: [id], onDelete: Cascade)
+  Clinic                 Clinic              @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+
+  @@index([hciCaseNo])
+  @@index([consultationTicketId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PhilHealth Konsulta Management
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Reference table: official PhilHealth management codes.
+/// Seeded with: 0=Not applicable, 1=Breastfeeding, 2=Smoking Cessation,
+/// 3=Lifestyle Modification, 4=Oral Check-up, X=Others
+model KonsultaManagementCode {
+  id          String   @id @default(uuid())
+  code        String   @unique  // PhilHealth code value: "0","1","2","3","4","X"
+  description String
+  sortOrder   Int      @default(0)
+
+  ConsultationManagements ConsultationManagement[]
+}
+
+/// Per-consultation management entries (many per ticket).
+model ConsultationManagement {
+  id                     String                  @id @default(uuid())
+  consultationTicketId   Int
+  managementCodeId       String                  // FK → KonsultaManagementCode.id
+  remarks                String?                 @db.Text
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+
+  ConsultationTicket     ConsultationTicket      @relation(fields: [consultationTicketId], references: [id], onDelete: Cascade)
+  ManagementCode         KonsultaManagementCode  @relation(fields: [managementCodeId], references: [id])
+
+  @@index([consultationTicketId])
 }

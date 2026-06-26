@@ -28,18 +28,17 @@ type HealthHistoryData = Prisma.UserGetPayload<{
     SurgicalHistories: true;
     PersonalHistory: true;
     ObGyneHistory: true;
-    PhysicalExaminations: true;
-    PediatricMeasurements: true;
+    VitalSigns: true;
   }
 }> & {
-  PediatricMeasurements: Array<{
+  VitalSigns: Array<{
     id: number;
     userId: number;
     createdAt: Date;
     updatedAt: Date;
     deletedAt: Date | null;
     dateTaken: Date;
-    remarks: string | null;
+    notes: string | null;
     length: number | null;
     headCircumference: number | null;
     skinfoldThickness: number | null;

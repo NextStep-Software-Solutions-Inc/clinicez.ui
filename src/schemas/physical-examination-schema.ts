@@ -1,7 +1,8 @@
 import { z } from "zod"
 
 /**
- * Physical Examination Schema
+ * Visual Acuity Schema
+ * Validates visual acuity fields on VitalSign
  */
 
 export const physicalExaminationSchema = z.object({
@@ -14,12 +15,6 @@ export const physicalExaminationSchema = z.object({
   visualAcuityRight: z
     .string()
     .regex(/^\d+\/\d+$/, "Vision must be in format like 20/20 or 6/6")
-    .optional()
-    .nullable(),
-
-  status: z
-    .string()
-    .max(200, "Status must be less than 200 characters")
     .optional()
     .nullable(),
 })

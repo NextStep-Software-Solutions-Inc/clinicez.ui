@@ -159,6 +159,10 @@ export default function NewConsultationDialog({
           isArchived: false,
           caseNumber: null,
           soapTransNo: null,
+          isPhilHealthKonsulta: false,
+          konsultaAtcCode: null,
+          konsultaIsWalkedIn: false,
+          konsultaCoPay: null,
           ConsultationTicketAttribute: { status: "PROCESSING", droppedAt: null, dropReason: null },
           ConsultationTicketHPs: hp
             ? [

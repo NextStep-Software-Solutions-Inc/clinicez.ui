@@ -15,13 +15,6 @@ import {
   FormMessage,
 } from "@components/ui/form";
 import { Input } from "@components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@components/ui/card";
 import { Separator } from "@components/ui/separator";
 import { toast } from "sonner";
@@ -35,7 +28,6 @@ import {
 const physicalExaminationSchema = z.object({
   visualAcuityLeft: z.string().optional(),
   visualAcuityRight: z.string().optional(),
-  status: z.string().optional(),
 });
 
 type PhysicalExaminationFormValues = z.infer<typeof physicalExaminationSchema>;
@@ -55,7 +47,6 @@ export default function PhysicalExaminationClient({
     defaultValues: {
       visualAcuityLeft: "",
       visualAcuityRight: "",
-      status: "",
     },
   });
 
@@ -73,7 +64,6 @@ export default function PhysicalExaminationClient({
         form.reset({
           visualAcuityLeft: result.data.visualAcuityLeft || "",
           visualAcuityRight: result.data.visualAcuityRight || "",
-          status: result.data.status || "",
         });
       }
     } catch (error) {
@@ -174,46 +164,6 @@ export default function PhysicalExaminationClient({
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Physical Status</CardTitle>
-              <CardDescription>
-                Overall physical examination status
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Physical Status</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select physical status" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="Physically Fit">Physically Fit</SelectItem>
-                        <SelectItem value="Underweight">Underweight</SelectItem>
-                        <SelectItem value="Normal Weight">Normal Weight</SelectItem>
-                        <SelectItem value="Overweight">Overweight</SelectItem>
-                        <SelectItem value="Obese">Obese</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormDescription>
-                      Overall physical examination assessment
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </CardContent>
-          </Card>
 
           <Button type="submit" disabled={saving}>
             {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

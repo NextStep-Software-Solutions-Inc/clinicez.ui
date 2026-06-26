@@ -113,42 +113,12 @@ export interface ObGyneHistoryRecord extends ObGyneHistoryInput {
   deletedAt: Date | null;
 }
 
-// Physical Examination Types (UPDATED - bloodType and pediatric fields removed)
-export interface PhysicalExaminationInput {
-  vitalSignId?: number | null;
-  visualAcuityLeft?: string | null;
-  visualAcuityRight?: string | null;
-  status?: string | null; // "Physically Fit", "Underweight", "Overweight", "Obese"
-}
 
-export interface PhysicalExaminationRecord extends PhysicalExaminationInput {
-  id: number;
-  userId: number;
-  createdAt: Date;
-  updatedAt: Date;
-  deletedAt: Date | null;
-}
-
-// Pediatric Measurement Types (NEW MODEL - separated from PhysicalExamination)
-export interface PediatricMeasurementInput {
-  dateTaken: Date;
-  length?: number | null; // cm - Decimal in DB
-  headCircumference?: number | null; // cm
-  skinfoldThickness?: number | null; // mm
-  waistCircumference?: number | null; // cm
-  hipCircumference?: number | null; // cm
-  limbCircumference?: number | null; // cm
-  midUpperArmCircumference?: number | null; // cm
-  remarks?: string | null;
-}
-
-export interface PediatricMeasurementRecord extends PediatricMeasurementInput {
-  id: number;
-  userId: number;
-  createdAt: Date;
-  updatedAt: Date;
-  deletedAt: Date | null;
-}
+// Pediatric Measurement Types - REMOVED
+// PediatricMeasurement model removed from Prisma schema.
+// Fields (length, headCircumference, skinfoldThickness, waistCircumference,
+// hipCircumference, limbCircumference, midUpperArmCircumference, notes)
+// are now consolidated into the VitalSign model.
 
 // NCD Risk Assessment Types - COMPUTED (not stored in database)
 // Model removed from schema - should be calculated on-demand from source data
@@ -187,8 +157,7 @@ export interface HealthHistoryData {
   SurgicalHistories: SurgicalHistoryRecord[];
   PersonalHistory: PersonalHistoryRecord | null;
   ObGyneHistory: ObGyneHistoryRecord | null;
-  PhysicalExaminations: PhysicalExaminationRecord[];
-  PediatricMeasurements: PediatricMeasurementRecord[]; // NEW
+  // PediatricMeasurements removed - pediatric fields now consolidated into VitalSign
   // ImmunizationRecord removed - use UserVaccination queries instead
   // NCDRiskAssessment removed - compute on-demand using NCDRiskAssessmentComputed
 }

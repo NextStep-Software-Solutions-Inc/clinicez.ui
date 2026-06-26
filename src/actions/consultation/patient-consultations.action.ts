@@ -38,6 +38,10 @@ export const getPatientConsultationsAction = withErrorHandling(
         isArchived: true,
         caseNumber: true,
         soapTransNo: true,
+        isPhilHealthKonsulta: true,
+        konsultaAtcCode: true,
+        konsultaIsWalkedIn: true,
+        konsultaCoPay: true,
         ConsultationTicketAttribute: {
           select: { status: true, dropReason: true, droppedAt: true },
         },
@@ -128,6 +132,10 @@ export const getPatientConsultationDetailAction = withErrorHandling(
         isArchived: true,
         caseNumber: true,
         soapTransNo: true,
+        isPhilHealthKonsulta: true,
+        konsultaAtcCode: true,
+        konsultaIsWalkedIn: true,
+        konsultaCoPay: true,
         ConsultationTicketAttribute: {
           select: {
             status: true,
@@ -158,7 +166,7 @@ export const getPatientConsultationDetailAction = withErrorHandling(
           },
         },
         ConsultationNotes: {
-          select: { id: true, section: true, content: true, hpId: true, showOnPatient: true },
+          select: { id: true, section: true, content: true, hpId: true, showOnPatient: true, structuredData: true },
         },
         ConsultationDiagnoses: {
           orderBy: [{ type: "asc" }, { createdAt: "asc" }],
@@ -473,6 +481,10 @@ export const getClinicConsultationQueueAction = withErrorHandling(
           subject: true,
           caseNumber: true,
           soapTransNo: true,
+          isPhilHealthKonsulta: true,
+          konsultaAtcCode: true,
+          konsultaIsWalkedIn: true,
+          konsultaCoPay: true,
           createdAt: true,
           updatedAt: true,
           isArchived: true,

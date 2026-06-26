@@ -27,6 +27,10 @@ const sidebarNavItems = [
     href: "/super-admin/diagnostics-procedures",
   },
   {
+    title: "Health Conditions",
+    href: "/super-admin/health-conditions",
+  },
+  {
     title: "Location Management",
     href: "/super-admin/locations",
   },

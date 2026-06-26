@@ -207,20 +207,23 @@ export async function getPatientVitalsData(userId?: string): Promise<VitalsTabDa
     }
 }
 
-/** Fetches physical examination records for the Exams tab. */
+/** Fetches visual acuity data from VitalSign records for the Exams tab. */
 export async function getPatientExamsData(userId?: string): Promise<ExamsTabData | null> {
     try {
         const patientId = await resolvePatientId(userId)
         if (!patientId) return null
 
-        const exams = await prisma.physicalExamination.findMany({
-            where: { userId: patientId },
+        const vitals = await prisma.vitalSign.findMany({
+            where: { userId: patientId, isActive: true, deletedAt: null },
             orderBy: { createdAt: 'desc' },
             take: 20,
         })
 
         return {
-            physicalExaminations: exams.map(e => serializeDateFields(e)),
+            vitalSigns: vitals.map(v => ({
+                ...serializeDateFields(v),
+                dateTaken: v.dateTaken.toISOString(),
+            })),
         }
     } catch (error) {
         console.error('[GET_PATIENT_EXAMS_DATA]', error)
@@ -264,8 +267,21 @@ export async function getPatientPediatricData(userId?: string): Promise<Pediatri
         })
         if (!patient) return null
 
-        const measurements = await prisma.pediatricMeasurement.findMany({
-            where: { userId: patient.id },
+        const measurements = await prisma.vitalSign.findMany({
+            where: {
+                userId: patient.id,
+                isActive: true,
+                deletedAt: null,
+                OR: [
+                    { length: { not: null } },
+                    { headCircumference: { not: null } },
+                    { skinfoldThickness: { not: null } },
+                    { waistCircumference: { not: null } },
+                    { hipCircumference: { not: null } },
+                    { limbCircumference: { not: null } },
+                    { midUpperArmCircumference: { not: null } },
+                ],
+            },
             orderBy: { dateTaken: 'asc' },
             take: 100,
         })
@@ -284,7 +300,7 @@ export async function getPatientPediatricData(userId?: string): Promise<Pediatri
                 hipCircumference: m.hipCircumference !== null ? Number(m.hipCircumference) : null,
                 limbCircumference: m.limbCircumference !== null ? Number(m.limbCircumference) : null,
                 midUpperArmCircumference: m.midUpperArmCircumference !== null ? Number(m.midUpperArmCircumference) : null,
-                remarks: m.remarks,
+                notes: m.notes,
                 createdAt: m.createdAt.toISOString(),
                 updatedAt: m.updatedAt.toISOString(),
                 deletedAt: m.deletedAt?.toISOString() ?? null,

@@ -29,7 +29,6 @@ import {
   mapPatientDataToDemographicsFormInput,
   mapVitalSignToFormInput,
   mapPediatricMeasurementToFormInput,
-  mapPhysicalExaminationToFormInput,
   convertVitalSignsToDateObjects,
   convertPediatricMeasurementsToDateObjects,
 } from '@/lib/mappers/health-records-mappers'
@@ -38,7 +37,6 @@ import type {
   VitalSignFormInput,
   PersonalHistoryFormInput,
   PediatricMeasurementFormInput,
-  PhysicalExaminationFormInput,
   AllergyFormInput,
   EmergencyContactFormInput,
   AddressFormInput,
@@ -341,10 +339,6 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
     [patientData],
   )
 
-  const physicalExaminationData = useMemo(
-    () => mapPhysicalExaminationToFormInput(patientData?.physicalExaminations),
-    [patientData],
-  )
 
   // Memoize PhilHealth currentData to prevent unnecessary re-renders and useEffect re-triggers in child component
   const philHealthCurrentData = useMemo(
@@ -823,7 +817,6 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
                   <PhysicalExaminationEditForm
                     userId={patientData.userId}
                     inline={true}
-                    currentData={physicalExaminationData}
                     onSuccess={handleSuccess}
                     saveRef={examinationSaveRef}
                     onDirtyChange={(d) => onSectionDirtyChange('examination', d)}

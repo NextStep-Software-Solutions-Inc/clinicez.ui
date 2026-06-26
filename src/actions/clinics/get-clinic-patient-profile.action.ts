@@ -98,7 +98,6 @@ export async function getClinicPatientProfileAction({
             medical,
             familyMedical,
             vitals,
-            exams,
             obGyne,
             pediatric,
             personal,
@@ -128,16 +127,25 @@ export async function getClinicPatientProfileAction({
                 orderBy: { dateTaken: "desc" },
                 take: 5,
             }),
-            prisma.physicalExamination.findMany({
-                where: { userId: patient.id },
-                orderBy: { createdAt: "desc" },
-                take: 10,
-            }),
+
             prisma.obGyneHistory.findFirst({
                 where: { userId: patient.id },
             }),
-            prisma.pediatricMeasurement.findMany({
-                where: { userId: patient.id },
+            prisma.vitalSign.findMany({
+                where: {
+                    userId: patient.id,
+                    isActive: true,
+                    deletedAt: null,
+                    OR: [
+                        { length: { not: null } },
+                        { headCircumference: { not: null } },
+                        { skinfoldThickness: { not: null } },
+                        { waistCircumference: { not: null } },
+                        { hipCircumference: { not: null } },
+                        { limbCircumference: { not: null } },
+                        { midUpperArmCircumference: { not: null } },
+                    ],
+                },
                 orderBy: { dateTaken: "asc" },
                 take: 100,
             }),
@@ -322,13 +330,7 @@ export async function getClinicPatientProfileAction({
                 }
                 : null,
 
-            // Physical Examinations
-            physicalExaminations: exams.map((e) => ({
-                ...e,
-                createdAt: e.createdAt.toISOString(),
-                updatedAt: e.updatedAt.toISOString(),
-                deletedAt: e.deletedAt ? e.deletedAt.toISOString() : null,
-            })),
+
 
             // OB/Gyn History
             obGyneHistory: obGyne
@@ -354,7 +356,7 @@ export async function getClinicPatientProfileAction({
                 midUpperArmCircumference: p.midUpperArmCircumference
                     ? Number(p.midUpperArmCircumference)
                     : null,
-                remarks: p.remarks,
+                notes: p.notes,
                 createdAt: p.createdAt.toISOString(),
                 updatedAt: p.updatedAt.toISOString(),
                 deletedAt: p.deletedAt ? p.deletedAt.toISOString() : null,

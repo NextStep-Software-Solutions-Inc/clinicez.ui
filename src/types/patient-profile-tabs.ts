@@ -13,7 +13,6 @@ import type {
 } from '@prisma/client'
 import type {
     MedicalHistoryData,
-    PhysicalExaminationData,
     CertificateData,
     ReferralData,
 } from '@/types/patient-profile'
@@ -60,7 +59,6 @@ export interface PatientBadgeCounts {
     medicalHistoriesCount: number
     familyMedicalHistoriesCount: number
     vitalSignsCount: number
-    physicalExaminationsCount: number
     hasPersonalHistory: boolean
     hasObGyneHistory: boolean
     pediatricMeasurementsCount: number
@@ -142,7 +140,7 @@ export interface VitalsTabData {
 }
 
 export interface ExamsTabData {
-    physicalExaminations: PhysicalExaminationData[]
+    vitalSigns: SerializedVitalSign[]
 }
 
 export interface ObGynTabData {
@@ -164,7 +162,7 @@ export interface PediatricTabData {
         hipCircumference: number | null
         limbCircumference: number | null
         midUpperArmCircumference: number | null
-        remarks: string | null
+        notes: string | null
         createdAt: string
         updatedAt: string
         deletedAt: string | null

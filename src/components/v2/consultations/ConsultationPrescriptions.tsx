@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { Fragment, useState, useTransition } from "react";
 import { Plus, Pill, Trash2, ChevronDown, ChevronUp, FileDown, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +22,7 @@ import {
 import type { GetPatientConsultationDetail } from "@/actions/consultation/patient-consultations.action";
 import type { GetHPsType } from "@/actions/hp.actions";
 import DownloadPrescriptionAction from "@/components/clinic/clinical-records/prescription/DownloadPrescriptionAction";
+import MedicinePhilHealthFields from "./MedicinePhilHealthFields";
 
 type Detail = NonNullable<GetPatientConsultationDetail["data"]>;
 type Prescription = NonNullable<Detail["Prescriptions"]>[number];
@@ -378,6 +379,7 @@ export default function ConsultationPrescriptions({
               onDeleteMedicine={handleDeleteMedicine}
               onReplace={isResolved ? undefined : () => openReplaceForm(rx.id)}
               isResolved={isResolved}
+              isKonsulta={consultation.isPhilHealthKonsulta ?? false}
             />
           ))}
         </div>
@@ -411,6 +413,7 @@ function PrescriptionCard({
   onDeleteMedicine,
   onReplace,
   isResolved = false,
+  isKonsulta = false,
 }: {
   rx: Prescription;
   expanded: boolean;
@@ -418,6 +421,7 @@ function PrescriptionCard({
   onDeleteMedicine: (id: number) => void;
   onReplace?: () => void;
   isResolved?: boolean;
+  isKonsulta?: boolean;
 }) {
   const hpName = rx.HealthcareProvider?.HPProfile?.name
     ? `${rx.HealthcareProvider.HPProfile.title ?? ""} ${rx.HealthcareProvider.HPProfile.name}`.trim()
@@ -477,28 +481,33 @@ function PrescriptionCard({
           )}
           <div className="space-y-1">
             {rx.Medicines?.map((med) => (
-              <div
-                key={med.id}
-                className="flex items-start justify-between gap-2 rounded-md bg-muted/30 px-3 py-2 text-xs"
-              >
-                <div className="min-w-0">
-                  <p className="font-medium text-foreground">{med.name}</p>
-                   <p className="text-muted-foreground">
-                    {formatMedicineDetails(med)}
-                  </p>
-                  {med.notes && <p className="text-muted-foreground/70 italic">{med.notes}</p>}
+              <Fragment key={med.id}>
+                <div className="flex items-start justify-between gap-2 rounded-md bg-muted/30 px-3 py-2 text-xs">
+                  <div className="min-w-0">
+                    <p className="font-medium text-foreground">{med.name}</p>
+                    <p className="text-muted-foreground">
+                      {formatMedicineDetails(med)}
+                    </p>
+                    {med.notes && <p className="text-muted-foreground/70 italic">{med.notes}</p>}
+                  </div>
+                  {!isResolved && (
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-6 w-6 text-destructive/60 hover:text-destructive shrink-0"
+                      onClick={() => onDeleteMedicine(med.id)}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  )}
                 </div>
-                {!isResolved && (
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-6 w-6 text-destructive/60 hover:text-destructive shrink-0"
-                    onClick={() => onDeleteMedicine(med.id)}
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
+                {isKonsulta && (
+                  <MedicinePhilHealthFields
+                    medicineId={med.id}
+                    disabled={isResolved}
+                  />
                 )}
-              </div>
+              </Fragment>
             ))}
           </div>
         </div>

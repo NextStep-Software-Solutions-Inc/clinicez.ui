@@ -39,8 +39,7 @@ export async function getPatientBaseData(): Promise<PatientBaseData | null> {
                         MedicalHistories: true,
                         FamilyMedicalHistories: true,
                         VitalSigns: { where: { isActive: true, deletedAt: null } },
-                        PhysicalExaminations: true,
-                        PediatricMeasurements: true,
+
                         UserVaccinations: { where: { isActive: true, deletedAt: null } },
                         UserAddresses: { where: { isActive: true } },
                         UserEmergencyContacts: { where: { isActive: true } },
@@ -79,6 +78,23 @@ export async function getPatientBaseData(): Promise<PatientBaseData | null> {
 
         if (!patient) return null
 
+        const pediatricCount = await prisma.vitalSign.count({
+            where: {
+                userId: patient.id,
+                isActive: true,
+                deletedAt: null,
+                OR: [
+                    { length: { not: null } },
+                    { headCircumference: { not: null } },
+                    { skinfoldThickness: { not: null } },
+                    { waistCircumference: { not: null } },
+                    { hipCircumference: { not: null } },
+                    { limbCircumference: { not: null } },
+                    { midUpperArmCircumference: { not: null } },
+                ],
+            },
+        })
+
         const clinicPatient = patient.ClinicPatients[0] ?? null
         const certCount = clinicPatient?._count.MedicalCertificates ?? 0
         const referralCount = clinicPatient?._count.ClinicReferralSlips ?? 0
@@ -111,10 +127,9 @@ export async function getPatientBaseData(): Promise<PatientBaseData | null> {
                 medicalHistoriesCount: patient._count.MedicalHistories,
                 familyMedicalHistoriesCount: patient._count.FamilyMedicalHistories,
                 vitalSignsCount: patient._count.VitalSigns,
-                physicalExaminationsCount: patient._count.PhysicalExaminations,
                 hasPersonalHistory: patient.PersonalHistory !== null,
                 hasObGyneHistory: patient.ObGyneHistory !== null,
-                pediatricMeasurementsCount: patient._count.PediatricMeasurements,
+                pediatricMeasurementsCount: pediatricCount,
                 userVaccinationsCount: patient._count.UserVaccinations,
                 userAddressesCount: patient._count.UserAddresses,
                 userEmergencyContactsCount: patient._count.UserEmergencyContacts,

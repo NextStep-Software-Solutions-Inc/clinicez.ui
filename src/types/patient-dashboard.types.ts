@@ -7,7 +7,7 @@
  * @generated from prisma/schema.prisma models:
  * - Appointment, AppointmentAttribute, HealthcareProvider
  * - Prescription, Medicine
- * - PhysicalExamination, PediatricMeasurement
+ * - PediatricMeasurement
  * - ConsultationNote, ConsultationTicket
  * - User, Clinic
  */
@@ -136,13 +136,12 @@ export interface HealthMetric {
 }
 
 /**
- * Physical examination with vitals
- * From PhysicalExamination model
+ * Health metrics with vitals
+ * Derived from VitalSign model
  */
 export interface HealthMetricsData {
     metrics: HealthMetric[];
     lastUpdated: Date;
-    examId?: number; // From PhysicalExamination.id
 }
 
 // ============================================================================

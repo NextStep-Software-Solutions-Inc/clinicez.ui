@@ -2,9 +2,8 @@ import type {
   MedicalHistory,
   FamilyMedicalHistory,
   VitalSign,
-  PhysicalExamination,
   ObGyneHistory,
-  PediatricMeasurement,
+
   PersonalHistory,
   PhilHealthRecord,
   PhilHealthDependent,
@@ -24,11 +23,7 @@ export interface MedicalHistoryData {
   details: string | null
 }
 
-export interface PhysicalExaminationData extends Omit<PhysicalExamination, 'createdAt' | 'updatedAt' | 'deletedAt'> {
-  createdAt: string
-  updatedAt: string
-  deletedAt: string | null
-}
+
 
 export interface ClinicInfo {
   id: number
@@ -101,8 +96,7 @@ export interface SerializedPatientHealthRecordsResponse {
   vitalSigns: Array<Omit<VitalSign, 'dateTaken' | 'createdAt' | 'updatedAt' | 'deletedAt'> & { dateTaken: string; createdAt: string; updatedAt: string; deletedAt: string | null }>
   latestVitals: (Omit<VitalSign, 'dateTaken' | 'createdAt' | 'updatedAt' | 'deletedAt'> & { dateTaken: string; createdAt: string; updatedAt: string; deletedAt: string | null }) | null
 
-  // Physical Examinations
-  physicalExaminations: PhysicalExaminationData[]
+
 
   // OB/Gyn History
   obGyneHistory: (Omit<ObGyneHistory, 'createdAt' | 'updatedAt' | 'deletedAt'> & { createdAt: string; updatedAt: string; deletedAt: string | null }) | null
@@ -126,7 +120,7 @@ export interface SerializedPatientHealthRecordsResponse {
     hipCircumference: number | null
     limbCircumference: number | null
     midUpperArmCircumference: number | null
-    remarks: string | null
+    notes: string | null
     createdAt: string
     updatedAt: string
     deletedAt: string | null

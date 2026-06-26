@@ -70,18 +70,36 @@ export async function addPhysicalExamination(
       return { success: false, error: `Validation failed: ${errorMessages}` }
     }
 
-    const physicalExam = await prisma.physicalExamination.create({
-      data: {
-        userId: dbUserId,
-        visualAcuityLeft: validatedInput.visualAcuityLeft,
-        visualAcuityRight: validatedInput.visualAcuityRight,
-        status: validatedInput.status,
-      },
+    // Find the latest VitalSign for this user and update it with visual acuity data,
+    // or create a new VitalSign record if none exists
+    const latestVitalSign = await prisma.vitalSign.findFirst({
+      where: { userId: dbUserId, isActive: true, deletedAt: null },
+      orderBy: { createdAt: 'desc' },
     })
+
+    let vitalSign
+    if (latestVitalSign) {
+      vitalSign = await prisma.vitalSign.update({
+        where: { id: latestVitalSign.id },
+        data: {
+          visualAcuityLeft: validatedInput.visualAcuityLeft,
+          visualAcuityRight: validatedInput.visualAcuityRight,
+        },
+      })
+    } else {
+      vitalSign = await prisma.vitalSign.create({
+        data: {
+          userId: dbUserId,
+          dateTaken: new Date(),
+          visualAcuityLeft: validatedInput.visualAcuityLeft,
+          visualAcuityRight: validatedInput.visualAcuityRight,
+        },
+      })
+    }
 
     await logAudit({
       entityType: AuditEntityType.PHYSICAL_EXAM,
-      entityId: physicalExam.id.toString(),
+      entityId: vitalSign.id.toString(),
       action: AuditAction.CREATE,
       performedBy: authUser.id,
       targetUser: !isOwn ? userId : undefined,
@@ -95,7 +113,7 @@ export async function addPhysicalExamination(
     return {
       success: true,
       message: 'Physical examination recorded successfully',
-      examinationId: physicalExam.id,
+      examinationId: vitalSign.id,
     }
   } catch (error) {
     console.error('[ADD_PHYSICAL_EXAMINATION_ERROR]', error)

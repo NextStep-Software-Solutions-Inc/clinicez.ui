@@ -139,10 +139,10 @@ function PediatricListView({ data }: Props) {
               )}
             </div>
 
-            {p.remarks && (
+            {p.notes && (
               <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700">
                 <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1">Remarks</p>
-                <p className="text-sm text-slate-700 dark:text-slate-300">{p.remarks}</p>
+                <p className="text-sm text-slate-700 dark:text-slate-300">{p.notes}</p>
               </div>
             )}
           </div>

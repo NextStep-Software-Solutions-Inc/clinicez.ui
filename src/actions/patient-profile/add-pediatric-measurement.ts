@@ -57,7 +57,7 @@ export async function addPediatricMeasurement(
       ? evaluateMUAC(Number(validatedInput.midUpperArmCircumference))
       : null
 
-    const measurement = await prisma.pediatricMeasurement.create({
+    const measurement = await prisma.vitalSign.create({
       data: {
         userId: dbUserId,
         dateTaken: validatedInput.dateTaken,
@@ -68,12 +68,12 @@ export async function addPediatricMeasurement(
         hipCircumference: validatedInput.hipCircumference,
         limbCircumference: validatedInput.limbCircumference,
         midUpperArmCircumference: validatedInput.midUpperArmCircumference,
-        remarks: validatedInput.remarks,
+        notes: validatedInput.remarks,
       },
     })
 
     await logAudit({
-      entityType: AuditEntityType.PEDIATRIC_MEASUREMENT,
+      entityType: AuditEntityType.VITAL_SIGN,
       entityId: measurement.id.toString(),
       action: AuditAction.CREATE,
       performedBy: authUser.id,

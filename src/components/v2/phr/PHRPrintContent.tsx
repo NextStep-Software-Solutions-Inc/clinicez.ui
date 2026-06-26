@@ -971,7 +971,7 @@ export function PHRPrintContent({ patient, sections, generatedAt, theme = 'color
                         <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{val(p.waistCircumference)}</td>
                         <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{val(p.hipCircumference)}</td>
                         <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{val(p.midUpperArmCircumference)}</td>
-                        <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{val(p.remarks)}</td>
+                        <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{val(p.notes)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -981,38 +981,39 @@ export function PHRPrintContent({ patient, sections, generatedAt, theme = 'color
           </div>
         )}
 
-        {/* PHYSICAL EXAMINATIONS */}
-        {has('exams') && (
-          <div style={styles.section}>
-            <SectionHeader icon="🔍" title="Physical Examinations" sectionHeaderBg={t.sectionHeaderBg} sectionHeaderText={t.sectionHeaderText} />
-            <div style={{ ...styles.sectionBody, border: `1px solid ${t.sectionBodyBorder}`, borderTop: 'none' }}>
-              {patient.physicalExaminations.length === 0 ? (
-                <EmptyRecord message="No physical examinations recorded." />
-              ) : (
-                <table style={styles.table}>
-                  <thead>
-                    <tr>
-                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Date</th>
-                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Visual Acuity — Left</th>
-                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Visual Acuity — Right</th>
-                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Status / Notes</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {patient.physicalExaminations.map((e, i) => (
-                      <tr key={e.id}>
-                        <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{formatDate(e.createdAt)}</td>
-                        <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{val(e.visualAcuityLeft)}</td>
-                        <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{val(e.visualAcuityRight)}</td>
-                        <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{val(e.status)}</td>
+        {/* VISUAL ACUITY */}
+        {has('exams') && (() => {
+          const vaRecords = patient.vitalSigns.filter(vs => vs.visualAcuityLeft || vs.visualAcuityRight)
+          return (
+            <div style={styles.section}>
+              <SectionHeader icon="👁️" title="Visual Acuity" sectionHeaderBg={t.sectionHeaderBg} sectionHeaderText={t.sectionHeaderText} />
+              <div style={{ ...styles.sectionBody, border: `1px solid ${t.sectionBodyBorder}`, borderTop: 'none' }}>
+                {vaRecords.length === 0 ? (
+                  <EmptyRecord message="No visual acuity records found." />
+                ) : (
+                  <table style={styles.table}>
+                    <thead>
+                      <tr>
+                        <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Date</th>
+                        <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Visual Acuity — Left</th>
+                        <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Visual Acuity — Right</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
+                    </thead>
+                    <tbody>
+                      {vaRecords.map((vs, i) => (
+                        <tr key={vs.id}>
+                          <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{formatDate(vs.dateTaken)}</td>
+                          <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{val(vs.visualAcuityLeft)}</td>
+                          <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{val(vs.visualAcuityRight)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          )
+        })()}
 
         {/* INSURANCE */}
         {has('insurance') && (

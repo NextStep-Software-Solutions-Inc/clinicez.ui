@@ -46,6 +46,8 @@ export const downloadHAFAction = withErrorHandling(async (userId: string) => {
           height: true,   // in cm
           weight: true,   // in kg
           bmi: true,
+          visualAcuityLeft: true,
+          visualAcuityRight: true,
         }
       },
       UserAllergies: {
@@ -88,17 +90,7 @@ export const downloadHAFAction = withErrorHandling(async (userId: string) => {
           Dose: true
         }
       },
-      PhysicalExaminations: {
-        where: { deletedAt: null },
-        orderBy: { createdAt: "desc" },
-        take: 1,
-        select: {
-          id: true,
-          visualAcuityLeft: true,
-          visualAcuityRight: true,
-          status: true
-        }
-      }
+
     }
   });
 
@@ -255,8 +247,8 @@ export const downloadHAFAction = withErrorHandling(async (userId: string) => {
     { field: "patientExaminationWeightKg", value: phr?.VitalSigns?.[0]?.weight?.toString() || "" },
     { field: "patientExaminationWeightLb", value: phr?.VitalSigns?.[0]?.weight ? kilogramsToPounds(phr.VitalSigns[0].weight).toString() : "" },
     { field: "patientExaminationBMI", value: phr?.VitalSigns?.[0]?.bmi ? phr.VitalSigns[0].bmi.toFixed(2) : "" }, // scale down to 2 decimal places
-    { field: "patientExaminationVisual_1", value: phr?.PhysicalExaminations?.[0]?.visualAcuityLeft || "" },
-    { field: "patientExaminationVisual_2", value: phr?.PhysicalExaminations?.[0]?.visualAcuityRight || "" },
+    { field: "patientExaminationVisual_1", value: phr?.VitalSigns?.[0]?.visualAcuityLeft || "" },
+    { field: "patientExaminationVisual_2", value: phr?.VitalSigns?.[0]?.visualAcuityRight || "" },
     { field: "patientExaminationTemperature", value: phr?.VitalSigns?.[0]?.temp?.toString() || "" },
 
     // Physical Examination - HEENT System

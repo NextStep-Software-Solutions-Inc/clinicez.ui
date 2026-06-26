@@ -5,7 +5,7 @@ import { getCachedSession } from "@/actions/session.action";
 import { YakapApiClient, decryptReport, encryptReport } from "@/lib/philhealth-yakap/api";
 import { revalidatePath } from "next/cache";
 import { generatePhilHealthKonsultaTransactionNumber } from "@/services/sequence-generator.service";
-import { generateKonsultaXml, type KonsultaPatientData, type KonsultaConsultationData, type KonsultaMedicineData } from "@/lib/philhealth-yakap/xml-generator";
+import { generateKonsultaXml, type KonsultaPatientData, type KonsultaConsultationData, type KonsultaMedicineData, type KonsultaDiagnosticExamData } from "@/lib/philhealth-yakap/xml-generator";
 
 const getClinicCredentials = async (clinicUid: string) => {
   const session = await getCachedSession();
@@ -443,9 +443,31 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
               include: {
                 Patient: {
                   select: {
+                    id: true,
                     firstName: true, lastName: true, middleName: true, suffix: true,
-                    dob: true, gender: true, mobile: true, telephone: true,
+                    dob: true, gender: true, mobile: true, telephone: true, bloodType: true,
                     PhilHealthRecords: { take: 1 },
+                    MedicalHistories: {
+                      include: { Condition: true },
+                    },
+                    FamilyMedicalHistories: {
+                      include: { Condition: true },
+                    },
+                    SurgicalHistories: true,
+                    PersonalHistory: true,
+                    VitalSigns: {
+                      where: { isActive: true, deletedAt: null },
+                      orderBy: { createdAt: "desc" },
+                      take: 1,
+                      select: {
+                        bpSystolic: true, bpDiastolic: true, pulseRate: true, respRate: true,
+                        temp: true, height: true, weight: true, bmi: true,
+                        visualAcuityLeft: true, visualAcuityRight: true,
+                        length: true, headCircumference: true, skinfoldThickness: true,
+                        waistCircumference: true, hipCircumference: true,
+                        limbCircumference: true, midUpperArmCircumference: true,
+                      },
+                    },
                   },
                 },
                 PhilHealthKonsultaEnlistments: {
@@ -457,6 +479,30 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
                   where: { soapTransNo: { not: null }, isActive: true },
                   select: {
                     id: true, subject: true, soapTransNo: true, caseNumber: true, createdAt: true,
+                    isPhilHealthKonsulta: true,
+                    konsultaAtcCode: true, konsultaIsWalkedIn: true, konsultaCoPay: true,
+                    ConsultationNotes: {
+                      select: { section: true, content: true, structuredData: true },
+                    },
+                    ConsultationDiagnoses: {
+                      select: { icd10Code: true },
+                    },
+                    Prescriptions: {
+                      where: { isActive: true },
+                      select: {
+                        Medicines: {
+                          where: { isActive: true },
+                          select: {
+                            id: true, name: true, genericName: true, brandName: true,
+                            dosage: true, frequency: true, unit: true, qty: true,
+                            PhilHealthData: true,
+                          },
+                        },
+                      },
+                    },
+                    ConsultationManagements: {
+                      include: { ManagementCode: true },
+                    },
                   },
                 },
               },
@@ -477,11 +523,47 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
       );
     }
 
-    // Build patient data for XML generator
-    const patients: KonsultaPatientData[] = batch.BatchPatients.map(bp => {
+    // Helper: map VitalSign record to XML vitals format
+    const mapVitals = (vs: {
+      bpSystolic?: number | null; bpDiastolic?: number | null;
+      pulseRate?: number | null; respRate?: number | null; temp?: number | null;
+      height?: number | null; weight?: number | null; bmi?: number | null;
+      visualAcuityLeft?: string | null; visualAcuityRight?: string | null;
+      length?: number | null; headCircumference?: number | null;
+      skinfoldThickness?: number | null; waistCircumference?: number | null;
+      hipCircumference?: number | null; limbCircumference?: number | null;
+      midUpperArmCircumference?: number | null;
+    } | null | undefined) => ({
+      systolic: vs?.bpSystolic?.toString() ?? "",
+      diastolic: vs?.bpDiastolic?.toString() ?? "",
+      hr: vs?.pulseRate?.toString() ?? "",
+      rr: vs?.respRate?.toString() ?? "",
+      temp: vs?.temp?.toString() ?? "",
+      height: vs?.height?.toString() ?? "",
+      weight: vs?.weight?.toString() ?? "",
+      bmi: vs?.bmi?.toString() ?? "",
+      zScore: "",
+      leftVision: vs?.visualAcuityLeft ?? "",
+      rightVision: vs?.visualAcuityRight ?? "",
+      length: vs?.length?.toString() ?? "",
+      headCirc: vs?.headCircumference?.toString() ?? "",
+      skinfoldThickness: vs?.skinfoldThickness?.toString() ?? "",
+      waist: vs?.waistCircumference?.toString() ?? "",
+      hip: vs?.hipCircumference?.toString() ?? "",
+      limbs: vs?.limbCircumference?.toString() ?? "",
+      midUpperArmCirc: vs?.midUpperArmCircumference?.toString() ?? "",
+    });
+
+    // Build patient data for XML generator (async for DB lookups)
+    const patients: KonsultaPatientData[] = await Promise.all(batch.BatchPatients.map(async (bp) => {
       const patient = bp.ClinicPatient.Patient;
       const enlistment = bp.ClinicPatient.PhilHealthKonsultaEnlistments[0];
       const phRecord = patient.PhilHealthRecords?.[0];
+      const latestVitals = patient.VitalSigns?.[0] ?? null;
+      if (latestVitals) {
+        latestVitals.length = latestVitals.length ? (latestVitals.length as any).toNumber() : null;
+        latestVitals.midUpperArmCircumference = latestVitals.midUpperArmCircumference ? (latestVitals.midUpperArmCircumference as any).toNumber() : null;
+      }
 
       const memberPin = phRecord?.pin || "";
       const patientPin = phRecord?.dependentPin || phRecord?.pin || "";
@@ -502,35 +584,112 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
       const formatDate = (d: Date | null) => d ? d.toISOString().split("T")[0] : "";
       const today = formatDate(new Date());
 
+      // Profile ATC/walk-in: from enlistment or defaults
+      const profileAtc = enlistment?.atcCode ?? "WALKEDIN";
+      const profileIsWalkedIn = enlistment?.isWalkedIn ?? true;
+
       // Build consultations for Tagging 2
       let consultations: KonsultaConsultationData[] | undefined;
       if (batch.tagging === "2" && bp.selectedTicketIds.length > 0) {
         consultations = bp.ClinicPatient.ConsultationTickets
           .filter(t => bp.selectedTicketIds.includes(t.id))
-          .map(t => ({
-            hciCaseNo: enlistment?.hciCaseNo || "",
-            hciTransNo: t.soapTransNo || "",
-            soapDate: formatDate(t.createdAt),
-            atc: "WALKEDIN",
-            isWalkedIn: "Y" as const,
-            coPay: "0",
-            transDate: today,
-            subjective: {
-              illnessHistory: t.subject || "",
-              signsSymptoms: "",
-              otherComplaint: "",
-              painSite: "",
-            },
-            vitals: {
-              systolic: "", diastolic: "", hr: "", rr: "", temp: "",
-              height: "", weight: "", bmi: "", zScore: "",
-              leftVision: "", rightVision: "", length: "", headCirc: "",
-              skinfoldThickness: "", waist: "", hip: "", limbs: "", midUpperArmCirc: "",
-            },
-            icdCodes: [],
-            medicines: [],
-          }));
+          .map(t => {
+            // Subjective structured data from notes
+            const subjectiveNote = t.ConsultationNotes?.find(n =>
+              n.section.toLowerCase().includes("subjective")
+            );
+            const sd = (subjectiveNote?.structuredData && typeof subjectiveNote.structuredData === 'object' && !Array.isArray(subjectiveNote.structuredData))
+              ? subjectiveNote.structuredData as Record<string, string>
+              : {};
+
+            // ICD codes from diagnoses
+            const icdCodes = (t.ConsultationDiagnoses ?? [])
+              .map(d => d.icd10Code)
+              .filter((c): c is string => !!c);
+
+            // Medicines from prescriptions
+            const medicines: KonsultaMedicineData[] = [];
+            for (const rx of t.Prescriptions ?? []) {
+              for (const med of rx.Medicines ?? []) {
+                const ph = med.PhilHealthData;
+                medicines.push({
+                  hciCaseNo: enlistment?.hciCaseNo || "",
+                  hciTransNo: t.soapTransNo || "",
+                  category: "",
+                  drugCode: ph?.drugCode || "NOMED00000000000000000000000",
+                  genericCode: ph?.genericCode || "",
+                  saltCode: ph?.saltCode || "",
+                  strengthCode: ph?.strengthCode || "",
+                  formCode: ph?.formCode || "",
+                  unitCode: ph?.unitCode || "",
+                  packageCode: ph?.packageCode || "",
+                  otherMedicine: ph?.otherMedicine || med.genericName || med.name || "",
+                  othMedDrugGrouping: ph?.othMedDrugGrouping || "",
+                  route: ph?.route || "",
+                  quantity: med.qty?.toString() || "0",
+                  actualUnitPrice: "0",
+                  totalAmtPrice: "0",
+                  instructionQuantity: med.dosage || "",
+                  instructionStrength: "",
+                  instructionFrequency: med.frequency || "",
+                  prescribingPhysician: "",
+                  isDispensed: "N",
+                  dateDispensed: "",
+                  dispensingPersonnel: "",
+                  isApplicable: "Y",
+                  dateAdded: formatDate(t.createdAt),
+                });
+              }
+            }
+
+            return {
+              hciCaseNo: enlistment?.hciCaseNo || "",
+              hciTransNo: t.soapTransNo || "",
+              soapDate: formatDate(t.createdAt),
+              atc: t.konsultaAtcCode || profileAtc,
+              isWalkedIn: (t.konsultaIsWalkedIn ?? profileIsWalkedIn) ? "Y" as const : "N" as const,
+              coPay: t.konsultaCoPay?.toString() || "0",
+              transDate: today,
+              subjective: {
+                illnessHistory: sd.illnessHistory || t.subject || "",
+                signsSymptoms: sd.signsSymptoms || "",
+                otherComplaint: sd.otherComplaint || "",
+                painSite: sd.painSite || "",
+              },
+              vitals: mapVitals(latestVitals as any),
+              icdCodes,
+              managements: (t.ConsultationManagements ?? []).map((m) => ({
+                managementId: m.ManagementCode.code,
+                othRemarks: m.remarks || "",
+              })),
+              medicines,
+            };
+          });
       }
+
+      // Fetch diagnostic results — query by selected consultation ticket IDs (most reliable)
+      // for Tagging 1 fall back to clinicPatientId
+      const ticketIds = bp.selectedTicketIds ?? [];
+      const diagRecords = await prisma.konsultaDiagnosticResult.findMany({
+        where: ticketIds.length > 0
+          ? { consultationTicketId: { in: ticketIds } }
+          : { clinicPatientId: bp.ClinicPatient.id },
+        orderBy: { createdAt: "asc" },
+      });
+      const diagnosticResults = diagRecords.length > 0
+        ? diagRecords.map(dr => ({
+            hciCaseNo: dr.hciCaseNo,
+            hciTransNo: dr.hciTransNo,
+            patientPin: patientPin,
+            patientType: patientType,
+            memPin: memberPin,
+            effYear: String(enlistment?.year || new Date().getFullYear()),
+            resultType: dr.resultType,
+            resultData: (dr.resultData && typeof dr.resultData === 'object' && !Array.isArray(dr.resultData))
+              ? dr.resultData as Record<string, string>
+              : {},
+          }))
+        : undefined;
 
       return {
         enlistment: {
@@ -567,20 +726,56 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
         profile: {
           hciTransNo: enlistment?.profilingTransNo || "",
           profDate: today,
-          atc: "WALKEDIN",
-          isWalkedIn: "Y" as const,
+          atc: profileAtc,
+          isWalkedIn: profileIsWalkedIn ? "Y" as const : "N" as const,
           transDate: today,
-          vitals: {
-            systolic: "", diastolic: "", hr: "", rr: "", temp: "",
-            height: "", weight: "", bmi: "", zScore: "",
-            leftVision: "", rightVision: "", length: "", headCirc: "",
-            skinfoldThickness: "", waist: "", hip: "", limbs: "", midUpperArmCirc: "",
-          },
-          bloodType: "",
+          vitals: mapVitals(latestVitals as any),
+          bloodType: patient.bloodType || "",
+          medicalHistories: patient.MedicalHistories.map(mh => {
+            const code = mh.Condition.code;
+            if (code) {
+              return {
+                code,
+                isRelevant: 'Y' as const,
+              };
+            }
+            return {
+              code: '998',
+              isRelevant: 'Y' as const,
+              mhsCode: '998',
+              mhsOthers: mh.details || mh.Condition.name,
+            };
+          }),
+          familyHistories: patient.FamilyMedicalHistories.map(fh => {
+            const code = fh.Condition.code;
+            if (code) {
+              return { code };
+            }
+            return {
+              code: '998',
+              specificDesc: fh.details || fh.Condition.name,
+            };
+          }),
+          surgicalHistories: patient.SurgicalHistories.map(sh => ({
+            desc: sh.operationName,
+            date: sh.operationDate ? formatDate(sh.operationDate) : '',
+          })),
+          socialHistory: patient.PersonalHistory ? {
+            isSmoker: (patient.PersonalHistory.smokingStatus === 'Current' || patient.PersonalHistory.smokingStatus === 'Yes') ? 'Y' : (patient.PersonalHistory.smokingStatus === 'Never' || patient.PersonalHistory.smokingStatus === 'No' ? 'N' : ''),
+            stickPerDay: '',
+            packPerYear: patient.PersonalHistory.numberOfPacksPerYear ? String(patient.PersonalHistory.numberOfPacksPerYear) : '',
+            isDrinker: (patient.PersonalHistory.alcoholStatus === 'Current' || patient.PersonalHistory.alcoholStatus === 'Yes') ? 'Y' : (patient.PersonalHistory.alcoholStatus === 'Never' || patient.PersonalHistory.alcoholStatus === 'No' ? 'N' : ''),
+            bottlePerDay: patient.PersonalHistory.numberOfBottlesPerDay ? String(patient.PersonalHistory.numberOfBottlesPerDay) : '',
+            isDrugUser: (patient.PersonalHistory.illicitDrugUse === 'Current' || patient.PersonalHistory.illicitDrugUse === 'Yes') ? 'Y' : (patient.PersonalHistory.illicitDrugUse === 'Never' || patient.PersonalHistory.illicitDrugUse === 'No' ? 'N' : ''),
+            isExposed: '',
+            specifyExposure: '',
+            socHistOther: '',
+          } : undefined,
         },
         consultations,
+        diagnosticResults,
       };
-    });
+    }));
 
     const pmccNo = credentials.pPMCCNo || "";
 

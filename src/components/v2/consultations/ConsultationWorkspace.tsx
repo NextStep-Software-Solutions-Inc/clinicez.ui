@@ -39,6 +39,9 @@ import ConsultationDiagnoses from "./ConsultationDiagnoses";
 import { PatientAIInsightButton } from "@/components/v2/patients/PatientAIInsightButton";
 import AddCoCreatorDialog from "./AddCoCreatorDialog";
 import { MarkdownRenderer } from "@/components/markdown/MarkdownRenderer";
+import KonsultaEncounterPanel from "./KonsultaEncounterPanel";
+import KonsultaDiagnosticResultsPanel from "./KonsultaDiagnosticResultsPanel";
+import KonsultaManagementPanel from "./KonsultaManagementPanel";
 
 type Detail = NonNullable<GetPatientConsultationDetail["data"]>;
 
@@ -83,6 +86,8 @@ export default function ConsultationWorkspace({
   const [addCoCreatorOpen, setAddCoCreatorOpen] = useState(false);
   const [showDropForm, setShowDropForm] = useState(false);
   const [dropReason, setDropReason] = useState("");
+  // Tracks whether PhilHealth Konsulta profiling is complete — gates the Resolve button
+  const [konsultaProfilingComplete, setKonsultaProfilingComplete] = useState<boolean | null>(null);
 
   const status = consultation.ConsultationTicketAttribute?.status;
   const apt = consultation.Appointment;
@@ -237,16 +242,24 @@ export default function ConsultationWorkspace({
                   {generatingYakap ? "Generating..." : "Generate Yakap No."}
                 </Button>
               )}
-              <Button
-                size="sm"
-                variant="outline"
-                className="gap-1.5 h-8 text-xs border-emerald-300 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 dark:border-emerald-700 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
-                disabled={resolving || dropping || generatingYakap}
-                onClick={handleResolve}
-              >
-                <CheckCircle2 className="h-3.5 w-3.5" />
-                {resolving ? "Resolving…" : "Resolve"}
-              </Button>
+              {(() => {
+                const isKonsultaBlocked =
+                  (consultation.isPhilHealthKonsulta) &&
+                  konsultaProfilingComplete === false;
+                return (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1.5 h-8 text-xs border-emerald-300 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 dark:border-emerald-700 dark:text-emerald-400 dark:hover:bg-emerald-950/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={resolving || dropping || generatingYakap || isKonsultaBlocked}
+                    title={isKonsultaBlocked ? "PhilHealth profiling is incomplete — complete all required fields first" : undefined}
+                    onClick={handleResolve}
+                  >
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    {resolving ? "Resolving…" : "Resolve"}
+                  </Button>
+                );
+              })()}
               {!showDropForm && (
                 <Button
                   size="sm"
@@ -405,6 +418,21 @@ export default function ConsultationWorkspace({
         )}
       </div>
 
+      {/* ── PhilHealth Konsulta Panel ── */}
+      {hasPatient && (
+        <KonsultaEncounterPanel
+          ticketId={consultation.id}
+          clinicPatientId={patient.clinicPatientId}
+          isPhilHealthKonsulta={consultation.isPhilHealthKonsulta ?? false}
+          konsultaAtcCode={(consultation as any).konsultaAtcCode ?? null}
+          konsultaIsWalkedIn={(consultation as any).konsultaIsWalkedIn ?? null}
+          konsultaCoPay={(consultation as any).konsultaCoPay ? Number((consultation as any).konsultaCoPay) : null}
+          isResolved={isResolved || isDropped}
+          onUpdate={() => onReloadDetail?.()}
+          onProfilingChecked={(complete) => setKonsultaProfilingComplete(complete)}
+        />
+      )}
+
       {/* ── Tabbed Workspace ── */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="sticky top-0 z-10 w-full justify-start rounded-none border-b border-border/50 bg-background h-10 px-2 sm:px-6 gap-0 overflow-x-auto [&::-webkit-scrollbar]:hidden">
@@ -485,6 +513,14 @@ export default function ConsultationWorkspace({
               onPatchDetail={onPatchDetail}
               isResolved={isResolved}
             />
+            {consultation.isPhilHealthKonsulta && (
+              <div className="px-4 sm:px-6 pb-6 border-t border-border/30 pt-4">
+                <KonsultaManagementPanel
+                  consultationTicketId={consultation.id}
+                  isResolved={isResolved || isDropped}
+                />
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="rx" className="mt-0 p-4 sm:p-6">
@@ -519,14 +555,25 @@ export default function ConsultationWorkspace({
 
           <TabsContent value="diagnostics" className="mt-0 p-4 sm:p-6">
             {hasPatient ? (
-              <ConsultationDiagnostics
-                clinicUid={clinicUid}
-                patient={patient}
-                consultation={consultation}
-                myHPs={myHPs}
-                onPatchDetail={onPatchDetail}
-                isResolved={isResolved}
-              />
+              <div className="space-y-6">
+                <ConsultationDiagnostics
+                  clinicUid={clinicUid}
+                  patient={patient}
+                  consultation={consultation}
+                  myHPs={myHPs}
+                  onPatchDetail={onPatchDetail}
+                  isResolved={isResolved}
+                />
+                {(consultation.isPhilHealthKonsulta) && (
+                  <KonsultaDiagnosticResultsPanel
+                    consultationTicketId={consultation.id}
+                    clinicPatientId={patient.clinicPatientId}
+                    hciCaseNo={(consultation as any).hciCaseNo ?? ""}
+                    hciTransNo={consultation.soapTransNo ?? ""}
+                    isResolved={isResolved || isDropped}
+                  />
+                )}
+              </div>
             ) : (
               <NoPatientPlaceholder />
             )}

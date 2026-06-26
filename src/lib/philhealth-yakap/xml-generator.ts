@@ -81,9 +81,36 @@ export interface KonsultaPatientData {
       midUpperArmCirc: string;
     };
     bloodType: string;
+    medicalHistories: {
+      code: string;           
+      isRelevant: 'Y' | 'N';
+      mhsCode?: string;       
+      mhsOthers?: string;     
+    }[];
+    familyHistories: {
+      code: string;
+      specificDesc?: string;
+    }[];
+    surgicalHistories: {
+      desc: string;
+      date: string;
+    }[];
+    socialHistory?: {
+      isSmoker: string;
+      stickPerDay: string;
+      packPerYear: string;
+      isDrinker: string;
+      bottlePerDay: string;
+      isDrugUser: string;
+      isExposed: string;
+      specifyExposure: string;
+      socHistOther: string;
+    };
   };
   // Consultations (for Tagging 2 only)
   consultations?: KonsultaConsultationData[];
+  // Diagnostic exam results (profiling + consultation combined)
+  diagnosticResults?: KonsultaDiagnosticExamData[];
 }
 
 export interface KonsultaConsultationData {
@@ -124,6 +151,16 @@ export interface KonsultaConsultationData {
   };
   // ICD codes
   icdCodes: string[];
+  // Managements
+  managements: KonsultaManagementData[];
+  // Advice
+  advice?: {
+    advice: string;
+    followUpDate: string;
+    referredTo: string;
+    reasonForReferral: string;
+    referredToOther: string;
+  };
   // Medicines
   medicines: KonsultaMedicineData[];
 }
@@ -154,6 +191,22 @@ export interface KonsultaMedicineData {
   dispensingPersonnel: string;
   isApplicable: string;
   dateAdded: string;
+}
+
+export interface KonsultaManagementData {
+  managementId: string;   // PhilHealth management code value e.g. "1","0","X"
+  othRemarks: string;     // remarks (required for "X" / Others)
+}
+
+export interface KonsultaDiagnosticExamData {
+  hciCaseNo: string;
+  hciTransNo: string;
+  patientPin: string;
+  patientType: string;
+  memPin: string;
+  effYear: string;
+  resultType: string;                      // e.g. "FBS", "HBA1C", "RBS"
+  resultData: Record<string, string>;      // exam-specific fields from JSON
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -188,43 +241,78 @@ type XmlNode = any;
 
 function buildMedHists(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
   const medhists = parent.ele('MEDHISTS');
-  // DTD requires at least one MEDHIST - emit placeholder
-  medhists.ele('MEDHIST', withStatus({
-    pHciTransNo: patient.profile.hciTransNo,
-    pMedHistCode: '',
-    pIsRelevant: 'N',
-  })).up();
+  const hists = patient.profile.medicalHistories;
+  
+  if (hists.length > 0) {
+    for (const h of hists) {
+      medhists.ele('MEDHIST', withStatus({
+        pMdiseaseCode: h.code,
+      })).up();
+    }
+  } else {
+    // DTD requires at least one MEDHIST - emit placeholder (999 None)
+    medhists.ele('MEDHIST', withStatus({
+      pMdiseaseCode: '999',
+    })).up();
+  }
   return medhists.up();
 }
 
 function buildMhSpecifics(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
   const specifics = parent.ele('MHSPECIFICS');
-  specifics.ele('MHSPECIFIC', withStatus({
-    pHciTransNo: patient.profile.hciTransNo,
-    pMedHistCode: '',
-    pMHSCode: '',
-    pMHSOthers: '',
-  })).up();
+  const hists = patient.profile.medicalHistories.filter(h => !!h.mhsOthers);
+  
+  if (hists.length > 0) {
+    for (const h of hists) {
+      specifics.ele('MHSPECIFIC', withStatus({
+        pMdiseaseCode: h.code,
+        pSpecificDesc: h.mhsOthers || '',
+      })).up();
+    }
+  } else {
+    specifics.ele('MHSPECIFIC', withStatus({
+      pMdiseaseCode: '',
+      pSpecificDesc: '',
+    })).up();
+  }
   return specifics.up();
 }
 
 function buildSurgHists(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
   const surghists = parent.ele('SURGHISTS');
-  surghists.ele('SURGHIST', withStatus({
-    pHciTransNo: patient.profile.hciTransNo,
-    pSurgHistCode: '',
-    pIsRelevant: 'N',
-  })).up();
+  const hists = patient.profile.surgicalHistories;
+  
+  if (hists.length > 0) {
+    for (const h of hists) {
+      surghists.ele('SURGHIST', withStatus({
+        pSurgDesc: h.desc,
+        pSurgDate: h.date,
+      })).up();
+    }
+  } else {
+    surghists.ele('SURGHIST', withStatus({
+      pSurgDesc: '',
+      pSurgDate: '',
+    })).up();
+  }
   return surghists.up();
 }
 
 function buildFamHists(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
   const famhists = parent.ele('FAMHISTS');
-  famhists.ele('FAMHIST', withStatus({
-    pHciTransNo: patient.profile.hciTransNo,
-    pFamHistCode: '',
-    pIsRelevant: 'N',
-  })).up();
+  const hists = patient.profile.familyHistories;
+
+  if (hists.length > 0) {
+    for (const h of hists) {
+      famhists.ele('FAMHIST', withStatus({
+        pMdiseaseCode: h.code,
+      })).up();
+    }
+  } else {
+    famhists.ele('FAMHIST', withStatus({
+      pMdiseaseCode: '999',
+    })).up();
+  }
   return famhists.up();
 }
 
@@ -240,17 +328,18 @@ function buildFhSpecifics(parent: XmlNode, patient: KonsultaPatientData): XmlNod
 }
 
 function buildSocHist(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
+  const soc = patient.profile.socialHistory;
   parent.ele('SOCHIST', withStatus({
     pHciTransNo: patient.profile.hciTransNo,
-    pIsSmoker: '',
-    pStickPerDay: '',
-    pPackPerYear: '',
-    pIsDrinker: '',
-    pBottlePerDay: '',
-    pIsDrugUser: '',
-    pIsExposed: '',
-    pSpecifyExposure: '',
-    pSocHistOther: '',
+    pIsSmoker: soc?.isSmoker || '',
+    pStickPerDay: soc?.stickPerDay || '',
+    pPackPerYear: soc?.packPerYear || '',
+    pIsDrinker: soc?.isDrinker || '',
+    pBottlePerDay: soc?.bottlePerDay || '',
+    pIsDrugUser: soc?.isDrugUser || '',
+    pIsExposed: soc?.isExposed || '',
+    pSpecifyExposure: soc?.specifyExposure || '',
+    pSocHistOther: soc?.socHistOther || '',
   })).up();
   return parent;
 }
@@ -304,11 +393,10 @@ function buildPregHist(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
 function buildProfilePepert(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
   const v = patient.profile.vitals;
   parent.ele('PEPERT', withStatus({
-    pHciTransNo: patient.profile.hciTransNo,
     pSystolic: v.systolic,
     pDiastolic: v.diastolic,
-    pHR: v.hr,
-    pRR: v.rr,
+    pHr: v.hr,
+    pRr: v.rr,
     pTemp: v.temp,
     pHeight: v.height,
     pWeight: v.weight,
@@ -329,7 +417,6 @@ function buildProfilePepert(parent: XmlNode, patient: KonsultaPatientData): XmlN
 
 function buildBloodType(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
   parent.ele('BLOODTYPE', withStatus({
-    pHciTransNo: patient.profile.hciTransNo,
     pBloodType: patient.profile.bloodType,
   })).up();
   return parent;
@@ -384,7 +471,6 @@ function buildNcdQAns(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
 
 function buildSoapSubjective(parent: XmlNode, consultation: KonsultaConsultationData): XmlNode {
   parent.ele('SUBJECTIVE', withStatus({
-    pHciTransNo: consultation.hciTransNo,
     pIllnessHistory: consultation.subjective.illnessHistory,
     pSignsSymptoms: consultation.subjective.signsSymptoms,
     pOtherComplaint: consultation.subjective.otherComplaint,
@@ -396,11 +482,10 @@ function buildSoapSubjective(parent: XmlNode, consultation: KonsultaConsultation
 function buildSoapPepert(parent: XmlNode, consultation: KonsultaConsultationData): XmlNode {
   const v = consultation.vitals;
   parent.ele('PEPERT', withStatus({
-    pHciTransNo: consultation.hciTransNo,
     pSystolic: v.systolic,
     pDiastolic: v.diastolic,
-    pHR: v.hr,
-    pRR: v.rr,
+    pHr: v.hr,
+    pRr: v.rr,
     pTemp: v.temp,
     pHeight: v.height,
     pWeight: v.weight,
@@ -445,15 +530,13 @@ function buildSoapIcds(parent: XmlNode, consultation: KonsultaConsultationData):
   if (consultation.icdCodes.length > 0) {
     for (const code of consultation.icdCodes) {
       icds.ele('ICD', withStatus({
-        pHciTransNo: consultation.hciTransNo,
-        pICDCode: code,
+        pIcdCode: code,
       })).up();
     }
   } else {
     // DTD requires at least one ICD
     icds.ele('ICD', withStatus({
-      pHciTransNo: consultation.hciTransNo,
-      pICDCode: '',
+      pIcdCode: '',
     })).up();
   }
   return icds.up();
@@ -463,34 +546,36 @@ function buildSoapDiagnostics(parent: XmlNode, consultation: KonsultaConsultatio
   const diagnostics = parent.ele('DIAGNOSTICS');
   // DTD requires at least one DIAGNOSTIC
   diagnostics.ele('DIAGNOSTIC', withStatus({
-    pHciTransNo: consultation.hciTransNo,
-    pDiagLabCode: '',
-    pDiagLabResult: '',
-    pDiagLabDate: '',
-    pDiagLabFacilityCode: '',
+    pDiagnosticId: '',
+    pOthRemarks: '',
+    pIsPhysicianRecommendation: 'N',
+    pPatientRemarks: '',
   })).up();
   return diagnostics.up();
 }
 
 function buildSoapManagements(parent: XmlNode, consultation: KonsultaConsultationData): XmlNode {
   const managements = parent.ele('MANAGEMENTS');
-  // DTD requires at least one MANAGEMENT
-  managements.ele('MANAGEMENT', withStatus({
-    pHciTransNo: consultation.hciTransNo,
-    pManagementCode: '',
-    pManagementRemarks: '',
-  })).up();
+  if (consultation.managements && consultation.managements.length > 0) {
+    for (const m of consultation.managements) {
+      managements.ele('MANAGEMENT', withStatus({
+        pManagementId: m.managementId,
+        pOthRemarks: m.othRemarks,
+      })).up();
+    }
+  } else {
+    // DTD requires at least one MANAGEMENT
+    managements.ele('MANAGEMENT', withStatus({
+      pManagementId: '0',
+      pOthRemarks: '',
+    })).up();
+  }
   return managements.up();
 }
 
 function buildSoapAdvice(parent: XmlNode, consultation: KonsultaConsultationData): XmlNode {
   parent.ele('ADVICE', withStatus({
-    pHciTransNo: consultation.hciTransNo,
-    pAdvice: '',
-    pFollowUpDate: '',
-    pReferredTo: '',
-    pReasonForReferral: '',
-    pReferredToOther: '',
+    pRemarks: consultation.advice?.advice || '',
   })).up();
   return parent;
 }
@@ -503,20 +588,19 @@ function buildStubSoap(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
   const soap = parent.ele('SOAP', withStatus({
     pHciCaseNo: '',
     pHciTransNo: '',
-    pPatientPIN: '',
-    pMemberPIN: '',
-    pSOAPDate: '',
-    pPatientAge: '',
+    pPatientPin: '',
+    pMemPin: '',
+    pSoapDate: '',
+    pPatientType: '',
+    pEffYear: '',
     pATC: '',
     pIsWalkedIn: '',
     pCoPay: '',
     pTransDate: '',
-    pCreatedBy: '',
   }));
 
   // SUBJECTIVE stub
   soap.ele('SUBJECTIVE', withStatus({
-    pHciTransNo: '',
     pIllnessHistory: '',
     pSignsSymptoms: '',
     pOtherComplaint: '',
@@ -525,11 +609,10 @@ function buildStubSoap(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
 
   // PEPERT stub
   soap.ele('PEPERT', withStatus({
-    pHciTransNo: '',
     pSystolic: '',
     pDiastolic: '',
-    pHR: '',
-    pRR: '',
+    pHr: '',
+    pRr: '',
     pTemp: '',
     pHeight: '',
     pWeight: '',
@@ -567,39 +650,31 @@ function buildStubSoap(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
   // ICDS stub
   const icds = soap.ele('ICDS');
   icds.ele('ICD', withStatus({
-    pHciTransNo: '',
-    pICDCode: '',
+    pIcdCode: '',
   })).up();
   icds.up();
 
   // DIAGNOSTICS stub
   const diagnostics = soap.ele('DIAGNOSTICS');
   diagnostics.ele('DIAGNOSTIC', withStatus({
-    pHciTransNo: '',
-    pDiagLabCode: '',
-    pDiagLabResult: '',
-    pDiagLabDate: '',
-    pDiagLabFacilityCode: '',
+    pDiagnosticId: '',
+    pOthRemarks: '',
+    pIsPhysicianRecommendation: 'N',
+    pPatientRemarks: '',
   })).up();
   diagnostics.up();
 
   // MANAGEMENTS stub
   const managements = soap.ele('MANAGEMENTS');
   managements.ele('MANAGEMENT', withStatus({
-    pHciTransNo: '',
-    pManagementCode: '',
-    pManagementRemarks: '',
+    pManagementId: '0',
+    pOthRemarks: '',
   })).up();
   managements.up();
 
   // ADVICE stub
   soap.ele('ADVICE', withStatus({
-    pHciTransNo: '',
-    pAdvice: '',
-    pFollowUpDate: '',
-    pReferredTo: '',
-    pReasonForReferral: '',
-    pReferredToOther: '',
+    pRemarks: '',
   })).up();
 
   return soap.up();
@@ -698,24 +773,25 @@ export function generateKonsultaXml(options: KonsultaXmlOptions): string {
       pHciTransNo: e.hciTransNo,
       pEffYear: e.effYear,
       pEnlistDate: e.enlistDate,
+      pEnlistStat: 'A',
       pPackageType: e.packageType,
       pWithConsent: e.withConsent,
-      pMemberPIN: m.pin,
-      pMemberLastName: m.lastName,
-      pMemberFirstName: m.firstName,
-      pMemberMiddleName: m.middleName,
-      pMemberExtName: m.extName,
-      pMemberDOB: m.dob,
-      pPatientPIN: p.pin,
-      pPatientLastName: p.lastName,
-      pPatientFirstName: p.firstName,
-      pPatientMiddleName: p.middleName,
-      pPatientExtName: p.extName,
+      pMemPin: m.pin,
+      pMemLname: m.lastName,
+      pMemFname: m.firstName,
+      pMemMname: m.middleName,
+      pMemExtname: m.extName,
+      pMemDob: m.dob,
+      pPatientPin: p.pin,
+      pPatientLname: p.lastName,
+      pPatientFname: p.firstName,
+      pPatientMname: p.middleName,
+      pPatientExtname: p.extName,
       pPatientSex: p.sex,
-      pPatientDOB: p.dob,
+      pPatientDob: p.dob,
       pPatientType: p.type,
       pPatientMobileNo: p.mobileNo,
-      pPatientLandLineNo: p.landlineNo,
+      pPatientLandlineNo: p.landlineNo,
       pTransDate: e.transDate,
       pCreatedBy: e.createdBy,
     })).up();
@@ -732,14 +808,15 @@ export function generateKonsultaXml(options: KonsultaXmlOptions): string {
     const profile = profiling.ele('PROFILE', withStatus({
       pHciCaseNo: patient.enlistment.hciCaseNo,
       pHciTransNo: pr.hciTransNo,
-      pPatientPIN: p.pin,
-      pMemberPIN: m.pin,
+      pPatientPin: p.pin,
+      pMemPin: m.pin,
       pProfDate: pr.profDate,
       pPatientAge: p.age,
+      pPatientType: p.type,
+      pEffYear: patient.enlistment.effYear,
       pATC: pr.atc,
       pIsWalkedIn: pr.isWalkedIn,
       pTransDate: pr.transDate,
-      pCreatedBy: patient.enlistment.createdBy,
     }));
 
     // Profile child elements
@@ -777,15 +854,15 @@ export function generateKonsultaXml(options: KonsultaXmlOptions): string {
         const soapNode = soaps.ele('SOAP', withStatus({
           pHciCaseNo: consultation.hciCaseNo,
           pHciTransNo: consultation.hciTransNo,
-          pPatientPIN: patient.patient.pin,
-          pMemberPIN: patient.member.pin,
-          pSOAPDate: consultation.soapDate,
-          pPatientAge: patient.patient.age,
+          pPatientPin: patient.patient.pin,
+          pMemPin: patient.member.pin,
+          pSoapDate: consultation.soapDate,
+          pPatientType: patient.patient.type,
+          pEffYear: patient.enlistment.effYear,
           pATC: consultation.atc,
           pIsWalkedIn: consultation.isWalkedIn,
           pCoPay: consultation.coPay,
           pTransDate: consultation.transDate,
-          pCreatedBy: patient.enlistment.createdBy,
         }));
 
         buildSoapSubjective(soapNode, consultation);
@@ -803,10 +880,234 @@ export function generateKonsultaXml(options: KonsultaXmlOptions): string {
   }
   soaps.up();
 
-  // ── DIAGNOSTICEXAMRESULTS (optional) ──────────────────────────────────────
-  const diagResults = doc.ele('DIAGNOSTICEXAMRESULTS');
-  // No data — emit empty container. DTD allows 0 children (DIAGNOSTICEXAMRESULT*)
-  diagResults.up();
+  // ── DIAGNOSTICEXAMRESULTS — DTD requires (DIAGNOSTICEXAMRESULT)+ ──────────
+  // Exact DTD casing for resultType values stored in DB
+  type DiagExamType =
+    | 'FBS' | 'RBS' | 'CBC' | 'URINALYSIS' | 'CHESTXRAY' | 'SPUTUM'
+    | 'LIPIDPROFILE' | 'ECG' | 'FECALYSIS' | 'PAPSMEAR' | 'OGTT'
+    | 'FOBT' | 'CREATININE' | 'PPDTest' | 'HbA1c';
+
+  // Exact DTD attribute names for the 5 common base fields
+  type BaseAttr =
+    | 'pReferralFacility' | 'pLabDate' | 'pDateAdded'
+    | 'pStatus' | 'pDiagnosticLabFee';
+
+  const DIAG_ELEM_MAP: Record<DiagExamType, { container: string; child: string }> = {
+    FBS:          { container: 'FBSS',          child: 'FBS' },
+    RBS:          { container: 'RBSS',          child: 'RBS' },
+    CBC:          { container: 'CBCS',          child: 'CBC' },
+    URINALYSIS:   { container: 'URINALYSISS',   child: 'URINALYSIS' },
+    CHESTXRAY:    { container: 'CHESTXRAYS',    child: 'CHESTXRAY' },
+    SPUTUM:       { container: 'SPUTUMS',       child: 'SPUTUM' },
+    LIPIDPROFILE: { container: 'LIPIDPROFILES', child: 'LIPIDPROFILE' },
+    ECG:          { container: 'ECGS',          child: 'ECG' },
+    FECALYSIS:    { container: 'FECALYSISS',    child: 'FECALYSIS' },
+    PAPSMEAR:     { container: 'PAPSMEARS',     child: 'PAPSMEAR' },
+    OGTT:         { container: 'OGTTS',         child: 'OGTT' },
+    FOBT:         { container: 'FOBTS',         child: 'FOBT' },
+    CREATININE:   { container: 'CREATININES',   child: 'CREATININE' },
+    PPDTest:      { container: 'PPDTests',      child: 'PPDTest' },
+    HbA1c:        { container: 'HbA1cs',        child: 'HbA1c' },
+  };
+
+  // Build type-specific attributes per exam type
+  function diagExamAttrs(type: DiagExamType | string, d: Record<string, string>): Record<string, string> {
+    const base: Record<BaseAttr, string> = {
+      pReferralFacility: d.referralFacility || '',
+      pLabDate:          d.labDate          || '',
+      pDateAdded:        d.dateAdded        || '',
+      pStatus:           d.status           || 'D',
+      pDiagnosticLabFee: d.diagnosticLabFee || '0.00',
+    };
+    switch (type) {
+      case 'FBS':
+      case 'RBS':
+        return { ...base,
+          pGlucoseMg:   d.glucoseMg   || '',
+          pGlucoseMmol: d.glucoseMmol || '',
+        };
+      case 'CBC':
+        return { ...base,
+          pHematocrit:     d.hematocrit     || '',
+          pHemoglobinG:    d.hemoglobinG    || '',
+          pHemoglobinMmol: d.hemoglobinMmol || '',
+          pMhcPg:          d.mhcPg          || '',
+          pMhcFmol:        d.mhcFmol        || '',
+          pMchcGhb:        d.mchcGhb        || '',
+          pMchcMmol:       d.mchcMmol       || '',
+          pMcvUm:          d.mcvUm          || '',
+          pMcvFl:          d.mcvFl          || '',
+          pWbc1000:        d.wbc1000        || '',
+          pWbc10:          d.wbc10          || '',
+          pMyelocyte:      d.myelocyte      || '',
+          pNeutrophilsBnd: d.neutrophilsBnd || '',
+          pNeutrophilsSeg: d.neutrophilsSeg || '',
+          pLymphocytes:    d.lymphocytes    || '',
+          pMonocytes:      d.monocytes      || '',
+          pEosinophils:    d.eosinophils    || '',
+          pBasophils:      d.basophils      || '',
+          pPlatelet:       d.platelet       || '',
+        };
+      case 'URINALYSIS':
+        return { ...base,
+          pGravity:       d.gravity       || '',
+          pAppearance:    d.appearance    || '',
+          pColor:         d.color         || '',
+          pGlucose:       d.glucose       || '',
+          pProteins:      d.proteins      || '',
+          pKetones:       d.ketones       || '',
+          pPh:            d.ph            || '',
+          pRbCells:       d.rbCells       || '',
+          pWbCells:       d.wbCells       || '',
+          pBacteria:      d.bacteria      || '',
+          pCrystals:      d.crystals      || '',
+          pBladderCell:   d.bladderCell   || '',
+          pSquamousCell:  d.squamousCell  || '',
+          pTubularCell:   d.tubularCell   || '',
+          pBroadCasts:    d.broadCasts    || '',
+          pEpithelialCast:d.epithelialCast|| '',
+          pGranularCast:  d.granularCast  || '',
+          pHyalineCast:   d.hyalineCast   || '',
+          pRbcCast:       d.rbcCast       || '',
+          pWaxyCast:      d.waxyCast      || '',
+          pWcCast:        d.wcCast        || '',
+          pAlbumin:       d.albumin       || '',
+          pPusCells:      d.pusCells      || '',
+        };
+      case 'CHESTXRAY':
+        return { ...base,
+          pFindings:           d.findings           || '',
+          pRemarksFindings:    d.remarksFindings    || '',
+          pObservation:        d.observation        || '',
+          pRemarksObservation: d.remarksObservation || '',
+        };
+      case 'SPUTUM':
+        return { ...base,
+          pDataCollection: d.dataCollection || '',
+          pFindings:       d.findings       || '',
+          pRemarks:        d.remarks        || '',
+          pNoPlusses:      d.noPlusses      || '',
+        };
+      case 'LIPIDPROFILE':
+        return { ...base,
+          pLdl:          d.ldl          || '',
+          pHdl:          d.hdl          || '',
+          pTotal:        d.total        || '',
+          pCholesterol:  d.cholesterol  || '',
+          pTriglycerides:d.triglycerides|| '',
+        };
+      case 'ECG':
+        return { ...base,
+          pFindings: d.findings || '',
+          pRemarks:  d.remarks  || '',
+        };
+      case 'FECALYSIS':
+        return { ...base,
+          pColor:       d.color       || '',
+          pConsistency: d.consistency || '',
+          pRbc:         d.rbc         || '',
+          pWbc:         d.wbc         || '',
+          pOva:         d.ova         || '',
+          pParasite:    d.parasite    || '',
+          pBlood:       d.blood       || '',
+          pPusCells:    d.pusCells    || '',
+        };
+      case 'PAPSMEAR':
+        return { ...base,
+          pFindings:   d.findings   || '',
+          pImpression: d.impression || '',
+        };
+      case 'OGTT':
+        return { ...base,
+          pExamFastingMg:      d.examFastingMg      || '',
+          pExamFastingMmol:    d.examFastingMmol    || '',
+          pExamOgttOneHrMg:    d.examOgttOneHrMg    || '',
+          pExamOgttOneHrMmol:  d.examOgttOneHrMmol  || '',
+          pExamOgttTwoHrMg:    d.examOgttTwoHrMg    || '',
+          pExamOgttTwoHrMmol:  d.examOgttTwoHrMmol  || '',
+        };
+      case 'FOBT':
+      case 'CREATININE':
+      case 'PPDTest':
+      case 'HbA1c':   // DTD uses pFindings, NOT pHba1c
+        return { ...base, pFindings: d.findings || d.result || '' };
+      default:        // OTHERDIAGEXAM
+        return { ...base,
+          pOthDiagExam: d.othDiagExam || type,
+          pFindings:    d.findings    || d.result || '',
+        };
+    }
+  }
+
+  const allDiagResults: KonsultaDiagnosticExamData[] = [];
+  for (const p of patients) {
+    if (p.diagnosticResults) {
+      allDiagResults.push(...p.diagnosticResults);
+    }
+  }
+
+  const diagResultsEl = doc.ele('DIAGNOSTICEXAMRESULTS');
+
+  if (allDiagResults.length > 0) {
+    // Group all exam results for the same patient into ONE DIAGNOSTICEXAMRESULT
+    const grouped = new Map<string, KonsultaDiagnosticExamData[]>();
+    for (const dr of allDiagResults) {
+      const key = `${dr.patientPin}_${dr.hciTransNo}`;
+      if (!grouped.has(key)) grouped.set(key, []);
+      grouped.get(key)!.push(dr);
+    }
+
+    for (const records of grouped.values()) {
+      const first = records[0];
+      const examResult = diagResultsEl.ele('DIAGNOSTICEXAMRESULT', {
+        pHciCaseNo:   first.hciCaseNo,
+        pHciTransNo:  first.hciTransNo,
+        pPatientPin:  first.patientPin,
+        pPatientType: first.patientType,
+        pMemPin:      first.memPin,
+        pEffYear:     first.effYear,
+      });
+
+      // Backward-compat: remap old uppercase DB values to exact DTD casing
+      const CASING_COMPAT: Partial<Record<string, DiagExamType>> = {
+        HBA1C:   'HbA1c',
+        PPDTEST: 'PPDTest',
+      };
+
+      // Group same-type records → one container per type (DTD: CREATININES (CREATININE)+)
+      const byType = new Map<string, { elemNames: { container: string; child: string }; items: KonsultaDiagnosticExamData[] }>();
+      for (const dr of records) {
+        const typeKey = (CASING_COMPAT[dr.resultType] ?? dr.resultType) as DiagExamType | string;
+        if (!byType.has(typeKey)) {
+          byType.set(typeKey, {
+            elemNames: DIAG_ELEM_MAP[typeKey as DiagExamType] ?? { container: 'OTHERDIAGEXAMS', child: 'OTHERDIAGEXAM' },
+            items: [],
+          });
+        }
+        byType.get(typeKey)!.items.push(dr);
+      }
+
+      for (const [typeKey, { elemNames, items }] of byType) {
+        const container = examResult.ele(elemNames.container);
+        for (const dr of items) {
+          container.ele(elemNames.child, withStatus(diagExamAttrs(typeKey, dr.resultData)));
+        }
+      }
+
+      examResult.up();
+    }
+  } else {
+    // DTD requires at least one DIAGNOSTICEXAMRESULT — emit stub
+    diagResultsEl.ele('DIAGNOSTICEXAMRESULT', {
+      pHciCaseNo:   '',
+      pHciTransNo:  '',
+      pPatientPin:  '',
+      pPatientType: '',
+      pMemPin:      '',
+      pEffYear:     '',
+    }).up();
+  }
+  diagResultsEl.up();
 
   // ── MEDICINES ─────────────────────────────────────────────────────────────
   const medicines = doc.ele('MEDICINES');

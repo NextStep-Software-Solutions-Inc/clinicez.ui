@@ -13,6 +13,7 @@ import type { GetHPsType } from "@/actions/hp.actions";
 import MarkdownEditor from "./MarkdownEditor";
 import { MedicalNoteSummarizer } from "@/components/ai";
 import { sortNoteSectionsSOAP } from "@/utils/soap-ordering";
+import KonsultaSubjectiveFields, { type SubjectiveStructuredData } from "./KonsultaSubjectiveFields";
 
 type Detail = NonNullable<GetPatientConsultationDetail["data"]>;
 
@@ -73,6 +74,22 @@ export default function ConsultationNotesEditor({
     Object.fromEntries(sections.map((s) => [s.name, true]))
   );
 
+  // PhilHealth Konsulta: structured subjective data
+  const isKonsulta = consultation.isPhilHealthKonsulta ?? false;
+  const initialStructuredData: Record<string, SubjectiveStructuredData> = {};
+  for (const note of consultation.ConsultationNotes) {
+    if (note.structuredData && typeof note.structuredData === 'object' && !Array.isArray(note.structuredData)) {
+      const sd = note.structuredData as Record<string, string>;
+      initialStructuredData[note.section] = {
+        illnessHistory: sd.illnessHistory ?? "",
+        signsSymptoms: sd.signsSymptoms ?? "",
+        painSite: sd.painSite ?? "",
+        otherComplaint: sd.otherComplaint ?? "",
+      };
+    }
+  }
+  const [structuredDataMap, setStructuredDataMap] = useState<Record<string, SubjectiveStructuredData>>(initialStructuredData);
+
   // Debounce timers per section — cleared on unmount
   const debounceTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
@@ -88,6 +105,9 @@ export default function ConsultationNotesEditor({
 
   const onPatchDetailRef = useRef(onPatchDetail);
   onPatchDetailRef.current = onPatchDetail;
+
+  const structuredDataMapRef = useRef(structuredDataMap);
+  structuredDataMapRef.current = structuredDataMap;
 
   // Cleanup all pending timers when the component unmounts
   useEffect(() => {
@@ -110,6 +130,7 @@ export default function ConsultationNotesEditor({
         content,
         hpId: hp.id,
         showOnPatient: showOnPatientRef.current[sectionName] ?? false,
+        structuredData: structuredDataMapRef.current[sectionName] ?? null,
       });
 
       if (result.status && result.data) {
@@ -125,6 +146,7 @@ export default function ConsultationNotesEditor({
           content: saved.content,
           hpId: saved.hpId,
           showOnPatient: saved.showOnPatient,
+          structuredData: saved.structuredData,
         } satisfies (typeof existing)[number];
         onPatchDetailRef.current({
           ConsultationNotes: idx >= 0
@@ -291,6 +313,25 @@ export default function ConsultationNotesEditor({
 
           {expanded[section.name] && (
             <div className="px-4 pb-4 space-y-2">
+              {/* PhilHealth Konsulta structured fields for subjective section */}
+              {isKonsulta && section.name.toLowerCase().includes("subjective") && (
+                <KonsultaSubjectiveFields
+                  data={structuredDataMap[section.name] ?? { illnessHistory: "", signsSymptoms: "", painSite: "", otherComplaint: "" }}
+                  onChange={(data) => {
+                    setStructuredDataMap((prev) => ({ ...prev, [section.name]: data }));
+                    // Trigger auto-save with debounce
+                    if (!isResolved && myActiveHpRef.current) {
+                      if (debounceTimers.current[section.name]) {
+                        clearTimeout(debounceTimers.current[section.name]);
+                      }
+                      debounceTimers.current[section.name] = setTimeout(() => {
+                        void doSave(section.name, noteValues[section.name] ?? "");
+                      }, AUTOSAVE_DELAY_MS);
+                    }
+                  }}
+                  disabled={isResolved}
+                />
+              )}
               <MarkdownEditor
                 value={noteValues[section.name] ?? ""}
                 onChange={(v) => handleNoteChange(section.name, v)}

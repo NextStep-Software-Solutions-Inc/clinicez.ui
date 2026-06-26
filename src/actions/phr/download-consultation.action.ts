@@ -31,6 +31,8 @@ export const downloadConsultationAction = withErrorHandling(async (userId?: stri
           bpDiastolic: true,
           pulseRate: true,
           respRate: true,
+          visualAcuityLeft: true,
+          visualAcuityRight: true,
           bmi: true,
           spo2: true, // oxygen saturation
         }
@@ -53,15 +55,7 @@ export const downloadConsultationAction = withErrorHandling(async (userId?: stri
           }
         }
       },
-      PhysicalExaminations: {
-        where: { deletedAt: null },
-        orderBy: { createdAt: "desc" },
-        take: 1,
-        select: {
-          visualAcuityLeft: true,
-          visualAcuityRight: true,
-        }
-      },
+
       ClinicPatients: {
         select: {
           clinicId: true
@@ -217,8 +211,8 @@ export const downloadConsultationAction = withErrorHandling(async (userId?: stri
     { field: "physicalExaminationBp_2", value: phr?.VitalSigns?.[0]?.bpDiastolic?.toString() || "" },
     { field: "physicalExaminationHeartRate", value: phr?.VitalSigns?.[0]?.pulseRate?.toString() || "" },
     { field: "physicalExaminationRespiratoryRate", value: phr?.VitalSigns?.[0]?.respRate?.toString() || "" },
-    { field: "physicalExaminationVisual_1", value: phr?.PhysicalExaminations?.[0]?.visualAcuityLeft || "" },
-    { field: "physicalExaminationVisual_2", value: phr?.PhysicalExaminations?.[0]?.visualAcuityRight || "" },
+    { field: "physicalExaminationVisual_1", value: phr?.VitalSigns?.[0]?.visualAcuityLeft || "" },
+    { field: "physicalExaminationVisual_2", value: phr?.VitalSigns?.[0]?.visualAcuityRight || "" },
     { field: "physicalExaminationHeent", value: "" },
     { field: "physicalExaminationChestBreastLungs", value: "" },
     { field: "physicalExaminationHeart", value: "" },

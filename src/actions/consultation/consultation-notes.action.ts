@@ -1,6 +1,7 @@
 "use server"
 
 import prisma from "@lib/prisma"
+import { Prisma } from "@prisma/client";
 import { getCachedSession } from "@actions/session.action";
 import { capitalize, hasCodeProperty } from "@lib/utils";
 
@@ -10,6 +11,7 @@ type UpsertConsultationNotePayload = {
   content: string;
   hpId: number;
   showOnPatient?: boolean;
+  structuredData?: any;
 }
 export const upsertConsultationNotesAction = async (data: UpsertConsultationNotePayload) => {
   let message = "Consultation notes updated successfully"
@@ -17,7 +19,7 @@ export const upsertConsultationNotesAction = async (data: UpsertConsultationNote
     const session = await getCachedSession()
     if (!session) throw new Error("User not authenticated.")
 
-    const { consultationTicketId, section, content, hpId, showOnPatient } = data
+    const { consultationTicketId, section, content, hpId, showOnPatient, structuredData } = data
 
     // Authorize: verify the current user's HP is assigned to this consultation ticket
     // Also check that the consultation is not resolved
@@ -54,10 +56,12 @@ export const upsertConsultationNotesAction = async (data: UpsertConsultationNote
         content,
         hpId,
         ...(showOnPatient !== undefined ? { showOnPatient } : {}),
+        ...(structuredData !== undefined ? { structuredData: structuredData as Prisma.InputJsonValue } : {}),
       },
       update: {
         content,
         ...(showOnPatient !== undefined ? { showOnPatient } : {}),
+        ...(structuredData !== undefined ? { structuredData: structuredData as Prisma.InputJsonValue } : {}),
       },
     })
     return { status: true, message: `${capitalize(section)} content updated successfully`, data: updatedNotes }

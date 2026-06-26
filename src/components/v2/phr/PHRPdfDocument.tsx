@@ -684,7 +684,7 @@ export function PHRPdfDocument({ patient, sections, generatedAt, theme = 'colorf
                       <Td flex={0.8} alt={i % 2 !== 0}>{v(pm.waistCircumference)}</Td>
                       <Td flex={0.8} alt={i % 2 !== 0}>{v(pm.hipCircumference)}</Td>
                       <Td flex={0.8} alt={i % 2 !== 0}>{v(pm.midUpperArmCircumference)}</Td>
-                      <Td flex={1.5} alt={i % 2 !== 0}>{v(pm.remarks)}</Td>
+                      <Td flex={1.5} alt={i % 2 !== 0}>{v(pm.notes)}</Td>
                     </View>
                   ))}
                 </View>
@@ -693,27 +693,29 @@ export function PHRPdfDocument({ patient, sections, generatedAt, theme = 'colorf
           </View>
         )}
 
-        {/* ─────────── PHYSICAL EXAMS ─────────── */}
-        {has('exams') && (
-          <View style={s.section} wrap={false}>
-            <SecHeader title="Physical Examinations" tc={tc} />
-            <View style={[s.sectionBody, { borderColor: tc.sectionBodyBorder }]}>
-              {patient.physicalExaminations.length === 0 ? <Empty msg="No physical examinations recorded." /> : (
-                <View style={s.table}>
-                  <View style={[s.tableHead, { backgroundColor: tc.tableHeadBg }]}><Th flex={1} tc={tc}>Date</Th><Th flex={1} tc={tc}>Visual Acuity — Left</Th><Th flex={1} tc={tc}>Visual Acuity — Right</Th><Th flex={2} tc={tc}>Status / Notes</Th></View>
-                  {patient.physicalExaminations.map((e, i) => (
-                    <View key={e.id} style={i % 2 === 0 ? s.tableRow : s.tableRowAlt}>
-                      <Td flex={1} alt={i % 2 !== 0}>{fmtDate(e.createdAt)}</Td>
-                      <Td flex={1} alt={i % 2 !== 0}>{v(e.visualAcuityLeft)}</Td>
-                      <Td flex={1} alt={i % 2 !== 0}>{v(e.visualAcuityRight)}</Td>
-                      <Td flex={2} alt={i % 2 !== 0}>{v(e.status)}</Td>
-                    </View>
-                  ))}
-                </View>
-              )}
+        {/* ─────────── VISUAL ACUITY ─────────── */}
+        {has('exams') && (() => {
+          const vaRecords = patient.vitalSigns.filter(vs => vs.visualAcuityLeft || vs.visualAcuityRight)
+          return (
+            <View style={s.section} wrap={false}>
+              <SecHeader title="Visual Acuity" tc={tc} />
+              <View style={[s.sectionBody, { borderColor: tc.sectionBodyBorder }]}>
+                {vaRecords.length === 0 ? <Empty msg="No visual acuity records found." /> : (
+                  <View style={s.table}>
+                    <View style={[s.tableHead, { backgroundColor: tc.tableHeadBg }]}><Th flex={1} tc={tc}>Date</Th><Th flex={1} tc={tc}>Visual Acuity — Left</Th><Th flex={1} tc={tc}>Visual Acuity — Right</Th></View>
+                    {vaRecords.map((vs, i) => (
+                      <View key={vs.id} style={i % 2 === 0 ? s.tableRow : s.tableRowAlt}>
+                        <Td flex={1} alt={i % 2 !== 0}>{fmtDate(vs.dateTaken)}</Td>
+                        <Td flex={1} alt={i % 2 !== 0}>{v(vs.visualAcuityLeft)}</Td>
+                        <Td flex={1} alt={i % 2 !== 0}>{v(vs.visualAcuityRight)}</Td>
+                      </View>
+                    ))}
+                  </View>
+                )}
+              </View>
             </View>
-          </View>
-        )}
+          )
+        })()}
 
         {/* ─────────── INSURANCE ─────────── */}
         {has('insurance') && (

@@ -150,6 +150,7 @@ export const permissionMatrix: Record<EditPermissionLevel, Set<string>> = {
     "medical-history",
     "family-history",
     "pediatric-measurements",
+    "ob-gyne",
   ]),
   [EditPermissionLevel.PROFESSIONAL_EDIT]: new Set([
     "demographics",

@@ -103,6 +103,26 @@ export interface KonsultaPatientData {
       illDrugUser: string;
       isSexuallyActive: string;
     };
+    obGyneHistory?: {
+      menarche: string;
+      lastMensPeriod: string;
+      periodDuration: string;
+      mensInterval: string;
+      padsPerDay: string;
+      onsetSexIntercourse: string;
+      birthControl: string;
+      isMenopause: string;
+      menopauseAge: string;
+      gravida: string;
+      para: string;
+      fullTerms: string;
+      premature: string;
+      abortion: string;
+      livingChildren: string;
+      typeLasDelivery: string;
+      isPreEclampsia: string;
+      wFamPlan: string;
+    };
     physicalExaminations: Array<{
       generalSurveyId: string;
       generalSurveyRemarks: string;
@@ -397,34 +417,35 @@ function buildImmunizations(parent: XmlNode, patient: KonsultaPatientData): XmlN
 }
 
 function buildMensHist(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
+  const og = patient.profile.obGyneHistory;
   parent.ele('MENSHIST', withStatus({
-    pMenarche: '',
-    pLastMensPeriod: '',
-    pPeriodDuration: '',
-    pPadsPerDay: '',
-    pOnsetSexIntercourse: '',
-    pBirthControl: '',
-    pIsMenopause: '',
-    pMenopauseAge: '',
+    pMenarchePeriod: og?.menarche || '',
+    pLastMensPeriod: og?.lastMensPeriod || '',
+    pPeriodDuration: og?.periodDuration || '',
+    pMensInterval: og?.mensInterval || '',
+    pPadsPerDay: og?.padsPerDay || '',
+    pOnsetSexIc: og?.onsetSexIntercourse || '',
+    pBirthCtrlMethod: og?.birthControl || '',
+    pIsMenopause: og?.isMenopause || '',
+    pMenopauseAge: og?.menopauseAge || '',
+    pIsApplicable: patient.patient.sex === 'F' ? 'Y' : 'N',
   })).up();
   return parent;
 }
 
 function buildPregHist(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
+  const og = patient.profile.obGyneHistory;
   parent.ele('PREGHIST', withStatus({
-    pGravida: '',
-    pPara: '',
-    pT: '',
-    pP: '',
-    pA: '',
-    pL: '',
-    pFullTerms: '',
-    pPremature: '',
-    pAbortion: '',
-    pLivingChildren: '',
-    pDateLastDelivery: '',
-    pTypeLasDelivery: '',
-    pLastChildBirthWeight: '',
+    pPregCnt: og?.gravida || '',
+    pDeliveryCnt: og?.para || '',
+    pDeliveryTyp: og?.typeLasDelivery || '',
+    pFullTermCnt: og?.fullTerms || '',
+    pPrematureCnt: og?.premature || '',
+    pAbortionCnt: og?.abortion || '',
+    pLivChildrenCnt: og?.livingChildren || '',
+    pWPregIndhyp: og?.isPreEclampsia || '',
+    pWFamPlan: og?.wFamPlan || '',
+    pIsApplicable: patient.patient.sex === 'F' ? 'Y' : 'N',
   })).up();
   return parent;
 }

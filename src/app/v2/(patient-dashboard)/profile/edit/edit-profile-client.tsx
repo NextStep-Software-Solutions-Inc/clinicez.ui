@@ -703,7 +703,14 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
                     </div>
                   ) : (
                     <Suspense fallback={<FormLoadingFallback />}>
-                      <ObGyneHistoryEditForm userId={patientData.userId} inline={true} onSuccess={handleSuccess} saveRef={obGyneSaveRef} onDirtyChange={(d) => onSectionDirtyChange('ob-gyne', d)} />
+                      <ObGyneHistoryEditForm 
+                        userId={patientData.userId} 
+                        currentData={patientData.obGyneHistory as any}
+                        inline={true} 
+                        onSuccess={handleSuccess} 
+                        saveRef={obGyneSaveRef} 
+                        onDirtyChange={(d) => onSectionDirtyChange('ob-gyne', d)} 
+                      />
                     </Suspense>
                   )}
                 </>

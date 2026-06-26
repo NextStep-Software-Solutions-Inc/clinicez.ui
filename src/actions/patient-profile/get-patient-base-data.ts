@@ -48,6 +48,12 @@ export async function getPatientBaseData(): Promise<PatientBaseData | null> {
                 },
                 PersonalHistory: { select: { id: true } },
                 ObGyneHistory: { select: { id: true } },
+                VitalSigns: {
+                    where: { isActive: true, deletedAt: null },
+                    orderBy: { createdAt: 'desc' },
+                    take: 1,
+                    select: { bmi: true, zScore: true }
+                },
                 ClinicPatients: {
                     where: { isActive: true, deletedAt: null },
                     select: {
@@ -78,22 +84,7 @@ export async function getPatientBaseData(): Promise<PatientBaseData | null> {
 
         if (!patient) return null
 
-        const pediatricCount = await prisma.vitalSign.count({
-            where: {
-                userId: patient.id,
-                isActive: true,
-                deletedAt: null,
-                OR: [
-                    { length: { not: null } },
-                    { headCircumference: { not: null } },
-                    { skinfoldThickness: { not: null } },
-                    { waistCircumference: { not: null } },
-                    { hipCircumference: { not: null } },
-                    { limbCircumference: { not: null } },
-                    { midUpperArmCircumference: { not: null } },
-                ],
-            },
-        })
+
 
         const clinicPatient = patient.ClinicPatients[0] ?? null
         const certCount = clinicPatient?._count.MedicalCertificates ?? 0
@@ -116,6 +107,8 @@ export async function getPatientBaseData(): Promise<PatientBaseData | null> {
             caseNumber: patient.caseNumber,
             nickname: patient.nickname,
             suffix: patient.suffix,
+            latestBmi: patient.VitalSigns?.[0]?.bmi ?? null,
+            latestZScore: patient.VitalSigns?.[0]?.zScore ?? null,
             verificationStatus: patient.verificationStatus,
             badges: {
                 hasEmail: !!patient.email,
@@ -129,7 +122,6 @@ export async function getPatientBaseData(): Promise<PatientBaseData | null> {
                 vitalSignsCount: patient._count.VitalSigns,
                 hasPersonalHistory: patient.PersonalHistory !== null,
                 hasObGyneHistory: patient.ObGyneHistory !== null,
-                pediatricMeasurementsCount: pediatricCount,
                 userVaccinationsCount: patient._count.UserVaccinations,
                 userAddressesCount: patient._count.UserAddresses,
                 userEmergencyContactsCount: patient._count.UserEmergencyContacts,

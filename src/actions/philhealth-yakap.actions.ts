@@ -461,12 +461,16 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
                       take: 1,
                       select: {
                         bpSystolic: true, bpDiastolic: true, pulseRate: true, respRate: true,
-                        temp: true, height: true, weight: true, bmi: true,
+                        temp: true, height: true, weight: true, bmi: true, zScore: true,
                         visualAcuityLeft: true, visualAcuityRight: true,
                         length: true, headCircumference: true, skinfoldThickness: true,
                         waistCircumference: true, hipCircumference: true,
                         limbCircumference: true, midUpperArmCircumference: true,
                       },
+                    },
+                    PhysicalExaminations: {
+                      where: { deletedAt: null },
+                      orderBy: { createdAt: "asc" },
                     },
                   },
                 },
@@ -503,6 +507,11 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
                     ConsultationManagements: {
                       include: { ManagementCode: true },
                     },
+                    PhysicalExaminations: {
+                      where: { deletedAt: null },
+                      orderBy: { createdAt: "desc" },
+                      take: 1,
+                    },
                   },
                 },
               },
@@ -532,7 +541,7 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
       length?: number | null; headCircumference?: number | null;
       skinfoldThickness?: number | null; waistCircumference?: number | null;
       hipCircumference?: number | null; limbCircumference?: number | null;
-      midUpperArmCircumference?: number | null;
+      midUpperArmCircumference?: number | null; zScore?: number | null;
     } | null | undefined) => ({
       systolic: vs?.bpSystolic?.toString() ?? "",
       diastolic: vs?.bpDiastolic?.toString() ?? "",
@@ -542,7 +551,7 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
       height: vs?.height?.toString() ?? "",
       weight: vs?.weight?.toString() ?? "",
       bmi: vs?.bmi?.toString() ?? "",
-      zScore: "",
+      zScore: vs?.zScore?.toString() ?? "",
       leftVision: vs?.visualAcuityLeft ?? "",
       rightVision: vs?.visualAcuityRight ?? "",
       length: vs?.length?.toString() ?? "",
@@ -554,6 +563,37 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
       midUpperArmCirc: vs?.midUpperArmCircumference?.toString() ?? "",
     });
 
+    const mapPhysicalExam = (pe: {
+      generalSurveyId?: string | null; generalSurveyRemarks?: string | null;
+      heentId?: string | null; heentRemarks?: string | null;
+      chestId?: string | null; chestRemarks?: string | null;
+      heartId?: string | null; heartRemarks?: string | null;
+      abdomenId?: string | null; abdomenRemarks?: string | null;
+      guId?: string | null; guRemarks?: string | null;
+      skinId?: string | null; skinRemarks?: string | null;
+      neuroId?: string | null; neuroRemarks?: string | null;
+      rectalId?: string | null; rectalRemarks?: string | null;
+    } | null | undefined) => pe ? {
+      generalSurveyId: pe.generalSurveyId ?? "",
+      generalSurveyRemarks: pe.generalSurveyRemarks ?? "",
+      heentId: pe.heentId ?? "",
+      heentRemarks: pe.heentRemarks ?? "",
+      chestId: pe.chestId ?? "",
+      chestRemarks: pe.chestRemarks ?? "",
+      heartId: pe.heartId ?? "",
+      heartRemarks: pe.heartRemarks ?? "",
+      abdomenId: pe.abdomenId ?? "",
+      abdomenRemarks: pe.abdomenRemarks ?? "",
+      guId: pe.guId ?? "",
+      guRemarks: pe.guRemarks ?? "",
+      skinId: pe.skinId ?? "",
+      skinRemarks: pe.skinRemarks ?? "",
+      neuroId: pe.neuroId ?? "",
+      neuroRemarks: pe.neuroRemarks ?? "",
+      rectalId: pe.rectalId ?? "",
+      rectalRemarks: pe.rectalRemarks ?? "",
+    } : undefined;
+
     // Build patient data for XML generator (async for DB lookups)
     const patients: KonsultaPatientData[] = await Promise.all(batch.BatchPatients.map(async (bp) => {
       const patient = bp.ClinicPatient.Patient;
@@ -561,8 +601,12 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
       const phRecord = patient.PhilHealthRecords?.[0];
       const latestVitals = patient.VitalSigns?.[0] ?? null;
       if (latestVitals) {
-        latestVitals.length = latestVitals.length ? (latestVitals.length as any).toNumber() : null;
-        latestVitals.midUpperArmCircumference = latestVitals.midUpperArmCircumference ? (latestVitals.midUpperArmCircumference as any).toNumber() : null;
+        const decimals: (keyof typeof latestVitals)[] = ['length', 'headCircumference', 'skinfoldThickness', 'waistCircumference', 'hipCircumference', 'limbCircumference', 'midUpperArmCircumference'];
+        decimals.forEach(k => {
+          if (latestVitals[k]) {
+            (latestVitals as any)[k] = (latestVitals[k] as any).toNumber();
+          }
+        });
       }
 
       const memberPin = phRecord?.pin || "";
@@ -657,6 +701,7 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
                 painSite: sd.painSite || "",
               },
               vitals: mapVitals(latestVitals as any),
+              physicalExam: mapPhysicalExam(t.PhysicalExaminations?.[0]),
               icdCodes,
               managements: (t.ConsultationManagements ?? []).map((m) => ({
                 managementId: m.ManagementCode.code,
@@ -724,19 +769,21 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
           age: ageStr,
         },
         profile: {
-          hciTransNo: enlistment?.profilingTransNo || "",
-          profDate: today,
+          hciTransNo: enlistment?.hciCaseNo?.replace(/^T-/, 'P-') || "",
+          profDate: enlistment?.createdAt ? formatDate(enlistment.createdAt) : today,
           atc: profileAtc,
           isWalkedIn: profileIsWalkedIn ? "Y" as const : "N" as const,
           transDate: today,
           vitals: mapVitals(latestVitals as any),
-          bloodType: patient.bloodType || "",
+          physicalExaminations: patient.PhysicalExaminations.map(pe => mapPhysicalExam(pe)).filter((x): x is NonNullable<typeof x> => !!x),
+          bloodType: patient.bloodType || "U",
           medicalHistories: patient.MedicalHistories.map(mh => {
             const code = mh.Condition.code;
             if (code) {
               return {
                 code,
                 isRelevant: 'Y' as const,
+                mhsOthers: mh.details || '',
               };
             }
             return {
@@ -749,7 +796,10 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
           familyHistories: patient.FamilyMedicalHistories.map(fh => {
             const code = fh.Condition.code;
             if (code) {
-              return { code };
+              return { 
+                code,
+                specificDesc: fh.details || '' 
+              };
             }
             return {
               code: '998',
@@ -761,15 +811,12 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
             date: sh.operationDate ? formatDate(sh.operationDate) : '',
           })),
           socialHistory: patient.PersonalHistory ? {
-            isSmoker: (patient.PersonalHistory.smokingStatus === 'Current' || patient.PersonalHistory.smokingStatus === 'Yes') ? 'Y' : (patient.PersonalHistory.smokingStatus === 'Never' || patient.PersonalHistory.smokingStatus === 'No' ? 'N' : ''),
-            stickPerDay: '',
-            packPerYear: patient.PersonalHistory.numberOfPacksPerYear ? String(patient.PersonalHistory.numberOfPacksPerYear) : '',
-            isDrinker: (patient.PersonalHistory.alcoholStatus === 'Current' || patient.PersonalHistory.alcoholStatus === 'Yes') ? 'Y' : (patient.PersonalHistory.alcoholStatus === 'Never' || patient.PersonalHistory.alcoholStatus === 'No' ? 'N' : ''),
-            bottlePerDay: patient.PersonalHistory.numberOfBottlesPerDay ? String(patient.PersonalHistory.numberOfBottlesPerDay) : '',
-            isDrugUser: (patient.PersonalHistory.illicitDrugUse === 'Current' || patient.PersonalHistory.illicitDrugUse === 'Yes') ? 'Y' : (patient.PersonalHistory.illicitDrugUse === 'Never' || patient.PersonalHistory.illicitDrugUse === 'No' ? 'N' : ''),
-            isExposed: '',
-            specifyExposure: '',
-            socHistOther: '',
+            isSmoker: patient.PersonalHistory.smokingStatus === 'CURRENT' ? 'Y' : (patient.PersonalHistory.smokingStatus === 'NEVER' || patient.PersonalHistory.smokingStatus === 'FORMER' ? 'N' : ''),
+            noCigpk: patient.PersonalHistory.numberOfPacksPerYear ? String(patient.PersonalHistory.numberOfPacksPerYear) : '',
+            isAdrinker: (patient.PersonalHistory.alcoholStatus === 'OCCASIONAL' || patient.PersonalHistory.alcoholStatus === 'REGULAR' || patient.PersonalHistory.alcoholStatus === 'HEAVY') ? 'Y' : (patient.PersonalHistory.alcoholStatus === 'NEVER' ? 'N' : ''),
+            noBottles: patient.PersonalHistory.numberOfBottlesPerDay ? String(patient.PersonalHistory.numberOfBottlesPerDay) : '',
+            illDrugUser: patient.PersonalHistory.illicitDrugUse === 'CURRENT' ? 'Y' : (patient.PersonalHistory.illicitDrugUse === 'NEVER' || patient.PersonalHistory.illicitDrugUse === 'FORMER' ? 'N' : ''),
+            isSexuallyActive: patient.PersonalHistory.sexuallyActive === 'YES' ? 'Y' : (patient.PersonalHistory.sexuallyActive === 'NO' || patient.PersonalHistory.sexuallyActive === 'INACTIVE' ? 'N' : ''),
           } : undefined,
         },
         consultations,

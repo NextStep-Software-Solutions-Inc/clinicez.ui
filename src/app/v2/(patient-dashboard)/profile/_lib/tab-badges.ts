@@ -29,8 +29,6 @@ export function getTabBadge(tabId: string, badges: PatientBadgeCounts): TabBadge
             return !badges.hasPersonalHistory ? { status: 'Incomplete', count: 1 } : null
         case 'obgyn':
             return !badges.hasObGyneHistory ? { status: 'Incomplete', count: 1 } : null
-        case 'pediatric':
-            return badges.pediatricMeasurementsCount === 0 ? { status: 'Incomplete', count: 1 } : null
         case 'vaccinations':
             return badges.userVaccinationsCount === 0 ? { status: 'Incomplete', count: 1 } : null
         case 'addresses':

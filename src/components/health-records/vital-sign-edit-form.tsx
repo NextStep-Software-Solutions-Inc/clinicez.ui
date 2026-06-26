@@ -272,6 +272,113 @@ export function VitalSignEditForm({
         </FormField>
       </div>
 
+      {/* Vision */}
+      <div className="space-y-4 border-b py-4">
+        <h3 className="text-sm font-semibold">Vision (Optional)</h3>
+
+        <FormField label="Visual Acuity (Left)" htmlFor="visualAcuityLeft" helpText="e.g. 20/20">
+          <Input
+            id="visualAcuityLeft"
+            type="text"
+            value={formData.visualAcuityLeft || ''}
+            onChange={(e) => handleFieldChange('visualAcuityLeft', e.target.value)}
+            placeholder="e.g., 20/20"
+          />
+        </FormField>
+
+        <FormField label="Visual Acuity (Right)" htmlFor="visualAcuityRight" helpText="e.g. 20/20">
+          <Input
+            id="visualAcuityRight"
+            type="text"
+            value={formData.visualAcuityRight || ''}
+            onChange={(e) => handleFieldChange('visualAcuityRight', e.target.value)}
+            placeholder="e.g., 20/20"
+          />
+        </FormField>
+      </div>
+
+      {/* Anthropometrics */}
+      <div className="space-y-4 border-b py-4">
+        <h3 className="text-sm font-semibold">Anthropometrics (Optional)</h3>
+
+        <FormField label="Length (cm)" htmlFor="length" helpText="For pediatric">
+          <Input
+            id="length"
+            type="number"
+            step="0.1"
+            placeholder="e.g., 50.5"
+            value={formData.length || ''}
+            onChange={(e) => handleFieldChange('length', e.target.value ? parseFloat(e.target.value) : undefined)}
+          />
+        </FormField>
+        
+        <FormField label="Head Circumference (cm)" htmlFor="headCircumference">
+          <Input
+            id="headCircumference"
+            type="number"
+            step="0.1"
+            placeholder="e.g., 34.0"
+            value={formData.headCircumference || ''}
+            onChange={(e) => handleFieldChange('headCircumference', e.target.value ? parseFloat(e.target.value) : undefined)}
+          />
+        </FormField>
+
+        <FormField label="Skinfold Thickness (mm)" htmlFor="skinfoldThickness">
+          <Input
+            id="skinfoldThickness"
+            type="number"
+            step="0.1"
+            placeholder="e.g., 12.5"
+            value={formData.skinfoldThickness || ''}
+            onChange={(e) => handleFieldChange('skinfoldThickness', e.target.value ? parseFloat(e.target.value) : undefined)}
+          />
+        </FormField>
+
+        <FormField label="Waist Circumference (cm)" htmlFor="waistCircumference">
+          <Input
+            id="waistCircumference"
+            type="number"
+            step="0.1"
+            placeholder="e.g., 80.0"
+            value={formData.waistCircumference || ''}
+            onChange={(e) => handleFieldChange('waistCircumference', e.target.value ? parseFloat(e.target.value) : undefined)}
+          />
+        </FormField>
+
+        <FormField label="Hip Circumference (cm)" htmlFor="hipCircumference">
+          <Input
+            id="hipCircumference"
+            type="number"
+            step="0.1"
+            placeholder="e.g., 90.0"
+            value={formData.hipCircumference || ''}
+            onChange={(e) => handleFieldChange('hipCircumference', e.target.value ? parseFloat(e.target.value) : undefined)}
+          />
+        </FormField>
+
+        <FormField label="Limb Circumference (cm)" htmlFor="limbCircumference">
+          <Input
+            id="limbCircumference"
+            type="number"
+            step="0.1"
+            placeholder="e.g., 25.0"
+            value={formData.limbCircumference || ''}
+            onChange={(e) => handleFieldChange('limbCircumference', e.target.value ? parseFloat(e.target.value) : undefined)}
+          />
+        </FormField>
+
+        <FormField label="Mid-Upper Arm Circumference (cm)" htmlFor="midUpperArmCircumference">
+          <Input
+            id="midUpperArmCircumference"
+            type="number"
+            step="0.1"
+            placeholder="e.g., 11.5"
+            value={formData.midUpperArmCircumference || ''}
+            onChange={(e) => handleFieldChange('midUpperArmCircumference', e.target.value ? parseFloat(e.target.value) : undefined)}
+          />
+        </FormField>
+      </div>
+
       {/* Notes */}
       <div className="space-y-4 pt-4">
         <h3 className="text-sm font-semibold">Notes (Optional)</h3>
@@ -300,8 +407,8 @@ export function VitalSignEditForm({
               <Button
                 onClick={() => {
                   const dataWithId = { ...recentVitals[0], id: recentVitals[0].id }
-                  setFormData(dataWithId)
-                  setBaselineData(dataWithId)
+                  setFormData(dataWithId as any)
+                  setBaselineData(dataWithId as any)
                   setIsEditingExisting(true)
                 }}
                 variant={isEditingExisting ? 'default' : 'outline'}

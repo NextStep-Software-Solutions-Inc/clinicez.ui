@@ -168,6 +168,63 @@ function VitalsListView({ data }: Props) {
                     </>
                   ) : "-"}  
                 </div>
+                {(v.visualAcuityLeft || v.visualAcuityRight) && (
+                  <div className="flex flex-col">
+                    <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1">Vision</p>
+                    <p className="text-sm font-bold text-slate-900 dark:text-white">
+                      L: {v.visualAcuityLeft || '-'} | R: {v.visualAcuityRight || '-'}
+                    </p>
+                  </div>
+                )}
+                {v.length && (
+                  <div className="flex flex-col">
+                    <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1">Length</p>
+                    <p className="text-sm font-bold text-slate-900 dark:text-white">{v.length.toString()}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">cm</p>
+                  </div>
+                )}
+                {v.headCircumference && (
+                  <div className="flex flex-col">
+                    <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1">Head Circumference</p>
+                    <p className="text-sm font-bold text-slate-900 dark:text-white">{v.headCircumference.toString()}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">cm</p>
+                  </div>
+                )}
+                {v.waistCircumference && (
+                  <div className="flex flex-col">
+                    <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1">Waist Circumference</p>
+                    <p className="text-sm font-bold text-slate-900 dark:text-white">{v.waistCircumference.toString()}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">cm</p>
+                  </div>
+                )}
+                {v.hipCircumference && (
+                  <div className="flex flex-col">
+                    <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1">Hip Circumference</p>
+                    <p className="text-sm font-bold text-slate-900 dark:text-white">{v.hipCircumference.toString()}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">cm</p>
+                  </div>
+                )}
+                {v.skinfoldThickness && (
+                  <div className="flex flex-col">
+                    <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1">Skinfold Thickness</p>
+                    <p className="text-sm font-bold text-slate-900 dark:text-white">{v.skinfoldThickness.toString()}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">mm</p>
+                  </div>
+                )}
+                {v.limbCircumference && (
+                  <div className="flex flex-col">
+                    <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1">Limb Circumference</p>
+                    <p className="text-sm font-bold text-slate-900 dark:text-white">{v.limbCircumference.toString()}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">cm</p>
+                  </div>
+                )}
+                {v.midUpperArmCircumference && (
+                  <div className="flex flex-col">
+                    <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1">Mid-Upper Arm Circumference</p>
+                    <p className="text-sm font-bold text-slate-900 dark:text-white">{v.midUpperArmCircumference.toString()}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">cm</p>
+                  </div>
+                )}
             </div>
 
             {remarks.length > 0 && (

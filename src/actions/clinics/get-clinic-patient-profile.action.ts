@@ -109,6 +109,7 @@ export async function getClinicPatientProfileAction({
             disabilities,
             addresses,
             surgical,
+            physicalExaminations,
         ] = await Promise.all([
             prisma.medicalHistory.findMany({
                 where: { userId: patient.id },
@@ -221,7 +222,12 @@ export async function getClinicPatientProfileAction({
             prisma.surgicalHistory.findMany({
                 where: { userId: patient.id, deletedAt: null },
                 orderBy: { createdAt: "desc" },
-                take: 20,
+                take: 15,
+            }),
+            prisma.physicalExamination.findMany({
+                where: { userId: patient.id, deletedAt: null },
+                orderBy: { createdAt: "desc" },
+                take: 5,
             }),
         ]);
 
@@ -330,7 +336,21 @@ export async function getClinicPatientProfileAction({
                 }
                 : null,
 
-
+            // Physical Examinations
+            physicalExaminations: physicalExaminations.map((pe) => ({
+                ...pe,
+                createdAt: pe.createdAt.toISOString(),
+                updatedAt: pe.updatedAt.toISOString(),
+                deletedAt: pe.deletedAt ? pe.deletedAt.toISOString() : null,
+            })),
+            latestPhysicalExam: physicalExaminations[0]
+                ? {
+                    ...physicalExaminations[0],
+                    createdAt: physicalExaminations[0].createdAt.toISOString(),
+                    updatedAt: physicalExaminations[0].updatedAt.toISOString(),
+                    deletedAt: physicalExaminations[0].deletedAt ? physicalExaminations[0].deletedAt.toISOString() : null,
+                }
+                : null,
 
             // OB/Gyn History
             obGyneHistory: obGyne

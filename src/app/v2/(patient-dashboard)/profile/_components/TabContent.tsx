@@ -7,7 +7,6 @@ import { MedicalTab }      from './tabs/MedicalTab'
 import { VitalsTab }       from './tabs/VitalsTab'
 import { ExamsTab }        from './tabs/ExamsTab'
 import { ObGynTab }        from './tabs/ObGynTab'
-import { PediatricTab }    from './tabs/PediatricTab'
 import { AddressesTab }    from './tabs/AddressesTab'
 import { ContactsTab }     from './tabs/ContactsTab'
 import { LifestyleTab }    from './tabs/LifestyleTab'
@@ -71,7 +70,6 @@ const TAB_LOADERS: Record<keyof PatientTabDataMap, React.ComponentType<{ userId?
   vitals:       createTabLoader('vitals',       VitalsTab as unknown as React.ComponentType<{ data: PatientTabDataMap['vitals'], isClinicMode: boolean, patientId?: number, clinicPatientId?: number | null }>),
   exams:        createTabLoader('exams',        ExamsTab as unknown as React.ComponentType<{ data: PatientTabDataMap['exams'], isClinicMode: boolean, patientId?: number, clinicPatientId?: number | null }>),
   obgyn:        createTabLoader('obgyn',        ObGynTab as unknown as React.ComponentType<{ data: PatientTabDataMap['obgyn'], isClinicMode: boolean, patientId?: number, clinicPatientId?: number | null }>),
-  pediatric:    createTabLoader('pediatric',    PediatricTab as unknown as React.ComponentType<{ data: PatientTabDataMap['pediatric'], isClinicMode: boolean, patientId?: number, clinicPatientId?: number | null }>),
   addresses:    createTabLoader('addresses',    AddressesTab as unknown as React.ComponentType<{ data: PatientTabDataMap['addresses'], isClinicMode: boolean, patientId?: number, clinicPatientId?: number | null }>),
   contacts:     createTabLoader('contacts',     ContactsTab as unknown as React.ComponentType<{ data: PatientTabDataMap['contacts'], isClinicMode: boolean, patientId?: number, clinicPatientId?: number | null }>),
   lifestyle:    createTabLoader('lifestyle',    LifestyleTab as unknown as React.ComponentType<{ data: PatientTabDataMap['lifestyle'], isClinicMode: boolean, patientId?: number, clinicPatientId?: number | null }>),

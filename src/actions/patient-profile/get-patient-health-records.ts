@@ -64,7 +64,7 @@ export async function getPatientHealthRecords(): Promise<SerializedPatientHealth
     }
 
     // Fetch related data in separate queries
-    const [medical, familyMedical, vitals, obGyne, pediatric, personal, philHealth, procedures, clinicPatients, allergies, emergencyContacts, vaccinations, disabilities, addresses, surgical] = await Promise.all([
+    const [medical, familyMedical, vitals, obGyne, physicalExaminations, pediatric, personal, philHealth, procedures, clinicPatients, allergies, emergencyContacts, vaccinations, disabilities, addresses, surgical] = await Promise.all([
       // Medical Histories
       prisma.medicalHistory.findMany({
         where: { userId: patient.id },
@@ -97,6 +97,11 @@ export async function getPatientHealthRecords(): Promise<SerializedPatientHealth
       // OB/Gyn History
       prisma.obGyneHistory.findFirst({
         where: { userId: patient.id },
+      }),
+      // Physical Examinations
+      prisma.physicalExamination.findMany({
+        where: { userId: patient.id, deletedAt: null },
+        orderBy: { createdAt: 'desc' },
       }),
       // Pediatric Measurements
       prisma.vitalSign.findMany({
@@ -335,18 +340,32 @@ export async function getPatientHealthRecords(): Promise<SerializedPatientHealth
       // Vital Signs
       vitalSigns: vitals.map(v => ({
         ...v,
+        length: v.length ? Number(v.length) : null,
+        headCircumference: v.headCircumference ? Number(v.headCircumference) : null,
+        skinfoldThickness: v.skinfoldThickness ? Number(v.skinfoldThickness) : null,
+        waistCircumference: v.waistCircumference ? Number(v.waistCircumference) : null,
+        hipCircumference: v.hipCircumference ? Number(v.hipCircumference) : null,
+        limbCircumference: v.limbCircumference ? Number(v.limbCircumference) : null,
+        midUpperArmCircumference: v.midUpperArmCircumference ? Number(v.midUpperArmCircumference) : null,
         dateTaken: v.dateTaken.toISOString(),
         createdAt: v.createdAt.toISOString(),
         updatedAt: v.updatedAt.toISOString(),
         deletedAt: v.deletedAt ? v.deletedAt.toISOString() : null,
-      })),
+      })) as any,
       latestVitals: vitals[0] ? {
         ...vitals[0],
+        length: vitals[0].length ? Number(vitals[0].length) : null,
+        headCircumference: vitals[0].headCircumference ? Number(vitals[0].headCircumference) : null,
+        skinfoldThickness: vitals[0].skinfoldThickness ? Number(vitals[0].skinfoldThickness) : null,
+        waistCircumference: vitals[0].waistCircumference ? Number(vitals[0].waistCircumference) : null,
+        hipCircumference: vitals[0].hipCircumference ? Number(vitals[0].hipCircumference) : null,
+        limbCircumference: vitals[0].limbCircumference ? Number(vitals[0].limbCircumference) : null,
+        midUpperArmCircumference: vitals[0].midUpperArmCircumference ? Number(vitals[0].midUpperArmCircumference) : null,
         dateTaken: vitals[0].dateTaken.toISOString(),
         createdAt: vitals[0].createdAt.toISOString(),
         updatedAt: vitals[0].updatedAt.toISOString(),
         deletedAt: vitals[0].deletedAt ? vitals[0].deletedAt.toISOString() : null,
-      } : null,
+      } as any : null,
 
 
 
@@ -356,6 +375,20 @@ export async function getPatientHealthRecords(): Promise<SerializedPatientHealth
         createdAt: obGyne.createdAt.toISOString(),
         updatedAt: obGyne.updatedAt.toISOString(),
         deletedAt: obGyne.deletedAt ? obGyne.deletedAt.toISOString() : null,
+      } : null,
+
+      // Physical Examinations
+      physicalExaminations: physicalExaminations.map((pe) => ({
+        ...pe,
+        createdAt: pe.createdAt.toISOString(),
+        updatedAt: pe.updatedAt.toISOString(),
+        deletedAt: pe.deletedAt ? pe.deletedAt.toISOString() : null,
+      })),
+      latestPhysicalExam: physicalExaminations[0] ? {
+        ...physicalExaminations[0],
+        createdAt: physicalExaminations[0].createdAt.toISOString(),
+        updatedAt: physicalExaminations[0].updatedAt.toISOString(),
+        deletedAt: physicalExaminations[0].deletedAt ? physicalExaminations[0].deletedAt.toISOString() : null,
       } : null,
 
       // Pediatric Measurements

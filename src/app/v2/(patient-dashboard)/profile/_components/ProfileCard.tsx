@@ -83,7 +83,7 @@ export function ProfileCard({ patient, isOwner }: ProfileCardProps) {
 
       {/* Stats row */}
       <div className="bg-white dark:bg-slate-800 border-t border-slate-100 dark:border-slate-700">
-        <div className="grid grid-cols-2 divide-x divide-slate-100 dark:divide-slate-700">
+        <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y sm:divide-y-0 divide-slate-100 dark:divide-slate-700">
           <div className="flex flex-col items-center py-3 px-2">
             <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-0.5">Age</p>
             <p className="text-lg font-bold text-slate-900 dark:text-white leading-tight">
@@ -95,6 +95,18 @@ export function ProfileCard({ patient, isOwner }: ProfileCardProps) {
             <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-0.5">Blood</p>
             <p className="text-lg font-bold text-red-500 leading-tight">
               {formatBloodType(patient.bloodType) || '—'}
+            </p>
+          </div>
+          <div className="flex flex-col items-center py-3 px-2">
+            <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-0.5">BMI</p>
+            <p className="text-lg font-bold text-emerald-500 leading-tight">
+              {patient.latestBmi != null ? patient.latestBmi.toFixed(1) : '—'}
+            </p>
+          </div>
+          <div className="flex flex-col items-center py-3 px-2">
+            <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-0.5">Z-Score</p>
+            <p className="text-lg font-bold text-blue-500 leading-tight">
+              {patient.latestZScore != null ? patient.latestZScore.toFixed(2) : '—'}
             </p>
           </div>
         </div>

@@ -155,6 +155,7 @@ model User {
   StudentRecords                   UserStudentRecord[]
   UserVaccinations                 UserVaccination[]
   VitalSigns                       VitalSign[]
+  PhysicalExaminations             PhysicalExamination[]
   Notifications                    Notification[]
   PatientInsights                  PatientInsight[]
   VerificationRequests             VerificationRequest[]
@@ -1035,7 +1036,9 @@ model VitalSign {
   updatedAt                DateTime  @updatedAt
   deletedAt                DateTime?
   isActive                 Boolean   @default(true)
+  consultationTicketId     Int?
   User                     User      @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  ConsultationTicket       ConsultationTicket? @relation(fields: [consultationTicketId], references: [id], onDelete: SetNull)
 }
 
 model OrganizationDepartment {
@@ -1682,6 +1685,8 @@ model ConsultationTicket {
   MedicalCertificates         ClinicMedicalCertificate[]
   ClinicReferralSlips         ClinicReferralSlip[]
   ConsultationNotes           ConsultationNote[]
+  VitalSigns                  VitalSign[]
+  PhysicalExaminations        PhysicalExamination[]
   ConsultationDiagnoses       ConsultationDiagnosis[]
   Appointment                 Appointment?                 @relation(fields: [appointmentId], references: [id], onUpdate: NoAction)
   ClinicPatient               ClinicPatient?               @relation(fields: [clinicPatientId], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -3031,7 +3036,7 @@ model KonsultaManagementCode {
 model ConsultationManagement {
   id                     String                  @id @default(uuid())
   consultationTicketId   Int
-  managementCodeId       String                  // FK → KonsultaManagementCode.id
+  managementCodeId       String                  // FK -> KonsultaManagementCode.id
   remarks                String?                 @db.Text
   createdAt              DateTime                @default(now())
   updatedAt              DateTime                @updatedAt
@@ -3040,4 +3045,57 @@ model ConsultationManagement {
   ManagementCode         KonsultaManagementCode  @relation(fields: [managementCodeId], references: [id])
 
   @@index([consultationTicketId])
+}
+
+model PhysicalExamLibrary {
+  id            String   @id @default(uuid())
+  category      String   // e.g., "CHEST", "HEENT", "SKIN", "HEART", "ABDOMEN", "GU", "NEURO", "RECTAL"
+  code          String   // The ID from the screenshot (e.g., "1", "2", "99")
+  description   String   // The label (e.g., "Essentially normal")
+  libraryStatus Int      @default(1) // 1 = ACTIVE, 0 = DEACTIVATED
+  isActive      Boolean  @default(true)
+  
+  @@unique([category, code])
+}
+
+model PhysicalExamination {
+  id                      String    @id @default(uuid())
+  userId                  Int
+  consultationTicketId    Int?      // Nullable FK to ConsultationTicket
+  dateTaken               DateTime  @default(now())
+  
+  // Storing the single String ID from PhilHealth's Library of Values
+  generalSurveyId         String?   // pGenSurveyId (e.g. "1" or "2")
+  generalSurveyRemarks    String?   // pGenSurveyRem
+
+  heentId                 String?   // pHeentId
+  heentRemarks            String?   // pHeentRem
+
+  chestId                 String?   // pChestId
+  chestRemarks            String?   // pChestRem
+
+  heartId                 String?   // pHeartId
+  heartRemarks            String?   // pHeartRem
+
+  abdomenId               String?   // pAbdomenId
+  abdomenRemarks          String?   // pAbdomenRem
+
+  guId                    String?   // pGuId
+  guRemarks               String?   // pGuRem
+
+  skinId                  String?   // pSkinId
+  skinRemarks             String?   // pSkinRem
+
+  neuroId                 String?   // pNeuroId
+  neuroRemarks            String?   // pNeuroRem
+  
+  rectalId                String?   // pRectalId
+  rectalRemarks           String?   // pRectalRem
+
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  deletedAt               DateTime?
+  
+  User                    User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ConsultationTicket      ConsultationTicket? @relation(fields: [consultationTicketId], references: [id], onDelete: SetNull)
 }

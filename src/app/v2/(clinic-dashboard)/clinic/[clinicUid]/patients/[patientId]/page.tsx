@@ -27,6 +27,8 @@ function toPatientBaseData(p: SerializedPatientHealthRecordsResponse): PatientBa
     gender:         p.gender,
     verificationStatus: p.verificationStatus,
     yakapEnlistment: p.yakapEnlistment,
+    latestBmi:      p.latestVitals?.bmi ?? null,
+    latestZScore:   p.latestVitals?.zScore ?? null,
     badges: {
       hasEmail:                    !!p.email,
       hasMobile:                   !!(p.mobile || p.telephone),
@@ -39,7 +41,6 @@ function toPatientBaseData(p: SerializedPatientHealthRecordsResponse): PatientBa
       vitalSignsCount:             p.vitalSigns.length,
       hasPersonalHistory:          !!p.personalHistory,
       hasObGyneHistory:            !!p.obGyneHistory,
-      pediatricMeasurementsCount:  p.pediatricMeasurements.length,
       userVaccinationsCount:       p.userVaccinations.length,
       userAddressesCount:          p.userAddresses.length,
       userEmergencyContactsCount:  p.userEmergencyContacts.length,

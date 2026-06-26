@@ -59,7 +59,6 @@ const PROFILE_TABS = [
   { id: 'vitals',       label: 'Vital Signs',         icon: Activity },
   { id: 'exams',        label: 'Physical Exams',      icon: FlaskConical },
   { id: 'obgyn',        label: 'OB/GYN',              icon: Baby },
-  { id: 'pediatric',    label: 'Pediatric',           icon: Ruler },
   { id: 'lifestyle',    label: 'Lifestyle & Social',  icon: Heart },
   { id: 'insurance',    label: 'Insurance & Docs',    icon: FileText },
 ] as const

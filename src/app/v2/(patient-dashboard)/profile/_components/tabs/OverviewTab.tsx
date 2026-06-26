@@ -112,6 +112,25 @@ function LatestVitalsCard({ data }: Props) {
           </div>
       </div>
 
+      {/* Anthropometrics & Vision */}
+      <div className="mb-6 pb-6 border-b border-slate-300/30 dark:border-white/10">
+        <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-4">Anthropometrics & Vision</p>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <VitalMetric label="Length" value={String(vitals.length || '-')} unit="cm" color="text-slate-700 dark:text-slate-300" />
+          <VitalMetric label="Head Circ." value={String(vitals.headCircumference || '-')} unit="cm" color="text-slate-700 dark:text-slate-300" />
+          <VitalMetric label="Skinfold" value={String(vitals.skinfoldThickness || '-')} unit="mm" color="text-slate-700 dark:text-slate-300" />
+          <VitalMetric label="Waist" value={String(vitals.waistCircumference || '-')} unit="cm" color="text-slate-700 dark:text-slate-300" />
+          <VitalMetric label="Hip" value={String(vitals.hipCircumference || '-')} unit="cm" color="text-slate-700 dark:text-slate-300" />
+          <VitalMetric label="Limbs" value={String(vitals.limbCircumference || '-')} unit="cm" color="text-slate-700 dark:text-slate-300" />
+          <VitalMetric label="MUAC" value={String(vitals.midUpperArmCircumference || '-')} unit="cm" color="text-slate-700 dark:text-slate-300" />
+          <VitalMetric label="Z-Score" value={String(vitals.zScore || '-')} unit="" color="text-slate-700 dark:text-slate-300" />
+        </div>
+        <div className="grid grid-cols-2 gap-4 mt-4">
+          <VitalMetric label="Left Vision" value={vitals.visualAcuityLeft || '-'} unit="" color="text-slate-700 dark:text-slate-300" />
+          <VitalMetric label="Right Vision" value={vitals.visualAcuityRight || '-'} unit="" color="text-slate-700 dark:text-slate-300" />
+        </div>
+      </div>
+
       {/* Clinical remarks */}
       {clinicalRemarks.length > 0 && (
         <div className="mb-6">

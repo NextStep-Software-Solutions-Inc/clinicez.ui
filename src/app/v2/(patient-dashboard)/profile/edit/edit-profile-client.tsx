@@ -40,16 +40,15 @@ import type {
   AllergyFormInput,
   EmergencyContactFormInput,
   AddressFormInput,
+  PhysicalExaminationFormInput,
 } from '@/schemas'
 import {
   DemographicsEditForm,
   VitalSignEditForm,
   PersonalHistoryEditForm,
   ObGyneHistoryEditForm,
-  PediatricMeasurementEditForm,
   MedicalConditionsEditForm,
   FamilyMedicalHistoryEditForm,
-  PhysicalExaminationEditForm,
   PhilHealthRecordEditForm,
   AllergyEditForm,
   EmergencyContactEditForm,
@@ -58,6 +57,7 @@ import {
   DisabilitiesEditForm,
   ProfilePictureUpload,
   SurgicalHistoryEditForm,
+  PhysicalExamListEditor,
 } from '@/components/health-records'
 import type { PatientHealthRecordsResponse } from '@/types/patient-profile'
 import './edit-profile.css'
@@ -133,17 +133,16 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
     'vital-signs': true,
     'personal-history': true,
     'ob-gyne': true,
-    pediatric: true,
     medical: true,
     surgical: true,
     family: true,
-    examination: true,
     philhealth: true,
     allergies: true,
     'emergency-contacts': true,
     addresses: true,
     vaccinations: true,
     disabilities: true,
+    'physical-exam': true,
   })
 
   // Create refs for all sections
@@ -151,10 +150,8 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
   const vitalSignsRef = useRef<HTMLDivElement>(null)
   const personalHistoryRef = useRef<HTMLDivElement>(null)
   const obGyneRef = useRef<HTMLDivElement>(null)
-  const pediatricRef = useRef<HTMLDivElement>(null)
   const medicalRef = useRef<HTMLDivElement>(null)
   const familyRef = useRef<HTMLDivElement>(null)
-  const examinationRef = useRef<HTMLDivElement>(null)
   const philhealthRef = useRef<HTMLDivElement>(null)
   const allergiesRef = useRef<HTMLDivElement>(null)
   const emergencyContactsRef = useRef<HTMLDivElement>(null)
@@ -162,17 +159,17 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
   const vaccinationsRef = useRef<HTMLDivElement>(null)
   const disabilitiesRef = useRef<HTMLDivElement>(null)
   const surgicalRef = useRef<HTMLDivElement>(null)
+  const physicalExamRef = useRef<HTMLDivElement>(null)
 
   // Save refs for batch-save forms (forms with a single "Save Changes" button)
   const demographicsSaveRef = useRef<SaveRefHandle | null>(null)
   const vitalSignsSaveRef = useRef<SaveRefHandle | null>(null)
   const personalHistorySaveRef = useRef<SaveRefHandle | null>(null)
   const obGyneSaveRef = useRef<SaveRefHandle | null>(null)
-  const pediatricSaveRef = useRef<SaveRefHandle | null>(null)
   const medicalSaveRef = useRef<SaveRefHandle | null>(null)
   const familySaveRef = useRef<SaveRefHandle | null>(null)
-  const examinationSaveRef = useRef<SaveRefHandle | null>(null)
   const philhealthSaveRef = useRef<SaveRefHandle | null>(null)
+  const physicalExamSaveRef = useRef<SaveRefHandle | null>(null)
 
   // Save All dialog state
   const [saveAllOpen, setSaveAllOpen] = useState(false)
@@ -193,16 +190,15 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
       { id: 'addresses', label: 'Addresses', icon: MapPin, ref: addressesRef, saveType: 'auto' },
       { id: 'emergency-contacts', label: 'Contacts', icon: Phone, ref: emergencyContactsRef, saveType: 'auto' },
       { id: 'allergies', label: 'Allergies', icon: AlertTriangle, ref: allergiesRef, saveType: 'auto' },
+      { id: 'physical-exam', label: 'Physical Exam', icon: User, ref: physicalExamRef, saveType: 'batch', saveRef: physicalExamSaveRef, onDirtyChange: (d) => onSectionDirtyChange('physical-exam', d) },
       { id: 'vaccinations', label: 'Vaccinations', icon: Syringe, ref: vaccinationsRef, saveType: 'auto' },
       { id: 'disabilities', label: 'Disabilities', icon: Accessibility, ref: disabilitiesRef, saveType: 'auto' },
       { id: 'vital-signs', label: 'Vitals', icon: Activity, ref: vitalSignsRef, saveType: 'batch', saveRef: vitalSignsSaveRef, onDirtyChange: (d) => onSectionDirtyChange('vital-signs', d) },
       { id: 'personal-history', label: 'History', icon: ClipboardList, ref: personalHistoryRef, saveType: 'batch', saveRef: personalHistorySaveRef, onDirtyChange: (d) => onSectionDirtyChange('personal-history', d) },
       { id: 'ob-gyne', label: 'OB/GYN', icon: Baby, ref: obGyneRef, saveType: 'batch', saveRef: obGyneSaveRef, onDirtyChange: (d) => onSectionDirtyChange('ob-gyne', d) },
-      { id: 'pediatric', label: 'Pediatric', icon: Ruler, ref: pediatricRef, saveType: 'batch', saveRef: pediatricSaveRef, onDirtyChange: (d) => onSectionDirtyChange('pediatric', d) },
       { id: 'medical', label: 'Conditions', icon: Stethoscope, ref: medicalRef, saveType: 'batch', saveRef: medicalSaveRef, onDirtyChange: (d) => onSectionDirtyChange('medical', d) },
       { id: 'surgical', label: 'Surgical', icon: Scissors, ref: surgicalRef, saveType: 'auto' },
       { id: 'family', label: 'Family', icon: Users, ref: familyRef, saveType: 'batch', saveRef: familySaveRef, onDirtyChange: (d) => onSectionDirtyChange('family', d) },
-      { id: 'examination', label: 'Exam', icon: FlaskConical, ref: examinationRef, saveType: 'batch', saveRef: examinationSaveRef, onDirtyChange: (d) => onSectionDirtyChange('examination', d) },
       { id: 'philhealth', label: 'PhilHealth', icon: Building, ref: philhealthRef, saveType: 'batch', saveRef: philhealthSaveRef, onDirtyChange: (d) => onSectionDirtyChange('philhealth', d) },
     ],
     [onSectionDirtyChange],
@@ -331,11 +327,6 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
 
   const personalHistoryData = useMemo(
     () => mapPersonalHistoryToFormInput(patientData?.personalHistory),
-    [patientData],
-  )
-
-  const pediatricData = useMemo(
-    () => mapPediatricMeasurementToFormInput(patientData?.pediatricMeasurements),
     [patientData],
   )
 
@@ -476,7 +467,7 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
         {/* Vertically Continuous Sections */}
         <div className="space-y-8">
           {/* Demographics Section */}
-          <div ref={sections[0].ref} id="demographics" className="scroll-mt-32 opacity-0 animate-fade-in">
+          <div ref={demographicsRef} id="demographics" className="scroll-mt-32 opacity-0 animate-fade-in">
             <div className="backdrop-blur-xl bg-white/30 dark:bg-slate-800/30 border border-white/40 dark:border-slate-700/40 rounded-2xl shadow-2xl p-6 md:p-8 hover:bg-white/40 dark:hover:bg-slate-800/40 transition-all duration-300">
               <div className="mb-6 flex items-center gap-3">
                 <div className="w-1.5 h-8 bg-gradient-to-b from-blue-500 to-cyan-500 rounded-full"></div>
@@ -503,7 +494,7 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
           </div>
 
           {/* Addresses Section */}
-          <div ref={sections[1].ref} id="addresses" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-100">
+          <div ref={addressesRef} id="addresses" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-100">
             <div className="backdrop-blur-xl bg-white/30 dark:bg-slate-800/30 border border-white/40 dark:border-slate-700/40 rounded-2xl shadow-2xl p-6 md:p-8 hover:bg-white/40 dark:hover:bg-slate-800/40 transition-all duration-300">
               <div className="mb-6 flex items-center gap-3">
                 <div className="w-1.5 h-8 bg-gradient-to-b from-green-500 to-emerald-500 rounded-full"></div>
@@ -525,7 +516,7 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
           </div>
 
           {/* Emergency Contacts Section */}
-          <div ref={sections[2].ref} id="emergency-contacts" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-150">
+          <div ref={emergencyContactsRef} id="emergency-contacts" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-150">
             <div className="backdrop-blur-xl bg-white/30 dark:bg-slate-800/30 border border-white/40 dark:border-slate-700/40 rounded-2xl shadow-2xl p-6 md:p-8 hover:bg-white/40 dark:hover:bg-slate-800/40 transition-all duration-300">
               <div className="mb-6 flex items-center gap-3">
                 <div className="w-1.5 h-8 bg-gradient-to-b from-blue-500 to-cyan-500 rounded-full"></div>
@@ -548,7 +539,7 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
           </div>
 
           {/* Allergies Section */}
-          <div ref={sections[3].ref} id="allergies" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-200">
+          <div ref={allergiesRef} id="allergies" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-200">
             <div className="backdrop-blur-xl bg-white/30 dark:bg-slate-800/30 border border-white/40 dark:border-slate-700/40 rounded-2xl shadow-2xl p-6 md:p-8 hover:bg-white/40 dark:hover:bg-slate-800/40 transition-all duration-300">
               <div className="mb-6 flex items-center gap-3">
                 <div className="w-1.5 h-8 bg-gradient-to-b from-red-500 to-orange-500 rounded-full"></div>
@@ -575,8 +566,30 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
             </div>
           </div>
 
+          {/* Physical Exam Section */}
+          <div ref={physicalExamRef} id="physical-exam" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-225">
+            <div className="backdrop-blur-xl bg-white/30 dark:bg-slate-800/30 border border-white/40 dark:border-slate-700/40 rounded-2xl shadow-2xl p-6 md:p-8 hover:bg-white/40 dark:hover:bg-slate-800/40 transition-all duration-300">
+              <div className="mb-6 flex items-center gap-3">
+                <div className="w-1.5 h-8 bg-gradient-to-b from-teal-500 to-cyan-500 rounded-full"></div>
+                <div>
+                  <h2 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">Physical Examination</h2>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">Record your physical examination findings</p>
+                </div>
+              </div>
+              {loadedSections['physical-exam'] && (
+                <Suspense fallback={<FormLoadingFallback />}>
+                  <PhysicalExamListEditor
+                    patientId={patientData.id}
+                    physicalExaminations={patientData.physicalExaminations || []}
+                    onSuccess={handleSuccess}
+                  />
+                </Suspense>
+              )}
+            </div>
+          </div>
+
           {/* Vaccinations Section */}
-          <div ref={sections[4].ref} id="vaccinations" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-250">
+          <div ref={vaccinationsRef} id="vaccinations" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-250">
             <div className="backdrop-blur-xl bg-white/30 dark:bg-slate-800/30 border border-white/40 dark:border-slate-700/40 rounded-2xl shadow-2xl p-6 md:p-8 hover:bg-white/40 dark:hover:bg-slate-800/40 transition-all duration-300">
               <div className="mb-6 flex items-center gap-3">
                 <div className="w-1.5 h-8 bg-gradient-to-b from-blue-500 to-cyan-500 rounded-full"></div>
@@ -599,7 +612,7 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
           </div>
 
           {/* Disabilities & Illnesses Section */}
-          <div ref={sections[5].ref} id="disabilities" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-300">
+          <div ref={disabilitiesRef} id="disabilities" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-300">
             <div className="backdrop-blur-xl bg-white/30 dark:bg-slate-800/30 border border-white/40 dark:border-slate-700/40 rounded-2xl shadow-2xl p-6 md:p-8 hover:bg-white/40 dark:hover:bg-slate-800/40 transition-all duration-300">
               <div className="mb-6 flex items-center gap-3">
                 <div className="w-1.5 h-8 bg-gradient-to-b from-purple-500 to-pink-500 rounded-full"></div>
@@ -622,7 +635,7 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
           </div>
 
           {/* Vital Signs Section */}
-          <div ref={sections[6].ref} id="vital-signs" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-350\">
+          <div ref={vitalSignsRef} id="vital-signs" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-350">
             <div className="backdrop-blur-xl bg-white/30 dark:bg-slate-800/30 border border-white/40 dark:border-slate-700/40 rounded-2xl shadow-2xl p-6 md:p-8 hover:bg-white/40 dark:hover:bg-slate-800/40 transition-all duration-300">
               <div className="mb-6 flex items-center gap-3">
                 <div className="w-1.5 h-8 bg-gradient-to-b from-red-500 to-pink-500 rounded-full"></div>
@@ -636,8 +649,8 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
                   <VitalSignEditForm
                     userId={patientData.userId}
                     inline={true}
-                    currentData={vitalSignData}
-                    recentVitals={convertVitalSignsToDateObjects(patientData?.vitalSigns)}
+                    currentData={vitalSignData as any}
+                    recentVitals={convertVitalSignsToDateObjects(patientData?.vitalSigns) as any}
                     onSuccess={handleSuccess}
                     saveRef={vitalSignsSaveRef}
                     onDirtyChange={(d) => onSectionDirtyChange('vital-signs', d)}
@@ -648,7 +661,7 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
           </div>
 
           {/* Personal History Section */}
-          <div ref={sections[7].ref} id="personal-history" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-400">
+          <div ref={personalHistoryRef} id="personal-history" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-400">
             <div className="backdrop-blur-xl bg-white/30 dark:bg-slate-800/30 border border-white/40 dark:border-slate-700/40 rounded-2xl shadow-2xl p-6 md:p-8 hover:bg-white/40 dark:hover:bg-slate-800/40 transition-all duration-300">
               <div className="mb-6 flex items-center gap-3">
                 <div className="w-1.5 h-8 bg-gradient-to-b from-amber-500 to-orange-500 rounded-full"></div>
@@ -673,7 +686,7 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
           </div>
 
           {/* OB/GYN History Section */}
-          <div ref={sections[8].ref} id="ob-gyne" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-450">
+          <div ref={obGyneRef} id="ob-gyne" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-450">
             <div className="backdrop-blur-xl bg-white/30 dark:bg-slate-800/30 border border-white/40 dark:border-slate-700/40 rounded-2xl shadow-2xl p-6 md:p-8 hover:bg-white/40 dark:hover:bg-slate-800/40 transition-all duration-300">
               <div className="mb-6 flex items-center gap-3">
                 <div className="w-1.5 h-8 bg-gradient-to-b from-rose-500 to-pink-500 rounded-full"></div>
@@ -698,33 +711,10 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
             </div>
           </div>
 
-          {/* Pediatric Measurements Section */}
-          <div ref={sections[9].ref} id="pediatric" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-500">
-            <div className="backdrop-blur-xl bg-white/30 dark:bg-slate-800/30 border border-white/40 dark:border-slate-700/40 rounded-2xl shadow-2xl p-6 md:p-8 hover:bg-white/40 dark:hover:bg-slate-800/40 transition-all duration-300">
-              <div className="mb-6 flex items-center gap-3">
-                <div className="w-1.5 h-8 bg-gradient-to-b from-purple-500 to-indigo-500 rounded-full"></div>
-                <div>
-                  <h2 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">Pediatric Measurements</h2>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">Physical measurements for pediatric patients</p>
-                </div>
-              </div>
-              {loadedSections['pediatric'] && (
-                <Suspense fallback={<FormLoadingFallback />}>
-                  <PediatricMeasurementEditForm
-                    userId={patientData.userId}
-                    inline={true}
-                    currentData={pediatricData as PediatricMeasurementFormInput}
-                    onSuccess={handleSuccess}
-                    saveRef={pediatricSaveRef}
-                    onDirtyChange={(d) => onSectionDirtyChange('pediatric', d)}
-                  />
-                </Suspense>
-              )}
-            </div>
-          </div>
+
 
           {/* Medical Conditions Section */}
-          <div ref={sections[10].ref} id="medical" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-550">
+          <div ref={medicalRef} id="medical" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-550">
             <div className="backdrop-blur-xl bg-white/30 dark:bg-slate-800/30 border border-white/40 dark:border-slate-700/40 rounded-2xl shadow-2xl p-6 md:p-8 hover:bg-white/40 dark:hover:bg-slate-800/40 transition-all duration-300">
               <div className="mb-6 flex items-center gap-3">
                 <div className="w-1.5 h-8 bg-gradient-to-b from-green-500 to-emerald-500 rounded-full"></div>
@@ -752,7 +742,7 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
           </div>
 
           {/* Surgical History Section */}
-          <div ref={sections[11].ref} id="surgical" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-575">
+          <div ref={surgicalRef} id="surgical" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-575">
             <div className="backdrop-blur-xl bg-white/30 dark:bg-slate-800/30 border border-white/40 dark:border-slate-700/40 rounded-2xl shadow-2xl p-6 md:p-8 hover:bg-white/40 dark:hover:bg-slate-800/40 transition-all duration-300">
               <div className="mb-6 flex items-center gap-3">
                 <div className="w-1.5 h-8 bg-gradient-to-b from-orange-500 to-amber-500 rounded-full"></div>
@@ -775,7 +765,7 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
           </div>
 
           {/* Family Medical History Section */}
-          <div ref={sections[12].ref} id="family" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-600">
+          <div ref={familyRef} id="family" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-600">
             <div className="backdrop-blur-xl bg-white/30 dark:bg-slate-800/30 border border-white/40 dark:border-slate-700/40 rounded-2xl shadow-2xl p-6 md:p-8 hover:bg-white/40 dark:hover:bg-slate-800/40 transition-all duration-300">
               <div className="mb-6 flex items-center gap-3">
                 <div className="w-1.5 h-8 bg-gradient-to-b from-teal-500 to-cyan-500 rounded-full"></div>
@@ -802,32 +792,8 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
             </div>
           </div>
 
-          {/* Physical Examination Section */}
-          <div ref={sections[13].ref} id="examination" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-650">
-            <div className="backdrop-blur-xl bg-white/30 dark:bg-slate-800/30 border border-white/40 dark:border-slate-700/40 rounded-2xl shadow-2xl p-6 md:p-8 hover:bg-white/40 dark:hover:bg-slate-800/40 transition-all duration-300">
-              <div className="mb-6 flex items-center gap-3">
-                <div className="w-1.5 h-8 bg-gradient-to-b from-indigo-500 to-blue-500 rounded-full"></div>
-                <div>
-                  <h2 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">Physical Examination</h2>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">Physical examination findings</p>
-                </div>
-              </div>
-              {loadedSections['examination'] && (
-                <Suspense fallback={<FormLoadingFallback />}>
-                  <PhysicalExaminationEditForm
-                    userId={patientData.userId}
-                    inline={true}
-                    onSuccess={handleSuccess}
-                    saveRef={examinationSaveRef}
-                    onDirtyChange={(d) => onSectionDirtyChange('examination', d)}
-                  />
-                </Suspense>
-              )}
-            </div>
-          </div>
-
           {/* PhilHealth Record Section */}
-          <div ref={sections[14].ref} id="philhealth" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-700">
+          <div ref={philhealthRef} id="philhealth" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-700">
             <div className="backdrop-blur-xl bg-white/30 dark:bg-slate-800/30 border border-white/40 dark:border-slate-700/40 rounded-2xl shadow-2xl p-6 md:p-8 hover:bg-white/40 dark:hover:bg-slate-800/40 transition-all duration-300">
               <div className="mb-6 flex items-center gap-3">
                 <div className="w-1.5 h-8 bg-gradient-to-b from-blue-600 to-blue-500 rounded-full"></div>

@@ -198,8 +198,15 @@ export async function getPatientVitalsData(userId?: string): Promise<VitalsTabDa
             gender: patient.gender as string | null,
             vitalSigns: vitals.map(v => ({
                 ...serializeDateFields(v),
+                length: v.length ? Number(v.length) : null,
+                headCircumference: v.headCircumference ? Number(v.headCircumference) : null,
+                skinfoldThickness: v.skinfoldThickness ? Number(v.skinfoldThickness) : null,
+                waistCircumference: v.waistCircumference ? Number(v.waistCircumference) : null,
+                hipCircumference: v.hipCircumference ? Number(v.hipCircumference) : null,
+                limbCircumference: v.limbCircumference ? Number(v.limbCircumference) : null,
+                midUpperArmCircumference: v.midUpperArmCircumference ? Number(v.midUpperArmCircumference) : null,
                 dateTaken: v.dateTaken.toISOString(),
-            })),
+            })) as any,
         }
     } catch (error) {
         console.error('[GET_PATIENT_VITALS_DATA]', error)
@@ -213,16 +220,35 @@ export async function getPatientExamsData(userId?: string): Promise<ExamsTabData
         const patientId = await resolvePatientId(userId)
         if (!patientId) return null
 
-        const vitals = await prisma.vitalSign.findMany({
-            where: { userId: patientId, isActive: true, deletedAt: null },
-            orderBy: { createdAt: 'desc' },
-            take: 20,
-        })
+        const [vitals, physicalExaminations] = await Promise.all([
+            prisma.vitalSign.findMany({
+                where: { userId: patientId, isActive: true, deletedAt: null },
+                orderBy: { createdAt: 'desc' },
+                take: 20,
+            }),
+            prisma.physicalExamination.findMany({
+                where: { userId: patientId, deletedAt: null },
+                orderBy: { createdAt: 'desc' },
+            })
+        ])
 
         return {
             vitalSigns: vitals.map(v => ({
                 ...serializeDateFields(v),
+                length: v.length ? Number(v.length) : null,
+                headCircumference: v.headCircumference ? Number(v.headCircumference) : null,
+                skinfoldThickness: v.skinfoldThickness ? Number(v.skinfoldThickness) : null,
+                waistCircumference: v.waistCircumference ? Number(v.waistCircumference) : null,
+                hipCircumference: v.hipCircumference ? Number(v.hipCircumference) : null,
+                limbCircumference: v.limbCircumference ? Number(v.limbCircumference) : null,
+                midUpperArmCircumference: v.midUpperArmCircumference ? Number(v.midUpperArmCircumference) : null,
                 dateTaken: v.dateTaken.toISOString(),
+            })) as any,
+            physicalExaminations: physicalExaminations.map(pe => ({
+                ...pe,
+                createdAt: pe.createdAt.toISOString(),
+                updatedAt: pe.updatedAt.toISOString(),
+                deletedAt: pe.deletedAt ? pe.deletedAt.toISOString() : null,
             })),
         }
     } catch (error) {

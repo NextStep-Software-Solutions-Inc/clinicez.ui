@@ -2,6 +2,7 @@ import type {
   MedicalHistory,
   FamilyMedicalHistory,
   VitalSign,
+  PhysicalExamination,
   ObGyneHistory,
 
   PersonalHistory,
@@ -92,9 +93,12 @@ export interface SerializedPatientHealthRecordsResponse {
     deletedAt: string | null
   }>
 
-  // Vital Signs
   vitalSigns: Array<Omit<VitalSign, 'dateTaken' | 'createdAt' | 'updatedAt' | 'deletedAt'> & { dateTaken: string; createdAt: string; updatedAt: string; deletedAt: string | null }>
   latestVitals: (Omit<VitalSign, 'dateTaken' | 'createdAt' | 'updatedAt' | 'deletedAt'> & { dateTaken: string; createdAt: string; updatedAt: string; deletedAt: string | null }) | null
+
+  // Physical Examination
+  physicalExaminations: Array<Omit<PhysicalExamination, 'createdAt' | 'updatedAt' | 'deletedAt'> & { createdAt: string; updatedAt: string; deletedAt: string | null }>
+  latestPhysicalExam: (Omit<PhysicalExamination, 'createdAt' | 'updatedAt' | 'deletedAt'> & { createdAt: string; updatedAt: string; deletedAt: string | null }) | null
 
 
 

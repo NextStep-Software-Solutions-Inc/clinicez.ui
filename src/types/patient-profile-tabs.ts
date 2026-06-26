@@ -10,6 +10,7 @@ import type {
     PhilHealthRecord,
     PhilHealthDependent,
     VerificationStatus,
+    PhysicalExamination,
 } from '@prisma/client'
 import type {
     MedicalHistoryData,
@@ -22,6 +23,12 @@ import type {
 // ---------------------------------------------------------------------------
 export type SerializedVitalSign = Omit<VitalSign, 'dateTaken' | 'createdAt' | 'updatedAt' | 'deletedAt'> & {
     dateTaken: string
+    createdAt: string
+    updatedAt: string
+    deletedAt: string | null
+}
+
+export type SerializedPhysicalExamination = Omit<PhysicalExamination, 'createdAt' | 'updatedAt' | 'deletedAt'> & {
     createdAt: string
     updatedAt: string
     deletedAt: string | null
@@ -61,7 +68,6 @@ export interface PatientBadgeCounts {
     vitalSignsCount: number
     hasPersonalHistory: boolean
     hasObGyneHistory: boolean
-    pediatricMeasurementsCount: number
     userVaccinationsCount: number
     userAddressesCount: number
     userEmergencyContactsCount: number
@@ -83,6 +89,8 @@ export interface PatientBaseData {
     age: number | null
     gender: string | null
     bloodType: string | null
+    latestBmi: number | null
+    latestZScore: number | null
     caseNumber: string | null
     nickname: string | null
     suffix: string | null
@@ -141,6 +149,7 @@ export interface VitalsTabData {
 
 export interface ExamsTabData {
     vitalSigns: SerializedVitalSign[]
+    physicalExaminations?: SerializedPhysicalExamination[]
 }
 
 export interface ObGynTabData {
@@ -264,7 +273,7 @@ export type PatientTabDataMap = {
     vitals: VitalsTabData
     exams: ExamsTabData
     obgyn: ObGynTabData
-    pediatric: PediatricTabData
+
     addresses: AddressesTabData
     contacts: ContactsTabData
     lifestyle: LifestyleTabData

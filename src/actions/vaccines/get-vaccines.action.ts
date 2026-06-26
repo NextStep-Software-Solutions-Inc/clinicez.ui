@@ -4,15 +4,17 @@ import prisma from "@lib/prisma";
 
 export type GetVaccinesResponse = Awaited<ReturnType<typeof getVaccinesAction>>;
 
-export const getVaccinesAction = async () => {
+export const getVaccinesAction = async (includeInactive: boolean = false) => {
     try {
         const vaccines = await prisma.vaccine.findMany({
-            where: { isActive: true },
+            where: includeInactive ? {} : { isActive: true },
             select: {
                 id: true,
                 name: true,
                 type: true,
                 description: true,
+                isActive: true,
+                PhilHealthData: true,
             },
             orderBy: { name: "asc" },
         });

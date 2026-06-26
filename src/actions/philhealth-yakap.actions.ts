@@ -456,6 +456,7 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
                     SurgicalHistories: true,
                     PersonalHistory: true,
                     ObGyneHistory: true,
+                    UserVaccinations: { include: { Vaccine: { include: { PhilHealthData: true } } } },
                     VitalSigns: {
                       where: { isActive: true, deletedAt: null },
                       orderBy: { createdAt: "desc" },
@@ -839,6 +840,35 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
             isPreEclampsia: patient.ObGyneHistory.hasPreEclampsia ? 'Y' : 'N',
             wFamPlan: patient.ObGyneHistory.birthControlMethod && patient.ObGyneHistory.birthControlMethod !== 'NONE' ? 'Y' : 'N',
           } : undefined,
+          immunizations: patient.UserVaccinations.map(uv => {
+            const vName = (uv.Vaccine.name || '').toUpperCase().trim();
+            const phData = uv.Vaccine.PhilHealthData;
+
+            let childCode = phData?.childImmcode || '';
+            let youngwCode = phData?.youngwImmcode || '';
+            let pregwCode = phData?.pregwImmcode || '';
+            let elderlyCode = phData?.elderlyImmcode || '';
+            let otherImm = phData?.otherImm || '';
+
+            // If the vaccine has NO mapping at all, fallback to "999" and put name in otherImm
+            if (!phData) {
+              childCode = '999';
+              youngwCode = '999';
+              pregwCode = '999';
+              elderlyCode = '999';
+              otherImm = vName;
+            }
+
+            return {
+              childImmcode: childCode || '999',
+              youngwImmcode: youngwCode || '999',
+              pregwImmcode: pregwCode || '999',
+              elderlyImmcode: elderlyCode || '999',
+              otherImm: otherImm,
+              reportStatus: 'U', // U = Updated
+              deficiencyRemarks: uv.notes || '',
+            };
+          }),
         },
         consultations,
         diagnosticResults,

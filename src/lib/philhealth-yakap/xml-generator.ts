@@ -123,6 +123,15 @@ export interface KonsultaPatientData {
       isPreEclampsia: string;
       wFamPlan: string;
     };
+    immunizations: Array<{
+      childImmcode: string;
+      youngwImmcode: string;
+      pregwImmcode: string;
+      elderlyImmcode: string;
+      otherImm: string;
+      reportStatus: string;
+      deficiencyRemarks: string;
+    }>;
     physicalExaminations: Array<{
       generalSurveyId: string;
       generalSurveyRemarks: string;
@@ -408,11 +417,31 @@ function buildSocHist(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
 
 function buildImmunizations(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
   const immunizations = parent.ele('IMMUNIZATIONS');
-  immunizations.ele('IMMUNIZATION', withStatus({
-    pImmunizationCode: '',
-    pImmunizationRemarks: '',
-    pImmunizationDateGiven: '',
-  })).up();
+  const imms = patient.profile.immunizations || [];
+  
+  if (imms.length === 0) {
+    immunizations.ele('IMMUNIZATION', withStatus({
+      pChildImmcode: '999',
+      pYoungwImmcode: '999',
+      pPregwImmcode: '999',
+      pElderlyImmcode: '999',
+      pOtherImm: '',
+      pReportStatus: 'U',
+      pDeficiencyRemarks: '',
+    })).up();
+  } else {
+    for (const imm of imms) {
+      immunizations.ele('IMMUNIZATION', withStatus({
+        pChildImmcode: imm.childImmcode || '',
+        pYoungwImmcode: imm.youngwImmcode || '',
+        pPregwImmcode: imm.pregwImmcode || '',
+        pElderlyImmcode: imm.elderlyImmcode || '',
+        pOtherImm: imm.otherImm || '',
+        pReportStatus: imm.reportStatus || 'U',
+        pDeficiencyRemarks: imm.deficiencyRemarks || '',
+      })).up();
+    }
+  }
   return immunizations.up();
 }
 

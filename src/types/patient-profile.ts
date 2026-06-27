@@ -92,6 +92,7 @@ export interface SerializedPatientHealthRecordsResponse {
     updatedAt: string
     deletedAt: string | null
   }>
+  ncdQuestionnaire: { id: number } | null
 
   vitalSigns: Array<Omit<VitalSign, 'dateTaken' | 'createdAt' | 'updatedAt' | 'deletedAt'> & { dateTaken: string; createdAt: string; updatedAt: string; deletedAt: string | null }>
   latestVitals: (Omit<VitalSign, 'dateTaken' | 'createdAt' | 'updatedAt' | 'deletedAt'> & { dateTaken: string; createdAt: string; updatedAt: string; deletedAt: string | null }) | null

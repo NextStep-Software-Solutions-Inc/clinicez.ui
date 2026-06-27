@@ -604,6 +604,58 @@ export default function PhilHealthBatchReports({ clinicUid }: PhilHealthBatchRep
         try { parsed = JSON.parse(selectedBatch.submissionResult); } catch { /* noop */ }
         const isSuccess = parsed?.success === true || parsed?.success === "true";
         const message = (parsed?.message as string) || "Report submitted";
+        
+        let rawUploadResult = (parsed?.uploadxmlresult) ||
+                              (parsed?.uploadXmlResult) || 
+                              (parsed?.UPLOADXMLRESULT) || 
+                              (parsed?.decodedJwtPayload as any)?.UPLOADXMLRESULT || 
+                              (parsed?.decodedJwtPayload as any)?.uploadxmlresult ||
+                              parsed?.decryptedErrors ||
+                              parsed?.decryptedResult ||
+                              "";
+                              
+        // Try to deeply parse stringified JSON in rawUploadResult.errors if it exists
+        if (rawUploadResult && typeof rawUploadResult === "object") {
+          try {
+            if ((rawUploadResult as any).errors && typeof (rawUploadResult as any).errors === "string") {
+              const firstParse = JSON.parse((rawUploadResult as any).errors);
+              if (firstParse.errors && typeof firstParse.errors === "string") {
+                const secondParse = JSON.parse(firstParse.errors);
+                (rawUploadResult as any).errors = secondParse.errors || secondParse;
+              } else {
+                (rawUploadResult as any).errors = firstParse.errors || firstParse;
+              }
+            }
+          } catch (e) {
+            // keep it as is
+          }
+        }
+        
+        let errorArray: string[] = [];
+        let otherProperties: Record<string, string | number | boolean | null> = {};
+        
+        if (rawUploadResult && typeof rawUploadResult === "object") {
+          const resultObj = rawUploadResult as any;
+          if (Array.isArray(resultObj.errors)) {
+            errorArray = resultObj.errors;
+          }
+          
+          // Explicitly map the properties the user wants to see
+          if ("transactionno" in resultObj) otherProperties["Transaction No"] = resultObj.transactionno;
+          if ("userid" in resultObj) otherProperties["User ID"] = resultObj.userid;
+          if ("dateuploaded" in resultObj) otherProperties["Date Uploaded"] = resultObj.dateuploaded;
+          
+          // Gather any other unexpected primitive properties
+          for (const [key, value] of Object.entries(resultObj)) {
+            if (key !== "errors" && key !== "transactionno" && key !== "userid" && key !== "dateuploaded" && typeof value !== "object") {
+              otherProperties[key] = value as string | number | boolean | null;
+            }
+          }
+        }
+        
+        const fallbackXmlResult = errorArray.length === 0 && Object.keys(otherProperties).length === 0 && rawUploadResult 
+          ? (typeof rawUploadResult === "string" ? rawUploadResult : JSON.stringify(rawUploadResult, null, 2))
+          : "";
 
         return (
           <Card className={isSuccess ? "border-emerald-200 dark:border-emerald-800" : "border-red-200 dark:border-red-800"}>
@@ -613,10 +665,52 @@ export default function PhilHealthBatchReports({ clinicUid }: PhilHealthBatchRep
                 Submission {isSuccess ? "Successful" : "Failed"}
               </CardTitle>
             </CardHeader>
-            <CardContent className="px-4 pb-3">
+            <CardContent className="px-4 pb-3 space-y-3">
               <p className={`text-xs font-medium ${isSuccess ? "text-emerald-700 dark:text-emerald-400" : "text-red-700 dark:text-red-400"}`}>
                 {message}
               </p>
+              
+              {/* Human-friendly Upload XML Result */}
+              {(errorArray.length > 0 || Object.keys(otherProperties).length > 0) && (
+                <div className="bg-red-50/50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/50 rounded-lg p-3 max-h-80 overflow-y-auto custom-scrollbar space-y-3">
+                  
+                  {Object.keys(otherProperties).length > 0 && (
+                    <div className="grid grid-cols-2 gap-3 text-[11px] text-red-800 dark:text-red-300">
+                      {Object.entries(otherProperties).map(([k, v]) => (
+                        <div key={k} className="flex flex-col">
+                          <span className="font-semibold uppercase opacity-70 mb-0.5">{k}</span>
+                          <span className="font-mono bg-red-100/50 dark:bg-red-900/30 px-1.5 py-0.5 rounded w-fit">
+                            {v === null || v === undefined ? "null" : String(v)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {errorArray.length > 0 && (
+                    <div className="pt-2 border-t border-red-200/50 dark:border-red-900/50">
+                      <span className="font-semibold uppercase opacity-70 text-[11px] text-red-800 dark:text-red-300 block mb-1.5">Errors</span>
+                      <ul className="space-y-1.5">
+                        {errorArray.map((err, idx) => (
+                          <li key={idx} className="text-[11px] text-red-800 dark:text-red-300 flex items-start gap-1.5 font-medium">
+                            <AlertCircle className="h-3.5 w-3.5 text-red-500 mt-0.5 shrink-0" />
+                            <span>{err.replace(/^an error was encountered while inserting .*? -error- /i, '')}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              {/* Fallback Raw JSON */}
+              {fallbackXmlResult && (
+                <div className="bg-red-50/50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/50 rounded-lg p-3 max-h-80 overflow-y-auto custom-scrollbar">
+                  <p className="text-[11px] text-red-800 dark:text-red-300 font-mono whitespace-pre-wrap">
+                    {fallbackXmlResult}
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
         );

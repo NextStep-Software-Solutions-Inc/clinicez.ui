@@ -152,6 +152,7 @@ export interface KonsultaPatientData {
       rectalId: string;
       rectalRemarks: string;
     }>;
+    ncdqans?: Record<string, string>;
   };
   // Consultations (for Tagging 2 only)
   consultations?: KonsultaConsultationData[];
@@ -533,24 +534,19 @@ function buildProfilePeMiscs(parent: XmlNode, patient: KonsultaPatientData): Xml
   const pes = patient.profile.physicalExaminations || [];
   const pemiscs = parent.ele('PEMISCS');
   
-  if (pes.length === 0) {
-    // Generate exactly 1 dummy PEMISC
-    pemiscs.ele('PEMISC', withStatus({
-      pSkinId: '', pHeentId: '', pChestId: '', pHeartId: '',
-      pAbdomenId: '', pNeuroId: '', pRectalId: '', pGuId: '',
-    })).up();
-  } else {
-    // Generate 1 PEMISC per historical Physical Examination
-    for (const pe of pes) {
+  // For profiles, we can generate one PEMISC per historical PE
+  for (const pe of pes) {
+    const hasAnyId = pe.skinId || pe.heentId || pe.chestId || pe.heartId || pe.abdomenId || pe.neuroId || pe.rectalId || pe.guId;
+    if (hasAnyId) {
       pemiscs.ele('PEMISC', withStatus({
-        pSkinId: pe.skinId || '',
-        pHeentId: pe.heentId || '',
-        pChestId: pe.chestId || '',
-        pHeartId: pe.heartId || '',
-        pAbdomenId: pe.abdomenId || '',
-        pNeuroId: pe.neuroId || '',
-        pRectalId: pe.rectalId || '',
-        pGuId: pe.guId || '',
+        pSkinId: pe.skinId ? String(pe.skinId) : '',
+        pHeentId: pe.heentId ? String(pe.heentId) : '',
+        pChestId: pe.chestId ? String(pe.chestId) : '',
+        pHeartId: pe.heartId ? String(pe.heartId) : '',
+        pAbdomenId: pe.abdomenId ? String(pe.abdomenId) : '',
+        pNeuroId: pe.neuroId ? String(pe.neuroId) : '',
+        pRectalId: pe.rectalId ? String(pe.rectalId) : '',
+        pGuId: pe.guId ? String(pe.guId) : '',
       })).up();
     }
   }
@@ -561,18 +557,7 @@ function buildProfilePeMiscs(parent: XmlNode, patient: KonsultaPatientData): Xml
 
 function buildProfilePeSpecific(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
   const pes = patient.profile.physicalExaminations || [];
-  if (pes.length === 0) {
-    parent.ele('PESPECIFIC', withStatus({
-      pSkinRem: '',
-      pHeentRem: '',
-      pChestRem: '',
-      pHeartRem: '',
-      pAbdomenRem: '',
-      pNeuroRem: '',
-      pRectalRem: '',
-      pGuRem: '',
-    })).up();
-  } else {
+  if (pes.length > 0) {
     // Only generate exactly 1 PESPECIFIC using the latest PE (last in the asc array)
     const latestPe = pes[pes.length - 1];
     parent.ele('PESPECIFIC', withStatus({
@@ -590,12 +575,60 @@ function buildProfilePeSpecific(parent: XmlNode, patient: KonsultaPatientData): 
 }
 
 function buildNcdQAns(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
-  // NCD Risk Assessment has 24 questions (Q1-Q24), all default empty
-  const attrs: Record<string, string> = {};
-  for (let i = 1; i <= 24; i++) {
-    attrs[`pQ${i}`] = '';
+  // NCD Risk Assessment is only for patients aged 25 and above
+  if (patient.patient.dob) {
+    const dob = new Date(patient.patient.dob);
+    const now = new Date();
+    let age = now.getFullYear() - dob.getFullYear();
+    const m = now.getMonth() - dob.getMonth();
+    if (m < 0 || (m === 0 && now.getDate() < dob.getDate())) {
+      age--;
+    }
+    
+    // PhilHealth rule: only emit NCDQANS if patient is >= 25 years old
+    if (age < 25) {
+      return parent;
+    }
   }
-  parent.ele('NCDQANS', withStatus(attrs)).up();
+
+  const mapNA = (val: string | null | undefined) => val === 'N/A' ? '' : (val || '');
+
+  const attrs = {
+    pQid1_Yn: mapNA(patient.profile.ncdqans?.q1),
+    pQid2_Yn: mapNA(patient.profile.ncdqans?.q2),
+    pQid3_Yn: mapNA(patient.profile.ncdqans?.q3),
+    pQid4_Yn: mapNA(patient.profile.ncdqans?.q4),
+    pQid5_Ynx: mapNA(patient.profile.ncdqans?.q5),
+    pQid6_Yn: mapNA(patient.profile.ncdqans?.q6),
+    pQid7_Yn: mapNA(patient.profile.ncdqans?.q7),
+    pQid8_Yn: mapNA(patient.profile.ncdqans?.q8),
+    pQid9_Yn: mapNA(patient.profile.ncdqans?.q9),
+    pQid10_Yn: mapNA(patient.profile.ncdqans?.q10),
+    pQid11_Yn: mapNA(patient.profile.ncdqans?.q11),
+    pQid12_Yn: mapNA(patient.profile.ncdqans?.q12),
+    pQid13_Yn: mapNA(patient.profile.ncdqans?.q13),
+    pQid14_Yn: mapNA(patient.profile.ncdqans?.q14),
+    pQid15_Yn: mapNA(patient.profile.ncdqans?.q15),
+    pQid16_Yn: mapNA(patient.profile.ncdqans?.q16),
+    pQid17_Abcde: mapNA(patient.profile.ncdqans?.q17),
+    pQid18_Yn: mapNA(patient.profile.ncdqans?.q18),
+    pQid19_Yn: mapNA(patient.profile.ncdqans?.q19),
+    pQid19_Fbsmg: mapNA(patient.profile.ncdqans?.q19_Fbsmg),
+    pQid19_Fbsmmol: mapNA(patient.profile.ncdqans?.q19_Fbsmmol),
+    pQid19_Fbsdate: patient.profile.ncdqans?.q19_Fbsdate ? patient.profile.ncdqans.q19_Fbsdate.split('T')[0] : '',
+    pQid20_Yn: mapNA(patient.profile.ncdqans?.q20),
+    pQid20_Choleval: mapNA(patient.profile.ncdqans?.q20_Choleval),
+    pQid20_Choledate: patient.profile.ncdqans?.q20_Choledate ? patient.profile.ncdqans.q20_Choledate.split('T')[0] : '',
+    pQid21_Yn: mapNA(patient.profile.ncdqans?.q21),
+    pQid21_Ketonval: mapNA(patient.profile.ncdqans?.q21_Ketonval),
+    pQid21_Ketondate: patient.profile.ncdqans?.q21_Ketondate ? patient.profile.ncdqans.q21_Ketondate.split('T')[0] : '',
+    pQid22_Yn: mapNA(patient.profile.ncdqans?.q22),
+    pQid22_Proteinval: mapNA(patient.profile.ncdqans?.q22_Proteinval),
+    pQid22_Proteindate: patient.profile.ncdqans?.q22_Proteindate ? patient.profile.ncdqans.q22_Proteindate.split('T')[0] : '',
+    pQid23_Yn: mapNA(patient.profile.ncdqans?.q23),
+    pQid24_Yn: mapNA(patient.profile.ncdqans?.q24),
+  };
+  parent.ele('NCDQANS', withStatus(attrs as any)).up();
   return parent;
 }
 
@@ -604,10 +637,47 @@ function buildNcdQAns(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function buildSoapSubjective(parent: XmlNode, consultation: KonsultaConsultationData): XmlNode {
+  let pSignsSymptoms = consultation.subjective.signsSymptoms;
+  let pOtherComplaint = consultation.subjective.otherComplaint;
+  
+  // Ensure pSignsSymptoms is semicolon separated and numeric codes are padded to 2 digits
+  let signsArray: string[] = [];
+  
+  if (pSignsSymptoms) {
+    if (!/^[\dX\s,;]+$/.test(pSignsSymptoms)) {
+      pOtherComplaint = [pSignsSymptoms, pOtherComplaint].filter(Boolean).join(" | ");
+      signsArray.push("X");
+    } else {
+      signsArray = pSignsSymptoms
+        .split(/[,;]+/)
+        .map(s => s.trim())
+        .filter(Boolean)
+        .map(s => {
+          if (/^\d+$/.test(s)) {
+            return s.padStart(2, '0');
+          }
+          return s; // keep "X" as is
+        });
+    }
+  }
+
+  // PhilHealth strict validation: 
+  // If pOtherComplaint has value, 'X' must be in pSignsSymptoms
+  if (pOtherComplaint && !signsArray.includes("X")) {
+    signsArray.push("X");
+  }
+  
+  // If pPainSite has value, '38' must be in pSignsSymptoms
+  if (consultation.subjective.painSite && !signsArray.includes("38")) {
+    signsArray.push("38");
+  }
+
+  pSignsSymptoms = signsArray.join(';');
+
   parent.ele('SUBJECTIVE', withStatus({
     pIllnessHistory: consultation.subjective.illnessHistory,
-    pSignsSymptoms: consultation.subjective.signsSymptoms,
-    pOtherComplaint: consultation.subjective.otherComplaint,
+    pSignsSymptoms: pSignsSymptoms,
+    pOtherComplaint: pOtherComplaint,
     pPainSite: consultation.subjective.painSite,
   })).up();
   return parent;
@@ -640,37 +710,33 @@ function buildSoapPepert(parent: XmlNode, consultation: KonsultaConsultationData
 
 function buildSoapPeMiscs(parent: XmlNode, consultation: KonsultaConsultationData): XmlNode {
   const pe = consultation.physicalExam;
-  const fields = [
-    { key: 'pHeentId', val: pe?.heentId },
-    { key: 'pChestId', val: pe?.chestId },
-    { key: 'pHeartId', val: pe?.heartId },
-    { key: 'pAbdomenId', val: pe?.abdomenId },
-    { key: 'pGuId', val: pe?.guId },
-    { key: 'pRectalId', val: pe?.rectalId },
-    { key: 'pSkinId', val: pe?.skinId },
-    { key: 'pNeuroId', val: pe?.neuroId },
-  ];
-
-  const validFields = fields.filter(f => !!f.val);
-
   const pemiscs = parent.ele('PEMISCS');
   
-  if (validFields.length === 0) {
-    // Generate exactly 1 dummy PEMISC
+  if (pe) {
+    const hasAnyId = pe.skinId || pe.heentId || pe.chestId || pe.heartId || pe.abdomenId || pe.neuroId || pe.rectalId || pe.guId;
+    if (hasAnyId) {
+      pemiscs.ele('PEMISC', withStatus({
+        pSkinId: pe.skinId ? String(pe.skinId) : '',
+        pHeentId: pe.heentId ? String(pe.heentId) : '',
+        pChestId: pe.chestId ? String(pe.chestId) : '',
+        pHeartId: pe.heartId ? String(pe.heartId) : '',
+        pAbdomenId: pe.abdomenId ? String(pe.abdomenId) : '',
+        pNeuroId: pe.neuroId ? String(pe.neuroId) : '',
+        pRectalId: pe.rectalId ? String(pe.rectalId) : '',
+        pGuId: pe.guId ? String(pe.guId) : '',
+      })).up();
+    } else {
+      // Dummy required by DTD. 11 = Essentially Normal for HEENT
+      pemiscs.ele('PEMISC', withStatus({
+        pSkinId: '', pHeentId: '11', pChestId: '', pHeartId: '',
+        pAbdomenId: '', pNeuroId: '', pRectalId: '', pGuId: '',
+      })).up();
+    }
+  } else {
     pemiscs.ele('PEMISC', withStatus({
-      pSkinId: '', pHeentId: '', pChestId: '', pHeartId: '',
+      pSkinId: '', pHeentId: '11', pChestId: '', pHeartId: '',
       pAbdomenId: '', pNeuroId: '', pRectalId: '', pGuId: '',
     })).up();
-  } else {
-    // Generate 1 PEMISC per populated field
-    for (const f of validFields) {
-      const attrs: any = {
-        pSkinId: '', pHeentId: '', pChestId: '', pHeartId: '',
-        pAbdomenId: '', pNeuroId: '', pRectalId: '', pGuId: '',
-      };
-      attrs[f.key] = f.val;
-      pemiscs.ele('PEMISC', withStatus(attrs)).up();
-    }
   }
 
   pemiscs.up();
@@ -695,16 +761,15 @@ function buildSoapPeSpecific(parent: XmlNode, consultation: KonsultaConsultation
 
 function buildSoapIcds(parent: XmlNode, consultation: KonsultaConsultationData): XmlNode {
   const icds = parent.ele('ICDS');
-  if (consultation.icdCodes.length > 0) {
+  if (consultation.icdCodes && consultation.icdCodes.length > 0) {
     for (const code of consultation.icdCodes) {
       icds.ele('ICD', withStatus({
         pIcdCode: code,
       })).up();
     }
   } else {
-    // DTD requires at least one ICD
     icds.ele('ICD', withStatus({
-      pIcdCode: '',
+      pIcdCode: 'Z00.0',
     })).up();
   }
   return icds.up();
@@ -712,12 +777,12 @@ function buildSoapIcds(parent: XmlNode, consultation: KonsultaConsultationData):
 
 function buildSoapDiagnostics(parent: XmlNode, consultation: KonsultaConsultationData): XmlNode {
   const diagnostics = parent.ele('DIAGNOSTICS');
-  // DTD requires at least one DIAGNOSTIC
+  // Only build if we have diagnostics in the future. For now, we generate the dummy required by DTD.
   diagnostics.ele('DIAGNOSTIC', withStatus({
-    pDiagnosticId: '',
+    pDiagnosticId: '0', // 0 = Not Applicable
     pOthRemarks: '',
     pIsPhysicianRecommendation: 'N',
-    pPatientRemarks: '',
+    pPatientRemarks: 'XX', // XX = None / Not Applicable
   })).up();
   return diagnostics.up();
 }
@@ -732,9 +797,8 @@ function buildSoapManagements(parent: XmlNode, consultation: KonsultaConsultatio
       })).up();
     }
   } else {
-    // DTD requires at least one MANAGEMENT
     managements.ele('MANAGEMENT', withStatus({
-      pManagementId: '0',
+      pManagementId: '0', // 0 = Not Applicable
       pOthRemarks: '',
     })).up();
   }
@@ -743,7 +807,7 @@ function buildSoapManagements(parent: XmlNode, consultation: KonsultaConsultatio
 
 function buildSoapAdvice(parent: XmlNode, consultation: KonsultaConsultationData): XmlNode {
   parent.ele('ADVICE', withStatus({
-    pRemarks: consultation.advice?.advice || '',
+    pRemarks: consultation.advice?.advice || 'None',
   })).up();
   return parent;
 }
@@ -949,7 +1013,7 @@ export function generateKonsultaXml(options: KonsultaXmlOptions): string {
       pHciTransNo: e.hciTransNo,
       pEffYear: e.effYear,
       pEnlistDate: e.enlistDate,
-      pEnlistStat: 'A',
+      pEnlistStat: '1',
       pPackageType: e.packageType,
       pWithConsent: e.withConsent,
       pMemPin: m.pin,

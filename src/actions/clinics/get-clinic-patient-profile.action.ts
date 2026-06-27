@@ -110,6 +110,7 @@ export async function getClinicPatientProfileAction({
             addresses,
             surgical,
             physicalExaminations,
+            ncdQuestionnaire,
         ] = await Promise.all([
             prisma.medicalHistory.findMany({
                 where: { userId: patient.id },
@@ -228,6 +229,9 @@ export async function getClinicPatientProfileAction({
                 where: { userId: patient.id, deletedAt: null },
                 orderBy: { createdAt: "desc" },
                 take: 5,
+            }),
+            prisma.patientNcdQuestionnaire.findUnique({
+                where: { patientId: patient.id },
             }),
         ]);
 

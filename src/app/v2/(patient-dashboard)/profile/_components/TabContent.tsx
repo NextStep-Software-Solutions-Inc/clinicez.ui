@@ -14,6 +14,7 @@ import { AllergiesTab }    from './tabs/AllergiesTab'
 import { VaccinationsTab } from './tabs/VaccinationsTab'
 import { DisabilitiesTab } from './tabs/DisabilitiesTab'
 import { InsuranceTab }    from './tabs/InsuranceTab'
+import { NcdQuestionnaireTab } from './tabs/ncd-questionnaire-tab'
 
 // ---------------------------------------------------------------------------
 // Skeleton shown while the server action is in flight
@@ -77,6 +78,7 @@ const TAB_LOADERS: Record<keyof PatientTabDataMap, React.ComponentType<{ userId?
   vaccinations: createTabLoader('vaccinations', VaccinationsTab as unknown as React.ComponentType<{ data: PatientTabDataMap['vaccinations'], isClinicMode: boolean, patientId?: number, clinicPatientId?: number | null }>),
   disabilities: createTabLoader('disabilities', DisabilitiesTab as unknown as React.ComponentType<{ data: PatientTabDataMap['disabilities'], isClinicMode: boolean, patientId?: number, clinicPatientId?: number | null }>),
   insurance:    createTabLoader('insurance',    InsuranceTab as unknown as React.ComponentType<{ data: PatientTabDataMap['insurance'], isClinicMode: boolean, patientId?: number, clinicPatientId?: number | null }>),
+  ncdQuestionnaire: createTabLoader('ncdQuestionnaire', NcdQuestionnaireTab as unknown as React.ComponentType<{ data: PatientTabDataMap['ncdQuestionnaire'], isClinicMode: boolean, patientId?: number, clinicPatientId?: number | null }>),
 }
 
 // ---------------------------------------------------------------------------

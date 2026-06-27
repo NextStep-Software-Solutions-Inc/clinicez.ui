@@ -17,6 +17,7 @@ import type {
     CertificateData,
     ReferralData,
 } from '@/types/patient-profile'
+import { NcdQuestionnaireSchemaType } from '@/schemas/ncd-questionnaire-schema'
 
 // ---------------------------------------------------------------------------
 // Serialised helpers (re-exported for convenience)
@@ -73,6 +74,7 @@ export interface PatientBadgeCounts {
     userEmergencyContactsCount: number
     philHealthRecordsCount: number
     totalDocumentsCount: number   // certs + referrals + procedures
+    hasNcdQuestionnaire: boolean
 }
 
 // ---------------------------------------------------------------------------
@@ -267,6 +269,11 @@ export interface InsuranceTabData {
 // ---------------------------------------------------------------------------
 // Discriminated map used for typing the server action + SWR hook
 // ---------------------------------------------------------------------------
+export interface NcdQuestionnaireTabData {
+    dob: string | null
+    ncdQuestionnaire: NcdQuestionnaireSchemaType | null
+}
+
 export type PatientTabDataMap = {
     overview: OverviewTabData
     medical: MedicalTabData
@@ -281,4 +288,5 @@ export type PatientTabDataMap = {
     vaccinations: VaccinationsTabData
     disabilities: DisabilitiesTabData
     insurance: InsuranceTabData
+    ncdQuestionnaire: NcdQuestionnaireTabData
 }

@@ -48,6 +48,7 @@ export async function getPatientBaseData(): Promise<PatientBaseData | null> {
                 },
                 PersonalHistory: { select: { id: true } },
                 ObGyneHistory: { select: { id: true } },
+                NcdQuestionnaire: { select: { id: true } },
                 VitalSigns: {
                     where: { isActive: true, deletedAt: null },
                     orderBy: { createdAt: 'desc' },
@@ -122,6 +123,7 @@ export async function getPatientBaseData(): Promise<PatientBaseData | null> {
                 vitalSignsCount: patient._count.VitalSigns,
                 hasPersonalHistory: patient.PersonalHistory !== null,
                 hasObGyneHistory: patient.ObGyneHistory !== null,
+                hasNcdQuestionnaire: patient.NcdQuestionnaire !== null,
                 userVaccinationsCount: patient._count.UserVaccinations,
                 userAddressesCount: patient._count.UserAddresses,
                 userEmergencyContactsCount: patient._count.UserEmergencyContacts,

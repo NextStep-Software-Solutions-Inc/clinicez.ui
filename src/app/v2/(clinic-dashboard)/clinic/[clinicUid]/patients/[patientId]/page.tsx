@@ -41,6 +41,7 @@ function toPatientBaseData(p: SerializedPatientHealthRecordsResponse): PatientBa
       vitalSignsCount:             p.vitalSigns.length,
       hasPersonalHistory:          !!p.personalHistory,
       hasObGyneHistory:            !!p.obGyneHistory,
+      hasNcdQuestionnaire:         !!p.ncdQuestionnaire,
       userVaccinationsCount:       p.userVaccinations.length,
       userAddressesCount:          p.userAddresses.length,
       userEmergencyContactsCount:  p.userEmergencyContacts.length,

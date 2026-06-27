@@ -313,7 +313,7 @@ export function ObGyneHistoryEditForm({
                 <SelectValue placeholder="Select type..." />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="_empty">Not applicable</SelectItem>
+                <SelectItem value="NONE">{obGyneHistoryLabels.typeOfDelivery.NONE}</SelectItem>
                 <SelectItem value="VAGINAL">{obGyneHistoryLabels.typeOfDelivery.VAGINAL}</SelectItem>
                 <SelectItem value="CESAREAN">{obGyneHistoryLabels.typeOfDelivery.CESAREAN}</SelectItem>
                 <SelectItem value="MIXED">{obGyneHistoryLabels.typeOfDelivery.MIXED}</SelectItem>

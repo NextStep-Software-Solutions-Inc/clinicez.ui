@@ -12,6 +12,7 @@ import {
     getPatientVaccinationsData,
     getPatientDisabilitiesData,
     getPatientInsuranceData,
+    getPatientNcdQuestionnaireData,
 } from '@/actions/patient-profile/get-patient-tab-data'
 import type { PatientTabDataMap } from '@/types/patient-profile-tabs'
 
@@ -29,6 +30,7 @@ const TAB_DATA_FETCHERS: { [K in keyof PatientTabDataMap]: (userId?: string) => 
     vaccinations: getPatientVaccinationsData,
     disabilities: getPatientDisabilitiesData,
     insurance: getPatientInsuranceData,
+    ncdQuestionnaire: getPatientNcdQuestionnaireData,
 }
 
 /**

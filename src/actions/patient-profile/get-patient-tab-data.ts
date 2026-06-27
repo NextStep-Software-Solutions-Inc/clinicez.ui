@@ -593,3 +593,28 @@ export async function getPatientInsuranceData(userId?: string): Promise<Insuranc
         return null
     }
 }
+
+export async function getPatientNcdQuestionnaireData(userId?: string): Promise<import('@/types/patient-profile-tabs').NcdQuestionnaireTabData | null> {
+    try {
+        const patientId = await resolvePatientId(userId)
+        if (!patientId) return null
+
+        const patient = await prisma.user.findUnique({
+            where: { id: patientId },
+            select: { 
+                dob: true,
+                NcdQuestionnaire: true 
+            },
+        })
+
+        if (!patient) return null
+
+        return {
+            dob: patient.dob?.toISOString() || null,
+            ncdQuestionnaire: patient.NcdQuestionnaire as any
+        }
+    } catch (error) {
+        console.error('[GET_PATIENT_NCD_DATA]', error)
+        return null
+    }
+}

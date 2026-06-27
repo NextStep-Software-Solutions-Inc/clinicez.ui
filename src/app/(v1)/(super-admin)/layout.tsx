@@ -39,6 +39,10 @@ const sidebarNavItems = [
     href: "/super-admin/physical-exam-library",
   },
   {
+    title: "Signs and Symptoms",
+    href: "/super-admin/signs-and-symptoms",
+  },
+  {
     title: "Location Management",
     href: "/super-admin/locations",
   },

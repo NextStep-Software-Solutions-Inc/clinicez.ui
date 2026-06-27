@@ -474,6 +474,7 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
                       where: { deletedAt: null },
                       orderBy: { createdAt: "asc" },
                     },
+                    NcdQuestionnaire: true,
                   },
                 },
                 PhilHealthKonsultaEnlistments: {
@@ -658,10 +659,13 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
             for (const rx of t.Prescriptions ?? []) {
               for (const med of rx.Medicines ?? []) {
                 const ph = med.PhilHealthData;
+                const disp = med.MedicineDispenseRecord;
+                const isCustom = ph?.drugCode?.startsWith("NOMED") || false;
+                
                 medicines.push({
                   hciCaseNo: enlistment?.hciCaseNo || "",
                   hciTransNo: t.soapTransNo || "",
-                  category: "",
+                  category: ph?.category || "",
                   drugCode: ph?.drugCode || "NOMED00000000000000000000000",
                   genericCode: ph?.genericCode || "",
                   saltCode: ph?.saltCode || "",
@@ -669,19 +673,19 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
                   formCode: ph?.formCode || "",
                   unitCode: ph?.unitCode || "",
                   packageCode: ph?.packageCode || "",
-                  otherMedicine: ph?.otherMedicine || med.genericName || med.name || "",
+                  otherMedicine: isCustom ? (ph?.otherMedicine || med.name || "") : "",
                   othMedDrugGrouping: ph?.othMedDrugGrouping || "",
                   route: ph?.route || "",
                   quantity: med.qty?.toString() || "0",
-                  actualUnitPrice: "0",
-                  totalAmtPrice: "0",
-                  instructionQuantity: med.dosage || "",
-                  instructionStrength: "",
-                  instructionFrequency: med.frequency || "",
+                  actualUnitPrice: ph?.actualUnitPrice?.toString() || "0",
+                  totalAmtPrice: ph?.totalAmtPrice?.toString() || "0",
+                  instructionQuantity: ph?.instructionQuantity || "1",
+                  instructionStrength: ph?.instructionStrength || med.dosage || "",
+                  instructionFrequency: ph?.instructionFrequency || med.frequency || "",
                   prescribingPhysician: "",
-                  isDispensed: "N",
-                  dateDispensed: "",
-                  dispensingPersonnel: "",
+                  isDispensed: disp?.isDispensed ? "Y" : "N",
+                  dateDispensed: disp?.dateDispensed ? formatDate(disp.dateDispensed) : "",
+                  dispensingPersonnel: disp?.dispensingPersonnel || "",
                   isApplicable: "Y",
                   dateAdded: formatDate(t.createdAt),
                 });
@@ -778,7 +782,14 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
           transDate: today,
           vitals: mapVitals(latestVitals as any),
           physicalExaminations: patient.PhysicalExaminations.map(pe => mapPhysicalExam(pe)).filter((x): x is NonNullable<typeof x> => !!x),
-          bloodType: patient.bloodType || "U",
+          bloodType: patient.bloodType === 'A_POSITIVE' ? 'A+' :
+                     patient.bloodType === 'A_NEGATIVE' ? 'A-' :
+                     patient.bloodType === 'B_POSITIVE' ? 'B+' :
+                     patient.bloodType === 'B_NEGATIVE' ? 'B-' :
+                     patient.bloodType === 'AB_POSITIVE' ? 'AB+' :
+                     patient.bloodType === 'AB_NEGATIVE' ? 'AB-' :
+                     patient.bloodType === 'O_POSITIVE' ? 'O+' :
+                     patient.bloodType === 'O_NEGATIVE' ? 'O-' : '',
           medicalHistories: patient.MedicalHistories.map(mh => {
             const code = mh.Condition.code;
             if (code) {
@@ -836,7 +847,9 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
             premature: patient.ObGyneHistory.premature?.toString() || '',
             abortion: patient.ObGyneHistory.abortion?.toString() || '',
             livingChildren: patient.ObGyneHistory.livingChildren?.toString() || '',
-            typeLasDelivery: patient.ObGyneHistory.typeOfDelivery || '',
+            typeLasDelivery: patient.ObGyneHistory.typeOfDelivery === 'VAGINAL' ? 'N' : 
+                             patient.ObGyneHistory.typeOfDelivery === 'CESAREAN' ? 'O' : 
+                             patient.ObGyneHistory.typeOfDelivery === 'MIXED' ? 'B' : 'X',
             isPreEclampsia: patient.ObGyneHistory.hasPreEclampsia ? 'Y' : 'N',
             wFamPlan: patient.ObGyneHistory.birthControlMethod && patient.ObGyneHistory.birthControlMethod !== 'NONE' ? 'Y' : 'N',
           } : undefined,
@@ -1029,12 +1042,14 @@ export async function submitBatchReportAction(clinicUid: string, batchId: string
       batch.transmittalNo, batch.xmlPayload, batch.tagging, token, credentials.cipherKey
     );
 
+    const isSuccess = submissionResult?.success === true || submissionResult?.success === "true" || submissionResult?.success === "True";
+    
     await prisma.konsultaBatchReport.update({
       where: { id: batchId },
       data: {
-        status: "SUBMITTED",
+        status: isSuccess ? "SUBMITTED" : "VALIDATED",
         submissionResult: JSON.stringify(submissionResult, null, 2),
-        submittedAt: new Date(),
+        submittedAt: isSuccess ? new Date() : null,
       },
     });
 
@@ -1063,6 +1078,8 @@ export async function regenerateBatchXmlAction(clinicUid: string, batchId: strin
         xmlPayload: null,
         validationResult: null,
         validatedAt: null,
+        submissionResult: null,
+        submittedAt: null,
       },
     });
 

@@ -64,7 +64,7 @@ export async function getPatientHealthRecords(): Promise<SerializedPatientHealth
     }
 
     // Fetch related data in separate queries
-    const [medical, familyMedical, vitals, obGyne, physicalExaminations, pediatric, personal, philHealth, procedures, clinicPatients, allergies, emergencyContacts, vaccinations, disabilities, addresses, surgical] = await Promise.all([
+    const [medical, familyMedical, vitals, obGyne, physicalExaminations, pediatric, personal, philHealth, procedures, clinicPatients, allergies, emergencyContacts, vaccinations, disabilities, addresses, surgical, ncdQuestionnaire] = await Promise.all([
       // Medical Histories
       prisma.medicalHistory.findMany({
         where: { userId: patient.id },
@@ -220,6 +220,10 @@ export async function getPatientHealthRecords(): Promise<SerializedPatientHealth
         orderBy: { createdAt: 'desc' },
         take: 20,
       }),
+      // NCD Questionnaire
+      prisma.patientNcdQuestionnaire.findUnique({
+        where: { patientId: patient.id },
+      }),
     ])
 
     // Fetch medical certificates and referral slips from clinic
@@ -313,6 +317,7 @@ export async function getPatientHealthRecords(): Promise<SerializedPatientHealth
       createdAt: patient.createdAt.toISOString(),
       updatedAt: patient.updatedAt.toISOString(),
       clinic: clinicPatients[0]?.Clinic || null,
+      ncdQuestionnaire: ncdQuestionnaire ? { id: ncdQuestionnaire.id } : null,
 
       // Medical Profile
       medicalHistories: medical.map((h) => ({

@@ -117,9 +117,10 @@ model User {
   OrganizationMembers              OrganizationMember[]          @relation("User")
 
   PersonalHistory          PersonalHistory?
-  PhilHealthRecordsCreated PhilHealthRecord[] @relation("PhilHealthRecordsCreatedBy")
-  PhilHealthRecordsDeleted PhilHealthRecord[] @relation("PhilHealthRecordsDeletedBy")
-  PhilHealthRecordsUpdated PhilHealthRecord[] @relation("PhilHealthRecordsUpdatedBy")
+  NcdQuestionnaire         PatientNcdQuestionnaire?
+  PhilHealthRecordsCreated PhilHealthRecord[]       @relation("PhilHealthRecordsCreatedBy")
+  PhilHealthRecordsDeleted PhilHealthRecord[]       @relation("PhilHealthRecordsDeletedBy")
+  PhilHealthRecordsUpdated PhilHealthRecord[]       @relation("PhilHealthRecordsUpdatedBy")
   PhilHealthRecords        PhilHealthRecord[]
 
   PreAssessmentNotes              PreAssessmentNote[]
@@ -3041,6 +3042,17 @@ model KonsultaManagementCode {
   ConsultationManagements ConsultationManagement[]
 }
 
+/// Reference table: official PhilHealth signs & symptoms codes.
+model KonsultaSignAndSymptom {
+  id          String   @id @default(uuid())
+  code        String   @unique // PhilHealth code value: "01", "02", etc., and "X"
+  description String
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
 /// Per-consultation management entries (many per ticket).
 model ConsultationManagement {
   id                   String   @id @default(uuid())
@@ -3107,4 +3119,51 @@ model PhysicalExamination {
 
   User               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   ConsultationTicket ConsultationTicket? @relation(fields: [consultationTicketId], references: [id], onDelete: SetNull)
+}
+
+model PatientNcdQuestionnaire {
+  id        Int @id @default(autoincrement())
+  patientId Int @unique
+
+  q1  String?
+  q2  String?
+  q3  String?
+  q4  String?
+  q5  String?
+  q6  String?
+  q7  String?
+  q8  String?
+  q9  String?
+  q10 String?
+  q11 String?
+  q12 String?
+  q13 String?
+  q14 String?
+  q15 String?
+  q16 String?
+  q17 String?
+  q18 String?
+  q19 String?
+  q20 String?
+  q21 String?
+  q22 String?
+  q23 String?
+  q24 String?
+
+  q19_Fbsmg   String?
+  q19_Fbsmmol String?
+  q19_Fbsdate DateTime?
+
+  q20_Choleval  String?
+  q20_Choledate DateTime?
+
+  q21_Ketonval  String?
+  q21_Ketondate DateTime?
+
+  q22_Proteinval  String?
+  q22_Proteindate DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  Patient   User     @relation(fields: [patientId], references: [id], onDelete: Cascade)
 }

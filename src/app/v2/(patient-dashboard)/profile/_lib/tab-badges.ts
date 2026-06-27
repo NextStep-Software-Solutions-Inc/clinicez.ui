@@ -39,6 +39,8 @@ export function getTabBadge(tabId: string, badges: PatientBadgeCounts): TabBadge
             if (badges.philHealthRecordsCount === 0) return { status: 'Incomplete', count: 1 }
             return badges.totalDocumentsCount > 0 ? { status: 'Available', count: badges.totalDocumentsCount } : null
         }
+        case 'ncdQuestionnaire':
+            return !badges.hasNcdQuestionnaire ? { status: 'Incomplete', count: 1 } : null
         case 'allergies':
         case 'disabilities':
         default:

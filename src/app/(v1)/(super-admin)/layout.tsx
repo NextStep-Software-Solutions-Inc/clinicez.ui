@@ -78,6 +78,10 @@ const sidebarNavItems = [
     title: "Database Seeding",
     href: "/super-admin/seed",
   },
+  {
+    title: "Database Tools",
+    href: "/super-admin/database",
+  },
 ];
 
 export default async function SuperAdminLayout({

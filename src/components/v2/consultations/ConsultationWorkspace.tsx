@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import {
   Stethoscope,
   Pill,
@@ -17,6 +17,7 @@ import {
   UserPlus,
   ClipboardList,
   Ban,
+  ShieldCheck,
 } from "lucide-react";
 import Link from "next/link";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -42,6 +43,8 @@ import { MarkdownRenderer } from "@/components/markdown/MarkdownRenderer";
 import KonsultaEncounterPanel from "./KonsultaEncounterPanel";
 import KonsultaDiagnosticResultsPanel from "./KonsultaDiagnosticResultsPanel";
 import KonsultaManagementPanel from "./KonsultaManagementPanel";
+import KonsultaRecommendedServicesPanel from "./KonsultaRecommendedServicesPanel";
+import KonsultaDiagnosticRequests from "./KonsultaDiagnosticRequests";
 
 type Detail = NonNullable<GetPatientConsultationDetail["data"]>;
 
@@ -79,6 +82,21 @@ export default function ConsultationWorkspace({
   onReloadDetail,
 }: ConsultationWorkspaceProps) {
   const [activeTab, setActiveTab] = useState("notes");
+  const [recommendedConsultDesc, setRecommendedConsultDesc] = useState("");
+
+  useEffect(() => {
+    if (consultation.isPhilHealthKonsulta && patient?.dob) {
+      const ageMonths = Math.floor((new Date().getTime() - new Date(patient.dob).getTime()) / (30.44 * 24 * 60 * 60 * 1000));
+      import("@/actions/consultation/konsulta-recommended-services.action").then((mod) => {
+        mod.getKonsultaRecommendedService(ageMonths, patient.gender as any).then((res) => {
+          if (res) {
+            setRecommendedConsultDesc(res.consultationDescription);
+          }
+        });
+      });
+    }
+  }, [consultation.isPhilHealthKonsulta, patient?.dob, patient?.gender]);
+
   const [resolving, startResolveTransition] = useTransition();
   const [dropping, startDropTransition] = useTransition();
   const [generatingYakap, startGeneratingYakap] = useTransition();
@@ -430,6 +448,7 @@ export default function ConsultationWorkspace({
           isResolved={isResolved || isDropped}
           onUpdate={() => onReloadDetail?.()}
           onProfilingChecked={(complete) => setKonsultaProfilingComplete(complete)}
+          recommendedServicesText={recommendedConsultDesc ? `Recommended for patient's age (${patient?.dob ? `${dayjs().diff(dayjs(patient.dob), 'year')} yrs` : 'Unknown'}) and gender (${patient?.gender || 'Unknown'}): ${recommendedConsultDesc}. Please navigate to the Diagnostics tab to offer these recommended services to the patient.` : undefined}
         />
       )}
 
@@ -556,21 +575,74 @@ export default function ConsultationWorkspace({
           <TabsContent value="diagnostics" className="mt-0 p-4 sm:p-6">
             {hasPatient ? (
               <div className="space-y-6">
-                <ConsultationDiagnostics
-                  clinicUid={clinicUid}
-                  patient={patient}
-                  consultation={consultation}
-                  myHPs={myHPs}
-                  onPatchDetail={onPatchDetail}
-                  isResolved={isResolved}
-                />
-                {(consultation.isPhilHealthKonsulta) && (
-                  <KonsultaDiagnosticResultsPanel
-                    consultationTicketId={consultation.id}
-                    clinicPatientId={patient.clinicPatientId}
-                    hciCaseNo={(consultation as any).hciCaseNo ?? ""}
-                    hciTransNo={consultation.soapTransNo ?? ""}
-                    isResolved={isResolved || isDropped}
+                {consultation.isPhilHealthKonsulta ? (
+                  <Tabs defaultValue="recommended" className="w-full">
+                    <TabsList className="w-full flex justify-start h-auto bg-transparent border-b p-0 rounded-none mb-6">
+                      {consultation.ClinicPatient?.Patient?.dob && (
+                        <TabsTrigger 
+                          value="recommended" 
+                          className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-teal-600 rounded-none px-4 py-2 flex items-center gap-1.5 text-xs font-medium text-teal-700 dark:text-teal-400"
+                        >
+                          <ShieldCheck className="h-3.5 w-3.5" />
+                          PhilHealth Recommended Services
+                        </TabsTrigger>
+                      )}
+                      <TabsTrigger 
+                        value="requests" 
+                        className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-teal-600 rounded-none px-4 py-2 flex items-center gap-1.5 text-xs font-medium text-teal-700 dark:text-teal-400"
+                      >
+                        <ShieldCheck className="h-3.5 w-3.5" />
+                        Diagnostic Requests
+                      </TabsTrigger>
+                      <TabsTrigger 
+                        value="results" 
+                        className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-teal-600 rounded-none px-4 py-2 flex items-center gap-1.5 text-xs font-medium text-teal-700 dark:text-teal-400"
+                      >
+                        <ShieldCheck className="h-3.5 w-3.5" />
+                        PhilHealth Diagnostic Results
+                      </TabsTrigger>
+                    </TabsList>
+
+                    {consultation.ClinicPatient?.Patient?.dob && (
+                      <TabsContent value="recommended" className="mt-0">
+                        <KonsultaRecommendedServicesPanel
+                          consultationTicketId={consultation.id}
+                          patientAgeMonths={Math.floor((new Date().getTime() - new Date(consultation.ClinicPatient.Patient.dob).getTime()) / (30.44 * 24 * 60 * 60 * 1000))}
+                          patientGender={consultation.ClinicPatient.Patient.gender || ""}
+                          initialOptions={(consultation as any).konsultaRecommendedDiagnosticOptions as any || []}
+                          onUpdate={() => onReloadDetail?.()}
+                        />
+                      </TabsContent>
+                    )}
+
+                    <TabsContent value="requests" className="mt-0">
+                      <KonsultaDiagnosticRequests
+                        clinicUid={clinicUid}
+                        hpId={myHPs[0]?.id || 0}
+                        patientId={patient.id}
+                        consultationTicketId={consultation.id}
+                        onDone={() => onReloadDetail?.()}
+                      />
+                    </TabsContent>
+
+                    <TabsContent value="results" className="mt-0">
+                      <KonsultaDiagnosticResultsPanel
+                        consultationTicketId={consultation.id}
+                        clinicPatientId={patient.clinicPatientId}
+                        hciCaseNo={(consultation as any).hciCaseNo ?? ""}
+                        hciTransNo={consultation.soapTransNo ?? ""}
+                        isResolved={isResolved || isDropped}
+                      />
+                    </TabsContent>
+                  </Tabs>
+                ) : (
+                  <ConsultationDiagnostics
+                    clinicUid={clinicUid}
+                    patient={patient}
+                    consultation={consultation}
+                    myHPs={myHPs}
+                    onPatchDetail={onPatchDetail}
+                    isResolved={isResolved}
                   />
                 )}
               </div>

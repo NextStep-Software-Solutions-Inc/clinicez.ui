@@ -126,7 +126,6 @@ model User {
   PreAssessmentNotes              PreAssessmentNote[]
   PrescriptionsCreated            Prescription[]                   @relation("PrescriptionCreatedBy")
   PrescriptionsUpdated            Prescription[]                   @relation("PrescriptionUpdatedBy")
-  ProcedureUsageHistory           ProcedureUsageHistory[]
   ReceiptCodeClaims               ReceiptCodeClaim[]
   ReservedTimeSlots               ReservedTimeSlot[]
   SocialLink                      SocialLink?
@@ -165,6 +164,7 @@ model User {
   verifiedAt                      DateTime?
   lastProfileUpdateAt             DateTime?
   KonsultaBatchReports            KonsultaBatchReport[]            @relation("KonsultaBatchReportCreator")
+  diagnosticRequests              DiagnosticRequest[]
 
   @@index([caseNumber])
 }
@@ -252,7 +252,6 @@ model ClinicPatient {
   ClinicPatientPermissions      ClinicPatientPermission[]
   ClinicReferralSlips           ClinicReferralSlip[]
   Prescriptions                 Prescription[]
-  ProcedureUsageHistory         ProcedureUsageHistory[]
   ConsultationTickets           ConsultationTicket[]
   PhilHealthKonsultaEnlistments PhilHealthKonsultaEnlistment[]
   KonsultaBatchPatients         KonsultaBatchPatient[]
@@ -522,6 +521,7 @@ model HealthcareProvider {
   ReservedTimeSlots     ReservedTimeSlot[]
   UserPreferences       UserPreference[]
   UserVaccinations      UserVaccination[]
+  diagnosticRequests    DiagnosticRequest[]
 }
 
 model HPProfile {
@@ -1326,7 +1326,6 @@ model Clinic {
   Medications                     Medication[]
   PreAssessmentNotes              PreAssessmentNote[]
   Prescriptions                   Prescription[]
-  procedureUsageHistories         ProcedureUsageHistory[]
   SequenceGenerators              SequenceGenerator[]
   ServiceCategories               ServiceCategory[]
   Systems                         System[]
@@ -1334,6 +1333,7 @@ model Clinic {
   UserDefaultClinicRoles          UserDefaultClinicRole[]
   KonsultaBatchReports            KonsultaBatchReport[]
   KonsultaDiagnosticResults       KonsultaDiagnosticResult[]
+  diagnosticRequests              DiagnosticRequest[]
 
   @@index([tenantId, clinicUid], map: "clinic_index")
 }
@@ -1670,47 +1670,49 @@ model ServiceAttribute {
 }
 
 model ConsultationTicket {
-  id                          Int                          @id @default(autoincrement())
-  systemId                    Int?
-  appointmentId               Int?
-  clinicPatientId             Int?
-  clinicId                    Int
-  subject                     String?                      @default("")
-  createdAt                   DateTime                     @default(now())
-  updatedAt                   DateTime                     @updatedAt
-  isActive                    Boolean                      @default(true)
-  isArchived                  Boolean                      @default(false)
-  caseNumberGeneratedAt       DateTime?
-  ekasAuthorizationCode       String?
-  ekasTransactionGeneratedAt  DateTime?
-  ekasTransactionNumber       String?                      @unique
-  caseNumber                  String?                      @unique
-  soapTransNo                 String?                      @unique
-  isPhilHealthKonsulta        Boolean                      @default(false)
-  konsultaAtcCode             String?
-  konsultaIsWalkedIn          Boolean?
-  konsultaCoPay               Decimal?                     @db.Decimal(10, 2)
-  ConsultationManagements     ConsultationManagement[]
-  konsultaAdvice              Json? // {advice, followUpDate, referredTo, reasonForReferral, referredToOther}
-  HeartStationRequests        ClinicHeartStationRequest[]
-  ImagingRequests             ClinicImagingRequest[]
-  LaboratoryRequests          ClinicLaboratoryRequest[]
-  MedicalCertificates         ClinicMedicalCertificate[]
-  ClinicReferralSlips         ClinicReferralSlip[]
-  ConsultationNotes           ConsultationNote[]
-  VitalSigns                  VitalSign[]
-  PhysicalExaminations        PhysicalExamination[]
-  ConsultationDiagnoses       ConsultationDiagnosis[]
-  Appointment                 Appointment?                 @relation(fields: [appointmentId], references: [id], onUpdate: NoAction)
-  ClinicPatient               ClinicPatient?               @relation(fields: [clinicPatientId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  Clinic                      Clinic                       @relation(fields: [clinicId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  System                      System?                      @relation(fields: [systemId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  ConsultationTicketAttribute ConsultationTicketAttribute?
-  ConsultationTicketHPs       ConsultationTicketHP[]
-  Interventions               Intervention[]
-  Medications                 Medication[]
-  Prescriptions               Prescription[]
-  KonsultaDiagnosticResults   KonsultaDiagnosticResult[]
+  id                                   Int                          @id @default(autoincrement())
+  systemId                             Int?
+  appointmentId                        Int?
+  clinicPatientId                      Int?
+  clinicId                             Int
+  subject                              String?                      @default("")
+  createdAt                            DateTime                     @default(now())
+  updatedAt                            DateTime                     @updatedAt
+  isActive                             Boolean                      @default(true)
+  isArchived                           Boolean                      @default(false)
+  caseNumberGeneratedAt                DateTime?
+  ekasAuthorizationCode                String?
+  ekasTransactionGeneratedAt           DateTime?
+  ekasTransactionNumber                String?                      @unique
+  caseNumber                           String?                      @unique
+  soapTransNo                          String?                      @unique
+  isPhilHealthKonsulta                 Boolean                      @default(false)
+  konsultaAtcCode                      String?
+  konsultaIsWalkedIn                   Boolean?
+  konsultaCoPay                        Decimal?                     @db.Decimal(10, 2)
+  konsultaRecommendedDiagnosticOptions Json?
+  ConsultationManagements              ConsultationManagement[]
+  konsultaAdvice                       Json? // {advice, followUpDate, referredTo, reasonForReferral, referredToOther}
+  HeartStationRequests                 ClinicHeartStationRequest[]
+  ImagingRequests                      ClinicImagingRequest[]
+  LaboratoryRequests                   ClinicLaboratoryRequest[]
+  MedicalCertificates                  ClinicMedicalCertificate[]
+  ClinicReferralSlips                  ClinicReferralSlip[]
+  ConsultationNotes                    ConsultationNote[]
+  VitalSigns                           VitalSign[]
+  PhysicalExaminations                 PhysicalExamination[]
+  ConsultationDiagnoses                ConsultationDiagnosis[]
+  Appointment                          Appointment?                 @relation(fields: [appointmentId], references: [id], onUpdate: NoAction)
+  ClinicPatient                        ClinicPatient?               @relation(fields: [clinicPatientId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Clinic                               Clinic                       @relation(fields: [clinicId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  System                               System?                      @relation(fields: [systemId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  ConsultationTicketAttribute          ConsultationTicketAttribute?
+  ConsultationTicketHPs                ConsultationTicketHP[]
+  Interventions                        Intervention[]
+  Medications                          Medication[]
+  Prescriptions                        Prescription[]
+  KonsultaDiagnosticResults            KonsultaDiagnosticResult[]
+  DiagnosticRequests                   DiagnosticRequest[]
 
   @@index([caseNumber])
   @@index([ekasTransactionNumber])
@@ -1974,6 +1976,7 @@ model DocumentTemplate {
   MedicalCertificateFindings        MedicalCertificateFinding[]
   MedicalCertificateReasons         MedicalCertificateReason[]
   Prescriptions                     Prescription[]
+  diagnosticRequests                DiagnosticRequest[]
 }
 
 model DocumentTemplateType {
@@ -2176,21 +2179,43 @@ model ClinicHeartStationProcedure {
   @@index([clinicId])
 }
 
-model ProcedureUsageHistory {
-  id              Int            @id @default(autoincrement())
-  userId          Int
-  clinicId        Int
-  procedureType   String
-  procedureId     Int
-  procedureName   String
-  usedAt          DateTime       @default(now())
-  clinicPatientId Int?
-  Clinic          Clinic         @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  clinicPatient   ClinicPatient? @relation(fields: [clinicPatientId], references: [id])
-  User            User           @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+model KonsultaRecommendedService {
+  id                      String   @id @default(uuid())
+  minAgeMonths            Int?
+  maxAgeMonths            Int?
+  gender                  Gender?
+  consultationDescription String
+  philhealthDiagnosticIds String[]
+}
 
-  @@index([userId, clinicId, procedureType])
-  @@index([usedAt])
+model DiagnosticProcedure {
+  id                     String  @id @default(uuid())
+  name                   String
+  category               String
+  description            String?
+  isActive               Boolean @default(true)
+  philhealthDiagnosticId String?
+
+  @@unique([name, category])
+}
+
+model DiagnosticRequest {
+  id                   String   @id @default(uuid())
+  clinicId             Int
+  hpId                 Int
+  patientId            Int
+  consultationTicketId Int?
+  documentTemplateId   Int
+  remarks              String?
+  dateRequested        DateTime @default(now())
+  isArchived           Boolean  @default(false)
+  diagnosticProcedures Json // [{ diagnosticProcedureId: string, bodyPart?: string }]
+
+  Clinic             Clinic              @relation(fields: [clinicId], references: [id])
+  HealthCareProvider HealthcareProvider  @relation(fields: [hpId], references: [id])
+  Patient            User                @relation(fields: [patientId], references: [id])
+  ConsultationTicket ConsultationTicket? @relation(fields: [consultationTicketId], references: [id])
+  DocumentTemplate   DocumentTemplate    @relation(fields: [documentTemplateId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model ClinicImagingRequest {

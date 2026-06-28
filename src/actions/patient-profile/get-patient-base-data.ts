@@ -90,7 +90,7 @@ export async function getPatientBaseData(): Promise<PatientBaseData | null> {
         const clinicPatient = patient.ClinicPatients[0] ?? null
         const certCount = clinicPatient?._count.MedicalCertificates ?? 0
         const referralCount = clinicPatient?._count.ClinicReferralSlips ?? 0
-        const procedureCount = await prisma.procedureUsageHistory.count({ where: { userId: patient.id } })
+        const procedureCount = 0;
 
         return {
             id: patient.id,

@@ -7,6 +7,7 @@ import {
   AlertTriangle,
   CheckCircle2,
   Footprints,
+  AlertCircle,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
@@ -30,6 +31,7 @@ interface KonsultaEncounterPanelProps {
   isResolved: boolean;
   onUpdate?: () => void;
   onProfilingChecked?: (isComplete: boolean) => void;
+  recommendedServicesText?: string;
 }
 
 export default function KonsultaEncounterPanel({
@@ -42,6 +44,7 @@ export default function KonsultaEncounterPanel({
   isResolved,
   onUpdate,
   onProfilingChecked,
+  recommendedServicesText,
 }: KonsultaEncounterPanelProps) {
   const [enabled, setEnabled] = useState(initialEnabled);
   const [atcCode, setAtcCode] = useState(initialAtc ?? "");
@@ -149,26 +152,22 @@ export default function KonsultaEncounterPanel({
   return (
     <div className="border-b border-teal-200 dark:border-teal-800/40 bg-teal-50/50 dark:bg-teal-950/20">
       {/* Header row */}
-      <div className="flex items-center gap-2 px-4 sm:px-6 py-2 border-b border-teal-100 dark:border-teal-800/20">
-        <ShieldCheck className="h-3.5 w-3.5 text-teal-600 dark:text-teal-400" />
-        <Label htmlFor="konsulta-toggle-on" className="text-xs font-medium text-teal-700 dark:text-teal-300 cursor-pointer">
-          PhilHealth Konsulta
-        </Label>
-        <Switch
-          id="konsulta-toggle-on"
-          checked={enabled}
-          onCheckedChange={handleToggle}
-          disabled={isResolved || toggling}
-          className="scale-75"
-        />
-        <Badge variant="outline" className="ml-auto text-[10px] h-5 border-teal-300 text-teal-700 dark:border-teal-700 dark:text-teal-400">
-          Tagging 2 — Consultation
-        </Badge>
-      </div>
-
-      {/* Fields row */}
-      <div className="px-4 sm:px-6 py-3 flex flex-wrap items-end gap-4">
-        {/* Walk-in toggle */}
+      <div className="flex items-center justify-between gap-2 px-4 sm:px-6 py-2 border-b border-teal-100 dark:border-teal-800/20">
+        <div className="flex gap-4">
+          <div className="flex items-center gap-2">
+          <ShieldCheck className="h-3.5 w-3.5 text-teal-600 dark:text-teal-400" />
+          <Label htmlFor="konsulta-toggle-on" className="text-xs font-medium text-teal-700 dark:text-teal-300 cursor-pointer">
+            PhilHealth Konsulta
+          </Label>
+          <Switch
+            id="konsulta-toggle-on"
+            checked={enabled}
+            onCheckedChange={handleToggle}
+            disabled={isResolved || toggling}
+            className="scale-75"
+          />
+        </div>
+         {/* Walk-in toggle */}
         <div className="flex items-center gap-2">
           <Footprints className="h-3.5 w-3.5 text-muted-foreground" />
           <Label htmlFor="walkin-toggle" className="text-xs text-muted-foreground cursor-pointer">
@@ -182,6 +181,15 @@ export default function KonsultaEncounterPanel({
             className="scale-75"
           />
         </div>
+        </div>
+        <Badge variant="outline" className={`${recommendedServicesText ? "" : "ml-auto"} text-[10px] h-5 border-teal-300 text-teal-700 dark:border-teal-700 dark:text-teal-400 shrink-0`}>
+          Tagging 2 — Consultation
+        </Badge>
+      </div>
+
+      {/* Fields row */}
+      <div className="px-4 sm:px-6 py-3 flex flex-wrap items-end gap-4">
+       
 
         {/* ATC Code */}
         <div className="flex flex-col gap-1">
@@ -264,6 +272,14 @@ export default function KonsultaEncounterPanel({
           </div>
         </div>
       )}
+      <div className="px-4 sm:px-6 pb-3">
+        {recommendedServicesText && (
+          <div className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
+            <AlertCircle className="h-3.5 w-3.5" />
+            {recommendedServicesText}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

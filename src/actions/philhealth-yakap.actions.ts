@@ -6,6 +6,7 @@ import { YakapApiClient, decryptReport, encryptReport } from "@/lib/philhealth-y
 import { revalidatePath } from "next/cache";
 import { generatePhilHealthKonsultaTransactionNumber } from "@/services/sequence-generator.service";
 import { generateKonsultaXml, type KonsultaPatientData, type KonsultaConsultationData, type KonsultaMedicineData, type KonsultaDiagnosticExamData } from "@/lib/philhealth-yakap/xml-generator";
+import { getKonsultaRecommendedService } from "./consultation/konsulta-recommended-services.action";
 
 const getClinicCredentials = async (clinicUid: string) => {
   const session = await getCachedSession();
@@ -488,6 +489,11 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
                     id: true, subject: true, soapTransNo: true, caseNumber: true, createdAt: true,
                     isPhilHealthKonsulta: true,
                     konsultaAtcCode: true, konsultaIsWalkedIn: true, konsultaCoPay: true,
+                    konsultaRecommendedDiagnosticOptions: true,
+                    DiagnosticRequests: {
+                      where: { isArchived: false },
+                      select: { diagnosticProcedures: true },
+                    },
                     ConsultationNotes: {
                       select: { section: true, content: true, structuredData: true },
                     },
@@ -635,12 +641,26 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
       const profileAtc = enlistment?.atcCode ?? "WALKEDIN";
       const profileIsWalkedIn = enlistment?.isWalkedIn ?? true;
 
+      // Fetch all diagnostic procedures to map to philhealth IDs
+      const allDiagProcs = await prisma.diagnosticProcedure.findMany({
+        where: { isActive: true, philhealthDiagnosticId: { not: null } },
+        select: { id: true, philhealthDiagnosticId: true },
+      });
+      const diagnosticProcedureMap = Object.fromEntries(
+        allDiagProcs.map(dp => [dp.id, dp.philhealthDiagnosticId])
+      );
+
       // Build consultations for Tagging 2
       let consultations: KonsultaConsultationData[] | undefined;
       if (batch.tagging === "2" && bp.selectedTicketIds.length > 0) {
-        consultations = bp.ClinicPatient.ConsultationTickets
+        consultations = await Promise.all(bp.ClinicPatient.ConsultationTickets
           .filter(t => bp.selectedTicketIds.includes(t.id))
-          .map(t => {
+          .map(async t => {
+            // Fetch recommended diagnostic services for the patient
+            const ageTotalMonths = adjustedYears * 12 + finalMonths;
+            const recommended = await getKonsultaRecommendedService(ageTotalMonths, patient.gender);
+            const allRecommendedDiagnosticIds = recommended?.philhealthDiagnosticIds || [];
+
             // Subjective structured data from notes
             const subjectiveNote = t.ConsultationNotes?.find(n =>
               n.section.toLowerCase().includes("subjective")
@@ -659,7 +679,7 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
             for (const rx of t.Prescriptions ?? []) {
               for (const med of rx.Medicines ?? []) {
                 const ph = med.PhilHealthData;
-                const disp = med.MedicineDispenseRecord;
+
                 const isCustom = ph?.drugCode?.startsWith("NOMED") || false;
                 
                 medicines.push({
@@ -683,9 +703,9 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
                   instructionStrength: ph?.instructionStrength || med.dosage || "",
                   instructionFrequency: ph?.instructionFrequency || med.frequency || "",
                   prescribingPhysician: "",
-                  isDispensed: disp?.isDispensed ? "Y" : "N",
-                  dateDispensed: disp?.dateDispensed ? formatDate(disp.dateDispensed) : "",
-                  dispensingPersonnel: disp?.dispensingPersonnel || "",
+                  isDispensed: "N",
+                  dateDispensed: "",
+                  dispensingPersonnel: "",
                   isApplicable: "Y",
                   dateAdded: formatDate(t.createdAt),
                 });
@@ -714,8 +734,17 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
                 othRemarks: m.remarks || "",
               })),
               medicines,
+              konsultaRecommendedDiagnosticOptions: (t.konsultaRecommendedDiagnosticOptions as any) || [],
+              diagnosticRequests: (t.DiagnosticRequests ?? []).flatMap((dr) => {
+                const procs = dr.diagnosticProcedures as any;
+                if (!Array.isArray(procs)) return [];
+                return procs.map(p => ({
+                  philhealthDiagnosticId: diagnosticProcedureMap[p.diagnosticProcedureId] || null,
+                }));
+              }).filter(d => d.philhealthDiagnosticId !== null),
+              allRecommendedDiagnosticIds,
             };
-          });
+          }));
       }
 
       // Fetch diagnostic results — query by selected consultation ticket IDs (most reliable)

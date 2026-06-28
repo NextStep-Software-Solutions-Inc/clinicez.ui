@@ -532,12 +532,7 @@ export async function getPatientInsuranceData(userId?: string): Promise<Insuranc
                   orderBy: { createdAt: 'desc' },
                 take: 10,
             }),
-            prisma.procedureUsageHistory.findMany({
-                where: { userId: patientId },
-                select: { id: true, userId: true, clinicId: true, procedureType: true, procedureName: true, usedAt: true },
-                orderBy: { usedAt: 'desc' },
-                take: 20,
-            }),
+            Promise.resolve([] as any[]),
             clinicPatient
                 ? prisma.clinicMedicalCertificate.findMany({
                     where: { clinicId: clinicPatient.clinicId, isActive: true, clinicPatientId: clinicPatient.id },

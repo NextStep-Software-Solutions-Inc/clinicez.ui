@@ -27,6 +27,10 @@ const sidebarNavItems = [
     href: "/super-admin/diagnostics-procedures",
   },
   {
+    title: "Diagnostic Procedures (BETA)",
+    href: "/super-admin/diagnostic-procedures",
+  },
+  {
     title: "Health Conditions",
     href: "/super-admin/health-conditions",
   },

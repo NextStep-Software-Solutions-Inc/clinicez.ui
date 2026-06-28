@@ -136,21 +136,7 @@ export async function getPatientHealthRecords(): Promise<SerializedPatientHealth
         take: 10,
       }),
       // Procedure History
-      prisma.procedureUsageHistory.findMany({
-        where: { userId: patient.id },
-        select: {
-          id: true,
-          userId: true,
-          clinicId: true,
-          procedureType: true,
-          procedureId: true,
-          procedureName: true,
-          usedAt: true,
-          clinicPatientId: true,
-        },
-        orderBy: { usedAt: 'desc' },
-        take: 10,
-      }),
+      Promise.resolve([] as any[]),
       // Clinic Patients
       prisma.clinicPatient.findMany({
         where: { patientId: patient.id, isActive: true, deletedAt: null },
@@ -491,12 +477,6 @@ export async function getPatientHealthRecords(): Promise<SerializedPatientHealth
         createdAt: p.createdAt.toISOString(),
         updatedAt: p.updatedAt.toISOString(),
         deletedAt: p.deletedAt ? p.deletedAt.toISOString() : null,
-      })),
-
-      // Procedure History
-      procedureHistory: procedures.map(p => ({
-        ...p,
-        usedAt: p.usedAt.toISOString(),
       })),
 
       // Clinical Documents

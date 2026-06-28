@@ -162,21 +162,7 @@ export async function getClinicPatientProfileAction({
                 orderBy: { createdAt: "desc" },
                 take: 10,
             }),
-            prisma.procedureUsageHistory.findMany({
-                where: { userId: patient.id },
-                select: {
-                    id: true,
-                    userId: true,
-                    clinicId: true,
-                    procedureType: true,
-                    procedureId: true,
-                    procedureName: true,
-                    usedAt: true,
-                    clinicPatientId: true,
-                },
-                orderBy: { usedAt: "desc" },
-                take: 10,
-            }),
+            Promise.resolve([] as any[]),
             prisma.userAllergy.findMany({
                 where: { userId: patient.id },
                 select: {
@@ -298,6 +284,7 @@ export async function getClinicPatientProfileAction({
             createdAt: patient.createdAt.toISOString(),
             updatedAt: patient.updatedAt.toISOString(),
             clinic: clinicPatientRecord.Clinic ?? null,
+            ncdQuestionnaire: null,
 
             // Medical Profile
             medicalHistories: medical.map((h) => ({

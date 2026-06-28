@@ -230,6 +230,10 @@ export interface KonsultaConsultationData {
   };
   // Medicines
   medicines: KonsultaMedicineData[];
+  // Diagnostic Options & Requests
+  konsultaRecommendedDiagnosticOptions?: { philhealthDiagnosticId: string; status: 'RQ' | 'RF' | 'XX' }[];
+  diagnosticRequests?: { philhealthDiagnosticId: string | null }[];
+  allRecommendedDiagnosticIds?: string[];
 }
 
 export interface KonsultaMedicineData {
@@ -263,6 +267,8 @@ export interface KonsultaMedicineData {
 export interface KonsultaManagementData {
   managementId: string;   // PhilHealth management code value e.g. "1","0","X"
   othRemarks: string;     // remarks (required for "X" / Others)
+  diagnosticRequests?: { philhealthDiagnosticId: string | null }[];
+  konsultaRecommendedDiagnosticOptions?: { philhealthDiagnosticId: string; status: 'RQ' | 'RF' | 'XX' }[];
 }
 
 export interface KonsultaDiagnosticExamData {
@@ -777,13 +783,61 @@ function buildSoapIcds(parent: XmlNode, consultation: KonsultaConsultationData):
 
 function buildSoapDiagnostics(parent: XmlNode, consultation: KonsultaConsultationData): XmlNode {
   const diagnostics = parent.ele('DIAGNOSTICS');
-  // Only build if we have diagnostics in the future. For now, we generate the dummy required by DTD.
-  diagnostics.ele('DIAGNOSTIC', withStatus({
-    pDiagnosticId: '0', // 0 = Not Applicable
-    pOthRemarks: '',
-    pIsPhysicianRecommendation: 'N',
-    pPatientRemarks: 'XX', // XX = None / Not Applicable
-  })).up();
+  const addedIds = new Set<string>();
+
+  // Add recommended options
+  if (consultation.konsultaRecommendedDiagnosticOptions) {
+    for (const opt of consultation.konsultaRecommendedDiagnosticOptions) {
+      diagnostics.ele('DIAGNOSTIC', withStatus({
+        pDiagnosticId: opt.philhealthDiagnosticId,
+        pOthRemarks: '',
+        pIsPhysicianRecommendation: 'Y',
+        pPatientRemarks: opt.status,
+      })).up();
+      addedIds.add(opt.philhealthDiagnosticId);
+    }
+  }
+
+  // Add generic diagnostic requests
+  if (consultation.diagnosticRequests) {
+    for (const req of consultation.diagnosticRequests) {
+      if (req.philhealthDiagnosticId && !addedIds.has(req.philhealthDiagnosticId)) {
+        diagnostics.ele('DIAGNOSTIC', withStatus({
+          pDiagnosticId: req.philhealthDiagnosticId,
+          pOthRemarks: '',
+          pIsPhysicianRecommendation: 'Y',
+          pPatientRemarks: 'RQ',
+        })).up();
+        addedIds.add(req.philhealthDiagnosticId);
+      }
+    }
+  }
+
+  // Inject 'XX' for any recommended diagnostics that weren't selected
+  if (consultation.allRecommendedDiagnosticIds) {
+    for (const reqId of consultation.allRecommendedDiagnosticIds) {
+      if (!addedIds.has(reqId)) {
+        diagnostics.ele('DIAGNOSTIC', withStatus({
+          pDiagnosticId: reqId,
+          pOthRemarks: '',
+          pIsPhysicianRecommendation: 'Y',
+          pPatientRemarks: 'XX',
+        })).up();
+        addedIds.add(reqId);
+      }
+    }
+  }
+
+  if (addedIds.size === 0) {
+    // Generate the dummy required by DTD.
+    diagnostics.ele('DIAGNOSTIC', withStatus({
+      pDiagnosticId: '0', // 0 = Not Applicable
+      pOthRemarks: '',
+      pIsPhysicianRecommendation: 'N',
+      pPatientRemarks: 'XX', // XX = None / Not Applicable
+    })).up();
+  }
+
   return diagnostics.up();
 }
 

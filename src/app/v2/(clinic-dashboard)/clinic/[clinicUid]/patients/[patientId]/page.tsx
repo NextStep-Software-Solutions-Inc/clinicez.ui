@@ -48,8 +48,7 @@ function toPatientBaseData(p: SerializedPatientHealthRecordsResponse): PatientBa
       philHealthRecordsCount:      p.philHealthRecords.length,
       totalDocumentsCount:
         (p.medicalCertificates?.length ?? 0) +
-        (p.referralSlips?.length ?? 0) +
-        (p.procedureHistory?.length ?? 0),
+        (p.referralSlips?.length ?? 0),
     },
   }
 }

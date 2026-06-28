@@ -8,7 +8,6 @@ import type {
   PersonalHistory,
   PhilHealthRecord,
   PhilHealthDependent,
-  ProcedureUsageHistory,
   ClinicMedicalCertificate,
   ClinicReferralSlip,
   HealthCondition,
@@ -204,9 +203,6 @@ export interface SerializedPatientHealthRecordsResponse {
     deletedAt: string | null
     PhilHealthDependents?: PhilHealthDependent[]
   }>
-
-  // Procedure History
-  procedureHistory: Array<Omit<ProcedureUsageHistory, 'usedAt'> & { usedAt: string }>
 
   // Clinical Documents
   medicalCertificates: CertificateData[]

@@ -136,6 +136,17 @@ export const getPatientConsultationDetailAction = withErrorHandling(
         konsultaAtcCode: true,
         konsultaIsWalkedIn: true,
         konsultaCoPay: true,
+        konsultaRecommendedDiagnosticOptions: true,
+        ClinicPatient: {
+          select: {
+            Patient: {
+              select: {
+                dob: true,
+                gender: true,
+              }
+            }
+          }
+        },
         ConsultationTicketAttribute: {
           select: {
             status: true,

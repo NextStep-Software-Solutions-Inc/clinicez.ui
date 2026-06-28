@@ -288,14 +288,7 @@ export default function KonsultaDiagnosticResultsPanel({
   return (
     <div className="space-y-3">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1.5 text-xs font-medium text-teal-700 dark:text-teal-400">
-          <ShieldCheck className="h-3.5 w-3.5" />
-          PhilHealth Diagnostic Results
-          <Badge variant="outline" className="ml-1 text-[10px] h-4">
-            {results.length}
-          </Badge>
-        </div>
+      <div className="flex items-center justify-end">
         {!isResolved && (
           <Button
             size="sm"

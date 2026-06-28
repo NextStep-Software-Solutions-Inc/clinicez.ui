@@ -132,11 +132,7 @@ export interface ComprehensivePatientData {
         notes?: string;
     }>;
 
-    procedureUsageHistories?: Array<{
-        procedureType: string;
-        procedureName: string;
-        usedAt: string;
-    }>;
+
 
     // Summary Counts
     totalConsultationNotes?: number;

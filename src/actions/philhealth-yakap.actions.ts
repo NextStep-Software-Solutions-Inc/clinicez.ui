@@ -1464,9 +1464,11 @@ export async function importKonsultaDataAction(clinicUid: string, records: any[]
        return { status: false, message: "No patients selected for import." };
     }
 
-    // Process everything in a transaction
-    await prisma.$transaction(async (tx) => {
-      for (const patient of patientsToImport) {
+    const summary = { imported: 0, existing: 0, error: 0, errors: [] as string[] };
+
+    for (const patient of patientsToImport) {
+      try {
+        const result = await prisma.$transaction(async (tx) => {
         const caseNo = patient.pHciCaseNo;
         const pin = patient.enlistment?.attributes?.pMemPin 
                  || patient.enlistment?.attributes?.pPatientPin 
@@ -1485,7 +1487,9 @@ export async function importKonsultaDataAction(clinicUid: string, records: any[]
         });
 
         let userId: number;
+        let isExisting = false;
         if (existingRecord) {
+          isExisting = true;
           userId = existingRecord.userId;
           if (existingRecord.User.ClinicPatients.length > 0) {
             clinicPatientId = existingRecord.User.ClinicPatients[0].id;
@@ -1619,10 +1623,22 @@ export async function importKonsultaDataAction(clinicUid: string, records: any[]
             }
           }
         }
+        // End of patient import logic
+          return { isExisting };
+        });
+        
+        if (result.isExisting) {
+          summary.existing++;
+        } else {
+          summary.imported++;
+        }
+      } catch (e: any) {
+        summary.error++;
+        summary.errors.push(`Case ${patient.pHciCaseNo}: ${e.message}`);
       }
-    });
-
-    return { status: true, message: `Successfully imported records into the database for ${patientsToImport.length} patients!` };
+    }
+    
+    return { status: true, summary, message: `Successfully processed ${patientsToImport.length} patients!` };
   } catch (error: any) {
     console.error("[importKonsultaDataAction]", error);
     return { status: false, message: error?.message || "Failed to import data" };
@@ -1668,7 +1684,7 @@ export async function importRegistrationListToDbAction(clinicUid: string, entrie
             // Create new user (using synthetic email with .net domain)
             const dummyEmail = `ph-${pin}-${Date.now()}@imported.clinicez.net`;
             
-            let gender;
+            let gender: "MALE" | "FEMALE" | undefined;
             if (entry.pAssignedSex === "M") gender = "MALE";
             else if (entry.pAssignedSex === "F") gender = "FEMALE";
             

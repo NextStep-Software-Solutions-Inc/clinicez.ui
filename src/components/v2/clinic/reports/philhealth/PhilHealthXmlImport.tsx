@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import React, { useState, useTransition, useRef } from "react";
 import { FileUp, Loader2, Upload, Check, ChevronDown, ChevronRight, AlertCircle, User, Activity, Stethoscope, Pill, Microscope } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,15 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { parseXmlImportAction, validateTransferredXmlAction, importKonsultaDataAction } from "@/actions/philhealth-yakap.actions";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Progress } from "@/components/ui/progress";
 
 interface PhilHealthXmlImportProps {
   clinicUid: string;
@@ -41,6 +50,12 @@ export default function PhilHealthXmlImport({ clinicUid }: PhilHealthXmlImportPr
     decryptedResult?: string;
   } | null>(null);
   const [isPending, startTransition] = useTransition();
+  
+  const [isImporting, setIsImporting] = useState(false);
+  const [showImportDialog, setShowImportDialog] = useState(false);
+  const [importProgress, setImportProgress] = useState(0);
+  const [importSummary, setImportSummary] = useState<{ imported: number; existing: number; error: number; errors: string[] } | null>(null);
+  const cancelImportRef = useRef(false);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -125,16 +140,48 @@ export default function PhilHealthXmlImport({ clinicUid }: PhilHealthXmlImportPr
     setSelectedItems(next);
   };
 
-  const handleImport = () => {
+  const handleImport = async () => {
     if (selectedItems.size === 0) return;
-    startTransition(async () => {
-      const result = await importKonsultaDataAction(clinicUid, parsedRecords, Array.from(selectedItems));
-      if (result.status) {
-        toast.success(result.message);
-      } else {
-        toast.error(result.message || "Failed to import data");
+
+    setImportSummary(null);
+    setShowImportDialog(true);
+    setIsImporting(true);
+    setImportProgress(0);
+    cancelImportRef.current = false;
+
+    const patientsToImport = parsedRecords.filter(p => selectedItems.has(`patient-${p.pHciCaseNo}`));
+    const selectedArray = Array.from(selectedItems);
+    
+    const summary = { imported: 0, existing: 0, error: 0, errors: [] as string[] };
+    const chunkSize = 2; // small chunks for complex XML data
+    
+    for (let i = 0; i < patientsToImport.length; i += chunkSize) {
+      if (cancelImportRef.current) {
+        summary.errors.push("Import cancelled by user.");
+        break;
       }
-    });
+      
+      const chunk = patientsToImport.slice(i, i + chunkSize);
+      try {
+        const result = await importKonsultaDataAction(clinicUid, chunk, selectedArray);
+        if (result.status && result.summary) {
+          summary.imported += result.summary.imported;
+          summary.existing += result.summary.existing;
+          summary.error += result.summary.error;
+          if (result.summary.errors) summary.errors.push(...result.summary.errors);
+        } else {
+          summary.error += chunk.length;
+          summary.errors.push(result.message || "Unknown error during chunk import");
+        }
+      } catch (e: any) {
+        summary.error += chunk.length;
+        summary.errors.push(e?.message || "Network error or server crash");
+      }
+      setImportProgress(Math.min(100, Math.round(((i + chunk.length) / patientsToImport.length) * 100)));
+    }
+    
+    setImportSummary(summary);
+    setIsImporting(false);
   };
 
   return (
@@ -400,14 +447,86 @@ export default function PhilHealthXmlImport({ clinicUid }: PhilHealthXmlImportPr
             </div>
             
             <div className="mt-6 flex justify-end">
-              <Button onClick={handleImport} disabled={selectedItems.size === 0 || isPending} className="bg-gradient-to-r from-teal-600 to-emerald-600 shadow-md">
-                {isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              <Button onClick={handleImport} disabled={selectedItems.size === 0 || isImporting} className="bg-gradient-to-r from-teal-600 to-emerald-600 shadow-md">
                 Import {selectedItems.size} Selected Items
               </Button>
             </div>
           </CardContent>
         </Card>
       )}
+
+      {/* Import Dialog */}
+      <Dialog open={showImportDialog} onOpenChange={(open) => {
+        if (!open && !isImporting) setShowImportDialog(false);
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Importing XML Data</DialogTitle>
+            <DialogDescription>
+              {isImporting ? "Please wait while we securely import your selected XML data." : "Import completed."}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-6 flex flex-col items-center justify-center space-y-4">
+            {isImporting ? (
+              <div className="w-full flex flex-col items-center justify-center space-y-4 px-4">
+                <Loader2 className="h-12 w-12 text-emerald-600 animate-spin" />
+                <p className="text-sm font-medium text-muted-foreground animate-pulse">Processing records... {importProgress}%</p>
+                <Progress 
+                  value={importProgress} 
+                  className="h-2 w-full max-w-xs bg-emerald-100 dark:bg-emerald-950" 
+                  indicatorClassName="bg-emerald-600 dark:bg-emerald-500" 
+                />
+              </div>
+            ) : importSummary ? (
+              <div className="w-full space-y-4">
+                <div className="grid grid-cols-3 gap-4 text-center">
+                  <div className="bg-emerald-50 dark:bg-emerald-950/30 p-3 rounded-lg border border-emerald-100 dark:border-emerald-900/50">
+                    <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{importSummary.imported}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Imported</p>
+                  </div>
+                  <div className="bg-blue-50 dark:bg-blue-950/30 p-3 rounded-lg border border-blue-100 dark:border-blue-900/50">
+                    <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{importSummary.existing}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Existing</p>
+                  </div>
+                  <div className="bg-red-50 dark:bg-red-950/30 p-3 rounded-lg border border-red-100 dark:border-red-900/50">
+                    <p className="text-2xl font-bold text-red-600 dark:text-red-400">{importSummary.error}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Failed</p>
+                  </div>
+                </div>
+                
+                {importSummary.errors.length > 0 && (
+                  <div className="mt-4">
+                    <p className="text-xs font-semibold text-red-600 mb-2">Errors encountered:</p>
+                    <div className="bg-red-50 dark:bg-red-950/20 p-2 rounded text-[10px] text-red-800 dark:text-red-300 max-h-32 overflow-y-auto">
+                      <ul className="list-disc pl-4 space-y-1">
+                        {importSummary.errors.map((err, i) => (
+                          <li key={i}>{err}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : null}
+          </div>
+
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                if (isImporting) {
+                  cancelImportRef.current = true;
+                } else {
+                  setShowImportDialog(false);
+                }
+              }} 
+            >
+              {isImporting ? "Cancel Import" : "Close"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

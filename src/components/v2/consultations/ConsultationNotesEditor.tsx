@@ -14,6 +14,7 @@ import MarkdownEditor from "./MarkdownEditor";
 import { MedicalNoteSummarizer } from "@/components/ai";
 import { sortNoteSectionsSOAP } from "@/utils/soap-ordering";
 import KonsultaSubjectiveFields, { type SubjectiveStructuredData } from "./KonsultaSubjectiveFields";
+import DownloadEkasButton from "./DownloadEkasButton";
 
 type Detail = NonNullable<GetPatientConsultationDetail["data"]>;
 
@@ -30,6 +31,7 @@ interface ConsultationNotesEditorProps {
 }
 
 export default function ConsultationNotesEditor({
+  clinicUid,
   consultation,
   myHPs,
   onPatchDetail,
@@ -260,18 +262,21 @@ export default function ConsultationNotesEditor({
 
   return (
     <div className="p-4 sm:p-6 space-y-3">
-      {/* AI Summarize button — hidden once consultation is resolved */}
-      {!isResolved && (
-      <div className="flex items-center justify-end">
-        <MedicalNoteSummarizer
-          consultationNotes={sections
-            .map((section) => `${section.label || section.name}: ${noteValues[section.name] ?? ""}`)
-            .join("\n\n")}
-          noteSections={sections.map((s) => s.label || s.name)}
-          outputFormat="markdown"
-        />
+      {/* Buttons above notes */}
+      <div className="flex items-center justify-end gap-2">
+        {isKonsulta && (
+          <DownloadEkasButton ticketId={consultation.id} clinicUid={clinicUid} />
+        )}
+        {!isResolved && (
+          <MedicalNoteSummarizer
+            consultationNotes={sections
+              .map((section) => `${section.label || section.name}: ${noteValues[section.name] ?? ""}`)
+              .join("\n\n")}
+            noteSections={sections.map((s) => s.label || s.name)}
+            outputFormat="markdown"
+          />
+        )}
       </div>
-      )}
       {sections.map((section) => (
         <div
           key={section.name}

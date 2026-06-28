@@ -8,16 +8,20 @@ import {
   CheckCircle2,
   Footprints,
   AlertCircle,
+  Loader2,
+  Check,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import {
   togglePhilHealthKonsultaAction,
   updateKonsultaEncounterAction,
   checkProfilingCompletenessAction,
+  verifyKonsultaEncounterAtcAction,
   type ProfilingCompletenessResult,
 } from "@/actions/consultation/konsulta-encounter.action";
 
@@ -53,6 +57,23 @@ export default function KonsultaEncounterPanel({
   const [profiling, setProfiling] = useState<ProfilingCompletenessResult | null>(null);
   const [toggling, startToggling] = useTransition();
   const [saving, startSaving] = useTransition();
+  const [verifyingAtc, startVerifyingAtc] = useTransition();
+
+  const handleVerifyAtc = () => {
+    if (!atcCode) return;
+    // Before verifying, make sure any local changes are saved first
+    if (atcCode !== initialAtc) {
+       handleAtcBlur();
+    }
+    startVerifyingAtc(async () => {
+      const result = await verifyKonsultaEncounterAtcAction({ ticketId });
+      if (result.data?.valid) {
+        toast.success(result.data.message || "ATC is valid");
+      } else {
+        toast.error(result.data?.message || result.message || "ATC is invalid");
+      }
+    });
+  };
 
   // Sync from props when parent re-fetches
   useEffect(() => {
@@ -194,17 +215,31 @@ export default function KonsultaEncounterPanel({
         {/* ATC Code */}
         <div className="flex flex-col gap-1">
           <Label htmlFor="atc-code" className="text-[10px] text-muted-foreground uppercase tracking-wide">
-            ATC Code
+            Authorization Transaction Code
           </Label>
-          <Input
-            id="atc-code"
-            value={atcCode}
-            onChange={(e) => setAtcCode(e.target.value.toUpperCase())}
-            onBlur={handleAtcBlur}
-            disabled={isResolved || isWalkedIn || saving}
-            placeholder={isWalkedIn ? "WALKEDIN" : "Enter ATC code"}
-            className="h-7 w-36 text-xs font-mono"
-          />
+          <div className="flex items-center gap-2">
+            <Input
+              id="atc-code"
+              value={atcCode}
+              onChange={(e) => setAtcCode(e.target.value.toUpperCase())}
+              onBlur={handleAtcBlur}
+              disabled={isResolved || isWalkedIn || saving || verifyingAtc}
+              placeholder={isWalkedIn ? "WALKEDIN" : "Enter ATC code"}
+              className="h-7 w-48 text-xs font-mono"
+            />
+            {!isWalkedIn && atcCode && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-[10px] px-2"
+                disabled={isResolved || saving || verifyingAtc}
+                onClick={handleVerifyAtc}
+              >
+                {verifyingAtc ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <ShieldCheck className="h-3 w-3 mr-1" />}
+                Verify
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Co-Pay */}

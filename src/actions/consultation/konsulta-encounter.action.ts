@@ -191,3 +191,60 @@ export const checkProfilingCompletenessAction = withErrorHandling(
     };
   }
 );
+
+// ─── Verify ATC Code for a Consultation Ticket ──────────────────────────────
+
+export const verifyKonsultaEncounterAtcAction = withErrorHandling(
+  async ({ ticketId }: { ticketId: number }) => {
+    const session = await getCachedSession();
+    if (!session) throw new Error("Unauthorized");
+
+    const ticket = await prismaClient.consultationTicket.findUnique({
+      where: { id: ticketId },
+      include: {
+        Clinic: { select: { clinicUid: true } },
+        ClinicPatient: {
+          include: {
+            Patient: {
+              include: {
+                PhilHealthRecords: { take: 1 }
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!ticket) throw new Error("Consultation ticket not found");
+    if (!ticket.konsultaAtcCode) throw new Error("No ATC code provided in this encounter");
+    
+    const phRecord = ticket.ClinicPatient?.Patient?.PhilHealthRecords?.[0];
+    const pin = phRecord?.dependentPin || phRecord?.pin;
+    
+    if (!pin) {
+      throw new Error("Patient does not have a PhilHealth PIN registered");
+    }
+
+    const clinicUid = ticket.Clinic.clinicUid;
+    
+    // Remove dashes from PIN
+    const cleanPin = pin.replace(/\D/g, "");
+
+    // Dynamic import to avoid circular dependencies if any
+    const { verifyAtcAction } = await import("@/actions/philhealth-yakap.actions");
+
+    // verifyAtcAction expects YYYY-MM-DD and formats it internally, so we use the standard ISO format
+    const isoDate = ticket.createdAt.toISOString().split("T")[0];
+
+    const result = await verifyAtcAction(clinicUid, cleanPin, ticket.konsultaAtcCode, isoDate);
+
+    if (!result.status) {
+      throw new Error(result.message || "Failed to verify ATC");
+    }
+
+    return {
+      data: result.data,
+      message: "ATC verification completed"
+    };
+  }
+);

@@ -150,7 +150,7 @@ export default function PhilHealthXmlImport({ clinicUid }: PhilHealthXmlImportPr
             <label className="flex items-center gap-2 px-4 py-2 bg-muted hover:bg-muted/80 rounded-lg cursor-pointer transition-colors text-sm">
               <Upload className="h-4 w-4" />
               Upload XML File
-              <input type="file" accept=".xml" className="hidden" onChange={handleFileUpload} />
+              <input type="file" accept=".xml,.xml.enc" className="hidden" onChange={handleFileUpload} />
             </label>
             <span className="text-xs text-muted-foreground">or paste XML below</span>
           </div>

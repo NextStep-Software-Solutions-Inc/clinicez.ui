@@ -1,15 +1,24 @@
 "use client";
 
 import { useState, useTransition, useRef } from "react";
-import { Loader2, Search, Download, FileSpreadsheet, FileText, CheckSquare } from "lucide-react";
+import { Loader2, Search, Download, FileSpreadsheet, FileText, CheckSquare, Database } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { extractRegistrationListAction } from "@/actions/philhealth-yakap.actions";
+import { extractRegistrationListAction, importRegistrationListToDbAction } from "@/actions/philhealth-yakap.actions";
 
 interface PhilHealthRegistrationListProps {
   clinicUid: string;
@@ -50,8 +59,13 @@ export default function PhilHealthRegistrationList({ clinicUid }: PhilHealthRegi
   const [isPending, startTransition] = useTransition();
   const [showRaw, setShowRaw] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [isImporting, setIsImporting] = useState(false);
+  const [showImportDialog, setShowImportDialog] = useState(false);
+  const [importProgress, setImportProgress] = useState(0);
+  const [importSummary, setImportSummary] = useState<{ imported: number; existing: number; error: number; errors: string[] } | null>(null);
   const pageSize = 100;
   const tableRef = useRef<HTMLTableElement>(null);
+  const cancelImportRef = useRef(false);
 
   const handleExtract = () => {
     if (!startDate || !endDate) {
@@ -138,6 +152,52 @@ export default function PhilHealthRegistrationList({ clinicUid }: PhilHealthRegi
     link.click();
     URL.revokeObjectURL(url);
     toast.success(`Exported ${selected.length} records to CSV`);
+  };
+
+  const handleImport = async () => {
+    const selected = getSelectedEntries();
+    if (selected.length === 0) {
+      toast.error("Please select at least one record to import");
+      return;
+    }
+    
+    setImportSummary(null);
+    setShowImportDialog(true);
+    setIsImporting(true);
+    setImportProgress(0);
+    cancelImportRef.current = false;
+
+    const summary = { imported: 0, existing: 0, error: 0, errors: [] as string[] };
+    
+    // Process in chunks of 5 for smoother progress bar updates
+    const chunkSize = 5;
+    for (let i = 0; i < selected.length; i += chunkSize) {
+      if (cancelImportRef.current) {
+        summary.errors.push("Import cancelled by user.");
+        break;
+      }
+      
+      const chunk = selected.slice(i, i + chunkSize);
+      try {
+        const result = await importRegistrationListToDbAction(clinicUid, chunk);
+        if (result.status && result.summary) {
+          summary.imported += result.summary.imported;
+          summary.existing += result.summary.existing;
+          summary.error += result.summary.error;
+          summary.errors.push(...result.summary.errors);
+        } else {
+          summary.error += chunk.length;
+          summary.errors.push(result.message || "Unknown error during chunk import");
+        }
+      } catch (e: any) {
+        summary.error += chunk.length;
+        summary.errors.push(e?.message || "Network error or server crash");
+      }
+      setImportProgress(Math.min(100, Math.round(((i + chunk.length) / selected.length) * 100)));
+    }
+    
+    setImportSummary(summary);
+    setIsImporting(false);
   };
 
   const handleExportPdf = () => {
@@ -299,6 +359,16 @@ export default function PhilHealthRegistrationList({ clinicUid }: PhilHealthRegi
                 Export PDF
               </Button>
               <Button
+                variant="outline"
+                size="sm"
+                onClick={handleImport}
+                disabled={!isSomeSelected || isImporting}
+                className="gap-1.5 text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 dark:border-emerald-800"
+              >
+                {isImporting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Database className="h-3.5 w-3.5" />}
+                Import to DB
+              </Button>
+              <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowRaw(!showRaw)}
@@ -450,6 +520,79 @@ export default function PhilHealthRegistrationList({ clinicUid }: PhilHealthRegi
           </CardContent>
         </Card>
       )}
+
+      {/* Import Dialog */}
+      <Dialog open={showImportDialog} onOpenChange={(open) => {
+        if (!open && !isImporting) setShowImportDialog(false);
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Importing Patients</DialogTitle>
+            <DialogDescription>
+              {isImporting ? "Please wait while we import the selected patients into your database." : "Import completed."}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-6 flex flex-col items-center justify-center space-y-4">
+            {isImporting ? (
+              <div className="w-full flex flex-col items-center justify-center space-y-4 px-4">
+                <Loader2 className="h-12 w-12 text-emerald-600 animate-spin" />
+                <p className="text-sm font-medium text-muted-foreground animate-pulse">Processing records... {importProgress}%</p>
+                <Progress 
+                  value={importProgress} 
+                  className="h-2 w-full max-w-xs bg-emerald-100 dark:bg-emerald-950" 
+                  indicatorClassName="bg-emerald-600 dark:bg-emerald-500" 
+                />
+              </div>
+            ) : importSummary ? (
+              <div className="w-full space-y-4">
+                <div className="grid grid-cols-3 gap-4 text-center">
+                  <div className="bg-emerald-50 dark:bg-emerald-950/30 p-3 rounded-lg border border-emerald-100 dark:border-emerald-900/50">
+                    <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{importSummary.imported}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Imported</p>
+                  </div>
+                  <div className="bg-blue-50 dark:bg-blue-950/30 p-3 rounded-lg border border-blue-100 dark:border-blue-900/50">
+                    <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{importSummary.existing}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Existing</p>
+                  </div>
+                  <div className="bg-red-50 dark:bg-red-950/30 p-3 rounded-lg border border-red-100 dark:border-red-900/50">
+                    <p className="text-2xl font-bold text-red-600 dark:text-red-400">{importSummary.error}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Failed</p>
+                  </div>
+                </div>
+                
+                {importSummary.errors.length > 0 && (
+                  <div className="mt-4">
+                    <p className="text-xs font-semibold text-red-600 mb-2">Errors encountered:</p>
+                    <div className="bg-red-50 dark:bg-red-950/20 p-2 rounded text-[10px] text-red-800 dark:text-red-300 max-h-32 overflow-y-auto">
+                      <ul className="list-disc pl-4 space-y-1">
+                        {importSummary.errors.map((err, i) => (
+                          <li key={i}>{err}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : null}
+          </div>
+
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                if (isImporting) {
+                  cancelImportRef.current = true;
+                } else {
+                  setShowImportDialog(false);
+                }
+              }} 
+            >
+              {isImporting ? "Cancel Import" : "Close"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

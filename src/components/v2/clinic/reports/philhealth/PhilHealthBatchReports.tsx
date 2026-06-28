@@ -821,44 +821,91 @@ export default function PhilHealthBatchReports({ clinicUid }: PhilHealthBatchRep
               >
                 <Copy className="h-3 w-3" /> Copy
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-1.5 text-xs h-7"
-                onClick={async () => {
-                  try {
-                    const toastId = toast.loading("Encrypting XML payload...");
-                    // Fetch encrypted payload string
-                    const encryptedStr = await downloadEncryptedBatchXmlAction(clinicUid, selectedBatch.id);
-                    
-                    const blob = new Blob([encryptedStr], { type: "application/json;charset=utf-8;" });
-                    const url = URL.createObjectURL(blob);
-                    const link = document.createElement("a");
-                    link.href = url;
-                    
-                    const accreNo = selectedBatch.transmittalNo
-                      ? selectedBatch.transmittalNo.substring(1, 10)
-                      : "UNKNOWN";
-                    const transmittal = selectedBatch.transmittalNo || selectedBatch.title.replace(/\s+/g, "_");
-                    
-                    // Format: #AAAAAAAAA_YYYYMMDD_pHciTransmittalNumber.xml.enc
-                    const today = new Date();
-                    const yyyy = today.getFullYear();
-                    const mm = String(today.getMonth() + 1).padStart(2, '0');
-                    const dd = String(today.getDate()).padStart(2, '0');
-                    const dateStr = `${yyyy}${mm}${dd}`;
-                    
-                    link.download = `${selectedBatch.tagging}${accreNo}_${dateStr}_${transmittal}.xml.enc`;
-                    link.click();
-                    URL.revokeObjectURL(url);
-                    toast.success("Encrypted XML file downloaded", { id: toastId });
-                  } catch (err: any) {
-                    toast.error(err.message || "Failed to download encrypted XML");
-                  }
-                }}
-              >
-                <Download className="h-3 w-3" /> Download
-              </Button>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5 text-xs h-7"
+                  >
+                    <Download className="h-3 w-3" /> Download
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Download XML</DialogTitle>
+                    <DialogDescription>
+                      Choose the format you would like to download. Encrypted XML is required for PhilHealth submission.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid grid-cols-2 gap-4 py-4">
+                    <Button
+                      variant="outline"
+                      className="h-24 flex flex-col items-center justify-center gap-2"
+                      onClick={() => {
+                        const blob = new Blob([selectedBatch.xmlPayload || ""], { type: "application/xml;charset=utf-8;" });
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement("a");
+                        link.href = url;
+                        
+                        const accreNo = selectedBatch.transmittalNo
+                          ? selectedBatch.transmittalNo.substring(1, 10)
+                          : "UNKNOWN";
+                        const transmittal = selectedBatch.transmittalNo || selectedBatch.title.replace(/\s+/g, "_");
+                        
+                        const today = new Date();
+                        const yyyy = today.getFullYear();
+                        const mm = String(today.getMonth() + 1).padStart(2, '0');
+                        const dd = String(today.getDate()).padStart(2, '0');
+                        const dateStr = `${yyyy}${mm}${dd}`;
+                        
+                        link.download = `${selectedBatch.tagging}${accreNo}_${dateStr}_${transmittal}.xml`;
+                        link.click();
+                        URL.revokeObjectURL(url);
+                        toast.success("Raw XML file downloaded");
+                      }}
+                    >
+                      <FileText className="h-6 w-6 text-muted-foreground" />
+                      <span>Raw XML</span>
+                    </Button>
+                    <Button
+                      className="h-24 flex flex-col items-center justify-center gap-2 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700"
+                      onClick={async () => {
+                        try {
+                          const toastId = toast.loading("Encrypting XML payload...");
+                          const encryptedStr = await downloadEncryptedBatchXmlAction(clinicUid, selectedBatch.id);
+                          
+                          const blob = new Blob([encryptedStr], { type: "application/json;charset=utf-8;" });
+                          const url = URL.createObjectURL(blob);
+                          const link = document.createElement("a");
+                          link.href = url;
+                          
+                          const accreNo = selectedBatch.transmittalNo
+                            ? selectedBatch.transmittalNo.substring(1, 10)
+                            : "UNKNOWN";
+                          const transmittal = selectedBatch.transmittalNo || selectedBatch.title.replace(/\s+/g, "_");
+                          
+                          const today = new Date();
+                          const yyyy = today.getFullYear();
+                          const mm = String(today.getMonth() + 1).padStart(2, '0');
+                          const dd = String(today.getDate()).padStart(2, '0');
+                          const dateStr = `${yyyy}${mm}${dd}`;
+                          
+                          link.download = `${selectedBatch.tagging}${accreNo}_${dateStr}_${transmittal}.xml.enc`;
+                          link.click();
+                          URL.revokeObjectURL(url);
+                          toast.success("Encrypted XML file downloaded", { id: toastId });
+                        } catch (err: any) {
+                          toast.error(err.message || "Failed to download encrypted XML");
+                        }
+                      }}
+                    >
+                      <Download className="h-6 w-6" />
+                      <span>Encrypted XML</span>
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div>
           </CardHeader>
           <CardContent className="px-4 pb-3">

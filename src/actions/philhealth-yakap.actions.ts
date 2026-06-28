@@ -1628,3 +1628,96 @@ export async function importKonsultaDataAction(clinicUid: string, records: any[]
     return { status: false, message: error?.message || "Failed to import data" };
   }
 }
+
+export async function importRegistrationListToDbAction(clinicUid: string, entries: any[]) {
+  try {
+    const session = await getCachedSession();
+    if (!session?.user) return { status: false, message: "Unauthorized" };
+    
+    const clinic = await prisma.clinic.findUnique({ where: { clinicUid } });
+    if (!clinic) return { status: false, message: "Clinic not found" };
+
+    if (!entries || entries.length === 0) {
+       return { status: false, message: "No patients selected for import." };
+    }
+
+    let importedCount = 0;
+    let existingCount = 0;
+    let errorCount = 0;
+    let errors: string[] = [];
+
+    for (const entry of entries) {
+      const pin = entry.pAssignedPin;
+      if (!pin) continue;
+
+      try {
+        await prisma.$transaction(async (tx) => {
+          // 1. Try to find existing patient by PIN
+          const existingRecord = await tx.philHealthRecord.findFirst({
+            where: { pin },
+            include: { User: { include: { ClinicPatients: { where: { clinicId: clinic.id } } } } }
+          });
+
+          if (existingRecord) {
+            existingCount++;
+            let userId = existingRecord.userId;
+            if (existingRecord.User.ClinicPatients.length === 0) {
+              await tx.clinicPatient.create({ data: { clinicId: clinic.id, patientId: userId } });
+            }
+          } else {
+            // Create new user (using synthetic email with .net domain)
+            const dummyEmail = `ph-${pin}-${Date.now()}@imported.clinicez.net`;
+            
+            let gender;
+            if (entry.pAssignedSex === "M") gender = "MALE";
+            else if (entry.pAssignedSex === "F") gender = "FEMALE";
+            
+            let dob;
+            if (entry.pAssignedDateOfBirth) {
+              dob = new Date(entry.pAssignedDateOfBirth);
+              if (isNaN(dob.getTime())) dob = undefined;
+            }
+
+            const newUser = await tx.user.create({
+              data: {
+                email: dummyEmail,
+                userId: `auth0|${pin}-${Date.now()}`,
+                firstName: entry.pAssignedFirstName || "Imported",
+                lastName: entry.pAssignedLastName || "Patient",
+                middleName: entry.pAssignedMiddleName || "",
+                suffix: entry.pAssignedExtName || "",
+                dob,
+                gender,
+                mobile: entry.pMobileNumber || "",
+              }
+            });
+            const userId = newUser.id;
+
+            await tx.philHealthRecord.create({
+              data: {
+                userId,
+                pin,
+                memberType: entry.pAssignedType || "MM"
+              }
+            });
+            
+            await tx.clinicPatient.create({ data: { clinicId: clinic.id, patientId: userId } });
+            importedCount++;
+          }
+        });
+      } catch (err: any) {
+        errorCount++;
+        errors.push(`Failed to import PIN ${pin}: ${err.message}`);
+      }
+    }
+
+    return { 
+      status: true, 
+      message: `Import complete. Imported: ${importedCount}, Existing: ${existingCount}, Errors: ${errorCount}`,
+      summary: { imported: importedCount, existing: existingCount, error: errorCount, errors }
+    };
+  } catch (error: any) {
+    console.error("[importRegistrationListToDbAction]", error);
+    return { status: false, message: error?.message || "Failed to import registration list" };
+  }
+}

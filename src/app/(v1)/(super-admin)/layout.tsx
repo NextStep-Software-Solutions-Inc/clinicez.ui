@@ -27,8 +27,12 @@ const sidebarNavItems = [
     href: "/super-admin/diagnostics-procedures",
   },
   {
-    title: "Diagnostic Procedures (BETA)",
+    title: "Diagnostic Procedures",
     href: "/super-admin/diagnostic-procedures",
+  },
+  {
+    title: "Yakap Recommended Services",
+    href: "/super-admin/konsulta-recommended-services",
   },
   {
     title: "Health Conditions",

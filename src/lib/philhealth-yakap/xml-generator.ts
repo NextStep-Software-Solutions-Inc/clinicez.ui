@@ -1378,7 +1378,7 @@ export function generateKonsultaXml(options: KonsultaXmlOptions): string {
     const hasDiagResults = p.diagnosticResults && p.diagnosticResults.length > 0;
     
     const hasDiabetesFamHist = p.profile.familyHistories?.some(
-      fh => fh.code === '006' || fh.code === '6' || fh.name?.toUpperCase() === 'DIABETES MELLITUS'
+      fh => fh.code === '006' || fh.code === '6' || fh.specificDesc?.toUpperCase() === 'DIABETES MELLITUS'
     );
     
     if (hasDiabetesFamHist && !hasDiagResults) {

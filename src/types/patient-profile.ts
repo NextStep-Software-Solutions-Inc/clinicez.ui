@@ -65,6 +65,7 @@ export interface SerializedPatientHealthRecordsResponse {
   telephone: string | null
   dob: string | null  // ISO string
   age: number | null
+  detailedAge: string | null
   gender: string | null
   bloodType: string | null
   civilStatus: string | null

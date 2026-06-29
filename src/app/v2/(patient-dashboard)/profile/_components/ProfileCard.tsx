@@ -86,9 +86,8 @@ export function ProfileCard({ patient, isOwner }: ProfileCardProps) {
         <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y sm:divide-y-0 divide-slate-100 dark:divide-slate-700">
           <div className="flex flex-col items-center py-3 px-2">
             <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-0.5">Age</p>
-            <p className="text-lg font-bold text-slate-900 dark:text-white leading-tight">
-              {patient.age ?? '—'}
-              <span className="text-xs font-normal text-slate-500 dark:text-slate-400 ml-0.5">yrs</span>
+            <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-tight text-center">
+              {patient.detailedAge ?? '—'}
             </p>
           </div>
           <div className="flex flex-col items-center py-3 px-2">

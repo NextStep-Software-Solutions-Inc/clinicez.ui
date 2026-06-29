@@ -8,6 +8,7 @@ import type {
   CertificateData,
   ReferralData,
 } from '@/types/patient-profile'
+import { calculateDetailedAge } from '@/lib/utils'
 
 export async function getPatientHealthRecords(): Promise<SerializedPatientHealthRecordsResponse | null> {
   try {
@@ -290,6 +291,7 @@ export async function getPatientHealthRecords(): Promise<SerializedPatientHealth
       telephone: patient.telephone,
       dob: patient.dob ? patient.dob.toISOString() : null,
       age: patient.dob ? Math.floor((new Date().getTime() - new Date(patient.dob).getTime()) / (365.25 * 24 * 60 * 60 * 1000)) : null,
+      detailedAge: calculateDetailedAge(patient.dob),
       gender: patient.gender,
       bloodType: patient.bloodType,
       civilStatus: patient.civilStatus,

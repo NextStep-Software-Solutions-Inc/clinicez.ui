@@ -31,6 +31,7 @@ export interface PhysicalExamEditFormProps {
   initialData: PhysicalExaminationFormInput | null;
   examId?: string;
   patientId: number;
+  consultationTicketId?: number;
   onSuccess?: () => void;
   onDirtyChange?: (isDirty: boolean) => void;
   saveRef?: React.MutableRefObject<{
@@ -43,6 +44,7 @@ export function PhysicalExamEditForm({
   initialData,
   examId,
   patientId,
+  consultationTicketId,
   onSuccess,
   onDirtyChange,
   saveRef,
@@ -101,7 +103,7 @@ export function PhysicalExamEditForm({
 
   const onSubmit = async (data: PhysicalExaminationFormInput) => {
     try {
-      const result = await savePhysicalExaminationAction(patientId, data, examId);
+      const result = await savePhysicalExaminationAction(patientId, data, examId, consultationTicketId);
       if (result.error) {
         toast.error(result.error);
         throw new Error(result.error);

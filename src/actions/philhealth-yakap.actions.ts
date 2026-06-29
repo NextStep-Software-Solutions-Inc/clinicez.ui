@@ -867,7 +867,7 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
             mensInterval: patient.ObGyneHistory.menstrualCycleInterval?.toString() || '',
             padsPerDay: patient.ObGyneHistory.numberOfPadsPerDay?.toString() || '',
             onsetSexIntercourse: patient.ObGyneHistory.ageAtFirstSexualIntercourse?.toString() || '',
-            birthControl: patient.ObGyneHistory.birthControlMethod || '',
+            birthControl: patient.ObGyneHistory.isFamilyPlanning ? (patient.ObGyneHistory.birthControlMethod || '') : '',
             isMenopause: patient.ObGyneHistory.menopauseStatus === 'YES' ? 'Y' : (patient.ObGyneHistory.menopauseStatus === 'NO' ? 'N' : ''),
             menopauseAge: patient.ObGyneHistory.menopauseAge?.toString() || '',
             gravida: patient.ObGyneHistory.gravidity?.toString() || '',
@@ -880,7 +880,7 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
                              patient.ObGyneHistory.typeOfDelivery === 'CESAREAN' ? 'O' : 
                              patient.ObGyneHistory.typeOfDelivery === 'MIXED' ? 'B' : 'X',
             isPreEclampsia: patient.ObGyneHistory.hasPreEclampsia ? 'Y' : 'N',
-            wFamPlan: patient.ObGyneHistory.birthControlMethod && patient.ObGyneHistory.birthControlMethod !== 'NONE' ? 'Y' : 'N',
+            wFamPlan: patient.ObGyneHistory.isFamilyPlanning ? 'Y' : 'N',
           } : undefined,
           immunizations: patient.UserVaccinations.map(uv => {
             const vName = (uv.Vaccine.name || '').toUpperCase().trim();
@@ -1663,14 +1663,20 @@ export async function importRegistrationListToDbAction(clinicUid: string, entrie
     let errors: string[] = [];
 
     for (const entry of entries) {
-      const pin = entry.pAssignedPin;
-      if (!pin) continue;
+      const isDependent = entry.pAssignedType === "DD";
+      const memberPin = isDependent ? entry.pPrimaryPIN || entry.pAssignedPin : entry.pAssignedPin;
+      const dependentPin = isDependent ? entry.pAssignedPin : null;
+      
+      const pinToFind = isDependent && dependentPin ? dependentPin : memberPin;
+      if (!pinToFind) continue;
 
       try {
         await prisma.$transaction(async (tx) => {
-          // 1. Try to find existing patient by PIN
+          // 1. Try to find existing patient by their actual PIN (dependent or member)
           const existingRecord = await tx.philHealthRecord.findFirst({
-            where: { pin },
+            where: isDependent && dependentPin 
+              ? { dependentPin } 
+              : { pin: memberPin },
             include: { User: { include: { ClinicPatients: { where: { clinicId: clinic.id } } } } }
           });
 
@@ -1682,7 +1688,7 @@ export async function importRegistrationListToDbAction(clinicUid: string, entrie
             }
           } else {
             // Create new user (using synthetic email with .net domain)
-            const dummyEmail = `ph-${pin}-${Date.now()}@imported.clinicez.net`;
+            const dummyEmail = `ph-${pinToFind}-${Date.now()}@imported.clinicez.net`;
             
             let gender: "MALE" | "FEMALE" | undefined;
             if (entry.pAssignedSex === "M") gender = "MALE";
@@ -1697,7 +1703,7 @@ export async function importRegistrationListToDbAction(clinicUid: string, entrie
             const newUser = await tx.user.create({
               data: {
                 email: dummyEmail,
-                userId: `auth0|${pin}-${Date.now()}`,
+                userId: `auth0|${pinToFind}-${Date.now()}`,
                 firstName: entry.pAssignedFirstName || "Imported",
                 lastName: entry.pAssignedLastName || "Patient",
                 middleName: entry.pAssignedMiddleName || "",
@@ -1712,7 +1718,8 @@ export async function importRegistrationListToDbAction(clinicUid: string, entrie
             await tx.philHealthRecord.create({
               data: {
                 userId,
-                pin,
+                pin: memberPin,
+                dependentPin,
                 memberType: entry.pAssignedType || "MM"
               }
             });
@@ -1723,7 +1730,7 @@ export async function importRegistrationListToDbAction(clinicUid: string, entrie
         });
       } catch (err: any) {
         errorCount++;
-        errors.push(`Failed to import PIN ${pin}: ${err.message}`);
+        errors.push(`Failed to import PIN ${pinToFind}: ${err.message}`);
       }
     }
 

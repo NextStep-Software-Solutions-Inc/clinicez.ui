@@ -9,6 +9,8 @@ import { Badge } from "@components/ui/badge";
 import { Building2, Hospital, Users, ExternalLink } from "lucide-react";
 import { Button } from "@components/ui/button";
 import { TenantAILimitManager } from "@/components/super-admin/TenantAILimitManager";
+import { CreateOrganizationDialog } from "./CreateOrganizationDialog";
+import { CreateClinicDialog } from "./CreateClinicDialog";
 
 interface TenantDetailTabsProps {
   tenant: {
@@ -159,11 +161,14 @@ export default function TenantDetailTabs({ tenant }: TenantDetailTabsProps) {
 
       <TabsContent value="organizations" className="space-y-4">
         <Card>
-          <CardHeader>
-            <CardTitle>Organizations</CardTitle>
-            <CardDescription>
-              View organization setup and manage roles within each organization.
-            </CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>Organizations</CardTitle>
+              <CardDescription>
+                View organization setup and manage roles within each organization.
+              </CardDescription>
+            </div>
+            <CreateOrganizationDialog tenantId={tenant.id} onSuccess={loadOrganizations} />
           </CardHeader>
           <CardContent>
             {loadingOrgs ? (
@@ -214,11 +219,14 @@ export default function TenantDetailTabs({ tenant }: TenantDetailTabsProps) {
 
       <TabsContent value="clinics" className="space-y-4">
         <Card>
-          <CardHeader>
-            <CardTitle>Clinics</CardTitle>
-            <CardDescription>
-              View clinic setup and manage appointment tab configurations.
-            </CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>Clinics</CardTitle>
+              <CardDescription>
+                View clinic setup and manage appointment tab configurations.
+              </CardDescription>
+            </div>
+            <CreateClinicDialog tenantId={tenant.id} organizations={organizations} onSuccess={loadClinics} />
           </CardHeader>
           <CardContent>
             {loadingClinics ? (

@@ -211,16 +211,42 @@ export function ObGyneHistoryEditForm({
             />
           </FormField>
 
-          <FormField label="Current Birth Control Method" htmlFor="birthControlMethod" helpText="Current contraceptive method (optional)">
-            <Input
-              id="birthControlMethod"
-              type="text"
-              maxLength={100}
-              value={formData.birthControlMethod || ''}
-              onChange={(e) => handleFieldChange('birthControlMethod', e.target.value || null)}
-              placeholder="e.g., Oral contraceptives, IUD, None, etc."
-            />
+          <FormField label="" htmlFor="isFamilyPlanning">
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="isFamilyPlanning"
+                checked={formData.isFamilyPlanning || false}
+                onCheckedChange={(value) => handleFieldChange('isFamilyPlanning', value === true ? true : null)}
+              />
+              <label htmlFor="isFamilyPlanning" className="text-sm">
+                Uses Family Planning Method?
+              </label>
+            </div>
           </FormField>
+
+          {formData.isFamilyPlanning && (
+            <FormField label="Current Birth Control Method" htmlFor="birthControlMethod" helpText="Current contraceptive method">
+              <Select
+                value={formData.birthControlMethod || ''}
+                onValueChange={(value) => handleFieldChange('birthControlMethod', value === '_empty' ? null : value)}
+              >
+                <SelectTrigger id="birthControlMethod">
+                  <SelectValue placeholder="Select method..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="PILLS">Pills</SelectItem>
+                  <SelectItem value="IUD">IUD</SelectItem>
+                  <SelectItem value="INJECTABLE">Injectable</SelectItem>
+                  <SelectItem value="IMPLANT">Implant</SelectItem>
+                  <SelectItem value="CONDOM">Condom</SelectItem>
+                  <SelectItem value="BTL">Bilateral Tubal Ligation (BTL)</SelectItem>
+                  <SelectItem value="VASECTOMY">Vasectomy</SelectItem>
+                  <SelectItem value="NFP">Natural Family Planning</SelectItem>
+                  <SelectItem value="OTHERS">Others</SelectItem>
+                </SelectContent>
+              </Select>
+            </FormField>
+          )}
         </div>
 
         {/* Pregnancy Statistics */}

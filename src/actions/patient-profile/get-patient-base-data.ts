@@ -3,6 +3,7 @@
 import { currentUser } from '@clerk/nextjs/server'
 import prisma from '@/lib/prisma'
 import type { PatientBaseData } from '@/types/patient-profile-tabs'
+import { calculateDetailedAge } from '@/lib/utils'
 
 /**
  * Fetches only the data needed for the profile card and tab badge counts.
@@ -103,6 +104,7 @@ export async function getPatientBaseData(): Promise<PatientBaseData | null> {
             age: patient.dob
                 ? Math.floor((Date.now() - new Date(patient.dob).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
                 : null,
+            detailedAge: calculateDetailedAge(patient.dob),
             gender: patient.gender,
             bloodType: patient.bloodType,
             caseNumber: patient.caseNumber,

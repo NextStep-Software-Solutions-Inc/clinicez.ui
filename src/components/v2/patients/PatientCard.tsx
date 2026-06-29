@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Heart, AlertCircle, Pill, ChevronRight, User, CheckCircle2, Clock, XCircle, UserPlus } from "lucide-react";
-import { calculateAge, formatBloodType } from "@/lib/utils";
+import { calculateDetailedAge, formatBloodType } from "@/lib/utils";
 import type { ClinicPatientListItem } from "@/types/clinic-patients-v2.types";
 import { PatientAIInsightButton } from "./PatientAIInsightButton";
 import { formatDistanceToNow } from "date-fns";
@@ -83,7 +83,7 @@ export const PatientCard = memo(function PatientCard({
 
   const initials = `${firstName?.charAt(0) ?? ""}${lastName?.charAt(0) ?? ""}`;
   const fullName = `${firstName ?? ""} ${middleName ? middleName + " " : ""}${lastName ?? ""}${suffix ? " " + suffix : ""}`.trim();
-  const age = calculateAge(dob) ?? 0;
+  const detailedAge = calculateDetailedAge(dob) ?? "—";
   const genderLabel = gender
     ? `${gender.charAt(0).toUpperCase()}${gender.slice(1).toLowerCase()}`
     : null;
@@ -127,7 +127,7 @@ export const PatientCard = memo(function PatientCard({
                     {genderLabel}
                   </span>
                 )}
-                <span className="text-xs text-muted-foreground">• {age}y</span>
+                <span className="text-xs text-muted-foreground">• {detailedAge}</span>
                 {bloodType && (
                   <Badge
                     variant="outline"
@@ -230,7 +230,7 @@ export const PatientCard = memo(function PatientCard({
             {genderLabel && (
               <span className="text-xs text-muted-foreground">{genderLabel}</span>
             )}
-            <span className="text-xs text-muted-foreground">• {age}y</span>
+            <span className="text-xs text-muted-foreground">• {detailedAge}</span>
             {bloodType && (
               <Badge
                 variant="outline"

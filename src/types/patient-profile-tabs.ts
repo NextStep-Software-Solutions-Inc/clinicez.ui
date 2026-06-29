@@ -89,6 +89,7 @@ export interface PatientBaseData {
     fullName: string
     picture: string | null
     age: number | null
+    detailedAge: string | null
     gender: string | null
     bloodType: string | null
     latestBmi: number | null

@@ -5,6 +5,7 @@ import prisma from "@/lib/prisma";
 import { getCachedSession } from "@/actions/session.action";
 import { requireClinicPermission } from "@/lib/permission-checker";
 import { PERMISSIONS } from "@/lib/permissions";
+import { calculateDetailedAge } from "@/lib/utils";
 import type { SerializedPatientHealthRecordsResponse } from "@/types/patient-profile";
 
 /**
@@ -271,6 +272,7 @@ export async function getClinicPatientProfileAction({
                     (365.25 * 24 * 60 * 60 * 1000)
                 )
                 : null,
+            detailedAge: calculateDetailedAge(patient.dob),
             gender: patient.gender,
             bloodType: patient.bloodType,
             civilStatus: patient.civilStatus,

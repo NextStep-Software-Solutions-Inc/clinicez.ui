@@ -23,6 +23,7 @@ function toPatientBaseData(p: SerializedPatientHealthRecordsResponse): PatientBa
     suffix:         p.suffix,
     caseNumber:     p.caseNumber,
     age:            p.age,
+    detailedAge:    p.detailedAge,
     bloodType:      p.bloodType,
     gender:         p.gender,
     verificationStatus: p.verificationStatus,

@@ -2446,6 +2446,7 @@ model ObGyneHistory {
   menopauseAge                Int?
   menopauseStatus             String?
   ageAtFirstSexualIntercourse Int?
+  isFamilyPlanning            Boolean?  @default(false)
   birthControlMethod          String?
   menstrualPeriodDuration     Int?
   menstrualCycleInterval      Int?

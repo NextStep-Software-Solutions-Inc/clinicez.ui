@@ -43,6 +43,8 @@ export const obGyneHistorySchema = z.object({
     .optional()
     .nullable(),
 
+  isFamilyPlanning: z.boolean().optional().nullable(),
+
   birthControlMethod: z
     .string()
     .max(100, "Method description must be less than 100 characters")

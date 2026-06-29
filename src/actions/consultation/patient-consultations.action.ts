@@ -143,6 +143,16 @@ export const getPatientConsultationDetailAction = withErrorHandling(
               select: {
                 dob: true,
                 gender: true,
+                FamilyMedicalHistories: {
+                  select: {
+                    Condition: {
+                      select: {
+                        name: true,
+                        code: true,
+                      }
+                    }
+                  }
+                }
               }
             }
           }
@@ -279,6 +289,14 @@ export const getPatientConsultationDetailAction = withErrorHandling(
               select: { HeartStationProcedure: { select: { name: true } } },
             },
           },
+        },
+        KonsultaDiagnosticResults: {
+          select: { id: true }
+        },
+        PhysicalExaminations: {
+          where: { deletedAt: null },
+          orderBy: { createdAt: "desc" },
+          take: 1,
         },
         ClinicReferralSlips: {
           where: { isActive: true, deletedAt: null },

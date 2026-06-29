@@ -19,6 +19,7 @@ import {
   deleteKonsultaDiagnosticResultAction,
   getKonsultaDiagnosticResultsAction,
 } from "@/actions/consultation/konsulta-diagnostic.action";
+import { Checkbox } from "@/components/ui/checkbox";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -32,15 +33,99 @@ type ExamType =
 interface FieldDef {
   key: string;
   label: string;
-  type?: "text" | "number" | "date";
+  type?: "text" | "number" | "date" | "select" | "multiselect";
   unit?: string;
   placeholder?: string;
   span?: "full";
+  options?: { value: string; label: string }[];
+  dependsOn?: { key: string; value: string };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Per-exam-type field definitions (keys match resultData keys → DTD attrs)
 // ─────────────────────────────────────────────────────────────────────────────
+
+const CHESTXRAY_FINDINGS = [
+  { value: "1", label: "1 - NORMAL" },
+  { value: "2", label: "2 - PNEUMONIA" },
+  { value: "3", label: "3 - PTB/KOCHS" },
+  { value: "4", label: "4 - PLEURAL EFFUSION" },
+  { value: "5", label: "5 - PNEUMOTHORAX" },
+  { value: "6", label: "6 - EMPHYSEMA" },
+  { value: "7", label: "7 - CHRONIC BRONCHITIS" },
+  { value: "8", label: "8 - BRONCHIECTASIS" },
+  { value: "9", label: "9 - ACUTE BRONCHITIS" },
+  { value: "10", label: "10 - BRONCHIOLITIS" },
+  { value: "11", label: "11 - CHRONIC OBSTRUCTIVE PULMONARY DISEASE" },
+  { value: "12", label: "12 - PULMONARY MASS" },
+  { value: "99", label: "99 - OTHERS" },
+];
+
+const CHESTXRAY_OBSERVATIONS = [
+  { value: "1", label: "1 - INFILTRATES" },
+  { value: "2", label: "2 - CALCIFICATION" },
+  { value: "3", label: "3 - CONSOLIDATION" },
+  { value: "4", label: "4 - CAVITY" },
+  { value: "5", label: "5 - DENSITIES" },
+  { value: "6", label: "6 - PLEURAL EFFUSION" },
+  { value: "7", label: "7 - PNEUMOTHORAX" },
+  { value: "8", label: "8 - BLEB" },
+  { value: "9", label: "9 - CARDIOMEGALY" },
+  { value: "10", label: "10 - THICKENING" },
+  { value: "11", label: "11 - HYPERAERATION/ EMPHYSEMATOUS CHANGES" },
+  { value: "12", label: "12 - MASS" },
+  { value: "99", label: "99 - OTHERS" },
+];
+
+const SPUTUM_DATA_COLLECTION = [
+  { value: "1", label: "1 - First Collection" },
+  { value: "2", label: "2 - Second Collection" },
+  { value: "3", label: "3 - Third Collection" },
+  { value: "X", label: "X - Not Applicable" },
+];
+
+const SPUTUM_FINDINGS = [
+  { value: "1", label: "1 - Essentially Normal" },
+  { value: "2", label: "2 - With Findings" },
+];
+
+const ECG_FINDINGS = [
+  { value: "1", label: "1 - Essentially Normal" },
+  { value: "2", label: "2 - With Findings" },
+];
+
+const FECALYSIS_COLOR = [
+  { value: "1", label: "1 - Brown" },
+  { value: "2", label: "2 - Black" },
+  { value: "3", label: "3 - Red" },
+  { value: "4", label: "4 - White/Grey" },
+  { value: "5", label: "5 - Yellow" },
+  { value: "6", label: "6 - Green" },
+];
+
+const FECALYSIS_CONSISTENCY = [
+  { value: "1", label: "1 - Soft" },
+  { value: "2", label: "2 - Well-Formed" },
+  { value: "3", label: "3 - Semi-Formed" },
+  { value: "4", label: "4 - Watery" },
+  { value: "5", label: "5 - Mucoid" },
+  { value: "6", label: "6 - Hard" },
+];
+
+const FECALYSIS_BLOOD = [
+  { value: "P", label: "P - Present" },
+  { value: "A", label: "A - Absent" },
+];
+
+const FOBT_FINDINGS = [
+  { value: "P", label: "P - Positive" },
+  { value: "N", label: "N - Negative" },
+];
+
+const PPDTEST_FINDINGS = [
+  { value: "P", label: "P - Positive" },
+  { value: "N", label: "N - Negative" },
+];
 
 const BASE_FIELDS: FieldDef[] = [
   { key: "referralFacility", label: "Referral Facility", placeholder: "Facility name", span: "full" },
@@ -105,16 +190,16 @@ const EXAM_FIELDS: Record<ExamType, FieldDef[]> = {
     { key: "pusCells",       label: "Pus Cells" },
   ],
   CHESTXRAY: [
-    { key: "findings",            label: "Findings",             span: "full" },
-    { key: "remarksFindings",     label: "Remarks on Findings",  span: "full" },
-    { key: "observation",         label: "Observation",          span: "full" },
-    { key: "remarksObservation",  label: "Remarks on Observation", span: "full" },
+    { key: "findings",            label: "Findings",             type: "select", options: CHESTXRAY_FINDINGS, span: "full" },
+    { key: "remarksFindings",     label: "Remarks on Findings",  span: "full", dependsOn: { key: "findings", value: "99" } },
+    { key: "observation",         label: "Observation",          type: "multiselect", options: CHESTXRAY_OBSERVATIONS, span: "full" },
+    { key: "remarksObservation",  label: "Remarks on Observation", span: "full", dependsOn: { key: "observation", value: "99" } },
   ],
   SPUTUM: [
-    { key: "dataCollection", label: "Data Collection", span: "full" },
-    { key: "findings",       label: "Findings",        span: "full" },
-    { key: "remarks",        label: "Remarks",         span: "full" },
-    { key: "noPlusses",      label: "No. of Plusses" },
+    { key: "dataCollection", label: "Data Collection", type: "select", options: SPUTUM_DATA_COLLECTION, span: "full" },
+    { key: "findings",       label: "Findings",        type: "select", options: SPUTUM_FINDINGS, span: "full" },
+    { key: "remarks",        label: "Remarks",         span: "full", dependsOn: { key: "findings", value: "2" } },
+    { key: "noPlusses",      label: "No. of Plusses",  dependsOn: { key: "findings", value: "2" } },
   ],
   LIPIDPROFILE: [
     { key: "ldl",           label: "LDL",           type: "number", unit: "mg/dL" },
@@ -124,17 +209,17 @@ const EXAM_FIELDS: Record<ExamType, FieldDef[]> = {
     { key: "triglycerides", label: "Triglycerides", type: "number", unit: "mg/dL" },
   ],
   ECG: [
-    { key: "findings", label: "Findings", span: "full" },
-    { key: "remarks",  label: "Remarks",  span: "full" },
+    { key: "findings", label: "Findings", type: "select", options: ECG_FINDINGS, span: "full" },
+    { key: "remarks",  label: "Remarks",  span: "full", dependsOn: { key: "findings", value: "2" } },
   ],
   FECALYSIS: [
-    { key: "color",       label: "Color" },
-    { key: "consistency", label: "Consistency" },
-    { key: "rbc",         label: "RBC" },
-    { key: "wbc",         label: "WBC" },
-    { key: "ova",         label: "Ova" },
-    { key: "parasite",    label: "Parasite" },
-    { key: "blood",       label: "Blood" },
+    { key: "color",       label: "Color",       type: "select", options: FECALYSIS_COLOR },
+    { key: "consistency", label: "Consistency", type: "select", options: FECALYSIS_CONSISTENCY },
+    { key: "rbc",         label: "RBC",         unit: "/hpf" },
+    { key: "wbc",         label: "WBC",         unit: "/hpf" },
+    { key: "ova",         label: "Ova",         unit: "+/-" },
+    { key: "parasite",    label: "Parasite",    unit: "+/-" },
+    { key: "blood",       label: "Blood",       type: "select", options: FECALYSIS_BLOOD },
     { key: "pusCells",    label: "Pus Cells" },
   ],
   PAPSMEAR: [
@@ -149,10 +234,10 @@ const EXAM_FIELDS: Record<ExamType, FieldDef[]> = {
     { key: "examOgttTwoHrMg",   label: "2-hr OGTT",  type: "number", unit: "mg/dL" },
     { key: "examOgttTwoHrMmol", label: "2-hr OGTT",  type: "number", unit: "mmol/L" },
   ],
-  FOBT:        [{ key: "findings", label: "Findings", span: "full" }],
-  CREATININE:  [{ key: "findings", label: "Findings", span: "full" }],
-  PPDTest:     [{ key: "findings", label: "Findings", span: "full" }],
-  HbA1c:       [{ key: "findings", label: "Findings / HbA1c Value", span: "full" }],
+  FOBT:        [{ key: "findings", label: "Findings", type: "select", options: FOBT_FINDINGS, span: "full" }],
+  CREATININE:  [{ key: "findings", label: "Findings", type: "number", unit: "mg/dL", span: "full" }],
+  PPDTest:     [{ key: "findings", label: "Findings", type: "select", options: PPDTEST_FINDINGS, span: "full" }],
+  HbA1c:       [{ key: "findings", label: "Findings / HbA1c Value", type: "number", unit: "mmol/mol", span: "full" }],
   OTHERDIAGEXAM: [
     { key: "othDiagExam", label: "Exam Name", span: "full" },
     { key: "findings",    label: "Findings",  span: "full" },
@@ -274,7 +359,11 @@ export default function KonsultaDiagnosticResultsPanel({
     EXAM_TYPES.find((t) => t.value === value)?.label ?? value;
 
   const activeFields =
-    examType ? [...BASE_FIELDS, ...EXAM_FIELDS[examType as ExamType]] : BASE_FIELDS;
+    (examType ? [...BASE_FIELDS, ...EXAM_FIELDS[examType as ExamType]] : BASE_FIELDS).filter((field) => {
+      if (!field.dependsOn) return true;
+      const val = fieldValues[field.dependsOn.key] || "";
+      return val.split(";").includes(field.dependsOn.value);
+    });
 
   if (loading) {
     return (
@@ -340,13 +429,55 @@ export default function KonsultaDiagnosticResultsPanel({
                       </span>
                     )}
                   </Label>
-                  <Input
-                    type={field.type ?? "text"}
-                    value={fieldValues[field.key] ?? ""}
-                    onChange={(e) => setField(field.key, e.target.value)}
-                    placeholder={field.placeholder ?? ""}
-                    className="h-7 text-xs"
-                  />
+                  {field.type === "select" ? (
+                    <Select
+                      value={fieldValues[field.key] ?? ""}
+                      onValueChange={(val) => setField(field.key, val)}
+                    >
+                      <SelectTrigger className="h-7 text-xs">
+                        <SelectValue placeholder={`Select ${field.label.toLowerCase()}`} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {field.options?.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value} className="text-xs">
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : field.type === "multiselect" ? (
+                    <div className="flex flex-wrap gap-x-4 gap-y-2 pt-1">
+                      {field.options?.map((opt) => {
+                        const currentValues = (fieldValues[field.key] || "").split(";").filter(Boolean);
+                        const isSelected = currentValues.includes(opt.value);
+                        return (
+                          <label key={opt.value} className="flex items-center gap-1.5 text-xs cursor-pointer">
+                            <Checkbox
+                              checked={isSelected}
+                              onCheckedChange={(checked) => {
+                                let newValues = [...currentValues];
+                                if (checked) {
+                                  newValues.push(opt.value);
+                                } else {
+                                  newValues = newValues.filter((v) => v !== opt.value);
+                                }
+                                setField(field.key, newValues.join(";"));
+                              }}
+                            />
+                            <span>{opt.label}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <Input
+                      type={field.type ?? "text"}
+                      value={fieldValues[field.key] ?? ""}
+                      onChange={(e) => setField(field.key, e.target.value)}
+                      placeholder={field.placeholder ?? ""}
+                      className="h-7 text-xs"
+                    />
+                  )}
                 </div>
               ))}
 
@@ -364,7 +495,9 @@ export default function KonsultaDiagnosticResultsPanel({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="D" className="text-xs">D — Done</SelectItem>
-                    <SelectItem value="P" className="text-xs">P — Pending</SelectItem>
+                    <SelectItem value="N" className="text-xs">N — Not yet done</SelectItem>
+                    <SelectItem value="X" className="text-xs">X — Deferred</SelectItem>
+                    <SelectItem value="W" className="text-xs">W — Waived</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

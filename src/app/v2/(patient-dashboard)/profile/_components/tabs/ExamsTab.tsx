@@ -46,15 +46,15 @@ export function ExamsTab({ data }: Props) {
               const time = dateTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })
 
               const findings = [
-                { label: 'General Survey', val: pe.generalSurveyId, remarks: pe.generalSurveyRemarks },
-                { label: 'Head, Eyes, Ears, Nose, Throat', val: pe.heentId, remarks: pe.heentRemarks },
-                { label: 'Chest/Lungs', val: pe.chestId, remarks: pe.chestRemarks },
-                { label: 'Cardiovascular System', val: pe.heartId, remarks: pe.heartRemarks },
-                { label: 'Abdomen', val: pe.abdomenId, remarks: pe.abdomenRemarks },
-                { label: 'Genitourinary', val: pe.guId, remarks: pe.guRemarks },
-                { label: 'Skin/Extremities', val: pe.skinId, remarks: pe.skinRemarks },
-                { label: 'Neurological', val: pe.neuroId, remarks: pe.neuroRemarks },
-                { label: 'Rectal', val: pe.rectalId, remarks: pe.rectalRemarks },
+                { label: 'General Survey', category: 'GENSURVEY', val: pe.generalSurveyId, remarks: pe.generalSurveyRemarks },
+                { label: 'Head, Eyes, Ears, Nose, Throat', category: 'HEENT', val: pe.heentId, remarks: pe.heentRemarks },
+                { label: 'Chest/Lungs', category: 'CHEST', val: pe.chestId, remarks: pe.chestRemarks },
+                { label: 'Cardiovascular System', category: 'HEART', val: pe.heartId, remarks: pe.heartRemarks },
+                { label: 'Abdomen', category: 'ABDOMEN', val: pe.abdomenId, remarks: pe.abdomenRemarks },
+                { label: 'Genitourinary', category: 'GU', val: pe.guId, remarks: pe.guRemarks },
+                { label: 'Skin/Extremities', category: 'SKIN', val: pe.skinId, remarks: pe.skinRemarks },
+                { label: 'Neurological', category: 'NEURO', val: pe.neuroId, remarks: pe.neuroRemarks },
+                { label: 'Rectal', category: 'RECTAL', val: pe.rectalId, remarks: pe.rectalRemarks },
               ].filter(f => f.val || f.remarks)
 
               return (
@@ -75,7 +75,7 @@ export function ExamsTab({ data }: Props) {
                           </p>
                           <p className="text-sm font-medium text-slate-900 dark:text-white">
                             {finding.val 
-                              ? libraries.find(l => l.code === finding.val)?.description || `Code: ${finding.val}` 
+                              ? libraries.find(l => l.category === finding.category && l.code === finding.val)?.description || `Code: ${finding.val}` 
                               : 'No code'}
                           </p>
                           {finding.remarks && (

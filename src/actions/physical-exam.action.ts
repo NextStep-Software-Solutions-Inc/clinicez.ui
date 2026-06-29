@@ -11,7 +11,8 @@ import type { PhysicalExaminationFormInput } from "@/schemas";
 export async function savePhysicalExaminationAction(
   patientId: number,
   data: PhysicalExaminationFormInput,
-  examId?: string
+  examId?: string,
+  consultationTicketId?: number
 ) {
   try {
     const session = await getCachedSession();
@@ -33,6 +34,7 @@ export async function savePhysicalExaminationAction(
 
     const dataPayload = {
       userId: patientId,
+      consultationTicketId: consultationTicketId || null,
       generalSurveyId: validatedData.generalSurveyId || null,
       generalSurveyRemarks: validatedData.generalSurveyRemarks || null,
       heentId: validatedData.heentId || null,

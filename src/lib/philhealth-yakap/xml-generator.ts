@@ -323,9 +323,9 @@ function buildMedHists(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
       })).up();
     }
   } else {
-    // DTD requires at least one MEDHIST - emit placeholder (999 None)
+    // DTD requires at least one MEDHIST - emit placeholder
     medhists.ele('MEDHIST', withStatus({
-      pMdiseaseCode: '999',
+      pMdiseaseCode: '',
     })).up();
   }
   return medhists.up();
@@ -383,7 +383,7 @@ function buildFamHists(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
     }
   } else {
     famhists.ele('FAMHIST', withStatus({
-      pMdiseaseCode: '999',
+      pMdiseaseCode: '',
     })).up();
   }
   return famhists.up();
@@ -428,10 +428,10 @@ function buildImmunizations(parent: XmlNode, patient: KonsultaPatientData): XmlN
 
   if (imms.length === 0) {
     immunizations.ele('IMMUNIZATION', withStatus({
-      pChildImmcode: '999',
-      pYoungwImmcode: '999',
-      pPregwImmcode: '999',
-      pElderlyImmcode: '999',
+      pChildImmcode: '',
+      pYoungwImmcode: '',
+      pPregwImmcode: '',
+      pElderlyImmcode: '',
       pOtherImm: '',
       pReportStatus: 'U',
       pDeficiencyRemarks: '',
@@ -540,6 +540,7 @@ function buildProfilePeMiscs(parent: XmlNode, patient: KonsultaPatientData): Xml
   const pes = patient.profile.physicalExaminations || [];
   const pemiscs = parent.ele('PEMISCS');
 
+  let added = false;
   // For profiles, we can generate one PEMISC per historical PE
   for (const pe of pes) {
     const hasAnyId = pe.skinId || pe.heentId || pe.chestId || pe.heartId || pe.abdomenId || pe.neuroId || pe.rectalId || pe.guId;
@@ -554,7 +555,15 @@ function buildProfilePeMiscs(parent: XmlNode, patient: KonsultaPatientData): Xml
         pRectalId: pe.rectalId ? String(pe.rectalId) : '',
         pGuId: pe.guId ? String(pe.guId) : '',
       })).up();
+      added = true;
     }
+  }
+
+  if (!added) {
+    pemiscs.ele('PEMISC', withStatus({
+      pSkinId: '', pHeentId: '', pChestId: '', pHeartId: '',
+      pAbdomenId: '', pNeuroId: '', pRectalId: '', pGuId: '',
+    })).up();
   }
 
   pemiscs.up();
@@ -576,12 +585,24 @@ function buildProfilePeSpecific(parent: XmlNode, patient: KonsultaPatientData): 
       pRectalRem: latestPe.rectalRemarks || '',
       pGuRem: latestPe.guRemarks || '',
     })).up();
+  } else {
+    parent.ele('PESPECIFIC', withStatus({
+      pSkinRem: '',
+      pHeentRem: '',
+      pChestRem: '',
+      pHeartRem: '',
+      pAbdomenRem: '',
+      pNeuroRem: '',
+      pRectalRem: '',
+      pGuRem: '',
+    })).up();
   }
   return parent;
 }
 
 function buildNcdQAns(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
   // NCD Risk Assessment is only for patients aged 25 and above
+  let isUnder25 = false;
   if (patient.patient.dob) {
     const dob = new Date(patient.patient.dob);
     const now = new Date();
@@ -591,13 +612,15 @@ function buildNcdQAns(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
       age--;
     }
 
-    // PhilHealth rule: only emit NCDQANS if patient is >= 25 years old
     if (age < 25) {
-      return parent;
+      isUnder25 = true;
     }
   }
 
-  const mapNA = (val: string | null | undefined) => val === 'N/A' ? '' : (val || '');
+  const mapNA = (val: string | null | undefined) => {
+    if (isUnder25) return '';
+    return val === 'N/A' ? '' : (val || '');
+  };
 
   const attrs = {
     pQid1_Yn: mapNA(patient.profile.ncdqans?.q1),
@@ -732,15 +755,14 @@ function buildSoapPeMiscs(parent: XmlNode, consultation: KonsultaConsultationDat
         pGuId: pe.guId ? String(pe.guId) : '',
       })).up();
     } else {
-      // Dummy required by DTD. 11 = Essentially Normal for HEENT
       pemiscs.ele('PEMISC', withStatus({
-        pSkinId: '', pHeentId: '11', pChestId: '', pHeartId: '',
+        pSkinId: '', pHeentId: '', pChestId: '', pHeartId: '',
         pAbdomenId: '', pNeuroId: '', pRectalId: '', pGuId: '',
       })).up();
     }
   } else {
     pemiscs.ele('PEMISC', withStatus({
-      pSkinId: '', pHeentId: '11', pChestId: '', pHeartId: '',
+      pSkinId: '', pHeentId: '', pChestId: '', pHeartId: '',
       pAbdomenId: '', pNeuroId: '', pRectalId: '', pGuId: '',
     })).up();
   }
@@ -1146,31 +1168,36 @@ export function generateKonsultaXml(options: KonsultaXmlOptions): string {
   } else {
     // Tagging 2: emit populated SOAPs from consultations
     for (const patient of patients) {
-      for (const consultation of patient.consultations ?? []) {
-        const soapNode = soaps.ele('SOAP', withStatus({
-          pHciCaseNo: consultation.hciCaseNo,
-          pHciTransNo: consultation.hciTransNo,
-          pPatientPin: patient.patient.pin,
-          pMemPin: patient.member.pin,
-          pSoapDate: consultation.soapDate,
-          pPatientType: patient.patient.type,
-          pEffYear: patient.enlistment.effYear,
-          pATC: consultation.atc,
-          pIsWalkedIn: consultation.isWalkedIn,
-          pCoPay: consultation.coPay,
-          pTransDate: consultation.transDate,
-        }));
+      const consultations = patient.consultations ?? [];
+      if (consultations.length === 0) {
+        buildStubSoap(soaps, patient);
+      } else {
+        for (const consultation of consultations) {
+          const soapNode = soaps.ele('SOAP', withStatus({
+            pHciCaseNo: consultation.hciCaseNo,
+            pHciTransNo: consultation.hciTransNo,
+            pPatientPin: patient.patient.pin,
+            pMemPin: patient.member.pin,
+            pSoapDate: consultation.soapDate,
+            pPatientType: patient.patient.type,
+            pEffYear: patient.enlistment.effYear,
+            pATC: consultation.atc,
+            pIsWalkedIn: consultation.isWalkedIn,
+            pCoPay: consultation.coPay,
+            pTransDate: consultation.transDate,
+          }));
 
-        buildSoapSubjective(soapNode, consultation);
-        buildSoapPepert(soapNode, consultation);
-        buildSoapPeMiscs(soapNode, consultation);
-        buildSoapPeSpecific(soapNode, consultation);
-        buildSoapIcds(soapNode, consultation);
-        buildSoapDiagnostics(soapNode, consultation);
-        buildSoapManagements(soapNode, consultation);
-        buildSoapAdvice(soapNode, consultation);
+          buildSoapSubjective(soapNode, consultation);
+          buildSoapPepert(soapNode, consultation);
+          buildSoapPeMiscs(soapNode, consultation);
+          buildSoapPeSpecific(soapNode, consultation);
+          buildSoapIcds(soapNode, consultation);
+          buildSoapDiagnostics(soapNode, consultation);
+          buildSoapManagements(soapNode, consultation);
+          buildSoapAdvice(soapNode, consultation);
 
-        soapNode.up();
+          soapNode.up();
+        }
       }
     }
   }
@@ -1348,8 +1375,18 @@ export function generateKonsultaXml(options: KonsultaXmlOptions): string {
 
   const allDiagResults: KonsultaDiagnosticExamData[] = [];
   for (const p of patients) {
-    if (p.diagnosticResults) {
-      allDiagResults.push(...p.diagnosticResults);
+    const hasDiagResults = p.diagnosticResults && p.diagnosticResults.length > 0;
+    
+    const hasDiabetesFamHist = p.profile.familyHistories?.some(
+      fh => fh.code === '006' || fh.code === '6' || fh.name?.toUpperCase() === 'DIABETES MELLITUS'
+    );
+    
+    if (hasDiabetesFamHist && !hasDiagResults) {
+      throw new Error(`PhilHealth Validation Error: A Diagnostic Exam Result is strictly required because the patient has a Family History of Diabetes Mellitus.`);
+    }
+
+    if (hasDiagResults) {
+      allDiagResults.push(...p.diagnosticResults!);
     }
   }
 

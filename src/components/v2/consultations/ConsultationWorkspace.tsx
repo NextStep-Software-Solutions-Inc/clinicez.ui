@@ -18,6 +18,7 @@ import {
   ClipboardList,
   Ban,
   ShieldCheck,
+  Activity,
 } from "lucide-react";
 import Link from "next/link";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -45,6 +46,7 @@ import KonsultaDiagnosticResultsPanel from "./KonsultaDiagnosticResultsPanel";
 import KonsultaManagementPanel from "./KonsultaManagementPanel";
 import KonsultaRecommendedServicesPanel from "./KonsultaRecommendedServicesPanel";
 import KonsultaDiagnosticRequests from "./KonsultaDiagnosticRequests";
+import { PhysicalExamEditForm } from "@/components/health-records/physical-exam-edit-form";
 
 type Detail = NonNullable<GetPatientConsultationDetail["data"]>;
 
@@ -174,6 +176,15 @@ export default function ConsultationWorkspace({
   const refCount = consultation.ClinicReferralSlips?.length ?? 0;
   const diagnosesCount = consultation.ConsultationDiagnoses?.length ?? 0;
 
+  const famHistories = consultation.ClinicPatient?.Patient?.FamilyMedicalHistories || [];
+  const hasDiabetesFamHist = famHistories.some(fh => 
+    fh.Condition?.code === '006' || 
+    fh.Condition?.code === '6' || 
+    fh.Condition?.name?.toUpperCase() === 'DIABETES MELLITUS'
+  );
+  // @ts-ignore - The property KonsultaDiagnosticResults is dynamically included in the query
+  const hasDiagResults = (consultation.KonsultaDiagnosticResults?.length ?? 0) > 0;
+
   // Placeholder shown inside patient-requiring tabs when patient context is unavailable
   const NoPatientPlaceholder = () => (
     <div className="flex flex-col items-center justify-center gap-3 py-16 text-center px-6">
@@ -244,21 +255,23 @@ export default function ConsultationWorkspace({
           </div>
           {canBeResolved && myHPs.length > 0 && (
             <div className="flex items-center gap-1.5 shrink-0">
-              {consultation.soapTransNo ? (
-                <Badge variant="outline" className="h-8 text-[10px] sm:text-xs font-mono bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950/40 dark:text-teal-400 dark:border-teal-800">
-                  SOAP: {consultation.soapTransNo}
-                </Badge>
-              ) : (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="gap-1.5 h-8 text-xs border-teal-300 text-teal-700 hover:bg-teal-50 hover:text-teal-800 dark:border-teal-700 dark:text-teal-400 dark:hover:bg-teal-950/30"
-                  disabled={generatingYakap}
-                  onClick={handleGenerateYakap}
-                >
-                  <CheckCircle2 className="h-3.5 w-3.5" />
-                  {generatingYakap ? "Generating..." : "Generate Yakap No."}
-                </Button>
+              {consultation.isPhilHealthKonsulta && (
+                consultation.soapTransNo ? (
+                  <Badge variant="outline" className="h-8 text-[10px] sm:text-xs font-mono bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950/40 dark:text-teal-400 dark:border-teal-800">
+                    SOAP: {consultation.soapTransNo}
+                  </Badge>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1.5 h-8 text-xs border-teal-300 text-teal-700 hover:bg-teal-50 hover:text-teal-800 dark:border-teal-700 dark:text-teal-400 dark:hover:bg-teal-950/30"
+                    disabled={generatingYakap}
+                    onClick={handleGenerateYakap}
+                  >
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    {generatingYakap ? "Generating..." : "Generate Yakap No."}
+                  </Button>
+                )
               )}
               {(() => {
                 const isKonsultaBlocked =
@@ -378,6 +391,20 @@ export default function ConsultationWorkspace({
             />
           </div>
         )}
+
+        {/* Diabetes Mellitus Diagnostic Warning */}
+        {hasDiabetesFamHist && !hasDiagResults && consultation.isPhilHealthKonsulta && (
+          <div className="mt-3 rounded-xl border border-amber-500/30 bg-amber-50 dark:bg-amber-950/20 p-3 space-y-1">
+            <h4 className="text-xs font-semibold text-amber-800 dark:text-amber-500 uppercase tracking-wide flex items-center gap-1.5">
+              <AlertCircle className="h-3.5 w-3.5" />
+              Diagnostic Exam Required
+            </h4>
+            <p className="text-xs text-amber-700/90 dark:text-amber-400/90">
+              The patient has a family history of Diabetes Mellitus. Please ensure a diagnostic exam result is provided for PhilHealth Konsulta compliance.
+            </p>
+          </div>
+        )}
+
         {/* Drop form */}
         {showDropForm && (
           <div className="mt-3 rounded-xl border border-gray-400/30 bg-gray-50/50 dark:bg-gray-900/20 p-4 space-y-3">
@@ -475,6 +502,18 @@ export default function ConsultationWorkspace({
               )}
             </TabsTrigger>
             <TabsTrigger
+              value="pe"
+              className="flex items-center gap-1.5 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary h-full px-3 text-xs"
+            >
+              <Activity className="h-3.5 w-3.5" />
+              Physical Exam
+              {((consultation as any).PhysicalExaminations?.length > 0) && (
+                <span className="ml-1 bg-primary/10 text-primary text-[10px] px-1.5 rounded-full">
+                  <CheckCircle2 className="h-3 w-3" />
+                </span>
+              )}
+            </TabsTrigger>
+            <TabsTrigger
               value="certs"
               className="flex items-center gap-1.5 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary h-full px-3 text-xs"
             >
@@ -551,6 +590,20 @@ export default function ConsultationWorkspace({
                 myHPs={myHPs}
                 onPatchDetail={onPatchDetail}
                 isResolved={isResolved}
+              />
+            ) : (
+              <NoPatientPlaceholder />
+            )}
+          </TabsContent>
+
+          <TabsContent value="pe" className="mt-0 p-4 sm:p-6">
+            {hasPatient ? (
+              <PhysicalExamEditForm
+                patientId={patient.id}
+                consultationTicketId={consultation.id}
+                examId={(consultation as any).PhysicalExaminations?.[0]?.id}
+                initialData={(consultation as any).PhysicalExaminations?.[0] || null}
+                onSuccess={onReloadDetail}
               />
             ) : (
               <NoPatientPlaceholder />

@@ -34,13 +34,38 @@ export const createConsultationTicketAction = withErrorHandling(async ({ systemI
   if (!canCreateConsultationTicket) throw new Error("You do not have permission to create consultation tickets")
 
   const consultationTicket = await prismaClient.$transaction(async (prisma) => {
-    const consultationConfig = await prismaClient.consultationConfig.findFirstOrThrow({
+    let consultationConfig = await prismaClient.consultationConfig.findFirst({
       where: {
         Clinic: {
           clinicUid
         }
       }
     })
+
+    if (!consultationConfig) {
+      const defaultNoteTemplate = await prismaClient.noteTemplate.findFirst({
+        where: { isActive: true }
+      });
+
+      if (!defaultNoteTemplate) {
+         throw new Error("No active Note Templates found in the system. Please contact an administrator.");
+      }
+
+      const clinic = await prismaClient.clinic.findUnique({
+        where: { clinicUid }
+      });
+
+      if (!clinic) {
+         throw new Error("Clinic not found");
+      }
+
+      consultationConfig = await prismaClient.consultationConfig.create({
+        data: {
+          clinicId: clinic.id,
+          noteTemplateId: defaultNoteTemplate.id
+        }
+      });
+    }
 
     return await prismaClient.consultationTicket.create({
       data: {

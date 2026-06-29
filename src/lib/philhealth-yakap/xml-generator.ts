@@ -297,9 +297,17 @@ const DEFAULT_DRUG_CODE = 'NOMED00000000000000000000000';
 // Helper: Common attributes added to every element
 // ─────────────────────────────────────────────────────────────────────────────
 
+function toUpperAttr(attrs: Record<string, string>): Record<string, string> {
+  const result: Record<string, string> = {};
+  for (const [k, v] of Object.entries(attrs)) {
+    result[k] = v ? String(v).toUpperCase() : '';
+  }
+  return result;
+}
+
 function withStatus(attrs: Record<string, string>): Record<string, string> {
   return {
-    ...attrs,
+    ...toUpperAttr(attrs),
     pReportStatus: REPORT_STATUS,
     pDeficiencyRemarks: DEFICIENCY_REMARKS,
   };
@@ -1071,13 +1079,13 @@ export function generateKonsultaXml(options: KonsultaXmlOptions): string {
     .ele('PCB', {
       pUsername: credentials.pUsername,
       pPassword: credentials.pPassword,
-      pHciAccreNo: credentials.pHciAccreNo,
-      pPMCCNo: credentials.pPMCCNo,
+      pHciAccreNo: credentials.pHciAccreNo.toUpperCase(),
+      pPMCCNo: credentials.pPMCCNo.toUpperCase(),
       pEnlistTotalCnt: String(enlistCount),
       pProfileTotalCnt: String(profileCount),
       pSoapTotalCnt: String(soapCount),
-      pCertificationId: credentials.pCertificationId,
-      pHciTransmittalNumber: credentials.pHciTransmittalNumber,
+      pCertificationId: credentials.pCertificationId.toUpperCase(),
+      pHciTransmittalNumber: credentials.pHciTransmittalNumber.toUpperCase(),
     });
 
   // ── ENLISTMENTS ───────────────────────────────────────────────────────────
@@ -1403,14 +1411,14 @@ export function generateKonsultaXml(options: KonsultaXmlOptions): string {
 
     for (const records of grouped.values()) {
       const first = records[0];
-      const examResult = diagResultsEl.ele('DIAGNOSTICEXAMRESULT', {
+      const examResult = diagResultsEl.ele('DIAGNOSTICEXAMRESULT', toUpperAttr({
         pHciCaseNo: first.hciCaseNo,
         pHciTransNo: first.hciTransNo,
         pPatientPin: first.patientPin,
         pPatientType: first.patientType,
         pMemPin: first.memPin,
         pEffYear: first.effYear,
-      });
+      }));
 
       // Backward-compat: remap old uppercase DB values to exact DTD casing
       const CASING_COMPAT: Partial<Record<string, DiagExamType>> = {
@@ -1442,14 +1450,14 @@ export function generateKonsultaXml(options: KonsultaXmlOptions): string {
     }
   } else {
     // DTD requires at least one DIAGNOSTICEXAMRESULT — emit stub
-    diagResultsEl.ele('DIAGNOSTICEXAMRESULT', {
+    diagResultsEl.ele('DIAGNOSTICEXAMRESULT', toUpperAttr({
       pHciCaseNo: '',
       pHciTransNo: '',
       pPatientPin: '',
       pPatientType: '',
       pMemPin: '',
       pEffYear: '',
-    }).up();
+    })).up();
   }
   diagResultsEl.up();
 

@@ -181,7 +181,9 @@ export function PhysicalExamEditForm({
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {systems.map((sys) => {
-          const categoryOptions = libraries.filter((l) => l.category === sys.category);
+          const categoryOptions = libraries
+            .filter((l) => l.category === sys.category)
+            .sort((a, b) => a.description.localeCompare(b.description));
 
           return (
             <div key={sys.key} className="space-y-3 rounded-lg border p-4">

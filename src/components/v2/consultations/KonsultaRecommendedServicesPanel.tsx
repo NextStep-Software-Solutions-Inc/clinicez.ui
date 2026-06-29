@@ -112,9 +112,13 @@ export default function KonsultaRecommendedServicesPanel({
   return (
     <div className="space-y-4">
       <div className="space-y-4">
-        {recommendedIds.map((id) => {
-          const proc = procedures.find((p) => p.philhealthDiagnosticId === id);
-          const name = proc ? proc.name : `Diagnostic ID: ${id}`;
+        {recommendedIds
+          .map((id) => {
+            const proc = procedures.find((p) => p.philhealthDiagnosticId === id);
+            return { id, name: proc ? proc.name : `Diagnostic ID: ${id}` };
+          })
+          .sort((a, b) => a.name.localeCompare(b.name))
+          .map(({ id, name }) => {
           const currentValue = selections[id] || 'XX'; // default to XX
 
           return (

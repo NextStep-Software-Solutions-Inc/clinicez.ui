@@ -245,21 +245,21 @@ const EXAM_FIELDS: Record<ExamType, FieldDef[]> = {
 };
 
 const EXAM_TYPES: { value: ExamType; label: string }[] = [
-  { value: "FBS",          label: "Fasting Blood Sugar (FBS)" },
-  { value: "RBS",          label: "Random Blood Sugar (RBS)" },
-  { value: "CBC",          label: "Complete Blood Count (CBC)" },
-  { value: "URINALYSIS",   label: "Urinalysis" },
   { value: "CHESTXRAY",    label: "Chest X-Ray" },
-  { value: "SPUTUM",       label: "Sputum Exam" },
-  { value: "LIPIDPROFILE", label: "Lipid Profile" },
-  { value: "ECG",          label: "ECG / EKG" },
-  { value: "FECALYSIS",    label: "Fecalysis" },
-  { value: "PAPSMEAR",     label: "Pap Smear" },
-  { value: "OGTT",         label: "Oral Glucose Tolerance Test (OGTT)" },
-  { value: "FOBT",         label: "Fecal Occult Blood Test (FOBT)" },
+  { value: "CBC",          label: "Complete Blood Count (CBC)" },
   { value: "CREATININE",   label: "Creatinine" },
-  { value: "PPDTest",      label: "PPD Test" },
+  { value: "ECG",          label: "ECG / EKG" },
+  { value: "FBS",          label: "Fasting Blood Sugar (FBS)" },
+  { value: "FOBT",         label: "Fecal Occult Blood Test (FOBT)" },
+  { value: "FECALYSIS",    label: "Fecalysis" },
   { value: "HbA1c",        label: "Glycated Hemoglobin (HbA1c)" },
+  { value: "LIPIDPROFILE", label: "Lipid Profile" },
+  { value: "OGTT",         label: "Oral Glucose Tolerance Test (OGTT)" },
+  { value: "PAPSMEAR",     label: "Pap Smear" },
+  { value: "PPDTest",      label: "PPD Test" },
+  { value: "RBS",          label: "Random Blood Sugar (RBS)" },
+  { value: "SPUTUM",       label: "Sputum Exam" },
+  { value: "URINALYSIS",   label: "Urinalysis" },
   { value: "OTHERDIAGEXAM",label: "Other Diagnostic Exam" },
 ];
 

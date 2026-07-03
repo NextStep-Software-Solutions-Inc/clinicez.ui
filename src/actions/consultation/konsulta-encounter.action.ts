@@ -32,8 +32,8 @@ export const togglePhilHealthKonsultaAction = withErrorHandling(
     return {
       data: ticket,
       message: enabled
-        ? "PhilHealth Konsulta enabled"
-        : "PhilHealth Konsulta disabled",
+        ? "PhilHealth Yakap enabled"
+        : "PhilHealth Yakap disabled",
     };
   }
 );
@@ -81,7 +81,7 @@ export const updateKonsultaEncounterAction = withErrorHandling(
       },
     });
 
-    return { data: ticket, message: "Konsulta encounter updated" };
+    return { data: ticket, message: "Yakap encounter updated" };
   }
 );
 
@@ -186,7 +186,7 @@ export const checkProfilingCompletenessAction = withErrorHandling(
         present,
       } satisfies ProfilingCompletenessResult,
       message: missing.length === 0
-        ? "Patient profile is complete for PhilHealth Konsulta"
+        ? "Patient profile is complete for PhilHealth Yakap"
         : `Missing ${missing.length} required section(s)`,
     };
   }

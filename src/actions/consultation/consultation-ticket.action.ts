@@ -1069,7 +1069,7 @@ export const resolveConsultationTicket = withErrorHandling(async (consultationId
 
     if (missing.length > 0) {
       throw new Error(
-        `Cannot resolve: PhilHealth Konsulta profiling is incomplete. Missing: ${missing.join(", ")}`
+        `Cannot resolve: PhilHealth Yakap profiling is incomplete. Missing: ${missing.join(", ")}`
       );
     }
   }

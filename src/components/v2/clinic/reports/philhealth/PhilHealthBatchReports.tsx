@@ -228,7 +228,13 @@ export default function PhilHealthBatchReports({ clinicUid }: PhilHealthBatchRep
     startTransition(async () => {
       const result = await submitBatchReportAction(clinicUid, selectedBatch.id);
       if (result.status) {
-        toast.success("Report submitted successfully");
+        // Look at the API success response, since status=true just means the request completed
+        const apiSuccess = result.data?.success === true || result.data?.success === "true" || result.data?.success === "True";
+        if (apiSuccess) {
+          toast.success("Report submitted successfully");
+        } else {
+          toast.error("Submission failed, please check the results below");
+        }
         loadBatchDetail(selectedBatch.id);
         loadBatches();
       } else {
@@ -293,7 +299,7 @@ export default function PhilHealthBatchReports({ clinicUid }: PhilHealthBatchRep
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-lg font-semibold">Batch Reports</h2>
-            <p className="text-sm text-muted-foreground">Create and manage PhilHealth Konsulta reports</p>
+            <p className="text-sm text-muted-foreground">Create and manage PhilHealth Yakap reports</p>
           </div>
           <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
             <DialogTrigger asChild>
@@ -305,7 +311,7 @@ export default function PhilHealthBatchReports({ clinicUid }: PhilHealthBatchRep
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Create New Batch Report</DialogTitle>
-                <DialogDescription>Create a batch for PhilHealth Konsulta XML report generation.</DialogDescription>
+                <DialogDescription>Create a batch for PhilHealth Yakap XML report generation.</DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
                 <div className="space-y-2">
@@ -604,6 +610,7 @@ export default function PhilHealthBatchReports({ clinicUid }: PhilHealthBatchRep
         try { parsed = JSON.parse(selectedBatch.submissionResult); } catch { /* noop */ }
         const isSuccess = parsed?.success === true || parsed?.success === "true";
         const message = (parsed?.message as string) || "Report submitted";
+        const summaryResult = parsed?.summary as Record<string, any> | undefined;
         
         let rawUploadResult = (parsed?.uploadxmlresult) ||
                               (parsed?.uploadXmlResult) || 
@@ -619,11 +626,14 @@ export default function PhilHealthBatchReports({ clinicUid }: PhilHealthBatchRep
           try {
             if ((rawUploadResult as any).errors && typeof (rawUploadResult as any).errors === "string") {
               const firstParse = JSON.parse((rawUploadResult as any).errors);
+              Object.assign(rawUploadResult, firstParse);
               if (firstParse.errors && typeof firstParse.errors === "string") {
-                const secondParse = JSON.parse(firstParse.errors);
-                (rawUploadResult as any).errors = secondParse.errors || secondParse;
-              } else {
-                (rawUploadResult as any).errors = firstParse.errors || firstParse;
+                try {
+                  const secondParse = JSON.parse(firstParse.errors);
+                  (rawUploadResult as any).errors = secondParse.errors || secondParse;
+                } catch {
+                  // If second parse fails, keep it as firstParse.errors
+                }
               }
             }
           } catch (e) {
@@ -638,6 +648,8 @@ export default function PhilHealthBatchReports({ clinicUid }: PhilHealthBatchRep
           const resultObj = rawUploadResult as any;
           if (Array.isArray(resultObj.errors)) {
             errorArray = resultObj.errors;
+          } else if (typeof resultObj.errors === "string") {
+            errorArray = [resultObj.errors];
           }
           
           // Explicitly map the properties the user wants to see
@@ -709,6 +721,39 @@ export default function PhilHealthBatchReports({ clinicUid }: PhilHealthBatchRep
                   <p className="text-[11px] text-red-800 dark:text-red-300 font-mono whitespace-pre-wrap">
                     {fallbackXmlResult}
                   </p>
+                </div>
+              )}
+
+              {/* Summary Result */}
+              {summaryResult && (
+                <div className="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-lg p-3">
+                  <span className="font-semibold uppercase opacity-70 text-[11px] block mb-2">Summary</span>
+                  <div className="grid grid-cols-2 gap-3 text-[11px]">
+                    <div className="flex flex-col">
+                      <span className="opacity-70 mb-0.5">Passed</span>
+                      <span className="font-mono bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400 px-1.5 py-0.5 rounded w-fit">
+                        {summaryResult.passed || "0"}
+                      </span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="opacity-70 mb-0.5">Failed</span>
+                      <span className="font-mono bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 px-1.5 py-0.5 rounded w-fit">
+                        {summaryResult.failed || "0"}
+                      </span>
+                    </div>
+                  </div>
+                  {Array.isArray(summaryResult.details) && summaryResult.details.length > 0 && (
+                    <div className="mt-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+                      <span className="opacity-70 text-[10px] block mb-1">Details</span>
+                      <ul className="space-y-1">
+                        {summaryResult.details.map((detail: any, idx: number) => (
+                          <li key={idx} className="text-[10px] text-muted-foreground font-mono whitespace-pre-wrap">
+                            {typeof detail === 'object' ? JSON.stringify(detail) : String(detail)}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
               )}
             </CardContent>

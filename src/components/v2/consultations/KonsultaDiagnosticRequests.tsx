@@ -22,6 +22,7 @@ type DiagnosticProcedureItem = {
   name: string;
   category: string;
   isPhilHealth: boolean;
+  philhealthDiagnosticId?: string | null;
 };
 
 type DiagnosticRequestRecord = {
@@ -40,12 +41,14 @@ export default function KonsultaDiagnosticRequests({
   hpId,
   patientId,
   consultationTicketId,
+  recommendedOptions = [],
   onDone,
 }: {
   clinicUid: string;
   hpId: number;
   patientId: number;
   consultationTicketId: number;
+  recommendedOptions?: { philhealthDiagnosticId: string; status: 'RQ' | 'RF' | 'XX' }[];
   onDone?: () => void;
 }) {
   const [isPending, startTransition] = useTransition();
@@ -152,6 +155,24 @@ export default function KonsultaDiagnosticRequests({
     });
   };
 
+  // Compute unrequested RQs
+  const requestedPhilhealthIds = new Set<string>();
+  requests.forEach(req => {
+    if (Array.isArray(req.diagnosticProcedures)) {
+      req.diagnosticProcedures.forEach((p: any) => {
+        const procInfo = allProcedures.find(ap => ap.id === p.diagnosticProcedureId);
+        if (procInfo?.philhealthDiagnosticId) {
+          requestedPhilhealthIds.add(procInfo.philhealthDiagnosticId);
+        }
+      });
+    }
+  });
+
+  const unrequestedRQs = recommendedOptions
+    .filter(opt => opt.status === 'RQ' && !requestedPhilhealthIds.has(opt.philhealthDiagnosticId))
+    .map(opt => allProcedures.find(ap => ap.philhealthDiagnosticId === opt.philhealthDiagnosticId))
+    .filter(Boolean) as DiagnosticProcedureItem[];
+
   if (loading) {
     return (
       <div className="p-4 border rounded-md bg-white dark:bg-zinc-950 flex justify-center animate-pulse text-sm text-zinc-500">
@@ -236,6 +257,30 @@ export default function KonsultaDiagnosticRequests({
               <X className="h-4 w-4" />
             </Button>
           </div>
+
+          {unrequestedRQs.length > 0 && (
+            <div className="bg-teal-50 dark:bg-teal-950/30 border border-teal-200 dark:border-teal-900 rounded-md p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="text-sm text-teal-800 dark:text-teal-400">
+                <p className="font-medium flex items-center gap-1"><Stethoscope className="w-4 h-4" /> Recommended Services Pending</p>
+                <p className="text-xs mt-1">There are {unrequestedRQs.length} recommended service(s) marked as Requested (RQ) that haven't been added yet.</p>
+              </div>
+              <Button 
+                size="sm" 
+                className="bg-teal-600 hover:bg-teal-700 text-white shrink-0"
+                onClick={() => {
+                  const newSelected = [...selectedProcedures];
+                  unrequestedRQs.forEach(proc => {
+                    if (!newSelected.find(p => p.id === proc.id)) {
+                      newSelected.push({ id: proc.id, name: proc.name });
+                    }
+                  });
+                  setSelectedProcedures(newSelected);
+                }}
+              >
+                Add RQs to Request
+              </Button>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Left: Search and Results */}

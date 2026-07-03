@@ -223,7 +223,7 @@ export function VaccinesClient({ initialData }: { initialData: Vaccine[] }) {
                         </div>
 
                         <div className="col-span-2 mt-4 pt-4 border-t">
-                            <h4 className="text-sm font-semibold mb-4 text-slate-600">PhilHealth Konsulta Mappings</h4>
+                            <h4 className="text-sm font-semibold mb-4 text-slate-600">PhilHealth Yakap Mappings</h4>
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label>Child Immunization Code</Label>

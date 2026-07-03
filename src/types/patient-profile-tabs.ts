@@ -275,13 +275,21 @@ export interface NcdQuestionnaireTabData {
     ncdQuestionnaire: NcdQuestionnaireSchemaType | null
 }
 
+export interface DiagnosticsTabData {
+    yakapEnlistment?: {
+        id: number
+        hciCaseNo: string | null
+        profilingTransNo: string | null
+    }
+}
+
 export type PatientTabDataMap = {
     overview: OverviewTabData
     medical: MedicalTabData
     vitals: VitalsTabData
     exams: ExamsTabData
+    diagnostics: DiagnosticsTabData
     obgyn: ObGynTabData
-
     addresses: AddressesTabData
     contacts: ContactsTabData
     lifestyle: LifestyleTabData

@@ -752,14 +752,19 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
       const ticketIds = bp.selectedTicketIds ?? [];
       const diagRecords = await prisma.konsultaDiagnosticResult.findMany({
         where: ticketIds.length > 0
-          ? { consultationTicketId: { in: ticketIds } }
+          ? {
+              OR: [
+                { consultationTicketId: { in: ticketIds } },
+                { consultationTicketId: null, clinicPatientId: bp.ClinicPatient.id }
+              ]
+            }
           : { clinicPatientId: bp.ClinicPatient.id },
         orderBy: { createdAt: "asc" },
       });
       const diagnosticResults = diagRecords.length > 0
         ? diagRecords.map(dr => ({
-            hciCaseNo: dr.hciCaseNo,
-            hciTransNo: dr.hciTransNo,
+            hciCaseNo: dr.hciCaseNo || enlistment?.hciCaseNo || "",
+            hciTransNo: dr.hciTransNo || enlistment?.profilingTransNo || "",
             patientPin: patientPin,
             patientType: patientType,
             memPin: memberPin,
@@ -1019,13 +1024,26 @@ export async function validateBatchReportAction(clinicUid: string, batchId: stri
 
     const validationResultStr = JSON.stringify(enrichedResult, null, 2);
 
+    const updateData: {
+      status: string;
+      validationResult: string;
+      validatedAt: Date | null;
+      xmlPayload?: string;
+    } = {
+      status: apiSuccess ? "VALIDATED" : "DRAFT",
+      validationResult: validationResultStr,
+      validatedAt: apiSuccess ? new Date() : null,
+    };
+
+    if (enrichedResult.decryptedResult) {
+      updateData.xmlPayload = enrichedResult.decryptedResult;
+    } else if (enrichedResult.decryptedXml) {
+      updateData.xmlPayload = enrichedResult.decryptedXml;
+    }
+
     await prisma.konsultaBatchReport.update({
       where: { id: batchId },
-      data: {
-        status: apiSuccess ? "VALIDATED" : "DRAFT",
-        validationResult: validationResultStr,
-        validatedAt: apiSuccess ? new Date() : null,
-      },
+      data: updateData,
     });
 
     revalidatePath(`/v2/clinic/${clinicUid}/philhealth`);
@@ -1574,7 +1592,7 @@ export async function importKonsultaDataAction(clinicUid: string, records: any[]
                 data: {
                   clinicId: clinic.id,
                   clinicPatientId,
-                  subject: "Imported Konsulta Encounter",
+                  subject: "Imported Yakap Encounter",
                   soapTransNo: transNo,
                   caseNumber: attrs.pHciCaseNo,
                   createdAt: attrs.pSoapDate ? new Date(attrs.pSoapDate) : new Date()

@@ -110,7 +110,7 @@ export function PhilHealthYakapCard({ clinicPatientId, isClinicMode, philHealthR
       const res = await enlistKonsultaAction(clinicUid, clinicPatientId, memberPin, dependentPin)
 
       if (res.success && res.enlistment) {
-        toast.success("Successfully enlisted in PhilHealth Konsulta!")
+        toast.success("Successfully enlisted in Yakap!")
         setEnlistment(res.enlistment)
       } else {
         toast.error(res.error || "Enlistment failed")
@@ -159,7 +159,7 @@ export function PhilHealthYakapCard({ clinicPatientId, isClinicMode, philHealthR
     <div className="glassmorphic-card p-6 border-2 border-teal-500/20">
       <div className="flex items-center gap-2 mb-6">
         <CheckCircle className="w-5 h-5 text-teal-600" />
-        <h3 className="text-lg font-semibold text-slate-900 dark:text-white">PhilHealth Konsulta Integration</h3>
+        <h3 className="text-lg font-semibold text-slate-900 dark:text-white">PhilHealth Yakap Integration</h3>
       </div>
 
       <div className="space-y-6">
@@ -230,7 +230,7 @@ export function PhilHealthYakapCard({ clinicPatientId, isClinicMode, philHealthR
         {/* ID Generation (Only visible after successful enlistment) */}
         {enlistment && (
           <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-700">
-            <h4 className="font-medium text-slate-900 dark:text-white">Konsulta Transaction Numbers</h4>
+            <h4 className="font-medium text-slate-900 dark:text-white">Yakap Transaction Numbers</h4>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <div className="space-y-2 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700">

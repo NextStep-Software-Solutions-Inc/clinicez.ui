@@ -613,3 +613,40 @@ export async function getPatientNcdQuestionnaireData(userId?: string): Promise<i
         return null
     }
 }
+
+export async function getPatientDiagnosticsData(userId?: string): Promise<import('@/types/patient-profile-tabs').DiagnosticsTabData | null> {
+    try {
+        const patientId = await resolvePatientId(userId)
+        if (!patientId) return null
+
+        const patient = await prisma.user.findUnique({
+            where: { id: patientId },
+            include: {
+                ClinicPatients: {
+                    include: {
+                        PhilHealthKonsultaEnlistments: {
+                            where: { status: 'ACTIVE' },
+                            orderBy: { createdAt: 'desc' },
+                            take: 1,
+                        }
+                    }
+                }
+            }
+        })
+
+        if (!patient) return null
+        
+        const enlistment = patient.ClinicPatients?.[0]?.PhilHealthKonsultaEnlistments?.[0]
+
+        return {
+            yakapEnlistment: enlistment ? {
+                id: enlistment.id,
+                hciCaseNo: enlistment.hciCaseNo,
+                profilingTransNo: enlistment.profilingTransNo,
+            } : undefined
+        }
+    } catch (error) {
+        console.error('[GET_PATIENT_DIAGNOSTICS_DATA]', error)
+        return null
+    }
+}

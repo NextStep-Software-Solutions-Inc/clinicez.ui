@@ -674,6 +674,7 @@ export default function ConsultationWorkspace({
                         hpId={myHPs[0]?.id || 0}
                         patientId={patient.id}
                         consultationTicketId={consultation.id}
+                        recommendedOptions={(consultation as any).konsultaRecommendedDiagnosticOptions as any || []}
                         onDone={() => onReloadDetail?.()}
                       />
                     </TabsContent>

@@ -63,7 +63,8 @@ export function decryptReport(jsonString: string, passphrase: string): string {
     decrypted = decrypted.subarray(0, nullIdx);
   }
 
-  return decrypted.toString('utf8');
+  // Remove any remaining null bytes (0x00) that might cause PostgreSQL encoding errors
+  return decrypted.toString('utf8').replace(/\0/g, '');
 }
 
 function parseYakapResponse(responseObj: Record<string, unknown>) {
@@ -243,9 +244,17 @@ export class YakapApiClient {
             return { ...responseData, decryptedErrors: decryptedXml };
           }
           
+          if (payload.encryptedxml) {
+            const xmlPayload = typeof payload.encryptedxml === 'string'
+              ? payload.encryptedxml
+              : JSON.stringify(payload.encryptedxml);
+            const decryptedXml = decryptReport(xmlPayload, cipherKey);
+            return { ...responseData, decryptedResult: decryptedXml, decodedJwtPayload: payload };
+          }
+
           if (payload.doc && payload.iv) {
              const decryptedStr = decryptReport(JSON.stringify(payload), cipherKey);
-             return { ...responseData, decryptedResult: decryptedStr };
+             return { ...responseData, decryptedResult: decryptedStr, decodedJwtPayload: payload };
           }
           
           return { ...responseData, decodedJwtPayload: payload };

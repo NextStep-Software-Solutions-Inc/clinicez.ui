@@ -38,7 +38,7 @@ export async function getKonsultaRecommendedService(
 
     return recommendedService;
   } catch (error) {
-    console.error("Failed to fetch Konsulta recommended service:", error);
+    console.error("Failed to fetch Yakap recommended service:", error);
     return null;
   }
 }
@@ -56,7 +56,7 @@ export async function updateKonsultaDiagnosticOptionsAction(
     });
     return { success: true };
   } catch (error) {
-    console.error("Failed to update Konsulta diagnostic options:", error);
+    console.error("Failed to update Yakap diagnostic options:", error);
     return { success: false, error: "Failed to save options." };
   }
 }

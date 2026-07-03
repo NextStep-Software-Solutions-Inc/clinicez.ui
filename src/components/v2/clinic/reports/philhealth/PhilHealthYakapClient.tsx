@@ -33,7 +33,7 @@ export function PhilHealthYakapClient({ clinicUid }: PhilHealthYakapClientProps)
         </div>
         <div>
           <h1 className="text-2xl font-bold text-foreground tracking-tight">PhilHealth Yakap</h1>
-          <p className="text-sm text-muted-foreground">Konsulta Package — XML Report Generation & Submission</p>
+          <p className="text-sm text-muted-foreground">Yakap Package — XML Report Generation & Submission</p>
         </div>
       </div>
 

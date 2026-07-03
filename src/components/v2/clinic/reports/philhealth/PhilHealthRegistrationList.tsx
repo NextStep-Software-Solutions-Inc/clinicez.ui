@@ -233,7 +233,7 @@ export default function PhilHealthRegistrationList({ clinicUid }: PhilHealthRegi
   </style>
 </head>
 <body>
-  <h2>PhilHealth Konsulta — Registration List</h2>
+  <h2>PhilHealth Yakap — Registration List</h2>
   <div class="subtitle">Date Range: ${startDate} to ${endDate} &bull; ${selected.length} records</div>
   <table>
     <thead>

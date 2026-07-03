@@ -268,15 +268,16 @@ const EXAM_TYPES: { value: ExamType; label: string }[] = [
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface KonsultaDiagnosticResultsPanelProps {
-  consultationTicketId: number;
+  consultationTicketId?: number;
   clinicPatientId: number;
-  hciCaseNo: string;
-  hciTransNo: string;
+  hciCaseNo?: string;
+  hciTransNo?: string;
   isResolved?: boolean;
 }
 
 type DiagResult = {
   id: string;
+  consultationTicketId?: number | null;
   resultType: string;
   resultData: Record<string, string>;
   hciCaseNo: string;
@@ -303,11 +304,12 @@ export default function KonsultaDiagnosticResultsPanel({
 
   useEffect(() => {
     (async () => {
-      const res = await getKonsultaDiagnosticResultsAction({ consultationTicketId });
+      const payload = consultationTicketId ? { consultationTicketId } : { clinicPatientId };
+      const res = await getKonsultaDiagnosticResultsAction(payload);
       if (res.data) setResults(res.data as unknown as DiagResult[]);
       setLoading(false);
     })();
-  }, [consultationTicketId]);
+  }, [consultationTicketId, clinicPatientId]);
 
   // Reset field values when exam type changes
   const handleExamTypeChange = (val: string) => {
@@ -327,10 +329,10 @@ export default function KonsultaDiagnosticResultsPanel({
     startSaving(async () => {
       const today = new Date().toISOString().split("T")[0];
       const res = await createKonsultaDiagnosticResultAction({
-        consultationTicketId,
+        consultationTicketId: consultationTicketId || null,
         clinicPatientId,
-        hciCaseNo,
-        hciTransNo,
+        hciCaseNo: hciCaseNo || "",
+        hciTransNo: hciTransNo || "",
         resultType: examType,
         resultData: fieldValues,
         transDate: today,
@@ -553,6 +555,9 @@ export default function KonsultaDiagnosticResultsPanel({
                       {r.resultType}
                     </Badge>
                     <span className="font-medium truncate">{getTypeLabel(r.resultType)}</span>
+                    <Badge variant="secondary" className="ml-2 text-[9px] h-4 leading-none px-1.5 opacity-80">
+                      {r.consultationTicketId ? "Consultation" : "Profiling"}
+                    </Badge>
                   </div>
                   {summary && (
                     <p className="text-muted-foreground mt-0.5">

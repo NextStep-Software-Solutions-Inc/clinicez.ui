@@ -67,13 +67,14 @@ export default function KonsultaRecommendedServicesPanel({
     fetchData();
   }, [patientAgeMonths, patientGender, initialOptions]);
 
-  const handleSelectionChange = async (id: string, value: 'RQ' | 'RF' | 'XX') => {
-    const newSelections = { ...selections, [id]: value };
-    setSelections(newSelections);
+  const handleSelectionChange = (id: string, value: 'RQ' | 'RF' | 'XX') => {
+    setSelections(prev => ({ ...prev, [id]: value }));
+  };
 
+  const handleSave = async () => {
     setSaving(true);
     try {
-      const optionsArray = Object.entries(newSelections).map(([optId, status]) => ({
+      const optionsArray = Object.entries(selections).map(([optId, status]) => ({
         philhealthDiagnosticId: optId,
         status,
       }));
@@ -148,6 +149,19 @@ export default function KonsultaRecommendedServicesPanel({
             </div>
           );
         })}
+      </div>
+      
+      <div className="flex justify-end pt-2">
+        <Button size="sm" onClick={handleSave} disabled={saving}>
+          {saving ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Saving...
+            </>
+          ) : (
+            "Save Options"
+          )}
+        </Button>
       </div>
     </div>
   );

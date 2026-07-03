@@ -89,7 +89,7 @@ export default function PhilHealthSettings() {
               name="facilityName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Konsulta Facility Name</FormLabel>
+                  <FormLabel>Yakap Facility Name</FormLabel>
                   <FormControl>
                     <Input 
                       placeholder="Enter facility name" 

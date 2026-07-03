@@ -188,7 +188,7 @@ export default function PhilHealthXmlImport({ clinicUid }: PhilHealthXmlImportPr
     <div className="space-y-4">
       <div>
         <h2 className="text-lg font-semibold">XML Import</h2>
-        <p className="text-sm text-muted-foreground">Upload or paste PhilHealth Konsulta XML to parse and review</p>
+        <p className="text-sm text-muted-foreground">Upload or paste PhilHealth Yakap XML to parse and review</p>
       </div>
 
       <Card>
@@ -203,7 +203,7 @@ export default function PhilHealthXmlImport({ clinicUid }: PhilHealthXmlImportPr
           </div>
 
           <Textarea
-            placeholder="Paste your PhilHealth Konsulta XML here..."
+            placeholder="Paste your PhilHealth Yakap XML here..."
             value={xmlInput}
             onChange={(e) => setXmlInput(e.target.value)}
             className="min-h-[200px] font-mono text-xs"

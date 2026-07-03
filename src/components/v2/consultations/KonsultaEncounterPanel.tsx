@@ -110,7 +110,7 @@ export default function KonsultaEncounterPanel({
         toast.success(result.message);
         onUpdate?.();
       } else {
-        toast.error("Failed to toggle PhilHealth Konsulta");
+        toast.error("Failed to toggle PhilHealth Yakap");
       }
     });
   };

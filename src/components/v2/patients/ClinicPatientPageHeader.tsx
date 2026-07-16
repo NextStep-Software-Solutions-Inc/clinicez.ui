@@ -8,10 +8,9 @@ interface ClinicPatientPageHeaderProps {
   patientId: number
   patientName: string
   /** 'view' shows: Patients > Patient Name
-   *  'edit' shows:  Patients > Patient Name > Edit Profile
    *  'consultations' shows: Patients > Patient Name > Consultations
    *  'appointments-consultations' shows: Patients > Patient Name > Appointments & Consultations */
-  mode: 'view' | 'edit' | 'consultations' | 'appointments-consultations'
+  mode: 'view' | 'consultations' | 'appointments-consultations'
 }
 
 export function ClinicPatientPageHeader({
@@ -34,18 +33,7 @@ export function ClinicPatientPageHeader({
 
           <ChevronRight className="w-4 h-4 text-muted-foreground/40 shrink-0" />
 
-          {mode === 'edit' ? (
-            <>
-              <Link
-                href={`/v2/clinic/${clinicUid}/patients/${patientId}`}
-                className="text-muted-foreground hover:text-foreground transition-colors truncate max-w-[200px]"
-              >
-                {patientName}
-              </Link>
-              <ChevronRight className="w-4 h-4 text-muted-foreground/40 shrink-0" />
-              <span className="text-foreground font-semibold">Edit Profile</span>
-            </>
-          ) : mode === 'consultations' ? (
+          {mode === 'consultations' ? (
             <>
               <Link
                 href={`/v2/clinic/${clinicUid}/patients/${patientId}`}

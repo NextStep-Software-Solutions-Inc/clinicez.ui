@@ -1235,9 +1235,9 @@ function CardContainer({
   children
 }: CardContainerProps) {
   return (
-    <div className="rounded-2xl border border-slate-100 dark:border-slate-850 bg-white dark:bg-slate-950/80 shadow-md p-6 relative overflow-hidden transition-all hover:shadow-lg">
+    <div className="rounded-2xl border border-slate-100 dark:border-slate-850 bg-white dark:bg-slate-950/80 shadow-md p-6 relative transition-all hover:shadow-lg">
       {/* Accent strip */}
-      <div className={`absolute top-0 left-0 w-full h-[3px] ${accentColor}`}></div>
+      <div className={`absolute top-0 left-0 w-full h-[3px] rounded-t-2xl ${accentColor}`}></div>
 
       {/* Header */}
       <div className="flex items-center justify-between gap-4 pb-4 mb-4 border-b border-slate-100 dark:border-slate-800">

@@ -106,15 +106,34 @@ export default function ClinicPatientProfileClient({
   const searchParams = useSearchParams()
   const pathname = usePathname()
   
-  const activeTabParam = searchParams.get('tab') as TabId | null
-  const activeTab = activeTabParam && ['demographics', 'clinical', 'history', 'preventative', 'obgyn'].includes(activeTabParam)
-    ? activeTabParam
-    : 'demographics'
+  const initialTab = useMemo(() => {
+    const tabParam = searchParams.get('tab') as TabId | null
+    return tabParam && ['demographics', 'clinical', 'history', 'preventative', 'obgyn'].includes(tabParam)
+      ? tabParam
+      : 'demographics'
+  }, [searchParams])
+
+  const [activeTab, setActiveTab] = useState<TabId>(initialTab)
+
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams.toString())
+    if (params.get('tab') !== activeTab) {
+      params.set('tab', activeTab)
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+    }
+  }, [activeTab, pathname, router, searchParams])
+
+  useEffect(() => {
+    const tabParam = searchParams.get('tab') as TabId | null
+    if (tabParam && ['demographics', 'clinical', 'history', 'preventative', 'obgyn'].includes(tabParam)) {
+      if (tabParam !== activeTab) {
+        setActiveTab(tabParam)
+      }
+    }
+  }, [searchParams, activeTab])
 
   const handleTabChange = (newTab: TabId) => {
-    const params = new URLSearchParams(searchParams.toString())
-    params.set('tab', newTab)
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+    setActiveTab(newTab)
   }
 
   const [patientData, setPatientData] = useState<PatientHealthRecordsResponse>(initialData)

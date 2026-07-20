@@ -400,7 +400,7 @@ export default function ConsultationWorkspace({
               Diagnostic Exam Required
             </h4>
             <p className="text-xs text-amber-700/90 dark:text-amber-400/90">
-              The patient has a family history of Diabetes Mellitus. Please ensure a diagnostic exam result is provided for PhilHealth Konsulta compliance.
+              The patient has a family history of Diabetes Mellitus. Please ensure a diagnostic exam result is provided for PhilHealth Yakap compliance.
             </p>
           </div>
         )}
@@ -463,7 +463,7 @@ export default function ConsultationWorkspace({
         )}
       </div>
 
-      {/* ── PhilHealth Konsulta Panel ── */}
+      {/* ── PhilHealth Yakap Panel ── */}
       {hasPatient && (
         <KonsultaEncounterPanel
           ticketId={consultation.id}

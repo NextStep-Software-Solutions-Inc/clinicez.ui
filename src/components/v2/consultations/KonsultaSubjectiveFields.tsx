@@ -80,7 +80,7 @@ export default function KonsultaSubjectiveFields({
     <div className="rounded-lg border border-teal-200 dark:border-teal-800/40 bg-teal-50/30 dark:bg-teal-950/10 p-3 mb-3 space-y-3">
       <div className="flex items-center gap-1.5 text-xs font-medium text-teal-700 dark:text-teal-400">
         <ShieldCheck className="h-3.5 w-3.5" />
-        PhilHealth Konsulta — Subjective Fields
+        PhilHealth Yakap — Subjective Fields
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

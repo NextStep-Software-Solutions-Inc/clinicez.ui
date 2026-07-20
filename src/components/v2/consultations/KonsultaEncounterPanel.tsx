@@ -156,7 +156,7 @@ export default function KonsultaEncounterPanel({
       <div className="flex items-center gap-2 px-4 sm:px-6 py-2 border-b border-border/30">
         <Shield className="h-3.5 w-3.5 text-teal-600 dark:text-teal-400" />
         <Label htmlFor="konsulta-toggle" className="text-xs text-muted-foreground cursor-pointer">
-          PhilHealth Konsulta
+          PhilHealth Yakap
         </Label>
         <Switch
           id="konsulta-toggle"
@@ -178,7 +178,7 @@ export default function KonsultaEncounterPanel({
           <div className="flex items-center gap-2">
           <ShieldCheck className="h-3.5 w-3.5 text-teal-600 dark:text-teal-400" />
           <Label htmlFor="konsulta-toggle-on" className="text-xs font-medium text-teal-700 dark:text-teal-300 cursor-pointer">
-            PhilHealth Konsulta
+            PhilHealth Yakap
           </Label>
           <Switch
             id="konsulta-toggle-on"
@@ -303,7 +303,7 @@ export default function KonsultaEncounterPanel({
         <div className="px-4 sm:px-6 pb-3">
           <div className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
             <CheckCircle2 className="h-3.5 w-3.5" />
-            Patient profile is complete for PhilHealth Konsulta
+            Patient profile is complete for PhilHealth Yakap
           </div>
         </div>
       )}

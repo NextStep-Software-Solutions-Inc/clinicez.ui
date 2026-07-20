@@ -115,25 +115,24 @@ export default function ClinicPatientProfileClient({
 
   const [activeTab, setActiveTab] = useState<TabId>(initialTab)
 
+  // Sync state when browser history transitions occur (back/forward buttons)
   useEffect(() => {
-    const params = new URLSearchParams(searchParams.toString())
-    if (params.get('tab') !== activeTab) {
-      params.set('tab', activeTab)
-      router.replace(`${pathname}?${params.toString()}`, { scroll: false })
-    }
-  }, [activeTab, pathname, router, searchParams])
-
-  useEffect(() => {
-    const tabParam = searchParams.get('tab') as TabId | null
-    if (tabParam && ['demographics', 'clinical', 'history', 'preventative', 'obgyn'].includes(tabParam)) {
-      if (tabParam !== activeTab) {
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search)
+      const tabParam = params.get('tab') as TabId | null
+      if (tabParam && ['demographics', 'clinical', 'history', 'preventative', 'obgyn'].includes(tabParam)) {
         setActiveTab(tabParam)
       }
     }
-  }, [searchParams, activeTab])
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [])
 
   const handleTabChange = (newTab: TabId) => {
     setActiveTab(newTab)
+    const params = new URLSearchParams(window.location.search)
+    params.set('tab', newTab)
+    window.history.replaceState(null, '', `${pathname}?${params.toString()}`)
   }
 
   const [patientData, setPatientData] = useState<PatientHealthRecordsResponse>(initialData)

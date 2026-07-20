@@ -4,7 +4,7 @@ import prismaClient from "@lib/prisma";
 import { getCachedSession } from "@actions/session.action";
 import { withErrorHandling } from "@/lib/with-error-handling";
 
-// ─── Toggle PhilHealth Konsulta on a consultation ticket ──────────────────────
+// ─── Toggle PhilHealth Yakap on a consultation ticket ──────────────────────
 
 export const togglePhilHealthKonsultaAction = withErrorHandling(
   async ({
@@ -217,16 +217,16 @@ export const verifyKonsultaEncounterAtcAction = withErrorHandling(
 
     if (!ticket) throw new Error("Consultation ticket not found");
     if (!ticket.konsultaAtcCode) throw new Error("No ATC code provided in this encounter");
-    
+
     const phRecord = ticket.ClinicPatient?.Patient?.PhilHealthRecords?.[0];
     const pin = phRecord?.dependentPin || phRecord?.pin;
-    
+
     if (!pin) {
       throw new Error("Patient does not have a PhilHealth PIN registered");
     }
 
     const clinicUid = ticket.Clinic.clinicUid;
-    
+
     // Remove dashes from PIN
     const cleanPin = pin.replace(/\D/g, "");
 

@@ -177,7 +177,7 @@ export async function generateTimestampCaseNumber(
 export type PhilHealthTransType = "CASE" | "ENLISTMENT" | "PROFILING" | "SOAP" | "TRANSMITTAL";
 
 /**
- * Generate a unique timestamp-based transaction number for PhilHealth Konsulta
+ * Generate a unique timestamp-based transaction number for PhilHealth Yakap
  * Format: 
  * CASE (T): T + ACCRE_NO + YYYYMM + 4-digit seq
  * ENLISTMENT (E): E + ACCRE_NO + YYYYMM + 5-digit seq
@@ -197,7 +197,7 @@ export async function generatePhilHealthKonsultaTransactionNumber(
   let prefixChar: string;
   let isCaseNo = false;
 
-  switch(transType) {
+  switch (transType) {
     case "CASE": entityType = "PHILHEALTH_KONSULTA_T"; prefixChar = "T"; isCaseNo = true; break;
     case "ENLISTMENT": entityType = "PHILHEALTH_KONSULTA_E"; prefixChar = "E"; break;
     case "PROFILING": entityType = "PHILHEALTH_KONSULTA_P"; prefixChar = "P"; break;
@@ -214,7 +214,7 @@ export async function generatePhilHealthKonsultaTransactionNumber(
 
   const maxRetries = options?.maxRetries ?? 3;
   const date = options?.createdAt || new Date();
-  
+
   // PhilHealth uses YYYYMM for resetting sequence numbers
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');

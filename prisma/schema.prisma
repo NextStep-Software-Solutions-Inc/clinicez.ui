@@ -852,7 +852,7 @@ model Vaccine {
   PhilHealthData   VaccinePhilHealthData?
 }
 
-/// PhilHealth Konsulta coded vaccine data (1:1 extension of Vaccine)
+/// PhilHealth Yakap coded vaccine data (1:1 extension of Vaccine)
 model VaccinePhilHealthData {
   id             String  @id @default(uuid())
   vaccineId      Int     @unique
@@ -2965,7 +2965,7 @@ model PhBarangay {
   @@index([isActive])
 }
 
-/// PhilHealth Konsulta batch report for XML generation and submission
+/// PhilHealth Yakap batch report for XML generation and submission
 model KonsultaBatchReport {
   id               String    @id @default(uuid())
   clinicId         Int
@@ -2988,7 +2988,7 @@ model KonsultaBatchReport {
   BatchPatients KonsultaBatchPatient[]
 }
 
-/// Patient entry within a PhilHealth Konsulta batch report
+/// Patient entry within a PhilHealth Yakap batch report
 model KonsultaBatchPatient {
   id                String  @id @default(uuid())
   batchId           String
@@ -3003,7 +3003,7 @@ model KonsultaBatchPatient {
   @@unique([batchId, clinicPatientId])
 }
 
-/// PhilHealth Konsulta coded medicine data (1:1 extension of Medicine)
+/// PhilHealth Yakap coded medicine data (1:1 extension of Medicine)
 model MedicinePhilHealthData {
   id                   String   @id @default(uuid())
   medicineId           Int      @unique
@@ -3030,7 +3030,7 @@ model MedicinePhilHealthData {
   Medicine Medicine @relation(fields: [medicineId], references: [id], onDelete: Cascade)
 }
 
-/// PhilHealth Konsulta diagnostic exam result — linked to either a Profile (P-prefix) or SOAP (S-prefix)
+/// PhilHealth Yakap diagnostic exam result — linked to either a Profile (P-prefix) or SOAP (S-prefix)
 model KonsultaDiagnosticResult {
   id                   String   @id @default(uuid())
   consultationTicketId Int? // NULL for profiling results (Tagging 1)
@@ -3053,7 +3053,7 @@ model KonsultaDiagnosticResult {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// PhilHealth Konsulta Management
+// PhilHealth Yakap Management
 // ─────────────────────────────────────────────────────────────────────────────
 
 /// Reference table: official PhilHealth management codes.

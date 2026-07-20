@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useTransition, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useTransition, useRef, useEffect, useMemo } from "react";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { ClinicPatientPageHeader } from "./ClinicPatientPageHeader";
 import {
   Folder,
   FolderOpen,
@@ -123,8 +124,47 @@ export function ClinicPatientFilesClient({
   currentUserId: _currentUserId,
 }: ClinicPatientFilesClientProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+
   const [folders, setFolders] = useState(initialFolders);
-  const [selectedFolder, setSelectedFolder] = useState<PatientFolder | null>(null);
+
+  const [selectedFolderId, setSelectedFolderId] = useState<number | null>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      const fId = params.get('folderId')
+      return fId ? parseInt(fId, 10) : null
+    }
+    return null
+  })
+
+  const selectedFolder = useMemo(() => {
+    if (selectedFolderId === null) return null
+    return folders.find((f) => f.id === selectedFolderId) || null
+  }, [folders, selectedFolderId])
+
+  const setSelectedFolder = (folder: PatientFolder | null) => {
+    const folderId = folder ? folder.id : null
+    setSelectedFolderId(folderId)
+    const params = new URLSearchParams(window.location.search)
+    if (folderId !== null) {
+      params.set('folderId', String(folderId))
+    } else {
+      params.delete('folderId')
+    }
+    window.history.replaceState(null, '', `${pathname}?${params.toString()}`)
+  }
+
+  // Listen to popstate event (back/forward button)
+  useEffect(() => {
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search)
+      const fId = params.get('folderId')
+      setSelectedFolderId(fId ? parseInt(fId, 10) : null)
+    }
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [])
   const [isPending, startTransition] = useTransition();
 
   // Create folder dialog
@@ -316,73 +356,19 @@ export function ClinicPatientFilesClient({
 
   return (
     <div className="relative min-h-screen">
+      <ClinicPatientPageHeader
+        clinicUid={clinicUid}
+        patientId={patientId}
+        patientName={patientName}
+        mode="files"
+        folderName={selectedFolder ? selectedFolder.name : undefined}
+      />
+
       {/* Glassmorphic ambient background blobs */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
         <div className="absolute -top-32 -right-32 h-96 w-96 rounded-full bg-blue-400/20 dark:bg-blue-500/10 blur-3xl" />
         <div className="absolute top-1/2 -left-40 h-72 w-72 rounded-full bg-indigo-400/20 dark:bg-indigo-500/10 blur-3xl" />
         <div className="absolute bottom-0 right-1/3 h-80 w-80 rounded-full bg-teal-400/15 dark:bg-teal-500/10 blur-3xl" />
-      </div>
-
-      {/* Sticky header */}
-      <div className="sticky top-0 z-50 glassmorphic-card rounded-none border-b border-white/20 dark:border-slate-700/30 px-4 md:px-6 py-3">
-        <div className="max-w-5xl mx-auto flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2 min-w-0">
-            <button
-              onClick={() => {
-                if (selectedFolder) {
-                  setSelectedFolder(null);
-                } else {
-                  router.push(`/v2/clinic/${clinicUid}/patients/${patientId}`);
-                }
-              }}
-              className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors shrink-0"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400">
-                <span
-                  className={`truncate max-w-[100px] md:max-w-[180px] ${selectedFolder ? "cursor-pointer hover:underline" : ""}`}
-                  onClick={() => selectedFolder && setSelectedFolder(null)}
-                >
-                  {patientName}&apos;s Files
-                </span>
-                {selectedFolder && (
-                  <>
-                    <ChevronRight className="w-3 h-3 shrink-0" />
-                    <span className="font-semibold text-slate-900 dark:text-white truncate max-w-[100px] md:max-w-none">
-                      {selectedFolder.name}
-                    </span>
-                  </>
-                )}
-              </div>
-              <p className="text-xs text-slate-400 dark:text-slate-500">View only — shared with your clinic</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0">
-            {!selectedFolder ? (
-              <Button
-                size="sm"
-                onClick={() => setShowCreateFolder(true)}
-                className="bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-white gap-1.5 text-xs md:text-sm"
-              >
-                <Plus className="w-4 h-4" />
-                <span className="hidden sm:inline">New Folder</span>
-              </Button>
-            ) : (
-              <Button
-                size="sm"
-                onClick={() => setShowUpload(true)}
-                className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white gap-1.5 text-xs md:text-sm"
-              >
-                <Upload className="w-4 h-4" />
-                <span className="hidden sm:inline">Upload</span>
-              </Button>
-            )}
-          </div>
-        </div>
       </div>
 
       {/* Patient Context Card */}
@@ -427,13 +413,38 @@ export function ClinicPatientFilesClient({
       </div>
 
       {/* Main content */}
-      <div className="max-w-5xl mx-auto px-4 md:px-6 py-6">
+      <div className="max-w-5xl mx-auto px-4 md:px-6 py-6 space-y-6">
+        {/* Header Action Row */}
+        <div className="flex items-center justify-between gap-4">
+          <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100 tracking-tight">
+            {selectedFolder ? selectedFolder.name : "Shared Folders"}
+          </h2>
+          <div>
+            {!selectedFolder ? (
+              <Button
+                size="sm"
+                onClick={() => setShowCreateFolder(true)}
+                className="bg-teal-600 hover:bg-teal-700 text-white gap-1.5 text-xs md:text-sm font-semibold rounded-xl"
+              >
+                <Plus className="w-4 h-4" />
+                <span>New Folder</span>
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                onClick={() => setShowUpload(true)}
+                className="bg-teal-600 hover:bg-teal-700 text-white gap-1.5 text-xs md:text-sm font-semibold rounded-xl"
+              >
+                <Upload className="w-4 h-4" />
+                <span>Upload File</span>
+              </Button>
+            )}
+          </div>
+        </div>
+
         {/* Folder view */}
         {!selectedFolder && (
           <div>
-            <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
-              Shared Folders
-            </h2>
             {folders.length === 0 ? (
               <div className="glassmorphic-card p-10 text-center">
                 <FolderOpen className="w-12 h-12 text-slate-400 mx-auto mb-3" />
@@ -536,11 +547,7 @@ export function ClinicPatientFilesClient({
         {/* Files inside folder */}
         {selectedFolder && (
           <div>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
-                {selectedFolder.name}
-              </h2>
-            </div>
+            {/* Folder title is already rendered in the main actions header */}
             {currentFolderFiles.length === 0 ? (
               <div className="glassmorphic-card p-10 text-center">
                 <File className="w-10 h-10 text-slate-400 mx-auto mb-3" />

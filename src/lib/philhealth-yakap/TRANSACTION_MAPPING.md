@@ -1,6 +1,6 @@
-# PhilHealth Konsulta Transaction Number (`hciTransNo`) Mapping Rules
+# PhilHealth Yakap Transaction Number (`hciTransNo`) Mapping Rules
 
-This document outlines how PhilHealth Konsulta transaction numbers (`hciTransNo`) are assigned to different clinical entities (Consultations, Medicines, Diagnostics, etc.). This ensures we do not mistakenly generate new sequences for entities that must inherit them.
+This document outlines how PhilHealth Yakap transaction numbers (`hciTransNo`) are assigned to different clinical entities (Consultations, Medicines, Diagnostics, etc.). This ensures we do not mistakenly generate new sequences for entities that must inherit them.
 
 ## The Core Rule: Inheritance
 PhilHealth **only** generates unique transaction numbers for core Encounters (Enlistment, Profiling, and SOAP Consultations). 

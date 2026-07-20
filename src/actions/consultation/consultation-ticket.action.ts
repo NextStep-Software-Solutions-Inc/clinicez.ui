@@ -48,7 +48,7 @@ export const createConsultationTicketAction = withErrorHandling(async ({ systemI
       });
 
       if (!defaultNoteTemplate) {
-         throw new Error("No active Note Templates found in the system. Please contact an administrator.");
+        throw new Error("No active Note Templates found in the system. Please contact an administrator.");
       }
 
       const clinic = await prismaClient.clinic.findUnique({
@@ -56,7 +56,7 @@ export const createConsultationTicketAction = withErrorHandling(async ({ systemI
       });
 
       if (!clinic) {
-         throw new Error("Clinic not found");
+        throw new Error("Clinic not found");
       }
 
       consultationConfig = await prismaClient.consultationConfig.create({
@@ -1018,7 +1018,7 @@ export const resolveConsultationTicket = withErrorHandling(async (consultationId
 
   if (!canResolveConsultationTicket) throw new Error("You do not have permission to resolve consultation tickets")
 
-  // Guard: if this is a PhilHealth Konsulta consultation, ensure profiling is complete
+  // Guard: if this is a PhilHealth Yakap consultation, ensure profiling is complete
   const ticket = await prismaClient.consultationTicket.findUnique({
     where: { id: consultationId },
     select: {

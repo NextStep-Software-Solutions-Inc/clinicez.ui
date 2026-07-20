@@ -23,7 +23,7 @@ export function formatTransactionNumber(
 ): string {
   const dateKey = getDateKey(date);
   const paddedSequence = sequenceNumber.toString().padStart(6, '0');
-  
+
   if (clinicId) {
     return `EKAS-C${clinicId}-${dateKey}-${paddedSequence}`;
   }
@@ -44,11 +44,32 @@ export function formatAuthorizationCode(
 ): string {
   const dateKey = getDateKey(date);
   const paddedSequence = sequenceNumber.toString().padStart(6, '0');
-  
+
   if (clinicId) {
     return `PHK-C${clinicId}-${dateKey}-${paddedSequence}`;
   }
   return `PHK-${dateKey}-${paddedSequence}`;
+}
+
+type KonsultaHciNumberPrefix = "R" | "T" | "E" | "P" | "S" | "M" | "D";
+
+/**
+ * PhilHealth Konsulta 21-character HCI reference format:
+ * [Type][9-digit HCI accreditation no][YYYYMM][5-digit sequence].
+ */
+export function formatKonsultaHciNumber(
+  prefix: KonsultaHciNumberPrefix,
+  hciAccreNo: string,
+  sequenceNumber: number,
+  date?: Date
+): string {
+  const d = date || new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const accre = hciAccreNo.replace(/\D/g, "").padStart(9, "0").slice(-9);
+  const paddedSequence = String(sequenceNumber).padStart(5, "0").slice(-5);
+
+  return `${prefix}${accre}${year}${month}${paddedSequence}`;
 }
 
 /**
@@ -59,7 +80,7 @@ export function formatAuthorizationCode(
  */
 export function parseTimestampFromTransactionNumber(transactionNumber: string): Date | null {
   const parts = transactionNumber.split('-');
-  
+
   // Handle both formats: EKAS-DATE-SEQ and EKAS-CLINIC-DATE-SEQ
   let dateStr: string;
   if (parts.length === 3) {
@@ -79,9 +100,9 @@ export function parseTimestampFromTransactionNumber(transactionNumber: string): 
   const day = parseInt(dateStr.substring(6, 8), 10);
 
   const date = new Date(year, month, day);
-  
+
   // Validate the date is valid
   if (isNaN(date.getTime())) return null;
-  
+
   return date;
 }

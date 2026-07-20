@@ -131,6 +131,7 @@
     "remark-gfm": "^4.0.1",
     "server-only": "^0.0.1",
     "sharp": "^0.33.5",
+    "soap": "^1.9.1",
     "sonner": "^1.7.4",
     "svix": "^1.84.1",
     "swr": "^2.4.0",
@@ -138,6 +139,7 @@
     "tailwindcss-animate": "^1.0.7",
     "use-sound": "^4.0.4",
     "xlsx": "^0.18.5",
+    "xmlbuilder2": "^4.0.3",
     "zod": "^3.25.76"
   },
   "devDependencies": {
@@ -153,6 +155,7 @@
     "@types/pg": "^8.16.0",
     "@types/react": "^19.2.13",
     "@types/react-dom": "^19.2.3",
+    "@types/soap": "^0.21.0",
     "animated-tailwindcss": "^4.0.0",
     "autoprefixer": "^10.4.24",
     "dotenv-cli": "^7.4.4",

@@ -8,17 +8,23 @@ import {
   upsertConsultationNotesAction,
   upsertConsultationNotesSettingsAction,
 } from "@/actions/consultation/consultation-notes.action";
+import type { SearchClinicKonsultaTermSuggestions } from "@/actions/clinics/konsulta-library.action";
 import type { GetPatientConsultationDetail } from "@/actions/consultation/patient-consultations.action";
 import type { GetHPsType } from "@/actions/hp.actions";
 import MarkdownEditor from "./MarkdownEditor";
 import { MedicalNoteSummarizer } from "@/components/ai";
 import { sortNoteSectionsSOAP } from "@/utils/soap-ordering";
+import ClinicKonsultaLibraryPicker from "./ClinicKonsultaLibraryPicker";
 
 type Detail = NonNullable<GetPatientConsultationDetail["data"]>;
 
 type SectionSaveStatus = "idle" | "saving" | "saved" | "error";
 
 const AUTOSAVE_DELAY_MS = 400;
+
+type KonsultaSuggestion = NonNullable<
+  SearchClinicKonsultaTermSuggestions["data"]
+>[number];
 
 interface ConsultationNotesEditorProps {
   clinicUid: string;
@@ -29,6 +35,7 @@ interface ConsultationNotesEditorProps {
 }
 
 export default function ConsultationNotesEditor({
+  clinicUid,
   consultation,
   myHPs,
   onPatchDetail,
@@ -174,6 +181,51 @@ export default function ConsultationNotesEditor({
     await doSave(sectionName, noteValues[sectionName] ?? "");
   };
 
+  const getSectionDomainKeys = (sectionName: string): string[] => {
+    const normalizedSection = sectionName.trim().toLowerCase();
+    if (
+      normalizedSection.includes("subjective") ||
+      normalizedSection.includes("history") ||
+      normalizedSection.includes("chief complaint")
+    ) {
+      return ["lib_signs_symptoms"];
+    }
+
+    if (normalizedSection.includes("assessment")) {
+      return ["lib_icd", "lib_mdiseases"];
+    }
+
+    if (normalizedSection.includes("plan")) {
+      return ["lib_management", "lib_diagnostic", "lib_medicine", "lib_medicine_generic"];
+    }
+
+    if (normalizedSection.includes("objective") || normalizedSection.includes("exam")) {
+      return [
+        "lib_heent",
+        "lib_chest",
+        "lib_heart",
+        "lib_abdomen",
+        "lib_neuro",
+        "lib_genitourinary",
+        "lib_digital_rectal",
+        "lib_skin_extremities",
+      ];
+    }
+
+    return [];
+  };
+
+  const insertLibrarySuggestion = (
+    sectionName: string,
+    suggestion: KonsultaSuggestion,
+  ) => {
+    const previousValue = noteValues[sectionName] ?? "";
+    const nextValue = previousValue.trim().length > 0
+      ? `${previousValue.trimEnd()}\n- ${suggestion.displayLabel}`
+      : `- ${suggestion.displayLabel}`;
+    handleNoteChange(sectionName, nextValue);
+  };
+
   const toggleShowOnPatient = (sectionName: string) => {
     if (!myActiveHp) {
       toast.error("You must have an HP profile to change privacy settings");
@@ -291,6 +343,28 @@ export default function ConsultationNotesEditor({
 
           {expanded[section.name] && (
             <div className="px-4 pb-4 space-y-2">
+              {getSectionDomainKeys(section.label || section.name).length > 0 && (
+                <div className="rounded-md border border-dashed border-border/70 bg-muted/20 p-2">
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                      Internal library assist
+                    </p>
+                    <span className="text-[11px] text-muted-foreground">
+                      Inserts mapped terms while keeping free-text editing available.
+                    </span>
+                  </div>
+                  <ClinicKonsultaLibraryPicker
+                    clinicUid={clinicUid}
+                    domainKeys={getSectionDomainKeys(section.label || section.name)}
+                    placeholder={`Search ${section.label || section.name} library terms`}
+                    className="h-8 text-xs"
+                    disabled={isResolved}
+                    onSelect={(suggestion) =>
+                      insertLibrarySuggestion(section.name, suggestion)
+                    }
+                  />
+                </div>
+              )}
               <MarkdownEditor
                 value={noteValues[section.name] ?? ""}
                 onChange={(v) => handleNoteChange(section.name, v)}

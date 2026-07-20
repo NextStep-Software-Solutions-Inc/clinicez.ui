@@ -7,7 +7,7 @@ import prisma from "@/lib/prisma"
 import { logger } from "@/lib/logger"
 import { calculateAge } from "@/lib/utils"
 import { getNextSequenceNumber } from "@/lib/sequence-generator"
-import { formatTransactionNumber, formatAuthorizationCode } from "@/lib/format-sequence"
+import { formatTransactionNumber, formatAuthorizationCode, formatKonsultaHciNumber } from "@/lib/format-sequence"
 
 const upper = (v?: string | null) => v ? v.toUpperCase() : ""
 
@@ -42,8 +42,15 @@ export const downloadEKASAction = withErrorHandling(async (
       select: {
         clinicId: true,
         caseNumber: true,
+        konsultaHciCaseNo: true,
+        konsultaHciTransNo: true,
         ekasTransactionNumber: true,
-        ekasAuthorizationCode: true
+        ekasAuthorizationCode: true,
+        Clinic: {
+          select: {
+            ClinicSetting: { select: { philhealthAccreditationNumber: true } }
+          }
+        }
       }
     })
 
@@ -53,6 +60,21 @@ export const downloadEKASAction = withErrorHandling(async (
     // Use clinic from consultation if not provided
     if (!clinicId && consultationTicket?.clinicId) {
       clinicId = consultationTicket.clinicId
+    }
+
+    if (consultationTicket) {
+      const hciAccreNo = consultationTicket.Clinic?.ClinicSetting?.philhealthAccreditationNumber ?? null
+      if (hciAccreNo && (!consultationTicket.konsultaHciCaseNo || !consultationTicket.konsultaHciTransNo)) {
+        const hciCaseSeq = await getNextSequenceNumber('KONSULTA_HCI_CASE', consultationTicket.clinicId)
+        const hciTransSeq = await getNextSequenceNumber('KONSULTA_SCREENING_TRANSACTION', consultationTicket.clinicId)
+        await prisma.consultationTicket.update({
+          where: { id: consultationTicketId },
+          data: {
+            konsultaHciCaseNo: consultationTicket.konsultaHciCaseNo ?? formatKonsultaHciNumber("T", hciAccreNo, hciCaseSeq),
+            konsultaHciTransNo: consultationTicket.konsultaHciTransNo ?? formatKonsultaHciNumber("P", hciAccreNo, hciTransSeq),
+          }
+        })
+      }
     }
   }
 

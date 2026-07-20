@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+	Philippine Health Insurance Corporation
+	KonSulTa Assignment Masterlist Document Type Definition Version 1.0
+	Assignment Masterlist
+	Version History
+        0.1 2019-12-19 by ZNL
+            : Initial draft
+		0.2 2020-01-16 by ZNL
+            : Add pContactNumber attribute for Member's Contact Number handler
+		0.3 2020-03-04 by ZNL	
+			: Remove pContactNumber
+			: Add pMobileNumber
+			: Add pLandlineNumber
+			: Change pMemType to pClientType
+			: Add pPrimaryPIN, pPrimaryLastName, pPrimaryFirstName, pPrimaryMiddleName, pPrimaryExtName, pPrimarystringOfBirth
+			: Add Range string - pStartstring and pEndstring attributes
+		0.3 2020-03-12 by ZNL
+			: Change data type of PIN from integer to string
+		0.4 2020-03-19 by ZNL
+			: Change data type of mobile number and landline from integer to string
+			: Change data type of date and integer into string
+		0.5 2020-03-25 by ZNL
+			: Add Sex for Assigned and Primary
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+  <xs:element name="ASSIGNMENTS">
+    <xs:complexType>
+      <xs:sequence minOccurs="0" maxOccurs="unbounded">
+        <xs:element ref="ASSIGNMENT"/>
+      </xs:sequence>
+      <xs:attribute name="pUsername" use="required" type="xs:string"/>
+      <xs:attribute name="pPassword" use="required" type="xs:string"/>
+      <xs:attribute name="pHciAccreNo" use="required" type="xs:string"/>
+      <xs:attribute name="pAssignmentTotalCnt" use="required" type="xs:string"/>
+      <xs:attribute name="pReportTransmittalNumber" use="required" type="xs:string"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ASSIGNMENT">
+    <xs:complexType>
+      <xs:attribute name="pAssignedPin" use="required" type="xs:string"/>
+      <xs:attribute name="pAssignedLastName" use="required" type="xs:string"/>
+      <xs:attribute name="pAssignedFirstName" use="required" type="xs:string"/>
+      <xs:attribute name="pAssignedMiddleName" use="required" type="xs:string"/>
+      <xs:attribute name="pAssignedExtName" use="required" type="xs:string"/>
+      <xs:attribute name="pAssignedDateOfBirth" use="required" type="xs:string"/>
+      <xs:attribute name="pAssignedSex" use="required" type="xs:string"/>
+      <xs:attribute name="pAssignedType">
+			<xs:simpleType>
+				<xs:restriction base="xs:string">
+					<xs:pattern value="MM|DD"/>
+				</xs:restriction>
+			</xs:simpleType>
+	  </xs:attribute>
+      <xs:attribute name="pPrimaryPIN" use="required" type="xs:string"/>
+      <xs:attribute name="pPrimaryLastName" use="required" type="xs:string"/>
+      <xs:attribute name="pPrimaryFirstName" use="required" type="xs:string"/>
+      <xs:attribute name="pPrimaryMiddleName" use="required" type="xs:string"/>
+      <xs:attribute name="pPrimaryExtName" use="required" type="xs:string"/>
+      <xs:attribute name="pPrimaryDateOfBirth" use="required" type="xs:string"/>
+      <xs:attribute name="pPrimarySex" use="required" type="xs:string"/>
+      <xs:attribute name="pMobileNumber" use="required" type="xs:string"/>
+      <xs:attribute name="pLandlineNumber" use="required" type="xs:string"/>
+      <xs:attribute name="pMemberNewCat" use="required" type="xs:string"/>
+      <xs:attribute name="pMemberNewCatDesc" use="required" type="xs:string"/>
+      <xs:attribute name="pPackageType" use="required"> 
+		<xs:simpleType>
+			<xs:restriction base="xs:string">
+			  <xs:pattern value="E|K"/>
+			</xs:restriction>
+		</xs:simpleType>
+	  </xs:attribute>
+      <xs:attribute name="pAssignedDate" use="required" type="xs:string"/>
+      <xs:attribute name="pAssignedStatus" use="required">
+		<xs:simpleType>
+			<xs:restriction base="xs:string">
+			  <xs:pattern value="1|2"/>
+			</xs:restriction>
+		</xs:simpleType>
+	  </xs:attribute>
+      <xs:attribute name="pEffYear" use="required" type="xs:string"/>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

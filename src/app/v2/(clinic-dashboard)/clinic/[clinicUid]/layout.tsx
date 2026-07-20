@@ -99,6 +99,12 @@ export default async function ClinicUidLayout(
       badgeCount: undefined,
     },
     {
+      name: "PhilHealth",
+      href: `/v2/clinic/${clinicUid}/philhealth`,
+      icon: "shield-check",
+      badgeCount: undefined,
+    },
+    {
       name: "Settings",
       href: `/v2/clinic/${clinicUid}/settings`,
       icon: "settings",

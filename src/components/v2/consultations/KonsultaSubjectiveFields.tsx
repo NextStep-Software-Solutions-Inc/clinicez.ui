@@ -26,14 +26,14 @@ interface KonsultaSubjectiveFieldsProps {
 }
 
 /**
- * Renders the 4 PhilHealth Konsulta structured subjective fields:
+ * Renders the 4 PhilHealth Yakap structured subjective fields:
  * - Illness History (pIllnessHistory)
  * - Signs & Symptoms (pSignsSymptoms)
  * - Pain Site (pPainSite)
  * - Other Complaint (pOtherComplaint)
  *
  * Displayed above the free-text markdown editor when the consultation
- * is PhilHealth Konsulta-enabled and the current section is "subjective".
+ * is PhilHealth Yakap-enabled and the current section is "subjective".
  */
 export default function KonsultaSubjectiveFields({
   data,

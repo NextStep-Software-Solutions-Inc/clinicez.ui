@@ -15,6 +15,8 @@ export * from './philhealth-record-schema'
 export * from './allergy-schema'
 export * from './emergency-contact-schema'
 export * from './address-schema'
+export * from './student-record-schema'
+export * from './employee-record-schema'
 
 /**
  * Combined type registry for all form inputs

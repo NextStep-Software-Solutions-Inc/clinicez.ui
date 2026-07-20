@@ -1042,7 +1042,7 @@ function buildStubMedicine(parent: XmlNode): XmlNode {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Generate a PhilHealth Konsulta XML string conforming to KonsultaData_v1.14.dtd.
+ * Generate a PhilHealth Yakap XML string conforming to KonsultaData_v1.14.dtd.
  *
  * @param options - Credentials, tagging mode, and patient data
  * @returns XML string ready for encryption and submission
@@ -1384,11 +1384,11 @@ export function generateKonsultaXml(options: KonsultaXmlOptions): string {
   const allDiagResults: KonsultaDiagnosticExamData[] = [];
   for (const p of patients) {
     const hasDiagResults = p.diagnosticResults && p.diagnosticResults.length > 0;
-    
+
     const hasDiabetesFamHist = p.profile.familyHistories?.some(
       fh => fh.code === '006' || fh.code === '6' || fh.specificDesc?.toUpperCase() === 'DIABETES MELLITUS'
     );
-    
+
     if (hasDiabetesFamHist && !hasDiagResults) {
       throw new Error(`PhilHealth Validation Error: A Diagnostic Exam Result is strictly required because the patient has a Family History of Diabetes Mellitus.`);
     }

@@ -76,7 +76,7 @@ export default function ConsultationNotesEditor({
     Object.fromEntries(sections.map((s) => [s.name, true]))
   );
 
-  // PhilHealth Konsulta: structured subjective data
+  // PhilHealth Yakap: structured subjective data
   const isKonsulta = consultation.isPhilHealthKonsulta ?? false;
   const initialStructuredData: Record<string, SubjectiveStructuredData> = {};
   for (const note of consultation.ConsultationNotes) {
@@ -296,11 +296,10 @@ export default function ConsultationNotesEditor({
               )}
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              <span className={`flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${
-                showOnPatient[section.name]
+              <span className={`flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${showOnPatient[section.name]
                   ? "border-emerald-300 text-emerald-700 bg-emerald-50 dark:border-emerald-700 dark:text-emerald-400 dark:bg-emerald-950/30"
                   : "border-border/50 text-muted-foreground bg-muted/30"
-              }`}>
+                }`}>
                 {showOnPatient[section.name] ? (
                   <Eye className="h-3 w-3" />
                 ) : (
@@ -318,7 +317,7 @@ export default function ConsultationNotesEditor({
 
           {expanded[section.name] && (
             <div className="px-4 pb-4 space-y-2">
-              {/* PhilHealth Konsulta structured fields for subjective section */}
+              {/* PhilHealth Yakap structured fields for subjective section */}
               {isKonsulta && section.name.toLowerCase().includes("subjective") && (
                 <KonsultaSubjectiveFields
                   data={structuredDataMap[section.name] ?? { illnessHistory: "", signsSymptoms: "", painSite: "", otherComplaint: "" }}
@@ -349,11 +348,10 @@ export default function ConsultationNotesEditor({
                   onClick={() => toggleShowOnPatient(section.name)}
                   disabled={isTogglingPrivacy}
                   title={showOnPatient[section.name] ? "Hide from patient" : "Show to patient"}
-                  className={`flex items-center gap-1.5 text-xs rounded-md px-2 py-1 border transition-colors ${
-                    showOnPatient[section.name]
+                  className={`flex items-center gap-1.5 text-xs rounded-md px-2 py-1 border transition-colors ${showOnPatient[section.name]
                       ? "border-emerald-300 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:border-emerald-700 dark:text-emerald-400 dark:bg-emerald-950/30"
                       : "border-border/50 text-muted-foreground hover:border-border hover:text-foreground"
-                  }`}
+                    }`}
                 >
                   {showOnPatient[section.name] ? (
                     <Eye className="h-3.5 w-3.5" />

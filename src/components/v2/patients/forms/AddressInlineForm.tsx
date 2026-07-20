@@ -1,18 +1,16 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import {
   createAddressAction,
   updateAddressAction,
   deleteAddressAction,
 } from '@/actions/address.action'
-import { getRegions } from '@/actions/locations.action'
 import { getActionErrorMessage } from '@/lib/action-error'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Trash2, Edit, Plus, X, Home } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -29,52 +27,24 @@ export function AddressInlineForm({
 }: AddressInlineFormProps) {
   const [activeAddressId, setActiveAddressId] = useState<number | 'new' | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-  const [regions, setRegions] = useState<any[]>([])
 
-  // Address fields matching addressSchema
+  // Simplified address fields
   const [formData, setFormData] = useState<any>({
-    address: '',
-    apartmentUnit: '',
-    bldgName: '',
-    addressLine: '',
     street: '',
-    subdivision: '',
-    region: '',
-    state: '', // Maps to state/province
-    city: '',
     barangay: '',
+    city: '',
+    state: '',
     zipCode: '',
     country: 'Philippines',
     isPrimary: false,
   })
 
-  // Load regions
-  useEffect(() => {
-    async function loadRegions() {
-      try {
-        const result = await getRegions()
-        if (result) {
-          setRegions(result)
-        }
-      } catch (err) {
-        console.error('Failed to load regions:', err)
-      }
-    }
-    loadRegions()
-  }, [])
-
   const handleStartEdit = (addr: any) => {
     setFormData({
-      address: addr.fullAddress || addr.address || '',
-      apartmentUnit: addr.apartmentUnit || '',
-      bldgName: addr.bldgName || '',
-      addressLine: addr.addressLine || '',
-      street: addr.street || '',
-      subdivision: addr.subdivision || '',
-      region: addr.region || '',
-      state: addr.state || '',
-      city: addr.city || '',
+      street: addr.street || addr.addressLine || '',
       barangay: addr.barangay || '',
+      city: addr.city || '',
+      state: addr.state || '',
       zipCode: addr.zipCode || '',
       country: addr.country || 'Philippines',
       isPrimary: !!addr.isPrimary,
@@ -84,16 +54,10 @@ export function AddressInlineForm({
 
   const handleStartNew = () => {
     setFormData({
-      address: '',
-      apartmentUnit: '',
-      bldgName: '',
-      addressLine: '',
       street: '',
-      subdivision: '',
-      region: '',
-      state: '',
-      city: '',
       barangay: '',
+      city: '',
+      state: '',
       zipCode: '',
       country: 'Philippines',
       isPrimary: addresses.length === 0, // auto-primary if first
@@ -109,8 +73,8 @@ export function AddressInlineForm({
   }
 
   const handleSave = async () => {
-    if (!formData.city || !formData.state) {
-      toast.error('City and Province/State are required')
+    if (!formData.street || !formData.city || !formData.state) {
+      toast.error('Street Address, City, and Province/State are required')
       return
     }
 
@@ -118,10 +82,7 @@ export function AddressInlineForm({
     try {
       let result
       const addressString = [
-        formData.apartmentUnit,
-        formData.bldgName,
         formData.street,
-        formData.subdivision,
         formData.barangay,
         formData.city,
         formData.state,
@@ -130,8 +91,19 @@ export function AddressInlineForm({
         .join(', ')
 
       const payload = {
-        ...formData,
-        fullAddress: addressString || formData.address || 'Unnamed Address',
+        street: formData.street,
+        barangay: formData.barangay,
+        city: formData.city,
+        state: formData.state,
+        zipCode: formData.zipCode || '',
+        country: formData.country,
+        isPrimary: formData.isPrimary,
+        apartmentUnit: null,
+        bldgName: null,
+        addressLine: null,
+        subdivision: null,
+        region: null,
+        fullAddress: addressString || 'Unnamed Address',
       }
 
       if (activeAddressId === 'new') {
@@ -198,72 +170,25 @@ export function AddressInlineForm({
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-xs">
-          {renderField(
-            'Apartment/Unit',
-            <Input
-              value={formData.apartmentUnit || ''}
-              onChange={(e) => handleFieldChange('apartmentUnit', e.target.value)}
-              className="h-8 text-xs focus-visible:ring-teal-500"
-              placeholder="e.g. Rm 101"
-            />
-          )}
+          <div className="sm:col-span-2">
+            {renderField(
+              'Street Address *',
+              <Input
+                value={formData.street || ''}
+                onChange={(e) => handleFieldChange('street', e.target.value)}
+                className="h-8 text-xs focus-visible:ring-teal-500"
+                placeholder="House/Unit no., Building/Street name, Subdivision"
+              />
+            )}
+          </div>
 
           {renderField(
-            'Building Name',
+            'Barangay',
             <Input
-              value={formData.bldgName || ''}
-              onChange={(e) => handleFieldChange('bldgName', e.target.value)}
+              value={formData.barangay || ''}
+              onChange={(e) => handleFieldChange('barangay', e.target.value)}
               className="h-8 text-xs focus-visible:ring-teal-500"
-              placeholder="e.g. Tower A"
-            />
-          )}
-
-          {renderField(
-            'Street Name',
-            <Input
-              value={formData.street || ''}
-              onChange={(e) => handleFieldChange('street', e.target.value)}
-              className="h-8 text-xs focus-visible:ring-teal-500"
-              placeholder="e.g. Rizal St"
-            />
-          )}
-
-          {renderField(
-            'Subdivision/Village',
-            <Input
-              value={formData.subdivision || ''}
-              onChange={(e) => handleFieldChange('subdivision', e.target.value)}
-              className="h-8 text-xs focus-visible:ring-teal-500"
-              placeholder="e.g. Green Village"
-            />
-          )}
-
-          {renderField(
-            'Region',
-            <Select
-              value={formData.region || ''}
-              onValueChange={(val) => handleFieldChange('region', val)}
-            >
-              <SelectTrigger className="h-8 text-xs focus:ring-teal-500">
-                <SelectValue placeholder="Select Region" />
-              </SelectTrigger>
-              <SelectContent>
-                {regions.map((reg) => (
-                  <SelectItem key={reg.code || reg.id} value={reg.name}>
-                    {reg.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-
-          {renderField(
-            'Province/State *',
-            <Input
-              value={formData.state || ''}
-              onChange={(e) => handleFieldChange('state', e.target.value)}
-              className="h-8 text-xs focus-visible:ring-teal-500"
-              placeholder="e.g. Misamis Oriental"
+              placeholder="e.g. Nazareth"
             />
           )}
 
@@ -278,12 +203,12 @@ export function AddressInlineForm({
           )}
 
           {renderField(
-            'Barangay',
+            'Province/State *',
             <Input
-              value={formData.barangay || ''}
-              onChange={(e) => handleFieldChange('barangay', e.target.value)}
+              value={formData.state || ''}
+              onChange={(e) => handleFieldChange('state', e.target.value)}
               className="h-8 text-xs focus-visible:ring-teal-500"
-              placeholder="e.g. Nazareth"
+              placeholder="e.g. Misamis Oriental"
             />
           )}
 

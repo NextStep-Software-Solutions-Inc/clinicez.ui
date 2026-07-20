@@ -71,14 +71,13 @@ export function VaccineV2Combobox({
 
   return (
     <div ref={containerRef} className="relative w-full">
-      <Button
+      <button
         type="button"
-        variant="outline"
         role="combobox"
         aria-expanded={open}
         disabled={disabled}
         onClick={() => setOpen(!open)}
-        className="w-full justify-between h-8 text-xs border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 font-normal hover:bg-slate-50 dark:hover:bg-slate-900 transition-all focus:ring-1 focus:ring-teal-500 text-slate-800 dark:text-slate-200"
+        className="w-full flex items-center justify-between px-3 h-8 text-xs border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 font-normal hover:bg-slate-50 dark:hover:bg-slate-900 rounded-md transition-all focus:ring-1 focus:ring-teal-500 outline-none text-slate-800 dark:text-slate-200"
       >
         <span className={cn('truncate', !selectedVaccine && 'text-slate-400 dark:text-slate-550')}>
           {selectedVaccine ? selectedVaccine.name : placeholder}
@@ -104,7 +103,7 @@ export function VaccineV2Combobox({
             <ChevronsUpDown className="h-3.5 w-3.5 opacity-55" />
           </motion.div>
         </div>
-      </Button>
+      </button>
 
       <AnimatePresence>
         {open && (

@@ -162,14 +162,13 @@ export function HealthConditionsV2Combobox({
 
       {/* Dropdown Selector */}
       <div className="relative">
-        <Button
+        <button
           type="button"
-          variant="outline"
           role="combobox"
           aria-expanded={open}
           disabled={disabled}
           onClick={() => setOpen(!open)}
-          className="w-full justify-between h-9 text-xs border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 font-normal hover:bg-slate-50 dark:hover:bg-slate-900 transition-all focus:ring-1 focus:ring-teal-500 text-slate-800 dark:text-slate-200"
+          className="w-full flex items-center justify-between px-3 h-9 text-xs border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 font-normal hover:bg-slate-50 dark:hover:bg-slate-900 rounded-md transition-all focus:ring-1 focus:ring-teal-500 outline-none text-slate-800 dark:text-slate-200"
         >
           <span>
             {value.length === 0 ? 'Select conditions...' : `${value.length} condition(s) selected`}
@@ -181,7 +180,7 @@ export function HealthConditionsV2Combobox({
           >
             <ChevronsUpDown className="h-3.5 w-3.5 opacity-55" />
           </motion.div>
-        </Button>
+        </button>
 
         <AnimatePresence>
           {open && (

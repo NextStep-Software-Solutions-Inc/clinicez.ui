@@ -146,7 +146,7 @@ export function HealthConditionsV2Combobox({
               <button
                 type="button"
                 onClick={() => removeCondition(cond.conditionId)}
-                className="p-0.5 rounded-full hover:bg-teal-500/20 text-teal-650 dark:text-teal-450 transition-colors"
+                className="p-0.5 rounded-full hover:bg-teal-500/20 text-teal-600 dark:text-teal-450 transition-colors"
               >
                 <X className="h-3 w-3" />
               </button>
@@ -236,7 +236,7 @@ export function HealthConditionsV2Combobox({
                                 onCheckedChange={() => toggleCondition(condition.id)}
                                 className="border-slate-300 dark:border-slate-700 data-[state=checked]:bg-teal-600 data-[state=checked]:border-teal-600"
                               />
-                              <span className={cn("flex-1", isSelected && "font-semibold text-teal-650 dark:text-teal-400")}>
+                              <span className={cn("flex-1", isSelected && "font-semibold text-teal-600 dark:text-teal-400")}>
                                 {condition.name}
                               </span>
                               {condition.usageCount && condition.usageCount > 0 && (
@@ -276,7 +276,7 @@ export function HealthConditionsV2Combobox({
                                 onCheckedChange={() => toggleCondition(condition.id)}
                                 className="border-slate-300 dark:border-slate-700 data-[state=checked]:bg-teal-600 data-[state=checked]:border-teal-600"
                               />
-                              <span className={cn("flex-1", isSelected && "font-semibold text-teal-650 dark:text-teal-400")}>
+                              <span className={cn("flex-1", isSelected && "font-semibold text-teal-600 dark:text-teal-400")}>
                                 {condition.name}
                               </span>
                             </button>

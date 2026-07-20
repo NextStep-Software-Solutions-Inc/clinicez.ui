@@ -139,7 +139,7 @@ export function VaccinationsInlineForm({
             type="button"
             onClick={() => setIsAdding(true)}
             size="sm"
-            className="text-xs flex items-center gap-1.5 h-8 bg-teal-650 hover:bg-teal-700 text-white"
+            className="text-xs flex items-center gap-1.5 h-8 bg-teal-600 hover:bg-teal-700 text-white"
             disabled={isLoading}
           >
             <Plus className="w-3.5 h-3.5" />
@@ -244,7 +244,7 @@ export function VaccinationsInlineForm({
             <Button
               type="button"
               size="sm"
-              className="h-8 text-xs bg-teal-650 hover:bg-teal-700 text-white"
+              className="h-8 text-xs bg-teal-600 hover:bg-teal-700 text-white"
               onClick={handleAdd}
               disabled={isLoading}
             >

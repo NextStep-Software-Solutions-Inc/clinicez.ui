@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Trash2, Plus, X, Syringe } from 'lucide-react'
 import { toast } from 'sonner'
+import { VaccineV2Combobox } from './VaccineV2Combobox'
 
 export interface VaccinationsInlineFormProps {
   userId: string
@@ -161,21 +162,11 @@ export function VaccinationsInlineForm({
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-xs">
             {renderField(
               'Vaccine Name *',
-              <Select
-                value={String(newVac.vaccineId)}
-                onValueChange={(val) => handleFieldChange('vaccineId', val)}
-              >
-                <SelectTrigger className="h-8 text-xs focus:ring-teal-500">
-                  <SelectValue placeholder="Select Vaccine" />
-                </SelectTrigger>
-                <SelectContent>
-                  {vaccinesList.map((v) => (
-                    <SelectItem key={v.id} value={String(v.id)}>
-                      {v.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <VaccineV2Combobox
+                value={newVac.vaccineId}
+                onChange={(val) => handleFieldChange('vaccineId', val)}
+                vaccines={vaccinesList}
+              />
             )}
 
             {renderField(

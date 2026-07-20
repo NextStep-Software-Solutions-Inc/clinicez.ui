@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { updateMedicalConditions } from '@/actions/patient-profile'
 import { getActionErrorMessage } from '@/lib/action-error'
-import { HealthConditionsCombobox } from '@/components/health-records/HealthConditionsCombobox'
+import { HealthConditionsV2Combobox } from './HealthConditionsV2Combobox'
 import { toast } from 'sonner'
 
 export interface MedicalConditionsInlineFormProps {
@@ -86,7 +86,7 @@ export function MedicalConditionsInlineForm({
         <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
           Search and Manage Conditions
         </label>
-        <HealthConditionsCombobox
+        <HealthConditionsV2Combobox
           value={conditions}
           onChange={(newVal) => setConditions(newVal)}
         />

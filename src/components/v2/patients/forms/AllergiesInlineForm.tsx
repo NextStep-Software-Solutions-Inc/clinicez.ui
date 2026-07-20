@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import { createUserAllergyAction, deleteUserAllergyAction } from '@/actions/users/user-allergy.action'
 import { getActionErrorMessage } from '@/lib/action-error'
-import { AllergenCombobox } from '@/components/health-records/AllergenCombobox'
+import { AllergenV2Combobox } from './AllergenV2Combobox'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Trash2, Plus, X, AlertTriangle } from 'lucide-react'
@@ -114,7 +114,7 @@ export function AllergiesInlineForm({
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-xs">
             <div className="space-y-1">
               <span className="text-xs font-semibold text-slate-500">Allergen *</span>
-              <AllergenCombobox
+              <AllergenV2Combobox
                 value={formData.allergen}
                 onChange={(val) => handleFieldChange('allergen', val)}
                 existingAllergens={allergies.map((a) => a.allergen)}

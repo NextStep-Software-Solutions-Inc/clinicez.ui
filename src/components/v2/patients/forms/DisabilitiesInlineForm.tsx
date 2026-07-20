@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import { addUserDisabilityAction, deleteUserDisabilityAction } from '@/actions/users/user-disability.action'
 import { getActionErrorMessage } from '@/lib/action-error'
-import { DisabilityCombobox } from '@/components/health-records/DisabilityCombobox'
+import { DisabilityV2Combobox } from './DisabilityV2Combobox'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -124,7 +124,7 @@ export function DisabilitiesInlineForm({
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-xs">
             <div className="space-y-1">
               <span className="text-xs font-semibold text-slate-500">Disability *</span>
-              <DisabilityCombobox
+              <DisabilityV2Combobox
                 value={formData.disabilityName || ''}
                 onChange={(val) => {
                   setFormData((prev: any) => ({

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import { getClinicPatientProfileAction } from "@/actions/clinics/get-clinic-patient-profile.action";
 import { getCachedSession } from "@/actions/session.action";
 import { getHPsAction } from "@/actions/hp.actions";
@@ -66,16 +67,18 @@ export default async function ClinicPatientProfilePage({
         mode="view"
       />
       <div className="px-6 sm:px-8 py-6 max-w-6xl mx-auto">
-        <ClinicPatientProfileClient
-          clinicUid={clinicUid}
-          patientId={numericPatientId}
-          initialData={patient}
-          refreshFn={refreshFn}
-          appointmentsHref={`/v2/clinic/${clinicUid}/patients/${patientId}/appointments-consultations`}
-          filesHref={`/v2/clinic/${clinicUid}/patients/${patientId}/files`}
-          downloadPHRHref={`/api/phr/clinic/${clinicUid}/patients/${patientId}`}
-          aiInsightConfig={isProvider && clinicId ? { patientId: numericPatientId, clinicId } : undefined}
-        />
+        <Suspense fallback={<div className="py-20 text-center text-slate-500 animate-pulse text-xs font-semibold">Loading patient records...</div>}>
+          <ClinicPatientProfileClient
+            clinicUid={clinicUid}
+            patientId={numericPatientId}
+            initialData={patient}
+            refreshFn={refreshFn}
+            appointmentsHref={`/v2/clinic/${clinicUid}/patients/${patientId}/appointments-consultations`}
+            filesHref={`/v2/clinic/${clinicUid}/patients/${patientId}/files`}
+            downloadPHRHref={`/api/phr/clinic/${clinicUid}/patients/${patientId}`}
+            aiInsightConfig={isProvider && clinicId ? { patientId: numericPatientId, clinicId } : undefined}
+          />
+        </Suspense>
       </div>
     </div>
   );

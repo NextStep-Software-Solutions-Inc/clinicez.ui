@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useMemo, useRef, useCallback, useEffect, Suspense } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import {
   User,
   MapPin,
@@ -103,8 +103,21 @@ export default function ClinicPatientProfileClient({
   aiInsightConfig,
 }: ClinicPatientProfileClientProps) {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const pathname = usePathname()
+  
+  const activeTabParam = searchParams.get('tab') as TabId | null
+  const activeTab = activeTabParam && ['demographics', 'clinical', 'history', 'preventative', 'obgyn'].includes(activeTabParam)
+    ? activeTabParam
+    : 'demographics'
+
+  const handleTabChange = (newTab: TabId) => {
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('tab', newTab)
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+  }
+
   const [patientData, setPatientData] = useState<PatientHealthRecordsResponse>(initialData)
-  const [activeTab, setActiveTab] = useState<TabId>('demographics')
   const [editingSections, setEditingSections] = useState<Record<string, boolean>>({})
   const [savingSections, setSavingSections] = useState<Record<string, boolean>>({})
 
@@ -273,32 +286,32 @@ export default function ClinicPatientProfileClient({
         <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none pb-0.5">
           <TabButton
             active={activeTab === 'demographics'}
-            onClick={() => setActiveTab('demographics')}
+            onClick={() => handleTabChange('demographics')}
             icon={User}
             label="Demographics & Contacts"
           />
           <TabButton
             active={activeTab === 'clinical'}
-            onClick={() => setActiveTab('clinical')}
+            onClick={() => handleTabChange('clinical')}
             icon={Activity}
             label="Vitals & Exams"
           />
           <TabButton
             active={activeTab === 'history'}
-            onClick={() => setActiveTab('history')}
+            onClick={() => handleTabChange('history')}
             icon={ClipboardList}
             label="Medical History"
           />
           <TabButton
             active={activeTab === 'preventative'}
-            onClick={() => setActiveTab('preventative')}
+            onClick={() => handleTabChange('preventative')}
             icon={Syringe}
             label="Allergies & Preventative"
           />
           {isFemale && (
             <TabButton
               active={activeTab === 'obgyn'}
-              onClick={() => setActiveTab('obgyn')}
+              onClick={() => handleTabChange('obgyn')}
               icon={Baby}
               label="OB/GYN History"
             />

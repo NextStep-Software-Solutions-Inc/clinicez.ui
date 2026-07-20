@@ -39,22 +39,20 @@ import {
   mapVitalSignToFormInput,
   convertVitalSignsToDateObjects,
 } from '@/lib/mappers/health-records-mappers'
-import {
-  DemographicsEditForm,
-  VitalSignEditForm,
-  PersonalHistoryEditForm,
-  ObGyneHistoryEditForm,
-  MedicalConditionsEditForm,
-  FamilyMedicalHistoryEditForm,
-  PhilHealthRecordEditForm,
-  AllergyEditForm,
-  EmergencyContactEditForm,
-  AddressEditForm,
-  VaccinationEditForm,
-  DisabilitiesEditForm,
-  SurgicalHistoryEditForm,
-  PhysicalExamListEditor,
-} from '@/components/health-records'
+import { DemographicsInlineForm } from './forms/DemographicsInlineForm'
+import { VitalSignsInlineForm } from './forms/VitalSignsInlineForm'
+import { PersonalHistoryInlineForm } from './forms/PersonalHistoryInlineForm'
+import { ObGyneHistoryInlineForm } from './forms/ObGyneHistoryInlineForm'
+import { MedicalConditionsInlineForm } from './forms/MedicalConditionsInlineForm'
+import { FamilyMedicalHistoryInlineForm } from './forms/FamilyMedicalHistoryInlineForm'
+import { PhilHealthInlineForm } from './forms/PhilHealthInlineForm'
+import { AllergiesInlineForm } from './forms/AllergiesInlineForm'
+import { EmergencyContactInlineForm } from './forms/EmergencyContactInlineForm'
+import { AddressInlineForm } from './forms/AddressInlineForm'
+import { VaccinationsInlineForm } from './forms/VaccinationsInlineForm'
+import { DisabilitiesInlineForm } from './forms/DisabilitiesInlineForm'
+import { SurgicalHistoryInlineForm } from './forms/SurgicalHistoryInlineForm'
+import { PhysicalExamInlineForm } from './forms/PhysicalExamInlineForm'
 import type { PatientHealthRecordsResponse } from '@/types/patient-profile'
 import { formatBloodType, calculateDetailedAge } from '@/lib/utils'
 import { DownloadPHRButton } from '@/components/v2/phr/DownloadPHRButton'
@@ -304,11 +302,8 @@ export default function ClinicPatientProfileClient({
               saving={savingSections['demographics']}
             >
               {editingSections['demographics'] ? (
-                <DemographicsEditForm
+                <DemographicsInlineForm
                   userId={patientData.userId}
-                  currentPicture={patientData.picture}
-                  hidePicture={true}
-                  inline={true}
                   currentData={demographicsData}
                   onSuccess={handleRefresh}
                   saveRef={demographicsSaveRef}
@@ -345,9 +340,9 @@ export default function ClinicPatientProfileClient({
               isAutoSaveForm
             >
               {editingSections['addresses'] ? (
-                <AddressEditForm
+                <AddressInlineForm
                   userId={patientData.userId}
-                  inline={true}
+                  addresses={patientData.userAddresses}
                   onSuccess={handleRefresh}
                 />
               ) : (
@@ -399,10 +394,9 @@ export default function ClinicPatientProfileClient({
               isAutoSaveForm
             >
               {editingSections['contacts'] ? (
-                <EmergencyContactEditForm
+                <EmergencyContactInlineForm
                   userId={patientData.userId}
-                  currentContacts={patientData.userEmergencyContacts}
-                  inline={true}
+                  contacts={patientData.userEmergencyContacts}
                   onSuccess={handleRefresh}
                 />
               ) : (
@@ -456,10 +450,9 @@ export default function ClinicPatientProfileClient({
               saving={savingSections['philhealth']}
             >
               {editingSections['philhealth'] ? (
-                <PhilHealthRecordEditForm
+                <PhilHealthInlineForm
                   userId={patientData.userId}
                   currentData={philHealthCurrentData as any}
-                  inline={true}
                   onSuccess={handleRefresh}
                   saveRef={philhealthSaveRef}
                 />
@@ -533,11 +526,9 @@ export default function ClinicPatientProfileClient({
               saving={savingSections['vital-signs']}
             >
               {editingSections['vital-signs'] ? (
-                <VitalSignEditForm
+                <VitalSignsInlineForm
                   userId={patientData.userId}
-                  inline={true}
                   currentData={vitalSignData as any}
-                  recentVitals={convertVitalSignsToDateObjects(patientData.vitalSigns)}
                   onSuccess={handleRefresh}
                   saveRef={vitalSignsSaveRef}
                 />
@@ -651,9 +642,9 @@ export default function ClinicPatientProfileClient({
               isAutoSaveForm
             >
               {editingSections['physical-exam'] ? (
-                <PhysicalExamListEditor
+                <PhysicalExamInlineForm
                   patientId={patientData.id}
-                  physicalExaminations={patientData.physicalExaminations as any}
+                  currentData={patientData.physicalExaminations?.[0] || {}}
                   onSuccess={handleRefresh}
                 />
               ) : (
@@ -723,9 +714,8 @@ export default function ClinicPatientProfileClient({
               saving={savingSections['personal-history']}
             >
               {editingSections['personal-history'] ? (
-                <PersonalHistoryEditForm
+                <PersonalHistoryInlineForm
                   userId={patientData.userId}
-                  inline={true}
                   currentData={personalHistoryData}
                   onSuccess={handleRefresh}
                   saveRef={personalHistorySaveRef}
@@ -754,9 +744,8 @@ export default function ClinicPatientProfileClient({
               saving={savingSections['medical-history']}
             >
               {editingSections['medical-history'] ? (
-                <MedicalConditionsEditForm
+                <MedicalConditionsInlineForm
                   userId={patientData.userId}
-                  inline={true}
                   currentConditions={patientData.medicalHistories?.map((h) => ({
                     conditionId: h.conditionId,
                     details: h.details || undefined,
@@ -802,10 +791,9 @@ export default function ClinicPatientProfileClient({
               isAutoSaveForm
             >
               {editingSections['surgical-history'] ? (
-                <SurgicalHistoryEditForm
+                <SurgicalHistoryInlineForm
                   userId={patientData.userId}
-                  inline={true}
-                  currentSurgeries={patientData.surgicalHistories}
+                  surgeries={patientData.surgicalHistories}
                   onSuccess={handleRefresh}
                 />
               ) : (
@@ -849,10 +837,9 @@ export default function ClinicPatientProfileClient({
               saving={savingSections['family-history']}
             >
               {editingSections['family-history'] ? (
-                <FamilyMedicalHistoryEditForm
+                <FamilyMedicalHistoryInlineForm
                   userId={patientData.userId}
-                  inline={true}
-                  currentConditions={patientData.familyMedicalHistories?.map((h) => ({
+                  currentHistory={patientData.familyMedicalHistories?.map((h) => ({
                     conditionId: h.conditionId,
                     details: h.details || undefined,
                   }))}
@@ -901,15 +888,9 @@ export default function ClinicPatientProfileClient({
               isAutoSaveForm
             >
               {editingSections['allergies'] ? (
-                <AllergyEditForm
+                <AllergiesInlineForm
                   userId={patientData.userId}
-                  currentAllergies={patientData.userAllergies?.map(allergy => ({
-                    id: allergy.id,
-                    allergen: allergy.allergen,
-                    reaction: allergy.reaction,
-                    notes: allergy.notes,
-                  })) || []}
-                  inline={true}
+                  allergies={patientData.userAllergies}
                   onSuccess={handleRefresh}
                 />
               ) : (
@@ -953,10 +934,9 @@ export default function ClinicPatientProfileClient({
               isAutoSaveForm
             >
               {editingSections['vaccinations'] ? (
-                <VaccinationEditForm
+                <VaccinationsInlineForm
                   userId={patientData.userId}
-                  inline={true}
-                  currentVaccinations={patientData.userVaccinations}
+                  vaccinations={patientData.userVaccinations}
                   onSuccess={handleRefresh}
                 />
               ) : (
@@ -1000,10 +980,9 @@ export default function ClinicPatientProfileClient({
               isAutoSaveForm
             >
               {editingSections['disabilities'] ? (
-                <DisabilitiesEditForm
+                <DisabilitiesInlineForm
                   userId={patientData.userId}
-                  inline={true}
-                  currentDisabilities={patientData.userDisabilities}
+                  disabilities={patientData.userDisabilities}
                   onSuccess={handleRefresh}
                 />
               ) : (
@@ -1053,10 +1032,9 @@ export default function ClinicPatientProfileClient({
               saving={savingSections['ob-gyne']}
             >
               {editingSections['ob-gyne'] ? (
-                <ObGyneHistoryEditForm
+                <ObGyneHistoryInlineForm
                   userId={patientData.userId}
                   currentData={patientData.obGyneHistory as any}
-                  inline={true}
                   onSuccess={handleRefresh}
                   saveRef={obGyneSaveRef}
                 />

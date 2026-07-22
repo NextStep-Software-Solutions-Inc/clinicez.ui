@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   type NavItem,
 } from "./DashboardSidebar";
@@ -131,9 +131,13 @@ export default function DashboardShell({
   children,
 }: DashboardShellProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [showMobileSearch, setShowMobileSearch] = useState(false);
 
+  const handleClinicChange = onClinicChange || ((clinic) => {
+    router.push(`/v2/clinic/${clinic.uid}`);
+  });
 
   return (
     <div
@@ -152,7 +156,7 @@ export default function DashboardShell({
               <ClinicSelector
                 activeClinic={activeClinic}
                 clinics={clinics}
-                onClinicChange={onClinicChange}
+                onClinicChange={handleClinicChange}
               />
             ) : activeOrg ? (
               <OrgSelector
@@ -211,7 +215,7 @@ export default function DashboardShell({
               <ClinicSelector
                 activeClinic={activeClinic}
                 clinics={clinics}
-                onClinicChange={onClinicChange}
+                onClinicChange={handleClinicChange}
               />
             ) : activeOrg ? (
               <OrgSelector

@@ -210,27 +210,27 @@ export function PhilHealthInlineForm({
   const renderField = (label: string, field: string, control: React.ReactNode) => {
     const error = errors[field]
     return (
-      <div className="space-y-1.5 w-full">
-        <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
+      <div className="space-y-1 w-full">
+        <label className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
           {label}
         </label>
         <div className="w-full">{control}</div>
-        {error && <span className="text-xs text-red-500 font-medium block mt-1">{error}</span>}
+        {error && <span className="text-[10px] text-red-500 font-medium block mt-0.5">{error}</span>}
       </div>
     )
   }
 
   return (
-    <div className="space-y-6 py-2">
+    <div className="space-y-4 py-1.5">
       {/* Main PhilHealth Insurance Fields */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-3.5 gap-y-3">
         {renderField(
           'PIN (PhilHealth ID)',
           'pin',
           <Input
             value={formData.pin}
             onChange={(e) => handleFieldChange('pin', e.target.value)}
-            className="h-9 text-sm focus-visible:ring-teal-500 font-mono"
+            className="h-8 text-xs focus-visible:ring-teal-500 font-mono"
             placeholder="12-digit PIN"
           />
         )}
@@ -241,7 +241,7 @@ export function PhilHealthInlineForm({
           <Input
             value={formData.tin}
             onChange={(e) => handleFieldChange('tin', e.target.value)}
-            className="h-9 text-sm focus-visible:ring-teal-500 font-mono"
+            className="h-8 text-xs focus-visible:ring-teal-500 font-mono"
             placeholder="Optional TIN"
           />
         )}
@@ -252,7 +252,7 @@ export function PhilHealthInlineForm({
           <Input
             value={formData.philSysId}
             onChange={(e) => handleFieldChange('philSysId', e.target.value)}
-            className="h-9 text-sm focus-visible:ring-teal-500 font-mono"
+            className="h-8 text-xs focus-visible:ring-teal-500 font-mono"
             placeholder="Optional PhilSys ID"
           />
         )}
@@ -264,7 +264,7 @@ export function PhilHealthInlineForm({
             value={formData.memberType || 'MM'}
             onValueChange={(val) => handleFieldChange('memberType', val)}
           >
-            <SelectTrigger className="h-9 text-sm focus:ring-teal-500">
+            <SelectTrigger className="h-8 text-xs focus:ring-teal-500">
               <SelectValue placeholder="Select Member Type" />
             </SelectTrigger>
             <SelectContent>
@@ -316,9 +316,9 @@ export function PhilHealthInlineForm({
               </button>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-3.5 gap-y-3">
               <div className="space-y-1">
-                <span className="text-xs font-semibold text-slate-500">First Name</span>
+                <label className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">First Name *</label>
                 <Input
                   value={newDependent.firstName}
                   onChange={(e) => setNewDependent((prev: any) => ({ ...prev, firstName: e.target.value }))}
@@ -327,7 +327,7 @@ export function PhilHealthInlineForm({
                 />
               </div>
               <div className="space-y-1">
-                <span className="text-xs font-semibold text-slate-500">Middle Name</span>
+                <label className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Middle Name</label>
                 <Input
                   value={newDependent.middleName}
                   onChange={(e) => setNewDependent((prev: any) => ({ ...prev, middleName: e.target.value }))}
@@ -336,7 +336,7 @@ export function PhilHealthInlineForm({
                 />
               </div>
               <div className="space-y-1">
-                <span className="text-xs font-semibold text-slate-500">Last Name</span>
+                <label className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Last Name *</label>
                 <Input
                   value={newDependent.lastName}
                   onChange={(e) => setNewDependent((prev: any) => ({ ...prev, lastName: e.target.value }))}
@@ -345,7 +345,7 @@ export function PhilHealthInlineForm({
                 />
               </div>
               <div className="space-y-1">
-                <span className="text-xs font-semibold text-slate-500">Relationship</span>
+                <label className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Relationship</label>
                 <Input
                   value={newDependent.relationship}
                   onChange={(e) => setNewDependent((prev: any) => ({ ...prev, relationship: e.target.value }))}
@@ -354,7 +354,7 @@ export function PhilHealthInlineForm({
                 />
               </div>
               <div className="space-y-1">
-                <span className="text-xs font-semibold text-slate-500">Gender</span>
+                <label className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Gender</label>
                 <Select
                   value={newDependent.gender}
                   onValueChange={(val) => setNewDependent((prev: any) => ({ ...prev, gender: val }))}
@@ -369,7 +369,7 @@ export function PhilHealthInlineForm({
                 </Select>
               </div>
               <div className="space-y-1">
-                <span className="text-xs font-semibold text-slate-500">Date of Birth</span>
+                <label className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Date of Birth</label>
                 <Input
                   type="date"
                   value={newDependent.dob}

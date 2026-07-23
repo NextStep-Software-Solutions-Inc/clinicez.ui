@@ -118,27 +118,27 @@ export function DemographicsInlineForm({
   ) => {
     const error = field === 'email' ? undefined : errors[field as keyof DemographicsFormInput]
     return (
-      <div className="space-y-1.5 w-full">
-        <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
+      <div className="space-y-1 w-full">
+        <label className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
           {label}
         </label>
         <div className="w-full">{control}</div>
         {error && (
-          <span className="text-xs text-red-500 font-medium block mt-1">{error}</span>
+          <span className="text-[10px] text-red-500 font-medium block mt-0.5">{error}</span>
         )}
       </div>
     )
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 py-2">
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-3.5 gap-y-3 py-1.5">
       {renderField(
         'First Name',
         'firstName',
         <Input
           value={formData.firstName || ''}
           onChange={(e) => handleFieldChange('firstName', e.target.value)}
-          className="h-9 text-sm focus-visible:ring-teal-500"
+          className="h-8 text-xs focus-visible:ring-teal-500"
           placeholder="First Name"
         />
       )}
@@ -149,7 +149,7 @@ export function DemographicsInlineForm({
         <Input
           value={formData.middleName || ''}
           onChange={(e) => handleFieldChange('middleName', e.target.value)}
-          className="h-9 text-sm focus-visible:ring-teal-500"
+          className="h-8 text-xs focus-visible:ring-teal-500"
           placeholder="Middle Name"
         />
       )}
@@ -160,7 +160,7 @@ export function DemographicsInlineForm({
         <Input
           value={formData.lastName || ''}
           onChange={(e) => handleFieldChange('lastName', e.target.value)}
-          className="h-9 text-sm focus-visible:ring-teal-500"
+          className="h-8 text-xs focus-visible:ring-teal-500"
           placeholder="Last Name"
         />
       )}
@@ -171,7 +171,7 @@ export function DemographicsInlineForm({
         <Input
           value={formData.suffix || ''}
           onChange={(e) => handleFieldChange('suffix', e.target.value)}
-          className="h-9 text-sm focus-visible:ring-teal-500"
+          className="h-8 text-xs focus-visible:ring-teal-500"
           placeholder="e.g. Jr., Sr., III"
         />
       )}
@@ -182,7 +182,7 @@ export function DemographicsInlineForm({
         <Input
           value={formData.nickname || ''}
           onChange={(e) => handleFieldChange('nickname', e.target.value)}
-          className="h-9 text-sm focus-visible:ring-teal-500"
+          className="h-8 text-xs focus-visible:ring-teal-500"
           placeholder="Nickname"
         />
       )}
@@ -194,7 +194,7 @@ export function DemographicsInlineForm({
           type="date"
           value={formData.dob ? new Date(formData.dob).toISOString().split('T')[0] : ''}
           onChange={(e) => handleFieldChange('dob', e.target.value ? new Date(e.target.value) : null)}
-          className="h-9 text-sm focus-visible:ring-teal-500"
+          className="h-8 text-xs focus-visible:ring-teal-500"
         />
       )}
 
@@ -205,7 +205,7 @@ export function DemographicsInlineForm({
           value={formData.gender || ''}
           onValueChange={(val) => handleFieldChange('gender', val || null)}
         >
-          <SelectTrigger className="h-9 text-sm focus:ring-teal-500">
+          <SelectTrigger className="h-8 text-xs focus:ring-teal-500">
             <SelectValue placeholder="Select Gender" />
           </SelectTrigger>
           <SelectContent>
@@ -222,7 +222,7 @@ export function DemographicsInlineForm({
           value={formData.bloodType || ''}
           onValueChange={(val) => handleFieldChange('bloodType', val || null)}
         >
-          <SelectTrigger className="h-9 text-sm focus:ring-teal-500">
+          <SelectTrigger className="h-8 text-xs focus:ring-teal-500">
             <SelectValue placeholder="Select Blood Type" />
           </SelectTrigger>
           <SelectContent>
@@ -246,7 +246,7 @@ export function DemographicsInlineForm({
           value={formData.civilStatus || ''}
           onValueChange={(val) => handleFieldChange('civilStatus', val || null)}
         >
-          <SelectTrigger className="h-9 text-sm focus:ring-teal-500">
+          <SelectTrigger className="h-8 text-xs focus:ring-teal-500">
             <SelectValue placeholder="Select Civil Status" />
           </SelectTrigger>
           <SelectContent>
@@ -265,7 +265,7 @@ export function DemographicsInlineForm({
         <Input
           value={formData.placeOfBirth || ''}
           onChange={(e) => handleFieldChange('placeOfBirth', e.target.value)}
-          className="h-9 text-sm focus-visible:ring-teal-500"
+          className="h-8 text-xs focus-visible:ring-teal-500"
           placeholder="Place of Birth"
         />
       )}
@@ -276,7 +276,7 @@ export function DemographicsInlineForm({
         <Input
           value={formData.nationality || ''}
           onChange={(e) => handleFieldChange('nationality', e.target.value)}
-          className="h-9 text-sm focus-visible:ring-teal-500"
+          className="h-8 text-xs focus-visible:ring-teal-500"
           placeholder="Nationality"
         />
       )}
@@ -287,7 +287,7 @@ export function DemographicsInlineForm({
         <Input
           value={formData.religion || ''}
           onChange={(e) => handleFieldChange('religion', e.target.value)}
-          className="h-9 text-sm focus-visible:ring-teal-500"
+          className="h-8 text-xs focus-visible:ring-teal-500"
           placeholder="Religion"
         />
       )}
@@ -298,7 +298,7 @@ export function DemographicsInlineForm({
         <Input
           value={formData.mobile || ''}
           onChange={(e) => handleFieldChange('mobile', e.target.value)}
-          className="h-9 text-sm focus-visible:ring-teal-500"
+          className="h-8 text-xs focus-visible:ring-teal-500"
           placeholder="e.g. 09171234567"
         />
       )}
@@ -309,7 +309,7 @@ export function DemographicsInlineForm({
         <Input
           value={formData.telephone || ''}
           onChange={(e) => handleFieldChange('telephone', e.target.value)}
-          className="h-9 text-sm focus-visible:ring-teal-500"
+          className="h-8 text-xs focus-visible:ring-teal-500"
           placeholder="Telephone Number"
         />
       )}

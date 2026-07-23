@@ -60,19 +60,14 @@ export default async function ClinicPatientProfilePage({
 
   return (
     <div className="w-full">
-      <ClinicPatientPageHeader
-        clinicUid={clinicUid}
-        patientId={numericPatientId}
-        patientName={patient.fullName}
-        mode="view"
-      />
-      <div className="px-6 sm:px-8 py-6 max-w-6xl mx-auto">
+      <div className="px-3 sm:px-6 py-3 sm:py-4 max-w-6xl mx-auto">
         <Suspense fallback={<div className="py-20 text-center text-slate-500 animate-pulse text-xs font-semibold">Loading patient records...</div>}>
           <ClinicPatientProfileClient
             clinicUid={clinicUid}
             patientId={numericPatientId}
             initialData={patient}
             refreshFn={refreshFn}
+            backHref={`/v2/clinic/${clinicUid}/patients`}
             appointmentsHref={`/v2/clinic/${clinicUid}/patients/${patientId}/appointments-consultations`}
             filesHref={`/v2/clinic/${clinicUid}/patients/${patientId}/files`}
             downloadPHRHref={`/api/phr/clinic/${clinicUid}/patients/${patientId}`}

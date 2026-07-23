@@ -148,20 +148,20 @@ export function PersonalHistoryInlineForm({
   ) => {
     const error = errors[field]
     return (
-      <div className="space-y-1.5 w-full">
-        <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
+      <div className="space-y-1 w-full">
+        <label className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
           {label}
         </label>
         <div className="w-full">{control}</div>
         {error && (
-          <span className="text-xs text-red-500 font-medium block mt-1">{error}</span>
+          <span className="text-[10px] text-red-500 font-medium block mt-0.5">{error}</span>
         )}
       </div>
     )
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 py-2">
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-3.5 gap-y-3 py-1.5">
       {renderField(
         'Smoking Status',
         'smokingStatus',
@@ -169,10 +169,11 @@ export function PersonalHistoryInlineForm({
           value={formData.smokingStatus || ''}
           onValueChange={(val) => handleFieldChange('smokingStatus', val || null)}
         >
-          <SelectTrigger className="h-9 text-sm focus:ring-teal-500">
+          <SelectTrigger className="h-8 text-xs focus:ring-teal-500">
             <SelectValue placeholder="Select Status" />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="NOT_APPLICABLE">Not Applicable (N/A)</SelectItem>
             <SelectItem value="NEVER">Never smoked</SelectItem>
             <SelectItem value="FORMER">Former smoker</SelectItem>
             <SelectItem value="CURRENT">Currently smoking</SelectItem>
@@ -185,11 +186,11 @@ export function PersonalHistoryInlineForm({
         'numberOfPacksPerYear',
         <Input
           type="number"
-          disabled={formData.smokingStatus === 'NEVER' || !formData.smokingStatus}
+          disabled={formData.smokingStatus === 'NEVER' || formData.smokingStatus === 'NOT_APPLICABLE' || !formData.smokingStatus}
           value={formData.numberOfPacksPerYear ?? ''}
           onChange={(e) => handleFieldChange('numberOfPacksPerYear', e.target.value)}
-          className="h-9 text-sm focus-visible:ring-teal-500"
-          placeholder={formData.smokingStatus === 'NEVER' ? 'N/A' : 'e.g. 5'}
+          className="h-8 text-xs focus-visible:ring-teal-500"
+          placeholder={formData.smokingStatus === 'NEVER' || formData.smokingStatus === 'NOT_APPLICABLE' ? 'N/A' : 'e.g. 5'}
         />
       )}
 
@@ -200,10 +201,11 @@ export function PersonalHistoryInlineForm({
           value={formData.alcoholStatus || ''}
           onValueChange={(val) => handleFieldChange('alcoholStatus', val || null)}
         >
-          <SelectTrigger className="h-9 text-sm focus:ring-teal-500">
+          <SelectTrigger className="h-8 text-xs focus:ring-teal-500">
             <SelectValue placeholder="Select Status" />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="NOT_APPLICABLE">Not Applicable (N/A)</SelectItem>
             <SelectItem value="NEVER">Never drink alcohol</SelectItem>
             <SelectItem value="OCCASIONAL">Occasional (a few times per year)</SelectItem>
             <SelectItem value="REGULAR">Regular (weekly)</SelectItem>
@@ -217,11 +219,11 @@ export function PersonalHistoryInlineForm({
         'numberOfBottlesPerDay',
         <Input
           type="number"
-          disabled={formData.alcoholStatus === 'NEVER' || !formData.alcoholStatus}
+          disabled={formData.alcoholStatus === 'NEVER' || formData.alcoholStatus === 'NOT_APPLICABLE' || !formData.alcoholStatus}
           value={formData.numberOfBottlesPerDay ?? ''}
           onChange={(e) => handleFieldChange('numberOfBottlesPerDay', e.target.value)}
-          className="h-9 text-sm focus-visible:ring-teal-500"
-          placeholder={formData.alcoholStatus === 'NEVER' ? 'N/A' : 'e.g. 2'}
+          className="h-8 text-xs focus-visible:ring-teal-500"
+          placeholder={formData.alcoholStatus === 'NEVER' || formData.alcoholStatus === 'NOT_APPLICABLE' ? 'N/A' : 'e.g. 2'}
         />
       )}
 
@@ -232,10 +234,11 @@ export function PersonalHistoryInlineForm({
           value={formData.illicitDrugUse || ''}
           onValueChange={(val) => handleFieldChange('illicitDrugUse', val || null)}
         >
-          <SelectTrigger className="h-9 text-sm focus:ring-teal-500">
+          <SelectTrigger className="h-8 text-xs focus:ring-teal-500">
             <SelectValue placeholder="Select Status" />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="NOT_APPLICABLE">Not Applicable (N/A)</SelectItem>
             <SelectItem value="NEVER">Never used</SelectItem>
             <SelectItem value="FORMER">Former user</SelectItem>
             <SelectItem value="CURRENT">Currently using</SelectItem>
@@ -250,7 +253,7 @@ export function PersonalHistoryInlineForm({
           value={formData.sexuallyActive || ''}
           onValueChange={(val) => handleFieldChange('sexuallyActive', val || null)}
         >
-          <SelectTrigger className="h-9 text-sm focus:ring-teal-500">
+          <SelectTrigger className="h-8 text-xs focus:ring-teal-500">
             <SelectValue placeholder="Select Status" />
           </SelectTrigger>
           <SelectContent>

@@ -168,9 +168,9 @@ export function PhysicalExamInlineForm({
             <div key={sys.key} className="space-y-3 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 bg-white/40 dark:bg-slate-900/10 shadow-sm">
               <h4 className="font-bold text-xs text-slate-500 uppercase tracking-wider">{sys.label}</h4>
               
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div className="space-y-1">
-                  <span className="text-xs font-semibold text-slate-400">Status</span>
+                  <label className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Status</label>
                   <Select
                     value={formData[`${sys.key}Id`] || ''}
                     onValueChange={(val) => handleFieldChange(`${sys.key}Id`, val)}
@@ -189,7 +189,7 @@ export function PhysicalExamInlineForm({
                 </div>
 
                 <div className="space-y-1">
-                  <span className="text-xs font-semibold text-slate-400">Remarks</span>
+                  <label className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Remarks</label>
                   <Input
                     value={formData[`${sys.key}Remarks`] || ''}
                     onChange={(e) => handleFieldChange(`${sys.key}Remarks`, e.target.value)}

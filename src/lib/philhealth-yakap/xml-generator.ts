@@ -417,15 +417,43 @@ function buildFhSpecifics(parent: XmlNode, patient: KonsultaPatientData): XmlNod
   return specifics.up();
 }
 
+function mapDeliveryType(val?: string | null): string {
+  if (!val || val === 'NONE' || val === 'N/A' || val === 'X' || val === 'NOT APPLICABLE' || val === 'NOT_APPLICABLE') return 'X';
+  if (val === 'VAGINAL' || val === 'N' || val === 'NORMAL' || val === 'NSD') return 'N';
+  if (val === 'CESAREAN' || val === 'CSD' || val === 'O' || val === 'OPERATIVE') return 'O';
+  if (val === 'MIXED' || val === 'B' || val === 'BOTH') return 'B';
+  return 'X';
+}
+
+function mapBloodType(val?: string | null): string {
+  if (!val || val === 'UNKNOWN' || val === 'N/A' || val === 'NOT APPLICABLE' || val === 'NOT_APPLICABLE') return 'N/A';
+  if (val === 'A_POSITIVE' || val === 'A+') return 'A+';
+  if (val === 'A_NEGATIVE' || val === 'A-') return 'A-';
+  if (val === 'B_POSITIVE' || val === 'B+') return 'B+';
+  if (val === 'B_NEGATIVE' || val === 'B-') return 'B-';
+  if (val === 'AB_POSITIVE' || val === 'AB+') return 'AB+';
+  if (val === 'AB_NEGATIVE' || val === 'AB-') return 'AB-';
+  if (val === 'O_POSITIVE' || val === 'O+') return 'O+';
+  if (val === 'O_NEGATIVE' || val === 'O-') return 'O-';
+  return val;
+}
+
+function mapSocValue(val?: string | null): string {
+  if (!val || val === 'N/A' || val === 'NOT_APPLICABLE' || val === 'X') return 'X';
+  if (val === 'Y' || val === 'YES' || val === 'CURRENT' || val === 'REGULAR' || val === 'OCCASIONAL' || val === 'HEAVY') return 'Y';
+  if (val === 'N' || val === 'NO' || val === 'NEVER' || val === 'FORMER') return 'N';
+  return 'X';
+}
+
 function buildSocHist(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
   const soc = patient.profile.socialHistory;
   parent.ele('SOCHIST', withStatus({
-    pIsSmoker: soc?.isSmoker || '',
-    pNoCigpk: soc?.noCigpk || '',
-    pIsAdrinker: soc?.isAdrinker || '',
-    pNoBottles: soc?.noBottles || '',
-    pIllDrugUser: soc?.illDrugUser || '',
-    pIsSexuallyActive: soc?.isSexuallyActive || '',
+    pIsSmoker: mapSocValue(soc?.isSmoker),
+    pNoCigpk: soc?.noCigpk || '0',
+    pIsAdrinker: mapSocValue(soc?.isAdrinker),
+    pNoBottles: soc?.noBottles || '0',
+    pIllDrugUser: mapSocValue(soc?.illDrugUser),
+    pIsSexuallyActive: mapSocValue(soc?.isSexuallyActive),
   })).up();
   return parent;
 }
@@ -462,34 +490,36 @@ function buildImmunizations(parent: XmlNode, patient: KonsultaPatientData): XmlN
 
 function buildMensHist(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
   const og = patient.profile.obGyneHistory;
+  const isFemale = patient.patient.sex === 'F';
   parent.ele('MENSHIST', withStatus({
-    pMenarchePeriod: og?.menarche || '',
-    pLastMensPeriod: og?.lastMensPeriod || '',
-    pPeriodDuration: og?.periodDuration || '',
-    pMensInterval: og?.mensInterval || '',
-    pPadsPerDay: og?.padsPerDay || '',
-    pOnsetSexIc: og?.onsetSexIntercourse || '',
-    pBirthCtrlMethod: og?.birthControl || '',
-    pIsMenopause: og?.isMenopause || '',
-    pMenopauseAge: og?.menopauseAge || '',
-    pIsApplicable: patient.patient.sex === 'F' ? 'Y' : 'N',
+    pMenarchePeriod: isFemale ? (og?.menarche || '') : '',
+    pLastMensPeriod: isFemale ? (og?.lastMensPeriod || '') : '',
+    pPeriodDuration: isFemale ? (og?.periodDuration || '') : '',
+    pMensInterval: isFemale ? (og?.mensInterval || '') : '',
+    pPadsPerDay: isFemale ? (og?.padsPerDay || '') : '',
+    pOnsetSexIc: isFemale ? (og?.onsetSexIntercourse || '') : '',
+    pBirthCtrlMethod: isFemale ? (og?.birthControl || '') : '',
+    pIsMenopause: isFemale ? (og?.isMenopause || '') : '',
+    pMenopauseAge: isFemale ? (og?.menopauseAge || '') : '',
+    pIsApplicable: isFemale ? 'Y' : 'N',
   })).up();
   return parent;
 }
 
 function buildPregHist(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
   const og = patient.profile.obGyneHistory;
+  const isFemale = patient.patient.sex === 'F';
   parent.ele('PREGHIST', withStatus({
-    pPregCnt: og?.gravida || '',
-    pDeliveryCnt: og?.para || '',
-    pDeliveryTyp: og?.typeLasDelivery || '',
-    pFullTermCnt: og?.fullTerms || '',
-    pPrematureCnt: og?.premature || '',
-    pAbortionCnt: og?.abortion || '',
-    pLivChildrenCnt: og?.livingChildren || '',
-    pWPregIndhyp: og?.isPreEclampsia || '',
-    pWFamPlan: og?.wFamPlan || '',
-    pIsApplicable: patient.patient.sex === 'F' ? 'Y' : 'N',
+    pPregCnt: isFemale ? (og?.gravida || '0') : '0',
+    pDeliveryCnt: isFemale ? (og?.para || '0') : '0',
+    pDeliveryTyp: isFemale ? mapDeliveryType(og?.typeLasDelivery) : 'X',
+    pFullTermCnt: isFemale ? (og?.fullTerms || '0') : '0',
+    pPrematureCnt: isFemale ? (og?.premature || '0') : '0',
+    pAbortionCnt: isFemale ? (og?.abortion || '0') : '0',
+    pLivChildrenCnt: isFemale ? (og?.livingChildren || '0') : '0',
+    pWPregIndhyp: isFemale ? (og?.isPreEclampsia === 'Y' || og?.isPreEclampsia === 'true' ? 'Y' : 'N') : 'X',
+    pWFamPlan: isFemale ? (og?.wFamPlan === 'Y' || og?.wFamPlan === 'true' ? 'Y' : 'N') : 'X',
+    pIsApplicable: isFemale ? 'Y' : 'N',
   })).up();
   return parent;
 }
@@ -521,7 +551,7 @@ function buildProfilePepert(parent: XmlNode, patient: KonsultaPatientData): XmlN
 
 function buildBloodType(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
   parent.ele('BLOODTYPE', withStatus({
-    pBloodType: patient.profile.bloodType,
+    pBloodType: mapBloodType(patient.profile.bloodType),
   })).up();
   return parent;
 }

@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo, useRef, useCallback, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
+import Link from 'next/link'
 import {
   User,
   MapPin,
@@ -27,7 +28,8 @@ import {
   CheckCircle2,
   Clock,
   XCircle,
-  AlertCircle
+  AlertCircle,
+  ArrowLeft
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
@@ -59,6 +61,7 @@ import { formatBloodType, calculateDetailedAge } from '@/lib/utils'
 import { DownloadPHRButton } from '@/components/v2/phr/DownloadPHRButton'
 import { PatientAIInsightButton } from '@/components/v2/patients/PatientAIInsightButton'
 import { calculateBMI, calculateBodyFat, getBMICategory, getBodyFatCategory, generateClinicalRemarks } from '@/app/v2/(patient-dashboard)/profile/_lib/vitals-utils'
+import { PhilHealthYakapCard } from '@/components/patient-dashboard-v2/PhilHealthYakapCard'
 
 const tabContentVariants = {
   hidden: { opacity: 0 },
@@ -84,19 +87,21 @@ interface ClinicPatientProfileClientProps {
   patientId: number
   initialData: PatientHealthRecordsResponse
   refreshFn: () => Promise<PatientHealthRecordsResponse | null>
+  backHref?: string
   appointmentsHref: string
   filesHref: string
   downloadPHRHref: string
   aiInsightConfig?: { patientId: number; clinicId?: number }
 }
 
-type TabId = 'demographics' | 'clinical' | 'history' | 'preventative' | 'obgyn'
+type TabId = 'philhealth' | 'demographics' | 'clinical' | 'history' | 'preventative' | 'obgyn'
 
 export default function ClinicPatientProfileClient({
   clinicUid,
   patientId,
   initialData,
   refreshFn,
+  backHref,
   appointmentsHref,
   filesHref,
   downloadPHRHref,
@@ -108,9 +113,10 @@ export default function ClinicPatientProfileClient({
 
   const initialTab = useMemo(() => {
     const tabParam = searchParams.get('tab') as TabId | null
-    return tabParam && ['demographics', 'clinical', 'history', 'preventative', 'obgyn'].includes(tabParam)
-      ? tabParam
-      : 'demographics'
+    if (tabParam && ['philhealth', 'demographics', 'clinical', 'history', 'preventative', 'obgyn'].includes(tabParam)) {
+      return tabParam
+    }
+    return 'philhealth'
   }, [searchParams])
 
   const [activeTab, setActiveTab] = useState<TabId>(initialTab)
@@ -221,69 +227,85 @@ export default function ClinicPatientProfileClient({
   const isFemale = patientData.gender === 'FEMALE'
 
   return (
-    <div className="w-full space-y-6 pb-24">
+    <div className="w-full space-y-3.5 sm:space-y-5 pb-20 sm:pb-24">
       {/* Premium Patient Header Card */}
-      <div className="relative overflow-hidden rounded-2xl border border-white/40 dark:border-slate-800/40 bg-gradient-to-br from-white/30 to-white/10 dark:from-slate-900/30 dark:to-slate-900/10 backdrop-blur-xl p-6 shadow-xl">
+      <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-gradient-to-br from-white to-slate-50/50 dark:from-slate-900 dark:to-slate-900/80 backdrop-blur-xl p-3.5 sm:p-5 shadow-lg">
         <div className="absolute top-0 right-0 w-64 h-64 bg-teal-500/5 dark:bg-teal-500/10 rounded-full blur-3xl pointer-events-none"></div>
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-cyan-500/5 dark:bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
-        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 relative z-10">
-          <div className="flex items-center gap-5">
-            <Avatar className="h-20 w-20 rounded-2xl border-2 border-white dark:border-slate-700 shadow-lg shrink-0">
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3.5 sm:gap-5 relative z-10">
+          <div className="flex items-center gap-3 sm:gap-4">
+            {backHref && (
+              <Link
+                href={backHref}
+                className="group flex items-center justify-center w-8 h-8 rounded-full border border-slate-200/80 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 text-slate-600 dark:text-slate-300 hover:text-teal-600 dark:hover:text-teal-400 hover:border-teal-500 transition-all shrink-0 shadow-sm"
+                title="Back to Patients"
+              >
+                <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" />
+              </Link>
+            )}
+            <Avatar className="h-14 w-14 sm:h-16 sm:w-16 rounded-2xl border-2 border-white dark:border-slate-700 shadow-md shrink-0">
               {patientData.picture ? (
                 <Image
                   src={patientData.picture}
                   alt={patientData.fullName}
-                  width={80}
-                  height={80}
+                  width={64}
+                  height={64}
                   className="object-cover"
                 />
               ) : (
-                <AvatarFallback className="rounded-2xl text-xl font-bold bg-teal-500/10 text-teal-600 dark:text-teal-400">
+                <AvatarFallback className="rounded-2xl text-base sm:text-lg font-bold bg-teal-500/10 text-teal-600 dark:text-teal-400">
                   {patientData.firstName?.[0]}{patientData.lastName?.[0]}
                 </AvatarFallback>
               )}
             </Avatar>
-            <div className="space-y-1">
-              <div className="flex items-center gap-3 flex-wrap">
-                <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+            <div className="space-y-0.5 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-lg sm:text-xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight">
                   {patientData.fullName}
                 </h1>
                 {renderVerificationBadge(patientData.verificationStatus)}
                 {patientData.yakapEnlistment && (
-                  <Badge className="bg-teal-500/15 text-teal-700 dark:text-teal-400 border border-teal-500/30 font-medium">
+                  <Badge className="bg-teal-500/15 text-teal-700 dark:text-teal-400 border border-teal-500/30 font-medium text-[10px]">
                     Yakap Enlisted
                   </Badge>
                 )}
               </div>
-              <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium break-all sm:break-normal">
                 {patientData.email} • {patientData.mobile || patientData.telephone || 'No contact number'}
               </p>
-              <div className="flex items-center gap-3 text-xs text-slate-450 dark:text-slate-500 font-semibold uppercase tracking-wider">
-                <span>Case: {patientData.caseNumber || 'N/A'}</span>
-                <span>•</span>
-                <span>Age: {ageString}</span>
-                <span>•</span>
-                <span>Blood: {formatBloodType(patientData.bloodType) || 'Unknown'}</span>
+              <div className="flex flex-wrap items-center gap-1 sm:gap-2 text-[10px] sm:text-xs pt-0.5 font-semibold uppercase tracking-wide">
+                <span className="px-2 py-0.5 rounded bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 font-bold">
+                  PhilHealth PIN: {philHealthCurrentData?.pin || patientData.philHealthRecords?.[0]?.pin || 'Not Registered'}
+                </span>
+                <span className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/50 dark:border-slate-700/50">
+                  Case: {patientData.caseNumber || 'N/A'}
+                </span>
+                <span className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/50 dark:border-slate-700/50">
+                  Age: {ageString}
+                </span>
+                <span className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/50 dark:border-slate-700/50">
+                  Blood: {formatBloodType(patientData.bloodType) || 'Unknown'}
+                </span>
               </div>
             </div>
           </div>
 
           {/* Quick Action Navigation Bar */}
-          <div className="flex flex-wrap items-center gap-2 lg:self-center shrink-0 w-full lg:w-auto">
+          <div className="grid grid-cols-2 gap-1.5 sm:flex sm:items-center sm:flex-wrap shrink-0 w-full lg:w-auto">
             <button
               onClick={() => router.push(appointmentsHref)}
-              className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all"
+              className="flex items-center justify-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all"
             >
-              <Calendar className="w-4 h-4 text-teal-500" />
-              <span>Appointments</span>
+              <Calendar className="w-3.5 h-3.5 text-teal-500 shrink-0" />
+              <span className="truncate">Appointments</span>
             </button>
             <button
               onClick={() => router.push(filesHref)}
-              className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all"
+              className="flex items-center justify-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all"
             >
-              <FolderOpen className="w-4 h-4 text-amber-500" />
-              <span>Files</span>
+              <FolderOpen className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+              <span className="truncate">Files</span>
             </button>
             <DownloadPHRButton printHref={downloadPHRHref} patientName={patientData.fullName} />
             {aiInsightConfig && (
@@ -292,7 +314,7 @@ export default function ClinicPatientProfileClient({
                 clinicId={aiInsightConfig.clinicId}
                 patientName={patientData.fullName}
                 size="default"
-                className="flex-1 lg:flex-none shrink-0"
+                className="w-full sm:w-auto shrink-0"
               />
             )}
           </div>
@@ -300,8 +322,14 @@ export default function ClinicPatientProfileClient({
       </div>
 
       {/* Modern Tabs Strip */}
-      <div className="sticky top-26 z-20 backdrop-blur-xl bg-white/70 dark:bg-slate-950/70 border-b border-slate-200/50 dark:border-slate-800/50 -mx-6 px-6 py-2.5">
-        <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none pb-0.5">
+      <div className="sticky top-12 z-30 backdrop-blur-xl bg-white/95 dark:bg-slate-950/95 border-b border-slate-200/60 dark:border-slate-800/60 shadow-xs -mx-3 px-3 sm:-mx-6 sm:px-6 py-1.5 sm:py-2">
+        <div className="flex items-center gap-1 overflow-x-auto scrollbar-none pb-0.5">
+          <TabButton
+            active={activeTab === 'philhealth'}
+            onClick={() => handleTabChange('philhealth')}
+            icon={Building}
+            label="PhilHealth & Insurance"
+          />
           <TabButton
             active={activeTab === 'demographics'}
             onClick={() => handleTabChange('demographics')}
@@ -337,7 +365,107 @@ export default function ClinicPatientProfileClient({
         </div>
       </div>
 
-      <div className="space-y-8 mt-6">
+      <div className="space-y-3.5 sm:space-y-5 mt-3 sm:mt-5">
+        {activeTab === 'philhealth' && (
+          <motion.div
+            key="philhealth"
+            initial="hidden"
+            animate="visible"
+            exit="hidden"
+            variants={tabContentVariants}
+            className="space-y-4 sm:space-y-6"
+          >
+            {/* Primary PhilHealth Insurance Card */}
+            <motion.div variants={cardVariants}>
+              <CardContainer
+                title="PhilHealth & Insurance"
+                icon={Building}
+                accentColor="bg-indigo-500"
+                editing={editingSections['philhealth']}
+                onEdit={() => toggleEdit('philhealth', true)}
+                onCancel={() => toggleEdit('philhealth', false)}
+                onSave={() => handleSaveSection('philhealth', philhealthSaveRef)}
+                saving={savingSections['philhealth']}
+              >
+                {editingSections['philhealth'] ? (
+                  <PhilHealthInlineForm
+                    userId={patientData.userId}
+                    currentData={philHealthCurrentData as any}
+                    onSuccess={handleRefresh}
+                    saveRef={philhealthSaveRef}
+                  />
+                ) : (
+                  <div className="space-y-6">
+                    {patientData.philHealthRecords.length > 0 ? (
+                      patientData.philHealthRecords.map((record) => (
+                        <div key={record.id} className="space-y-6">
+                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-3 gap-y-2 py-1">
+                            <ViewCell label="PIN (PhilHealth ID)" value={record.pin} className="text-indigo-600 dark:text-indigo-400 font-bold" />
+                            <ViewCell label="Member Type" value={((record as any).memberType) === 'MM' ? 'Formal Member (MM)' : ((record as any).memberType) === 'DD' ? 'Dependent (DD)' : (record as any).memberType || '—'} />
+                            <ViewCell label="PhilSys ID" value={record.philSysId} />
+                            <ViewCell label="TIN" value={record.tin} />
+                            <ViewCell label="Yakap Enlistment" value={patientData.yakapEnlistment ? 'Enlisted' : 'Not Enlisted'} />
+                          </div>
+
+                          {/* Dependents list */}
+                          {record.PhilHealthDependents && record.PhilHealthDependents.length > 0 ? (
+                            <div className="space-y-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+                              <h4 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                                Registered PhilHealth Dependents ({record.PhilHealthDependents.length})
+                              </h4>
+                              <div className="overflow-x-auto rounded-xl border border-slate-200/80 dark:border-slate-800">
+                                <table className="min-w-full text-xs text-left">
+                                  <thead className="bg-slate-50 dark:bg-slate-900 font-bold text-slate-500 uppercase">
+                                    <tr>
+                                      <th className="px-3.5 py-2.5">Full Name</th>
+                                      <th className="px-3.5 py-2.5">Relationship</th>
+                                      <th className="px-3.5 py-2.5">Gender</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-slate-700 dark:text-slate-300">
+                                    {record.PhilHealthDependents.map((dep) => (
+                                      <tr key={dep.id}>
+                                        <td className="px-3.5 py-2.5 font-bold">{dep.firstName} {dep.lastName}</td>
+                                        <td className="px-3.5 py-2.5 capitalize">{dep.relationship ? dep.relationship.toLowerCase() : '—'}</td>
+                                        <td className="px-3.5 py-2.5 capitalize">{dep.gender ? dep.gender.toLowerCase() : '—'}</td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="pt-2 text-xs text-slate-500 dark:text-slate-400 italic">
+                              No registered dependents on file.
+                            </div>
+                          )}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-8 text-slate-500 dark:text-slate-400 text-sm">
+                        <Building className="w-10 h-10 mx-auto text-indigo-400/40 mb-2" />
+                        <p className="font-semibold text-slate-700 dark:text-slate-300">No PhilHealth records added yet.</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Click "Edit" above to record PhilHealth PIN, Member Type, PhilSys ID, and TIN.</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </CardContainer>
+            </motion.div>
+
+            {/* PhilHealth Yakap API Integration & Case / Transaction No Generator */}
+            {patientData.id && (
+              <motion.div variants={cardVariants}>
+                <PhilHealthYakapCard
+                  clinicPatientId={patientData.id}
+                  isClinicMode={true}
+                  philHealthRecord={philHealthCurrentData}
+                />
+              </motion.div>
+            )}
+          </motion.div>
+        )}
+
         {activeTab === 'demographics' && (
           <motion.div
             key="demographics"
@@ -367,7 +495,7 @@ export default function ClinicPatientProfileClient({
                     saveRef={demographicsSaveRef}
                   />
                 ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 py-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-3 gap-y-2 py-1">
                     <ViewCell label="First Name" value={patientData.firstName} />
                     <ViewCell label="Middle Name" value={patientData.middleName} />
                     <ViewCell label="Last Name" value={patientData.lastName} />
@@ -494,80 +622,6 @@ export default function ClinicPatientProfileClient({
                     ) : (
                       <div className="text-center py-6 text-slate-500 dark:text-slate-400 text-sm">
                         No emergency contacts recorded. Click edit to add contact.
-                      </div>
-                    )}
-                  </div>
-                )}
-              </CardContainer>
-            </motion.div>
-
-            {/* PhilHealth Insurance Card */}
-            <motion.div variants={cardVariants}>
-              <CardContainer
-                title="PhilHealth & Insurance"
-                icon={Building}
-                accentColor="bg-indigo-500"
-                editing={editingSections['philhealth']}
-                onEdit={() => toggleEdit('philhealth', true)}
-                onCancel={() => toggleEdit('philhealth', false)}
-                onSave={() => handleSaveSection('philhealth', philhealthSaveRef)}
-                saving={savingSections['philhealth']}
-              >
-                {editingSections['philhealth'] ? (
-                  <PhilHealthInlineForm
-                    userId={patientData.userId}
-                    currentData={philHealthCurrentData as any}
-                    onSuccess={handleRefresh}
-                    saveRef={philhealthSaveRef}
-                  />
-                ) : (
-                  <div className="space-y-6">
-                    {patientData.philHealthRecords.length > 0 ? (
-                      patientData.philHealthRecords.map((record) => (
-                        <div key={record.id} className="space-y-6">
-                          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                            <ViewCell label="PIN (PhilHealth ID)" value={record.pin} />
-                            <ViewCell label="TIN" value={record.tin} />
-                            <ViewCell label="PhilSys ID" value={record.philSysId} />
-                            <ViewCell
-                              label="Member Type"
-                              value={((record as any).memberType) === 'MM' ? 'Formal Member' : 'Dependent'}
-                            />
-                          </div>
-
-                          {/* Dependents list */}
-                          {record.PhilHealthDependents && record.PhilHealthDependents.length > 0 && (
-                            <div className="space-y-3 pt-4 border-t border-slate-100 dark:border-slate-800">
-                              <h4 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-                                Registered Dependents
-                              </h4>
-                              <div className="overflow-x-auto rounded-xl border border-slate-100 dark:border-slate-800">
-                                <table className="min-w-full text-xs text-left">
-                                  <thead className="bg-slate-50 dark:bg-slate-900 font-bold text-slate-500 uppercase">
-                                    <tr>
-                                      <th className="px-4 py-3">Full Name</th>
-                                      <th className="px-4 py-3">Relationship</th>
-                                      <th className="px-4 py-3">Gender</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-slate-700 dark:text-slate-350">
-                                    {record.PhilHealthDependents.map((dep) => (
-                                      <tr key={dep.id}>
-                                        <td className="px-4 py-3">{dep.firstName} {dep.lastName}</td>
-                                        <td className="px-4 py-3 capitalize">{dep.relationship ? dep.relationship.toLowerCase() : '—'}</td>
-                                        <td className="px-4 py-3 capitalize">{dep.gender ? dep.gender.toLowerCase() : '—'}</td>
-                                      </tr>
-                                    ))}
-                                  </tbody>
-                                </table>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      ))
-                    ) : (
-                      <div className="text-center py-6 text-slate-500 dark:text-slate-400 text-sm">
-                        No PhilHealth records added yet. Click edit to record insurance.
                       </div>
                     )}
                   </div>
@@ -805,7 +859,7 @@ export default function ClinicPatientProfileClient({
                     saveRef={personalHistorySaveRef}
                   />
                 ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 py-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-3 gap-y-2 py-1">
                     <ViewCell label="Smoking Status" value={patientData.personalHistory?.smokingStatus} className="capitalize" />
                     <ViewCell label="Packs per Year" value={patientData.personalHistory?.numberOfPacksPerYear} />
                     <ViewCell label="Alcohol Intake" value={patientData.personalHistory?.alcoholStatus} className="capitalize" />
@@ -1151,7 +1205,7 @@ export default function ClinicPatientProfileClient({
                     saveRef={obGyneSaveRef}
                   />
                 ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 py-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-3 gap-y-2 py-1">
                     <ViewCell label="Menarche Age" value={patientData.obGyneHistory?.menarche ? `${patientData.obGyneHistory.menarche} years` : null} />
                     <ViewCell label="LMP (Last Menstrual Period)" value={patientData.obGyneHistory?.lastMenstrualPeriod ? new Date(patientData.obGyneHistory.lastMenstrualPeriod).toLocaleDateString() : null} />
                     <ViewCell label="Menopause Status" value={patientData.obGyneHistory?.menopauseStatus} className="uppercase" />
@@ -1187,7 +1241,7 @@ function TabButton({ active, onClick, icon: Icon, label }: TabButtonProps) {
   return (
     <button
       onClick={onClick}
-      className={`relative flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold tracking-tight whitespace-nowrap shrink-0 transition-all duration-200 focus-visible:outline-none focus:outline-none ${active
+      className={`relative flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold tracking-tight whitespace-nowrap shrink-0 transition-all duration-200 focus-visible:outline-none focus:outline-none ${active
         ? 'text-white'
         : 'text-slate-600 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-900'
         }`}
@@ -1199,8 +1253,8 @@ function TabButton({ active, onClick, icon: Icon, label }: TabButtonProps) {
           transition={{ type: 'spring', stiffness: 380, damping: 30 }}
         />
       )}
-      <span className="relative z-10 flex items-center gap-2">
-        <Icon className={`w-4 h-4 transition-colors duration-200 ${active ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
+      <span className="relative z-10 flex items-center gap-1.5 sm:gap-2">
+        <Icon className={`w-3.5 h-3.5 sm:w-4 sm:h-4 transition-colors duration-200 ${active ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
         <span className="transition-colors duration-200">{label}</span>
       </span>
     </button>
@@ -1234,17 +1288,17 @@ function CardContainer({
   children
 }: CardContainerProps) {
   return (
-    <div className="rounded-2xl border border-slate-100 dark:border-slate-850 bg-white dark:bg-slate-950/80 shadow-md p-6 relative transition-all hover:shadow-lg">
+    <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-950/90 shadow-sm p-3.5 sm:p-5 relative transition-all hover:shadow-md">
       {/* Accent strip */}
       <div className={`absolute top-0 left-0 w-full h-[3px] rounded-t-2xl ${accentColor}`}></div>
 
       {/* Header */}
-      <div className="flex items-center justify-between gap-4 pb-4 mb-4 border-b border-slate-100 dark:border-slate-800">
-        <div className="flex items-center gap-2.5">
-          <div className={`p-1.5 rounded-lg ${accentColor}/10 shrink-0`}>
-            <Icon className="w-5 h-5 text-slate-700 dark:text-slate-350" />
+      <div className="flex items-center justify-between gap-2.5 pb-2.5 mb-3 border-b border-slate-100 dark:border-slate-800/80">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className={`p-1 rounded-lg ${accentColor}/10 shrink-0`}>
+            <Icon className="w-4 h-4 text-slate-700 dark:text-slate-350" />
           </div>
-          <h3 className="text-lg font-bold text-slate-800 dark:text-white leading-none">
+          <h3 className="text-sm sm:text-base font-bold text-slate-800 dark:text-white leading-none truncate">
             {title}
           </h3>
         </div>
@@ -1253,18 +1307,18 @@ function CardContainer({
         {!editing ? (
           <button
             onClick={onEdit}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 transition-all shrink-0"
+            className="flex items-center gap-1 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 text-[11px] font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 transition-all shrink-0"
           >
-            <Edit2 className="w-3.5 h-3.5 text-teal-600" />
+            <Edit2 className="w-3 h-3 text-teal-600" />
             <span>{isAutoSaveForm ? 'Manage' : 'Edit'}</span>
           </button>
         ) : (
           isAutoSaveForm && (
             <button
               onClick={onCancel}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-slate-900 transition-all shrink-0"
+              className="flex items-center gap-1 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 text-[11px] font-bold text-slate-600 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-slate-900 transition-all shrink-0"
             >
-              <X className="w-3.5 h-3.5" />
+              <X className="w-3 h-3" />
               <span>Done</span>
             </button>
           )
@@ -1324,11 +1378,11 @@ interface ViewCellProps {
 function ViewCell({ label, value, className = '' }: ViewCellProps) {
   const displayValue = value === null || value === undefined || value === '' ? '—' : String(value)
   return (
-    <div className="space-y-1">
-      <p className="text-xs font-bold text-slate-450 dark:text-slate-500 uppercase tracking-wider">
+    <div className="space-y-0.5 min-w-0">
+      <p className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider truncate">
         {label}
       </p>
-      <p className={`text-sm font-semibold text-slate-800 dark:text-slate-200 ${className}`}>
+      <p className={`text-xs font-semibold text-slate-800 dark:text-slate-100 break-words ${className}`}>
         {displayValue}
       </p>
     </div>
@@ -1345,14 +1399,14 @@ interface VitalMetricBoxProps {
 
 function VitalMetricBox({ label, value, unit, color }: VitalMetricBoxProps) {
   return (
-    <div className="rounded-xl border border-slate-100 dark:border-slate-850 p-4 text-center bg-slate-50/20 dark:bg-slate-900/10">
-      <p className="text-[10px] font-bold text-slate-450 dark:text-slate-500 uppercase tracking-wider mb-1">
+    <div className="rounded-xl border border-slate-100 dark:border-slate-850 p-2 sm:p-3 text-center bg-slate-50/30 dark:bg-slate-900/30 min-w-0">
+      <p className="text-[9px] sm:text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5 truncate">
         {label}
       </p>
-      <p className={`text-xl font-extrabold leading-none ${color}`}>
+      <p className={`text-base sm:text-lg font-black leading-none ${color}`}>
         {value}
       </p>
-      <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 font-semibold">
+      <p className="text-[9px] text-slate-400 dark:text-slate-500 mt-0.5 font-semibold truncate">
         {unit}
       </p>
     </div>

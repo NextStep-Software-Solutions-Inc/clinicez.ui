@@ -1,74 +1,81 @@
 export default function ClinicPatientProfileLoading() {
   return (
-    <div className="w-full">
-      {/* Sticky header skeleton */}
-      <div className="sticky top-0 z-50 bg-gradient-to-b from-slate-50/20 via-blue-50/20 to-transparent dark:from-slate-950/20 dark:via-blue-950/20 dark:to-transparent backdrop-blur-sm mb-8 px-8 pt-4 pb-6 rounded-xl">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3 flex-1">
-              <div className="w-10 h-10 rounded-lg bg-slate-300/60 dark:bg-slate-600/60 animate-pulse" />
-              <div className="h-8 bg-slate-300/60 dark:bg-slate-600/60 rounded-lg flex-1 max-w-xs animate-pulse" />
+    <div className="w-full space-y-4 max-w-6xl mx-auto pb-24">
+      {/* Patient Profile Card Skeleton */}
+      <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl p-4 sm:p-5 shadow-sm space-y-4 animate-pulse">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            {/* Back Button Skeleton */}
+            <div className="w-9 h-9 rounded-full bg-slate-200 dark:bg-slate-800 flex-shrink-0" />
+            {/* Avatar Skeleton */}
+            <div className="w-12 h-12 rounded-2xl bg-slate-200 dark:bg-slate-800 flex-shrink-0" />
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2">
+                <div className="h-5 w-40 bg-slate-200 dark:bg-slate-800 rounded-md" />
+                <div className="h-4 w-28 bg-indigo-200/60 dark:bg-indigo-900/40 rounded-full" />
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="h-3.5 w-16 bg-slate-200 dark:bg-slate-800 rounded" />
+                <div className="h-3.5 w-20 bg-slate-200 dark:bg-slate-800 rounded" />
+                <div className="h-3.5 w-24 bg-slate-200 dark:bg-slate-800 rounded" />
+              </div>
             </div>
-            <div className="w-10 h-10 rounded-lg bg-slate-300/60 dark:bg-slate-600/60 animate-pulse" />
           </div>
+          {/* Action Button Skeleton */}
+          <div className="h-8 w-32 bg-slate-200 dark:bg-slate-800 rounded-lg self-end sm:self-center" />
+        </div>
+
+        {/* Quick Vitals Summary Row Skeleton */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-3 border-t border-slate-100 dark:border-slate-800/60">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 space-y-1">
+              <div className="h-3 w-16 bg-slate-200 dark:bg-slate-700/60 rounded" />
+              <div className="h-4 w-24 bg-slate-300 dark:bg-slate-700 rounded" />
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* Main content */}
-      <div className="max-w-6xl mx-auto pb-32 px-4 sm:px-6">
-        {/* Profile card */}
-        <div className="rounded-2xl border border-white/40 dark:border-slate-700/40 bg-white/30 dark:bg-slate-800/30 backdrop-blur-xl mb-8 overflow-hidden">
-          {/* Header gradient bar */}
-          <div className="h-32 bg-gradient-to-r from-slate-300/50 to-slate-200/50 dark:from-slate-600/50 dark:to-slate-500/50 animate-pulse" />
-          {/* Demographics grid */}
-          <div className="p-8">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="space-y-2">
-                  <div className="h-4 bg-slate-300/30 dark:bg-slate-600/30 rounded w-16 animate-pulse" />
-                  <div className="h-6 bg-slate-300/40 dark:bg-slate-600/40 rounded-lg w-24 animate-pulse" />
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Tabs row */}
-        <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-          {Array.from({ length: 8 }).map((_, i) => (
+      {/* Sticky Tab Navigation Bar Skeleton */}
+      <div className="sticky top-12 z-30 bg-slate-50/90 dark:bg-slate-950/90 backdrop-blur-md py-1 border-b border-slate-200/60 dark:border-slate-800">
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+          {Array.from({ length: 6 }).map((_, i) => (
             <div
               key={i}
-              className="h-10 bg-slate-300/60 dark:bg-slate-600/60 rounded-lg animate-pulse min-w-[120px]"
+              className={`h-8 rounded-lg flex-shrink-0 animate-pulse ${
+                i === 0 ? 'w-40 bg-indigo-200 dark:bg-indigo-900/50' : 'w-32 bg-slate-200 dark:bg-slate-800'
+              }`}
             />
           ))}
         </div>
+      </div>
 
-        {/* Content card */}
-        <div className="rounded-2xl border border-white/40 dark:border-slate-700/40 bg-white/30 dark:bg-slate-800/30 backdrop-blur-xl p-6 space-y-6">
-          <div className="h-6 bg-slate-300/40 dark:bg-slate-600/40 rounded-lg w-48 animate-pulse" />
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="space-y-2">
-                <div className="h-4 bg-slate-300/30 dark:bg-slate-600/30 rounded w-16 animate-pulse" />
-                <div className="h-5 bg-slate-300/40 dark:bg-slate-600/40 rounded w-24 animate-pulse" />
-              </div>
-            ))}
+      {/* Primary Tab Content Skeleton (Ultra-Dense 5-Column Grid Card) */}
+      <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl p-5 shadow-sm space-y-5 animate-pulse">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-indigo-200 dark:bg-indigo-900/50" />
+            <div className="h-5 w-56 bg-slate-200 dark:bg-slate-800 rounded-md" />
           </div>
+          <div className="h-7 w-16 bg-slate-200 dark:bg-slate-800 rounded-md" />
         </div>
 
-        {/* Quick stats grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div
-              key={i}
-              className="rounded-xl border border-white/40 dark:border-slate-700/40 bg-white/30 dark:bg-slate-800/30 backdrop-blur-xl p-4 space-y-2"
-            >
-              <div className="h-4 bg-slate-300/30 dark:bg-slate-600/30 rounded w-3/4 animate-pulse" />
-              <div className="h-6 bg-slate-300/40 dark:bg-slate-600/40 rounded-lg w-1/2 animate-pulse" />
+        {/* 5-Column High-Density Grid Skeleton */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-3.5 gap-y-3 py-1">
+          {Array.from({ length: 10 }).map((_, i) => (
+            <div key={i} className="space-y-1">
+              <div className="h-3 w-20 bg-slate-200 dark:bg-slate-800 rounded" />
+              <div className="h-8 w-full bg-slate-100 dark:bg-slate-800/60 rounded-lg" />
             </div>
           ))}
         </div>
+
+        {/* Dependents Table Skeleton */}
+        <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
+          <div className="h-3.5 w-44 bg-slate-200 dark:bg-slate-800 rounded" />
+          <div className="h-20 w-full bg-slate-100 dark:bg-slate-800/40 rounded-xl" />
+        </div>
       </div>
     </div>
-  );
+  )
 }

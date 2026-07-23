@@ -79,19 +79,19 @@ interface ProfileClientProps {
   patient: SerializedPatientHealthRecordsResponse
 }
 
-type TabId = 'demographics' | 'clinical' | 'history' | 'preventative' | 'obgyn'
+type TabId = 'philhealth' | 'demographics' | 'clinical' | 'history' | 'preventative' | 'obgyn'
 
 export default function ProfileClient({ patient }: ProfileClientProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const pathname = usePathname()
-  
+
   const initialTab = useMemo(() => {
     const tabParam = searchParams.get('tab') as TabId | null
-    if (tabParam && ['demographics', 'clinical', 'history', 'preventative', 'obgyn'].includes(tabParam)) {
+    if (tabParam && ['philhealth', 'demographics', 'clinical', 'history', 'preventative', 'obgyn'].includes(tabParam)) {
       return tabParam
     }
-    return 'demographics'
+    return 'philhealth'
   }, [searchParams])
 
   const [activeTab, setActiveTab] = useState<TabId>(initialTab)
@@ -100,7 +100,7 @@ export default function ProfileClient({ patient }: ProfileClientProps) {
     const handlePopState = () => {
       const params = new URLSearchParams(window.location.search)
       const tabParam = params.get('tab') as TabId | null
-      if (tabParam && ['demographics', 'clinical', 'history', 'preventative', 'obgyn'].includes(tabParam)) {
+      if (tabParam && ['philhealth', 'demographics', 'clinical', 'history', 'preventative', 'obgyn'].includes(tabParam)) {
         setActiveTab(tabParam)
       }
     }
@@ -159,7 +159,7 @@ export default function ProfileClient({ patient }: ProfileClientProps) {
 
   const handleSaveSection = async (sectionId: string, saveRef: React.RefObject<{ submit: () => Promise<void>; hasChanges: boolean } | null>) => {
     if (!saveRef.current) return
-    
+
     setSavingSections(prev => ({ ...prev, [sectionId]: true }))
     try {
       await saveRef.current.submit()
@@ -201,7 +201,7 @@ export default function ProfileClient({ patient }: ProfileClientProps) {
   const isFemale = patientData.gender === 'FEMALE'
 
   return (
-    <div className="w-full space-y-6 pb-24">
+    <div className="w-full space-y-4 sm:space-y-6 pb-20 sm:pb-24">
       {/* Dynamic ambient background blobs */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
         <div className="absolute -top-32 -right-32 h-96 w-96 rounded-full bg-blue-400/20 dark:bg-blue-500/10 blur-3xl" />
@@ -211,19 +211,19 @@ export default function ProfileClient({ patient }: ProfileClientProps) {
 
       <div className="flex items-center justify-between gap-4 relative z-10">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">My Profile</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">My Profile</h1>
           <p className="text-xs text-slate-500 dark:text-slate-400">View and update your health records inline</p>
         </div>
       </div>
 
       {/* Premium Patient Header Card */}
-      <div className="relative overflow-hidden rounded-2xl border border-white/40 dark:border-slate-800/40 bg-gradient-to-br from-white/30 to-white/10 dark:from-slate-900/30 dark:to-slate-900/10 backdrop-blur-xl p-6 shadow-xl relative z-10">
+      <div className="m-1 relative overflow-hidden rounded-2xl border border-white/40 dark:border-slate-800/40 bg-gradient-to-br from-white/30 to-white/10 dark:from-slate-900/30 dark:to-slate-900/10 backdrop-blur-xl p-4 sm:p-6 shadow-xl relative z-10">
         <div className="absolute top-0 right-0 w-64 h-64 bg-teal-500/5 dark:bg-teal-500/10 rounded-full blur-3xl pointer-events-none"></div>
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-cyan-500/5 dark:bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
-        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 relative z-10">
-          <div className="flex items-center gap-5">
-            <Avatar className="h-20 w-20 rounded-2xl border-2 border-white dark:border-slate-700 shadow-lg shrink-0">
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 sm:gap-6 relative z-10">
+          <div className="flex items-center gap-3.5 sm:gap-5">
+            <Avatar className="h-16 w-16 sm:h-20 sm:w-20 rounded-2xl border-2 border-white dark:border-slate-700 shadow-lg shrink-0">
               {patientData.picture ? (
                 <Image
                   src={patientData.picture}
@@ -233,50 +233,57 @@ export default function ProfileClient({ patient }: ProfileClientProps) {
                   className="object-cover"
                 />
               ) : (
-                <AvatarFallback className="rounded-2xl text-xl font-bold bg-teal-500/10 text-teal-600 dark:text-teal-400">
+                <AvatarFallback className="rounded-2xl text-lg sm:text-xl font-bold bg-teal-500/10 text-teal-600 dark:text-teal-400">
                   {patientData.firstName?.[0]}{patientData.lastName?.[0]}
                 </AvatarFallback>
               )}
             </Avatar>
-            <div className="space-y-1">
-              <div className="flex items-center gap-3 flex-wrap">
-                <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+            <div className="space-y-1 min-w-0">
+              <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+                <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight">
                   {patientData.fullName}
                 </h1>
                 {renderVerificationBadge(patientData.verificationStatus)}
                 {patientData.yakapEnlistment && (
-                  <Badge className="bg-teal-500/15 text-teal-700 dark:text-teal-400 border border-teal-500/30 font-medium">
+                  <Badge className="bg-teal-500/15 text-teal-700 dark:text-teal-400 border border-teal-500/30 font-medium text-[10px] sm:text-xs">
                     Yakap Enlisted
                   </Badge>
                 )}
               </div>
-              <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium break-all sm:break-normal">
                 {patientData.email} • {patientData.mobile || patientData.telephone || 'No contact number'}
               </p>
-              <div className="flex items-center gap-3 text-xs text-slate-450 dark:text-slate-500 font-semibold uppercase tracking-wider">
-                <span>Case: {patientData.caseNumber || 'N/A'}</span>
-                <span>•</span>
-                <span>Age: {ageString}</span>
-                <span>•</span>
-                <span>Blood: {formatBloodType(patientData.bloodType) || 'Unknown'}</span>
+              <div className="flex flex-wrap items-center gap-1 sm:gap-2 text-[10px] sm:text-xs pt-0.5 font-semibold uppercase tracking-wide">
+                <span className="px-2 py-0.5 rounded bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 font-bold">
+                  PhilHealth PIN: {patientData.philHealthRecords?.[0]?.pin || 'Not Registered'}
+                </span>
+                <span className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/50 dark:border-slate-700/50">
+                  Case: {patientData.caseNumber || 'N/A'}
+                </span>
+                <span className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/50 dark:border-slate-700/50">
+                  Age: {ageString}
+                </span>
+                <span className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/50 dark:border-slate-700/50">
+                  Blood: {formatBloodType(patientData.bloodType) || 'Unknown'}
+                </span>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-2.5 flex-wrap shrink-0">
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:flex-wrap shrink-0 w-full lg:w-auto">
             <Link
               href="/v2/patient/files"
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm"
+              className="flex items-center justify-center gap-1.5 px-3 py-2 sm:px-4 sm:py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm"
             >
-              <FolderOpen className="w-4 h-4 text-teal-600" />
-              <span>My Files</span>
+              <FolderOpen className="w-4 h-4 text-teal-600 shrink-0" />
+              <span className="truncate">My Files</span>
             </Link>
             <Link
               href="/v2/appointments-consultations"
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm"
+              className="flex items-center justify-center gap-1.5 px-3 py-2 sm:px-4 sm:py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm"
             >
-              <Calendar className="w-4 h-4 text-teal-600" />
-              <span>Appointments</span>
+              <Calendar className="w-4 h-4 text-teal-600 shrink-0" />
+              <span className="truncate">Appointments</span>
             </Link>
             <DownloadPHRButton
               patientName={patientData.fullName}
@@ -287,8 +294,14 @@ export default function ProfileClient({ patient }: ProfileClientProps) {
       </div>
 
       {/* Navigation Pills */}
-      <div className="sticky top-12 z-20 -mx-4 px-4 py-3 bg-slate-50/80 dark:bg-slate-950/80 backdrop-blur-md border-b border-slate-200/50 dark:border-slate-900/50 relative z-10">
+      <div className="sticky top-12 z-30 -mx-3 px-3 sm:-mx-4 sm:px-4 py-2 sm:py-3 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-b border-slate-200/60 dark:border-slate-800/60 shadow-xs">
         <div className="max-w-5xl mx-auto flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth">
+          <TabButton
+            active={activeTab === 'philhealth'}
+            onClick={() => handleTabChange('philhealth')}
+            icon={Building}
+            label="PhilHealth & Insurance"
+          />
           <TabButton
             active={activeTab === 'demographics'}
             onClick={() => handleTabChange('demographics')}
@@ -325,8 +338,97 @@ export default function ProfileClient({ patient }: ProfileClientProps) {
       </div>
 
       {/* Main Tab Content Cards */}
-      <div className="max-w-5xl mx-auto mt-6 relative z-10">
+      <div className="max-w-5xl mx-auto mt-4 sm:mt-6 relative z-10">
         <AnimatePresence mode="wait">
+          {activeTab === 'philhealth' && (
+            <motion.div
+              key="philhealth"
+              initial="hidden"
+              animate="visible"
+              exit="hidden"
+              variants={tabContentVariants}
+              className="space-y-4 sm:space-y-6"
+            >
+              {/* Primary PhilHealth Insurance Card */}
+              <motion.div variants={cardVariants}>
+                <CardContainer
+                  title="PhilHealth & Insurance"
+                  icon={Building}
+                  accentColor="bg-indigo-500"
+                  editing={editingSections['philhealth']}
+                  onEdit={() => toggleEdit('philhealth', true)}
+                  onCancel={() => toggleEdit('philhealth', false)}
+                  onSave={() => handleSaveSection('philhealth', philhealthSaveRef)}
+                  saving={savingSections['philhealth']}
+                >
+                  {editingSections['philhealth'] ? (
+                    <PhilHealthInlineForm
+                      userId={patientData.userId}
+                      currentData={philHealthCurrentData as any}
+                      onSuccess={handleRefresh}
+                      saveRef={philhealthSaveRef}
+                    />
+                  ) : (
+                    <div className="space-y-6">
+                      {patientData.philHealthRecords.length > 0 ? (
+                        patientData.philHealthRecords.map((record) => (
+                          <div key={record.id} className="space-y-6">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-3 gap-y-2 py-1">
+                              <ViewCell label="PIN (PhilHealth ID)" value={record.pin} className="text-indigo-600 dark:text-indigo-400 font-bold" />
+                              <ViewCell label="Member Type" value={((record as any).memberType) === 'MM' ? 'Formal Member (MM)' : ((record as any).memberType) === 'DD' ? 'Dependent (DD)' : (record as any).memberType || '—'} />
+                              <ViewCell label="PhilSys ID" value={record.philSysId} />
+                              <ViewCell label="TIN" value={record.tin} />
+                              <ViewCell label="Yakap Enlistment" value={patientData.yakapEnlistment ? 'Enlisted' : 'Not Enlisted'} />
+                            </div>
+
+                            {/* Dependents list */}
+                            {record.PhilHealthDependents && record.PhilHealthDependents.length > 0 ? (
+                              <div className="space-y-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+                                <h4 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                                  Registered PhilHealth Dependents ({record.PhilHealthDependents.length})
+                                </h4>
+                                <div className="overflow-x-auto rounded-xl border border-slate-200/80 dark:border-slate-800">
+                                  <table className="min-w-full text-xs text-left">
+                                    <thead className="bg-slate-50 dark:bg-slate-900 font-bold text-slate-500 uppercase">
+                                      <tr>
+                                        <th className="px-3.5 py-2.5">Full Name</th>
+                                        <th className="px-3.5 py-2.5">Relationship</th>
+                                        <th className="px-3.5 py-2.5">Gender</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-slate-700 dark:text-slate-300">
+                                      {record.PhilHealthDependents.map((dep) => (
+                                        <tr key={dep.id}>
+                                          <td className="px-3.5 py-2.5 font-bold">{dep.firstName} {dep.lastName}</td>
+                                          <td className="px-3.5 py-2.5 capitalize">{dep.relationship ? dep.relationship.toLowerCase() : '—'}</td>
+                                          <td className="px-3.5 py-2.5 capitalize">{dep.gender ? dep.gender.toLowerCase() : '—'}</td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="pt-2 text-xs text-slate-500 dark:text-slate-400 italic">
+                                No registered dependents on file.
+                              </div>
+                            )}
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-center py-8 text-slate-500 dark:text-slate-400 text-sm">
+                          <Building className="w-10 h-10 mx-auto text-indigo-400/40 mb-2" />
+                          <p className="font-semibold text-slate-700 dark:text-slate-300">No PhilHealth records added yet.</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Click "Edit" above to record PhilHealth PIN, Member Type, PhilSys ID, and TIN.</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </CardContainer>
+              </motion.div>
+            </motion.div>
+          )}
+
           {activeTab === 'demographics' && (
             <motion.div
               key="demographics"
@@ -356,7 +458,7 @@ export default function ProfileClient({ patient }: ProfileClientProps) {
                       saveRef={demographicsSaveRef}
                     />
                   ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 py-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-3 gap-y-2 py-1">
                       <ViewCell label="First Name" value={patientData.firstName} />
                       <ViewCell label="Middle Name" value={patientData.middleName} />
                       <ViewCell label="Last Name" value={patientData.lastName} />
@@ -794,7 +896,7 @@ export default function ProfileClient({ patient }: ProfileClientProps) {
                       saveRef={personalHistorySaveRef}
                     />
                   ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 py-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-3 gap-y-2 py-1">
                       <ViewCell label="Smoking Status" value={patientData.personalHistory?.smokingStatus} className="capitalize" />
                       <ViewCell label="Packs per Year" value={patientData.personalHistory?.numberOfPacksPerYear} />
                       <ViewCell label="Alcohol Intake" value={patientData.personalHistory?.alcoholStatus} className="capitalize" />
@@ -1140,7 +1242,7 @@ export default function ProfileClient({ patient }: ProfileClientProps) {
                       saveRef={obGyneSaveRef}
                     />
                   ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 py-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-3 gap-y-2 py-1">
                       <ViewCell label="Menarche Age" value={patientData.obGyneHistory?.menarche ? `${patientData.obGyneHistory.menarche} years` : null} />
                       <ViewCell label="LMP (Last Menstrual Period)" value={patientData.obGyneHistory?.lastMenstrualPeriod ? new Date(patientData.obGyneHistory.lastMenstrualPeriod).toLocaleDateString() : null} />
                       <ViewCell label="Menopause Status" value={patientData.obGyneHistory?.menopauseStatus} className="uppercase" />
@@ -1177,11 +1279,10 @@ function TabButton({ active, onClick, icon: Icon, label }: TabButtonProps) {
   return (
     <button
       onClick={onClick}
-      className={`relative flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold tracking-tight whitespace-nowrap shrink-0 transition-all duration-200 focus-visible:outline-none focus:outline-none ${
-        active 
-          ? 'text-white' 
-          : 'text-slate-600 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-900'
-      }`}
+      className={`relative flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold tracking-tight whitespace-nowrap shrink-0 transition-all duration-200 focus-visible:outline-none focus:outline-none ${active
+        ? 'text-white'
+        : 'text-slate-600 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-900'
+        }`}
     >
       {active && (
         <motion.div
@@ -1190,8 +1291,8 @@ function TabButton({ active, onClick, icon: Icon, label }: TabButtonProps) {
           transition={{ type: 'spring', stiffness: 380, damping: 30 }}
         />
       )}
-      <span className="relative z-10 flex items-center gap-2">
-        <Icon className={`w-4 h-4 transition-colors duration-200 ${active ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
+      <span className="relative z-10 flex items-center gap-1.5 sm:gap-2">
+        <Icon className={`w-3.5 h-3.5 sm:w-4 sm:h-4 transition-colors duration-200 ${active ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
         <span className="transition-colors duration-200">{label}</span>
       </span>
     </button>
@@ -1225,17 +1326,17 @@ function CardContainer({
   children
 }: CardContainerProps) {
   return (
-    <div className="rounded-2xl border border-slate-100 dark:border-slate-850 bg-white dark:bg-slate-950/80 shadow-md p-6 relative transition-all hover:shadow-lg">
+    <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-950/90 shadow-sm p-3.5 sm:p-5 relative transition-all hover:shadow-md">
       {/* Accent strip */}
       <div className={`absolute top-0 left-0 w-full h-[3px] rounded-t-2xl ${accentColor}`}></div>
 
       {/* Header */}
-      <div className="flex items-center justify-between gap-4 pb-4 mb-4 border-b border-slate-100 dark:border-slate-800">
-        <div className="flex items-center gap-2.5">
-          <div className={`p-1.5 rounded-lg ${accentColor}/10 shrink-0`}>
-            <Icon className="w-5 h-5 text-slate-700 dark:text-slate-355" />
+      <div className="flex items-center justify-between gap-2.5 pb-2.5 mb-3 border-b border-slate-100 dark:border-slate-800/80">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className={`p-1 rounded-lg ${accentColor}/10 shrink-0`}>
+            <Icon className="w-4 h-4 text-slate-700 dark:text-slate-355" />
           </div>
-          <h3 className="text-lg font-bold text-slate-800 dark:text-white leading-none">
+          <h3 className="text-sm sm:text-base font-bold text-slate-800 dark:text-white leading-none truncate">
             {title}
           </h3>
         </div>
@@ -1244,18 +1345,18 @@ function CardContainer({
         {!editing ? (
           <button
             onClick={onEdit}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 transition-all shrink-0"
+            className="flex items-center gap-1 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 text-[11px] font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 transition-all shrink-0"
           >
-            <Edit2 className="w-3.5 h-3.5 text-teal-600" />
+            <Edit2 className="w-3 h-3 text-teal-600" />
             <span>{isAutoSaveForm ? 'Manage' : 'Edit'}</span>
           </button>
         ) : (
           isAutoSaveForm && (
             <button
               onClick={onCancel}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-slate-900 transition-all shrink-0"
+              className="flex items-center gap-1 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 text-[11px] font-bold text-slate-600 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-slate-900 transition-all shrink-0"
             >
-              <X className="w-3.5 h-3.5" />
+              <X className="w-3 h-3" />
               <span>Done</span>
             </button>
           )
@@ -1315,11 +1416,11 @@ interface ViewCellProps {
 function ViewCell({ label, value, className = '' }: ViewCellProps) {
   const displayValue = value === null || value === undefined || value === '' ? '—' : String(value)
   return (
-    <div className="space-y-1">
-      <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+    <div className="space-y-0.5 sm:space-y-1 min-w-0">
+      <p className="text-[10px] sm:text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider truncate">
         {label}
       </p>
-      <p className={`text-sm font-semibold text-slate-800 dark:text-slate-200 ${className}`}>
+      <p className={`text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200 break-words ${className}`}>
         {displayValue}
       </p>
     </div>
@@ -1336,14 +1437,14 @@ interface VitalMetricBoxProps {
 
 function VitalMetricBox({ label, value, unit, color }: VitalMetricBoxProps) {
   return (
-    <div className="rounded-xl border border-slate-100 dark:border-slate-850 p-4 text-center bg-slate-50/20 dark:bg-slate-900/10">
-      <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">
+    <div className="rounded-xl border border-slate-100 dark:border-slate-850 p-2.5 sm:p-4 text-center bg-slate-50/20 dark:bg-slate-900/10 min-w-0">
+      <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1 truncate">
         {label}
       </p>
-      <p className={`text-xl font-extrabold leading-none ${color}`}>
+      <p className={`text-lg sm:text-xl font-extrabold leading-none ${color}`}>
         {value}
       </p>
-      <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 font-semibold">
+      <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 font-semibold truncate">
         {unit}
       </p>
     </div>

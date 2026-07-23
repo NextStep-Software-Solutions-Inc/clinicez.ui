@@ -175,22 +175,22 @@ export function VitalSignsInlineForm({
   ) => {
     const error = errors[field]
     return (
-      <div className="space-y-1.5 w-full">
-        <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
+      <div className="space-y-1 w-full">
+        <label className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
           {label}
         </label>
         <div className="w-full">{control}</div>
         {error && (
-          <span className="text-xs text-red-500 font-medium block mt-1">{error}</span>
+          <span className="text-[10px] text-red-500 font-medium block mt-0.5">{error}</span>
         )}
       </div>
     )
   }
 
   return (
-    <div className="space-y-6 py-2">
-      {/* Date & Time taken */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+    <div className="space-y-4 py-1.5">
+      {/* Main Vital Metrics Grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-3.5 gap-y-3">
         {renderField(
           'Date & Time Recorded',
           'dateTaken',
@@ -198,7 +198,7 @@ export function VitalSignsInlineForm({
             type="datetime-local"
             value={formData.dateTaken ? new Date(new Date(formData.dateTaken).getTime() - new Date(formData.dateTaken).getTimezoneOffset() * 60000).toISOString().slice(0, 16) : ''}
             onChange={(e) => handleFieldChange('dateTaken', e.target.value ? new Date(e.target.value) : null)}
-            className="h-9 text-sm focus-visible:ring-teal-500"
+            className="h-8 text-xs focus-visible:ring-teal-500"
           />
         )}
       </div>
@@ -215,7 +215,7 @@ export function VitalSignsInlineForm({
               type="number"
               value={formData.bpSystolic ?? ''}
               onChange={(e) => handleFieldChange('bpSystolic', e.target.value)}
-              className="h-9 text-sm focus-visible:ring-teal-500"
+              className="h-8 text-xs focus-visible:ring-teal-500"
               placeholder="e.g. 120"
             />
           )}
@@ -227,7 +227,7 @@ export function VitalSignsInlineForm({
               type="number"
               value={formData.bpDiastolic ?? ''}
               onChange={(e) => handleFieldChange('bpDiastolic', e.target.value)}
-              className="h-9 text-sm focus-visible:ring-teal-500"
+              className="h-8 text-xs focus-visible:ring-teal-500"
               placeholder="e.g. 80"
             />
           )}
@@ -239,7 +239,7 @@ export function VitalSignsInlineForm({
               type="number"
               value={formData.pulseRate ?? ''}
               onChange={(e) => handleFieldChange('pulseRate', e.target.value)}
-              className="h-9 text-sm focus-visible:ring-teal-500"
+              className="h-8 text-xs focus-visible:ring-teal-500"
               placeholder="e.g. 72"
             />
           )}
@@ -252,7 +252,7 @@ export function VitalSignsInlineForm({
               step="0.1"
               value={formData.temp ?? ''}
               onChange={(e) => handleFieldChange('temp', e.target.value)}
-              className="h-9 text-sm focus-visible:ring-teal-500"
+              className="h-8 text-xs focus-visible:ring-teal-500"
               placeholder="e.g. 36.5"
             />
           )}
@@ -265,7 +265,7 @@ export function VitalSignsInlineForm({
               step="0.1"
               value={formData.weight ?? ''}
               onChange={(e) => handleFieldChange('weight', e.target.value)}
-              className="h-9 text-sm focus-visible:ring-teal-500"
+              className="h-8 text-xs focus-visible:ring-teal-500"
               placeholder="e.g. 70"
             />
           )}
@@ -278,7 +278,7 @@ export function VitalSignsInlineForm({
               step="0.1"
               value={formData.height ?? ''}
               onChange={(e) => handleFieldChange('height', e.target.value)}
-              className="h-9 text-sm focus-visible:ring-teal-500"
+              className="h-8 text-xs focus-visible:ring-teal-500"
               placeholder="e.g. 175"
             />
           )}
@@ -290,7 +290,7 @@ export function VitalSignsInlineForm({
               type="number"
               value={formData.spo2 ?? ''}
               onChange={(e) => handleFieldChange('spo2', e.target.value)}
-              className="h-9 text-sm focus-visible:ring-teal-500"
+              className="h-8 text-xs focus-visible:ring-teal-500"
               placeholder="e.g. 98"
             />
           )}
@@ -302,7 +302,7 @@ export function VitalSignsInlineForm({
               type="number"
               value={formData.respRate ?? ''}
               onChange={(e) => handleFieldChange('respRate', e.target.value)}
-              className="h-9 text-sm focus-visible:ring-teal-500"
+              className="h-8 text-xs focus-visible:ring-teal-500"
               placeholder="e.g. 16"
             />
           )}
@@ -322,7 +322,7 @@ export function VitalSignsInlineForm({
               step="0.1"
               value={formData.length ?? ''}
               onChange={(e) => handleFieldChange('length', e.target.value)}
-              className="h-9 text-sm focus-visible:ring-teal-500"
+              className="h-8 text-xs focus-visible:ring-teal-500"
               placeholder="Pediatric height"
             />
           )}
@@ -335,7 +335,7 @@ export function VitalSignsInlineForm({
               step="0.1"
               value={formData.headCircumference ?? ''}
               onChange={(e) => handleFieldChange('headCircumference', e.target.value)}
-              className="h-9 text-sm focus-visible:ring-teal-500"
+              className="h-8 text-xs focus-visible:ring-teal-500"
               placeholder="Pediatric head circ."
             />
           )}
@@ -348,7 +348,7 @@ export function VitalSignsInlineForm({
               step="0.1"
               value={formData.waistCircumference ?? ''}
               onChange={(e) => handleFieldChange('waistCircumference', e.target.value)}
-              className="h-9 text-sm focus-visible:ring-teal-500"
+              className="h-8 text-xs focus-visible:ring-teal-500"
               placeholder="Waist circumference"
             />
           )}
@@ -361,7 +361,7 @@ export function VitalSignsInlineForm({
               step="0.1"
               value={formData.hipCircumference ?? ''}
               onChange={(e) => handleFieldChange('hipCircumference', e.target.value)}
-              className="h-9 text-sm focus-visible:ring-teal-500"
+              className="h-8 text-xs focus-visible:ring-teal-500"
               placeholder="Hip circumference"
             />
           )}
@@ -374,7 +374,7 @@ export function VitalSignsInlineForm({
               step="0.1"
               value={formData.limbCircumference ?? ''}
               onChange={(e) => handleFieldChange('limbCircumference', e.target.value)}
-              className="h-9 text-sm focus-visible:ring-teal-500"
+              className="h-8 text-xs focus-visible:ring-teal-500"
               placeholder="Limb circumference"
             />
           )}
@@ -387,7 +387,7 @@ export function VitalSignsInlineForm({
               step="0.1"
               value={formData.midUpperArmCircumference ?? ''}
               onChange={(e) => handleFieldChange('midUpperArmCircumference', e.target.value)}
-              className="h-9 text-sm focus-visible:ring-teal-500"
+              className="h-8 text-xs focus-visible:ring-teal-500"
               placeholder="MUAC (cm)"
             />
           )}

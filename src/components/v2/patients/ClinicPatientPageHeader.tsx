@@ -28,7 +28,7 @@ export function ClinicPatientPageHeader({
     : `/v2/clinic/${clinicUid}/patients`
 
   return (
-    <div className="sticky top-12 z-30 backdrop-blur-md bg-white/80 dark:bg-slate-950/80 border-b border-slate-100 dark:border-slate-900/60 px-6 sm:px-8 py-3 mx-6 sm:mx-8">
+    <div className="sticky top-12 z-40 h-12 flex items-center backdrop-blur-md bg-white/95 dark:bg-slate-950/95 border-b border-slate-200/60 dark:border-slate-800/60 shadow-xs px-3 py-1.5 sm:py-2">
       <div className="flex items-center gap-4">
         {/* Sleek Circular Back Button */}
         <Link

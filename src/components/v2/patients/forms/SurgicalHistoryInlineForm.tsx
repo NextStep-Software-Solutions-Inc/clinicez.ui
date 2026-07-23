@@ -118,7 +118,7 @@ export function SurgicalHistoryInlineForm({
   const renderField = (label: string, control: React.ReactNode) => {
     return (
       <div className="space-y-1">
-        <span className="text-xs font-semibold text-slate-500">{label}</span>
+        <label className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">{label}</label>
         <div className="w-full">{control}</div>
       </div>
     )

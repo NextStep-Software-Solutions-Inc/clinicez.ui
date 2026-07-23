@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
-import { CheckCircle, AlertCircle, Loader2 } from 'lucide-react'
+import { CheckCircle2, AlertCircle, Loader2, ShieldCheck, FileKey, Zap } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
+import { Badge } from '@/components/ui/badge'
 import { 
   verifyKonsultaPinAction, 
   enlistKonsultaAction, 
@@ -86,7 +86,6 @@ export function PhilHealthYakapCard({ clinicPatientId, isClinicMode, philHealthR
       const res = await verifyKonsultaPinAction(clinicUid, pinToVerify, memberType)
 
       if (res.success && res.data) {
-        // Just verify, don't enlist yet
         toast.success("Successfully verified with PhilHealth Yakap API!")
       } else {
         toast.error(res.error || "Verification failed")
@@ -149,125 +148,149 @@ export function PhilHealthYakapCard({ clinicPatientId, isClinicMode, philHealthR
 
   if (isLoading) {
     return (
-      <div className="glassmorphic-card p-6 border-2 border-teal-500/20 flex justify-center items-center">
-        <Loader2 className="w-6 h-6 animate-spin text-teal-600" />
+      <div className="p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white/70 dark:bg-slate-900/60 flex justify-center items-center">
+        <Loader2 className="w-5 h-5 animate-spin text-teal-600" />
       </div>
     )
   }
 
   return (
-    <div className="glassmorphic-card p-6 border-2 border-teal-500/20">
-      <div className="flex items-center gap-2 mb-6">
-        <CheckCircle className="w-5 h-5 text-teal-600" />
-        <h3 className="text-lg font-semibold text-slate-900 dark:text-white">PhilHealth Yakap Integration</h3>
-      </div>
-
-      <div className="space-y-6">
-        {/* Verification Display */}
-        <div className="space-y-4 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl">
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-            <div>
-              <Label className="text-slate-500">Member Type</Label>
-              <p className="font-medium text-slate-900 dark:text-white">
-                {memberType === 'DD' ? 'Dependent' : 'Principal Member'}
-              </p>
-            </div>
-            <div>
-              <Label className="text-slate-500">Member PIN {memberType === 'DD' && '(Principal)'}</Label>
-              <p className="font-mono font-medium text-slate-900 dark:text-white">
-                {formatPhilHealthPIN(memberPin)}
-              </p>
-            </div>
-            {memberType === 'DD' && (
-              <div>
-                <Label className="text-slate-500">Dependent PIN</Label>
-                <p className="font-mono font-medium text-slate-900 dark:text-white">
-                  {formatPhilHealthPIN(dependentPin)}
-                </p>
-              </div>
-            )}
+    <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl p-4 sm:p-5 shadow-sm space-y-4">
+      {/* Header Bar */}
+      <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center font-bold">
+            <ShieldCheck className="w-4 h-4" />
           </div>
-
-          {!enlistment ? (
-            <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-700">
-              {!memberPin ? (
-                <div className="flex items-center gap-2 text-amber-600 bg-amber-50 p-3 rounded-lg text-sm">
-                  <AlertCircle className="w-4 h-4" />
-                  Please update the patient's PhilHealth Profile with their PINs to use Yakap Integration.
-                </div>
-              ) : (
-                <div className="flex flex-col sm:flex-row items-center gap-3">
-                  <Button 
-                    variant="outline" 
-                    onClick={handleVerify} 
-                    disabled={isVerifying || isEnlisting} 
-                    className="w-full sm:w-auto text-teal-600 border-teal-600 hover:bg-teal-50"
-                  >
-                    {isVerifying && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Verify PINs
-                  </Button>
-                  
-                  <Button 
-                    onClick={handleEnlist} 
-                    disabled={isEnlisting || isVerifying} 
-                    className="w-full sm:w-auto bg-teal-600 hover:bg-teal-700"
-                  >
-                    {isEnlisting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Enlist to Yakap
-                  </Button>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400 font-medium pt-2">
-              <CheckCircle className="w-4 h-4" />
-              Verified & Enlisted
-            </div>
-          )}
+          <div>
+            <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+              PhilHealth Yakap API Integration & Case Generator
+            </h3>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+              Real-time API verification, Konsulta enlistment, and transaction numbers
+            </p>
+          </div>
         </div>
 
-        {/* ID Generation (Only visible after successful enlistment) */}
-        {enlistment && (
-          <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-700">
-            <h4 className="font-medium text-slate-900 dark:text-white">Yakap Transaction Numbers</h4>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div className="space-y-2 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700">
-                <Label className="text-xs text-slate-500 uppercase">Case Number</Label>
-                <p className="font-mono font-medium text-slate-900 dark:text-white text-lg">
-                  {enlistment.hciCaseNo || 'N/A'}
-                </p>
-              </div>
+        {enlistment ? (
+          <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-bold text-[10px] uppercase tracking-wider px-2.5 py-0.5">
+            <CheckCircle2 className="w-3 h-3 mr-1" /> Enlisted & Verified
+          </Badge>
+        ) : (
+          <Badge className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 font-bold text-[10px] uppercase tracking-wider px-2.5 py-0.5">
+            Pending Enlistment
+          </Badge>
+        )}
+      </div>
 
-              <div className="space-y-2 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700">
-                <Label className="text-xs text-slate-500 uppercase">Enlistment Trans No</Label>
-                <p className="font-mono font-medium text-slate-900 dark:text-white text-lg">
-                  {enlistment.enlistmentTransNo || 'N/A'}
-                </p>
-              </div>
+      {/* Dense 5-Column Grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-3.5 gap-y-3 py-1">
+        <div className="space-y-1">
+          <label className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
+            Member Type
+          </label>
+          <div className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">
+            {memberType === 'DD' ? 'Dependent (DD)' : 'Principal (MM)'}
+          </div>
+        </div>
 
-              <div className="space-y-2 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700">
-                <Label className="text-xs text-slate-500 uppercase">Profiling Trans No</Label>
-                {enlistment.profilingTransNo ? (
-                  <p className="font-mono font-medium text-slate-900 dark:text-white text-lg">
-                    {enlistment.profilingTransNo}
-                  </p>
-                ) : (
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => handleGenerateId('PROFILING')}
-                    disabled={isGenerating || !enlistment.hciCaseNo}
-                    title={!enlistment.hciCaseNo ? "Generate Case No first" : undefined}
-                    className="w-full text-teal-600 border-teal-600 hover:bg-teal-50"
-                  >
-                    {isGenerating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Generate Profiling No
-                  </Button>
-                )}
-              </div>
+        <div className="space-y-1">
+          <label className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
+            Principal PIN
+          </label>
+          <div className="text-xs font-semibold font-mono text-slate-800 dark:text-slate-200 truncate">
+            {formatPhilHealthPIN(memberPin)}
+          </div>
+        </div>
+
+        {memberType === 'DD' && (
+          <div className="space-y-1">
+            <label className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
+              Dependent PIN
+            </label>
+            <div className="text-xs font-semibold font-mono text-slate-800 dark:text-slate-200 truncate">
+              {formatPhilHealthPIN(dependentPin)}
             </div>
+          </div>
+        )}
+
+        <div className="space-y-1">
+          <label className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
+            Enlistment Trans No
+          </label>
+          <div className="text-xs font-semibold font-mono text-indigo-600 dark:text-indigo-400 truncate">
+            {enlistment?.enlistmentTransNo || '—'}
+          </div>
+        </div>
+
+        <div className="space-y-1">
+          <label className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
+            HCI Case No
+          </label>
+          <div className="text-xs font-semibold font-mono text-indigo-600 dark:text-indigo-400 truncate">
+            {enlistment?.hciCaseNo || '—'}
+          </div>
+        </div>
+
+        <div className="space-y-1">
+          <label className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
+            Profiling Trans No
+          </label>
+          <div className="text-xs font-semibold font-mono text-indigo-600 dark:text-indigo-400 truncate">
+            {enlistment?.profilingTransNo || '—'}
+          </div>
+        </div>
+      </div>
+
+      {/* Action Toolbar */}
+      <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3">
+        {!memberPin ? (
+          <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 text-xs font-medium bg-amber-50 dark:bg-amber-950/20 px-3 py-2 rounded-lg border border-amber-200/60 dark:border-amber-900/30 w-full sm:w-auto">
+            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+            <span>Update PhilHealth PIN in record above to enable Yakap API integration.</span>
+          </div>
+        ) : (
+          <div className="flex flex-wrap items-center gap-2">
+            {!enlistment && (
+              <>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={handleVerify} 
+                  disabled={isVerifying || isEnlisting} 
+                  className="h-8 text-xs font-semibold text-teal-600 border-teal-600/40 hover:bg-teal-50 dark:hover:bg-teal-950/20"
+                >
+                  {isVerifying && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+                  <ShieldCheck className="w-3.5 h-3.5 mr-1.5" />
+                  Verify PINs
+                </Button>
+                
+                <Button 
+                  size="sm"
+                  onClick={handleEnlist} 
+                  disabled={isEnlisting || isVerifying} 
+                  className="h-8 text-xs font-semibold bg-teal-600 hover:bg-teal-700 text-white shadow-sm"
+                >
+                  {isEnlisting && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+                  <Zap className="w-3.5 h-3.5 mr-1.5" />
+                  Enlist to Yakap
+                </Button>
+              </>
+            )}
+
+            {enlistment && !enlistment.profilingTransNo && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => handleGenerateId('PROFILING')}
+                disabled={isGenerating}
+                className="h-8 text-xs font-semibold text-indigo-600 border-indigo-500/40 hover:bg-indigo-50 dark:hover:bg-indigo-950/20"
+              >
+                {isGenerating && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+                <FileKey className="w-3.5 h-3.5 mr-1.5" />
+                Generate Profiling Trans No
+              </Button>
+            )}
           </div>
         )}
       </div>

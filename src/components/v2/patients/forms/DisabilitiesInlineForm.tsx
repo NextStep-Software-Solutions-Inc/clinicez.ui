@@ -87,7 +87,7 @@ export function DisabilitiesInlineForm({
   const renderField = (label: string, control: React.ReactNode) => {
     return (
       <div className="space-y-1">
-        <span className="text-xs font-semibold text-slate-500">{label}</span>
+        <label className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">{label}</label>
         <div className="w-full">{control}</div>
       </div>
     )
@@ -121,9 +121,9 @@ export function DisabilitiesInlineForm({
             </button>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-xs">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-3.5 gap-y-3 text-xs">
             <div className="space-y-1">
-              <span className="text-xs font-semibold text-slate-500">Disability *</span>
+              <label className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Disability *</label>
               <DisabilityV2Combobox
                 value={formData.disabilityName || ''}
                 onChange={(val) => {

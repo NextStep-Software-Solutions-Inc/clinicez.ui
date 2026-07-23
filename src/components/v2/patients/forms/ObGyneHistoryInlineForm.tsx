@@ -156,21 +156,21 @@ export function ObGyneHistoryInlineForm({
   ) => {
     const error = errors[field]
     return (
-      <div className="space-y-1.5 w-full">
-        <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
+      <div className="space-y-1 w-full">
+        <label className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
           {label}
         </label>
         <div className="w-full">{control}</div>
         {error && (
-          <span className="text-xs text-red-500 font-medium block mt-1">{error}</span>
+          <span className="text-[10px] text-red-500 font-medium block mt-0.5">{error}</span>
         )}
       </div>
     )
   }
 
   return (
-    <div className="space-y-6 py-2">
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+    <div className="space-y-4 py-1.5">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-3.5 gap-y-3">
         {renderField(
           'Age of Menarche (Years)',
           'menarche',
@@ -178,7 +178,7 @@ export function ObGyneHistoryInlineForm({
             type="number"
             value={formData.menarche ?? ''}
             onChange={(e) => handleFieldChange('menarche', e.target.value)}
-            className="h-9 text-sm focus-visible:ring-teal-500"
+            className="h-8 text-xs focus-visible:ring-teal-500"
             placeholder="e.g. 12"
           />
         )}
@@ -190,7 +190,7 @@ export function ObGyneHistoryInlineForm({
             type="date"
             value={formData.lastMenstrualPeriod ? new Date(formData.lastMenstrualPeriod).toISOString().split('T')[0] : ''}
             onChange={(e) => handleFieldChange('lastMenstrualPeriod', e.target.value ? new Date(e.target.value) : null)}
-            className="h-9 text-sm focus-visible:ring-teal-500"
+            className="h-8 text-xs focus-visible:ring-teal-500"
           />
         )}
 
@@ -201,7 +201,7 @@ export function ObGyneHistoryInlineForm({
             type="number"
             value={formData.menstrualCycleInterval ?? ''}
             onChange={(e) => handleFieldChange('menstrualCycleInterval', e.target.value)}
-            className="h-9 text-sm focus-visible:ring-teal-500"
+            className="h-8 text-xs focus-visible:ring-teal-500"
             placeholder="e.g. 28"
           />
         )}
@@ -213,7 +213,7 @@ export function ObGyneHistoryInlineForm({
             type="number"
             value={formData.menstrualPeriodDuration ?? ''}
             onChange={(e) => handleFieldChange('menstrualPeriodDuration', e.target.value)}
-            className="h-9 text-sm focus-visible:ring-teal-500"
+            className="h-8 text-xs focus-visible:ring-teal-500"
             placeholder="e.g. 5"
           />
         )}
@@ -225,7 +225,7 @@ export function ObGyneHistoryInlineForm({
             type="number"
             value={formData.numberOfPadsPerDay ?? ''}
             onChange={(e) => handleFieldChange('numberOfPadsPerDay', e.target.value)}
-            className="h-9 text-sm focus-visible:ring-teal-500"
+            className="h-8 text-xs focus-visible:ring-teal-500"
             placeholder="e.g. 3"
           />
         )}
@@ -237,7 +237,7 @@ export function ObGyneHistoryInlineForm({
             value={formData.menopauseStatus || ''}
             onValueChange={(val) => handleFieldChange('menopauseStatus', val || null)}
           >
-            <SelectTrigger className="h-9 text-sm focus:ring-teal-500">
+            <SelectTrigger className="h-8 text-xs focus:ring-teal-500">
               <SelectValue placeholder="Select Status" />
             </SelectTrigger>
             <SelectContent>
@@ -257,7 +257,7 @@ export function ObGyneHistoryInlineForm({
             disabled={formData.menopauseStatus !== 'POST'}
             value={formData.menopauseAge ?? ''}
             onChange={(e) => handleFieldChange('menopauseAge', e.target.value)}
-            className="h-9 text-sm focus-visible:ring-teal-500"
+            className="h-8 text-xs focus-visible:ring-teal-500"
             placeholder="e.g. 50"
           />
         )}
@@ -269,7 +269,7 @@ export function ObGyneHistoryInlineForm({
             type="number"
             value={formData.ageAtFirstSexualIntercourse ?? ''}
             onChange={(e) => handleFieldChange('ageAtFirstSexualIntercourse', e.target.value)}
-            className="h-9 text-sm focus-visible:ring-teal-500"
+            className="h-8 text-xs focus-visible:ring-teal-500"
             placeholder="e.g. 18"
           />
         )}
@@ -294,7 +294,7 @@ export function ObGyneHistoryInlineForm({
             disabled={!formData.isFamilyPlanning}
             value={formData.birthControlMethod || ''}
             onChange={(e) => handleFieldChange('birthControlMethod', e.target.value)}
-            className="h-9 text-sm focus-visible:ring-teal-500"
+            className="h-8 text-xs focus-visible:ring-teal-500"
             placeholder="e.g. Pill, Condom, IUD"
           />
         )}
@@ -312,7 +312,7 @@ export function ObGyneHistoryInlineForm({
               type="number"
               value={formData.gravidity ?? ''}
               onChange={(e) => handleFieldChange('gravidity', e.target.value)}
-              className="h-9 text-sm focus-visible:ring-teal-500"
+              className="h-8 text-xs focus-visible:ring-teal-500"
               placeholder="G"
             />
           )}
@@ -324,7 +324,7 @@ export function ObGyneHistoryInlineForm({
               type="number"
               value={formData.parity ?? ''}
               onChange={(e) => handleFieldChange('parity', e.target.value)}
-              className="h-9 text-sm focus-visible:ring-teal-500"
+              className="h-8 text-xs focus-visible:ring-teal-500"
               placeholder="P"
             />
           )}
@@ -336,7 +336,7 @@ export function ObGyneHistoryInlineForm({
               type="number"
               value={formData.fullTerm ?? ''}
               onChange={(e) => handleFieldChange('fullTerm', e.target.value)}
-              className="h-9 text-sm focus-visible:ring-teal-500"
+              className="h-8 text-xs focus-visible:ring-teal-500"
               placeholder="F"
             />
           )}

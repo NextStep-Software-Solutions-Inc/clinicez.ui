@@ -111,9 +111,9 @@ export function AllergiesInlineForm({
             </button>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-xs">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-3.5 gap-y-3 text-xs">
             <div className="space-y-1">
-              <span className="text-xs font-semibold text-slate-500">Allergen *</span>
+              <label className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Allergen *</label>
               <AllergenV2Combobox
                 value={formData.allergen}
                 onChange={(val) => handleFieldChange('allergen', val)}
@@ -122,7 +122,7 @@ export function AllergiesInlineForm({
             </div>
 
             <div className="space-y-1">
-              <span className="text-xs font-semibold text-slate-500">Reaction / Symptoms *</span>
+              <label className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Reaction / Symptoms *</label>
               <Input
                 value={formData.reaction}
                 onChange={(e) => handleFieldChange('reaction', e.target.value)}
@@ -132,7 +132,7 @@ export function AllergiesInlineForm({
             </div>
 
             <div className="space-y-1 sm:col-span-1">
-              <span className="text-xs font-semibold text-slate-500">Severity / Notes</span>
+              <label className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Severity / Notes</label>
               <Input
                 value={formData.notes}
                 onChange={(e) => handleFieldChange('notes', e.target.value)}

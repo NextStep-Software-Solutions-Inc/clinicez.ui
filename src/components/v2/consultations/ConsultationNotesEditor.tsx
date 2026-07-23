@@ -13,6 +13,8 @@ import type { GetHPsType } from "@/actions/hp.actions";
 import MarkdownEditor from "./MarkdownEditor";
 import { MedicalNoteSummarizer } from "@/components/ai";
 import { sortNoteSectionsSOAP } from "@/utils/soap-ordering";
+import KonsultaSubjectiveFields, { type SubjectiveStructuredData } from "./KonsultaSubjectiveFields";
+import DownloadEkasButton from "./DownloadEkasButton";
 
 type Detail = NonNullable<GetPatientConsultationDetail["data"]>;
 
@@ -29,6 +31,7 @@ interface ConsultationNotesEditorProps {
 }
 
 export default function ConsultationNotesEditor({
+  clinicUid,
   consultation,
   myHPs,
   onPatchDetail,
@@ -73,6 +76,22 @@ export default function ConsultationNotesEditor({
     Object.fromEntries(sections.map((s) => [s.name, true]))
   );
 
+  // PhilHealth Yakap: structured subjective data
+  const isKonsulta = consultation.isPhilHealthKonsulta ?? false;
+  const initialStructuredData: Record<string, SubjectiveStructuredData> = {};
+  for (const note of consultation.ConsultationNotes) {
+    if (note.structuredData && typeof note.structuredData === 'object' && !Array.isArray(note.structuredData)) {
+      const sd = note.structuredData as Record<string, string>;
+      initialStructuredData[note.section] = {
+        illnessHistory: sd.illnessHistory ?? "",
+        signsSymptoms: sd.signsSymptoms ?? "",
+        painSite: sd.painSite ?? "",
+        otherComplaint: sd.otherComplaint ?? "",
+      };
+    }
+  }
+  const [structuredDataMap, setStructuredDataMap] = useState<Record<string, SubjectiveStructuredData>>(initialStructuredData);
+
   // Debounce timers per section — cleared on unmount
   const debounceTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
@@ -88,6 +107,9 @@ export default function ConsultationNotesEditor({
 
   const onPatchDetailRef = useRef(onPatchDetail);
   onPatchDetailRef.current = onPatchDetail;
+
+  const structuredDataMapRef = useRef(structuredDataMap);
+  structuredDataMapRef.current = structuredDataMap;
 
   // Cleanup all pending timers when the component unmounts
   useEffect(() => {
@@ -110,6 +132,7 @@ export default function ConsultationNotesEditor({
         content,
         hpId: hp.id,
         showOnPatient: showOnPatientRef.current[sectionName] ?? false,
+        structuredData: structuredDataMapRef.current[sectionName] ?? null,
       });
 
       if (result.status && result.data) {
@@ -125,6 +148,7 @@ export default function ConsultationNotesEditor({
           content: saved.content,
           hpId: saved.hpId,
           showOnPatient: saved.showOnPatient,
+          structuredData: saved.structuredData,
         } satisfies (typeof existing)[number];
         onPatchDetailRef.current({
           ConsultationNotes: idx >= 0
@@ -238,18 +262,21 @@ export default function ConsultationNotesEditor({
 
   return (
     <div className="p-4 sm:p-6 space-y-3">
-      {/* AI Summarize button — hidden once consultation is resolved */}
-      {!isResolved && (
-      <div className="flex items-center justify-end">
-        <MedicalNoteSummarizer
-          consultationNotes={sections
-            .map((section) => `${section.label || section.name}: ${noteValues[section.name] ?? ""}`)
-            .join("\n\n")}
-          noteSections={sections.map((s) => s.label || s.name)}
-          outputFormat="markdown"
-        />
+      {/* Buttons above notes */}
+      <div className="flex items-center justify-end gap-2">
+        {isKonsulta && (
+          <DownloadEkasButton ticketId={consultation.id} clinicUid={clinicUid} />
+        )}
+        {!isResolved && (
+          <MedicalNoteSummarizer
+            consultationNotes={sections
+              .map((section) => `${section.label || section.name}: ${noteValues[section.name] ?? ""}`)
+              .join("\n\n")}
+            noteSections={sections.map((s) => s.label || s.name)}
+            outputFormat="markdown"
+          />
+        )}
       </div>
-      )}
       {sections.map((section) => (
         <div
           key={section.name}
@@ -269,11 +296,10 @@ export default function ConsultationNotesEditor({
               )}
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              <span className={`flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${
-                showOnPatient[section.name]
+              <span className={`flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${showOnPatient[section.name]
                   ? "border-emerald-300 text-emerald-700 bg-emerald-50 dark:border-emerald-700 dark:text-emerald-400 dark:bg-emerald-950/30"
                   : "border-border/50 text-muted-foreground bg-muted/30"
-              }`}>
+                }`}>
                 {showOnPatient[section.name] ? (
                   <Eye className="h-3 w-3" />
                 ) : (
@@ -291,6 +317,25 @@ export default function ConsultationNotesEditor({
 
           {expanded[section.name] && (
             <div className="px-4 pb-4 space-y-2">
+              {/* PhilHealth Yakap structured fields for subjective section */}
+              {isKonsulta && section.name.toLowerCase().includes("subjective") && (
+                <KonsultaSubjectiveFields
+                  data={structuredDataMap[section.name] ?? { illnessHistory: "", signsSymptoms: "", painSite: "", otherComplaint: "" }}
+                  onChange={(data) => {
+                    setStructuredDataMap((prev) => ({ ...prev, [section.name]: data }));
+                    // Trigger auto-save with debounce
+                    if (!isResolved && myActiveHpRef.current) {
+                      if (debounceTimers.current[section.name]) {
+                        clearTimeout(debounceTimers.current[section.name]);
+                      }
+                      debounceTimers.current[section.name] = setTimeout(() => {
+                        void doSave(section.name, noteValues[section.name] ?? "");
+                      }, AUTOSAVE_DELAY_MS);
+                    }
+                  }}
+                  disabled={isResolved}
+                />
+              )}
               <MarkdownEditor
                 value={noteValues[section.name] ?? ""}
                 onChange={(v) => handleNoteChange(section.name, v)}
@@ -303,11 +348,10 @@ export default function ConsultationNotesEditor({
                   onClick={() => toggleShowOnPatient(section.name)}
                   disabled={isTogglingPrivacy}
                   title={showOnPatient[section.name] ? "Hide from patient" : "Show to patient"}
-                  className={`flex items-center gap-1.5 text-xs rounded-md px-2 py-1 border transition-colors ${
-                    showOnPatient[section.name]
+                  className={`flex items-center gap-1.5 text-xs rounded-md px-2 py-1 border transition-colors ${showOnPatient[section.name]
                       ? "border-emerald-300 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:border-emerald-700 dark:text-emerald-400 dark:bg-emerald-950/30"
                       : "border-border/50 text-muted-foreground hover:border-border hover:text-foreground"
-                  }`}
+                    }`}
                 >
                   {showOnPatient[section.name] ? (
                     <Eye className="h-3.5 w-3.5" />

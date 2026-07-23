@@ -121,10 +121,41 @@ export async function updatePhilhealthRecord(
 
     const updateData = {
       pin: validatedInput.pin,
+      dependentPin: validatedInput.dependentPin,
       tin: validatedInput.tin,
       philSysId: validatedInput.philSysId,
-      memberTypeId: validatedInput.memberTypeId,
+      memberType: validatedInput.memberType,
       photoUrl: validatedInput.photoUrl,
+    }
+
+    // Check for unique constraints before updating/creating
+    const uniqueFieldsCheck = [];
+    if (validatedInput.pin) uniqueFieldsCheck.push({ pin: validatedInput.pin });
+    if (validatedInput.tin) uniqueFieldsCheck.push({ tin: validatedInput.tin });
+    if (validatedInput.philSysId) uniqueFieldsCheck.push({ philSysId: validatedInput.philSysId });
+
+    if (uniqueFieldsCheck.length > 0) {
+      const existingRecord = await prisma.philHealthRecord.findFirst({
+        where: {
+          OR: uniqueFieldsCheck,
+          NOT: {
+            userId: targetUser.id
+          }
+        }
+      });
+
+      if (existingRecord) {
+        if (existingRecord.pin === validatedInput.pin) {
+          return { success: false, error: 'This PIN is already associated with another record.' };
+        }
+        if (validatedInput.tin && existingRecord.tin === validatedInput.tin) {
+          return { success: false, error: 'This TIN is already associated with another record.' };
+        }
+        if (validatedInput.philSysId && existingRecord.philSysId === validatedInput.philSysId) {
+          return { success: false, error: 'This PhilSys ID is already associated with another record.' };
+        }
+        return { success: false, error: 'One of the provided unique IDs is already in use.' };
+      }
     }
 
     let action = AuditAction.CREATE
@@ -132,14 +163,14 @@ export async function updatePhilhealthRecord(
       action = AuditAction.UPDATE
       await prisma.philHealthRecord.update({
         where: { id: currentRecord.id },
-        data: updateData as any,
+        data: updateData,
       })
     } else {
       await prisma.philHealthRecord.create({
         data: {
           userId: targetUser.id,
           ...updateData,
-        } as any,
+        },
       })
     }
 

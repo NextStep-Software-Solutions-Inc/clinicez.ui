@@ -7,8 +7,8 @@ import { AppRouterPageRouteOpts } from "@/types";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "PHR | PhilHealth eKonsulta",
-  description: "Manage your PhilHealth eKonsulta information",
+  title: "PHR | PhilHealth Yakap",
+  description: "Manage your PhilHealth Yakap information",
 };
 
 export default async function PhilHealthPage(props: AppRouterPageRouteOpts) {
@@ -20,7 +20,7 @@ export default async function PhilHealthPage(props: AppRouterPageRouteOpts) {
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <h3 className="text-lg font-medium">PhilHealth eKonsulta</h3>
+        <h3 className="text-lg font-medium">PhilHealth Yakap</h3>
         <p className="text-sm text-muted-foreground">
           Manage your PhilHealth eKonsulta information
         </p>

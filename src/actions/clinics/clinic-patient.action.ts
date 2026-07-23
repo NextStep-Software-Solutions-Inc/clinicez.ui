@@ -109,6 +109,7 @@ export interface GetClinicPatientsResult {
       picture: string | null;
       StudentRecords: Array<{ studentId: number }>;
     };
+    PhilHealthKonsultaEnlistments: Array<{ id: number; profilingTransNo: string | null; hciCaseNo: string | null; }>;
   }>;
   total: number;
   nextCursor: number | null;
@@ -231,6 +232,17 @@ export const getClinicPatientsAction = async (filters: GetClinicPatientFilters):
               studentId: true
             }
           }
+        }
+      },
+      PhilHealthKonsultaEnlistments: {
+        where: {
+          year: new Date().getFullYear(),
+          status: 'ACTIVE'
+        },
+        select: {
+          id: true,
+          profilingTransNo: true,
+          hciCaseNo: true
         }
       }
     }

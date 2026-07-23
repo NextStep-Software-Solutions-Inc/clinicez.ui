@@ -73,21 +73,13 @@ export default async function PatientAppointmentsConsultationsPage({
   const { patient, appointments, consultationTickets } = result.data;
 
   return (
-    <div>
-      <ClinicPatientPageHeader
-        clinicUid={clinicUid}
-        patientId={numericPatientId}
-        patientName={patient.fullName}
-        mode="appointments-consultations"
-      />
-      <PatientAppointmentsConsultationsClient
-        clinicUid={clinicUid}
-        patientId={numericPatientId}
-        patientName={patient.fullName}
-        appointments={appointments}
-        consultationTickets={consultationTickets}
-        access={access}
-      />
-    </div>
+    <PatientAppointmentsConsultationsClient
+      clinicUid={clinicUid}
+      patientId={numericPatientId}
+      patientName={patient.fullName}
+      appointments={appointments}
+      consultationTickets={consultationTickets}
+      access={access}
+    />
   );
 }

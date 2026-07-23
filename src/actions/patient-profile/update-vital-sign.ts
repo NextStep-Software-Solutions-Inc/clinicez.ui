@@ -78,7 +78,7 @@ export async function updateVitalSign(
     try {
       // Strip 0/null/undefined values for numeric fields — 0 is not a valid measurement
       // value for any vital sign and the schema's min() checks would reject it
-      const numericFields = ['height', 'weight', 'bpSystolic', 'bpDiastolic', 'pulseRate', 'respRate', 'spo2', 'temp'] as const
+      const numericFields = ['height', 'weight', 'bpSystolic', 'bpDiastolic', 'pulseRate', 'respRate', 'spo2', 'temp', 'length', 'headCircumference', 'skinfoldThickness', 'waistCircumference', 'hipCircumference', 'limbCircumference', 'midUpperArmCircumference'] as const
       const cleanedInput = { ...input }
       for (const field of numericFields) {
         if (cleanedInput[field] == null || cleanedInput[field] === 0) cleanedInput[field] = undefined
@@ -94,6 +94,18 @@ export async function updateVitalSign(
       return { success: false, error: `Validation failed: ${errorMessages}` }
     }
 
+    // Auto-compute BMI and Z-Score
+    let computedBmi = undefined;
+    let computedZScore = undefined;
+    const effectiveHeight = validatedInput.height ?? (validatedInput.length ? Number(validatedInput.length) : undefined);
+    
+    if (validatedInput.weight && effectiveHeight) {
+      const heightInMeters = effectiveHeight / 100;
+      computedBmi = parseFloat((validatedInput.weight / (heightInMeters * heightInMeters)).toFixed(2));
+      // Simplified mock Z-Score (assuming mean BMI of 22 and SD of 3 for demonstration)
+      computedZScore = parseFloat(((computedBmi - 22) / 3).toFixed(2));
+    }
+
     // Update the record
     const vitalSign = await prisma.vitalSign.update({
       where: { id: vitalSignId },
@@ -101,6 +113,8 @@ export async function updateVitalSign(
         dateTaken: validatedInput.dateTaken,
         height: validatedInput.height,
         weight: validatedInput.weight,
+        bmi: computedBmi,
+        zScore: computedZScore,
         bpSystolic: validatedInput.bpSystolic,
         bpDiastolic: validatedInput.bpDiastolic,
         pulseRate: validatedInput.pulseRate,
@@ -108,6 +122,15 @@ export async function updateVitalSign(
         spo2: validatedInput.spo2,
         respRate: validatedInput.respRate,
         notes: validatedInput.notes,
+        visualAcuityLeft: validatedInput.visualAcuityLeft,
+        visualAcuityRight: validatedInput.visualAcuityRight,
+        length: validatedInput.length,
+        headCircumference: validatedInput.headCircumference,
+        skinfoldThickness: validatedInput.skinfoldThickness,
+        waistCircumference: validatedInput.waistCircumference,
+        hipCircumference: validatedInput.hipCircumference,
+        limbCircumference: validatedInput.limbCircumference,
+        midUpperArmCircumference: validatedInput.midUpperArmCircumference,
       },
     })
 

@@ -43,6 +43,8 @@ export const obGyneHistorySchema = z.object({
     .optional()
     .nullable(),
 
+  isFamilyPlanning: z.boolean().optional().nullable(),
+
   birthControlMethod: z
     .string()
     .max(100, "Method description must be less than 100 characters")
@@ -118,7 +120,7 @@ export const obGyneHistorySchema = z.object({
     .nullable(),
 
   typeOfDelivery: z
-    .enum(["VAGINAL", "CESAREAN", "MIXED"], {
+    .enum(["VAGINAL", "CESAREAN", "MIXED", "NONE"], {
       errorMap: () => ({ message: "Please select a delivery type" }),
     })
     .optional()
@@ -171,6 +173,7 @@ export const obGyneHistoryLabels = {
     NONE: "Not applicable",
   },
   typeOfDelivery: {
+    NONE: "Not applicable",
     VAGINAL: "Vaginal delivery",
     CESAREAN: "Cesarean section (C-section)",
     MIXED: "Both vaginal and cesarean",

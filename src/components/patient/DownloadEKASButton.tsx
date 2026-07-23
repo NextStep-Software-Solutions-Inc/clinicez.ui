@@ -23,11 +23,11 @@ export const DownloadEKASButton: React.FC<DownloadEKASButtonProps> = ({
 }) => {
   const handleDownload = async () => {
     toast.promise(promiseWrapper(downloadEKASAction)(userId, consultationTicketId, clinicId), {
-      loading: `Generating Electronic Konsulta Availment Slip${patientName ? ` for ${patientName}` : ''}...`,
+      loading: `Generating Electronic Yakap Availment Slip${patientName ? ` for ${patientName}` : ''}...`,
       success: async (res: { status: boolean; message: string; data: { pdfData: string; filename: string } | null }) => {
         if (!res?.data) throw new Error("No PDF data received from server")
         toBlobDownload(res.data.pdfData, res.data.filename)
-        return "Electronic Konsulta Availment Slip downloaded successfully"
+        return "Electronic Yakap Availment Slip downloaded successfully"
       },
       error: "Unable to generate EKAS. Please check the patient's profile information and try again.",
     })

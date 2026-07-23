@@ -1,0 +1,88 @@
+<PCB pUsername="" pPassword="" pHciAccreNo="H90000001" pPMCCNo="P00001" pEnlistTotalCnt="1" pProfileTotalCnt="1" pSoapTotalCnt="1" pCertificationId="KON-DUMMYSCERTP00001" pHciTransmittalNumber="RH9000000120220800001">
+  <ENLISTMENTS>
+    <ENLISTMENT pHciCaseNo="TH9000000120220800001" pHciTransNo="EH9000000120220800001" pEffYear="2022" pEnlistStat="1" pEnlistDate="2022-08-26" pPackageType="K" pMemPin="030263078507" pMemFname="MEMFIRSTNAME" pMemMname="MIDDLENAME" pMemLname="LASTNAME" pMemExtname="" pMemDob="1970-01-01" pPatientPin="242500004774" pPatientFname="DEPFIRSTNAME" pPatientMname="MIDDLENAME" pPatientLname="LASTNAME" pPatientExtname="" pPatientSex="M" pPatientDob="2021-08-01" pPatientType="DD" pPatientMobileNo="09090000000" pPatientLandlineNo="" pWithConsent="Y" pTransDate="2022-08-26" pCreatedBy="TEST01" pReportStatus="U" pDeficiencyRemarks=""/>
+  </ENLISTMENTS>
+  <PROFILING>
+    <PROFILE pHciTransNo="PH9000000120220800001" pHciCaseNo="TH9000000120220800001" pProfDate="2022-08-26" pPatientPin="242500004774" pPatientType="DD" pPatientAge="1 YR(S), 0 MO(S), 25 DAY(S)" pMemPin="030263078507" pEffYear="2022" pATC="JruBaQ2Y" pIsWalkedIn="N" pTransDate="2022-08-27" pReportStatus="U" pDeficiencyRemarks="">
+      <MEDHISTS>
+        <MEDHIST pMdiseaseCode="001" pReportStatus="U" pDeficiencyRemarks=""/>
+        <MEDHIST pMdiseaseCode="002" pReportStatus="U" pDeficiencyRemarks=""/>
+      </MEDHISTS>
+      <MHSPECIFICS>
+        <MHSPECIFIC pMdiseaseCode="001" pSpecificDesc="SAMPLE ALLERGY" pReportStatus="U" pDeficiencyRemarks=""/>
+      </MHSPECIFICS>
+      <SURGHISTS>
+        <SURGHIST pSurgDesc="SAMPLE OPERATION" pSurgDate="2022-06-01" pReportStatus="U" pDeficiencyRemarks=""/>
+      </SURGHISTS>
+      <FAMHISTS>
+        <FAMHIST pMdiseaseCode="002" pReportStatus="U" pDeficiencyRemarks=""/>
+        <FAMHIST pMdiseaseCode="006" pReportStatus="U" pDeficiencyRemarks=""/>
+      </FAMHISTS>
+      <FHSPECIFICS>
+        <FHSPECIFIC pMdiseaseCode="" pSpecificDesc="" pReportStatus="U" pDeficiencyRemarks=""/>
+      </FHSPECIFICS>
+      <SOCHIST pIsSmoker="N" pNoCigpk="" pIsAdrinker="N" pNoBottles="" pIllDrugUser="N" pIsSexuallyActive="N" pReportStatus="U" pDeficiencyRemarks=""/>
+      <IMMUNIZATIONS>
+        <IMMUNIZATION pChildImmcode="C01" pYoungwImmcode="" pPregwImmcode="" pElderlyImmcode="" pOtherImm="" pReportStatus="U" pDeficiencyRemarks=""/>
+        <IMMUNIZATION pChildImmcode="C02" pYoungwImmcode="" pPregwImmcode="" pElderlyImmcode="" pOtherImm="" pReportStatus="U" pDeficiencyRemarks=""/>
+        <IMMUNIZATION pChildImmcode="C04" pYoungwImmcode="" pPregwImmcode="" pElderlyImmcode="" pOtherImm="" pReportStatus="U" pDeficiencyRemarks=""/>
+        <IMMUNIZATION pChildImmcode="C08" pYoungwImmcode="" pPregwImmcode="" pElderlyImmcode="" pOtherImm="" pReportStatus="U" pDeficiencyRemarks=""/>
+        <IMMUNIZATION pChildImmcode="C09" pYoungwImmcode="" pPregwImmcode="" pElderlyImmcode="" pOtherImm="" pReportStatus="U" pDeficiencyRemarks=""/>
+        <IMMUNIZATION pChildImmcode="C13" pYoungwImmcode="" pPregwImmcode="" pElderlyImmcode="" pOtherImm="" pReportStatus="U" pDeficiencyRemarks=""/>
+        <IMMUNIZATION pChildImmcode="" pYoungwImmcode="999" pPregwImmcode="" pElderlyImmcode="" pOtherImm="" pReportStatus="U" pDeficiencyRemarks=""/>
+        <IMMUNIZATION pChildImmcode="" pYoungwImmcode="" pPregwImmcode="999" pElderlyImmcode="" pOtherImm="" pReportStatus="U" pDeficiencyRemarks=""/>
+        <IMMUNIZATION pChildImmcode="" pYoungwImmcode="" pPregwImmcode="" pElderlyImmcode="999" pOtherImm="" pReportStatus="U" pDeficiencyRemarks=""/>
+      </IMMUNIZATIONS>
+      <MENSHIST pMenarchePeriod="0" pLastMensPeriod="" pPeriodDuration="0" pMensInterval="0" pPadsPerDay="0" pOnsetSexIc="0" pBirthCtrlMethod="" pIsMenopause="" pMenopauseAge="" pIsApplicable="N" pReportStatus="U" pDeficiencyRemarks=""/>
+      <PREGHIST pPregCnt="0" pDeliveryCnt="0" pDeliveryTyp="X" pFullTermCnt="0" pPrematureCnt="0" pAbortionCnt="0" pLivChildrenCnt="0" pWPregIndhyp="N" pWFamPlan="N" pIsApplicable="N" pReportStatus="U" pDeficiencyRemarks=""/>
+      <PEPERT pSystolic="95" pDiastolic="58" pHr="110" pRr="30" pTemp="36.10" pHeight="0" pWeight="8.9" pBMI="0" pZScore="" pLeftVision="20" pRightVision="20" pLength="63" pHeadCirc="46" pSkinfoldThickness="46" pWaist="48" pHip="50" pLimbs="40" pMidUpperArmCirc="12.5" pReportStatus="U" pDeficiencyRemarks=""/>
+      <BLOODTYPE pBloodType="B+" pReportStatus="U" pDeficiencyRemarks=""/>
+      <PEGENSURVEY pGenSurveyId="1" pGenSurveyRem="" pReportStatus="U" pDeficiencyRemarks=""/>
+      <PEMISCS>
+        <PEMISC pSkinId="" pHeentId="11" pChestId="" pHeartId="" pAbdomenId="" pNeuroId="" pRectalId="" pGuId="" pReportStatus="U" pDeficiencyRemarks=""/>
+        <PEMISC pSkinId="" pHeentId="" pChestId="8" pHeartId="" pAbdomenId="" pNeuroId="" pRectalId="" pGuId="" pReportStatus="U" pDeficiencyRemarks=""/>
+        <PEMISC pSkinId="" pHeentId="" pChestId="" pHeartId="5" pAbdomenId="" pNeuroId="" pRectalId="" pGuId="" pReportStatus="U" pDeficiencyRemarks=""/>
+        <PEMISC pSkinId="" pHeentId="" pChestId="" pHeartId="" pAbdomenId="7" pNeuroId="" pRectalId="" pGuId="" pReportStatus="U" pDeficiencyRemarks=""/>
+        <PEMISC pSkinId="" pHeentId="" pChestId="" pHeartId="" pAbdomenId="" pNeuroId="" pRectalId="" pGuId="99" pReportStatus="U" pDeficiencyRemarks=""/>
+        <PEMISC pSkinId="" pHeentId="" pChestId="" pHeartId="" pAbdomenId="" pNeuroId="" pRectalId="3" pGuId="" pReportStatus="U" pDeficiencyRemarks=""/>
+        <PEMISC pSkinId="1" pHeentId="" pChestId="" pHeartId="" pAbdomenId="" pNeuroId="" pRectalId="" pGuId="" pReportStatus="U" pDeficiencyRemarks=""/>
+        <PEMISC pSkinId="" pHeentId="" pChestId="" pHeartId="" pAbdomenId="" pNeuroId="6" pRectalId="" pGuId="" pReportStatus="U" pDeficiencyRemarks=""/>
+      </PEMISCS>
+      <PESPECIFIC pSkinRem="" pHeentRem="" pChestRem="" pHeartRem="" pAbdomenRem="" pNeuroRem="" pRectalRem="" pGuRem="SAMPLE REMARKS" pReportStatus="U" pDeficiencyRemarks=""/>
+      <NCDQANS pQid1_Yn="" pQid2_Yn="" pQid3_Yn="" pQid4_Yn="" pQid5_Ynx="" pQid6_Yn="" pQid7_Yn="" pQid8_Yn="" pQid9_Yn="" pQid10_Yn="" pQid11_Yn="" pQid12_Yn="" pQid13_Yn="" pQid14_Yn="" pQid15_Yn="" pQid16_Yn="" pQid17_Abcde="" pQid18_Yn="" pQid19_Yn="" pQid19_Fbsmg="" pQid19_Fbsmmol="" pQid19_Fbsdate="" pQid20_Yn="" pQid20_Choleval="" pQid20_Choledate="" pQid21_Yn="" pQid21_Ketonval="" pQid21_Ketondate="" pQid22_Yn="" pQid22_Proteinval="" pQid22_Proteindate="" pQid23_Yn="" pQid24_Yn="" pReportStatus="U" pDeficiencyRemarks=""/>
+    </PROFILE>
+  </PROFILING>
+  <SOAPS>
+    <SOAP pHciCaseNo="" pHciTransNo="" pSoapDate="" pPatientPin="" pPatientType="" pMemPin="" pEffYear="" pATC="" pIsWalkedIn="" pCoPay="" pTransDate="" pReportStatus="U" pDeficiencyRemarks="">
+      <SUBJECTIVE pIllnessHistory="" pSignsSymptoms="" pOtherComplaint="" pPainSite="" pReportStatus="U" pDeficiencyRemarks=""/>
+      <PEPERT pSystolic="" pDiastolic="" pHr="" pRr="" pTemp="" pHeight="" pWeight="" pBMI="" pZScore="" pLeftVision="" pRightVision="" pLength="" pHeadCirc="" pSkinfoldThickness="" pWaist="" pHip="" pLimbs="" pMidUpperArmCirc="" pReportStatus="U" pDeficiencyRemarks=""/>
+      <PEMISCS>
+        <PEMISC pSkinId="" pHeentId="" pChestId="" pHeartId="" pAbdomenId="" pNeuroId="" pGuId="" pRectalId="" pReportStatus="U" pDeficiencyRemarks=""/>
+      </PEMISCS>
+      <PESPECIFIC pSkinRem="" pHeentRem="" pChestRem="" pHeartRem="" pAbdomenRem="" pNeuroRem="" pRectalRem="" pGuRem="" pReportStatus="U" pDeficiencyRemarks=""/>
+      <ICDS>
+        <ICD pIcdCode="" pReportStatus="U" pDeficiencyRemarks=""/>
+      </ICDS>
+      <DIAGNOSTICS>
+        <DIAGNOSTIC pDiagnosticId="" pOthRemarks="" pIsPhysicianRecommendation="" pPatientRemarks="" pReportStatus="U" pDeficiencyRemarks=""/>
+      </DIAGNOSTICS>
+      <MANAGEMENTS>
+        <MANAGEMENT pManagementId="" pOthRemarks="" pReportStatus="U" pDeficiencyRemarks=""/>
+      </MANAGEMENTS>
+      <ADVICE pRemarks="" pReportStatus="U" pDeficiencyRemarks=""/>
+    </SOAP>
+  </SOAPS>
+  <DIAGNOSTICEXAMRESULTS>
+    <DIAGNOSTICEXAMRESULT pHciCaseNo="TH9000000120220800001" pHciTransNo="PH9000000120220800001" pPatientPin="242500004774" pPatientType="DD" pMemPin="030263078507" pEffYear="2022">
+      <FBSS>
+        <FBS pReferralFacility="SAMPLE REFERRAL FACILITY" pLabDate="2022-08-26" pGlucoseMg="45" pGlucoseMmol="7.8" pDateAdded="2022-08-27" pStatus="D" pDiagnosticLabFee="0.00" pReportStatus="U" pDeficiencyRemarks=""/>
+      </FBSS>
+      <RBSS>
+        <RBS pReferralFacility="" pLabDate="2022-08-26" pGlucoseMg="45" pGlucoseMmol="7.8" pDateAdded="2022-08-27" pStatus="D" pDiagnosticLabFee="0.00" pReportStatus="U" pDeficiencyRemarks=""/>
+      </RBSS>
+    </DIAGNOSTICEXAMRESULT>
+  </DIAGNOSTICEXAMRESULTS>
+  <MEDICINES>
+    <MEDICINE pHciCaseNo="" pHciTransNo="" pCategory="" pDrugCode="" pGenericCode="" pSaltCode="" pStrengthCode="" pFormCode="" pUnitCode="" pPackageCode="" pOtherMedicine="" pRoute="" pQuantity="" pActualUnitPrice="" pTotalAmtPrice="" pInstructionQuantity="" pInstructionStrength="" pInstructionFrequency="" pPrescribingPhysician="" pIsDispensed="" pDateDispensed="" pDispensingPersonnel="" pIsApplicable="" pDateAdded="" pReportStatus="U" pDeficiencyRemarks=""/>
+  </MEDICINES>
+</PCB>

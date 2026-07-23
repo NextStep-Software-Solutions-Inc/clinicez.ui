@@ -8,22 +8,28 @@ import type {
     ObGyneHistory,
     PersonalHistory,
     PhilHealthRecord,
-    PhilHealthMemberType,
     PhilHealthDependent,
     VerificationStatus,
+    PhysicalExamination,
 } from '@prisma/client'
 import type {
     MedicalHistoryData,
-    PhysicalExaminationData,
     CertificateData,
     ReferralData,
 } from '@/types/patient-profile'
+import { NcdQuestionnaireSchemaType } from '@/schemas/ncd-questionnaire-schema'
 
 // ---------------------------------------------------------------------------
 // Serialised helpers (re-exported for convenience)
 // ---------------------------------------------------------------------------
 export type SerializedVitalSign = Omit<VitalSign, 'dateTaken' | 'createdAt' | 'updatedAt' | 'deletedAt'> & {
     dateTaken: string
+    createdAt: string
+    updatedAt: string
+    deletedAt: string | null
+}
+
+export type SerializedPhysicalExamination = Omit<PhysicalExamination, 'createdAt' | 'updatedAt' | 'deletedAt'> & {
     createdAt: string
     updatedAt: string
     deletedAt: string | null
@@ -45,7 +51,6 @@ export type SerializedPhilHealthRecord = Omit<PhilHealthRecord, 'createdAt' | 'u
     createdAt: string
     updatedAt: string
     deletedAt: string | null
-    PhilHealthMemberType?: (Omit<PhilHealthMemberType, 'createdAt' | 'updatedAt'> & { createdAt: string; updatedAt: string }) | null
     PhilHealthDependents?: PhilHealthDependent[]
 }
 
@@ -62,15 +67,14 @@ export interface PatientBadgeCounts {
     medicalHistoriesCount: number
     familyMedicalHistoriesCount: number
     vitalSignsCount: number
-    physicalExaminationsCount: number
     hasPersonalHistory: boolean
     hasObGyneHistory: boolean
-    pediatricMeasurementsCount: number
     userVaccinationsCount: number
     userAddressesCount: number
     userEmergencyContactsCount: number
     philHealthRecordsCount: number
     totalDocumentsCount: number   // certs + referrals + procedures
+    hasNcdQuestionnaire: boolean
 }
 
 // ---------------------------------------------------------------------------
@@ -85,13 +89,21 @@ export interface PatientBaseData {
     fullName: string
     picture: string | null
     age: number | null
+    detailedAge: string | null
     gender: string | null
     bloodType: string | null
+    latestBmi: number | null
+    latestZScore: number | null
     caseNumber: string | null
     nickname: string | null
     suffix: string | null
     verificationStatus: VerificationStatus
     badges: PatientBadgeCounts
+    yakapEnlistment?: {
+        id: number
+        hciCaseNo: string | null
+        profilingTransNo: string | null
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -139,7 +151,8 @@ export interface VitalsTabData {
 }
 
 export interface ExamsTabData {
-    physicalExaminations: PhysicalExaminationData[]
+    vitalSigns: SerializedVitalSign[]
+    physicalExaminations?: SerializedPhysicalExamination[]
 }
 
 export interface ObGynTabData {
@@ -161,7 +174,7 @@ export interface PediatricTabData {
         hipCircumference: number | null
         limbCircumference: number | null
         midUpperArmCircumference: number | null
-        remarks: string | null
+        notes: string | null
         createdAt: string
         updatedAt: string
         deletedAt: string | null
@@ -257,13 +270,26 @@ export interface InsuranceTabData {
 // ---------------------------------------------------------------------------
 // Discriminated map used for typing the server action + SWR hook
 // ---------------------------------------------------------------------------
+export interface NcdQuestionnaireTabData {
+    dob: string | null
+    ncdQuestionnaire: NcdQuestionnaireSchemaType | null
+}
+
+export interface DiagnosticsTabData {
+    yakapEnlistment?: {
+        id: number
+        hciCaseNo: string | null
+        profilingTransNo: string | null
+    }
+}
+
 export type PatientTabDataMap = {
     overview: OverviewTabData
     medical: MedicalTabData
     vitals: VitalsTabData
     exams: ExamsTabData
+    diagnostics: DiagnosticsTabData
     obgyn: ObGynTabData
-    pediatric: PediatricTabData
     addresses: AddressesTabData
     contacts: ContactsTabData
     lifestyle: LifestyleTabData
@@ -271,4 +297,5 @@ export type PatientTabDataMap = {
     vaccinations: VaccinationsTabData
     disabilities: DisabilitiesTabData
     insurance: InsuranceTabData
+    ncdQuestionnaire: NcdQuestionnaireTabData
 }

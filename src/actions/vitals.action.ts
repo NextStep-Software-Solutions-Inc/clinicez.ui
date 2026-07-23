@@ -27,6 +27,17 @@ type BaseVitalSign = {
   bpSystolic?: number;
   bpDiastolic?: number;
   notes?: string;
+  // Extended: vision (from PhysicalExamination consolidation)
+  visualAcuityLeft?: string;
+  visualAcuityRight?: string;
+  // Extended: anthropometrics (from PediatricMeasurement consolidation)
+  length?: number;
+  headCircumference?: number;
+  skinfoldThickness?: number;
+  waistCircumference?: number;
+  hipCircumference?: number;
+  limbCircumference?: number;
+  midUpperArmCircumference?: number;
 }
 export const createUserVitalSignAction = withErrorHandling(async (payload: BaseVitalSign & { userId: string }) => {
   const { userId, ...res } = payload;

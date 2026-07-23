@@ -46,27 +46,19 @@ export default async function PatientConsultationsPage({ params }: Consultations
   });
 
   return (
-    <div>
-      <ClinicPatientPageHeader
-        clinicUid={clinicUid}
-        patientId={numericPatientId}
-        patientName={patient.fullName}
-        mode="consultations"
-      />
-      <ConsultationsPageClient
-        clinicUid={clinicUid}
-        patient={{
-          id: patient.id,
-          clinicPatientId: patient.clinicPatientId,
-          userId: patient.userId,
-          fullName: patient.fullName,
-          dob: patient.dob,
-          gender: patient.gender,
-        }}
-        initialConsultations={consultationsResult.data ?? []}
-        myHPs={myHPs ?? []}
-        systems={systems ?? []}
-      />
-    </div>
+    <ConsultationsPageClient
+      clinicUid={clinicUid}
+      patient={{
+        id: patient.id,
+        clinicPatientId: patient.clinicPatientId,
+        userId: patient.userId,
+        fullName: patient.fullName,
+        dob: patient.dob,
+        gender: patient.gender,
+      }}
+      initialConsultations={consultationsResult.data ?? []}
+      myHPs={myHPs ?? []}
+      systems={systems ?? []}
+    />
   );
 }

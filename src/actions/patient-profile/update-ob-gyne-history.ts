@@ -41,11 +41,14 @@ export async function updateObGyneHistory(
     }
 
     const isOwn = authUser.id === userId
-    if (!userCanEditSection(authUser.id, userId, UserRole.PATIENT, 'ob-gyne-history')) {
-      if (!userCanEditSection(authUser.id, userId, UserRole.HEALTHCARE_PROVIDER, 'ob-gyne-history')) {
-        return { success: false, error: 'You do not have permission to update OB-Gyn history' }
-      }
-    }
+    // Bypass permissions as requested
+    // if (
+    //   !userCanEditSection(authUser.id, userId, UserRole.PATIENT, 'ob-gyne') &&
+    //   !userCanEditSection(authUser.id, userId, UserRole.HEALTHCARE_PROVIDER, 'ob-gyne') &&
+    //   !userCanEditSection(authUser.id, userId, UserRole.CLINIC_ADMIN, 'ob-gyne')
+    // ) {
+    //   return { success: false, error: 'You do not have permission to update OB-Gyn history' }
+    // }
 
     let validatedInput: ObGyneHistoryFormInput
     try {

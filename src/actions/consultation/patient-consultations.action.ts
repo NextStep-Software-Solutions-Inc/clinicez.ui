@@ -37,6 +37,11 @@ export const getPatientConsultationsAction = withErrorHandling(
         updatedAt: true,
         isArchived: true,
         caseNumber: true,
+        soapTransNo: true,
+        isPhilHealthKonsulta: true,
+        konsultaAtcCode: true,
+        konsultaIsWalkedIn: true,
+        konsultaCoPay: true,
         ConsultationTicketAttribute: {
           select: { status: true, dropReason: true, droppedAt: true },
         },
@@ -126,6 +131,32 @@ export const getPatientConsultationDetailAction = withErrorHandling(
         updatedAt: true,
         isArchived: true,
         caseNumber: true,
+        soapTransNo: true,
+        isPhilHealthKonsulta: true,
+        konsultaAtcCode: true,
+        konsultaIsWalkedIn: true,
+        konsultaCoPay: true,
+        konsultaRecommendedDiagnosticOptions: true,
+        ClinicPatient: {
+          select: {
+            Patient: {
+              select: {
+                dob: true,
+                gender: true,
+                FamilyMedicalHistories: {
+                  select: {
+                    Condition: {
+                      select: {
+                        name: true,
+                        code: true,
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
         ConsultationTicketAttribute: {
           select: {
             status: true,
@@ -156,7 +187,7 @@ export const getPatientConsultationDetailAction = withErrorHandling(
           },
         },
         ConsultationNotes: {
-          select: { id: true, section: true, content: true, hpId: true, showOnPatient: true },
+          select: { id: true, section: true, content: true, hpId: true, showOnPatient: true, structuredData: true },
         },
         ConsultationDiagnoses: {
           orderBy: [{ type: "asc" }, { createdAt: "asc" }],
@@ -258,6 +289,14 @@ export const getPatientConsultationDetailAction = withErrorHandling(
               select: { HeartStationProcedure: { select: { name: true } } },
             },
           },
+        },
+        KonsultaDiagnosticResults: {
+          select: { id: true }
+        },
+        PhysicalExaminations: {
+          where: { deletedAt: null },
+          orderBy: { createdAt: "desc" },
+          take: 1,
         },
         ClinicReferralSlips: {
           where: { isActive: true, deletedAt: null },
@@ -470,6 +509,11 @@ export const getClinicConsultationQueueAction = withErrorHandling(
           id: true,
           subject: true,
           caseNumber: true,
+          soapTransNo: true,
+          isPhilHealthKonsulta: true,
+          konsultaAtcCode: true,
+          konsultaIsWalkedIn: true,
+          konsultaCoPay: true,
           createdAt: true,
           updatedAt: true,
           isArchived: true,

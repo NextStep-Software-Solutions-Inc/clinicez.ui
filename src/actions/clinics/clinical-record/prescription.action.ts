@@ -7,6 +7,8 @@ import { USER_WITH_HEALTHCARE_PROVIDERS_SELECT, validateHealthcareProviderAuth }
 import { generateSerialNumber } from "@/lib/utils";
 import { Prisma } from "@prisma/client";
 import { createNotification } from "@/actions/notifications/notification.action";
+import { getNextSequenceNumber } from "@/lib/sequence-generator";
+import { formatKonsultaHciNumber } from "@/lib/format-sequence";
 
 export type GetPrescriptionFilters = {
   clinicUid: string;
@@ -259,11 +261,26 @@ export const createPrescriptionAction = withErrorHandling(async (input: CreatePr
     });
     if (!documentTemplate) throw new Error("Prescription template not found");
 
+    const clinic = await prisma.clinic.findUniqueOrThrow({
+      where: { clinicUid },
+      select: {
+        id: true,
+        ClinicSetting: { select: { philhealthAccreditationNumber: true } },
+      }
+    });
     const serialNumber = generateSerialNumber();
+    const hciAccreNo = clinic.ClinicSetting?.philhealthAccreditationNumber ?? null;
+    const transactionSequence = hciAccreNo
+      ? await getNextSequenceNumber("KONSULTA_MEDICINE_TRANSACTION", clinic.id)
+      : null;
 
     const prescription = await prisma.prescription.create({
       data: {
         serialNumber,
+        ...(hciAccreNo && transactionSequence ? {
+          transactionNumber: formatKonsultaHciNumber("M", hciAccreNo, transactionSequence),
+          transactionGeneratedAt: new Date(),
+        } : {}),
         name: name || "",
         remarks: remarks || "",
         consultationTicketId,
@@ -271,10 +288,7 @@ export const createPrescriptionAction = withErrorHandling(async (input: CreatePr
         templateId: documentTemplate.id,
         patientId,
         hpId: authorizedHpId,
-        clinicId: (await prisma.clinic.findUniqueOrThrow({
-          where: { clinicUid },
-          select: { id: true }
-        })).id,
+        clinicId: clinic.id,
         createdById: createdBy,
         isActive: true,
       },

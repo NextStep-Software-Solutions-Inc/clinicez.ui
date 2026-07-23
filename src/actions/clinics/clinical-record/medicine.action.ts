@@ -169,6 +169,33 @@ export type CreateMedicineInput = {
   duration?: number;
   notes?: string;
   prescriptionId: number;
+  
+  // PhilHealth Specifics
+  philHealth?: {
+    category?: string;
+    drugCode?: string;
+    genericCode?: string;
+    saltCode?: string;
+    strengthCode?: string;
+    formCode?: string;
+    unitCode?: string;
+    packageCode?: string;
+    otherMedicine?: string;
+    othMedDrugGrouping?: string;
+    route?: string;
+    instructionQuantity?: string;
+    instructionStrength?: string;
+    instructionFrequency?: string;
+    actualUnitPrice?: number;
+    totalAmtPrice?: number;
+  };
+  
+  // Dispensing Specifics
+  dispensing?: {
+    isDispensed: boolean;
+    dateDispensed?: Date;
+    dispensingPersonnel?: string;
+  };
 };
 
 export const createMedicineAction = withErrorHandling(async (input: CreateMedicineInput) => {
@@ -197,12 +224,20 @@ export const createMedicineAction = withErrorHandling(async (input: CreateMedici
 
     if (!prescription) throw new Error("Prescription not found");
 
+    const { philHealth, dispensing, ...coreInput } = input;
+
     const medicine = await prisma.medicine.create({
       data: {
-        ...input,
+        ...coreInput,
         createdById: appUser.id,
         isActive: true,
+        PhilHealthData: philHealth ? { create: philHealth } : undefined,
+        MedicineDispenseRecord: dispensing ? { create: dispensing } : undefined,
       },
+      include: {
+        PhilHealthData: true,
+        MedicineDispenseRecord: true,
+      }
     });
 
     return medicine;

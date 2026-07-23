@@ -1,8 +1,8 @@
 "use server";
 
-import { redirect, RedirectType } from "next/navigation";
+import { redirect } from "next/navigation";
 
 
-export const navigateAction = async (url: string, type?: RedirectType ) => {
+export const navigateAction = async (url: string, type?: Parameters<typeof redirect>[1]) => {
   redirect(url, type);
 }

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useTransition, useCallback, useEffect } from "react";
-import { ClipboardPlus, Stethoscope, Clock, CheckCircle2, Archive, ChevronLeft, Ban } from "lucide-react";
+import Link from "next/link";
+import { ClipboardPlus, Stethoscope, Clock, CheckCircle2, Archive, ChevronLeft, Ban, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
@@ -144,12 +145,21 @@ export default function ConsultationsPageClient({
           }`}
         >
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-border/50 shrink-0">
-            <div>
-              <p className="text-sm font-semibold text-foreground">{patient.fullName}</p>
-              <p className="text-xs text-muted-foreground">
-                {consultations.length} consultation{consultations.length !== 1 ? "s" : ""}
-              </p>
+          <div className="flex items-center justify-between px-3.5 py-3 border-b border-border/50 shrink-0">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <Link
+                href={`/v2/clinic/${clinicUid}/patients/${patient.id}`}
+                className="group flex items-center justify-center w-7 h-7 rounded-full border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-500 hover:text-teal-600 dark:hover:text-teal-400 hover:border-teal-500 dark:hover:border-teal-500 hover:shadow-xs transition-all duration-200 shrink-0"
+                title="Back to Patient Profile"
+              >
+                <ArrowLeft className="w-3.5 h-3.5 transition-transform duration-200 group-hover:-translate-x-0.5" />
+              </Link>
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm font-bold text-foreground truncate">{patient.fullName}</p>
+                <p className="text-[10px] text-muted-foreground font-medium">
+                  {consultations.length} consultation{consultations.length !== 1 ? "s" : ""}
+                </p>
+              </div>
             </div>
             <NewConsultationDialog
               clinicUid={clinicUid}
@@ -158,7 +168,7 @@ export default function ConsultationsPageClient({
               systems={systems}
               onCreated={handleCreated}
             >
-              <Button size="sm" className="gap-1.5 h-8 text-xs">
+              <Button size="sm" className="gap-1 h-7 text-[11px] px-2.5 bg-teal-600 hover:bg-teal-700 text-white shrink-0">
                 <ClipboardPlus className="h-3.5 w-3.5" />
                 New
               </Button>

@@ -41,9 +41,9 @@ export default function EKASWrapper({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Electronic Konsulta Availment Slip (EKAS) and Electronic Prescription Slip (EPRESS)</CardTitle>
+        <CardTitle>Electronic Yakap Availment Slip (EKAS) and Electronic Prescription Slip (EPRESS)</CardTitle>
         <CardDescription>
-          Download the Electronic Konsulta Availment Slip for this consultation.
+          Download the Electronic Yakap Availment Slip for this consultation.
         </CardDescription>
       </CardHeader>
       <CardContent>

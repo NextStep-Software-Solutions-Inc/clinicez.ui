@@ -1,0 +1,59 @@
+E:\Projects\@Misc\@@VisualStudio\EClaimsDocEncryption\PhilHealthEClaimsEncryptionDemoApp\bin\Debug\PhilHealthEClaimsEncryptionDemoApp.exe.config
+E:\Projects\@Misc\@@VisualStudio\EClaimsDocEncryption\PhilHealthEClaimsEncryptionDemoApp\obj\Debug\PhilHealthEClaimsEncryptionDemoApp.csprojResolveAssemblyReference.cache
+E:\Projects\@Misc\@@VisualStudio\EClaimsDocEncryption\PhilHealthEClaimsEncryptionDemoApp\obj\Debug\PhilHealthEClaimsEncryptionDemoApp.Form1.resources
+E:\Projects\@Misc\@@VisualStudio\EClaimsDocEncryption\PhilHealthEClaimsEncryptionDemoApp\obj\Debug\PhilHealthEClaimsEncryptionDemoApp.Properties.Resources.resources
+E:\Projects\@Misc\@@VisualStudio\EClaimsDocEncryption\PhilHealthEClaimsEncryptionDemoApp\obj\Debug\PhilHealthEClaimsEncryptionDemoApp.csproj.GenerateResource.Cache
+E:\Projects\@Misc\@@VisualStudio\EClaimsDocEncryption\PhilHealthEClaimsEncryptionDemoApp\bin\Debug\PhilHealthEClaimsEncryptionDemoApp.exe
+E:\Projects\@Misc\@@VisualStudio\EClaimsDocEncryption\PhilHealthEClaimsEncryptionDemoApp\bin\Debug\PhilHealthEClaimsEncryptionDemoApp.pdb
+E:\Projects\@Misc\@@VisualStudio\EClaimsDocEncryption\PhilHealthEClaimsEncryptionDemoApp\obj\Debug\PhilHealthEClaimsEncryptionDemoApp.exe
+E:\Projects\@Misc\@@VisualStudio\EClaimsDocEncryption\PhilHealthEClaimsEncryptionDemoApp\obj\Debug\PhilHealthEClaimsEncryptionDemoApp.pdb
+E:\Projects\eClaims\docs\e-Claims Documentation\Encrypting e-claims XML\Encryption Guide\rev09292014\Demo Kit for C#\PhilHealthEClaimsEncryptionDemoApp\bin\Debug\PhilHealthEClaimsEncryptionDemoApp.exe.config
+E:\Projects\eClaims\docs\e-Claims Documentation\Encrypting e-claims XML\Encryption Guide\rev09292014\Demo Kit for C#\PhilHealthEClaimsEncryptionDemoApp\obj\Debug\PhilHealthEClaimsEncryptionDemoApp.exe
+E:\Projects\eClaims\docs\e-Claims Documentation\Encrypting e-claims XML\Encryption Guide\rev09292014\Demo Kit for C#\PhilHealthEClaimsEncryptionDemoApp\obj\Debug\PhilHealthEClaimsEncryptionDemoApp.pdb
+C:\Users\Manny\Projects\eClaims\docs\eclaims kit\eclaims encryption\Demo Kit for C#\PhilHealthEClaimsEncryptionDemoApp\bin\Debug\PhilHealthEClaimsEncryptionDemoApp.exe.config
+C:\Users\Manny\Projects\eClaims\docs\eclaims kit\eclaims encryption\Demo Kit for C#\PhilHealthEClaimsEncryptionDemoApp\obj\Debug\PhilHealthEClaimsEncryptionDemoApp.exe
+C:\Users\Manny\Projects\eClaims\docs\eclaims kit\eclaims encryption\Demo Kit for C#\PhilHealthEClaimsEncryptionDemoApp\obj\Debug\PhilHealthEClaimsEncryptionDemoApp.pdb
+C:\Users\Manny\Projects\eClaims\docs\eclaims kit\eclaims encryption\Demo Kit for C#\PhilHealthEClaimsEncryptionDemoApp\bin\Debug\PhilHealthEClaimsEncryptionDemoApp.exe
+C:\Users\Manny\Projects\eClaims\docs\eclaims kit\eclaims encryption\Demo Kit for C#\PhilHealthEClaimsEncryptionDemoApp\bin\Debug\PhilHealthEClaimsEncryptionDemoApp.pdb
+C:\Users\Manny\Projects\eClaims\docs\eclaims kit\eclaims encryption\Demo Kit for C#\PhilHealthEClaimsEncryptionDemoApp\obj\Debug\PhilHealthEClaimsEncryptionDemoApp.csprojResolveAssemblyReference.cache
+C:\Users\Manny\Projects\eClaims\docs\eclaims kit\eclaims encryption\Demo Kit for C#\PhilHealthEClaimsEncryptionDemoApp\obj\Debug\PhilHealthEClaimsEncryptionDemoApp.Form1.resources
+C:\Users\Manny\Projects\eClaims\docs\eclaims kit\eclaims encryption\Demo Kit for C#\PhilHealthEClaimsEncryptionDemoApp\obj\Debug\PhilHealthEClaimsEncryptionDemoApp.Properties.Resources.resources
+C:\Users\Manny\Projects\eClaims\docs\eclaims kit\eclaims encryption\Demo Kit for C#\PhilHealthEClaimsEncryptionDemoApp\obj\Debug\PhilHealthEClaimsEncryptionDemoApp.csproj.GenerateResource.Cache
+C:\Users\Manny\Projects\eClaims\docs\eclaims kit\eclaims encryption\Demo Kit for C#\PhilHealthEClaimsEncryptionDemoApp\bin\Debug\Newtonsoft.Json.dll
+C:\Users\Manny\Projects\eClaims\docs\eclaims kit\eclaims encryption\Demo Kit for C#\PhilHealthEClaimsEncryptionDemoApp\bin\Debug\Newtonsoft.Json.xml
+E:\Projects\eClaims\docs\eclaims kit\eclaims encryption\Demo Kit for C#\PhilHealthEClaimsEncryptionDemoApp\bin\Debug\PhilHealthEClaimsEncryptionDemoApp.exe.config
+E:\Projects\eClaims\docs\eclaims kit\eclaims encryption\Demo Kit for C#\PhilHealthEClaimsEncryptionDemoApp\obj\Debug\PhilHealthEClaimsEncryptionDemoApp.exe
+E:\Projects\eClaims\docs\eclaims kit\eclaims encryption\Demo Kit for C#\PhilHealthEClaimsEncryptionDemoApp\obj\Debug\PhilHealthEClaimsEncryptionDemoApp.pdb
+E:\Projects\eClaims\docs\eclaims kit\eclaims encryption\Demo Kit for C#\PhilHealthEClaimsEncryptionDemoApp\bin\Debug\PhilHealthEClaimsEncryptionDemoApp.exe
+E:\Projects\eClaims\docs\eclaims kit\eclaims encryption\Demo Kit for C#\PhilHealthEClaimsEncryptionDemoApp\bin\Debug\PhilHealthEClaimsEncryptionDemoApp.pdb
+E:\Projects\eClaims\docs\eclaims kit\eclaims encryption\Demo Kit for C#\PhilHealthEClaimsEncryptionDemoApp\bin\Debug\Newtonsoft.Json.dll
+E:\Projects\eClaims\docs\eclaims kit\eclaims encryption\Demo Kit for C#\PhilHealthEClaimsEncryptionDemoApp\bin\Debug\Newtonsoft.Json.xml
+E:\Projects\eClaims\docs\eclaims kit\eclaims encryption\Demo Kit for C#\PhilHealthEClaimsEncryptionDemoApp\obj\Debug\PhilHealthEClaimsEncryptionDemoApp.csprojResolveAssemblyReference.cache
+E:\Projects\eClaims\docs\eclaims kit\eclaims encryption\Demo Kit for C#\PhilHealthEClaimsEncryptionDemoApp\obj\Debug\PhilHealthEClaimsEncryptionDemoApp.Form1.resources
+E:\Projects\eClaims\docs\eclaims kit\eclaims encryption\Demo Kit for C#\PhilHealthEClaimsEncryptionDemoApp\obj\Debug\PhilHealthEClaimsEncryptionDemoApp.Properties.Resources.resources
+E:\Projects\eClaims\docs\eclaims kit\eclaims encryption\Demo Kit for C#\PhilHealthEClaimsEncryptionDemoApp\obj\Debug\PhilHealthEClaimsEncryptionDemoApp.csproj.GenerateResource.Cache
+E:\Projects\eClaims\docs\Dev Kit for PECWS v2.5\ForEncryption\Demo Kit for C#\PhilHealthEClaimsEncryptionDemoApp\bin\Debug\PhilHealthEClaimsEncryptionDemoApp.exe.config
+E:\Projects\eClaims\docs\Dev Kit for PECWS v2.5\ForEncryption\Demo Kit for C#\PhilHealthEClaimsEncryptionDemoApp\bin\Debug\PhilHealthEClaimsEncryptionDemoApp.exe
+E:\Projects\eClaims\docs\Dev Kit for PECWS v2.5\ForEncryption\Demo Kit for C#\PhilHealthEClaimsEncryptionDemoApp\bin\Debug\PhilHealthEClaimsEncryptionDemoApp.pdb
+E:\Projects\eClaims\docs\Dev Kit for PECWS v2.5\ForEncryption\Demo Kit for C#\PhilHealthEClaimsEncryptionDemoApp\bin\Debug\Newtonsoft.Json.dll
+E:\Projects\eClaims\docs\Dev Kit for PECWS v2.5\ForEncryption\Demo Kit for C#\PhilHealthEClaimsEncryptionDemoApp\bin\Debug\Newtonsoft.Json.xml
+E:\Projects\eClaims\docs\Dev Kit for PECWS v2.5\ForEncryption\Demo Kit for C#\PhilHealthEClaimsEncryptionDemoApp\obj\Debug\PhilHealthEClaimsEncryptionDemoApp.Form1.resources
+E:\Projects\eClaims\docs\Dev Kit for PECWS v2.5\ForEncryption\Demo Kit for C#\PhilHealthEClaimsEncryptionDemoApp\obj\Debug\PhilHealthEClaimsEncryptionDemoApp.Properties.Resources.resources
+E:\Projects\eClaims\docs\Dev Kit for PECWS v2.5\ForEncryption\Demo Kit for C#\PhilHealthEClaimsEncryptionDemoApp\obj\Debug\PhilHealthEClaimsEncryptionDemoApp.csproj.GenerateResource.Cache
+E:\Projects\eClaims\docs\Dev Kit for PECWS v2.5\ForEncryption\Demo Kit for C#\PhilHealthEClaimsEncryptionDemoApp\obj\Debug\PhilHealthEClaimsEncryptionDemoApp.exe
+E:\Projects\eClaims\docs\Dev Kit for PECWS v2.5\ForEncryption\Demo Kit for C#\PhilHealthEClaimsEncryptionDemoApp\obj\Debug\PhilHealthEClaimsEncryptionDemoApp.pdb
+E:\Projects\eClaims\docs\Dev Kit for PECWS v2.5\ForEncryption\Demo Kit for C#\PhilHealthEClaimsEncryptionDemoApp\obj\Debug\PhilHealthEClaimsEncryptionDemoApp.csprojResolveAssemblyReference.cache
+C:\Users\wacan\Downloads\_Konsulta Development Kit v1.1-20260427T031038Z-3-001\_Konsulta Development Kit v1.1\ForEncryption\Demo Kit for C#\PhilHealthEClaimsEncryptionDemoApp\bin\Debug\PhilHealthEClaimsEncryptionDemoApp.exe.config
+C:\Users\wacan\Downloads\_Konsulta Development Kit v1.1-20260427T031038Z-3-001\_Konsulta Development Kit v1.1\ForEncryption\Demo Kit for C#\PhilHealthEClaimsEncryptionDemoApp\bin\Debug\PhilHealthEClaimsEncryptionDemoApp.exe
+C:\Users\wacan\Downloads\_Konsulta Development Kit v1.1-20260427T031038Z-3-001\_Konsulta Development Kit v1.1\ForEncryption\Demo Kit for C#\PhilHealthEClaimsEncryptionDemoApp\bin\Debug\PhilHealthEClaimsEncryptionDemoApp.pdb
+C:\Users\wacan\Downloads\_Konsulta Development Kit v1.1-20260427T031038Z-3-001\_Konsulta Development Kit v1.1\ForEncryption\Demo Kit for C#\PhilHealthEClaimsEncryptionDemoApp\bin\Debug\Newtonsoft.Json.dll
+C:\Users\wacan\Downloads\_Konsulta Development Kit v1.1-20260427T031038Z-3-001\_Konsulta Development Kit v1.1\ForEncryption\Demo Kit for C#\PhilHealthEClaimsEncryptionDemoApp\bin\Debug\Newtonsoft.Json.xml
+C:\Users\wacan\Downloads\_Konsulta Development Kit v1.1-20260427T031038Z-3-001\_Konsulta Development Kit v1.1\ForEncryption\Demo Kit for C#\PhilHealthEClaimsEncryptionDemoApp\obj\Debug\PhilHealthEClaimsEncryptionDemoApp.csproj.AssemblyReference.cache
+C:\Users\wacan\Downloads\_Konsulta Development Kit v1.1-20260427T031038Z-3-001\_Konsulta Development Kit v1.1\ForEncryption\Demo Kit for C#\PhilHealthEClaimsEncryptionDemoApp\obj\Debug\PhilHealthEClaimsEncryptionDemoApp.exe.config
+C:\Users\wacan\Downloads\_Konsulta Development Kit v1.1-20260427T031038Z-3-001\_Konsulta Development Kit v1.1\ForEncryption\Demo Kit for C#\PhilHealthEClaimsEncryptionDemoApp\obj\Debug\PhilHealthEClaimsEncryptionDemoApp.Form1.resources
+C:\Users\wacan\Downloads\_Konsulta Development Kit v1.1-20260427T031038Z-3-001\_Konsulta Development Kit v1.1\ForEncryption\Demo Kit for C#\PhilHealthEClaimsEncryptionDemoApp\obj\Debug\PhilHealthEClaimsEncryptionDemoApp.Properties.Resources.resources
+C:\Users\wacan\Downloads\_Konsulta Development Kit v1.1-20260427T031038Z-3-001\_Konsulta Development Kit v1.1\ForEncryption\Demo Kit for C#\PhilHealthEClaimsEncryptionDemoApp\obj\Debug\PhilHealthEClaimsEncryptionDemoApp.csproj.GenerateResource.cache
+C:\Users\wacan\Downloads\_Konsulta Development Kit v1.1-20260427T031038Z-3-001\_Konsulta Development Kit v1.1\ForEncryption\Demo Kit for C#\PhilHealthEClaimsEncryptionDemoApp\obj\Debug\PhilHealthEClaimsEncryptionDemoApp.csproj.CoreCompileInputs.cache
+C:\Users\wacan\Downloads\_Konsulta Development Kit v1.1-20260427T031038Z-3-001\_Konsulta Development Kit v1.1\ForEncryption\Demo Kit for C#\PhilHealthEClaimsEncryptionDemoApp\obj\Debug\PhilHeal.EB54EBA7.Up2Date
+C:\Users\wacan\Downloads\_Konsulta Development Kit v1.1-20260427T031038Z-3-001\_Konsulta Development Kit v1.1\ForEncryption\Demo Kit for C#\PhilHealthEClaimsEncryptionDemoApp\obj\Debug\PhilHealthEClaimsEncryptionDemoApp.exe
+C:\Users\wacan\Downloads\_Konsulta Development Kit v1.1-20260427T031038Z-3-001\_Konsulta Development Kit v1.1\ForEncryption\Demo Kit for C#\PhilHealthEClaimsEncryptionDemoApp\obj\Debug\PhilHealthEClaimsEncryptionDemoApp.pdb

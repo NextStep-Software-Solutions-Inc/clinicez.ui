@@ -1,0 +1,35 @@
+export const NCD_HEADERS = [
+  { id: 1, description: "High Fat/High Salt Food Intake" },
+  { id: 2, description: "Dietary Fiber Intake" },
+  { id: 3, description: "Physical Activity" },
+  { id: 4, description: "Presence or Absence of Diabetes" },
+  { id: 5, description: "Questionnaire to Determine Probable Angina, Heart Attack..." },
+  { id: null, description: "Risk Assessment" }, // For Q17
+];
+
+export const NCD_QUESTIONS = [
+  { qid: "q1", headerId: 1, text: "Eats processed/fast foods (e.g. instant noodles, hamburgers, fries, fried chicken skin etc.) and ihaw-ihaw (e.g. isaw, adidas, etc.) weekly?" },
+  { qid: "q2", headerId: 2, text: "3 servings of vegetables daily?" },
+  { qid: "q3", headerId: 2, text: "2-3 servings of fruits daily?" },
+  { qid: "q4", headerId: 3, text: "Does at least 2.5 hours a week of moderate-intensity physical activity?" },
+  { qid: "q5", headerId: 4, text: "Was patient diagnosed as having diabetes?" },
+  { qid: "q6", headerId: 4, text: "Does patient have symptoms of Polyphagia?" },
+  { qid: "q7", headerId: 4, text: "Does patient have symptoms of Polydipsia?" },
+  { qid: "q8", headerId: 4, text: "Does patient have symptoms of Polyuria?" },
+  { qid: "q9", headerId: 5, text: "Have you had any pain or discomfort or any pressure or heaviness in your chest?" },
+  { qid: "q10", headerId: 5, parentQid: "q9", text: "Do you get the pain in the center of the chest or left arm?" },
+  { qid: "q11", headerId: 5, parentQid: "q9", text: "Do you get it when you walk uphill or hurry?" },
+  { qid: "q12", headerId: 5, parentQid: "q9", text: "Do you slowdown if you get the pain while walking?" },
+  { qid: "q13", headerId: 5, parentQid: "q9", text: "Does the pain go away if you stand still or if you take a tablet under the tongue?" },
+  { qid: "q14", headerId: 5, parentQid: "q9", text: "Does the pain away in less than 10 minutes?" },
+  { qid: "q15", headerId: 5, text: "Have you ever had a severe chest pain across the front of your chest lasting for half an hour or more?" },
+  { qid: "q16", headerId: 5, text: "Have you ever had any of the following: difficulty in talking, weakness of arm and/or leg on one side of the body or numbness on one side of the body?" },
+  { qid: "q17", headerId: null, text: "Risk level percentage (A: <10%, B: 10% to <20%, C: 20% to <30%, D: 30% to <40%, E: =>40% )" },
+  { qid: "q18", headerId: 4, parentQid: "q5", text: "If Yes, (if with diabetes) choose with/without medication" },
+  { qid: "q19", headerId: 4, text: "Raised Blood Glucose" },
+  { qid: "q20", headerId: 4, text: "Raised Blood Lipids" },
+  { qid: "q21", headerId: 4, text: "Presence of Urine Ketones" },
+  { qid: "q22", headerId: 4, text: "Presence of Urine Protein" },
+  { qid: "q23", headerId: 5, text: "Angina or Heart Attack" },
+  { qid: "q24", headerId: 5, text: "Stroke and TIA" },
+];

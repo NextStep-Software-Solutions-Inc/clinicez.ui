@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   type NavItem,
 } from "./DashboardSidebar";
@@ -21,6 +21,7 @@ import {
   Heart,
   Stethoscope,
   Folder,
+  ShieldCheck,
   type LucideIcon,
 } from "lucide-react";
 import { Input } from "@components/ui/input";
@@ -50,6 +51,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   heart: Heart,
   stethoscope: Stethoscope,
   folder: Folder,
+  "shield-check": ShieldCheck,
 };
 
 function resolveIcon(name: string): LucideIcon {
@@ -129,9 +131,13 @@ export default function DashboardShell({
   children,
 }: DashboardShellProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [showMobileSearch, setShowMobileSearch] = useState(false);
 
+  const handleClinicChange = onClinicChange || ((clinic) => {
+    router.push(`/v2/clinic/${clinic.uid}`);
+  });
 
   return (
     <div
@@ -150,7 +156,7 @@ export default function DashboardShell({
               <ClinicSelector
                 activeClinic={activeClinic}
                 clinics={clinics}
-                onClinicChange={onClinicChange}
+                onClinicChange={handleClinicChange}
               />
             ) : activeOrg ? (
               <OrgSelector
@@ -209,7 +215,7 @@ export default function DashboardShell({
               <ClinicSelector
                 activeClinic={activeClinic}
                 clinics={clinics}
-                onClinicChange={onClinicChange}
+                onClinicChange={handleClinicChange}
               />
             ) : activeOrg ? (
               <OrgSelector

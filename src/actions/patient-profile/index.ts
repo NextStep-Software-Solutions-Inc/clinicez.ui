@@ -29,11 +29,6 @@ export {
 } from './update-ob-gyne-history'
 
 export {
-  addPediatricMeasurement,
-  type AddPediatricMeasurementResponse,
-} from './add-pediatric-measurement'
-
-export {
   updateMedicalConditions,
   type UpdateMedicalConditionsResponse,
 } from './update-medical-conditions'
@@ -42,11 +37,6 @@ export {
   updateFamilyMedicalConditions,
   type UpdateFamilyMedicalConditionsResponse,
 } from './update-family-medical-conditions'
-
-export {
-  addPhysicalExamination,
-  type AddPhysicalExaminationResponse,
-} from './add-physical-examination'
 
 export {
   updatePhilhealthRecord,

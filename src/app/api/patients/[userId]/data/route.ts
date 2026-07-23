@@ -54,7 +54,6 @@ export async function GET(
             prescriptions,
             surgicalHistories,
             allergies,
-            procedureUsageHistories,
             userAllergies,
         ] = await Promise.all([
             // 1. Get user demographics
@@ -369,15 +368,7 @@ export async function GET(
             }),
 
             // 17. Get procedure usage history
-            prisma.procedureUsageHistory.findMany({
-                where: {
-                    userId,
-                },
-                orderBy: {
-                    usedAt: 'desc',
-                },
-                take: 20,
-            }),
+            Promise.resolve([] as any[]),
 
             // 18. Get user allergies
             prisma.userAllergy.findMany({
@@ -537,11 +528,7 @@ export async function GET(
                 notes: a.notes,
             })),
 
-            procedureUsageHistories: procedureUsageHistories.map((p: any) => ({
-                procedureType: p.procedureType,
-                procedureName: p.procedureName,
-                usedAt: p.usedAt.toISOString(),
-            })),
+
 
             // Summary counts
             totalConsultationNotes: consultationNotes.length,

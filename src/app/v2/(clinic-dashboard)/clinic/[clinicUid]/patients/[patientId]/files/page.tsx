@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import { getCachedSession } from "@/actions/session.action";
 import {
   getPatientFilesForClinicAction,
@@ -49,19 +50,22 @@ export default async function ClinicPatientFilesPage({ params }: Props) {
   if (!clinic) notFound();
 
   return (
-    <ClinicPatientFilesClient
-      clinicUid={clinicUid}
-      clinicId={clinic.id}
-      patientId={numericPatientId}
-      patientName={patient.fullName}
-      patientPicture={patient.picture ?? null}
-      patientAge={patient.age ?? null}
-      patientGender={patient.gender ?? null}
-      patientBloodType={patient.bloodType ?? null}
-      patientCaseNumber={patient.caseNumber ?? null}
-      initialFolders={foldersResult.data ?? []}
-      fileTypes={fileTypesResult ?? []}
-      currentUserId={currentUser.id}
-    />
+    <Suspense fallback={<div className="py-20 text-center text-slate-500 animate-pulse text-xs font-semibold">Loading patient files...</div>}>
+      <ClinicPatientFilesClient
+        clinicUid={clinicUid}
+        clinicId={clinic.id}
+        patientId={numericPatientId}
+        patientName={patient.fullName}
+        patientPicture={patient.picture ?? null}
+        patientAge={patient.age ?? null}
+        patientDob={patient.dob ?? null}
+        patientGender={patient.gender ?? null}
+        patientBloodType={patient.bloodType ?? null}
+        patientCaseNumber={patient.caseNumber ?? null}
+        initialFolders={foldersResult.data ?? []}
+        fileTypes={fileTypesResult ?? []}
+        currentUserId={currentUser.id}
+      />
+    </Suspense>
   );
 }

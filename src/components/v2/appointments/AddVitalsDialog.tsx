@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
-import { Activity } from "lucide-react";
+import { Activity, ChevronDown, ChevronUp } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -37,6 +37,9 @@ const preprocessOptionalNumber = z.preprocess(
 const MEASUREMENT_FIELDS = [
   "height", "weight", "temp", "pulseRate", "respRate",
   "spo2", "bpSystolic", "bpDiastolic",
+  "length", "headCircumference", "skinfoldThickness",
+  "waistCircumference", "hipCircumference", "limbCircumference",
+  "midUpperArmCircumference",
 ] as const;
 
 const vitalSignsSchema = z.object({
@@ -51,6 +54,17 @@ const vitalSignsSchema = z.object({
   bmi: preprocessOptionalNumber,
   notes: z.string().optional(),
   dateTaken: z.coerce.date({ required_error: "Date taken is required" }),
+  // Extended: vision
+  visualAcuityLeft: z.string().optional(),
+  visualAcuityRight: z.string().optional(),
+  // Extended: anthropometrics
+  length: preprocessOptionalNumber,
+  headCircumference: preprocessOptionalNumber,
+  skinfoldThickness: preprocessOptionalNumber,
+  waistCircumference: preprocessOptionalNumber,
+  hipCircumference: preprocessOptionalNumber,
+  limbCircumference: preprocessOptionalNumber,
+  midUpperArmCircumference: preprocessOptionalNumber,
 }).superRefine((data, ctx) => {
   const hasAny = MEASUREMENT_FIELDS.some((f) => data[f] !== undefined);
   if (!hasAny) {
@@ -82,6 +96,7 @@ interface AddVitalsDialogProps {
 export function AddVitalsDialog({ patientUserId, onSaved }: AddVitalsDialogProps) {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showExtended, setShowExtended] = useState(false);
 
   const form = useForm<VitalSignsFormData>({
     resolver: zodResolver(vitalSignsSchema),
@@ -291,6 +306,117 @@ export function AddVitalsDialog({ patientUserId, onSaved }: AddVitalsDialogProps
               rows={2}
             />
           </div>
+
+          {/* Extended Measurements (collapsible) */}
+          <button
+            type="button"
+            onClick={() => setShowExtended(!showExtended)}
+            className="w-full flex items-center justify-between text-xs font-medium text-muted-foreground hover:text-foreground transition-colors py-1"
+          >
+            <span>Extended Measurements (Vision & Anthropometrics)</span>
+            {showExtended ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+          </button>
+          {showExtended && (
+            <div className="space-y-4 rounded-lg border border-border/50 p-3">
+              {/* Vision */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Left Eye Vision</Label>
+                  <Input
+                    placeholder="e.g. 20/20"
+                    {...form.register("visualAcuityLeft")}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Right Eye Vision</Label>
+                  <Input
+                    placeholder="e.g. 20/20"
+                    {...form.register("visualAcuityRight")}
+                  />
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Anthropometrics */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Length (cm)</Label>
+                  <Input
+                    type="number"
+                    inputMode="numeric"
+                    placeholder="Length"
+                    {...form.register("length", { valueAsNumber: true })}
+                    onFocus={selectOnFocus}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Head Circumference (cm)</Label>
+                  <Input
+                    type="number"
+                    inputMode="numeric"
+                    placeholder="Head circ."
+                    {...form.register("headCircumference", { valueAsNumber: true })}
+                    onFocus={selectOnFocus}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Waist Circumference (cm)</Label>
+                  <Input
+                    type="number"
+                    inputMode="numeric"
+                    placeholder="Waist circ."
+                    {...form.register("waistCircumference", { valueAsNumber: true })}
+                    onFocus={selectOnFocus}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Hip Circumference (cm)</Label>
+                  <Input
+                    type="number"
+                    inputMode="numeric"
+                    placeholder="Hip circ."
+                    {...form.register("hipCircumference", { valueAsNumber: true })}
+                    onFocus={selectOnFocus}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Skinfold (mm)</Label>
+                  <Input
+                    type="number"
+                    inputMode="numeric"
+                    placeholder="Skinfold"
+                    {...form.register("skinfoldThickness", { valueAsNumber: true })}
+                    onFocus={selectOnFocus}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Limb Circ. (cm)</Label>
+                  <Input
+                    type="number"
+                    inputMode="numeric"
+                    placeholder="Limb circ."
+                    {...form.register("limbCircumference", { valueAsNumber: true })}
+                    onFocus={selectOnFocus}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">MUAC (cm)</Label>
+                  <Input
+                    type="number"
+                    inputMode="numeric"
+                    placeholder="Mid-upper arm"
+                    {...form.register("midUpperArmCircumference", { valueAsNumber: true })}
+                    onFocus={selectOnFocus}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         <DialogFooter>

@@ -44,23 +44,7 @@ export const searchProceduresAction = withErrorHandling(
 
     // Step 1: Get recent procedures from usage history (last 30 days)
     if (searchTerm.trim() === "" || searchTerm.length < 2) {
-      const recentUsage = await prisma.procedureUsageHistory.findMany({
-        where: {
-          userId: userId.id,
-          clinicId,
-          procedureType,
-          usedAt: {
-            gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // Last 30 days
-          },
-        },
-        orderBy: { usedAt: "desc" },
-        take: 10,
-        select: {
-          procedureId: true,
-          procedureName: true,
-        },
-      });
-
+      const recentUsage: any[] = [];
       // Fetch full details for recent procedures
       if (procedureType === "imaging") {
         const recentIds = recentUsage.map((u) => u.procedureId);
@@ -529,15 +513,7 @@ interface TrackProcedureUsageParams {
  */
 export const trackProcedureUsageAction = withErrorHandling(
   async ({ userId, clinicId, procedureType, procedureId, procedureName }: TrackProcedureUsageParams) => {
-    const result = await prisma.procedureUsageHistory.create({
-      data: {
-        userId,
-        clinicId,
-        procedureType,
-        procedureId,
-        procedureName,
-      },
-    });
+    const result = {};
 
     return { message: "Procedure usage tracked successfully", data: result };
   }

@@ -1,17 +1,19 @@
 'use client'
 
 import Link from 'next/link'
-import { ArrowLeft, ChevronRight } from 'lucide-react'
+import { ArrowLeft, ChevronRight, Users, User, Calendar, History, Home, FolderOpen, Folder } from 'lucide-react'
 
 interface ClinicPatientPageHeaderProps {
   clinicUid: string
   patientId: number
   patientName: string
   /** 'view' shows: Patients > Patient Name
-   *  'edit' shows:  Patients > Patient Name > Edit Profile
    *  'consultations' shows: Patients > Patient Name > Consultations
-   *  'appointments-consultations' shows: Patients > Patient Name > Appointments & Consultations */
-  mode: 'view' | 'edit' | 'consultations' | 'appointments-consultations'
+   *  'appointments-consultations' shows: Patients > Patient Name > Appointments & Consultations
+   *  'files' shows: Patients > Patient Name > Files (and dynamic folder name) */
+  mode: 'view' | 'consultations' | 'appointments-consultations' | 'files'
+  folderName?: string
+  hideBreadcrumbs?: boolean
 }
 
 export function ClinicPatientPageHeader({
@@ -19,58 +21,129 @@ export function ClinicPatientPageHeader({
   patientId,
   patientName,
   mode,
+  folderName,
+  hideBreadcrumbs = false,
 }: ClinicPatientPageHeaderProps) {
+  // Determine dynamic back button destination based on context mode
+  const backHref = mode === 'files'
+    ? (folderName ? `/v2/clinic/${clinicUid}/patients/${patientId}/files` : `/v2/clinic/${clinicUid}/patients/${patientId}`)
+    : mode === 'appointments-consultations' || mode === 'consultations'
+    ? `/v2/clinic/${clinicUid}/patients/${patientId}`
+    : `/v2/clinic/${clinicUid}/patients`
+
+  const shouldHideBreadcrumbs = hideBreadcrumbs || mode === 'appointments-consultations'
+
   return (
-    <div className="sticky top-12 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b border-border/50 px-6 sm:px-8 py-2 -mx-6 sm:-mx-8">
-      <div className="flex items-center justify-between gap-4">
-        <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-sm min-w-0">
-          <Link
-            href={`/v2/clinic/${clinicUid}/patients`}
-            className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors shrink-0"
+    <div className="sticky top-12 z-40 h-12 flex items-center backdrop-blur-md bg-white/95 dark:bg-slate-950/95 border-b border-slate-200/60 dark:border-slate-800/60 shadow-xs px-3 py-1.5 sm:py-2">
+      <div className="flex items-center gap-4">
+        {/* Sleek Circular Back Button */}
+        <Link
+          href={backHref}
+          onClick={(e) => {
+            // When in files sub-folder mode, clicking back should instantly update query params and trigger popstate
+            if (mode === 'files' && folderName) {
+              e.preventDefault()
+              const params = new URLSearchParams(window.location.search)
+              params.delete('folderId')
+              window.history.replaceState(null, '', `${window.location.pathname}?${params.toString()}`)
+              window.dispatchEvent(new Event('popstate'))
+            }
+          }}
+          className="group flex items-center justify-center w-8 h-8 rounded-full border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-500 hover:text-teal-600 dark:hover:text-teal-400 hover:border-teal-500 dark:hover:border-teal-500 hover:shadow-sm transition-all duration-200 shrink-0"
+          title="Back to Patient Profile"
+        >
+          <ArrowLeft className="w-4 h-4 transition-transform duration-200 group-hover:-translate-x-0.5" />
+        </Link>
+
+        {/* Elegant Glassmorphic Breadcrumbs Pill */}
+        {!shouldHideBreadcrumbs && (
+          <nav
+            aria-label="Breadcrumb"
+            className="flex items-center gap-1.5 px-3 py-1 rounded-full border border-slate-200/40 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/20 backdrop-blur-lg shadow-sm min-w-0"
           >
-            <ArrowLeft className="w-4 h-4" />
-            Patients
+          {/* Home Icon Link */}
+          <Link
+            href={`/v2/clinic/${clinicUid}/dashboard`}
+            className="flex items-center text-slate-400 hover:text-slate-650 dark:hover:text-slate-250 transition-colors p-0.5 rounded-md"
+            title="Clinic Dashboard"
+          >
+            <Home className="w-3.5 h-3.5" />
           </Link>
 
-          <ChevronRight className="w-4 h-4 text-muted-foreground/40 shrink-0" />
+          <ChevronRight className="w-3 h-3 text-slate-300 dark:text-slate-650 shrink-0" />
 
-          {mode === 'edit' ? (
-            <>
-              <Link
-                href={`/v2/clinic/${clinicUid}/patients/${patientId}`}
-                className="text-muted-foreground hover:text-foreground transition-colors truncate max-w-[200px]"
-              >
-                {patientName}
-              </Link>
-              <ChevronRight className="w-4 h-4 text-muted-foreground/40 shrink-0" />
-              <span className="text-foreground font-semibold">Edit Profile</span>
-            </>
-          ) : mode === 'consultations' ? (
-            <>
-              <Link
-                href={`/v2/clinic/${clinicUid}/patients/${patientId}`}
-                className="text-muted-foreground hover:text-foreground transition-colors truncate max-w-[200px]"
-              >
-                {patientName}
-              </Link>
-              <ChevronRight className="w-4 h-4 text-muted-foreground/40 shrink-0" />
-              <span className="text-foreground font-semibold">Consultations</span>
-            </>
-          ) : mode === 'appointments-consultations' ? (
-            <>
-              <Link
-                href={`/v2/clinic/${clinicUid}/patients/${patientId}`}
-                className="text-muted-foreground hover:text-foreground transition-colors truncate max-w-[200px]"
-              >
-                {patientName}
-              </Link>
-              <ChevronRight className="w-4 h-4 text-muted-foreground/40 shrink-0" />
-              <span className="text-foreground font-semibold">Appointments &amp; Consultations</span>
-            </>
+          {/* Patients Index Link */}
+          <Link
+            href={`/v2/clinic/${clinicUid}/patients`}
+            className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-250 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-all duration-200 shrink-0"
+          >
+            <Users className="w-3.5 h-3.5 text-slate-400" />
+            <span>Patients</span>
+          </Link>
+
+          <ChevronRight className="w-3 h-3 text-slate-300 dark:text-slate-650 shrink-0" />
+
+          {/* Patient Profile Href Link */}
+          {mode === 'view' ? (
+            <span className="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-900 shadow-sm border border-slate-200/50 dark:border-slate-800 truncate">
+              <User className="w-3.5 h-3.5 text-teal-600 dark:text-teal-450" />
+              <span className="truncate max-w-[150px]">{patientName}</span>
+            </span>
           ) : (
-            <span className="text-foreground font-semibold truncate">{patientName}</span>
+            <>
+              <Link
+                href={`/v2/clinic/${clinicUid}/patients/${patientId}`}
+                className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-250 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-all duration-200 truncate"
+              >
+                <User className="w-3.5 h-3.5 text-slate-400" />
+                <span className="truncate max-w-[100px]">{patientName}</span>
+              </Link>
+
+              <ChevronRight className="w-3 h-3 text-slate-300 dark:text-slate-650 shrink-0" />
+
+              {mode === 'consultations' ? (
+                <span className="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-900 shadow-sm border border-slate-200/50 dark:border-slate-800 shrink-0">
+                  <History className="w-3.5 h-3.5 text-teal-600 dark:text-teal-450" />
+                  <span>Consultations</span>
+                </span>
+              ) : (
+                <>
+                  {folderName ? (
+                    <>
+                      <Link
+                        href={`/v2/clinic/${clinicUid}/patients/${patientId}/files`}
+                        onClick={(e) => {
+                          e.preventDefault()
+                          const params = new URLSearchParams(window.location.search)
+                          params.delete('folderId')
+                          window.history.replaceState(null, '', `${window.location.pathname}?${params.toString()}`)
+                          window.dispatchEvent(new Event('popstate'))
+                        }}
+                        className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-250 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-all duration-200"
+                      >
+                        <FolderOpen className="w-3.5 h-3.5 text-slate-400" />
+                        <span>Files</span>
+                      </Link>
+
+                      <ChevronRight className="w-3 h-3 text-slate-300 dark:text-slate-650 shrink-0" />
+
+                      <span className="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-900 shadow-sm border border-slate-200/50 dark:border-slate-800 truncate">
+                        <Folder className="w-3.5 h-3.5 text-teal-600 dark:text-teal-450" />
+                        <span className="truncate max-w-[150px]">{folderName}</span>
+                      </span>
+                    </>
+                  ) : (
+                    <span className="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-900 shadow-sm border border-slate-200/50 dark:border-slate-800 shrink-0">
+                      <FolderOpen className="w-3.5 h-3.5 text-teal-600 dark:text-teal-450" />
+                      <span>Files</span>
+                    </span>
+                  )}
+                </>
+              )}
+            </>
           )}
         </nav>
+      )}
       </div>
     </div>
   )

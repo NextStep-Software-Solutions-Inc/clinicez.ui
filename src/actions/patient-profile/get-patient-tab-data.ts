@@ -198,8 +198,15 @@ export async function getPatientVitalsData(userId?: string): Promise<VitalsTabDa
             gender: patient.gender as string | null,
             vitalSigns: vitals.map(v => ({
                 ...serializeDateFields(v),
+                length: v.length ? Number(v.length) : null,
+                headCircumference: v.headCircumference ? Number(v.headCircumference) : null,
+                skinfoldThickness: v.skinfoldThickness ? Number(v.skinfoldThickness) : null,
+                waistCircumference: v.waistCircumference ? Number(v.waistCircumference) : null,
+                hipCircumference: v.hipCircumference ? Number(v.hipCircumference) : null,
+                limbCircumference: v.limbCircumference ? Number(v.limbCircumference) : null,
+                midUpperArmCircumference: v.midUpperArmCircumference ? Number(v.midUpperArmCircumference) : null,
                 dateTaken: v.dateTaken.toISOString(),
-            })),
+            })) as any,
         }
     } catch (error) {
         console.error('[GET_PATIENT_VITALS_DATA]', error)
@@ -207,20 +214,42 @@ export async function getPatientVitalsData(userId?: string): Promise<VitalsTabDa
     }
 }
 
-/** Fetches physical examination records for the Exams tab. */
+/** Fetches visual acuity data from VitalSign records for the Exams tab. */
 export async function getPatientExamsData(userId?: string): Promise<ExamsTabData | null> {
     try {
         const patientId = await resolvePatientId(userId)
         if (!patientId) return null
 
-        const exams = await prisma.physicalExamination.findMany({
-            where: { userId: patientId },
-            orderBy: { createdAt: 'desc' },
-            take: 20,
-        })
+        const [vitals, physicalExaminations] = await Promise.all([
+            prisma.vitalSign.findMany({
+                where: { userId: patientId, isActive: true, deletedAt: null },
+                orderBy: { createdAt: 'desc' },
+                take: 20,
+            }),
+            prisma.physicalExamination.findMany({
+                where: { userId: patientId, deletedAt: null },
+                orderBy: { createdAt: 'desc' },
+            })
+        ])
 
         return {
-            physicalExaminations: exams.map(e => serializeDateFields(e)),
+            vitalSigns: vitals.map(v => ({
+                ...serializeDateFields(v),
+                length: v.length ? Number(v.length) : null,
+                headCircumference: v.headCircumference ? Number(v.headCircumference) : null,
+                skinfoldThickness: v.skinfoldThickness ? Number(v.skinfoldThickness) : null,
+                waistCircumference: v.waistCircumference ? Number(v.waistCircumference) : null,
+                hipCircumference: v.hipCircumference ? Number(v.hipCircumference) : null,
+                limbCircumference: v.limbCircumference ? Number(v.limbCircumference) : null,
+                midUpperArmCircumference: v.midUpperArmCircumference ? Number(v.midUpperArmCircumference) : null,
+                dateTaken: v.dateTaken.toISOString(),
+            })) as any,
+            physicalExaminations: physicalExaminations.map(pe => ({
+                ...pe,
+                createdAt: pe.createdAt.toISOString(),
+                updatedAt: pe.updatedAt.toISOString(),
+                deletedAt: pe.deletedAt ? pe.deletedAt.toISOString() : null,
+            })),
         }
     } catch (error) {
         console.error('[GET_PATIENT_EXAMS_DATA]', error)
@@ -264,8 +293,21 @@ export async function getPatientPediatricData(userId?: string): Promise<Pediatri
         })
         if (!patient) return null
 
-        const measurements = await prisma.pediatricMeasurement.findMany({
-            where: { userId: patient.id },
+        const measurements = await prisma.vitalSign.findMany({
+            where: {
+                userId: patient.id,
+                isActive: true,
+                deletedAt: null,
+                OR: [
+                    { length: { not: null } },
+                    { headCircumference: { not: null } },
+                    { skinfoldThickness: { not: null } },
+                    { waistCircumference: { not: null } },
+                    { hipCircumference: { not: null } },
+                    { limbCircumference: { not: null } },
+                    { midUpperArmCircumference: { not: null } },
+                ],
+            },
             orderBy: { dateTaken: 'asc' },
             take: 100,
         })
@@ -284,7 +326,7 @@ export async function getPatientPediatricData(userId?: string): Promise<Pediatri
                 hipCircumference: m.hipCircumference !== null ? Number(m.hipCircumference) : null,
                 limbCircumference: m.limbCircumference !== null ? Number(m.limbCircumference) : null,
                 midUpperArmCircumference: m.midUpperArmCircumference !== null ? Number(m.midUpperArmCircumference) : null,
-                remarks: m.remarks,
+                notes: m.notes,
                 createdAt: m.createdAt.toISOString(),
                 updatedAt: m.updatedAt.toISOString(),
                 deletedAt: m.deletedAt?.toISOString() ?? null,
@@ -485,17 +527,12 @@ export async function getPatientInsuranceData(userId?: string): Promise<Insuranc
 
         const [philHealth, procedures, certs, slips] = await Promise.all([
             prisma.philHealthRecord.findMany({
-                where: { userId: patientId, isActive: true },
-                include: { PhilHealthDependents: true, PhilHealthMemberType: true },
-                orderBy: { createdAt: 'desc' },
+                  where: { userId: patientId, isActive: true },
+                  include: { PhilHealthDependents: true },
+                  orderBy: { createdAt: 'desc' },
                 take: 10,
             }),
-            prisma.procedureUsageHistory.findMany({
-                where: { userId: patientId },
-                select: { id: true, userId: true, clinicId: true, procedureType: true, procedureName: true, usedAt: true },
-                orderBy: { usedAt: 'desc' },
-                take: 20,
-            }),
+            Promise.resolve([] as any[]),
             clinicPatient
                 ? prisma.clinicMedicalCertificate.findMany({
                     where: { clinicId: clinicPatient.clinicId, isActive: true, clinicPatientId: clinicPatient.id },
@@ -514,14 +551,11 @@ export async function getPatientInsuranceData(userId?: string): Promise<Insuranc
                 : Promise.resolve([]),
         ])
 
-        return {
-            philHealthRecords: philHealth.map(r => ({
-                ...serializeDateFields(r),
-                PhilHealthMemberType: r.PhilHealthMemberType
-                    ? { ...r.PhilHealthMemberType, createdAt: r.PhilHealthMemberType.createdAt.toISOString(), updatedAt: r.PhilHealthMemberType.updatedAt.toISOString() }
-                    : null,
-                PhilHealthDependents: r.PhilHealthDependents,
-            })),
+          return {
+              philHealthRecords: philHealth.map(r => ({
+                  ...serializeDateFields(r),
+                  PhilHealthDependents: r.PhilHealthDependents,
+              })),
             medicalCertificates: certs.map(c => ({
                 id: c.id,
                 serialNumber: c.serialNumber,
@@ -551,6 +585,68 @@ export async function getPatientInsuranceData(userId?: string): Promise<Insuranc
         }
     } catch (error) {
         console.error('[GET_PATIENT_INSURANCE_DATA]', error)
+        return null
+    }
+}
+
+export async function getPatientNcdQuestionnaireData(userId?: string): Promise<import('@/types/patient-profile-tabs').NcdQuestionnaireTabData | null> {
+    try {
+        const patientId = await resolvePatientId(userId)
+        if (!patientId) return null
+
+        const patient = await prisma.user.findUnique({
+            where: { id: patientId },
+            select: { 
+                dob: true,
+                NcdQuestionnaire: true 
+            },
+        })
+
+        if (!patient) return null
+
+        return {
+            dob: patient.dob?.toISOString() || null,
+            ncdQuestionnaire: patient.NcdQuestionnaire as any
+        }
+    } catch (error) {
+        console.error('[GET_PATIENT_NCD_DATA]', error)
+        return null
+    }
+}
+
+export async function getPatientDiagnosticsData(userId?: string): Promise<import('@/types/patient-profile-tabs').DiagnosticsTabData | null> {
+    try {
+        const patientId = await resolvePatientId(userId)
+        if (!patientId) return null
+
+        const patient = await prisma.user.findUnique({
+            where: { id: patientId },
+            include: {
+                ClinicPatients: {
+                    include: {
+                        PhilHealthKonsultaEnlistments: {
+                            where: { status: 'ACTIVE' },
+                            orderBy: { createdAt: 'desc' },
+                            take: 1,
+                        }
+                    }
+                }
+            }
+        })
+
+        if (!patient) return null
+        
+        const enlistment = patient.ClinicPatients?.[0]?.PhilHealthKonsultaEnlistments?.[0]
+
+        return {
+            yakapEnlistment: enlistment ? {
+                id: enlistment.id,
+                hciCaseNo: enlistment.hciCaseNo,
+                profilingTransNo: enlistment.profilingTransNo,
+            } : undefined
+        }
+    } catch (error) {
+        console.error('[GET_PATIENT_DIAGNOSTICS_DATA]', error)
         return null
     }
 }

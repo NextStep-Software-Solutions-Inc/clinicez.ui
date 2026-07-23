@@ -5,6 +5,7 @@ import prisma from "@/lib/prisma";
 import { getCachedSession } from "@/actions/session.action";
 import { requireClinicPermission } from "@/lib/permission-checker";
 import { PERMISSIONS } from "@/lib/permissions";
+import { calculateDetailedAge } from "@/lib/utils";
 import type { SerializedPatientHealthRecordsResponse } from "@/types/patient-profile";
 
 /**
@@ -42,6 +43,17 @@ export async function getClinicPatientProfileAction({
             },
             include: {
                 Clinic: { select: { id: true, name: true } },
+                PhilHealthKonsultaEnlistments: {
+                    where: {
+                        year: new Date().getFullYear(),
+                        status: 'ACTIVE'
+                    },
+                    select: {
+                        id: true,
+                        hciCaseNo: true,
+                        profilingTransNo: true
+                    }
+                }
             },
         });
 
@@ -87,7 +99,6 @@ export async function getClinicPatientProfileAction({
             medical,
             familyMedical,
             vitals,
-            exams,
             obGyne,
             pediatric,
             personal,
@@ -99,6 +110,8 @@ export async function getClinicPatientProfileAction({
             disabilities,
             addresses,
             surgical,
+            physicalExaminations,
+            ncdQuestionnaire,
         ] = await Promise.all([
             prisma.medicalHistory.findMany({
                 where: { userId: patient.id },
@@ -117,16 +130,25 @@ export async function getClinicPatientProfileAction({
                 orderBy: { dateTaken: "desc" },
                 take: 5,
             }),
-            prisma.physicalExamination.findMany({
-                where: { userId: patient.id },
-                orderBy: { createdAt: "desc" },
-                take: 10,
-            }),
+
             prisma.obGyneHistory.findFirst({
                 where: { userId: patient.id },
             }),
-            prisma.pediatricMeasurement.findMany({
-                where: { userId: patient.id },
+            prisma.vitalSign.findMany({
+                where: {
+                    userId: patient.id,
+                    isActive: true,
+                    deletedAt: null,
+                    OR: [
+                        { length: { not: null } },
+                        { headCircumference: { not: null } },
+                        { skinfoldThickness: { not: null } },
+                        { waistCircumference: { not: null } },
+                        { hipCircumference: { not: null } },
+                        { limbCircumference: { not: null } },
+                        { midUpperArmCircumference: { not: null } },
+                    ],
+                },
                 orderBy: { dateTaken: "asc" },
                 take: 100,
             }),
@@ -137,26 +159,11 @@ export async function getClinicPatientProfileAction({
                 where: { userId: patient.id, isActive: true },
                 include: {
                     PhilHealthDependents: true,
-                    PhilHealthMemberType: true,
                 },
                 orderBy: { createdAt: "desc" },
                 take: 10,
             }),
-            prisma.procedureUsageHistory.findMany({
-                where: { userId: patient.id },
-                select: {
-                    id: true,
-                    userId: true,
-                    clinicId: true,
-                    procedureType: true,
-                    procedureId: true,
-                    procedureName: true,
-                    usedAt: true,
-                    clinicPatientId: true,
-                },
-                orderBy: { usedAt: "desc" },
-                take: 10,
-            }),
+            Promise.resolve([] as any[]),
             prisma.userAllergy.findMany({
                 where: { userId: patient.id },
                 select: {
@@ -203,7 +210,15 @@ export async function getClinicPatientProfileAction({
             prisma.surgicalHistory.findMany({
                 where: { userId: patient.id, deletedAt: null },
                 orderBy: { createdAt: "desc" },
-                take: 20,
+                take: 15,
+            }),
+            prisma.physicalExamination.findMany({
+                where: { userId: patient.id, deletedAt: null },
+                orderBy: { createdAt: "desc" },
+                take: 5,
+            }),
+            prisma.patientNcdQuestionnaire.findUnique({
+                where: { patientId: patient.id },
             }),
         ]);
 
@@ -257,6 +272,7 @@ export async function getClinicPatientProfileAction({
                     (365.25 * 24 * 60 * 60 * 1000)
                 )
                 : null,
+            detailedAge: calculateDetailedAge(patient.dob),
             gender: patient.gender,
             bloodType: patient.bloodType,
             civilStatus: patient.civilStatus,
@@ -270,6 +286,7 @@ export async function getClinicPatientProfileAction({
             createdAt: patient.createdAt.toISOString(),
             updatedAt: patient.updatedAt.toISOString(),
             clinic: clinicPatientRecord.Clinic ?? null,
+            ncdQuestionnaire: null,
 
             // Medical Profile
             medicalHistories: medical.map((h) => ({
@@ -313,12 +330,20 @@ export async function getClinicPatientProfileAction({
                 : null,
 
             // Physical Examinations
-            physicalExaminations: exams.map((e) => ({
-                ...e,
-                createdAt: e.createdAt.toISOString(),
-                updatedAt: e.updatedAt.toISOString(),
-                deletedAt: e.deletedAt ? e.deletedAt.toISOString() : null,
+            physicalExaminations: physicalExaminations.map((pe) => ({
+                ...pe,
+                createdAt: pe.createdAt.toISOString(),
+                updatedAt: pe.updatedAt.toISOString(),
+                deletedAt: pe.deletedAt ? pe.deletedAt.toISOString() : null,
             })),
+            latestPhysicalExam: physicalExaminations[0]
+                ? {
+                    ...physicalExaminations[0],
+                    createdAt: physicalExaminations[0].createdAt.toISOString(),
+                    updatedAt: physicalExaminations[0].updatedAt.toISOString(),
+                    deletedAt: physicalExaminations[0].deletedAt ? physicalExaminations[0].deletedAt.toISOString() : null,
+                }
+                : null,
 
             // OB/Gyn History
             obGyneHistory: obGyne
@@ -344,7 +369,7 @@ export async function getClinicPatientProfileAction({
                 midUpperArmCircumference: p.midUpperArmCircumference
                     ? Number(p.midUpperArmCircumference)
                     : null,
-                remarks: p.remarks,
+                notes: p.notes,
                 createdAt: p.createdAt.toISOString(),
                 updatedAt: p.updatedAt.toISOString(),
                 deletedAt: p.deletedAt ? p.deletedAt.toISOString() : null,
@@ -431,14 +456,12 @@ export async function getClinicPatientProfileAction({
                 createdAt: p.createdAt.toISOString(),
                 updatedAt: p.updatedAt.toISOString(),
                 deletedAt: p.deletedAt ? p.deletedAt.toISOString() : null,
-                PhilHealthMemberType: p.PhilHealthMemberType
-                    ? {
-                        ...p.PhilHealthMemberType,
-                        createdAt: p.PhilHealthMemberType.createdAt.toISOString(),
-                        updatedAt: p.PhilHealthMemberType.updatedAt.toISOString(),
-                    }
-                    : null,
             })),
+            yakapEnlistment: clinicPatientRecord.PhilHealthKonsultaEnlistments?.[0] ? {
+                id: clinicPatientRecord.PhilHealthKonsultaEnlistments[0].id,
+                hciCaseNo: clinicPatientRecord.PhilHealthKonsultaEnlistments[0].hciCaseNo,
+                profilingTransNo: clinicPatientRecord.PhilHealthKonsultaEnlistments[0].profilingTransNo
+            } : undefined,
 
             // Procedure History
             procedureHistory: procedures.map((p) => ({

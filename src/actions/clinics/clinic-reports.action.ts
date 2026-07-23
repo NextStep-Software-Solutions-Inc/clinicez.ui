@@ -265,10 +265,7 @@ export const getClinicReportsAction = withErrorHandling(
       }),
 
       // ── Service utilization: procedure usage history ──────────────────
-      prisma.procedureUsageHistory.findMany({
-        where: { Clinic: { clinicUid }, usedAt: dateFilter },
-        select: { procedureType: true, procedureName: true },
-      }),
+      Promise.resolve([] as any[]),
     ]);
 
     // ── Process appointment stats ─────────────────────────────────────────

@@ -14,7 +14,7 @@ interface DownloadPKRFActionProps { userId: string; children?: React.ReactNode }
 const DownloadPKRFAction: React.FC<DownloadPKRFActionProps> = ({ userId, children }) => {
   const handleDownload = async () => {
     toast.promise(promiseWrapper(downloadPKRFAction)(userId), {
-      loading: "Generating PhilHealth Konsulta Registration Form...",
+      loading: "Generating PhilHealth Yakap Registration Form...",
       success: async (res) => {
         const data = res.data
         if (!data) throw new Error("No PDF data received from server")
@@ -40,7 +40,7 @@ const DownloadPKRFAction: React.FC<DownloadPKRFActionProps> = ({ userId, childre
             {children || defaultButton}
           </div>
         </TooltipTrigger>
-        <TooltipContent side="top">Download Konsulta Registration Form</TooltipContent>
+        <TooltipContent side="top">Download Yakap Registration Form</TooltipContent>
       </Tooltip>
     </TooltipProvider>
   )

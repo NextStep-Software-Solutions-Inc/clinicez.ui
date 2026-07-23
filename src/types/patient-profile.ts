@@ -4,12 +4,10 @@ import type {
   VitalSign,
   PhysicalExamination,
   ObGyneHistory,
-  PediatricMeasurement,
+
   PersonalHistory,
   PhilHealthRecord,
-  PhilHealthMemberType,
   PhilHealthDependent,
-  ProcedureUsageHistory,
   ClinicMedicalCertificate,
   ClinicReferralSlip,
   HealthCondition,
@@ -25,11 +23,7 @@ export interface MedicalHistoryData {
   details: string | null
 }
 
-export interface PhysicalExaminationData extends Omit<PhysicalExamination, 'createdAt' | 'updatedAt' | 'deletedAt'> {
-  createdAt: string
-  updatedAt: string
-  deletedAt: string | null
-}
+
 
 export interface ClinicInfo {
   id: number
@@ -71,6 +65,7 @@ export interface SerializedPatientHealthRecordsResponse {
   telephone: string | null
   dob: string | null  // ISO string
   age: number | null
+  detailedAge: string | null
   gender: string | null
   bloodType: string | null
   civilStatus: string | null
@@ -97,16 +92,26 @@ export interface SerializedPatientHealthRecordsResponse {
     updatedAt: string
     deletedAt: string | null
   }>
+  ncdQuestionnaire: { id: number } | null
 
-  // Vital Signs
   vitalSigns: Array<Omit<VitalSign, 'dateTaken' | 'createdAt' | 'updatedAt' | 'deletedAt'> & { dateTaken: string; createdAt: string; updatedAt: string; deletedAt: string | null }>
   latestVitals: (Omit<VitalSign, 'dateTaken' | 'createdAt' | 'updatedAt' | 'deletedAt'> & { dateTaken: string; createdAt: string; updatedAt: string; deletedAt: string | null }) | null
 
-  // Physical Examinations
-  physicalExaminations: PhysicalExaminationData[]
+  // Physical Examination
+  physicalExaminations: Array<Omit<PhysicalExamination, 'createdAt' | 'updatedAt' | 'deletedAt'> & { createdAt: string; updatedAt: string; deletedAt: string | null }>
+  latestPhysicalExam: (Omit<PhysicalExamination, 'createdAt' | 'updatedAt' | 'deletedAt'> & { createdAt: string; updatedAt: string; deletedAt: string | null }) | null
+
+
 
   // OB/Gyn History
   obGyneHistory: (Omit<ObGyneHistory, 'createdAt' | 'updatedAt' | 'deletedAt'> & { createdAt: string; updatedAt: string; deletedAt: string | null }) | null
+
+  // Yakap
+  yakapEnlistment?: {
+    id: number
+    hciCaseNo: string | null
+    profilingTransNo: string | null
+  }
 
   // Pediatric Measurements
   pediatricMeasurements: Array<{
@@ -120,7 +125,7 @@ export interface SerializedPatientHealthRecordsResponse {
     hipCircumference: number | null
     limbCircumference: number | null
     midUpperArmCircumference: number | null
-    remarks: string | null
+    notes: string | null
     createdAt: string
     updatedAt: string
     deletedAt: string | null
@@ -197,12 +202,8 @@ export interface SerializedPatientHealthRecordsResponse {
     createdAt: string
     updatedAt: string
     deletedAt: string | null
-    PhilHealthMemberType?: (Omit<PhilHealthMemberType, 'createdAt' | 'updatedAt'> & { createdAt: string; updatedAt: string }) | null
     PhilHealthDependents?: PhilHealthDependent[]
   }>
-
-  // Procedure History
-  procedureHistory: Array<Omit<ProcedureUsageHistory, 'usedAt'> & { usedAt: string }>
 
   // Clinical Documents
   medicalCertificates: CertificateData[]

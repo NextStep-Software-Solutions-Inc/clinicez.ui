@@ -160,6 +160,42 @@ export function calculateAge(birthDate: Date | string | null | undefined): numbe
   return today.diff(birthDay, 'year');
 }
 
+export function calculateDetailedAge(birthDate: Date | string | null | undefined): string | null {
+  if (birthDate === null || birthDate === undefined) {
+    return null;
+  }
+
+  const date = typeof birthDate === 'string' ? new Date(birthDate) : birthDate;
+  const birthDay = dayjs(date);
+
+  if (!birthDay.isValid()) {
+    return null;
+  }
+
+  const today = dayjs();
+  
+  const years = today.diff(birthDay, 'year');
+  const dateAfterYears = birthDay.add(years, 'year');
+  
+  const months = today.diff(dateAfterYears, 'month');
+  const dateAfterMonths = dateAfterYears.add(months, 'month');
+  
+  const weeks = today.diff(dateAfterMonths, 'week');
+  const dateAfterWeeks = dateAfterMonths.add(weeks, 'week');
+  
+  const days = today.diff(dateAfterWeeks, 'day');
+  
+  const parts = [];
+  if (years > 0) parts.push(`${years} ${years === 1 ? 'Year' : 'Years'}`);
+  if (months > 0) parts.push(`${months} ${months === 1 ? 'month' : 'months'}`);
+  if (weeks > 0) parts.push(`${weeks} ${weeks === 1 ? 'week' : 'weeks'}`);
+  
+  // always include days
+  parts.push(`${days} ${days === 1 ? 'day' : 'days'}`);
+  
+  return parts.join(' ');
+}
+
 export function centimeterToInch(cm: number | string): number {
   const cmValue = typeof cm === 'string' ? parseFloat(cm) : cm;
   if (isNaN(cmValue)) {

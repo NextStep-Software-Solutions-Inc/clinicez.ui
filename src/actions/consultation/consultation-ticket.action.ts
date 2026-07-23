@@ -53,13 +53,38 @@ export const createConsultationTicketAction = withErrorHandling(async ({ systemI
   const now = new Date();
 
   const consultationTicket = await prismaClient.$transaction(async (prisma) => {
-    const consultationConfig = await prismaClient.consultationConfig.findFirstOrThrow({
+    let consultationConfig = await prismaClient.consultationConfig.findFirst({
       where: {
         Clinic: {
           clinicUid
         }
       }
     })
+
+    if (!consultationConfig) {
+      const defaultNoteTemplate = await prismaClient.noteTemplate.findFirst({
+        where: { isActive: true }
+      });
+
+      if (!defaultNoteTemplate) {
+        throw new Error("No active Note Templates found in the system. Please contact an administrator.");
+      }
+
+      const clinic = await prismaClient.clinic.findUnique({
+        where: { clinicUid }
+      });
+
+      if (!clinic) {
+        throw new Error("Clinic not found");
+      }
+
+      consultationConfig = await prismaClient.consultationConfig.create({
+        data: {
+          clinicId: clinic.id,
+          noteTemplateId: defaultNoteTemplate.id
+        }
+      });
+    }
 
     return await prismaClient.consultationTicket.create({
       data: {
@@ -1015,6 +1040,62 @@ export const resolveConsultationTicket = withErrorHandling(async (consultationId
   const canResolveConsultationTicket = resolveConsultationTicketPermissions.some(p => userPermissionArray.includes(p))
 
   if (!canResolveConsultationTicket) throw new Error("You do not have permission to resolve consultation tickets")
+
+  // Guard: if this is a PhilHealth Yakap consultation, ensure profiling is complete
+  const ticket = await prismaClient.consultationTicket.findUnique({
+    where: { id: consultationId },
+    select: {
+      isPhilHealthKonsulta: true,
+      ClinicPatient: {
+        select: {
+          id: true,
+          Patient: {
+            select: {
+              firstName: true, lastName: true, dob: true, gender: true,
+              bloodType: true, mobile: true,
+              PhilHealthRecords: { take: 1, select: { pin: true, memberType: true } },
+              VitalSigns: {
+                where: { isActive: true, deletedAt: null },
+                take: 1,
+                select: { height: true, weight: true, bpSystolic: true },
+              },
+            },
+          },
+          PhilHealthKonsultaEnlistments: {
+            where: { status: "ACTIVE" },
+            take: 1,
+            select: { hciCaseNo: true, profilingTransNo: true, enlistmentTransNo: true },
+          },
+        },
+      },
+    },
+  });
+
+  if (ticket?.isPhilHealthKonsulta) {
+    const cp = ticket.ClinicPatient;
+    const pat = cp?.Patient;
+    const enlistment = cp?.PhilHealthKonsultaEnlistments[0];
+    const vitals = pat?.VitalSigns[0];
+    const phRecord = pat?.PhilHealthRecords[0];
+
+    const missing: string[] = [];
+    if (!pat?.firstName || !pat?.lastName) missing.push("Patient name");
+    if (!pat?.dob) missing.push("Date of birth");
+    if (!pat?.gender) missing.push("Sex/gender");
+    if (!pat?.bloodType) missing.push("Blood type");
+    if (!pat?.mobile) missing.push("Mobile number");
+    if (!phRecord?.pin) missing.push("PhilHealth PIN");
+    if (!phRecord?.memberType) missing.push("Member type");
+    if (!enlistment?.hciCaseNo) missing.push("HCI Case No.");
+    if (!enlistment?.profilingTransNo) missing.push("Profiling Trans No.");
+    if (!vitals?.height || !vitals?.weight) missing.push("Vitals (height/weight)");
+
+    if (missing.length > 0) {
+      throw new Error(
+        `Cannot resolve: PhilHealth Yakap profiling is incomplete. Missing: ${missing.join(", ")}`
+      );
+    }
+  }
 
   await prismaClient.consultationTicketAttribute.update({
     where: {

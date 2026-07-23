@@ -92,6 +92,15 @@ export function mapVitalSignToFormInput(
         spo2: latestVitals.spo2,
         respRate: latestVitals.respRate,
         notes: latestVitals.notes,
+        visualAcuityLeft: latestVitals.visualAcuityLeft,
+        visualAcuityRight: latestVitals.visualAcuityRight,
+        length: latestVitals.length,
+        headCircumference: latestVitals.headCircumference,
+        skinfoldThickness: latestVitals.skinfoldThickness,
+        waistCircumference: latestVitals.waistCircumference,
+        hipCircumference: latestVitals.hipCircumference,
+        limbCircumference: latestVitals.limbCircumference,
+        midUpperArmCircumference: latestVitals.midUpperArmCircumference,
     }
 }
 
@@ -138,7 +147,7 @@ export function mapPatientDataToDemographicsFormInput(
 }
 
 /**
- * Mapper: Latest PediatricMeasurement → form input
+ * Mapper: Latest pediatric measurement (from VitalSign) → form input
  * 
  * Maps the most recent pediatric measurement record to the form input type
  * This prepopulates the form with the patient's latest pediatric measurements
@@ -171,31 +180,7 @@ export function mapPediatricMeasurementToFormInput(
         hipCircumference: toNumber(latestMeasurement.hipCircumference),
         limbCircumference: toNumber(latestMeasurement.limbCircumference),
         midUpperArmCircumference: toNumber(latestMeasurement.midUpperArmCircumference),
-        remarks: latestMeasurement.remarks,
-    }
-}
-
-/**
- * Mapper: Latest PhysicalExamination → form input
- * 
- * Maps the most recent physical examination record to the form input type
- * This prepopulates the form with the patient's latest examination findings
- * 
- * Data is already sorted by createdAt DESC in server action, so [0] is the latest
- */
-export function mapPhysicalExaminationToFormInput(
-    physicalExaminations: PatientHealthRecordsResponse['physicalExaminations'] | null | undefined
-) {
-    if (!physicalExaminations || physicalExaminations.length === 0) return undefined
-
-    // Get the most recent examination (first in array, already sorted by createdAt DESC)
-    const latestExamination = physicalExaminations[0]
-    if (!latestExamination) return undefined
-
-    return {
-        visualAcuityLeft: latestExamination.visualAcuityLeft,
-        visualAcuityRight: latestExamination.visualAcuityRight,
-        status: latestExamination.status,
+        remarks: latestMeasurement.notes,
     }
 }
 
@@ -222,6 +207,15 @@ export function convertVitalSignsToDateObjects(
         spo2: v.spo2,
         respRate: v.respRate,
         notes: v.notes,
+        visualAcuityLeft: v.visualAcuityLeft,
+        visualAcuityRight: v.visualAcuityRight,
+        length: v.length,
+        headCircumference: v.headCircumference,
+        skinfoldThickness: v.skinfoldThickness,
+        waistCircumference: v.waistCircumference,
+        hipCircumference: v.hipCircumference,
+        limbCircumference: v.limbCircumference,
+        midUpperArmCircumference: v.midUpperArmCircumference,
         createdAt: new Date(v.createdAt),
         updatedAt: new Date(v.updatedAt),
         deletedAt: v.deletedAt ? new Date(v.deletedAt) : null,
@@ -230,7 +224,7 @@ export function convertVitalSignsToDateObjects(
 }
 
 /**
- * Helper: Convert serialized pediatricMeasurements (string dates) to Prisma PediatricMeasurement format (Date objects)
+ * Helper: Convert serialized pediatricMeasurements (string dates) to VitalSign-compatible format (Date objects)
  * Used when passing measurements to components that expect Prisma types
  */
 export function convertPediatricMeasurementsToDateObjects(
@@ -249,7 +243,7 @@ export function convertPediatricMeasurementsToDateObjects(
         hipCircumference: m.hipCircumference,
         limbCircumference: m.limbCircumference,
         midUpperArmCircumference: m.midUpperArmCircumference,
-        remarks: m.remarks,
+        notes: m.notes,
         createdAt: new Date(m.createdAt),
         updatedAt: new Date(m.updatedAt),
         deletedAt: m.deletedAt ? new Date(m.deletedAt) : null,

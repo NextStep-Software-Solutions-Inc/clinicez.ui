@@ -5,7 +5,6 @@ import {
     getPatientVitalsData,
     getPatientExamsData,
     getPatientObGynData,
-    getPatientPediatricData,
     getPatientAddressesData,
     getPatientContactsData,
     getPatientLifestyleData,
@@ -13,6 +12,8 @@ import {
     getPatientVaccinationsData,
     getPatientDisabilitiesData,
     getPatientInsuranceData,
+    getPatientNcdQuestionnaireData,
+    getPatientDiagnosticsData,
 } from '@/actions/patient-profile/get-patient-tab-data'
 import type { PatientTabDataMap } from '@/types/patient-profile-tabs'
 
@@ -22,8 +23,8 @@ const TAB_DATA_FETCHERS: { [K in keyof PatientTabDataMap]: (userId?: string) => 
     medical: getPatientMedicalData,
     vitals: getPatientVitalsData,
     exams: getPatientExamsData,
+    diagnostics: getPatientDiagnosticsData,
     obgyn: getPatientObGynData,
-    pediatric: getPatientPediatricData,
     addresses: getPatientAddressesData,
     contacts: getPatientContactsData,
     lifestyle: getPatientLifestyleData,
@@ -31,6 +32,7 @@ const TAB_DATA_FETCHERS: { [K in keyof PatientTabDataMap]: (userId?: string) => 
     vaccinations: getPatientVaccinationsData,
     disabilities: getPatientDisabilitiesData,
     insurance: getPatientInsuranceData,
+    ncdQuestionnaire: getPatientNcdQuestionnaireData,
 }
 
 /**

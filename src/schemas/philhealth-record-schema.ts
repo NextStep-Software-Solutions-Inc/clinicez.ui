@@ -56,26 +56,42 @@ export type PhilHealthDependentFormInput = z.infer<typeof philHealthDependentSch
 export const philHealthRecordSchema = z.object({
   pin: z
     .string()
-    .min(1, "PIN (PhilHealth ID Number) is required")
-    .max(50, "PIN must be less than 50 characters"),
+    .transform((val) => val.replace(/\D/g, ""))
+    .refine((val) => val.length === 12 || val.length === 15, "PIN must be 12 or 15 digits"),
 
   tin: z
     .string()
-    .max(50, "TIN (Tax Identification Number) must be less than 50 characters")
+    .transform((val) => {
+      const digits = val.replace(/\D/g, "");
+      return digits === "" ? undefined : digits;
+    })
     .optional()
-    .nullable(),
+    .nullable()
+    .refine((val) => !val || (val.length >= 9 && val.length <= 15), "TIN must be between 9 and 15 digits"),
 
   philSysId: z
     .string()
-    .max(50, "PhilSys ID must be less than 50 characters")
+    .transform((val) => {
+      const digits = val.replace(/\D/g, "");
+      return digits === "" ? undefined : digits;
+    })
     .optional()
-    .nullable(),
+    .nullable()
+    .refine((val) => !val || val.length === 12 || val.length === 15, "PhilSys ID must be 12 or 15 digits"),
 
-  memberTypeId: z
-    .number()
-    .int()
+  dependentPin: z
+    .string()
+    .transform((val) => {
+      const digits = val.replace(/\D/g, "");
+      return digits === "" ? undefined : digits;
+    })
     .optional()
-    .nullable(),
+    .nullable()
+    .refine((val) => !val || val.length === 12 || val.length === 15, "Dependent PIN must be 12 or 15 digits"),
+
+  memberType: z
+    .enum(["MM", "DD"])
+    .default("MM"),
 
   photoUrl: z
     .string()
@@ -98,21 +114,8 @@ export type PhilHealthRecordFormInput = z.infer<typeof philHealthRecordSchema>
 export const philHealthRecordLabels = {
   pin: "Your PhilHealth ID Number (found on your PhilHealth card)",
   tin: "Tax Identification Number (optional, for employed members)",
+  dependentPin: "Your Dependent PIN (if you are a dependent)",
   philSysId: "Philippine System ID (optional, if you have registered)",
-  memberTypeId: "Your member category (e.g., Individual, Employed, Self-Employed)",
+  memberType: "Your member category (Principal Member or Dependent)",
   photoUrl: "URL to your PhilHealth card photo (optional)",
 }
-
-/**
- * PhilHealth Member Types
- * These should match the database HealthcareProvider types
- */
-export const philHealthMemberTypes = [
-  { id: 1, name: "Individual", description: "Self-paying member" },
-  { id: 2, name: "Employed", description: "Member through employer" },
-  { id: 3, name: "Self-Employed", description: "Self-employed professional" },
-  { id: 4, name: "Senior Citizen", description: "Senior citizen member" },
-  { id: 5, name: "PWD", description: "Person with disability" },
-  { id: 6, name: "Indigent", description: "Indigent/sponsored member" },
-  { id: 7, name: "Lifetime Member", description: "Lifetime member" },
-]

@@ -27,8 +27,28 @@ const sidebarNavItems = [
     href: "/super-admin/diagnostics-procedures",
   },
   {
-    title: "PhilHealth Yakap Libraries",
-    href: "/super-admin/yakap-libraries",
+    title: "Diagnostic Procedures",
+    href: "/super-admin/diagnostic-procedures",
+  },
+  {
+    title: "Yakap Recommended Services",
+    href: "/super-admin/konsulta-recommended-services",
+  },
+  {
+    title: "Health Conditions",
+    href: "/super-admin/health-conditions",
+  },
+  {
+    title: "Vaccines",
+    href: "/super-admin/vaccines",
+  },
+  {
+    title: "Physical Exam Library",
+    href: "/super-admin/physical-exam-library",
+  },
+  {
+    title: "Signs and Symptoms",
+    href: "/super-admin/signs-and-symptoms",
   },
   {
     title: "Location Management",
@@ -57,6 +77,10 @@ const sidebarNavItems = [
   {
     title: "Database Seeding",
     href: "/super-admin/seed",
+  },
+  {
+    title: "Database Tools",
+    href: "/super-admin/database",
   },
 ];
 

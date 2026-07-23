@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Heart, AlertCircle, Pill, ChevronRight, User, CheckCircle2, Clock, XCircle, UserPlus } from "lucide-react";
-import { calculateAge, formatBloodType } from "@/lib/utils";
+import { calculateDetailedAge, formatBloodType } from "@/lib/utils";
 import type { ClinicPatientListItem } from "@/types/clinic-patients-v2.types";
 import { PatientAIInsightButton } from "./PatientAIInsightButton";
 import { formatDistanceToNow } from "date-fns";
@@ -46,6 +46,15 @@ function ProfileStatusBadge({ status }: { status: string }) {
   );
 }
 
+function YakapBadge({ isProfiled }: { isProfiled: boolean }) {
+  return (
+    <span className="inline-flex items-center gap-1 text-[10px] font-medium text-teal-700 dark:text-teal-400 bg-teal-50 dark:bg-teal-950/40 px-1.5 py-0.5 rounded">
+      <CheckCircle2 className="h-3 w-3 flex-shrink-0" />
+      <span className="hidden sm:inline">Yakap {isProfiled ? 'Profiled' : 'Enlisted'}</span>
+    </span>
+  );
+}
+
 export const PatientCard = memo(function PatientCard({
   patient,
   clinicUid,
@@ -74,13 +83,17 @@ export const PatientCard = memo(function PatientCard({
 
   const initials = `${firstName?.charAt(0) ?? ""}${lastName?.charAt(0) ?? ""}`;
   const fullName = `${firstName ?? ""} ${middleName ? middleName + " " : ""}${lastName ?? ""}${suffix ? " " + suffix : ""}`.trim();
-  const age = calculateAge(dob) ?? 0;
+  const detailedAge = calculateDetailedAge(dob) ?? "—";
   const genderLabel = gender
     ? `${gender.charAt(0).toUpperCase()}${gender.slice(1).toLowerCase()}`
     : null;
 
   const profileHref = `/v2/clinic/${clinicUid}/patients/${patientId}`;
   const joinedAgo = formatDistanceToNow(new Date(createdAt), { addSuffix: true });
+
+  const activeYakapEnlistment = patient.PhilHealthKonsultaEnlistments?.[0];
+  const isYakapEnlisted = !!activeYakapEnlistment;
+  const isYakapProfiled = !!activeYakapEnlistment?.profilingTransNo;
 
   /* ── Grid View ─────────────────────────────────────────────────────────── */
   if (viewMode === "grid") {
@@ -114,7 +127,7 @@ export const PatientCard = memo(function PatientCard({
                     {genderLabel}
                   </span>
                 )}
-                <span className="text-xs text-muted-foreground">• {age}y</span>
+                <span className="text-xs text-muted-foreground">• {detailedAge}</span>
                 {bloodType && (
                   <Badge
                     variant="outline"
@@ -151,8 +164,9 @@ export const PatientCard = memo(function PatientCard({
           </div>
 
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <ProfileStatusBadge status={profileCompletionStatus} />
+              {isYakapEnlisted && <YakapBadge isProfiled={isYakapProfiled} />}
               <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                 <UserPlus className="h-3 w-3 flex-shrink-0" />
                 Added {joinedAgo}
@@ -216,7 +230,7 @@ export const PatientCard = memo(function PatientCard({
             {genderLabel && (
               <span className="text-xs text-muted-foreground">{genderLabel}</span>
             )}
-            <span className="text-xs text-muted-foreground">• {age}y</span>
+            <span className="text-xs text-muted-foreground">• {detailedAge}</span>
             {bloodType && (
               <Badge
                 variant="outline"
@@ -226,8 +240,9 @@ export const PatientCard = memo(function PatientCard({
               </Badge>
             )}
           </div>
-          <div className="flex items-center gap-2 mt-0.5">
+          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
             <ProfileStatusBadge status={profileCompletionStatus} />
+            {isYakapEnlisted && <YakapBadge isProfiled={isYakapProfiled} />}
             <span className="text-[10px] text-muted-foreground flex items-center gap-1">
               <UserPlus className="h-3 w-3 flex-shrink-0" />
               Added {joinedAgo}

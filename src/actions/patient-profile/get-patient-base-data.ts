@@ -3,6 +3,7 @@
 import { currentUser } from '@clerk/nextjs/server'
 import prisma from '@/lib/prisma'
 import type { PatientBaseData } from '@/types/patient-profile-tabs'
+import { calculateDetailedAge } from '@/lib/utils'
 
 /**
  * Fetches only the data needed for the profile card and tab badge counts.
@@ -39,8 +40,7 @@ export async function getPatientBaseData(): Promise<PatientBaseData | null> {
                         MedicalHistories: true,
                         FamilyMedicalHistories: true,
                         VitalSigns: { where: { isActive: true, deletedAt: null } },
-                        PhysicalExaminations: true,
-                        PediatricMeasurements: true,
+
                         UserVaccinations: { where: { isActive: true, deletedAt: null } },
                         UserAddresses: { where: { isActive: true } },
                         UserEmergencyContacts: { where: { isActive: true } },
@@ -49,6 +49,13 @@ export async function getPatientBaseData(): Promise<PatientBaseData | null> {
                 },
                 PersonalHistory: { select: { id: true } },
                 ObGyneHistory: { select: { id: true } },
+                NcdQuestionnaire: { select: { id: true } },
+                VitalSigns: {
+                    where: { isActive: true, deletedAt: null },
+                    orderBy: { createdAt: 'desc' },
+                    take: 1,
+                    select: { bmi: true, zScore: true }
+                },
                 ClinicPatients: {
                     where: { isActive: true, deletedAt: null },
                     select: {
@@ -59,6 +66,17 @@ export async function getPatientBaseData(): Promise<PatientBaseData | null> {
                                 ClinicReferralSlips: { where: { isActive: true } },
                             },
                         },
+                        PhilHealthKonsultaEnlistments: {
+                            where: {
+                                year: new Date().getFullYear(),
+                                status: 'ACTIVE'
+                            },
+                            select: {
+                                id: true,
+                                hciCaseNo: true,
+                                profilingTransNo: true
+                            }
+                        }
                     },
                     take: 1,
                 },
@@ -68,10 +86,12 @@ export async function getPatientBaseData(): Promise<PatientBaseData | null> {
 
         if (!patient) return null
 
+
+
         const clinicPatient = patient.ClinicPatients[0] ?? null
         const certCount = clinicPatient?._count.MedicalCertificates ?? 0
         const referralCount = clinicPatient?._count.ClinicReferralSlips ?? 0
-        const procedureCount = await prisma.procedureUsageHistory.count({ where: { userId: patient.id } })
+        const procedureCount = 0;
 
         return {
             id: patient.id,
@@ -84,11 +104,14 @@ export async function getPatientBaseData(): Promise<PatientBaseData | null> {
             age: patient.dob
                 ? Math.floor((Date.now() - new Date(patient.dob).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
                 : null,
+            detailedAge: calculateDetailedAge(patient.dob),
             gender: patient.gender,
             bloodType: patient.bloodType,
             caseNumber: patient.caseNumber,
             nickname: patient.nickname,
             suffix: patient.suffix,
+            latestBmi: patient.VitalSigns?.[0]?.bmi ?? null,
+            latestZScore: patient.VitalSigns?.[0]?.zScore ?? null,
             verificationStatus: patient.verificationStatus,
             badges: {
                 hasEmail: !!patient.email,
@@ -100,16 +123,20 @@ export async function getPatientBaseData(): Promise<PatientBaseData | null> {
                 medicalHistoriesCount: patient._count.MedicalHistories,
                 familyMedicalHistoriesCount: patient._count.FamilyMedicalHistories,
                 vitalSignsCount: patient._count.VitalSigns,
-                physicalExaminationsCount: patient._count.PhysicalExaminations,
                 hasPersonalHistory: patient.PersonalHistory !== null,
                 hasObGyneHistory: patient.ObGyneHistory !== null,
-                pediatricMeasurementsCount: patient._count.PediatricMeasurements,
+                hasNcdQuestionnaire: patient.NcdQuestionnaire !== null,
                 userVaccinationsCount: patient._count.UserVaccinations,
                 userAddressesCount: patient._count.UserAddresses,
                 userEmergencyContactsCount: patient._count.UserEmergencyContacts,
                 philHealthRecordsCount: patient._count.PhilHealthRecords,
                 totalDocumentsCount: certCount + referralCount + procedureCount,
             },
+            yakapEnlistment: clinicPatient?.PhilHealthKonsultaEnlistments?.[0] ? {
+                id: clinicPatient.PhilHealthKonsultaEnlistments[0].id,
+                hciCaseNo: clinicPatient.PhilHealthKonsultaEnlistments[0].hciCaseNo,
+                profilingTransNo: clinicPatient.PhilHealthKonsultaEnlistments[0].profilingTransNo
+            } : undefined
         }
     } catch (error) {
         console.error('[GET_PATIENT_BASE_DATA]', error)

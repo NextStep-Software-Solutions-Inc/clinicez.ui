@@ -1,10 +1,8 @@
 "use server";
 
-import { getPhilHealthMemberTypesAction } from "@/actions/philhealth/philhealth-member-type.action";
 import { PhilHealthForm } from "./PhilHealthForm";
 import { PhilHealthPhoto } from "./PhilHealthPhoto";
 import { getPhilHealthRecordAction } from "@/actions/philhealth/philhealth-record.action";
-import { PhilHealthMemberType } from "@prisma/client";
 
 interface PhilHealthFormWrapperProps {
   userUid: string;
@@ -12,13 +10,8 @@ interface PhilHealthFormWrapperProps {
 }
 
 export default async function PhilHealthFormWrapper({ userUid, readonly }: PhilHealthFormWrapperProps) {
-  let memberTypes: PhilHealthMemberType[] = [];
-  let philhealthRecord: { id: number; pin: string; philSysId?: string; tin?: string; memberTypeId: number; photoUrl?: string } | undefined;
-  try {
-    memberTypes = await getPhilHealthMemberTypesAction();
-  } catch {
-    memberTypes = [];
-  }
+  let philhealthRecord: { id: number; pin: string; philSysId?: string; tin?: string; memberType?: string; photoUrl?: string } | undefined;
+
   try {
     const existing = await getPhilHealthRecordAction(userUid);
     if (existing.data) {
@@ -27,7 +20,7 @@ export default async function PhilHealthFormWrapper({ userUid, readonly }: PhilH
         pin: existing.data.pin,
         philSysId: existing.data.philSysId ?? undefined,
         tin: existing.data.tin ?? undefined,
-        memberTypeId: existing.data.memberTypeId,
+        memberType: existing.data.memberType,
         photoUrl: ('photoUrl' in existing.data
           ? (existing.data as { photoUrl?: string | null }).photoUrl ?? undefined
           : undefined),
@@ -46,7 +39,7 @@ export default async function PhilHealthFormWrapper({ userUid, readonly }: PhilH
           readonly={readonly}
         />
       )}
-      <PhilHealthForm userUid={userUid} readonly={readonly} memberTypes={memberTypes} philhealth={philhealthRecord} />
+      <PhilHealthForm userUid={userUid} readonly={readonly} philhealth={philhealthRecord} />
     </div>
   );
 }

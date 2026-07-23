@@ -76,6 +76,19 @@ export const vitalSignSchema = z
       .max(500, "Notes must be less than 500 characters")
       .optional()
       .nullable(),
+
+    // Vision
+    visualAcuityLeft: z.string().max(20).optional().nullable(),
+    visualAcuityRight: z.string().max(20).optional().nullable(),
+
+    // Anthropometrics
+    length: z.number().min(0).max(200).optional().nullable(),
+    headCircumference: z.number().min(0).max(100).optional().nullable(),
+    skinfoldThickness: z.number().min(0).max(100).optional().nullable(),
+    waistCircumference: z.number().min(0).max(200).optional().nullable(),
+    hipCircumference: z.number().min(0).max(200).optional().nullable(),
+    limbCircumference: z.number().min(0).max(100).optional().nullable(),
+    midUpperArmCircumference: z.number().min(0).max(100).optional().nullable(),
   })
   .refine(
     (data) => {

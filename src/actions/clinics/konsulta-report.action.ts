@@ -136,17 +136,17 @@ async function getClinicKonsultaCredentials(clinicId: number) {
     const setting = await prisma.clinicSetting.findFirst({
         where: { clinicId },
         select: {
-            konsultaUsername: true,
-            konsultaPassword: true,
+            philhealthYakapUsername: true,
+            philhealthYakapPassword: true,
             philhealthAccreditationNumber: true,
-            pmccNumber: true,
+            philhealthYakapPmccNumber: true,
         },
     });
     if (
-        typeof setting?.konsultaUsername === "undefined" ||
-        typeof setting.konsultaPassword === "undefined" ||
+        typeof setting?.philhealthYakapUsername === "undefined" ||
+        typeof setting.philhealthYakapPassword === "undefined" ||
         !setting.philhealthAccreditationNumber ||
-        !setting.pmccNumber
+        !setting.philhealthYakapPmccNumber
     ) {
         throw new Error(
             "PhilHealth Konsulta credentials are not fully configured in Clinic Settings.",
@@ -158,10 +158,10 @@ async function getClinicKonsultaCredentials(clinicId: number) {
         );
     }
     return {
-        username: setting.konsultaUsername ?? "",
-        password: setting.konsultaPassword ?? "",
+        username: setting.philhealthYakapUsername ?? "",
+        password: setting.philhealthYakapPassword ?? "",
         hciAccreNo: setting.philhealthAccreditationNumber,
-        pmccNumber: setting.pmccNumber,
+        pmccNumber: setting.philhealthYakapPmccNumber,
         certificationId: KONSULTA_SOFTWARE_CERT_ID,
         cipherKey: KONSULTA_CIPHER_KEY,
     };
@@ -281,18 +281,7 @@ async function getKonsultaTokenForClinic(clinicId: number): Promise<string> {
     return token;
 }
 
-async function resolveDefaultMemberTypeId(
-    tx: Prisma.TransactionClient,
-): Promise<number> {
-    const memberType = await tx.philHealthMemberType.findFirst({
-        where: { isActive: true },
-        orderBy: { id: "asc" },
-        select: { id: true },
-    });
-    if (!memberType)
-        throw new Error("PhilHealth member type reference data is not configured.");
-    return memberType.id;
-}
+
 
 // ─── Patients ─────────────────────────────────────────────────────────────────
 
@@ -321,10 +310,9 @@ const KONSULTA_PATIENT_SELECT = {
                 select: {
                     id: true,
                     pin: true,
-                    memberTypeId: true,
+                    memberType: true,
                     pinVerificationStatus: true,
                     pinVerifiedAt: true,
-                    PhilHealthMemberType: { select: { name: true, category: true } },
                 },
                 take: 1,
             },
@@ -539,7 +527,6 @@ export const enrollPatientPhilHealthAction = withErrorHandling(
                             data: {
                                 userId: clinicPatient.Patient.id,
                                 pin: normalizedPin,
-                                memberTypeId: await resolveDefaultMemberTypeId(tx),
                                 philSysId: philSysId?.trim() || null,
                                 tin: tin?.trim() || null,
                             },
@@ -958,13 +945,18 @@ async function upsertPatientProfileFromXml(
 
     const profDate = profile.profDate ? new Date(profile.profDate) : new Date();
 
-    // ── VitalSign ──────────────────────────────────────────────────────────
+    // ── VitalSign (including pediatric measurements) ──────────────────────────
+    const hasPediatric = [
+        profile.length, profile.headCirc, profile.skinfoldThickness,
+        profile.waist, profile.hip, profile.limbs, profile.midUpperArmCirc,
+    ].some((v) => v && v.trim() !== "" && v.trim() !== "0");
+
     const hasSomeVital = [
         profile.systolic, profile.diastolic, profile.hr, profile.rr,
         profile.temp, profile.height, profile.weight,
     ].some((v) => v && v.trim() !== "" && v.trim() !== "0");
 
-    if (hasSomeVital) {
+    if (hasSomeVital || hasPediatric) {
         await prisma.vitalSign.create({
             data: {
                 userId,
@@ -977,21 +969,6 @@ async function upsertPatientProfileFromXml(
                 height: toFloat(profile.height),
                 weight: toFloat(profile.weight),
                 bmi: toFloat(profile.bmi),
-            },
-        });
-    }
-
-    // ── PediatricMeasurement ───────────────────────────────────────────────
-    const hasPediatric = [
-        profile.length, profile.headCirc, profile.skinfoldThickness,
-        profile.waist, profile.hip, profile.limbs, profile.midUpperArmCirc,
-    ].some((v) => v && v.trim() !== "" && v.trim() !== "0");
-
-    if (hasPediatric) {
-        await prisma.pediatricMeasurement.create({
-            data: {
-                userId,
-                dateTaken: profDate,
                 length: toFloat(profile.length) ?? null,
                 headCircumference: toFloat(profile.headCirc) ?? null,
                 skinfoldThickness: toFloat(profile.skinfoldThickness) ?? null,
@@ -1351,7 +1328,7 @@ export const getPhilHealthConsultationsAction = withErrorHandling(
                                             where: { deletedAt: null },
                                             select: {
                                                 pin: true,
-                                                PhilHealthMemberType: { select: { name: true } },
+                                                memberType: true,
                                             },
                                             take: 1,
                                         },
@@ -1394,7 +1371,7 @@ export const getPhilHealthConsultationsAction = withErrorHandling(
                                     where: { deletedAt: null },
                                     select: {
                                         pin: true,
-                                        PhilHealthMemberType: { select: { name: true } },
+                                        memberType: true,
                                     },
                                     take: 1,
                                 },
@@ -2382,20 +2359,6 @@ export const generateBatchXmlAction = withErrorHandling(
                                 height: true,
                                 weight: true,
                                 bmi: true,
-                            },
-                        },
-                        PhysicalExaminations: {
-                            where: { deletedAt: null },
-                            orderBy: { createdAt: "desc" },
-                            take: 1,
-                            select: { visualAcuityLeft: true, visualAcuityRight: true },
-                        },
-                        PediatricMeasurements: {
-                            where: { deletedAt: null },
-                            orderBy: { dateTaken: "desc" },
-                            take: 5,
-                            select: {
-                                dateTaken: true,
                                 length: true,
                                 headCircumference: true,
                                 skinfoldThickness: true,
@@ -2403,6 +2366,8 @@ export const generateBatchXmlAction = withErrorHandling(
                                 hipCircumference: true,
                                 limbCircumference: true,
                                 midUpperArmCircumference: true,
+                                visualAcuityLeft: true,
+                                visualAcuityRight: true,
                             },
                         },
                     },
@@ -2680,8 +2645,6 @@ export const generateBatchXmlAction = withErrorHandling(
                 const ph = hp.PersonalHistory;
                 const ob = hp.ObGyneHistory;
                 const vs = hp.VitalSigns[0];
-                const pe = hp.PhysicalExaminations[0];
-                const pm = hp.PediatricMeasurements[0];
                 const isFemale = gender === "FEMALE";
 
                 return {
@@ -2711,28 +2674,28 @@ export const generateBatchXmlAction = withErrorHandling(
                     height: vs?.height != null ? String(vs.height) : "",
                     weight: vs?.weight != null ? String(vs.weight) : "",
                     bmi: vs?.bmi != null ? String(vs.bmi) : "",
-                    leftVision: pe?.visualAcuityLeft ?? "",
-                    rightVision: pe?.visualAcuityRight ?? "",
+                    leftVision: vs?.visualAcuityLeft ?? "",
+                    rightVision: vs?.visualAcuityRight ?? "",
                     // Pediatric measurements (PEPERT)
-                    length: pm?.length != null ? String(pm.length) : "",
+                    length: vs?.length != null ? String(vs.length) : "",
                     headCirc:
-                        pm?.headCircumference != null
-                            ? String(pm.headCircumference)
+                        vs?.headCircumference != null
+                            ? String(vs.headCircumference)
                             : "",
                     skinfoldThickness:
-                        pm?.skinfoldThickness != null
-                            ? String(pm.skinfoldThickness)
+                        vs?.skinfoldThickness != null
+                            ? String(vs.skinfoldThickness)
                             : "",
                     waist:
-                        pm?.waistCircumference != null
-                            ? String(pm.waistCircumference)
+                        vs?.waistCircumference != null
+                            ? String(vs.waistCircumference)
                             : "",
-                    hip: pm?.hipCircumference != null ? String(pm.hipCircumference) : "",
+                    hip: vs?.hipCircumference != null ? String(vs.hipCircumference) : "",
                     limbs:
-                        pm?.limbCircumference != null ? String(pm.limbCircumference) : "",
+                        vs?.limbCircumference != null ? String(vs.limbCircumference) : "",
                     midUpperArmCirc:
-                        pm?.midUpperArmCircumference != null
-                            ? String(pm.midUpperArmCircumference)
+                        vs?.midUpperArmCircumference != null
+                            ? String(vs.midUpperArmCircumference)
                             : "",
 
                     // MENSHIST (only applicable for female patients)
@@ -2985,12 +2948,6 @@ export const generateBatchXmlAction = withErrorHandling(
                                 (v) => v.dateTaken <= consultation.createdAt,
                             ) ?? patientProfileEntry.VitalSigns[0]
                             : undefined;
-                        // Pediatric measurements: find the closest on or before the consultation date
-                        const patientPediatric = patientProfileEntry
-                            ? patientProfileEntry.PediatricMeasurements.find(
-                                (pm) => pm.dateTaken <= consultation.createdAt,
-                            ) ?? patientProfileEntry.PediatricMeasurements[0]
-                            : undefined;
 
                         const soapSubData: KonsultaSoapSubData = {
                             // SUBJECTIVE
@@ -3032,32 +2989,32 @@ export const generateBatchXmlAction = withErrorHandling(
                                     : "",
                             // Pediatric measurements
                             length:
-                                patientPediatric?.length != null
-                                    ? String(patientPediatric.length)
+                                patientVitals?.length != null
+                                    ? String(patientVitals.length)
                                     : "",
                             headCirc:
-                                patientPediatric?.headCircumference != null
-                                    ? String(patientPediatric.headCircumference)
+                                patientVitals?.headCircumference != null
+                                    ? String(patientVitals.headCircumference)
                                     : "",
                             skinfoldThickness:
-                                patientPediatric?.skinfoldThickness != null
-                                    ? String(patientPediatric.skinfoldThickness)
+                                patientVitals?.skinfoldThickness != null
+                                    ? String(patientVitals.skinfoldThickness)
                                     : "",
                             waist:
-                                patientPediatric?.waistCircumference != null
-                                    ? String(patientPediatric.waistCircumference)
+                                patientVitals?.waistCircumference != null
+                                    ? String(patientVitals.waistCircumference)
                                     : "",
                             hip:
-                                patientPediatric?.hipCircumference != null
-                                    ? String(patientPediatric.hipCircumference)
+                                patientVitals?.hipCircumference != null
+                                    ? String(patientVitals.hipCircumference)
                                     : "",
                             limbs:
-                                patientPediatric?.limbCircumference != null
-                                    ? String(patientPediatric.limbCircumference)
+                                patientVitals?.limbCircumference != null
+                                    ? String(patientVitals.limbCircumference)
                                     : "",
                             midUpperArmCirc:
-                                patientPediatric?.midUpperArmCircumference != null
-                                    ? String(patientPediatric.midUpperArmCircumference)
+                                patientVitals?.midUpperArmCircumference != null
+                                    ? String(patientVitals.midUpperArmCircumference)
                                     : "",
 
                             // ICDS from ConsultationDiagnoses

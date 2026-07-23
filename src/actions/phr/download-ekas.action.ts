@@ -13,7 +13,7 @@ const upper = (v?: string | null) => v ? v.toUpperCase() : ""
 
 type PhilHealthRecordLite = {
   id: number;
-  memberTypeId: number;
+  memberType?: string;
   pin?: string | null;
 }
 
@@ -26,7 +26,7 @@ export const downloadEKASAction = withErrorHandling(async (
   consultationTicketId?: number | null,
   clinicId?: number | null
 ): Promise<{ message: string; data: { pdfData: string; filename: string } }> => {
-  if (!userId) throw new Error("User ID is required to generate Electronic Konsulta Availment Slip")
+  if (!userId) throw new Error("User ID is required to generate Electronic Yakap Availment Slip")
 
   const userRes = await getUserAction(userId)
   const user = userRes.data
@@ -146,17 +146,17 @@ export const downloadEKASAction = withErrorHandling(async (
     const fetched = await prisma.philHealthRecord.findFirst({
       where: { userId: user.id, isActive: true, deletedAt: null },
       orderBy: { id: 'asc' },
-      select: { id: true, memberTypeId: true, pin: true },
+      select: { id: true, memberType: true, pin: true },
     })
     phr = fetched ?? undefined
   }
 
   // Get member type
-  const memberType = phr?.memberTypeId
-    ? await prisma.philHealthMemberType.findUnique({
-      where: { id: phr.memberTypeId },
-      select: { name: true, category: true }
-    })
+  const memberType = phr?.memberType
+    ? {
+      name: phr.memberType === 'MM' ? 'Principal' : 'Dependent',
+      category: phr.memberType === 'MM' ? 'DIRECT' : 'INDIRECT'
+    }
     : null
 
   // Get preferred konsulta provider (clinic name)
@@ -200,7 +200,7 @@ export const downloadEKASAction = withErrorHandling(async (
     { field: 'checkboxTypeDependent', condition: isDependent },
   ]
 
-  logger.info("Generating Electronic Konsulta Availment Slip PDF", {
+  logger.info("Generating Electronic Yakap Availment Slip PDF", {
     userId,
     consultationTicketId,
     caseNumber: finalCaseNumber,
@@ -218,7 +218,7 @@ export const downloadEKASAction = withErrorHandling(async (
   const filename = `EKAS_${fullName}_${Date.now()}.pdf`
 
   return {
-    message: "Electronic Konsulta Availment Slip generated successfully",
+    message: "Electronic Yakap Availment Slip generated successfully",
     data: {
       pdfData: result.pdfData,
       filename

@@ -241,72 +241,6 @@ export async function seedProceduresAction(): Promise<SeedResult> {
 }
 
 // ──────────────────────────────────────────────────────────────
-// 3. Seed PhilHealth Member Types
-// ──────────────────────────────────────────────────────────────
-export async function seedPhilHealthAction(): Promise<SeedResult> {
-  try {
-    await requireSuperAdmin();
-
-    const before = await prisma.philHealthMemberType.count();
-
-    await prisma.$transaction(async (tx) => {
-      const directParent = await tx.philHealthMemberType.upsert({
-        where: { name: "Direct Contributor" },
-        update: { category: "DIRECT" },
-        create: { name: "Direct Contributor", category: "DIRECT" },
-      });
-      const indirectParent = await tx.philHealthMemberType.upsert({
-        where: { name: "Indirect Contributor" },
-        update: { category: "INDIRECT" },
-        create: { name: "Indirect Contributor", category: "INDIRECT" },
-      });
-
-      const directChildren = [
-        "Employed Private", "Employed Government", "Professional Practitioner",
-        "Self-Earning Individual", "Individual", "Sole Proprietor",
-        "Group Enrollment Scheme", "Kasambahay", "Family Driver",
-        "Migrant Worker - Land-Based", "Migrant Worker - Sea-Based",
-        "Lifetime Member", "Filipinos with Dual Citizenship / Living Abroad",
-        "Foreign National",
-      ];
-      const indirectChildren = [
-        "Listahanan", "4Ps/MCCT", "Senior Citizen", "PAMANA", "KIA/KIPO",
-        "Bangsamoro/Normalization", "LGU-sponsored", "NGA-sponsored",
-        "Private-sponsored", "Person with Disability",
-      ];
-
-      for (const name of directChildren) {
-        await tx.philHealthMemberType.upsert({
-          where: { name },
-          update: { parentId: directParent.id, category: "DIRECT" },
-          create: { name, parentId: directParent.id, category: "DIRECT" },
-        });
-      }
-      for (const name of indirectChildren) {
-        await tx.philHealthMemberType.upsert({
-          where: { name },
-          update: { parentId: indirectParent.id, category: "INDIRECT" },
-          create: { name, parentId: indirectParent.id, category: "INDIRECT" },
-        });
-      }
-    });
-
-    const after = await prisma.philHealthMemberType.count();
-    const created = after - before;
-
-    return {
-      status: true,
-      message: `PhilHealth member types seeded. Total: ${after} (added ${created} new)`,
-      data: { created, skipped: after - created, total: after },
-    };
-  } catch (error) {
-    console.error("seedPhilHealthAction error:", error);
-    const message = error instanceof Error ? error.message : "Failed to seed PhilHealth member types";
-    return { status: false, message, data: null };
-  }
-}
-
-// ──────────────────────────────────────────────────────────────
 // 4. Seed Vaccines, Routes, and Doses
 // ──────────────────────────────────────────────────────────────
 const vaccineRoutes = [
@@ -439,14 +373,13 @@ export async function seedAllAction(): Promise<SeedResult> {
   try {
     await requireSuperAdmin();
 
-    const [permissions, procedures, philhealth, vaccinesResult] = await Promise.all([
+    const [permissions, procedures, vaccinesResult] = await Promise.all([
       seedPermissionsAction(),
       seedProceduresAction(),
-      seedPhilHealthAction(),
       seedVaccinesAction(),
     ]);
 
-    const results = [permissions, procedures, philhealth, vaccinesResult];
+    const results = [permissions, procedures, vaccinesResult];
     const failed = results.filter((r) => !r.status);
 
     if (failed.length > 0) {

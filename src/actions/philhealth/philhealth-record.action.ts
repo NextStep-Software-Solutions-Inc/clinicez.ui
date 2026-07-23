@@ -29,14 +29,13 @@ type CreatePhilHealthRecordPayload = {
     pin: string;
     philSysId?: string | null;
     tin?: string | null;
-    memberTypeId: number;
+    memberType?: string;
   };
 };
 
 export const createPhilHealthRecordAction = withErrorHandling(async ({ userUid, philhealth }: CreatePhilHealthRecordPayload) => {
   const session = await getCachedSession();
   if (!session) throw new Error("Unauthorized");
-  if (!philhealth.memberTypeId) throw new Error("Member type is required");
 
   let record;
   try {
@@ -54,7 +53,7 @@ export const createPhilHealthRecordAction = withErrorHandling(async ({ userUid, 
           pin: philhealth.pin,
           philSysId: normalizeOptional(philhealth.philSysId),
           tin: normalizeOptional(philhealth.tin),
-          memberTypeId: philhealth.memberTypeId,
+          memberType: philhealth.memberType || 'MM',
         }
       });
     });
@@ -77,14 +76,13 @@ type UpdatePhilHealthRecordPayload = {
     pin: string;
     philSysId?: string | null;
     tin?: string | null;
-    memberTypeId: number;
+    memberType?: string;
   };
 };
 
 export const updatePhilHealthRecordAction = withErrorHandling(async ({ philHealthRecordId, philhealth }: UpdatePhilHealthRecordPayload) => {
   const session = await getCachedSession();
   if (!session) throw new Error("Unauthorized");
-  if (!philhealth.memberTypeId) throw new Error("Member type is required");
   let record;
   try {
     record = await prisma.philHealthRecord.update({
@@ -93,7 +91,7 @@ export const updatePhilHealthRecordAction = withErrorHandling(async ({ philHealt
         pin: philhealth.pin,
         philSysId: normalizeOptional(philhealth.philSysId),
         tin: normalizeOptional(philhealth.tin),
-        memberTypeId: philhealth.memberTypeId,
+        memberType: philhealth.memberType || 'MM',
       }
     });
   } catch (error) {

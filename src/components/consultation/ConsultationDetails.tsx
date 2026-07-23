@@ -268,8 +268,8 @@ export const ClinicalRecords = ({
     {
       value: "ekas",
       tabTitle: "EKAS & EPRESS",
-      cardTitle: "Electronic Konsulta Availment Slip & Electronic Prescription Slip",
-      description: "Download the Electronic Konsulta Availment Slip for this consultation.",
+      cardTitle: "Electronic Yakap Availment Slip & Electronic Prescription Slip",
+      description: "Download the Electronic Yakap Availment Slip for this consultation.",
       Component: EKASWrapper,
     }
   ];

@@ -45,7 +45,7 @@ const DownloadPHRForms: React.FC<DownloadPHRFormsProps> = ({ userId }) => {
 
   const handlePKRFDownload = async () => {
     toast.promise(promiseWrapper(downloadPKRFAction)(userId), {
-      loading: "Generating PhilHealth Konsulta Registration Form...",
+      loading: "Generating PhilHealth Yakap Registration Form...",
       success: async (res) => {
         const data = res.data
         if (!data) throw new Error("No PDF data received from server")

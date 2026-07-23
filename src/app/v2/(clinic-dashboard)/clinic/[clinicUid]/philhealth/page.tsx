@@ -1,29 +1,14 @@
-import type { Metadata } from "next";
-import { PhilHealthReportTab } from "@/components/v2/clinic/reports/PhilHealthReportTab";
+"use server";
 
-export const dynamic = "force-dynamic";
-
-export const metadata: Metadata = {
-  title: "PhilHealth",
-  description: "PhilHealth Konsulta patient management and batch reporting",
-};
+import { PhilHealthYakapClient } from "@/components/v2/clinic/reports/philhealth/PhilHealthYakapClient";
 
 interface PhilHealthPageProps {
   params: Promise<{ clinicUid: string }>;
 }
 
-export default async function ClinicPhilHealthPage({ params }: PhilHealthPageProps) {
-  const { clinicUid } = await params;
+export default async function PhilHealthPage(props: PhilHealthPageProps) {
+  const params = await props.params;
+  const { clinicUid } = params;
 
-  return (
-    <div className="p-3 sm:p-6">
-      <div className="mb-4">
-        <h1 className="text-2xl font-bold tracking-tight">PhilHealth Konsulta/Yakap</h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          Manage enrolled patients, generate PCB reports, and submit to PhilHealth.
-        </p>
-      </div>
-      <PhilHealthReportTab clinicUid={clinicUid} />
-    </div>
-  );
+  return <PhilHealthYakapClient clinicUid={clinicUid} />;
 }

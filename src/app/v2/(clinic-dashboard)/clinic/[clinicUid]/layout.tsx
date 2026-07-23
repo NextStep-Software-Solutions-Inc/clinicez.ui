@@ -99,9 +99,9 @@ export default async function ClinicUidLayout(
       badgeCount: undefined,
     },
     {
-      name: "PhilHealth",
+      name: "PhilHealth Yakap",
       href: `/v2/clinic/${clinicUid}/philhealth`,
-      icon: "shield-check",
+      icon: "shield",
       badgeCount: undefined,
     },
     {

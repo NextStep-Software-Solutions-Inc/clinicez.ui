@@ -23,7 +23,6 @@ import {
   Crown,
   Trash2,
   ChevronDown,
-  RefreshCw,
   ShieldCheck,
   ShieldX,
   Shield,
@@ -49,19 +48,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
-} from "@/components/ui/alert";
 import {
   Form,
   FormControl,
@@ -120,17 +106,6 @@ import {
 
 import { updateClinicAction } from "@/actions/clinics/clinic.action";
 import { updatePhilHealthSettingsAction } from "@/actions/clinics/clinic-setting.action";
-import {
-  bootstrapClinicKonsultaLibrariesAction,
-  createClinicKonsultaLibraryItemAction,
-  getClinicKonsultaLibraryDomainItemsAction,
-  getClinicKonsultaMappingAuditHistoryAction,
-  getClinicKonsultaLibrarySummaryAction,
-  searchPhilHealthKonsultaReferencesAction,
-  type GetClinicKonsultaMappingAuditHistory,
-  type GetClinicKonsultaLibrarySummary,
-  updateClinicKonsultaLibraryMappingAction,
-} from "@/actions/clinics/konsulta-library.action";
 import { upsertClinicAppointmentConfigAction } from "@/actions/appointments/appointment-config.action";
 import {
   addClinicMemberAction,
@@ -200,10 +175,6 @@ import { GoogleCalendarIntegration } from "@/components/v2/integrations/GoogleCa
 import { CalendarEventsList } from "@/components/v2/integrations/CalendarEventsList";
 import type { CalendarEventItem } from "@/actions/google/auth.action";
 import type { GetSystems } from "@/actions/system.action";
-import type {
-  GetClinicKonsultaLibraryDomainItems,
-  SearchPhilHealthKonsultaReferences,
-} from "@/actions/clinics/konsulta-library.action";
 
 /* ─────────────────────────────────────────────────────────────────── */
 /*  Types                                                              */
@@ -223,16 +194,6 @@ type RolesWithPermissionsData = NonNullable<GetClinicRolesWithPermissions>;
 type ClinicAppointmentTabsData = NonNullable<GetClinicAppointmentTabs["data"]>;
 type AllAppointmentTabsData = NonNullable<GetAppointmentTabs>;
 type SystemsData = NonNullable<GetSystems>;
-type KonsultaLibrarySummaryData = NonNullable<GetClinicKonsultaLibrarySummary["data"]>;
-type KonsultaLibraryDomainItemsData = NonNullable<
-  GetClinicKonsultaLibraryDomainItems["data"]
->;
-type PhilHealthKonsultaReferenceOptions = NonNullable<
-  SearchPhilHealthKonsultaReferences["data"]
->;
-type KonsultaMappingAuditHistoryData = NonNullable<
-  GetClinicKonsultaMappingAuditHistory["data"]
->;
 
 interface ClinicSettingsClientProps {
   clinicUid: string;
@@ -253,7 +214,6 @@ interface ClinicSettingsClientProps {
   googleCalendarEvents?: CalendarEventItem[];
   initialSystems: SystemsData;
   canUpdateSettings?: boolean;
-  konsultaLibrarySummary: KonsultaLibrarySummaryData | null;
 }
 
 /* ─────────────────────────────────────────────────────────────────── */
@@ -286,9 +246,9 @@ type AppointmentFormValues = z.infer<typeof appointmentSchema>;
 const philhealthSchema = z.object({
   philhealthAccreditationNumber: z.string().optional(),
   facilityName: z.string().optional(),
-  konsultaUsername: z.string().optional(),
-  konsultaPassword: z.string().optional(),
-  pmccNumber: z.string().optional(),
+  philhealthYakapUsername: z.string().optional(),
+  philhealthYakapPassword: z.string().optional(),
+  philhealthYakapPmccNumber: z.string().optional(),
 });
 type PhilHealthFormValues = z.infer<typeof philhealthSchema>;
 
@@ -771,136 +731,20 @@ function AppointmentsTab({
 function PhilHealthTab({
   clinicUid,
   clinicSetting,
-  initialKonsultaLibrarySummary,
 }: {
   clinicUid: string;
   clinicSetting: ClinicSettingData | null;
-  initialKonsultaLibrarySummary: KonsultaLibrarySummaryData | null;
 }) {
   const [isPending, startTransition] = useTransition();
-  const [isLibraryPending, startLibraryTransition] = useTransition();
-  const [testResult, setTestResult] = useState<string | null>(null);
-  const [isTesting, setIsTesting] = useState(false);
-  const [librarySummary, setLibrarySummary] = useState<KonsultaLibrarySummaryData | null>(
-    initialKonsultaLibrarySummary,
-  );
-  const [domainItems, setDomainItems] = useState<KonsultaLibraryDomainItemsData>([]);
-  const [isDomainDialogOpen, setIsDomainDialogOpen] = useState(false);
-  const [selectedDomainKey, setSelectedDomainKey] = useState<string | null>(null);
-  const [selectedDomainTitle, setSelectedDomainTitle] = useState<string>("");
-  const [domainQuery, setDomainQuery] = useState("");
-  const [isLoadingDomainItems, setIsLoadingDomainItems] = useState(false);
-  const [newItemLabel, setNewItemLabel] = useState("");
-  const [newItemCode, setNewItemCode] = useState("");
-  const [mappingItem, setMappingItem] = useState<
-    KonsultaLibraryDomainItemsData[number] | null
-  >(null);
-  const [referenceQuery, setReferenceQuery] = useState("");
-  const [referenceOptions, setReferenceOptions] =
-    useState<PhilHealthKonsultaReferenceOptions>([]);
-  const [selectedReferenceValue, setSelectedReferenceValue] =
-    useState<string>("__UNMAPPED__");
-  const [mappingAuditHistory, setMappingAuditHistory] =
-    useState<KonsultaMappingAuditHistoryData>([]);
-  const [mappingAuditError, setMappingAuditError] = useState<string | null>(null);
-
-  const refreshLibrarySummary = useCallback(async () => {
-    const result = await getClinicKonsultaLibrarySummaryAction(clinicUid);
-    if (result.status && result.data) {
-      setLibrarySummary(result.data);
-    }
-  }, [clinicUid]);
-  const loadMappingAuditHistory = useCallback(async () => {
-    const result = await getClinicKonsultaMappingAuditHistoryAction(clinicUid);
-    if (result.status && result.data) {
-      setMappingAuditHistory(result.data);
-      setMappingAuditError(null);
-      return;
-    }
-
-    setMappingAuditHistory([]);
-    setMappingAuditError(result.message ?? "Failed to load mapping history.");
-  }, [clinicUid]);
-
-  useEffect(() => {
-    void loadMappingAuditHistory();
-  }, [loadMappingAuditHistory]);
-
-  const loadDomainItems = useCallback(
-    async (domainKey: string, query = "") => {
-      setIsLoadingDomainItems(true);
-      const result = await getClinicKonsultaLibraryDomainItemsAction(
-        clinicUid,
-        domainKey,
-        query,
-      );
-      if (result.status && result.data) {
-        setDomainItems(result.data);
-      } else {
-        toast.error(result.message ?? "Failed to load domain items.");
-      }
-      setIsLoadingDomainItems(false);
-    },
-    [clinicUid],
-  );
-
-  const openDomainDialog = useCallback(
-    async (domainKey: string, title: string) => {
-      setSelectedDomainKey(domainKey);
-      setSelectedDomainTitle(title);
-      setDomainQuery("");
-      setNewItemCode("");
-      setNewItemLabel("");
-      setIsDomainDialogOpen(true);
-      await loadDomainItems(domainKey, "");
-    },
-    [loadDomainItems],
-  );
-
-  const openMappingDialog = useCallback(
-    async (item: KonsultaLibraryDomainItemsData[number]) => {
-      setMappingItem(item);
-      const initialQuery = item.displayLabel;
-      setReferenceQuery(initialQuery);
-      const result = await searchPhilHealthKonsultaReferencesAction(
-        clinicUid,
-        item.domainKey,
-        initialQuery,
-      );
-      if (result.status && result.data) {
-        setReferenceOptions(result.data);
-      } else {
-        setReferenceOptions([]);
-        toast.error(
-          result.message ??
-            "Failed to load PhilHealth references. Please try again or contact support if the issue persists.",
-        );
-      }
-      setSelectedReferenceValue(
-        item.mappedReferenceId ? String(item.mappedReferenceId) : "__UNMAPPED__",
-      );
-    },
-    [clinicUid],
-  );
-
-  const selectedDomainSummary = useMemo(
-    () =>
-      selectedDomainKey
-        ? librarySummary?.domains.find(
-            (domain) => domain.domainKey === selectedDomainKey,
-          ) ?? null
-        : null,
-    [librarySummary?.domains, selectedDomainKey],
-  );
 
   const form = useForm<PhilHealthFormValues>({
     resolver: zodResolver(philhealthSchema),
     defaultValues: {
       philhealthAccreditationNumber: clinicSetting?.philhealthAccreditationNumber ?? "",
       facilityName: clinicSetting?.facilityName ?? "",
-      konsultaUsername: clinicSetting?.konsultaUsername ?? "",
-      konsultaPassword: clinicSetting?.konsultaPassword ?? "",
-      pmccNumber: clinicSetting?.pmccNumber ?? "",
+      philhealthYakapUsername: clinicSetting?.philhealthYakapUsername ?? "",
+      philhealthYakapPassword: clinicSetting?.philhealthYakapPassword ?? "",
+      philhealthYakapPmccNumber: clinicSetting?.philhealthYakapPmccNumber ?? "",
     },
   });
 
@@ -909,243 +753,15 @@ function PhilHealthTab({
       const result = await updatePhilHealthSettingsAction(clinicUid, {
         philhealthAccreditationNumber: values.philhealthAccreditationNumber || undefined,
         facilityName: values.facilityName || undefined,
-        konsultaUsername: values.konsultaUsername || undefined,
-        konsultaPassword: values.konsultaPassword || undefined,
-        pmccNumber: values.pmccNumber || undefined,
+        philhealthYakapUsername: values.philhealthYakapUsername || undefined,
+        philhealthYakapPassword: values.philhealthYakapPassword || undefined,
+        philhealthYakapPmccNumber: values.philhealthYakapPmccNumber || undefined,
       });
 
       if (result.status) {
         toast.success("PhilHealth settings saved.");
       } else {
         toast.error(result.message ?? "Failed to save PhilHealth settings.");
-      }
-    });
-  };
-
-  const handleTestConnection = async () => {
-    setIsTesting(true);
-    setTestResult(null);
-    const lines: string[] = [];
-    const post = async (action: string, extra?: object) => {
-      const res = await fetch("/api/konsulta/test-staging", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action, clinicId: clinicSetting?.clinicId, ...extra }),
-      });
-      return res.json() as Promise<Record<string, unknown>>;
-    };
-
-    try {
-      // Step 1 — raw TCP ping
-      lines.push("[1/5] Pinging SOAP endpoint…");
-      setTestResult(lines.join("\n"));
-      const ping = await post("ping");
-      if (ping.ok) {
-        lines.push(`  ✓ Reachable (HTTP ${(ping.ping as Record<string, unknown>)?.statusCode ?? "?"})`);
-      } else {
-        lines.push(`  ✗ Unreachable — ${(ping.ping as Record<string, unknown>)?.error ?? "unknown error"}`);
-        lines.push("  → Server may be down, behind a firewall, or blocking this IP.");
-        setTestResult(lines.join("\n"));
-        toast.error("Staging server is unreachable");
-        return;
-      }
-
-      // Step 2 — WSDL fetch
-      lines.push("\n[2/5] Fetching WSDL…");
-      setTestResult(lines.join("\n"));
-      const describe = await post("describe");
-      if (describe.ok) {
-        const describeInner = describe.describe as Record<string, unknown>;
-        const operations = describeInner?.operations;
-        lines.push(`  ✓ WSDL loaded — ${Object.keys(operations as object ?? {}).length} operation(s) available`);
-      } else {
-        const describeInner = describe.describe as Record<string, unknown>;
-        lines.push(`  ✗ WSDL fetch failed — ${describeInner?.error ?? describe.error ?? "unknown"}`);
-        setTestResult(lines.join("\n"));
-        toast.error("WSDL fetch failed");
-        return;
-      }
-
-      // Step 3 — getToken
-      lines.push("\n[3/5] Getting access token…");
-      setTestResult(lines.join("\n"));
-      const tokenRes = await post("get-token");
-      if (tokenRes.ok) {
-        const raw = (tokenRes.result as Record<string, unknown>)?.return as string ?? "";
-        let jwt = raw;
-        try { jwt = (JSON.parse(raw) as { result?: string }).result ?? raw; } catch { /* plain string */ }
-        lines.push(`  ✓ Token: ${jwt.slice(0, 40)}…`);
-      } else {
-        lines.push(`  ✗ getToken failed — ${tokenRes.error ?? "unknown"}`);
-        if (tokenRes.hint) lines.push(`  ℹ ${tokenRes.hint}`);
-        setTestResult(lines.join("\n"));
-        toast.error("getToken failed");
-        return;
-      }
-
-      // Step 4 — extractRegistrationList (ERL)
-      lines.push("\n[4/5] Extracting registration list (ERL)…");
-      setTestResult(lines.join("\n"));
-      const erlRes = await post("extract-registration");
-      if (erlRes.ok) {
-        const m = erlRes.firstMember as Record<string, string> | null;
-        if (m?.pAssignedPin) {
-          lines.push(`  ✓ Found registered member: PIN ${m.pAssignedPin} (${m.pAssignedType}) — effYear ${m.pEffYear}`);
-        } else {
-          lines.push("  ✓ ERL succeeded but returned no members — upload test will use Annex B sample PINs");
-        }
-      } else {
-        lines.push(`  ⚠ ERL failed (${erlRes.error ?? "unknown"}) — upload test will use Annex B sample PINs`);
-      }
-
-      // Step 5 — upload dummy PCB XML report (validateReport → submitReport)
-      lines.push("\n[5/5] Uploading dummy PCB XML report…");
-      setTestResult(lines.join("\n"));
-      const uploadRes = await post("upload-test", { memberType: "MM" });
-      console.log({ uploadRes });
-      if (uploadRes.ok) {
-        const erlNote = uploadRes.erlNote as string | undefined;
-        if (erlNote) lines.push(`  ℹ ${erlNote}`);
-        const validateData = uploadRes.validate as Record<string, unknown> | string | null;
-        const submitData = uploadRes.submit as Record<string, unknown> | string | null;
-        const validateMsg = typeof validateData === "object" && validateData
-          ? JSON.stringify(validateData, null, 2).split("\n").map((l, i) => i === 0 ? l : "      " + l).join("\n")
-          : String(validateData ?? "");
-        const submitMsg = typeof submitData === "object" && submitData
-          ? JSON.stringify(submitData, null, 2).split("\n").map((l, i) => i === 0 ? l : "      " + l).join("\n")
-          : String(submitData ?? "");
-        lines.push(`  ✓ validateReport: ${validateMsg}`);
-        lines.push(`  ✓ submitReport:   ${submitMsg}`);
-        toast.success("Full staging flow complete — all 5 steps passed");
-      } else {
-        const errMsg = uploadRes.error as string | undefined;
-        const erlNote = uploadRes.erlNote as string | undefined;
-        const validateData = uploadRes.validate as Record<string, unknown> | string | null;
-        const soapFault = uploadRes.soapFaultBody as string | undefined;
-        const rawResp = uploadRes.rawSoapResponse as string | undefined;
-
-        if (erlNote) lines.push(`  ℹ ${erlNote}`);
-        if (errMsg) {
-          lines.push(`  ✗ Upload failed — ${errMsg}`);
-        } else if (typeof validateData === "object" && validateData) {
-          lines.push(`  ✗ Validation failed — ${JSON.stringify(validateData)}`);
-        } else if (validateData) {
-          lines.push(`  ✗ Validation failed — ${String(validateData)}`);
-        } else {
-          lines.push(`  ✗ Upload failed — no error detail returned`);
-        }
-
-        if (uploadRes.hint) lines.push(`  ℹ ${uploadRes.hint}`);
-        if (uploadRes.validationErrors) lines.push(`  Validation errors:\n${String(uploadRes.validationErrors)}`);
-        if (soapFault) lines.push(`  SOAP fault:\n  ${soapFault.slice(0, 400)}`);
-        if (rawResp) lines.push(`  Server response:\n  ${rawResp.slice(0, 600)}`);
-        toast.error("Report upload failed");
-      }
-    } catch (err) {
-      lines.push(`\nUnexpected error: ${err instanceof Error ? err.message : String(err)}`);
-      toast.error("Connection test failed");
-    } finally {
-      setTestResult(lines.join("\n"));
-      setIsTesting(false);
-    }
-  };
-
-  const handleBootstrapLibraries = () => {
-    startLibraryTransition(async () => {
-      const result = await bootstrapClinicKonsultaLibrariesAction(clinicUid);
-      if (result.status) {
-        toast.success(result.message ?? "Clinic libraries bootstrapped.");
-        await refreshLibrarySummary();
-        if (selectedDomainKey) {
-          await loadDomainItems(selectedDomainKey, domainQuery);
-        }
-      } else {
-        toast.error(result.message ?? "Failed to bootstrap clinic libraries.");
-      }
-    });
-  };
-
-  const handleRefreshDomainItems = () => {
-    if (!selectedDomainKey) {
-      return;
-    }
-
-    startLibraryTransition(async () => {
-      await loadDomainItems(selectedDomainKey, domainQuery);
-      await refreshLibrarySummary();
-    });
-  };
-
-  const handleCreateInternalItem = () => {
-    if (!selectedDomainKey) {
-      return;
-    }
-
-    startLibraryTransition(async () => {
-      const result = await createClinicKonsultaLibraryItemAction(clinicUid, {
-        domainKey: selectedDomainKey,
-        internalCode: newItemCode.trim() || undefined,
-        displayLabel: newItemLabel,
-      });
-
-      if (result.status) {
-        toast.success(result.message ?? "Internal library item created.");
-        setNewItemCode("");
-        setNewItemLabel("");
-        await loadDomainItems(selectedDomainKey, domainQuery);
-        await refreshLibrarySummary();
-      } else {
-        toast.error(result.message ?? "Failed to create internal library item.");
-      }
-    });
-  };
-
-  const handleSearchReferences = () => {
-    if (!mappingItem) {
-      return;
-    }
-
-    startLibraryTransition(async () => {
-      const result = await searchPhilHealthKonsultaReferencesAction(
-        clinicUid,
-        mappingItem.domainKey,
-        referenceQuery,
-      );
-      if (result.status && result.data) {
-        setReferenceOptions(result.data);
-      } else {
-        toast.error(result.message ?? "Failed to search references.");
-      }
-    });
-  };
-
-  const handleSaveMapping = () => {
-    if (!mappingItem) {
-      return;
-    }
-
-    startLibraryTransition(async () => {
-      const nextReferenceId =
-        selectedReferenceValue === "__UNMAPPED__"
-          ? null
-          : Number(selectedReferenceValue);
-      const result = await updateClinicKonsultaLibraryMappingAction(clinicUid, {
-        clinicItemId: mappingItem.id,
-        philHealthReferenceItemId: nextReferenceId,
-      });
-
-      if (result.status) {
-        toast.success(result.message ?? "Mapping saved.");
-        setMappingItem(null);
-        setReferenceOptions([]);
-        setSelectedReferenceValue("__UNMAPPED__");
-        if (selectedDomainKey) {
-          await loadDomainItems(selectedDomainKey, domainQuery);
-        }
-        await refreshLibrarySummary();
-        await loadMappingAuditHistory();
-      } else {
-        toast.error(result.message ?? "Failed to save mapping.");
       }
     });
   };
@@ -1196,307 +812,48 @@ function PhilHealthTab({
                 </FormItem>
               )}
             />
-
-            <Separator />
-
-            <div>
-              <p className="text-sm font-semibold mb-1">Konsulta PKA Credentials</p>
-              <p className="text-xs text-muted-foreground mb-4">
-                Required for submitting PCB reports to PhilHealth via the Konsulta v1.1 SOAP API.
-              </p>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <FormField
-                  control={form.control}
-                  name="konsultaUsername"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Konsulta Username</FormLabel>
-                      <FormControl>
-                        <Input placeholder="PhilHealth-issued username" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="konsultaPassword"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Konsulta Password</FormLabel>
-                      <FormControl>
-                        <Input type="password" placeholder="PhilHealth-issued password" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="pmccNumber"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>PMCC Number</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g. Z15445" {...field} />
-                      </FormControl>
-                      <FormDescription>Primary care clinic code assigned by PhilHealth.</FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <KeyRound className="h-4 w-4 text-primary" />
-              Konsulta Staging Connection Test
-            </CardTitle>
-            <CardDescription>
-              Verify that the saved credentials can reach the PhilHealth Konsulta staging server.
-              Save your credentials first before running this test.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-center gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                disabled={isTesting}
-                onClick={handleTestConnection}
-              >
-                {isTesting ? (
-                  <><Loader2 className="h-4 w-4 animate-spin mr-2" />Testing…</>
-                ) : (
-                  "Test Staging Connection"
-                )}
-              </Button>
-            </div>
-            {testResult && (
-              <pre className="rounded bg-muted p-3 text-xs whitespace-pre-wrap break-all max-h-72 overflow-y-auto">
-                {testResult}
-              </pre>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Layers className="h-4 w-4 text-primary" />
-                  Konsulta Library Bootstrap &amp; Mapping
-                </CardTitle>
-                <CardDescription>
-                  Clinic-owned internal libraries are bootstrapped from the bundled
-                  PhilHealth reference kit, then mapped back to PhilHealth values for
-                  export-safe XML generation.
-                </CardDescription>
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                disabled={isLibraryPending}
-                onClick={handleBootstrapLibraries}
-              >
-                {isLibraryPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Bootstrapping…
-                  </>
-                ) : (
-                  <>
-                    <Package className="mr-2 h-4 w-4" />
-                    Bootstrap Internal Libraries
-                  </>
-                )}
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-5">
-            <div className="grid gap-3 md:grid-cols-4">
-              <div className="rounded-lg border p-4">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                  PhilHealth references
-                </p>
-                <p className="mt-2 text-2xl font-semibold">
-                  {librarySummary?.totals.philHealthReferenceCount ?? 0}
-                </p>
-              </div>
-              <div className="rounded-lg border p-4">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                  Clinic items
-                </p>
-                <p className="mt-2 text-2xl font-semibold">
-                  {librarySummary?.totals.clinicItemCount ?? 0}
-                </p>
-              </div>
-              <div className="rounded-lg border p-4">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                  Mapped
-                </p>
-                <p className="mt-2 text-2xl font-semibold">
-                  {librarySummary?.totals.mappedCount ?? 0}
-                </p>
-              </div>
-              <div className="rounded-lg border p-4">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                  Needs work
-                </p>
-                <p className="mt-2 text-2xl font-semibold">
-                  {(librarySummary?.totals.unmappedCount ?? 0) +
-                    (librarySummary?.totals.needsReviewCount ?? 0)}
-                </p>
-              </div>
-            </div>
-
-            {(librarySummary?.totals.missingDomains ?? 0) > 0 && (
-              <Alert>
-                <AlertTriangle className="h-4 w-4" />
-                <AlertTitle>Some Konsulta domains still need bootstrap</AlertTitle>
-                <AlertDescription>
-                  Use the bootstrap button to create clinic-owned internal libraries
-                  first, then review mappings before relying on those domains for
-                  export.
-                </AlertDescription>
-              </Alert>
-            )}
-
-            <div className="rounded-lg border p-4">
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-semibold">
-                    Recent Konsulta mapping activity
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Audit trail for internal term to PhilHealth reference mapping changes.
-                  </p>
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => void loadMappingAuditHistory()}
-                >
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  Refresh
-                </Button>
-              </div>
-              {mappingAuditError ? (
-                <p className="text-xs text-muted-foreground">{mappingAuditError}</p>
-              ) : mappingAuditHistory.length === 0 ? (
-                <p className="text-xs text-muted-foreground">
-                  No mapping changes have been audited yet.
-                </p>
-              ) : (
-                <div className="space-y-2">
-                  {mappingAuditHistory.map((log) => {
-                    const metadata =
-                      log.metadata && typeof log.metadata === "object"
-                        ? (log.metadata as {
-                            clinicItemLabel?: string;
-                            domainKey?: string;
-                          })
-                        : null;
-
-                    return (
-                      <div
-                        key={log.id}
-                        className="rounded-md border border-border/70 bg-muted/20 p-3"
-                      >
-                        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                          <div className="text-sm font-medium">
-                            {metadata?.clinicItemLabel ?? log.reason ?? "Mapping updated"}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            {new Date(log.performedAt).toLocaleString("en-PH")} ·{" "}
-                            {log.performerName}
-                          </div>
-                        </div>
-                        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
-                          {metadata?.domainKey && (
-                            <Badge variant="outline">{metadata.domainKey}</Badge>
-                          )}
-                          <span className="text-muted-foreground">
-                            {log.previousValue ?? "Unmapped"}
-                          </span>
-                          <ChevronRight className="h-3 w-3 text-muted-foreground" />
-                          <span className="font-medium text-foreground">
-                            {log.newValue ?? "Unmapped"}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+            <FormField
+              control={form.control}
+              name="philhealthYakapUsername"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>PhilHealth Yakap Username</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Username for PhilHealth SOAP API" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
               )}
-            </div>
-
-            <div className="rounded-lg border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Domain</TableHead>
-                    <TableHead>Refs</TableHead>
-                    <TableHead>Clinic</TableHead>
-                    <TableHead>Mapped</TableHead>
-                    <TableHead>Unmapped</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {(librarySummary?.domains ?? []).map((domain) => (
-                    <TableRow key={domain.domainKey}>
-                      <TableCell>
-                        <div className="space-y-1">
-                          <p className="font-medium">{domain.title}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {domain.domainKey}
-                          </p>
-                        </div>
-                      </TableCell>
-                      <TableCell>{domain.philHealthReferenceCount}</TableCell>
-                      <TableCell>{domain.clinicItemCount}</TableCell>
-                      <TableCell>{domain.mappedCount}</TableCell>
-                      <TableCell>
-                        {domain.unmappedCount + domain.needsReviewCount}
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={
-                            domain.bootstrapStatus === "READY"
-                              ? "secondary"
-                              : "destructive"
-                          }
-                        >
-                          {domain.bootstrapStatus === "READY"
-                            ? "Ready"
-                            : "Missing"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() =>
-                            openDomainDialog(domain.domainKey, domain.title)
-                          }
-                        >
-                          Manage
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+            />
+            <FormField
+              control={form.control}
+              name="philhealthYakapPassword"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>PhilHealth Yakap Password</FormLabel>
+                  <FormControl>
+                    <Input type="password" placeholder="Password for PhilHealth SOAP API" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="philhealthYakapPmccNumber"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>PhilHealth PMCC Number</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. Z15445" {...field} />
+                  </FormControl>
+                  <FormDescription>
+                    PMCC Number required for Yakap Integration
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </CardContent>
         </Card>
 
@@ -1515,231 +872,6 @@ function PhilHealthTab({
             )}
           </Button>
         </div>
-
-        <Dialog
-          open={isDomainDialogOpen}
-          onOpenChange={(open) => {
-            setIsDomainDialogOpen(open);
-            if (!open) {
-              setDomainItems([]);
-              setSelectedDomainKey(null);
-              setSelectedDomainTitle("");
-            }
-          }}
-        >
-          <DialogContent className="max-w-5xl">
-            <DialogHeader>
-              <DialogTitle>{selectedDomainTitle || "Konsulta domain"}</DialogTitle>
-              <DialogDescription>
-                Review clinic-owned internal items, add custom values, and inspect
-                current PhilHealth mapping status for this domain.
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-4">
-              <div className="grid gap-3 lg:grid-cols-[2fr,auto]">
-                <div className="flex gap-2">
-                  <Input
-                    value={domainQuery}
-                    onChange={(event) => setDomainQuery(event.target.value)}
-                    placeholder="Search internal code or label"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleRefreshDomainItems}
-                    disabled={!selectedDomainKey || isLibraryPending}
-                  >
-                    <Search className="mr-2 h-4 w-4" />
-                    Search
-                  </Button>
-                </div>
-                <div className="flex items-center justify-end gap-2">
-                  <Badge variant="secondary">
-                    {selectedDomainSummary?.mappedCount ?? 0} mapped
-                  </Badge>
-                  <Badge variant="outline">
-                    {(selectedDomainSummary?.unmappedCount ?? 0) +
-                      (selectedDomainSummary?.needsReviewCount ?? 0)}{" "}
-                    pending
-                  </Badge>
-                </div>
-              </div>
-
-              <div className="grid gap-3 rounded-lg border p-4 md:grid-cols-[1fr,1fr,auto]">
-                <Input
-                  value={newItemCode}
-                  onChange={(event) => setNewItemCode(event.target.value)}
-                  placeholder="Optional internal code"
-                />
-                <Input
-                  value={newItemLabel}
-                  onChange={(event) => setNewItemLabel(event.target.value)}
-                  placeholder="New clinic-only internal label"
-                />
-                <Button
-                  type="button"
-                  onClick={handleCreateInternalItem}
-                  disabled={!selectedDomainKey || !newItemLabel.trim() || isLibraryPending}
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add internal item
-                </Button>
-              </div>
-
-              <div className="max-h-[420px] overflow-y-auto rounded-lg border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Internal item</TableHead>
-                      <TableHead>Source</TableHead>
-                      <TableHead>Mapping</TableHead>
-                      <TableHead className="text-right">Action</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {isLoadingDomainItems ? (
-                      <TableRow>
-                        <TableCell colSpan={4} className="text-center text-muted-foreground">
-                          Loading internal items…
-                        </TableCell>
-                      </TableRow>
-                    ) : domainItems.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={4} className="text-center text-muted-foreground">
-                          No internal items found for this domain.
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      domainItems.map((item) => (
-                        <TableRow key={item.id}>
-                          <TableCell>
-                            <div className="space-y-1">
-                              <p className="font-medium">{item.displayLabel}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {item.internalCode ?? "No internal code"}
-                              </p>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline">{item.sourceType}</Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="space-y-1">
-                              <Badge
-                                variant={
-                                  item.mappingStatus === "MAPPED"
-                                    ? "secondary"
-                                    : "destructive"
-                                }
-                              >
-                                {item.mappingStatus}
-                              </Badge>
-                              <p className="text-xs text-muted-foreground">
-                                {item.mappedReferenceCode
-                                  ? `${item.mappedReferenceCode} — ${item.mappedReferenceLabel}`
-                                  : "No PhilHealth reference assigned"}
-                              </p>
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => openMappingDialog(item)}
-                            >
-                              {item.mappingStatus === "MAPPED" ? "Remap" : "Map"}
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        <Dialog
-          open={mappingItem !== null}
-          onOpenChange={(open) => {
-            if (!open) {
-              setMappingItem(null);
-              setReferenceOptions([]);
-              setSelectedReferenceValue("__UNMAPPED__");
-            }
-          }}
-        >
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Map to PhilHealth reference</DialogTitle>
-              <DialogDescription>
-                {mappingItem
-                  ? `Choose the PhilHealth-compliant reference for "${mappingItem.displayLabel}".`
-                  : "Choose a PhilHealth reference."}
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-4">
-              <div className="flex gap-2">
-                <Input
-                  value={referenceQuery}
-                  onChange={(event) => setReferenceQuery(event.target.value)}
-                  placeholder="Search PhilHealth code or label"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleSearchReferences}
-                  disabled={!mappingItem || isLibraryPending}
-                >
-                  <Search className="mr-2 h-4 w-4" />
-                  Search
-                </Button>
-              </div>
-
-              <Select
-                value={selectedReferenceValue}
-                onValueChange={setSelectedReferenceValue}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a PhilHealth reference" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__UNMAPPED__">
-                    Leave unmapped
-                  </SelectItem>
-                  {referenceOptions.map((option) => (
-                    <SelectItem key={option.id} value={String(option.id)}>
-                      {option.externalCode
-                        ? `${option.externalCode} — ${option.displayLabel}`
-                        : option.displayLabel}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setMappingItem(null);
-                  setReferenceOptions([]);
-                  setSelectedReferenceValue("__UNMAPPED__");
-                }}
-              >
-                Cancel
-              </Button>
-              <Button type="button" onClick={handleSaveMapping} disabled={isLibraryPending}>
-                Save mapping
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </form>
     </Form>
   );
@@ -4027,7 +3159,6 @@ export function ClinicSettingsClient({
   googleCalendarEvents = [],
   initialSystems,
   canUpdateSettings = false,
-  konsultaLibrarySummary,
 }: ClinicSettingsClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -4155,11 +3286,7 @@ export function ClinicSettingsClient({
         </TabsContent>
 
         <TabsContent value="philhealth" className="mt-6">
-          <PhilHealthTab
-            clinicUid={clinicUid}
-            clinicSetting={clinicSetting}
-            initialKonsultaLibrarySummary={konsultaLibrarySummary}
-          />
+          <PhilHealthTab clinicUid={clinicUid} clinicSetting={clinicSetting} />
         </TabsContent>
 
         <TabsContent value="members" className="mt-6">

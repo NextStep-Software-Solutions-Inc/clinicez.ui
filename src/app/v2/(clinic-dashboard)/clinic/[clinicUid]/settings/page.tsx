@@ -13,7 +13,6 @@ import { getClinicAppointmentTabsAction } from "@/actions/clinics/clinic-appoint
 import { getAppointmentTabsAction } from "@/actions/appointment-tab.action";
 import { checkGoogleCalendarAccess, getCalendarEvents } from "@/actions/google/auth.action";
 import { getSystemsAction } from "@/actions/system.action";
-import { getClinicKonsultaLibrarySummaryAction } from "@/actions/clinics/konsulta-library.action";
 import { ClinicSettingsClient } from "@/components/v2/settings/ClinicSettingsClient";
 import { notFound } from "next/navigation";
 import { getCachedSession } from "@/actions/session.action";
@@ -51,7 +50,6 @@ export default async function ClinicSettingsPage({ params }: ClinicSettingsPageP
     googleAccess,
     initialSystems,
     myPermissions,
-    konsultaLibrarySummaryResult,
   ] = await Promise.all([
     getClinicAction(clinicUid),
     getClinicSettingAction(clinicUid),
@@ -68,7 +66,6 @@ export default async function ClinicSettingsPage({ params }: ClinicSettingsPageP
     checkGoogleCalendarAccess(),
     getSystemsAction(clinicUid),
     session ? getPermissionsAction({ userId: session.user.sub, type: "CLINIC" }) : Promise.resolve([]),
-    getClinicKonsultaLibrarySummaryAction(clinicUid),
   ]);
 
   if (!clinicResult.status || !clinicResult.data) {
@@ -103,7 +100,6 @@ export default async function ClinicSettingsPage({ params }: ClinicSettingsPageP
         googleCalendarEvents={googleCalendarEvents}
         initialSystems={initialSystems}
         canUpdateSettings={canUpdateSettings}
-        konsultaLibrarySummary={konsultaLibrarySummaryResult.data}
       />
     </Suspense>
   );

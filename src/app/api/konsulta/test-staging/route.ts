@@ -126,24 +126,24 @@ async function resolveCredentials(
             where: { clinicId },
             select: {
                 philhealthAccreditationNumber: true,
-                konsultaUsername: true,
-                konsultaPassword: true,
-                pmccNumber: true,
+                philhealthYakapUsername: true,
+                philhealthYakapPassword: true,
+                philhealthYakapPmccNumber: true,
             },
         });
 
         if (
-            setting?.konsultaUsername &&
-            setting.konsultaPassword &&
+            setting?.philhealthYakapUsername &&
+            setting.philhealthYakapPassword &&
             setting.philhealthAccreditationNumber &&
-            setting.pmccNumber
+            setting.philhealthYakapPmccNumber
         ) {
             return {
-                username: setting.konsultaUsername,
-                password: setting.konsultaPassword,
+                username: setting.philhealthYakapUsername,
+                password: setting.philhealthYakapPassword,
                 hciAccreNo: setting.philhealthAccreditationNumber,
-                pmccNumber: setting.pmccNumber,
-                certificationId: `KON-DUMMYCERTS-${setting.pmccNumber}`,
+                pmccNumber: setting.philhealthYakapPmccNumber,
+                certificationId: `KON-DUMMYCERTS-${setting.philhealthYakapPmccNumber}`,
                 cipherKey:
                     process.env.PHILHEALTH_KONSULTA_CIPHER_KEY ?? "PHilheaLthDuMmyZ15445",
             };

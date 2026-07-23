@@ -1,6 +1,7 @@
-"use client";
+'use client'
 
-import Link from "next/link";
+import React from 'react'
+import Link from 'next/link'
 import {
   Calendar,
   Stethoscope,
@@ -16,77 +17,94 @@ import {
   FileCheck,
   AlertCircle,
   Clipboard,
-} from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import dayjs from "@/lib/day-utils";
-import type { GetPatientHistoryResult } from "@/actions/clinics/get-patient-history.action";
-import type { PatientHistoryAccess } from "@/actions/clinics/get-patient-history.action";
+  User,
+  ArrowLeft,
+  ExternalLink,
+} from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import dayjs from '@/lib/day-utils'
+import type { GetPatientHistoryResult } from '@/actions/clinics/get-patient-history.action'
+import type { PatientHistoryAccess } from '@/actions/clinics/get-patient-history.action'
 
-type HistoryData = NonNullable<GetPatientHistoryResult["data"]>;
-type Appointment = HistoryData["appointments"][number];
-type ConsultationTicket = HistoryData["consultationTickets"][number];
+type HistoryData = NonNullable<GetPatientHistoryResult['data']>
+type Appointment = HistoryData['appointments'][number]
+type ConsultationTicket = HistoryData['consultationTickets'][number]
 
 interface PatientAppointmentsConsultationsClientProps {
-  clinicUid: string;
-  patientId: number;
-  patientName: string;
-  appointments: HistoryData["appointments"];
-  consultationTickets: HistoryData["consultationTickets"];
-  access: PatientHistoryAccess;
+  clinicUid: string
+  patientId: number
+  patientName: string
+  appointments: HistoryData['appointments']
+  consultationTickets: HistoryData['consultationTickets']
+  access: PatientHistoryAccess
 }
 
 // ---------------------------------------------------------------------------
 // Status helpers
 // ---------------------------------------------------------------------------
 
-function getConsultationStatusVariant(
-  status?: string | null
-): "default" | "secondary" | "outline" | "destructive" {
+function getConsultationStatusBadge(status?: string | null) {
   switch (status) {
-    case "RESOLVED":
-      return "default";
-    case "PROCESSING":
-      return "secondary";
-    case "DROPPED":
-      return "outline";
+    case 'RESOLVED':
+      return (
+        <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-extrabold text-[10px] uppercase tracking-wider px-2.5 py-0.5">
+          <CheckCircle2 className="w-3 h-3 mr-1" /> Resolved
+        </Badge>
+      )
+    case 'PROCESSING':
+      return (
+        <Badge className="bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20 font-extrabold text-[10px] uppercase tracking-wider px-2.5 py-0.5">
+          <Clock className="w-3 h-3 mr-1" /> Processing
+        </Badge>
+      )
+    case 'DROPPED':
+      return (
+        <Badge className="bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 font-extrabold text-[10px] uppercase tracking-wider px-2.5 py-0.5">
+          <AlertCircle className="w-3 h-3 mr-1" /> Dropped
+        </Badge>
+      )
     default:
-      return "outline";
+      return (
+        <Badge className="bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/20 font-extrabold text-[10px] uppercase tracking-wider px-2.5 py-0.5">
+          {status || 'Draft'}
+        </Badge>
+      )
   }
 }
 
-function getConsultationStatusIcon(status?: string | null) {
+function getAppointmentStatusBadge(status?: string | null) {
   switch (status) {
-    case "RESOLVED":
-      return <CheckCircle2 className="h-3.5 w-3.5" />;
-    case "PROCESSING":
-      return <Clock className="h-3.5 w-3.5" />;
-    case "ARCHIVED":
-      return <Archive className="h-3.5 w-3.5" />;
-    case "DROPPED":
-      return <AlertCircle className="h-3.5 w-3.5" />;
+    case 'CONFIRMED':
+    case 'COMPLETED':
+      return (
+        <Badge className="bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20 font-extrabold text-[10px] uppercase tracking-wider px-2.5 py-0.5">
+          <CheckCircle2 className="w-3 h-3 mr-1" /> {status}
+        </Badge>
+      )
+    case 'PENDING':
+    case 'ROUTED':
+    case 'RECEIVED':
+      return (
+        <Badge className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 font-extrabold text-[10px] uppercase tracking-wider px-2.5 py-0.5">
+          <Clock className="w-3 h-3 mr-1" /> {status}
+        </Badge>
+      )
+    case 'CANCELLED':
+    case 'DECLINED':
+    case 'DROPPED':
+      return (
+        <Badge className="bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 font-extrabold text-[10px] uppercase tracking-wider px-2.5 py-0.5">
+          <AlertCircle className="w-3 h-3 mr-1" /> {status}
+        </Badge>
+      )
     default:
-      return <Stethoscope className="h-3.5 w-3.5" />;
-  }
-}
-
-function getAppointmentStatusVariant(
-  status?: string | null
-): "default" | "secondary" | "outline" | "destructive" {
-  switch (status) {
-    case "CONFIRMED":
-    case "COMPLETED":
-      return "default";
-    case "PENDING":
-    case "ROUTED":
-    case "RECEIVED":
-      return "secondary";
-    case "CANCELLED":
-    case "DECLINED":
-    case "DROPPED":
-      return "destructive";
-    default:
-      return "outline";
+      return (
+        <Badge className="bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/20 font-extrabold text-[10px] uppercase tracking-wider px-2.5 py-0.5">
+          {status || 'Scheduled'}
+        </Badge>
+      )
   }
 }
 
@@ -95,8 +113,8 @@ function getAppointmentStatusVariant(
 // ---------------------------------------------------------------------------
 
 type ListItem =
-  | { kind: "consultation"; data: ConsultationTicket; date: Date }
-  | { kind: "appointment"; data: Appointment; date: Date };
+  | { kind: 'consultation'; data: ConsultationTicket; date: Date }
+  | { kind: 'appointment'; data: Appointment; date: Date }
 
 // ---------------------------------------------------------------------------
 // Timeline entry components
@@ -107,264 +125,211 @@ function ConsultationTimelineEntry({
   access,
   isLast,
 }: {
-  ticket: ConsultationTicket;
-  access: PatientHistoryAccess;
-  isLast: boolean;
+  ticket: ConsultationTicket
+  access: PatientHistoryAccess
+  isLast: boolean
 }) {
-  const status = ticket.ConsultationTicketAttribute?.status;
-  const hps = ticket.ConsultationTicketHPs.map((h) => h.HealthCareProvider);
-  const appointment = ticket.Appointment;
+  const status = ticket.ConsultationTicketAttribute?.status
+  const hps = ticket.ConsultationTicketHPs.map((h) => h.HealthCareProvider)
+  const appointment = ticket.Appointment
 
-  // Build lookup maps: by section name AND by numeric ID (section field stores either)
-  const sections = ticket.ConsultationTicketAttribute?.NoteTemplate?.NoteSections ?? [];
+  const sections = ticket.ConsultationTicketAttribute?.NoteTemplate?.NoteSections ?? []
   const sectionLabelByName = new Map<string, string>(
-    sections.map((s) => [s.name, s.label || s.name])
-  );
-  const sectionLabelById = new Map<number, string>(
-    sections.map((s) => [s.id, s.label || s.name])
-  );
-  const getSectionLabel = (sectionValue: string) => {
-    // Try lookup by name first
-    const byName = sectionLabelByName.get(sectionValue);
-    if (byName) return byName;
-    // Try lookup by numeric ID (some older records store the NoteSection.id as a string)
-    const numericId = parseInt(sectionValue, 10);
-    if (!isNaN(numericId)) {
-      const byId = sectionLabelById.get(numericId);
-      if (byId) return byId;
-    }
-    // Fallback: capitalize and de-slugify
-    return sectionValue.replace(/[_-]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-  };
+    sections.map((s) => [s.name, s.label])
+  )
+  const sectionLabelById = new Map<string, string>(
+    sections.map((s) => [String(s.id), s.label])
+  )
+
+  const notes = (ticket as any).ConsultationNotes ?? (ticket as any).ConsultationTicketNotes ?? []
+  const filledFields = (notes as any[]).filter(
+    (f: any) => f.value && typeof f.value === 'string' && f.value.trim() !== ''
+  )
+  const rxCount = (ticket as any).ConsultationPrescriptions?.length ?? 0
+  const labCount = (ticket as any).ConsultationLabOrders?.length ?? 0
+  const radCount = (ticket as any).ConsultationRadOrders?.length ?? 0
 
   return (
-    <div className="relative flex gap-4">
-      {/* Timeline connector */}
+    <div className="relative flex gap-4 sm:gap-6">
+      {/* Timeline Connector */}
       <div className="relative flex flex-col items-center shrink-0 w-6">
-        <div className="w-3 h-3 rounded-full bg-primary ring-2 ring-background mt-1.5 shrink-0 z-10" />
-        {!isLast && (
-          <div className="w-0.5 bg-border/50 flex-1 mt-1" />
-        )}
+        <div className="w-3.5 h-3.5 rounded-full bg-teal-500 ring-4 ring-teal-500/20 dark:ring-teal-500/30 mt-1.5 shrink-0 z-10" />
+        {!isLast && <div className="w-0.5 bg-slate-200 dark:bg-slate-800 flex-1 mt-1" />}
       </div>
 
-      {/* Card */}
-      <div className="flex-1 min-w-0 min-w-0 pb-6">
-        <div className="rounded-lg border border-border/60 bg-card shadow-sm overflow-hidden p-3 sm:p-4">
-          {/* Header row */}
-          <div className="flex items-start justify-between gap-3 mb-3">
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1.5 mb-1">
-                <Stethoscope className="h-3.5 w-3.5 text-primary shrink-0" />
-                <span className="text-xs font-semibold text-primary uppercase tracking-wide">
-                  Consultation
+      {/* Modern Card Container */}
+      <div className="flex-1 min-w-0 pb-6 sm:pb-8">
+        <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl p-4 sm:p-5 shadow-xs hover:shadow-md transition-all space-y-4">
+          {/* Header Row */}
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1 space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-wider text-teal-600 dark:text-teal-400 bg-teal-500/10 px-2 py-0.5 rounded-md">
+                  <Stethoscope className="h-3 w-3" /> Consultation
                 </span>
                 {ticket.caseNumber && (
-                  <span className="text-xs text-muted-foreground">
-                    · Case #{ticket.caseNumber}
+                  <span className="text-[11px] font-mono font-medium text-slate-500 dark:text-slate-400">
+                    Case #{ticket.caseNumber}
                   </span>
                 )}
               </div>
-              <h3 className="text-sm font-semibold text-foreground truncate">
-                {ticket.subject ?? "Consultation"}
+              <h3 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white truncate">
+                {ticket.subject || ticket.Appointment?.subject || ticket.Appointment?.complaint || 'Consultation Note'}
               </h3>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {dayjs(ticket.createdAt).format("MMMM D, YYYY [at] h:mm A")}
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                {dayjs(ticket.createdAt).format('MMMM D, YYYY [at] h:mm A')}
               </p>
             </div>
-            <div className="flex items-center gap-1.5 shrink-0">
-              <Badge
-                variant={getConsultationStatusVariant(status)}
-                className="gap-1 text-xs"
-              >
-                {getConsultationStatusIcon(status)}
-                {status ?? "Open"}
-              </Badge>
-              {ticket.isArchived && (
-                <Badge variant="outline" className="gap-1 text-xs">
-                  <Archive className="h-3 w-3" />
-                  Archived
-                </Badge>
-              )}
-            </div>
+            {getConsultationStatusBadge(status)}
           </div>
 
-          {/* Healthcare providers */}
+          {/* Providers */}
           {hps.length > 0 && (
-            <div className="flex flex-wrap gap-3 mb-3">
-              {hps.map((hp) => (
-                <span
-                  key={hp.id}
-                  className="flex items-center gap-1.5 text-xs text-muted-foreground"
-                >
-                  <Stethoscope className="h-3 w-3 shrink-0" />
-                  {[
-                    hp.HPProfile?.title,
-                    hp.HPProfile?.name ||
-                      `${hp.User?.firstName ?? ""} ${hp.User?.lastName ?? ""}`.trim(),
-                    hp.HPProfile?.suffix,
-                  ]
-                    .filter(Boolean)
-                    .join(" ")}
-                  {hp.HPType?.name && (
-                    <span className="text-muted-foreground/60">
-                      · {hp.HPType.name}
-                    </span>
-                  )}
-                </span>
-              ))}
-            </div>
-          )}
-
-          {/* Linked appointment chip */}
-          {appointment && (
-            <div className="flex items-center gap-1.5 mb-3 text-xs text-muted-foreground bg-muted/50 rounded-md px-2.5 py-1.5 max-w-full overflow-hidden">
-              <Calendar className="h-3.5 w-3.5 shrink-0" />
-              <span className="truncate">
-                Linked: {appointment.subject ?? appointment.complaint ?? "Appointment"}
+            <div className="flex flex-wrap items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
+              <User className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+              <span>
+                {hps
+                  .map((hp) =>
+                    [
+                      hp.HPProfile?.title,
+                      hp.HPProfile?.name ||
+                        `${hp.User?.firstName ?? ''} ${hp.User?.lastName ?? ''}`.trim(),
+                      hp.HPProfile?.suffix,
+                      hp.HPType?.name ? `(${hp.HPType.name})` : '',
+                    ]
+                      .filter(Boolean)
+                      .join(' ')
+                  )
+                  .join(', ')}
               </span>
-              {appointment.AppointmentAttribute?.date && (
-                <span className="text-muted-foreground/70 shrink-0">
-                  · {dayjs(appointment.AppointmentAttribute.date).format("MMM D, YYYY")}
-                </span>
-              )}
             </div>
           )}
 
-          {/* Consultation notes */}
-          {ticket.ConsultationNotes.length > 0 ? (
-            <div className="space-y-2 mb-3">
-              {ticket.ConsultationNotes.map((note) => (
-                <div
-                  key={note.id}
-                  className="rounded-md bg-muted/40 border border-border/40 p-3"
-                >
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
-                    {getSectionLabel(note.section)}
-                  </p>
-                  <p className="text-xs text-foreground/80 whitespace-pre-wrap break-words line-clamp-4">
-                    {note.content}
-                  </p>
-                </div>
-              ))}
+          {/* Linked Appointment */}
+          {appointment && (
+            <div className="text-xs text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/40 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 flex items-center gap-2">
+              <Calendar className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+              <span className="font-semibold text-slate-700 dark:text-slate-300">
+                Linked Appointment: {appointment.subject ?? appointment.complaint ?? 'Scheduled'}
+              </span>
+            </div>
+          )}
+
+          {/* Key Findings Preview */}
+          {filledFields.length > 0 ? (
+            <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+              {filledFields.slice(0, 3).map((field: any) => {
+                const sectionKey = field.section || field.noteSectionId
+                const label =
+                  sectionLabelByName.get(sectionKey) ??
+                  sectionLabelById.get(String(sectionKey)) ??
+                  sectionKey
+                return (
+                  <div key={field.id || field.noteSectionId} className="text-xs">
+                    <span className="font-extrabold uppercase text-[10px] tracking-wider text-slate-400 dark:text-slate-500 block">
+                      {label}
+                    </span>
+                    <p className="text-slate-700 dark:text-slate-300 font-medium line-clamp-2 mt-0.5">
+                      {field.value}
+                    </p>
+                  </div>
+                )
+              })}
             </div>
           ) : (
-            <div className="flex items-center gap-1.5 mb-3 text-xs text-muted-foreground/60">
-              <FileText className="h-3.5 w-3.5 shrink-0" />
-              <span>
-                {access === "owner"
-                  ? "No notes shared with you."
-                  : "No consultation notes recorded."}
-              </span>
-            </div>
+            <p className="text-xs text-slate-400 dark:text-slate-500 italic pt-1">
+              No detailed clinical notes recorded.
+            </p>
           )}
 
-          {/* Attachments summary */}
-          {(ticket.Prescriptions.length > 0 ||
-            ticket.MedicalCertificates.length > 0 ||
-            ticket.LaboratoryRequests.length > 0 ||
-            ticket.ImagingRequests.length > 0) && (
-            <div className="flex flex-wrap gap-1.5 pt-1 border-t border-border/40">
-              {ticket.Prescriptions.length > 0 && (
-                <span className="flex items-center gap-1 text-xs bg-muted rounded-md px-2 py-0.5">
-                  <Pill className="h-3 w-3 text-emerald-500" />
-                  {ticket.Prescriptions.length} Rx
-                </span>
+          {/* Auxiliary Order Badges */}
+          {(rxCount > 0 || labCount > 0 || radCount > 0) && (
+            <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+              {rxCount > 0 && (
+                <Badge variant="outline" className="text-xs gap-1 border-slate-200 dark:border-slate-700">
+                  <Pill className="h-3 w-3 text-teal-600 dark:text-teal-400" />
+                  {rxCount} Rx Prescription{rxCount > 1 ? 's' : ''}
+                </Badge>
               )}
-              {ticket.MedicalCertificates.length > 0 && (
-                <span className="flex items-center gap-1 text-xs bg-muted rounded-md px-2 py-0.5">
-                  <FileCheck className="h-3 w-3 text-blue-500" />
-                  {ticket.MedicalCertificates.length} Cert
-                </span>
+              {labCount > 0 && (
+                <Badge variant="outline" className="text-xs gap-1 border-slate-200 dark:border-slate-700">
+                  <TestTube className="h-3 w-3 text-sky-600 dark:text-sky-400" />
+                  {labCount} Lab Order{labCount > 1 ? 's' : ''}
+                </Badge>
               )}
-              {ticket.LaboratoryRequests.length > 0 && (
-                <span className="flex items-center gap-1 text-xs bg-muted rounded-md px-2 py-0.5">
-                  <TestTube className="h-3 w-3 text-purple-500" />
-                  {ticket.LaboratoryRequests.length} Lab
-                </span>
-              )}
-              {ticket.ImagingRequests.length > 0 && (
-                <span className="flex items-center gap-1 text-xs bg-muted rounded-md px-2 py-0.5">
-                  <Scan className="h-3 w-3 text-orange-500" />
-                  {ticket.ImagingRequests.length} Imaging
-                </span>
+              {radCount > 0 && (
+                <Badge variant="outline" className="text-xs gap-1 border-slate-200 dark:border-slate-700">
+                  <Scan className="h-3 w-3 text-indigo-600 dark:text-indigo-400" />
+                  {radCount} Imaging Order{radCount > 1 ? 's' : ''}
+                </Badge>
               )}
             </div>
           )}
         </div>
       </div>
     </div>
-  );
+  )
 }
 
 function AppointmentTimelineEntry({
   appointment,
   isLast,
 }: {
-  appointment: Appointment;
-  isLast: boolean;
+  appointment: Appointment
+  isLast: boolean
 }) {
-  const attr = appointment.AppointmentAttribute;
-  const hp = appointment.AppointmentRouting[0]?.RoutedTo;
+  const attr = appointment.AppointmentAttribute
+  const hp = appointment.AppointmentRouting[0]?.RoutedTo
 
   return (
-    <div className="relative flex gap-4">
-      {/* Timeline connector */}
+    <div className="relative flex gap-4 sm:gap-6">
+      {/* Timeline Connector */}
       <div className="relative flex flex-col items-center shrink-0 w-6">
-        <div className="w-3 h-3 rounded-full bg-background border-2 border-muted-foreground/40 mt-1.5 shrink-0 z-10" />
-        {!isLast && (
-          <div className="w-0.5 bg-border/50 flex-1 mt-1" />
-        )}
+        <div className="w-3.5 h-3.5 rounded-full bg-slate-300 dark:bg-slate-700 ring-4 ring-slate-200/50 dark:ring-slate-800 mt-1.5 shrink-0 z-10" />
+        {!isLast && <div className="w-0.5 bg-slate-200 dark:bg-slate-800 flex-1 mt-1" />}
       </div>
 
-      {/* Card */}
-      <div className="flex-1 min-w-0 min-w-0 pb-6">
-        <div className="rounded-lg border border-border/60 bg-card shadow-sm overflow-hidden p-3 sm:p-4">
-          {/* Header row */}
-          <div className="flex items-start justify-between gap-3 mb-3">
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1.5 mb-1">
-                <Calendar className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                  Appointment
+      {/* Card Container */}
+      <div className="flex-1 min-w-0 pb-6 sm:pb-8">
+        <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl p-4 sm:p-5 shadow-xs hover:shadow-md transition-all space-y-4">
+          {/* Header Row */}
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1 space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-wider text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">
+                  <Calendar className="h-3 w-3" /> Appointment
                 </span>
               </div>
-              <h3 className="text-sm font-semibold text-foreground truncate">
-                {appointment.subject ?? appointment.complaint ?? "Appointment"}
+              <h3 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white truncate">
+                {appointment.subject ?? appointment.complaint ?? 'Scheduled Appointment'}
               </h3>
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
                 {attr?.date
-                  ? dayjs(attr.date).format("MMMM D, YYYY") +
-                    (attr.timeStart ? ` at ${attr.timeStart}` : "") +
-                    (attr.timeEnd ? ` – ${attr.timeEnd}` : "")
-                  : dayjs(appointment.createdAt).format("MMMM D, YYYY [at] h:mm A")}
+                  ? dayjs(attr.date).format('MMMM D, YYYY') +
+                    (attr.timeStart ? ` at ${attr.timeStart}` : '') +
+                    (attr.timeEnd ? ` – ${attr.timeEnd}` : '')
+                  : dayjs(appointment.createdAt).format('MMMM D, YYYY [at] h:mm A')}
               </p>
             </div>
-            {attr?.status && (
-              <Badge
-                variant={getAppointmentStatusVariant(attr.status)}
-                className="text-xs shrink-0"
-              >
-                {attr.status}
-              </Badge>
-            )}
+            {getAppointmentStatusBadge(attr?.status)}
           </div>
 
           {/* Type / Mode / Service badges */}
           {attr && (
-            <div className="flex flex-wrap gap-1.5 mb-3">
+            <div className="flex flex-wrap gap-1.5">
               {attr.AppointmentType?.name && (
-                <Badge variant="outline" className="text-xs gap-1">
-                  <ClipboardList className="h-3 w-3" />
+                <Badge variant="outline" className="text-xs gap-1 border-slate-200 dark:border-slate-700">
+                  <ClipboardList className="h-3 w-3 text-slate-400" />
                   {attr.AppointmentType.name}
                 </Badge>
               )}
               {attr.AppointmentMode?.name && (
-                <Badge variant="outline" className="text-xs">
+                <Badge variant="outline" className="text-xs border-slate-200 dark:border-slate-700">
                   {attr.AppointmentMode.name}
                 </Badge>
               )}
               {attr.Service?.name && (
-                <Badge variant="outline" className="text-xs">
+                <Badge variant="outline" className="text-xs border-slate-200 dark:border-slate-700">
                   {attr.Service.name}
                 </Badge>
               )}
@@ -373,32 +338,36 @@ function AppointmentTimelineEntry({
 
           {/* Assigned provider */}
           {hp && (
-            <p className="flex items-center gap-1.5 text-xs text-muted-foreground mb-3">
-              <Stethoscope className="h-3.5 w-3.5 shrink-0" />
-              {[
-                hp.HPProfile?.title,
-                hp.HPProfile?.name ||
-                  `${hp.User?.firstName ?? ""} ${hp.User?.lastName ?? ""}`.trim(),
-                hp.HPProfile?.suffix,
-              ]
-                .filter(Boolean)
-                .join(" ")}
-            </p>
+            <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
+              <Stethoscope className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+              <span>
+                {[
+                  hp.HPProfile?.title,
+                  hp.HPProfile?.name ||
+                    `${hp.User?.firstName ?? ''} ${hp.User?.lastName ?? ''}`.trim(),
+                  hp.HPProfile?.suffix,
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+              </span>
+            </div>
           )}
 
           {/* Chief complaint */}
           {appointment.complaint && (
-            <div className="rounded-md bg-muted/40 border border-border/40 p-3">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
+            <div className="rounded-xl bg-slate-50 dark:bg-slate-800/40 p-3 border border-slate-100 dark:border-slate-800">
+              <span className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-1">
                 Chief Complaint
+              </span>
+              <p className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                {appointment.complaint}
               </p>
-              <p className="text-xs text-foreground/80">{appointment.complaint}</p>
             </div>
           )}
         </div>
       </div>
     </div>
-  );
+  )
 }
 
 // ---------------------------------------------------------------------------
@@ -417,7 +386,7 @@ export default function PatientAppointmentsConsultationsClient({
   const listItems: ListItem[] = [
     ...consultationTickets.map(
       (t): ListItem => ({
-        kind: "consultation",
+        kind: 'consultation',
         data: t,
         date: new Date(t.createdAt),
       })
@@ -427,72 +396,104 @@ export default function PatientAppointmentsConsultationsClient({
       .filter((a) => a.ConsultationTickets.length === 0)
       .map(
         (a): ListItem => ({
-          kind: "appointment",
+          kind: 'appointment',
           data: a,
           date: a.AppointmentAttribute?.date
             ? new Date(a.AppointmentAttribute.date)
             : new Date(a.createdAt),
         })
       ),
-  ].sort((a, b) => b.date.getTime() - a.date.getTime());
+  ].sort((a, b) => b.date.getTime() - a.date.getTime())
+
+  // Patient Initials for Avatar
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .filter(Boolean)
+      .map((part) => part[0])
+      .join('')
+      .substring(0, 2)
+      .toUpperCase()
+  }
 
   return (
-    <div className="max-w-3xl mx-auto px-3 sm:px-4 py-4 overflow-hidden">
-      {/* Sub-header: summary + navigation button */}
-      <div className="flex items-center justify-between mb-6 gap-3">
-        <p className="text-xs text-muted-foreground">
-          {patientName} · {consultationTickets.length} consultation
-          {consultationTickets.length !== 1 ? "s" : ""} ·{" "}
-          {appointments.length} appointment
-          {appointments.length !== 1 ? "s" : ""}
-        </p>
-        <Link
-          href={`/v2/clinic/${clinicUid}/patients/${patientId}/consultations`}
-        >
-          <Button variant="outline" size="sm" className="gap-1.5 shrink-0">
-            <Clipboard className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Consultations Workspace</span>
-            <span className="sm:hidden">Workspace</span>
-            <ChevronRight className="h-3.5 w-3.5" />
-          </Button>
-        </Link>
+    <div className="w-full space-y-5 pb-20 sm:pb-24">
+      {/* Premium Patient Header Banner (Aligned with EMR Patient Profile/Chart) */}
+      <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-gradient-to-br from-white to-slate-50/50 dark:from-slate-900 dark:to-slate-900/80 backdrop-blur-xl p-4 sm:p-5 shadow-lg">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-teal-500/5 dark:bg-teal-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 relative z-10">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <Avatar className="w-12 h-12 sm:w-14 sm:h-14 border-2 border-teal-500/30 shadow-md">
+              <AvatarFallback className="bg-gradient-to-br from-teal-500 to-teal-700 text-white font-extrabold text-base sm:text-lg">
+                {getInitials(patientName)}
+              </AvatarFallback>
+            </Avatar>
+
+            <div className="space-y-1">
+              <h1 className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+                {patientName}
+              </h1>
+              <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
+                <Badge variant="outline" className="bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-500/20 font-bold text-[10px] uppercase">
+                  {consultationTickets.length} Consultation{consultationTickets.length !== 1 ? 's' : ''}
+                </Badge>
+                <Badge variant="outline" className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 font-bold text-[10px] uppercase">
+                  {appointments.length} Appointment{appointments.length !== 1 ? 's' : ''}
+                </Badge>
+              </div>
+            </div>
+          </div>
+
+          <Link href={`/v2/clinic/${clinicUid}/patients/${patientId}/consultations`}>
+            <Button size="sm" className="bg-teal-600 hover:bg-teal-700 text-white h-9 px-4 text-xs font-semibold shadow-sm rounded-xl gap-2">
+              <Stethoscope className="w-4 h-4" />
+              <span>Consultations Workspace</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </Button>
+          </Link>
+        </div>
       </div>
 
-      {/* Timeline */}
-      {listItems.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 gap-3 text-center">
-          <div className="w-14 h-14 rounded-full bg-muted/50 flex items-center justify-center">
-            <AlertCircle className="h-7 w-7 text-muted-foreground/40" />
-          </div>
-          <div>
-            <p className="text-sm font-medium text-foreground/70">
-              No history yet
+      {/* Timeline Section */}
+      <div className="max-w-4xl mx-auto space-y-4 pt-2">
+        <h2 className="text-xs font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500 px-1">
+          Activity History & Timeline ({listItems.length})
+        </h2>
+
+        {listItems.length === 0 ? (
+          <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl p-12 text-center space-y-3">
+            <Calendar className="w-10 h-10 mx-auto text-slate-300 dark:text-slate-700" />
+            <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300">No records found</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+              This patient currently has no past appointments or consultation tickets on file.
             </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Appointments and consultation notes will appear here.
-            </p>
           </div>
-        </div>
-      ) : (
-        <div>
-          {listItems.map((item, index) =>
-            item.kind === "consultation" ? (
-              <ConsultationTimelineEntry
-                key={`consultation-${item.data.id}`}
-                ticket={item.data as ConsultationTicket}
-                access={access}
-                isLast={index === listItems.length - 1}
-              />
-            ) : (
-              <AppointmentTimelineEntry
-                key={`appointment-${item.data.id}`}
-                appointment={item.data as Appointment}
-                isLast={index === listItems.length - 1}
-              />
-            )
-          )}
-        </div>
-      )}
+        ) : (
+          <div className="space-y-1">
+            {listItems.map((item, index) => {
+              const isLast = index === listItems.length - 1
+              if (item.kind === 'consultation') {
+                return (
+                  <ConsultationTimelineEntry
+                    key={`c-${item.data.id}`}
+                    ticket={item.data}
+                    access={access}
+                    isLast={isLast}
+                  />
+                )
+              }
+              return (
+                <AppointmentTimelineEntry
+                  key={`a-${item.data.id}`}
+                  appointment={item.data}
+                  isLast={isLast}
+                />
+              )
+            })}
+          </div>
+        )}
+      </div>
     </div>
-  );
+  )
 }

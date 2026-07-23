@@ -13,6 +13,7 @@ interface ClinicPatientPageHeaderProps {
    *  'files' shows: Patients > Patient Name > Files (and dynamic folder name) */
   mode: 'view' | 'consultations' | 'appointments-consultations' | 'files'
   folderName?: string
+  hideBreadcrumbs?: boolean
 }
 
 export function ClinicPatientPageHeader({
@@ -21,11 +22,16 @@ export function ClinicPatientPageHeader({
   patientName,
   mode,
   folderName,
+  hideBreadcrumbs = false,
 }: ClinicPatientPageHeaderProps) {
   // Determine dynamic back button destination based on context mode
   const backHref = mode === 'files'
     ? (folderName ? `/v2/clinic/${clinicUid}/patients/${patientId}/files` : `/v2/clinic/${clinicUid}/patients/${patientId}`)
+    : mode === 'appointments-consultations' || mode === 'consultations'
+    ? `/v2/clinic/${clinicUid}/patients/${patientId}`
     : `/v2/clinic/${clinicUid}/patients`
+
+  const shouldHideBreadcrumbs = hideBreadcrumbs || mode === 'appointments-consultations'
 
   return (
     <div className="sticky top-12 z-40 h-12 flex items-center backdrop-blur-md bg-white/95 dark:bg-slate-950/95 border-b border-slate-200/60 dark:border-slate-800/60 shadow-xs px-3 py-1.5 sm:py-2">
@@ -44,16 +50,17 @@ export function ClinicPatientPageHeader({
             }
           }}
           className="group flex items-center justify-center w-8 h-8 rounded-full border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-500 hover:text-teal-600 dark:hover:text-teal-400 hover:border-teal-500 dark:hover:border-teal-500 hover:shadow-sm transition-all duration-200 shrink-0"
-          title={folderName ? "Back to Folders" : "Back"}
+          title="Back to Patient Profile"
         >
           <ArrowLeft className="w-4 h-4 transition-transform duration-200 group-hover:-translate-x-0.5" />
         </Link>
 
         {/* Elegant Glassmorphic Breadcrumbs Pill */}
-        <nav
-          aria-label="Breadcrumb"
-          className="flex items-center gap-1.5 px-3 py-1 rounded-full border border-slate-200/40 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/20 backdrop-blur-lg shadow-sm min-w-0"
-        >
+        {!shouldHideBreadcrumbs && (
+          <nav
+            aria-label="Breadcrumb"
+            className="flex items-center gap-1.5 px-3 py-1 rounded-full border border-slate-200/40 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/20 backdrop-blur-lg shadow-sm min-w-0"
+          >
           {/* Home Icon Link */}
           <Link
             href={`/v2/clinic/${clinicUid}/dashboard`}
@@ -99,11 +106,6 @@ export function ClinicPatientPageHeader({
                   <History className="w-3.5 h-3.5 text-teal-600 dark:text-teal-450" />
                   <span>Consultations</span>
                 </span>
-              ) : mode === 'appointments-consultations' ? (
-                <span className="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-900 shadow-sm border border-slate-200/50 dark:border-slate-800 shrink-0">
-                  <Calendar className="w-3.5 h-3.5 text-teal-600 dark:text-teal-450" />
-                  <span>Appointments &amp; Consultations</span>
-                </span>
               ) : (
                 <>
                   {folderName ? (
@@ -141,6 +143,7 @@ export function ClinicPatientPageHeader({
             </>
           )}
         </nav>
+      )}
       </div>
     </div>
   )

@@ -2,6 +2,7 @@
 
 import { useState, useTransition, useRef, useEffect, useMemo } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import Link from "next/link";
 import { ClinicPatientPageHeader } from "./ClinicPatientPageHeader";
 import {
   Folder,
@@ -354,16 +355,12 @@ export function ClinicPatientFilesClient({
     ? folders.find((f) => f.id === selectedFolder.id)?.Files ?? []
     : [];
 
+  const backHref = selectedFolder
+    ? `/v2/clinic/${clinicUid}/patients/${patientId}/files`
+    : `/v2/clinic/${clinicUid}/patients/${patientId}`;
+
   return (
     <div className="relative min-h-screen">
-      <ClinicPatientPageHeader
-        clinicUid={clinicUid}
-        patientId={patientId}
-        patientName={patientName}
-        mode="files"
-        folderName={selectedFolder ? selectedFolder.name : undefined}
-      />
-
       {/* Glassmorphic ambient background blobs */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
         <div className="absolute -top-32 -right-32 h-96 w-96 rounded-full bg-blue-400/20 dark:bg-blue-500/10 blur-3xl" />
@@ -373,8 +370,25 @@ export function ClinicPatientFilesClient({
 
       {/* Patient Context Card */}
       <div className="max-w-5xl mx-auto px-4 md:px-6 pt-4">
-        <div className="glassmorphic-card px-4 py-3 flex items-center gap-4">
-          <div className="w-11 h-11 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-base shrink-0 overflow-hidden">
+        <div className="glassmorphic-card px-4 py-3 flex items-center gap-3 sm:gap-4">
+          <Link
+            href={backHref}
+            onClick={(e) => {
+              if (selectedFolder) {
+                e.preventDefault();
+                const params = new URLSearchParams(window.location.search);
+                params.delete("folderId");
+                window.history.replaceState(null, "", `${window.location.pathname}?${params.toString()}`);
+                window.dispatchEvent(new Event("popstate"));
+              }
+            }}
+            className="group flex items-center justify-center w-8 h-8 rounded-full border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-500 hover:text-teal-600 dark:hover:text-teal-400 hover:border-teal-500 dark:hover:border-teal-500 hover:shadow-xs transition-all duration-200 shrink-0"
+            title={selectedFolder ? "Back to Folders" : "Back to Patient Profile"}
+          >
+            <ArrowLeft className="w-4 h-4 transition-transform duration-200 group-hover:-translate-x-0.5" />
+          </Link>
+
+          <div className="w-11 h-11 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-base shrink-0 overflow-hidden shadow-xs">
             {patientPicture ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={patientPicture} alt={patientName} className="w-full h-full object-cover" />

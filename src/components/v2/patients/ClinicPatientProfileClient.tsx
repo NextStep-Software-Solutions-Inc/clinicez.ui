@@ -105,7 +105,7 @@ export default function ClinicPatientProfileClient({
   const router = useRouter()
   const searchParams = useSearchParams()
   const pathname = usePathname()
-  
+
   const initialTab = useMemo(() => {
     const tabParam = searchParams.get('tab') as TabId | null
     return tabParam && ['demographics', 'clinical', 'history', 'preventative', 'obgyn'].includes(tabParam)
@@ -179,7 +179,7 @@ export default function ClinicPatientProfileClient({
 
   const handleSaveSection = async (sectionId: string, saveRef: React.RefObject<{ submit: () => Promise<void>; hasChanges: boolean } | null>) => {
     if (!saveRef.current) return
-    
+
     setSavingSections(prev => ({ ...prev, [sectionId]: true }))
     try {
       await saveRef.current.submit()
@@ -300,7 +300,7 @@ export default function ClinicPatientProfileClient({
       </div>
 
       {/* Modern Tabs Strip */}
-      <div className="sticky top-20 z-20 backdrop-blur-xl bg-white/70 dark:bg-slate-950/70 border-b border-slate-200/50 dark:border-slate-800/50 -mx-6 px-6 py-2.5">
+      <div className="sticky top-26 z-20 backdrop-blur-xl bg-white/70 dark:bg-slate-950/70 border-b border-slate-200/50 dark:border-slate-800/50 -mx-6 px-6 py-2.5">
         <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none pb-0.5">
           <TabButton
             active={activeTab === 'demographics'}
@@ -1187,11 +1187,10 @@ function TabButton({ active, onClick, icon: Icon, label }: TabButtonProps) {
   return (
     <button
       onClick={onClick}
-      className={`relative flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold tracking-tight whitespace-nowrap shrink-0 transition-all duration-200 focus-visible:outline-none focus:outline-none ${
-        active 
-          ? 'text-white' 
-          : 'text-slate-600 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-900'
-      }`}
+      className={`relative flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold tracking-tight whitespace-nowrap shrink-0 transition-all duration-200 focus-visible:outline-none focus:outline-none ${active
+        ? 'text-white'
+        : 'text-slate-600 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-900'
+        }`}
     >
       {active && (
         <motion.div

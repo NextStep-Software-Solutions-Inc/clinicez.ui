@@ -2,7 +2,7 @@ export default function AppointmentsConsultationsLoading() {
   return (
     <div className="w-full">
       {/* Sticky header skeleton */}
-      <div className="sticky top-0 z-10 border-b border-border/50 px-6 sm:px-8 py-4 -mx-6 sm:-mx-8 mb-4">
+      <div className="sticky top-0 z-10 border-b border-border/50 px-6 sm:px-8 py-4 mx-6 sm:mx-8 mb-4">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-20 h-5 bg-slate-300/60 dark:bg-slate-600/60 rounded animate-pulse" />

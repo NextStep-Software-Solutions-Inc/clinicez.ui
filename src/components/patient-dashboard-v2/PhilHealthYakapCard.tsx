@@ -12,6 +12,7 @@ import {
   generateKonsultaIdsAction,
   getKonsultaEnlistmentAction 
 } from '@/actions/philhealth-yakap.actions'
+import { formatPhilHealthPin } from '@/components/v2/patients/forms/schemas/mask-utils'
 
 interface Props {
   clinicPatientId: number
@@ -50,20 +51,9 @@ export function PhilHealthYakapCard({ clinicPatientId, isClinicMode, philHealthR
     return null
   }
 
-  const formatPhilHealthPIN = (val: string | null | undefined) => {
-    if (!val) return 'N/A'
-    const digits = val.replace(/\D/g, '').substring(0, 12);
-    let formatted = '';
-    if (digits.length > 0) {
-      formatted = digits.substring(0, 2);
-    }
-    if (digits.length > 2) {
-      formatted += '-' + digits.substring(2, 11);
-    }
-    if (digits.length > 11) {
-      formatted += '-' + digits.substring(11, 12);
-    }
-    return formatted || 'N/A';
+  const formatPhilHealthPIN = (val: string | null | undefined): string => {
+    const res = formatPhilHealthPin(val);
+    return res || 'N/A';
   }
 
   const memberType = philHealthRecord?.memberType || 'MM'

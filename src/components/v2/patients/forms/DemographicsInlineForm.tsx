@@ -3,7 +3,9 @@
 import React, { useState, useEffect } from 'react'
 import { updateDemographics } from '@/actions/patient-profile'
 import { getActionErrorMessage } from '@/lib/action-error'
-import { demographicsSchema, type DemographicsFormInput } from '@/schemas/demographics-schema'
+import { demographicsSchema as schemaVal } from './schemas/demographics.schema'
+import { type DemographicsFormInput } from '@/schemas/demographics-schema'
+import { formatMobileNumber, unmaskDigits } from './schemas/mask-utils'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { toast } from 'sonner'
@@ -23,8 +25,8 @@ export function DemographicsInlineForm({
   saveRef,
   onDirtyChange,
 }: DemographicsInlineFormProps) {
-  const [formData, setFormData] = useState<Partial<DemographicsFormInput>>(currentData)
-  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [formData, setFormData] = useState<any>(currentData)
+  const [errors, setErrors] = useState<Record<string, string | undefined>>({})
 
   // Track changes
   const hasChanges = JSON.stringify(formData) !== JSON.stringify(currentData)
@@ -33,18 +35,13 @@ export function DemographicsInlineForm({
     onDirtyChange?.(hasChanges)
   }, [hasChanges, onDirtyChange])
 
-  const handleFieldChange = (field: keyof DemographicsFormInput, value: any) => {
-    setFormData((prev) => ({
+  const handleFieldChange = (field: string, value: any) => {
+    setFormData((prev: any) => ({
       ...prev,
       [field]: value === '' ? null : value,
     }))
-    // Clear error for the field being edited
     if (errors[field]) {
-      setErrors((prev) => {
-        const next = { ...prev }
-        delete next[field]
-        return next
-      })
+      setErrors((prev) => ({ ...prev, [field]: undefined }))
     }
   }
 
@@ -55,7 +52,7 @@ export function DemographicsInlineForm({
     }
 
     // Validation using zod schema
-    const validationResult = demographicsSchema.safeParse({
+    const validationResult = schemaVal.safeParse({
       ...formData,
       // Map empty values to null/undefined where appropriate
       middleName: formData.middleName || null,
@@ -71,7 +68,7 @@ export function DemographicsInlineForm({
 
     if (!validationResult.success) {
       const fieldErrors: Record<string, string> = {}
-      validationResult.error.errors.forEach((err) => {
+      validationResult.error.errors.forEach((err: any) => {
         if (err.path[0]) {
           fieldErrors[err.path[0] as string] = err.message
         }
@@ -84,7 +81,7 @@ export function DemographicsInlineForm({
     let saveErrorMessage: string | null = null
 
     try {
-      const result = await updateDemographics(userId, validationResult.data as DemographicsFormInput)
+      const result = await updateDemographics(userId, validationResult.data as unknown as DemographicsFormInput)
 
       if (result.success) {
         toast.success(result.message || 'Demographic information updated successfully')
@@ -111,18 +108,46 @@ export function DemographicsInlineForm({
     }
   }, [saveRef, formData, hasChanges])
 
+  const validateField = (field: string, value: any) => {
+    const rawVal = field === 'mobileNo' ? unmaskDigits(value) : value
+    const testData = {
+      ...formData,
+      [field]: rawVal,
+    }
+
+    const result = schemaVal.safeParse(testData)
+    if (!result.success) {
+      const fieldError = result.error.errors.find((err) => err.path[0] === field)
+      if (fieldError) {
+        setErrors((prev) => ({ ...prev, [field]: fieldError.message }))
+        return
+      }
+    }
+    setErrors((prev) => ({ ...prev, [field]: undefined }))
+  }
+
   const renderField = (
     label: string,
-    field: keyof DemographicsFormInput | 'email',
-    control: React.ReactNode
+    field: string,
+    control: React.ReactElement<any>
   ) => {
-    const error = field === 'email' ? undefined : errors[field as keyof DemographicsFormInput]
+    const error = errors[field]
     return (
       <div className="space-y-1 w-full">
         <label className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
           {label}
         </label>
-        <div className="w-full">{control}</div>
+        <div className="w-full">
+          {React.cloneElement(control, {
+            onBlur: (e: any) => {
+              control.props.onBlur?.(e)
+              validateField(field, e.target.value)
+            },
+            className: `${control.props.className || ''} ${
+              error ? 'border-red-500 text-red-900 focus-visible:ring-red-500 dark:border-red-500' : ''
+            }`,
+          })}
+        </div>
         {error && (
           <span className="text-[10px] text-red-500 font-medium block mt-0.5">{error}</span>
         )}
@@ -296,10 +321,11 @@ export function DemographicsInlineForm({
         'Mobile Number',
         'mobile',
         <Input
-          value={formData.mobile || ''}
-          onChange={(e) => handleFieldChange('mobile', e.target.value)}
-          className="h-8 text-xs focus-visible:ring-teal-500"
-          placeholder="e.g. 09171234567"
+          value={formatMobileNumber(formData.mobile)}
+          onChange={(e) => handleFieldChange('mobile', unmaskDigits(e.target.value))}
+          maxLength={13}
+          className="h-8 text-xs focus-visible:ring-teal-500 font-mono"
+          placeholder="09XX-XXX-XXXX"
         />
       )}
 

@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react'
 import { addVitalSign, updateVitalSign } from '@/actions/patient-profile'
 import { getActionErrorMessage } from '@/lib/action-error'
 import { vitalSignSchema, type VitalSignFormInput } from '@/schemas/vital-signs-schema'
+import { vitalsSchema } from './schemas/vitals.schema'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { toast } from 'sonner'
@@ -52,7 +53,7 @@ export function VitalSignsInlineForm({
   }, [currentData])
 
   const [formData, setFormData] = useState<any>(initialFormValues)
-  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [errors, setErrors] = useState<Record<string, string | undefined>>({})
 
   // Compute hasChanges relative to baseline
   const hasChanges = useMemo(() => {
@@ -168,10 +169,42 @@ export function VitalSignsInlineForm({
     }
   }, [saveRef, formData, hasChanges])
 
+  const validateField = (field: string, value: any) => {
+    const fieldMap: Record<string, string> = {
+      bpSystolic: 'systolic',
+      bpDiastolic: 'diastolic',
+      pulseRate: 'hr',
+      respRate: 'rr',
+      temp: 'temp',
+      height: 'height',
+      weight: 'weight',
+    }
+    const targetKey = fieldMap[field] || field
+    const testData = {
+      systolic: field === 'bpSystolic' ? String(value || '') : String(formData.bpSystolic || ''),
+      diastolic: field === 'bpDiastolic' ? String(value || '') : String(formData.bpDiastolic || ''),
+      hr: field === 'pulseRate' ? String(value || '') : String(formData.pulseRate || ''),
+      rr: field === 'respRate' ? String(value || '') : String(formData.respRate || ''),
+      temp: field === 'temp' ? String(value || '') : String(formData.temp || ''),
+      height: field === 'height' ? String(value || '') : String(formData.height || ''),
+      weight: field === 'weight' ? String(value || '') : String(formData.weight || ''),
+    }
+
+    const result = vitalsSchema.safeParse(testData)
+    if (!result.success) {
+      const fieldError = result.error.errors.find((err) => err.path[0] === targetKey)
+      if (fieldError) {
+        setErrors((prev) => ({ ...prev, [field]: fieldError.message }))
+        return
+      }
+    }
+    setErrors((prev) => ({ ...prev, [field]: undefined }))
+  }
+
   const renderField = (
     label: string,
     field: string,
-    control: React.ReactNode
+    control: React.ReactElement<any>
   ) => {
     const error = errors[field]
     return (
@@ -179,7 +212,17 @@ export function VitalSignsInlineForm({
         <label className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
           {label}
         </label>
-        <div className="w-full">{control}</div>
+        <div className="w-full">
+          {React.cloneElement(control, {
+            onBlur: (e: any) => {
+              control.props.onBlur?.(e)
+              validateField(field, e.target.value)
+            },
+            className: `${control.props.className || ''} ${
+              error ? 'border-red-500 text-red-900 focus-visible:ring-red-500 dark:border-red-500' : ''
+            }`,
+          })}
+        </div>
         {error && (
           <span className="text-[10px] text-red-500 font-medium block mt-0.5">{error}</span>
         )}

@@ -13,6 +13,8 @@ import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import { Trash2, Edit, Plus, X, Heart } from 'lucide-react'
 import { toast } from 'sonner'
+import { emergencyContactSchema } from './schemas/emergency-contact.schema'
+import { formatMobileNumber, unmaskDigits } from './schemas/mask-utils'
 
 export interface EmergencyContactInlineFormProps {
   userId: string
@@ -27,6 +29,7 @@ export function EmergencyContactInlineForm({
 }: EmergencyContactInlineFormProps) {
   const [activeContactId, setActiveContactId] = useState<number | 'new' | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [errors, setErrors] = useState<Record<string, string | undefined>>({})
 
   // Form Fields
   const [formData, setFormData] = useState<any>({
@@ -132,13 +135,43 @@ export function EmergencyContactInlineForm({
     }
   }
 
-  const renderField = (label: string, control: React.ReactNode) => {
+  const validateField = (field: string, value: any) => {
+    const rawVal = field === 'phone' ? unmaskDigits(value) : value
+    const testData = {
+      ...formData,
+      [field]: rawVal,
+    }
+
+    const result = emergencyContactSchema.safeParse(testData)
+    if (!result.success) {
+      const fieldError = result.error.errors.find((err) => err.path[0] === field)
+      if (fieldError) {
+        setErrors((prev) => ({ ...prev, [field]: fieldError.message }))
+        return
+      }
+    }
+    setErrors((prev) => ({ ...prev, [field]: undefined }))
+  }
+
+  const renderField = (label: string, field: string, control: React.ReactElement<any>) => {
+    const error = errors[field]
     return (
-      <div className="space-y-0.5 w-full">
+      <div className="space-y-1 w-full">
         <label className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
           {label}
         </label>
-        <div className="w-full">{control}</div>
+        <div className="w-full">
+          {React.cloneElement(control, {
+            onBlur: (e: any) => {
+              control.props.onBlur?.(e)
+              validateField(field, e.target.value)
+            },
+            className: `${control.props.className || ''} ${
+              error ? 'border-red-500 text-red-900 focus-visible:ring-red-500 dark:border-red-500' : ''
+            }`,
+          })}
+        </div>
+        {error && <span className="text-[10px] text-red-500 font-medium block mt-0.5">{error}</span>}
       </div>
     )
   }
@@ -158,6 +191,7 @@ export function EmergencyContactInlineForm({
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-3.5 gap-y-3 text-xs">
           {renderField(
             'First Name *',
+            'firstName',
             <Input
               value={formData.firstName || ''}
               onChange={(e) => handleFieldChange('firstName', e.target.value)}
@@ -168,6 +202,7 @@ export function EmergencyContactInlineForm({
 
           {renderField(
             'Middle Name',
+            'middleName',
             <Input
               value={formData.middleName || ''}
               onChange={(e) => handleFieldChange('middleName', e.target.value)}
@@ -178,6 +213,7 @@ export function EmergencyContactInlineForm({
 
           {renderField(
             'Last Name *',
+            'lastName',
             <Input
               value={formData.lastName || ''}
               onChange={(e) => handleFieldChange('lastName', e.target.value)}
@@ -188,6 +224,7 @@ export function EmergencyContactInlineForm({
 
           {renderField(
             'Suffix',
+            'suffix',
             <Input
               value={formData.suffix || ''}
               onChange={(e) => handleFieldChange('suffix', e.target.value)}
@@ -198,6 +235,7 @@ export function EmergencyContactInlineForm({
 
           {renderField(
             'Relationship *',
+            'relationship',
             <Input
               value={formData.relationship || ''}
               onChange={(e) => handleFieldChange('relationship', e.target.value)}
@@ -208,17 +246,20 @@ export function EmergencyContactInlineForm({
 
           {renderField(
             'Phone Number *',
+            'phone',
             <Input
-              value={formData.phone || ''}
-              onChange={(e) => handleFieldChange('phone', e.target.value)}
-              className="h-8 text-xs focus-visible:ring-teal-500"
-              placeholder="e.g. 09171234567"
+              value={formatMobileNumber(formData.phone)}
+              onChange={(e) => handleFieldChange('phone', unmaskDigits(e.target.value))}
+              maxLength={13}
+              className="h-8 text-xs focus-visible:ring-teal-500 font-mono"
+              placeholder="09XX-XXX-XXXX"
             />
           )}
 
           <div className="sm:col-span-2">
             {renderField(
               'Address / Location',
+              'address',
               <Input
                 value={formData.address || ''}
                 onChange={(e) => handleFieldChange('address', e.target.value)}

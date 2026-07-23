@@ -55,6 +55,7 @@ import type { SerializedPatientHealthRecordsResponse } from '@/types/patient-pro
 import { formatBloodType, calculateDetailedAge } from '@/lib/utils'
 import { DownloadPHRButton } from '@/components/v2/phr/DownloadPHRButton'
 import { getPatientHealthRecords } from '@/actions/patient-profile/get-patient-health-records'
+import { formatPhilHealthPin, formatPhilSysId, formatTin, formatMobileNumber } from '@/components/v2/patients/forms/schemas/mask-utils'
 
 const tabContentVariants = {
   hidden: { opacity: 0 },
@@ -374,10 +375,10 @@ export default function ProfileClient({ patient }: ProfileClientProps) {
                         patientData.philHealthRecords.map((record) => (
                           <div key={record.id} className="space-y-6">
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-3 gap-y-2 py-1">
-                              <ViewCell label="PIN (PhilHealth ID)" value={record.pin} className="text-indigo-600 dark:text-indigo-400 font-bold" />
+                              <ViewCell label="PIN (PhilHealth ID)" value={formatPhilHealthPin(record.pin)} className="text-indigo-600 dark:text-indigo-400 font-bold font-mono" />
                               <ViewCell label="Member Type" value={((record as any).memberType) === 'MM' ? 'Formal Member (MM)' : ((record as any).memberType) === 'DD' ? 'Dependent (DD)' : (record as any).memberType || '—'} />
-                              <ViewCell label="PhilSys ID" value={record.philSysId} />
-                              <ViewCell label="TIN" value={record.tin} />
+                              <ViewCell label="PhilSys ID" value={formatPhilSysId(record.philSysId)} className="font-mono" />
+                              <ViewCell label="TIN" value={formatTin(record.tin)} className="font-mono" />
                               <ViewCell label="Yakap Enlistment" value={patientData.yakapEnlistment ? 'Enlisted' : 'Not Enlisted'} />
                             </div>
 
@@ -471,7 +472,7 @@ export default function ProfileClient({ patient }: ProfileClientProps) {
                       <ViewCell label="Place of Birth" value={patientData.placeOfBirth} />
                       <ViewCell label="Nationality" value={patientData.nationality} />
                       <ViewCell label="Religion" value={patientData.religion} />
-                      <ViewCell label="Mobile Number" value={patientData.mobile} />
+                      <ViewCell label="Mobile Number" value={formatMobileNumber(patientData.mobile)} className="font-mono" />
                       <ViewCell label="Telephone Number" value={patientData.telephone} />
                       <ViewCell label="Email Address" value={patientData.email} />
                     </div>

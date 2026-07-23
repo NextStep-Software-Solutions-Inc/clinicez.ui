@@ -10,6 +10,8 @@ import { Button } from '@/components/ui/button'
 import { Trash2, Plus, UserPlus, X, ShieldAlert } from 'lucide-react'
 import { toast } from 'sonner'
 import { philHealthRecordSchema, type PhilHealthRecordFormInput, type PhilHealthDependentFormInput } from '@/schemas/philhealth-record-schema'
+import { formatPhilHealthPin, formatPhilSysId, formatTin, unmaskDigits } from './schemas/mask-utils'
+import { philHealthSchema, dependentSchema } from './schemas/philhealth.schema'
 
 export interface PhilHealthInlineFormProps {
   userId: string
@@ -55,7 +57,7 @@ export function PhilHealthInlineForm({
     gender: 'MALE',
     dob: '',
   })
-  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [errors, setErrors] = useState<Record<string, string | undefined>>({})
   const [isLoading, setIsLoading] = useState(false)
 
   // Track if main form has changes
@@ -207,14 +209,47 @@ export function PhilHealthInlineForm({
     }
   }
 
-  const renderField = (label: string, field: string, control: React.ReactNode) => {
+  const validateField = (field: string, value: any) => {
+    const rawPin = field === 'pin' ? unmaskDigits(value) : formData.pin
+    const rawTin = field === 'tin' ? unmaskDigits(value) : formData.tin
+    const rawPhilSysId = field === 'philSysId' ? unmaskDigits(value) : formData.philSysId
+
+    const testData = {
+      pin: rawPin,
+      tin: rawTin,
+      philSysId: rawPhilSysId,
+      memberType: formData.memberType,
+    }
+
+    const result = philHealthSchema.safeParse(testData)
+    if (!result.success) {
+      const fieldError = result.error.errors.find((err) => err.path[0] === field)
+      if (fieldError) {
+        setErrors((prev) => ({ ...prev, [field]: fieldError.message }))
+        return
+      }
+    }
+    setErrors((prev) => ({ ...prev, [field]: undefined }))
+  }
+
+  const renderField = (label: string, field: string, control: React.ReactElement<any>) => {
     const error = errors[field]
     return (
       <div className="space-y-1 w-full">
         <label className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
           {label}
         </label>
-        <div className="w-full">{control}</div>
+        <div className="w-full">
+          {React.cloneElement(control, {
+            onBlur: (e: any) => {
+              control.props.onBlur?.(e)
+              validateField(field, e.target.value)
+            },
+            className: `${control.props.className || ''} ${
+              error ? 'border-red-500 text-red-900 focus-visible:ring-red-500 dark:border-red-500' : ''
+            }`,
+          })}
+        </div>
         {error && <span className="text-[10px] text-red-500 font-medium block mt-0.5">{error}</span>}
       </div>
     )
@@ -228,10 +263,11 @@ export function PhilHealthInlineForm({
           'PIN (PhilHealth ID)',
           'pin',
           <Input
-            value={formData.pin}
-            onChange={(e) => handleFieldChange('pin', e.target.value)}
+            value={formatPhilHealthPin(formData.pin)}
+            onChange={(e) => handleFieldChange('pin', unmaskDigits(e.target.value))}
+            maxLength={14}
             className="h-8 text-xs focus-visible:ring-teal-500 font-mono"
-            placeholder="12-digit PIN"
+            placeholder="XX-XXXXXXXXX-X"
           />
         )}
 
@@ -239,10 +275,11 @@ export function PhilHealthInlineForm({
           'TIN',
           'tin',
           <Input
-            value={formData.tin}
-            onChange={(e) => handleFieldChange('tin', e.target.value)}
+            value={formatTin(formData.tin)}
+            onChange={(e) => handleFieldChange('tin', unmaskDigits(e.target.value))}
+            maxLength={15}
             className="h-8 text-xs focus-visible:ring-teal-500 font-mono"
-            placeholder="Optional TIN"
+            placeholder="XXX-XXX-XXX-XXX"
           />
         )}
 
@@ -250,10 +287,11 @@ export function PhilHealthInlineForm({
           'PhilSys ID',
           'philSysId',
           <Input
-            value={formData.philSysId}
-            onChange={(e) => handleFieldChange('philSysId', e.target.value)}
+            value={formatPhilSysId(formData.philSysId)}
+            onChange={(e) => handleFieldChange('philSysId', unmaskDigits(e.target.value))}
+            maxLength={19}
             className="h-8 text-xs focus-visible:ring-teal-500 font-mono"
-            placeholder="Optional PhilSys ID"
+            placeholder="XXXX-XXXX-XXXX-XXXX"
           />
         )}
 

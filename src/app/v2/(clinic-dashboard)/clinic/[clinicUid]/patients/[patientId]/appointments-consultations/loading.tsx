@@ -1,71 +1,68 @@
 export default function AppointmentsConsultationsLoading() {
   return (
-    <div className="w-full">
-      {/* Sticky header skeleton */}
-      <div className="sticky top-0 z-10 border-b border-border/50 px-6 sm:px-8 py-4 mx-6 sm:mx-8 mb-4">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-20 h-5 bg-slate-300/60 dark:bg-slate-600/60 rounded animate-pulse" />
-            <div className="w-4 h-4 bg-slate-300/60 dark:bg-slate-600/60 rounded animate-pulse" />
-            <div className="w-36 h-5 bg-slate-300/60 dark:bg-slate-600/60 rounded animate-pulse" />
+    <div className="max-w-4xl mx-auto space-y-4 px-3 sm:px-4 py-3 sm:py-4 pb-20 sm:pb-24">
+      {/* High-Density Patient Header Banner Card Skeleton */}
+      <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white/80 dark:bg-slate-900/60 p-3 sm:p-4 shadow-sm animate-pulse">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            {/* Back Button Skeleton */}
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-slate-200 dark:bg-slate-800 shrink-0" />
+            {/* Avatar Skeleton */}
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-slate-200 dark:bg-slate-800 shrink-0" />
+            <div className="space-y-1.5">
+              {/* Name Skeleton */}
+              <div className="w-36 sm:w-48 h-4 bg-slate-200 dark:bg-slate-800 rounded-md" />
+              {/* Badges Skeleton */}
+              <div className="flex items-center gap-1.5">
+                <div className="w-20 h-3.5 bg-slate-200 dark:bg-slate-800 rounded" />
+                <div className="w-20 h-3.5 bg-slate-200 dark:bg-slate-800 rounded" />
+              </div>
+            </div>
           </div>
-          <div className="w-52 h-8 bg-slate-300/60 dark:bg-slate-600/60 rounded-lg animate-pulse" />
+          {/* Action Button Skeleton */}
+          <div className="w-full sm:w-36 h-8 bg-slate-200 dark:bg-slate-800 rounded-lg shrink-0" />
         </div>
       </div>
 
-      {/* Split-panel skeleton */}
-      <div className="flex h-[calc(100dvh-16rem)] overflow-hidden border border-border/40 rounded-lg">
-        {/* Left: list skeleton */}
-        <aside className="w-80 shrink-0 border-r border-border/50 flex flex-col">
-          <div className="px-4 py-3 border-b border-border/50">
-            <div className="h-4 bg-slate-300/60 dark:bg-slate-600/60 rounded w-3/4 animate-pulse mb-1.5" />
-            <div className="h-3 bg-slate-300/40 dark:bg-slate-600/40 rounded w-1/2 animate-pulse" />
-          </div>
-          <div className="flex-1 overflow-hidden">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div
-                key={i}
-                className="px-4 py-3 border-b border-border/30 space-y-2"
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <div className="h-4 bg-slate-300/60 dark:bg-slate-600/60 rounded flex-1 animate-pulse" />
-                  <div className="h-5 w-16 bg-slate-300/40 dark:bg-slate-600/40 rounded-full animate-pulse shrink-0" />
-                </div>
-                <div className="h-3 bg-slate-300/40 dark:bg-slate-600/40 rounded w-2/3 animate-pulse" />
-                <div className="h-3 bg-slate-300/30 dark:bg-slate-600/30 rounded w-1/2 animate-pulse" />
-              </div>
-            ))}
-          </div>
-        </aside>
+      {/* Timeline Section Skeleton */}
+      <div className="space-y-3 pt-1">
+        {/* Section Heading Skeleton */}
+        <div className="w-44 h-3 bg-slate-200 dark:bg-slate-800 rounded animate-pulse px-1" />
 
-        {/* Right: detail skeleton */}
-        <main className="flex-1 p-6 space-y-6">
-          <div>
-            <div className="h-5 w-24 bg-slate-300/60 dark:bg-slate-600/60 rounded-full animate-pulse mb-2" />
-            <div className="h-7 bg-slate-300/60 dark:bg-slate-600/60 rounded w-64 animate-pulse mb-1.5" />
-            <div className="h-3 bg-slate-300/40 dark:bg-slate-600/40 rounded w-40 animate-pulse" />
-          </div>
-          <div className="rounded-lg border border-border/40 p-4 space-y-2">
-            <div className="h-3 w-20 bg-slate-300/40 dark:bg-slate-600/40 rounded animate-pulse mb-3" />
-            {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="h-4 bg-slate-300/30 dark:bg-slate-600/30 rounded animate-pulse" />
-            ))}
-          </div>
-          <div>
-            <div className="h-3 w-28 bg-slate-300/40 dark:bg-slate-600/40 rounded animate-pulse mb-3" />
-            {Array.from({ length: 2 }).map((_, i) => (
-              <div
-                key={i}
-                className="rounded-lg border border-border/40 p-4 mb-3 space-y-2"
-              >
-                <div className="h-3 w-20 bg-slate-300/30 dark:bg-slate-600/30 rounded animate-pulse" />
-                <div className="h-4 bg-slate-300/40 dark:bg-slate-600/40 rounded w-full animate-pulse" />
-                <div className="h-4 bg-slate-300/40 dark:bg-slate-600/40 rounded w-3/4 animate-pulse" />
+        {/* Timeline Items Skeletons */}
+        <div className="space-y-2">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="relative flex gap-3 sm:gap-4 animate-pulse">
+              {/* Timeline Connector */}
+              <div className="relative flex flex-col items-center shrink-0 w-4 sm:w-5">
+                <div className="w-3 h-3 rounded-full bg-slate-300 dark:bg-slate-700 ring-2 ring-slate-200 dark:ring-slate-800 mt-1 shrink-0 z-10" />
+                {i < 2 && <div className="w-0.5 bg-slate-200 dark:bg-slate-800 flex-1 mt-1" />}
               </div>
-            ))}
-          </div>
-        </main>
+
+              {/* Card Skeleton */}
+              <div className="flex-1 min-w-0 pb-4 sm:pb-5">
+                <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white/80 dark:bg-slate-900/60 p-3 sm:p-4 shadow-xs space-y-3">
+                  {/* Header Row */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="space-y-1.5 flex-1">
+                      <div className="w-24 h-3 bg-slate-200 dark:bg-slate-800 rounded" />
+                      <div className="w-48 h-4 bg-slate-200 dark:bg-slate-800 rounded" />
+                      <div className="w-32 h-3 bg-slate-200 dark:bg-slate-800 rounded" />
+                    </div>
+                    <div className="w-16 h-5 bg-slate-200 dark:bg-slate-800 rounded-md shrink-0" />
+                  </div>
+
+                  {/* Body Lines */}
+                  <div className="space-y-1.5 pt-2 border-t border-slate-100 dark:border-slate-800">
+                    <div className="w-full h-3 bg-slate-200 dark:bg-slate-800 rounded" />
+                    <div className="w-3/4 h-3 bg-slate-200 dark:bg-slate-800 rounded" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
-  );
+  )
 }

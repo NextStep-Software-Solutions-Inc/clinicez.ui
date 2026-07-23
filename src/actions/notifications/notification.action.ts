@@ -108,34 +108,37 @@ export async function createNotifications(
 
 /**
  * Fetch recent notifications for the currently authenticated user.
- * Returns the 30 most recent notifications, newest first.
+ * Returns recent notifications, newest first.
+ * @param limit Max number of notifications to fetch (defaults to 50, capped at 200).
  */
-export const getNotificationsAction = withErrorHandling(async () => {
-  const session = await getCachedSession();
-  if (!session) throw new Error("User not authenticated.");
+export const getNotificationsAction = withErrorHandling(
+  async (limit: number = 50) => {
+    const session = await getCachedSession();
+    if (!session) throw new Error("User not authenticated.");
 
-  const user = await prismaClient.user.findUniqueOrThrow({
-    where: { userId: session.user.sub },
-    select: { id: true },
-  });
+    const user = await prismaClient.user.findUniqueOrThrow({
+      where: { userId: session.user.sub },
+      select: { id: true },
+    });
 
-  const notifications = await prismaClient.notification.findMany({
-    where: { userId: user.id },
-    orderBy: { createdAt: "desc" },
-    take: 30,
-    select: {
-      id: true,
-      type: true,
-      title: true,
-      message: true,
-      link: true,
-      isRead: true,
-      createdAt: true,
-    },
-  });
+    const notifications = await prismaClient.notification.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: "desc" },
+      take: Math.min(Math.max(1, limit), 200),
+      select: {
+        id: true,
+        type: true,
+        title: true,
+        message: true,
+        link: true,
+        isRead: true,
+        createdAt: true,
+      },
+    });
 
-  return { message: "Notifications fetched", data: notifications };
-});
+    return { message: "Notifications fetched", data: notifications };
+  },
+);
 
 /**
  * Get the count of unread notifications for the current user.

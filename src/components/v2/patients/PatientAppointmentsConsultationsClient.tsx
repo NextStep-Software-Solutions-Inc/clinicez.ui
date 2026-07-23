@@ -424,6 +424,14 @@ export default function PatientAppointmentsConsultationsClient({
 
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 relative z-10">
           <div className="flex items-center gap-3 sm:gap-4">
+            <Link
+              href={`/v2/clinic/${clinicUid}/patients/${patientId}`}
+              className="group flex items-center justify-center w-8 h-8 rounded-full border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-500 hover:text-teal-600 dark:hover:text-teal-400 hover:border-teal-500 dark:hover:border-teal-500 hover:shadow-sm transition-all duration-200 shrink-0"
+              title="Back to Patient Profile"
+            >
+              <ArrowLeft className="w-4 h-4 transition-transform duration-200 group-hover:-translate-x-0.5" />
+            </Link>
+
             <Avatar className="w-12 h-12 sm:w-14 sm:h-14 border-2 border-teal-500/30 shadow-md">
               <AvatarFallback className="bg-gradient-to-br from-teal-500 to-teal-700 text-white font-extrabold text-base sm:text-lg">
                 {getInitials(patientName)}

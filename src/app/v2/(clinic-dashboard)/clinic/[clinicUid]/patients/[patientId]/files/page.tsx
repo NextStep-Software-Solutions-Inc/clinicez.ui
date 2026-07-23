@@ -58,6 +58,7 @@ export default async function ClinicPatientFilesPage({ params }: Props) {
         patientName={patient.fullName}
         patientPicture={patient.picture ?? null}
         patientAge={patient.age ?? null}
+        patientDob={patient.dob ?? null}
         patientGender={patient.gender ?? null}
         patientBloodType={patient.bloodType ?? null}
         patientCaseNumber={patient.caseNumber ?? null}

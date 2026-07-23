@@ -60,6 +60,7 @@ import {
 } from "@/actions/patient/patient-files.action";
 import { heic2Jpeg, isHeicFile, PATIENT_FILE_ACCEPT } from "@/lib/file-manipulation";
 import { compressImageAsync } from "@/lib/image-compression";
+import { calculateDetailedAge } from "@/lib/utils";
 
 type FileType = { id: number; name: string };
 
@@ -70,6 +71,7 @@ interface ClinicPatientFilesClientProps {
   patientName: string;
   patientPicture?: string | null;
   patientAge?: number | null;
+  patientDob?: string | Date | null;
   patientGender?: string | null;
   patientBloodType?: string | null;
   patientCaseNumber?: string | null;
@@ -107,7 +109,7 @@ function formatBloodType(bt: string): string {
 }
 
 function formatGender(g: string): string {
-  return g.charAt(0) + g.slice(1).toLowerCase();
+  return g.charAt(0).toUpperCase() + g.slice(1).toLowerCase();
 }
 
 export function ClinicPatientFilesClient({
@@ -117,6 +119,7 @@ export function ClinicPatientFilesClient({
   patientName,
   patientPicture,
   patientAge,
+  patientDob,
   patientGender,
   patientBloodType,
   patientCaseNumber,
@@ -406,9 +409,9 @@ export function ClinicPatientFilesClient({
               )}
             </div>
             <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-              {patientAge != null && (
-                <span className="text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">
-                  {patientAge} yrs
+              {(patientDob || patientAge != null) && (
+                <span className="text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full font-medium">
+                  {patientDob ? (calculateDetailedAge(patientDob)?.toUpperCase() ?? `${patientAge} YEARS`) : `${patientAge} YEARS`}
                 </span>
               )}
               {patientGender && (

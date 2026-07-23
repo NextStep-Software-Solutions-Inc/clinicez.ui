@@ -83,6 +83,9 @@ export function NotificationBell() {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
+  const [limit, setLimit] = useState(50);
+  const [hasMore, setHasMore] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   // Ref for the polling interval
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -93,18 +96,20 @@ export function NotificationBell() {
   const readCount = notifications.filter((n) => n.isRead).length;
 
   // ── Fetch via server action ────────────────────────────────────────────────
-  const fetchNotifications = useCallback(async () => {
+  const fetchNotifications = useCallback(async (requestedLimit?: number) => {
     if (isFetchingRef.current) return;
     isFetchingRef.current = true;
+    const fetchLimit = requestedLimit ?? limit;
     try {
-      const result = await getNotificationsAction();
+      const result = await getNotificationsAction(fetchLimit);
       if (result.status && result.data) {
         setNotifications(result.data);
+        setHasMore(result.data.length >= fetchLimit);
       }
     } finally {
       isFetchingRef.current = false;
     }
-  }, []);
+  }, [limit]);
 
   // ── Bootstrap polling on mount ─────────────────────────────────────────────
   useEffect(() => {
@@ -173,6 +178,14 @@ export function NotificationBell() {
     await toggleMuteNotificationsAction(newMuted);
   };
 
+  const handleLoadMore = async () => {
+    const nextLimit = limit + 50;
+    setLimit(nextLimit);
+    setIsLoadingMore(true);
+    await fetchNotifications(nextLimit);
+    setIsLoadingMore(false);
+  };
+
   const handleNotificationClick = async (notification: NotificationItem) => {
     if (!notification.isRead) {
       await handleMarkRead(notification.id);
@@ -229,88 +242,103 @@ export function NotificationBell() {
             <p className="text-xs opacity-70">No notifications yet.</p>
           </div>
         ) : (
-          <ul className="divide-y">
-            {notifications.map((notification) => (
-              <li
-                key={notification.id}
-                className={cn(
-                  "group flex cursor-pointer items-start gap-3 px-4 py-3 transition-colors hover:bg-muted/50",
-                  !notification.isRead && "bg-accent/5",
-                )}
-                onClick={() => handleNotificationClick(notification)}
-              >
-                {/* Icon */}
-                <span
-                  className="mt-0.5 shrink-0 text-lg leading-none"
-                  aria-hidden
+          <>
+            <ul className="divide-y">
+              {notifications.map((notification) => (
+                <li
+                  key={notification.id}
+                  className={cn(
+                    "group flex cursor-pointer items-start gap-3 px-4 py-3 transition-colors hover:bg-muted/50",
+                    !notification.isRead && "bg-accent/5",
+                  )}
+                  onClick={() => handleNotificationClick(notification)}
                 >
-                  {NOTIFICATION_ICONS[notification.type as NotificationType] ?? "🔔"}
-                </span>
-
-                {/* Content */}
-                <div className="min-w-0 flex-1">
-                  <p
-                    className={cn(
-                      "text-sm leading-snug",
-                      !notification.isRead
-                        ? "font-semibold text-foreground"
-                        : "text-foreground/80",
-                    )}
+                  {/* Icon */}
+                  <span
+                    className="mt-0.5 shrink-0 text-lg leading-none"
+                    aria-hidden
                   >
-                    {notification.title}
-                  </p>
-                  <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">
-                    {notification.message}
-                  </p>
-                  <p className="mt-1 text-[11px] text-muted-foreground/60">
-                    {formatDistanceToNow(new Date(notification.createdAt), {
-                      addSuffix: true,
-                    })}
-                  </p>
-                </div>
+                    {NOTIFICATION_ICONS[notification.type as NotificationType] ?? "🔔"}
+                  </span>
 
-                {/* Right-side actions */}
-                <div className="flex shrink-0 flex-col items-end gap-1">
-                  {!notification.isRead && (
-                    <span className="h-2 w-2 rounded-full bg-blue-500" />
-                  )}
-                  {notification.link && (
-                    <ExternalLink className="h-3 w-3 text-muted-foreground/50 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  )}
-                  <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                  {/* Content */}
+                  <div className="min-w-0 flex-1">
+                    <p
+                      className={cn(
+                        "text-sm leading-snug",
+                        !notification.isRead
+                          ? "font-semibold text-foreground"
+                          : "text-foreground/80",
+                      )}
+                    >
+                      {notification.title}
+                    </p>
+                    <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">
+                      {notification.message}
+                    </p>
+                    <p className="mt-1 text-[11px] text-muted-foreground/60">
+                      {formatDistanceToNow(new Date(notification.createdAt), {
+                        addSuffix: true,
+                      })}
+                    </p>
+                  </div>
+
+                  {/* Right-side actions */}
+                  <div className="flex shrink-0 flex-col items-end gap-1">
                     {!notification.isRead && (
+                      <span className="h-2 w-2 rounded-full bg-blue-500" />
+                    )}
+                    {notification.link && (
+                      <ExternalLink className="h-3 w-3 text-muted-foreground/50 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    )}
+                    <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                      {!notification.isRead && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-5 w-5"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleMarkRead(notification.id);
+                          }}
+                          aria-label="Mark as read"
+                          title="Mark as read"
+                        >
+                          <Check className="h-3 w-3" />
+                        </Button>
+                      )}
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-5 w-5"
+                        className="h-5 w-5 text-muted-foreground hover:text-destructive"
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleMarkRead(notification.id);
+                          handleDismiss(notification.id);
                         }}
-                        aria-label="Mark as read"
-                        title="Mark as read"
+                        aria-label="Dismiss notification"
+                        title="Dismiss"
                       >
-                        <Check className="h-3 w-3" />
+                        <X className="h-3 w-3" />
                       </Button>
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-5 w-5 text-muted-foreground hover:text-destructive"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDismiss(notification.id);
-                      }}
-                      aria-label="Dismiss notification"
-                      title="Dismiss"
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
+                    </div>
                   </div>
-                </div>
-              </li>
-            ))}
-          </ul>
+                </li>
+              ))}
+            </ul>
+            {hasMore && (
+              <div className="p-2 text-center border-t">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full h-8 text-xs text-muted-foreground hover:text-foreground"
+                  onClick={handleLoadMore}
+                  disabled={isLoadingMore}
+                >
+                  {isLoadingMore ? "Loading..." : "Load more notifications"}
+                </Button>
+              </div>
+            )}
+          </>
         )}
       </ScrollArea>
 

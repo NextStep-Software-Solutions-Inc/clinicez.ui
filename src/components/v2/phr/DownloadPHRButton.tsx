@@ -23,7 +23,7 @@ interface DownloadPHRButtonProps {
 }
 
 const DEFAULT_BUTTON_CLASS =
-  'flex items-center gap-1.5 md:gap-2 px-4 md:px-5 py-2.5 md:py-3 rounded-lg bg-gradient-to-br from-teal-600 to-cyan-500 text-white text-sm font-semibold hover:shadow-lg transition-all duration-300 hover:scale-105 shadow-lg'
+  'flex items-center justify-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold transition-all shadow-sm shrink-0'
 
 export function DownloadPHRButton({ printHref, patientName, label = 'Download PHR', className }: DownloadPHRButtonProps) {
   const [open, setOpen] = useState(false)
@@ -94,11 +94,12 @@ export function DownloadPHRButton({ printHref, patientName, label = 'Download PH
   return (
     <>
       <button
+        type="button"
         onClick={() => setOpen(true)}
         className={className ?? DEFAULT_BUTTON_CLASS}
       >
-        <Download className="w-4 h-4" />
-        <span className="hidden lg:inline">{label}</span>
+        <Download className="w-3.5 h-3.5 shrink-0" />
+        <span className="truncate">{label}</span>
       </button>
 
       {/* ── Section Selection ── */}

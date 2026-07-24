@@ -54,7 +54,7 @@ export const AllergenComboBox = ({value, onChange}: AllergenComboBoxProps) => {
           </Button>
         </FormControl>
       </PopoverTrigger>
-      <PopoverContent className=" p-0">
+      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
         <Command>
           <CommandInput placeholder="Search allergen..." onValueChange={setAllergenInput} />
           <CommandEmpty asChild>

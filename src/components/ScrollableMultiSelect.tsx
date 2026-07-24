@@ -201,7 +201,7 @@ export default function ScrollableMultiSelect({
         </Button>
       </PopoverTrigger>
       <PopoverContent
-        className="w-full p-0"
+        className="w-[--radix-popover-trigger-width] p-0"
         align="start"
         onWheel={(e) => {
           // Prevent wheel events from bubbling up to prevent issues with portals

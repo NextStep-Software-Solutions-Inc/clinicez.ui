@@ -48,7 +48,7 @@ export const ComboBox = ({value, onChange, options = []}: ComboBoxProps) => {
           </Button>
         </FormControl>
       </PopoverTrigger>
-      <PopoverContent className=" p-0">
+      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
         <Command>
           <CommandInput placeholder="Enter to search or create" onValueChange={setInputValue} />
           <ConditionalRender condition={inputValue?.length > 0}>

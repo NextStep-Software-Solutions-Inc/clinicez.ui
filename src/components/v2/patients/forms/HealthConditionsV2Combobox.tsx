@@ -1,13 +1,12 @@
 'use client'
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Check, ChevronsUpDown, X, Loader2 } from 'lucide-react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Badge } from '@/components/ui/badge'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { getActionErrorMessage } from '@/lib/action-error'
@@ -42,6 +41,19 @@ export function HealthConditionsV2Combobox({
   const [topConditions, setTopConditions] = useState<HealthCondition[]>([])
   const [otherConditions, setOtherConditions] = useState<HealthCondition[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  // Close when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   // Fetch health conditions on mount
   useEffect(() => {
@@ -120,7 +132,7 @@ export function HealthConditionsV2Combobox({
   const hiddenCount = Math.max(0, value.length - maxDisplayBadges)
 
   return (
-    <div className="space-y-4">
+    <div ref={containerRef} className="space-y-4">
       {/* Selected Badges */}
       {value.length > 0 && (
         <div className="flex flex-wrap gap-2">
@@ -149,131 +161,136 @@ export function HealthConditionsV2Combobox({
       )}
 
       {/* Dropdown Selector */}
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <button
-            type="button"
-            role="combobox"
-            aria-expanded={open}
-            disabled={disabled}
-            className="w-full flex items-center justify-between px-3 h-9 text-xs border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 font-normal hover:bg-slate-50 dark:hover:bg-slate-900 rounded-md transition-all focus:ring-1 focus:ring-teal-500 outline-none text-slate-800 dark:text-slate-200"
-          >
-            <span>
-              {value.length === 0 ? 'Select conditions...' : `${value.length} condition(s) selected`}
-            </span>
-            <motion.div
-              animate={{ rotate: open ? 180 : 0 }}
-              transition={{ duration: 0.2 }}
-              className="text-slate-400 ml-2"
-            >
-              <ChevronsUpDown className="h-3.5 w-3.5 opacity-55" />
-            </motion.div>
-          </button>
-        </PopoverTrigger>
-
-        <PopoverContent
-          align="start"
-          sideOffset={4}
-          className="w-[--radix-popover-trigger-width] p-0 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-850 rounded-xl shadow-xl overflow-hidden z-[100]"
+      <div className="relative">
+        <button
+          type="button"
+          role="combobox"
+          aria-expanded={open}
+          disabled={disabled}
+          onClick={() => setOpen(!open)}
+          className="w-full flex items-center justify-between px-3 h-9 text-xs border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 font-normal hover:bg-slate-50 dark:hover:bg-slate-900 rounded-md transition-all focus:ring-1 focus:ring-teal-500 outline-none text-slate-800 dark:text-slate-200"
         >
-          <div className="p-2 border-b border-slate-100 dark:border-slate-850 bg-slate-50/50 dark:bg-slate-900/10">
-            <Input
-              placeholder="Search health conditions..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="h-8 text-xs bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 focus:border-teal-500 focus:ring-teal-500"
-              autoFocus
-            />
-          </div>
+          <span>
+            {value.length === 0 ? 'Select conditions...' : `${value.length} condition(s) selected`}
+          </span>
+          <motion.div
+            animate={{ rotate: open ? 180 : 0 }}
+            transition={{ duration: 0.2 }}
+            className="text-slate-405 ml-2"
+          >
+            <ChevronsUpDown className="h-3.5 w-3.5 opacity-55" />
+          </motion.div>
+        </button>
 
-          <div className="max-h-[260px] overflow-y-auto p-1.5 space-y-1 text-xs">
-            {isLoading ? (
-              <div className="flex items-center justify-center py-6 text-slate-500 dark:text-slate-450">
-                <Loader2 className="h-4 w-4 animate-spin mr-2 text-teal-500" />
-                <span>Loading conditions...</span>
+        <AnimatePresence>
+          {open && (
+            <motion.div
+              initial={{ opacity: 0, y: 4, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 4, scale: 0.98 }}
+              transition={{ duration: 0.15, ease: 'easeOut' }}
+              className="absolute z-50 w-full mt-1.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-850 rounded-xl shadow-xl overflow-hidden"
+            >
+              <div className="p-2 border-b border-slate-100 dark:border-slate-850 bg-slate-50/50 dark:bg-slate-900/10">
+                <Input
+                  placeholder="Search health conditions..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="h-8 text-xs bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 focus:border-teal-500 focus:ring-teal-500"
+                  autoFocus
+                />
               </div>
-            ) : filteredTopConditions.length === 0 && filteredOtherConditions.length === 0 ? (
-              <div className="text-center py-6 text-slate-500 dark:text-slate-400">
-                No matching conditions found
-              </div>
-            ) : (
-              <>
-                {/* Frequently Used Section */}
-                {filteredTopConditions.length > 0 && (
-                  <div className="space-y-0.5">
-                    <div className="px-2.5 py-1 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-                      Frequently Used
-                    </div>
-                    {filteredTopConditions.map((condition) => {
-                      const isSelected = value.some((c) => c.conditionId === condition.id)
-                      return (
-                        <button
-                          key={condition.id}
-                          type="button"
-                          onClick={() => toggleCondition(condition.id)}
-                          className={cn(
-                            "w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-left hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors",
-                            isSelected && "bg-teal-50/20 dark:bg-teal-950/10"
-                          )}
-                        >
-                          <Checkbox
-                            checked={isSelected}
-                            onCheckedChange={() => toggleCondition(condition.id)}
-                            className="border-slate-300 dark:border-slate-700 data-[state=checked]:bg-teal-600 data-[state=checked]:border-teal-600"
-                          />
-                          <span className={cn("flex-1", isSelected && "font-semibold text-teal-600 dark:text-teal-400")}>
-                            {condition.name}
-                          </span>
-                          {condition.usageCount && condition.usageCount > 0 && (
-                            <span className="text-[10px] text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-900 px-1.5 py-0.5 rounded-full font-bold">
-                              {condition.usageCount}
-                            </span>
-                          )}
-                        </button>
-                      )
-                    })}
+
+              <div className="max-h-[260px] overflow-y-auto p-1.5 space-y-1 text-xs">
+                {isLoading ? (
+                  <div className="flex items-center justify-center py-6 text-slate-500 dark:text-slate-450">
+                    <Loader2 className="h-4 w-4 animate-spin mr-2 text-teal-500" />
+                    <span>Loading conditions...</span>
                   </div>
-                )}
-
-                {/* Other Conditions Section */}
-                {filteredOtherConditions.length > 0 && (
-                  <div className="space-y-0.5 pt-1">
+                ) : filteredTopConditions.length === 0 && filteredOtherConditions.length === 0 ? (
+                  <div className="text-center py-6 text-slate-500 dark:text-slate-400">
+                    No matching conditions found
+                  </div>
+                ) : (
+                  <>
+                    {/* Frequently Used Section */}
                     {filteredTopConditions.length > 0 && (
-                      <div className="my-1.5 border-t border-slate-100 dark:border-slate-850" />
+                      <div className="space-y-0.5">
+                        <div className="px-2.5 py-1 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                          Frequently Used
+                        </div>
+                        {filteredTopConditions.map((condition) => {
+                          const isSelected = value.some((c) => c.conditionId === condition.id)
+                          return (
+                            <button
+                              key={condition.id}
+                              type="button"
+                              onClick={() => toggleCondition(condition.id)}
+                              className={cn(
+                                "w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-left hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors",
+                                isSelected && "bg-teal-50/20 dark:bg-teal-950/10"
+                              )}
+                            >
+                              <Checkbox
+                                checked={isSelected}
+                                onCheckedChange={() => toggleCondition(condition.id)}
+                                className="border-slate-300 dark:border-slate-700 data-[state=checked]:bg-teal-600 data-[state=checked]:border-teal-600"
+                              />
+                              <span className={cn("flex-1", isSelected && "font-semibold text-teal-600 dark:text-teal-400")}>
+                                {condition.name}
+                              </span>
+                              {condition.usageCount && condition.usageCount > 0 && (
+                                <span className="text-[10px] text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-900 px-1.5 py-0.5 rounded-full font-bold">
+                                  {condition.usageCount}
+                                </span>
+                              )}
+                            </button>
+                          )
+                        })}
+                      </div>
                     )}
-                    <div className="px-2.5 py-1 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-                      Other Conditions
-                    </div>
-                    {filteredOtherConditions.map((condition) => {
-                      const isSelected = value.some((c) => c.conditionId === condition.id)
-                      return (
-                        <button
-                          key={condition.id}
-                          type="button"
-                          onClick={() => toggleCondition(condition.id)}
-                          className={cn(
-                            "w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-left hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors",
-                            isSelected && "bg-teal-50/20 dark:bg-teal-950/10"
-                          )}
-                        >
-                          <Checkbox
-                            checked={isSelected}
-                            onCheckedChange={() => toggleCondition(condition.id)}
-                            className="border-slate-300 dark:border-slate-700 data-[state=checked]:bg-teal-600 data-[state=checked]:border-teal-600"
-                          />
-                          <span className={cn("flex-1", isSelected && "font-semibold text-teal-600 dark:text-teal-400")}>
-                            {condition.name}
-                          </span>
-                        </button>
-                      )
-                    })}
-                  </div>
+
+                    {/* Other Conditions Section */}
+                    {filteredOtherConditions.length > 0 && (
+                      <div className="space-y-0.5 pt-1">
+                        {filteredTopConditions.length > 0 && (
+                          <div className="my-1.5 border-t border-slate-100 dark:border-slate-850" />
+                        )}
+                        <div className="px-2.5 py-1 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                          Other Conditions
+                        </div>
+                        {filteredOtherConditions.map((condition) => {
+                          const isSelected = value.some((c) => c.conditionId === condition.id)
+                          return (
+                            <button
+                              key={condition.id}
+                              type="button"
+                              onClick={() => toggleCondition(condition.id)}
+                              className={cn(
+                                "w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-left hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors",
+                                isSelected && "bg-teal-50/20 dark:bg-teal-950/10"
+                              )}
+                            >
+                              <Checkbox
+                                checked={isSelected}
+                                onCheckedChange={() => toggleCondition(condition.id)}
+                                className="border-slate-300 dark:border-slate-700 data-[state=checked]:bg-teal-600 data-[state=checked]:border-teal-600"
+                              />
+                              <span className={cn("flex-1", isSelected && "font-semibold text-teal-600 dark:text-teal-400")}>
+                                {condition.name}
+                              </span>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </>
                 )}
-              </>
-            )}
-          </div>
-        </PopoverContent>
-      </Popover>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
 
       {/* Details Fields for Selected Conditions */}
       {value.length > 0 && (

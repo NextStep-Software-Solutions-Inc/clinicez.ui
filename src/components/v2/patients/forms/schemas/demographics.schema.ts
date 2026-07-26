@@ -7,13 +7,32 @@ export const demographicsSchema = z.object({
   lastName: z.string().min(1, 'Last name is required'),
   suffix: z.string().optional().nullable(),
   nickname: z.string().optional().nullable(),
-  dob: z.string().min(1, 'Date of birth is required'),
+  dob: z
+    .union([z.string(), z.date()])
+    .optional()
+    .nullable()
+    .refine(
+      (val) =>
+        val !== null &&
+        val !== undefined &&
+        val !== '' &&
+        (val instanceof Date || (typeof val === 'string' && val.trim().length > 0)),
+      { message: 'Date of birth is required' }
+    ),
   gender: z.string().min(1, 'Gender is required'),
   bloodType: z.string().optional().nullable(),
   civilStatus: z.string().optional().nullable(),
   placeOfBirth: z.string().optional().nullable(),
   nationality: z.string().optional().nullable(),
   religion: z.string().optional().nullable(),
+  mobile: z
+    .string()
+    .optional()
+    .nullable()
+    .transform((val) => (val ? unmaskDigits(val) : ''))
+    .refine((val) => val.length === 0 || val.length === 11, {
+      message: 'Mobile number must be 11 digits (e.g. 0917-123-4567)',
+    }),
   mobileNo: z
     .string()
     .optional()

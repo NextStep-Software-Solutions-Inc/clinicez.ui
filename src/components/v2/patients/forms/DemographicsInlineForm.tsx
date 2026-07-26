@@ -6,6 +6,7 @@ import { getActionErrorMessage } from '@/lib/action-error'
 import { demographicsSchema as schemaVal } from './schemas/demographics.schema'
 import { type DemographicsFormInput } from '@/schemas/demographics-schema'
 import { formatMobileNumber, unmaskDigits } from './schemas/mask-utils'
+import { normalizeDobToUtcNoon } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { toast } from 'sonner'
@@ -58,7 +59,7 @@ export function DemographicsInlineForm({
       middleName: formData.middleName || null,
       suffix: formData.suffix || null,
       nickname: formData.nickname || null,
-      dob: formData.dob ? new Date(formData.dob) : null,
+      dob: formData.dob ? normalizeDobToUtcNoon(formData.dob) : null,
       mobile: formData.mobile || null,
       telephone: formData.telephone || null,
       placeOfBirth: formData.placeOfBirth || null,

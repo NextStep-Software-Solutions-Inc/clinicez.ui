@@ -42,11 +42,15 @@ export const demographicsSchema = z.object({
     .nullable(),
 
   dob: z
-    .date()
-    .max(new Date(), "Date of birth must be today or earlier")
-    .refine(
-      (dob) => validateAge(dob),
-      "Age must be between 0 and 120 years"
+    .preprocess(
+      (val) => (val ? new Date(val as any) : val),
+      z
+        .date()
+        .refine((d) => d <= new Date(), "Date of birth must be today or earlier")
+        .refine(
+          (dob) => validateAge(dob),
+          "Age must be between 0 and 120 years"
+        )
     )
     .optional()
     .nullable(),

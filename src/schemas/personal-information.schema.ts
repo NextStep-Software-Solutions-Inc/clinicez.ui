@@ -51,11 +51,14 @@ export const personalInformationFormSchema = z.object({
   civilStatus: z.nativeEnum(CivilStatus, {
     required_error: "Please select your civil status."
   }),
-  dob: z.date({
-    required_error: "A date of birth is required.",
-  }).refine(date => date <= startOfToday(), {
-    message: "Date of birth cannot be in the future.",
-  }),
+  dob: z
+    .preprocess(
+      (val) => (typeof val === "string" || val instanceof Date ? new Date(val) : val),
+      z.date({ required_error: "A date of birth is required." })
+    )
+    .refine((date) => date <= startOfToday(), {
+      message: "Date of birth cannot be in the future.",
+    }),
   placeOfBirth: z.string({
     message: "Where were you born?"
   }).optional()

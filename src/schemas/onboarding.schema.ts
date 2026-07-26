@@ -18,7 +18,10 @@ export const onboardingBasicInfoSchema = z.object({
       message: "Last name must not be empty.",
     }),
   dob: z
-    .date({ required_error: "Date of birth is required." })
+    .preprocess(
+      (val) => (typeof val === "string" || val instanceof Date ? new Date(val) : val),
+      z.date({ required_error: "Date of birth is required." })
+    )
     .refine((date) => date <= startOfToday(), {
       message: "Date of birth cannot be in the future.",
     }),

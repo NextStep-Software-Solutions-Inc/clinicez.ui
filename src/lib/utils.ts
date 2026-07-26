@@ -213,3 +213,22 @@ export function kilogramsToPounds(kg: number | string): number {
   const pounds = kgValue * 2.20462;
   return parseFloat(pounds.toFixed(2));
 }
+
+/**
+ * Normalizes a Date or date string to a UTC Date object set to 12:00:00 (noon) UTC.
+ * Persisting dates at 12:00 UTC prevents timezone offset shifts (e.g. UTC+8 or UTC-5)
+ * from rolling the calendar day back or forward when saving to PostgreSQL @db.Date.
+ */
+export function normalizeDobToUtcNoon(dob: Date | string | null | undefined): Date | null {
+  if (!dob) return null;
+  if (typeof dob === 'string') {
+    const match = dob.trim().match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (match) {
+      const [, y, m, d] = match;
+      return new Date(Date.UTC(parseInt(y, 10), parseInt(m, 10) - 1, parseInt(d, 10), 12, 0, 0));
+    }
+  }
+  const date = typeof dob === 'string' ? new Date(dob) : dob;
+  if (isNaN(date.getTime())) return null;
+  return new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0));
+}

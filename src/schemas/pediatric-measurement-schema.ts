@@ -9,7 +9,7 @@ import { z } from "zod"
 export const pediatricMeasurementSchema = z.object({
   dateTaken: z
     .date()
-    .max(new Date(), "Measurement date must be today or earlier"),
+    .refine((d) => d <= new Date(), "Measurement date must be today or earlier"),
 
   length: z
     .coerce.number()

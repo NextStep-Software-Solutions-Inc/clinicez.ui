@@ -5,6 +5,7 @@ import { sessionCheck } from "@/lib/auth";
 import { withErrorHandling } from "@/lib/with-error-handling";
 import { createFieldChangeLogs } from "@/actions/audit.action";
 import { diffFields } from "@/lib/audit-utils";
+import { normalizeDobToUtcNoon } from "@lib/utils";
 import {
   onboardingBasicInfoSchema,
   type OnboardingBasicInfoValues,
@@ -60,12 +61,14 @@ export const completeBasicOnboardingAction = withErrorHandling(
       where: { userId: session.user.sub },
     });
 
+    const normalizedDob = normalizeDobToUtcNoon(parsed.dob);
+
     const updatedUser = await prisma.user.update({
       where: { id: user.id },
       data: {
         firstName: parsed.firstName,
         lastName: parsed.lastName,
-        dob: parsed.dob,
+        dob: normalizedDob,
         gender: parsed.gender,
         mobile: parsed.mobile,
         onboardingStatus: "COMPLETED",

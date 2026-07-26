@@ -15,6 +15,7 @@ import {
 } from '@/lib/permissions'
 import { UserRole } from '@/types/edit-permissions'
 import { logAudit, AuditAction, AuditEntityType, trackChanges } from '@/lib/audit-logger'
+import { normalizeDobToUtcNoon } from '@/lib/utils'
 
 export interface UpdateDemographicsResponse {
   success: boolean
@@ -136,7 +137,7 @@ export async function updateDemographics(
         middleName: dataToUpdate.middleName !== undefined ? dataToUpdate.middleName : undefined,
         suffix: dataToUpdate.suffix !== undefined ? dataToUpdate.suffix : undefined,
         nickname: dataToUpdate.nickname !== undefined ? dataToUpdate.nickname : undefined,
-        dob: dataToUpdate.dob !== undefined ? dataToUpdate.dob : undefined,
+        dob: dataToUpdate.dob !== undefined ? (dataToUpdate.dob ? normalizeDobToUtcNoon(dataToUpdate.dob) : null) : undefined,
         gender: dataToUpdate.gender !== undefined ? dataToUpdate.gender : undefined,
         bloodType: dataToUpdate.bloodType !== undefined ? dataToUpdate.bloodType : undefined,
         civilStatus: dataToUpdate.civilStatus !== undefined ? dataToUpdate.civilStatus : undefined,

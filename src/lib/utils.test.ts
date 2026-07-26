@@ -65,3 +65,33 @@ describe('calculateAge', () => {
     expect(age).toBeLessThan(0);
   });
 });
+
+describe('normalizeDobToUtcNoon', () => {
+  it('should return null for null or undefined input', () => {
+    const { normalizeDobToUtcNoon } = require('./utils');
+    expect(normalizeDobToUtcNoon(null)).toBe(null);
+    expect(normalizeDobToUtcNoon(undefined)).toBe(null);
+  });
+
+  it('should normalize a date string YYYY-MM-DD to 12:00:00 UTC', () => {
+    const { normalizeDobToUtcNoon } = require('./utils');
+    const result = normalizeDobToUtcNoon('1995-07-24');
+    expect(result).not.toBe(null);
+    expect(result?.getUTCFullYear()).toBe(1995);
+    expect(result?.getUTCMonth()).toBe(6); // 0-indexed July
+    expect(result?.getUTCDate()).toBe(24);
+    expect(result?.getUTCHours()).toBe(12);
+  });
+
+  it('should normalize a Date object to 12:00:00 UTC with preserved day', () => {
+    const { normalizeDobToUtcNoon } = require('./utils');
+    const localDate = new Date(1995, 6, 24); // July 24
+    const result = normalizeDobToUtcNoon(localDate);
+    expect(result).not.toBe(null);
+    expect(result?.getUTCFullYear()).toBe(1995);
+    expect(result?.getUTCMonth()).toBe(6);
+    expect(result?.getUTCDate()).toBe(24);
+    expect(result?.getUTCHours()).toBe(12);
+  });
+});
+

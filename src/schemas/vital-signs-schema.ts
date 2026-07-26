@@ -9,7 +9,7 @@ export const vitalSignSchema = z
   .object({
     dateTaken: z
       .date()
-      .max(new Date(), "Vital sign date must be today or earlier"),
+      .refine((d) => d <= new Date(), "Vital sign date must be today or earlier"),
 
     height: z
       .number()

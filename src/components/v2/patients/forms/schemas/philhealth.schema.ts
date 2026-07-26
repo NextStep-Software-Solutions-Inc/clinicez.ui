@@ -29,7 +29,7 @@ export const dependentSchema = z.object({
   lastName: z.string().min(1, 'Last Name is required'),
   relationship: z.string().optional(),
   gender: z.string().optional(),
-  dob: z.string().optional(),
+  dob: z.union([z.string(), z.date()]).optional().nullable(),
 });
 
 export type PhilHealthSchemaInput = z.infer<typeof philHealthSchema>;

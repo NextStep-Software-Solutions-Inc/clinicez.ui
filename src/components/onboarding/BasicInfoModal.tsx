@@ -37,7 +37,7 @@ import {
   type OnboardingBasicInfoValues,
 } from "@/schemas/onboarding.schema";
 import { completeBasicOnboardingAction } from "@/actions/onboarding/user-onboarding.action";
-import { capitalize } from "@lib/utils";
+import { capitalize, normalizeDobToUtcNoon } from "@lib/utils";
 
 interface BasicInfoModalProps {
   firstName: string | null;
@@ -73,7 +73,11 @@ export default function BasicInfoModal({
     async (values: OnboardingBasicInfoValues) => {
       setIsLoading(true);
       try {
-        const result = await completeBasicOnboardingAction(values);
+        const payload = {
+          ...values,
+          dob: normalizeDobToUtcNoon(values.dob) as Date,
+        };
+        const result = await completeBasicOnboardingAction(payload);
         if (result.status) {
           toast.success("Your profile is all set!");
           router.refresh();

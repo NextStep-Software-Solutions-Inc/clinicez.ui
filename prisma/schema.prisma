@@ -173,6 +173,7 @@ model PhilHealthRecord {
   id                    Int                   @id @default(autoincrement())
   userId                Int
   pin                   String                @unique
+  principalMemberPin    String?
   dependentPin          String?
   tin                   String?               @unique
   philSysId             String?               @unique

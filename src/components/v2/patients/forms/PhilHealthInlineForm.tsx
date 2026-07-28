@@ -19,6 +19,7 @@ export interface PhilHealthInlineFormProps {
   currentData?: {
     id?: number
     pin: string
+    dependentPin?: string
     tin?: string
     philSysId?: string
     memberType: 'MM' | 'DD'
@@ -40,6 +41,7 @@ export function PhilHealthInlineForm({
   const initialFormValues = useMemo(() => {
     return {
       pin: currentData?.pin || '',
+      dependentPin: currentData?.dependentPin || '',
       tin: currentData?.tin || '',
       philSysId: currentData?.philSysId || '',
       memberType: currentData?.memberType || 'MM',
@@ -148,6 +150,7 @@ export function PhilHealthInlineForm({
     // Clean data format before validation
     const parsedData: any = {
       pin: formData.pin,
+      dependentPin: formData.dependentPin || null,
       memberType: formData.memberType || 'MM',
       tin: formData.tin || null,
       philSysId: formData.philSysId || null,

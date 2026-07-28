@@ -164,6 +164,7 @@ export default function ClinicPatientProfileClient({
     if (!record) return undefined
     return {
       pin: record.pin,
+      dependentPin: (record as any).dependentPin || undefined,
       tin: record.tin || undefined,
       philSysId: record.philSysId || undefined,
       memberType: ((record as any).memberType as 'MM' | 'DD') || 'MM',
@@ -399,47 +400,59 @@ export default function ClinicPatientProfileClient({
                   <div className="space-y-6">
                     {patientData.philHealthRecords.length > 0 ? (
                       patientData.philHealthRecords.map((record) => (
-                        <div key={record.id} className="space-y-6">
-                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-3 gap-y-2 py-1">
-                            <ViewCell label="PIN (PhilHealth ID)" value={formatPhilHealthPin(record.pin)} className="text-indigo-600 dark:text-indigo-400 font-bold font-mono" />
+                        <div key={record.id} className="space-y-6">                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-3 gap-y-2 py-1">
+                            <ViewCell
+                              label={((record as any).memberType) === 'DD' ? 'Principal Member PIN' : 'PIN (PhilHealth ID)'}
+                              value={formatPhilHealthPin(record.pin)}
+                              className="text-indigo-600 dark:text-indigo-400 font-bold font-mono"
+                            />
+                            {((record as any).memberType) === 'DD' && (
+                              <ViewCell
+                                label="Patient PIN (Dependent PIN)"
+                                value={formatPhilHealthPin((record as any).dependentPin)}
+                                className="text-indigo-600 dark:text-indigo-400 font-bold font-mono"
+                              />
+                            )}
                             <ViewCell label="Member Type" value={((record as any).memberType) === 'MM' ? 'Formal Member (MM)' : ((record as any).memberType) === 'DD' ? 'Dependent (DD)' : (record as any).memberType || '—'} />
                             <ViewCell label="PhilSys ID" value={formatPhilSysId(record.philSysId)} className="font-mono" />
                             <ViewCell label="TIN" value={formatTin(record.tin)} className="font-mono" />
                             <ViewCell label="Yakap Enlistment" value={patientData.yakapEnlistment ? 'Enlisted' : 'Not Enlisted'} />
                           </div>
 
-                          {/* Dependents list */}
-                          {record.PhilHealthDependents && record.PhilHealthDependents.length > 0 ? (
-                            <div className="space-y-3 pt-4 border-t border-slate-100 dark:border-slate-800">
-                              <h4 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-                                Registered PhilHealth Dependents ({record.PhilHealthDependents.length})
-                              </h4>
-                              <div className="overflow-x-auto rounded-xl border border-slate-200/80 dark:border-slate-800">
-                                <table className="min-w-full text-xs text-left">
-                                  <thead className="bg-slate-50 dark:bg-slate-900 font-bold text-slate-500 uppercase">
-                                    <tr>
-                                      <th className="px-3.5 py-2.5">Full Name</th>
-                                      <th className="px-3.5 py-2.5">Relationship</th>
-                                      <th className="px-3.5 py-2.5">Gender</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-slate-700 dark:text-slate-300">
-                                    {record.PhilHealthDependents.map((dep) => (
-                                      <tr key={dep.id}>
-                                        <td className="px-3.5 py-2.5 font-bold">{dep.firstName} {dep.lastName}</td>
-                                        <td className="px-3.5 py-2.5 capitalize">{dep.relationship ? dep.relationship.toLowerCase() : '—'}</td>
-                                        <td className="px-3.5 py-2.5 capitalize">{dep.gender ? dep.gender.toLowerCase() : '—'}</td>
+                          {/* Dependents list (Only for Principal Members MM) */}
+                          {((record as any).memberType || 'MM') === 'MM' && (
+                            record.PhilHealthDependents && record.PhilHealthDependents.length > 0 ? (
+                              <div className="space-y-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+                                <h4 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                                  Registered PhilHealth Dependents ({record.PhilHealthDependents.length})
+                                </h4>
+                                <div className="overflow-x-auto rounded-xl border border-slate-200/80 dark:border-slate-800">
+                                  <table className="min-w-full text-xs text-left">
+                                    <thead className="bg-slate-50 dark:bg-slate-900 font-bold text-slate-500 uppercase">
+                                      <tr>
+                                        <th className="px-3.5 py-2.5">Full Name</th>
+                                        <th className="px-3.5 py-2.5">Relationship</th>
+                                        <th className="px-3.5 py-2.5">Gender</th>
                                       </tr>
-                                    ))}
-                                  </tbody>
-                                </table>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-slate-700 dark:text-slate-300">
+                                      {record.PhilHealthDependents.map((dep) => (
+                                        <tr key={dep.id}>
+                                          <td className="px-3.5 py-2.5 font-bold">{dep.firstName} {dep.lastName}</td>
+                                          <td className="px-3.5 py-2.5 capitalize">{dep.relationship ? dep.relationship.toLowerCase() : '—'}</td>
+                                          <td className="px-3.5 py-2.5 capitalize">{dep.gender ? dep.gender.toLowerCase() : '—'}</td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
                               </div>
-                            </div>
-                          ) : (
-                            <div className="pt-2 text-xs text-slate-500 dark:text-slate-400 italic">
-                              No registered dependents on file.
-                            </div>
-                          )}
+                            ) : (
+                              <div className="pt-2 text-xs text-slate-500 dark:text-slate-400 italic">
+                                No registered dependents on file.
+                              </div>
+                            )
+                          )}      )}
                         </div>
                       ))
                     ) : (

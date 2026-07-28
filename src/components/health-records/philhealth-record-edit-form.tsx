@@ -360,7 +360,7 @@ export function PhilHealthRecordEditForm({
                 <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-muted-foreground">
                   <div>
                     <span className="font-medium text-foreground">PIN:</span>{" "}
-                    <span className="font-mono text-foreground font-semibold">{principalInfo.pin}</span>
+                    <span className="font-mono text-foreground font-semibold">{formatPhilHealthPIN(principalInfo.pin)}</span>
                   </div>
                   <div>
                     <span className="font-medium text-foreground">Date of Birth:</span>{" "}

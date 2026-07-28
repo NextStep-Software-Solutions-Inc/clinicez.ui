@@ -68,6 +68,7 @@ import {
 	getPrincipalMemberByPinAction,
 	type PrincipalMemberInfo,
 } from "@/actions/clinics/konsulta-report.action";
+import { formatPhilHealthPin } from "@/components/v2/patients/forms/schemas/mask-utils";
 import {
     extractGeneratedKonsultaBatchDeficiencies,
     type StructuredKonsultaBatchDeficiency,
@@ -1156,7 +1157,7 @@ function PatientsPanel({ clinicUid }: { clinicUid: string }) {
 										<div className="grid grid-cols-2 gap-x-4 gap-y-1 text-muted-foreground">
 											<div>
 												<span className="font-medium text-foreground">PIN:</span>{" "}
-												<span className="font-mono text-foreground font-semibold">{principalMemberInfo.pin}</span>
+												<span className="font-mono text-foreground font-semibold">{formatPhilHealthPin(principalMemberInfo.pin)}</span>
 											</div>
 											<div>
 												<span className="font-medium text-foreground">Date of Birth:</span>{" "}

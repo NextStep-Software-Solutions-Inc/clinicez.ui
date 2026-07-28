@@ -366,7 +366,7 @@ export function PhilHealthInlineForm({
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-x-3 gap-y-1 text-slate-600 dark:text-slate-400">
                 <div>
                   <span className="font-medium text-slate-900 dark:text-slate-200 block text-[10px] uppercase">PIN</span>
-                  <span className="font-mono text-slate-900 dark:text-slate-100 font-semibold">{principalInfo.pin}</span>
+                  <span className="font-mono text-slate-900 dark:text-slate-100 font-semibold">{formatPhilHealthPin(principalInfo.pin)}</span>
                 </div>
                 <div>
                   <span className="font-medium text-slate-900 dark:text-slate-200 block text-[10px] uppercase">DOB</span>
@@ -392,7 +392,7 @@ export function PhilHealthInlineForm({
             </div>
           ) : (
             <div className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-950/30 dark:text-amber-400 p-2.5 rounded border border-amber-200 dark:border-amber-800">
-              No principal member record found in system matching PIN <span className="font-mono font-semibold">{formData.pin || '—'}</span>. Enter the Principal Member's details during clinic enlistment.
+              No principal member record found in system matching PIN <span className="font-mono font-semibold">{formatPhilHealthPin(formData.pin) || '—'}</span>. Enter the Principal Member's details during clinic enlistment.
             </div>
           )}
         </div>

@@ -445,10 +445,13 @@ export const enrollPatientPhilHealthAction = withErrorHandling(
     }: UpsertKonsultaPatientEnrollmentPayload) => {
         const session = await getCachedSession();
         if (!session) throw new Error("Unauthorized");
-        if (patientType !== "MM" && patientType !== "DD")
-            throw new Error("Patient type must be Member or Dependent.");
-        if (patientType === "DD" && (!memberPin || !memberPin.trim())) {
-            throw new Error("A linked Principal Member PIN is required for Dependent records.");
+        if (patientType === "DD") {
+            if (!memberPin || !memberPin.trim()) {
+                throw new Error("A linked Principal Member PIN is required for Dependent records.");
+            }
+            if (memberPin.trim() === pin.trim()) {
+                throw new Error("Principal Member PIN and Dependent/Patient PIN cannot be the same.");
+            }
         }
 
         const clinicId = await resolveClinicId(clinicUid);

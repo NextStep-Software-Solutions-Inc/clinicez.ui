@@ -111,6 +111,13 @@ export function PhilHealthInlineForm({
       throw new Error('PIN is required')
     }
 
+    if (formData.memberType === 'DD' && formData.pin?.trim() && formData.dependentPin?.trim()) {
+      if (formData.pin.trim() === formData.dependentPin.trim()) {
+        toast.error('Principal Member PIN and Dependent/Patient PIN cannot be the same.')
+        throw new Error('Principal Member PIN and Dependent PIN cannot be identical.')
+      }
+    }
+
     // Clean data format before validation
     const parsedData: any = {
       pin: formData.pin,

@@ -164,10 +164,10 @@ export default function ClinicPatientProfileClient({
     if (!record) return undefined
     return {
       pin: record.pin,
-      principalMemberPin: (record as any).principalMemberPin || (record as any).dependentPin || undefined,
+      principalMemberPin: record.principalMemberPin || undefined,
       tin: record.tin || undefined,
       philSysId: record.philSysId || undefined,
-      memberType: ((record as any).memberType as 'MM' | 'DD') || 'MM',
+      memberType: (record.memberType as 'MM' | 'DD') || 'MM',
       photoUrl: record.photoUrl || undefined,
       dependents: record.PhilHealthDependents || [],
       id: record.id,
@@ -402,25 +402,25 @@ export default function ClinicPatientProfileClient({
                       patientData.philHealthRecords.map((record) => (
                         <div key={record.id} className="space-y-6">                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-3 gap-y-2 py-1">
                             <ViewCell
-                              label={((record as any).memberType) === 'DD' ? 'Patient PIN (Dependent PIN)' : 'PIN (PhilHealth ID)'}
+                              label={record.memberType === 'DD' ? 'Patient PIN (Dependent PIN)' : 'PIN (PhilHealth ID)'}
                               value={formatPhilHealthPin(record.pin)}
                               className="text-indigo-600 dark:text-indigo-400 font-bold font-mono"
                             />
-                            {((record as any).memberType) === 'DD' && (
+                            {record.memberType === 'DD' && (
                               <ViewCell
                                 label="Principal Member PIN"
-                                value={formatPhilHealthPin((record as any).principalMemberPin || (record as any).dependentPin)}
+                                value={formatPhilHealthPin(record.principalMemberPin)}
                                 className="text-indigo-600 dark:text-indigo-400 font-bold font-mono"
                               />
                             )}
-                            <ViewCell label="Member Type" value={((record as any).memberType) === 'MM' ? 'Formal Member (MM)' : ((record as any).memberType) === 'DD' ? 'Dependent (DD)' : (record as any).memberType || '—'} />
+                            <ViewCell label="Member Type" value={record.memberType === 'MM' ? 'Formal Member (MM)' : record.memberType === 'DD' ? 'Dependent (DD)' : record.memberType || '—'} />
                             <ViewCell label="PhilSys ID" value={formatPhilSysId(record.philSysId)} className="font-mono" />
                             <ViewCell label="TIN" value={formatTin(record.tin)} className="font-mono" />
                             <ViewCell label="Yakap Enlistment" value={patientData.yakapEnlistment ? 'Enlisted' : 'Not Enlisted'} />
                           </div>
 
                           {/* Dependents list (Only for Principal Members MM) */}
-                          {((record as any).memberType || 'MM') === 'MM' && (
+                          {record.memberType === 'MM' && (
                             record.PhilHealthDependents && record.PhilHealthDependents.length > 0 ? (
                               <div className="space-y-3 pt-4 border-t border-slate-100 dark:border-slate-800">
                                 <h4 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">

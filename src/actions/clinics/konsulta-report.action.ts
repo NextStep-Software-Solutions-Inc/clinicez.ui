@@ -566,6 +566,7 @@ export const enrollPatientPhilHealthAction = withErrorHandling(
                             await tx.user.create({
                                 data: {
                                     userId: `pm_${normMemberPin}_${Date.now()}`,
+                                    email: `pm_${normMemberPin}_${Date.now()}@placeholder.clinicez.internal`,
                                     firstName: principalMemberDetails.firstName.trim(),
                                     lastName: principalMemberDetails.lastName.trim(),
                                     middleName: principalMemberDetails.middleName?.trim() || null,

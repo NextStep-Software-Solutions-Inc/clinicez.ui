@@ -449,6 +449,9 @@ export const enrollPatientPhilHealthAction = withErrorHandling(
             if (!memberPin || !memberPin.trim()) {
                 throw new Error("A linked Principal Member PIN is required for Dependent records.");
             }
+            if (!pin || !pin.trim()) {
+                throw new Error("Patient PIN (Dependent PIN) is required for Dependent records.");
+            }
             if (memberPin.trim() === pin.trim()) {
                 throw new Error("Principal Member PIN and Dependent/Patient PIN cannot be the same.");
             }

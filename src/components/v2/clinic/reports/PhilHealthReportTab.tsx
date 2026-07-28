@@ -586,6 +586,10 @@ function PatientsPanel({ clinicUid }: { clinicUid: string }) {
 				toast.error("Principal Member PIN is required for dependent records.");
 				return;
 			}
+			if (!enrollForm.pin.trim()) {
+				toast.error("Patient PIN (Dependent PIN) is required for dependent records.");
+				return;
+			}
 			if (enrollForm.memberPin.trim() === enrollForm.pin.trim()) {
 				toast.error("Principal Member PIN and Dependent/Patient PIN cannot be the same.");
 				return;

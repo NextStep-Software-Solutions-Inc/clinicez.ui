@@ -67,17 +67,23 @@ export function PhilHealthInlineForm({
   // Lookup principal member info when memberType is Dependent and PIN is entered
   useEffect(() => {
     if (formData.memberType === 'DD' && formData.pin?.trim()) {
-      void getPrincipalMemberByPinAction(formData.pin.trim()).then((res) => {
+      void getPrincipalMemberByPinAction(formData.pin.trim(), userId).then((res) => {
         if (res.data) {
           setPrincipalInfo(res.data)
         } else {
           setPrincipalInfo(null)
+          if (res.message?.includes('cannot link to themselves')) {
+            setErrors((prev) => ({
+              ...prev,
+              pin: "Patient cannot link to themselves as the Principal Member. Please enter the Principal Member's PIN.",
+            }))
+          }
         }
       })
     } else {
       setPrincipalInfo(null)
     }
-  }, [formData.memberType, formData.pin])
+  }, [formData.memberType, formData.pin, userId])
 
   // Zod-powered real-time inline input validation
   useEffect(() => {

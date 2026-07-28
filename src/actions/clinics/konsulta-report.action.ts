@@ -1798,6 +1798,7 @@ export async function resolvePrincipalMembersByPins(pins: string[]): Promise<Map
     const records = await prisma.philHealthRecord.findMany({
         where: {
             pin: { in: uniquePins },
+            memberType: "MM",
             deletedAt: null,
         },
         include: {
@@ -1930,7 +1931,7 @@ export const searchPrincipalMemberAction = withErrorHandling(
 );
 
 export const getPrincipalMemberByPinAction = withErrorHandling(
-    async (pin: string): Promise<{ message: string; data: PrincipalMemberInfo | null }> => {
+    async (pin: string, excludeUserId?: string | number): Promise<{ message: string; data: PrincipalMemberInfo | null }> => {
         const session = await getCachedSession();
         if (!session) throw new Error("Unauthorized");
 
@@ -1943,6 +1944,13 @@ export const getPrincipalMemberByPinAction = withErrorHandling(
         if (!found) {
             return {
                 message: `No principal member found with PhilHealth PIN: ${normalizedPin}`,
+                data: null,
+            };
+        }
+
+        if (excludeUserId && found.userId && found.userId.toString() === excludeUserId.toString()) {
+            return {
+                message: `Patient cannot link to themselves as the Principal Member.`,
                 data: null,
             };
         }

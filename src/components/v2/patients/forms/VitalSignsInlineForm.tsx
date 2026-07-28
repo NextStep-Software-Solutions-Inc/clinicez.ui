@@ -8,10 +8,13 @@ import { vitalsSchema } from './schemas/vitals.schema'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { toast } from 'sonner'
+import { calculateAgeInMonths } from '@/lib/pediatric-growth-utils'
 
 export interface VitalSignsInlineFormProps {
   userId: string
   currentData?: Partial<VitalSignFormInput & { id?: number }>
+  patientDob?: Date | string | null
+  patientAgeMonths?: number | null
   onSuccess?: () => void
   saveRef?: React.MutableRefObject<{ submit: () => Promise<void>; hasChanges: boolean } | null>
   onDirtyChange?: (isDirty: boolean) => void
@@ -20,10 +23,21 @@ export interface VitalSignsInlineFormProps {
 export function VitalSignsInlineForm({
   userId,
   currentData = {},
+  patientDob,
+  patientAgeMonths: rawAgeMonths,
   onSuccess,
   saveRef,
   onDirtyChange,
 }: VitalSignsInlineFormProps) {
+  const ageMonths = useMemo(() => {
+    if (rawAgeMonths !== undefined && rawAgeMonths !== null) return rawAgeMonths;
+    if (!patientDob) return null;
+    const date = typeof patientDob === 'string' ? new Date(patientDob) : patientDob;
+    if (isNaN(date.getTime())) return null;
+    return calculateAgeInMonths(date);
+  }, [patientDob, rawAgeMonths]);
+
+  const isPediatric = ageMonths !== null && ageMonths <= 24;
   // Check if we are updating an existing vital sign record
   const isEditingExisting = !!currentData?.id
 
@@ -91,7 +105,30 @@ export function VitalSignsInlineForm({
       return
     }
 
-    // Check at least one vital sign value is provided
+    // Pediatric PEPERT required fields validation (0-24 months)
+    if (isPediatric) {
+      const requiredPediatricFields: { key: string; label: string }[] = [
+        { key: 'length', label: 'Length' },
+        { key: 'headCircumference', label: 'Head Circumference' },
+        { key: 'skinfoldThickness', label: 'Skinfold Thickness' },
+        { key: 'waistCircumference', label: 'Waist Circumference' },
+        { key: 'hipCircumference', label: 'Hip Circumference' },
+        { key: 'limbCircumference', label: 'Limb Circumference' },
+        { key: 'midUpperArmCircumference', label: 'Mid-Upper Arm Circumference (MUAC)' },
+      ]
+      const missingPediatric = requiredPediatricFields.filter(
+        (field) => formData[field.key] === null || formData[field.key] === undefined || String(formData[field.key]).trim() === ''
+      )
+      if (missingPediatric.length > 0) {
+        const fieldErrors: Record<string, string> = {}
+        missingPediatric.forEach((field) => {
+          fieldErrors[field.key] = `${field.label} is required for patients 0–24 months`
+        })
+        setErrors(fieldErrors)
+        toast.error(`Required pediatric fields missing (0–24 mos): ${missingPediatric.map(f => f.label).join(', ')}`)
+        throw new Error('Pediatric required fields missing')
+      }
+    }
     const measurementFields = [
       'height', 'weight', 'bpSystolic', 'bpDiastolic', 'pulseRate', 
       'temp', 'spo2', 'respRate', 'length', 'headCircumference',

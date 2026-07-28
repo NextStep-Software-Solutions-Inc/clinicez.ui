@@ -20,12 +20,12 @@ import type { PersonalHistoryFormInput, DemographicsFormInput } from '@/schemas'
  */
 
 export const PersonalHistoryDbSchema = z.object({
-    smokingStatus: z.enum(['NEVER', 'FORMER', 'CURRENT'] as const).nullable(),
+    smokingStatus: z.enum(['NEVER', 'FORMER', 'CURRENT', 'NOT_APPLICABLE'] as const).nullable(),
     numberOfPacksPerYear: z.number().nullable(),
-    alcoholStatus: z.enum(['NEVER', 'OCCASIONAL', 'REGULAR', 'HEAVY'] as const).nullable(),
+    alcoholStatus: z.enum(['NEVER', 'OCCASIONAL', 'REGULAR', 'HEAVY', 'NOT_APPLICABLE'] as const).nullable(),
     numberOfBottlesPerDay: z.number().nullable(),
-    illicitDrugUse: z.enum(['NEVER', 'FORMER', 'CURRENT'] as const).nullable(),
-    sexuallyActive: z.enum(['YES', 'NO', 'INACTIVE'] as const).nullable(),
+    illicitDrugUse: z.enum(['NEVER', 'FORMER', 'CURRENT', 'NOT_APPLICABLE'] as const).nullable(),
+    sexuallyActive: z.enum(['YES', 'NO', 'INACTIVE', 'NOT_APPLICABLE'] as const).nullable(),
 })
 
 export const DemographicsDbSchema = z.object({

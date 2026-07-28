@@ -42,8 +42,9 @@ import {
   mapPersonalHistoryToFormInput,
   mapPatientDataToDemographicsFormInput,
   mapVitalSignToFormInput,
-  convertVitalSignsToDateObjects,
 } from '@/lib/mappers/health-records-mappers'
+import { calculateAge } from '@/lib/utils'
+import { personalHistoryLabels } from '@/schemas'
 import { DemographicsInlineForm } from './forms/DemographicsInlineForm'
 import { VitalSignsInlineForm } from './forms/VitalSignsInlineForm'
 import { PersonalHistoryInlineForm } from './forms/PersonalHistoryInlineForm'
@@ -721,6 +722,7 @@ export default function ClinicPatientProfileClient({
                   <VitalSignsInlineForm
                     userId={patientData.userId}
                     currentData={vitalSignData as any}
+                    patientDob={patientData.dob}
                     onSuccess={handleRefresh}
                     saveRef={vitalSignsSaveRef}
                   />
@@ -920,17 +922,48 @@ export default function ClinicPatientProfileClient({
                   <PersonalHistoryInlineForm
                     userId={patientData.userId}
                     currentData={personalHistoryData}
+                    patientDob={patientData.dob}
                     onSuccess={handleRefresh}
                     saveRef={personalHistorySaveRef}
                   />
                 ) : (
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-3 gap-y-2 py-1">
-                    <ViewCell label="Smoking Status" value={patientData.personalHistory?.smokingStatus} className="capitalize" />
+                    <ViewCell
+                      label="Smoking Status"
+                      value={
+                        patientData.personalHistory?.smokingStatus
+                          ? personalHistoryLabels.smokingStatus[patientData.personalHistory.smokingStatus as keyof typeof personalHistoryLabels.smokingStatus] || patientData.personalHistory.smokingStatus
+                          : null
+                      }
+                    />
                     <ViewCell label="Packs per Year" value={patientData.personalHistory?.numberOfPacksPerYear} />
-                    <ViewCell label="Alcohol Intake" value={patientData.personalHistory?.alcoholStatus} className="capitalize" />
+                    <ViewCell
+                      label="Alcohol Intake"
+                      value={
+                        patientData.personalHistory?.alcoholStatus
+                          ? personalHistoryLabels.alcoholStatus[patientData.personalHistory.alcoholStatus as keyof typeof personalHistoryLabels.alcoholStatus] || patientData.personalHistory.alcoholStatus
+                          : null
+                      }
+                    />
                     <ViewCell label="Bottles per Day" value={patientData.personalHistory?.numberOfBottlesPerDay ? String(patientData.personalHistory.numberOfBottlesPerDay) : null} />
-                    <ViewCell label="Drug Use Status" value={patientData.personalHistory?.illicitDrugUse} className="capitalize" />
-                    <ViewCell label="Sexually Active" value={patientData.personalHistory?.sexuallyActive} className="capitalize" />
+                    <ViewCell
+                      label="Drug Use Status"
+                      value={
+                        patientData.personalHistory?.illicitDrugUse
+                          ? personalHistoryLabels.illicitDrugUse[patientData.personalHistory.illicitDrugUse as keyof typeof personalHistoryLabels.illicitDrugUse] || patientData.personalHistory.illicitDrugUse
+                          : null
+                      }
+                    />
+                    <ViewCell
+                      label="Sexually Active"
+                      value={
+                        patientData.dob && calculateAge(patientData.dob) !== null && calculateAge(patientData.dob)! < 15
+                          ? "N/A (Patient < 15 yrs)"
+                          : patientData.personalHistory?.sexuallyActive
+                            ? personalHistoryLabels.sexuallyActive[patientData.personalHistory.sexuallyActive as keyof typeof personalHistoryLabels.sexuallyActive] || patientData.personalHistory.sexuallyActive
+                            : null
+                      }
+                    />
                   </div>
                 )}
               </CardContainer>

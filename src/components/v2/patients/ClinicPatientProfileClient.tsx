@@ -409,7 +409,7 @@ export default function ClinicPatientProfileClient({
                             {((record as any).memberType) === 'DD' && (
                               <ViewCell
                                 label="Principal Member PIN"
-                                value={formatPhilHealthPin((record as any).dependentPin)}
+                                value={formatPhilHealthPin((record as any).principalMemberPin || (record as any).dependentPin)}
                                 className="text-indigo-600 dark:text-indigo-400 font-bold font-mono"
                               />
                             )}

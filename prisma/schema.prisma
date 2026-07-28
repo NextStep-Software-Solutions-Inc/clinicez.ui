@@ -174,7 +174,6 @@ model PhilHealthRecord {
   userId                Int
   pin                   String                @unique
   principalMemberPin    String?
-  dependentPin          String?
   tin                   String?               @unique
   philSysId             String?               @unique
   memberType            String                @default("MM")

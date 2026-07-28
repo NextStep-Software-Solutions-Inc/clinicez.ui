@@ -64,6 +64,9 @@ import {
 	validateKonsultaBatchAction,
 	verifyKonsultaAtcByPinAction,
 	verifyKonsultaMemberDependentRegistrationAction,
+	searchPrincipalMemberAction,
+	getPrincipalMemberByPinAction,
+	type PrincipalMemberInfo,
 } from "@/actions/clinics/konsulta-report.action";
 import {
     extractGeneratedKonsultaBatchDeficiencies,
@@ -421,6 +424,11 @@ function PatientsPanel({ clinicUid }: { clinicUid: string }) {
 	const [selectedEnrolledIds, setSelectedEnrolledIds] = useState<Set<number>>(
 		new Set(),
 	);
+	const [principalMemberInfo, setPrincipalMemberInfo] = useState<PrincipalMemberInfo | null>(null);
+	const [principalSearchQuery, setPrincipalSearchQuery] = useState("");
+	const [principalSearchResults, setPrincipalSearchResults] = useState<PrincipalMemberInfo[]>([]);
+	const [isSearchingPrincipal, setIsSearchingPrincipal] = useState(false);
+	const [isLookingUpPin, setIsLookingUpPin] = useState(false);
 
 	const loadFeed = useCallback(
 		async (kind: "ENROLLED" | "UNENROLLED", skip: number, replace: boolean) => {
@@ -473,14 +481,69 @@ function PatientsPanel({ clinicUid }: { clinicUid: string }) {
 
 	function openEnrollDialog(patient: ClinicPatientRow) {
 		const ph = patient.Patient.PhilHealthRecords[0];
+		const patientType = patient.konsultaPatientType === "DD" ? "DD" : "MM";
+		const memberPin = patient.konsultaMemberPin ?? (patientType === "MM" ? (ph?.pin ?? "") : "");
 		setEnrollTarget(patient);
 		setEnrollForm({
 			pin: ph?.pin ?? "",
-			patientType: patient.konsultaPatientType === "DD" ? "DD" : "MM",
-			memberPin: patient.konsultaMemberPin ?? ph?.pin ?? "",
+			patientType,
+			memberPin,
 			philSysId: "",
 			tin: "",
 		});
+		setPrincipalMemberInfo(null);
+		setPrincipalSearchQuery("");
+		setPrincipalSearchResults([]);
+
+		if (patientType === "DD" && memberPin) {
+			void getPrincipalMemberByPinAction(memberPin).then((res) => {
+				if (res.data) {
+					setPrincipalMemberInfo(res.data);
+				}
+			});
+		}
+	}
+
+	async function handleSearchPrincipal() {
+		if (!principalSearchQuery.trim()) return;
+		setIsSearchingPrincipal(true);
+		const res = await searchPrincipalMemberAction({ query: principalSearchQuery.trim(), clinicUid });
+		setIsSearchingPrincipal(false);
+		if (res.data) {
+			setPrincipalSearchResults(res.data);
+			if (res.data.length === 0) {
+				toast.warning("No principal members found matching query.");
+			}
+		} else {
+			toast.error(res.message ?? "Failed to search principal members.");
+		}
+	}
+
+	async function handleLookupPrincipalPin(pinToLookup: string) {
+		const pin = pinToLookup.trim();
+		if (!pin) {
+			toast.error("Please enter a Principal Member PIN.");
+			return;
+		}
+		setIsLookingUpPin(true);
+		const res = await getPrincipalMemberByPinAction(pin);
+		setIsLookingUpPin(false);
+		if (res.data) {
+			setPrincipalMemberInfo(res.data);
+			setEnrollForm((f) => ({ ...f, memberPin: res.data!.pin }));
+			setPrincipalSearchResults([]);
+			toast.success(`Retrieved details for Principal Member: ${res.data.firstName} ${res.data.lastName}`);
+		} else {
+			setPrincipalMemberInfo(null);
+			toast.error(res.message ?? `No principal member found with PIN: ${pin}`);
+		}
+	}
+
+	function selectPrincipalMember(member: PrincipalMemberInfo) {
+		setPrincipalMemberInfo(member);
+		setEnrollForm((f) => ({ ...f, memberPin: member.pin }));
+		setPrincipalSearchResults([]);
+		toast.success(`Linked Principal Member: ${member.firstName} ${member.lastName} (${member.pin})`);
 	}
 
 	async function handleEnroll() {
@@ -489,24 +552,15 @@ function PatientsPanel({ clinicUid }: { clinicUid: string }) {
 			toast.error("PhilHealth PIN is required");
 			return;
 		}
-		if (enrollForm.patientType === "DD" && !enrollForm.memberPin.trim()) {
-			toast.error("Primary member PIN is required for dependents");
-			return;
+		if (enrollForm.patientType === "DD") {
+			if (!enrollForm.memberPin.trim() || !principalMemberInfo) {
+				toast.error("A linked Principal Member is required for dependent records. Please search and select a valid Principal Member.");
+				return;
+			}
 		}
 
 		setEnrollLoading(true);
 		const patientName = `${enrollTarget.Patient.firstName} ${enrollTarget.Patient.lastName}`;
-		console.log(
-			`[Enrollment] Starting enrollment for ${patientName} (ID: ${enrollTarget.id})`,
-			{
-				pin: `${enrollForm.pin.substring(0, 6)}****`,
-				patientType: enrollForm.patientType,
-				memberPin:
-					enrollForm.patientType === "DD"
-						? `${enrollForm.memberPin.substring(0, 6)}****`
-						: "(same as patient PIN)",
-			},
-		);
 
 		const res = await enrollPatientPhilHealthAction({
 			clinicUid,
@@ -522,19 +576,10 @@ function PatientsPanel({ clinicUid }: { clinicUid: string }) {
 		});
 		setEnrollLoading(false);
 
-		console.log(`[Enrollment] Response for ${patientName}:`, {
-			status: res.status,
-			registrationStatus: res.data?.registrationStatus,
-			registrationResult: res.data?.registrationResult,
-			message: res.message,
-		});
-
 		if (res.status) {
 			if (res.data?.registrationStatus === "REGISTERED") {
-				toast.success(`✓ ${patientName} is now registered with Konsulta`);
-				console.log(`[Enrollment] Success: Patient registered`);
+				toast.success(`✓ ${patientName} is now registered with PhilHealth Yakap`);
 			} else {
-				// Build detailed error message from registration result
 				let detailedMessage = `Patient details saved. Status: ${res.data?.registrationStatus ?? "unknown"}.`;
 				const result = res.data?.registrationResult as
 					| Record<string, unknown>
@@ -543,7 +588,6 @@ function PatientsPanel({ clinicUid }: { clinicUid: string }) {
 				if (result?.error) {
 					detailedMessage += ` Error: ${result.error}`;
 				} else if (result) {
-					// PhilHealth SOAP response details
 					const details = Object.entries(result)
 						.filter(([key]) => key !== "registrationStatus")
 						.map(([key, value]) => `${key}: ${value}`)
@@ -554,20 +598,11 @@ function PatientsPanel({ clinicUid }: { clinicUid: string }) {
 				}
 
 				toast.warning(detailedMessage);
-				console.warn(
-					`[Enrollment] Partial success: Registration not confirmed.`,
-					{
-						status: res.data?.registrationStatus,
-						result: res.data?.registrationResult,
-						message: res.message,
-					},
-				);
 			}
 			setEnrollTarget(null);
 			void reload();
 		} else {
 			toast.error(res.message ?? "Enrollment failed");
-			console.error(`[Enrollment] Failed:`, res.message);
 		}
 	}
 
@@ -962,8 +997,8 @@ function PatientsPanel({ clinicUid }: { clinicUid: string }) {
 						<DialogTitle className="flex items-center gap-2">
 							<ShieldCheck className="h-4 w-4 text-primary" />
 							{enrollTarget?.konsultaRegistrationStatus === "REGISTERED"
-								? "Update Konsulta Enrollment"
-								: "Enroll for Konsulta"}
+								? "Update PhilHealth Yakap Enrollment"
+								: "Enroll for PhilHealth Yakap"}
 						</DialogTitle>
 						<DialogDescription>
 							{enrollTarget
@@ -990,41 +1025,129 @@ function PatientsPanel({ clinicUid }: { clinicUid: string }) {
 
 						<div className="space-y-1.5">
 							<Label htmlFor="enroll-patient-type">
-								Patient Type <span className="text-destructive">*</span>
+								Member Type <span className="text-destructive">*</span>
 							</Label>
 							<Select
 								value={enrollForm.patientType}
-								onValueChange={(v: "MM" | "DD") =>
+								onValueChange={(v: "MM" | "DD") => {
 									setEnrollForm((f) => ({
 										...f,
 										patientType: v,
 										memberPin: v === "MM" ? f.pin : f.memberPin,
-									}))
-								}
+									}));
+									if (v === "MM") {
+										setPrincipalMemberInfo(null);
+										setPrincipalSearchResults([]);
+									}
+								}}
 							>
 								<SelectTrigger id="enroll-patient-type">
 									<SelectValue />
 								</SelectTrigger>
 								<SelectContent>
-									<SelectItem value="MM">Member</SelectItem>
+									<SelectItem value="MM">Principal Member</SelectItem>
 									<SelectItem value="DD">Dependent</SelectItem>
 								</SelectContent>
 							</Select>
 						</div>
 
 						{enrollForm.patientType === "DD" && (
-							<div className="space-y-1.5">
-								<Label htmlFor="enroll-member-pin">
-									Primary Member PIN <span className="text-destructive">*</span>
-								</Label>
-								<Input
-									id="enroll-member-pin"
-									placeholder="Primary member PhilHealth PIN"
-									value={enrollForm.memberPin}
-									onChange={(e) =>
-										setEnrollForm((f) => ({ ...f, memberPin: e.target.value }))
-									}
-								/>
+							<div className="space-y-3 pt-1 border-t">
+								<div className="space-y-1.5">
+									<Label htmlFor="enroll-member-search">
+										Link to Principal Member <span className="text-destructive">*</span>
+									</Label>
+									<div className="flex gap-2">
+										<Input
+											id="enroll-member-search"
+											placeholder="Search by PIN or Name"
+											value={principalSearchQuery || enrollForm.memberPin}
+											onChange={(e) => {
+												setPrincipalSearchQuery(e.target.value);
+												setEnrollForm((f) => ({ ...f, memberPin: e.target.value }));
+											}}
+										/>
+										<Button
+											type="button"
+											variant="secondary"
+											onClick={() => void handleSearchPrincipal()}
+											disabled={isSearchingPrincipal}
+										>
+											{isSearchingPrincipal ? <Loader2 className="h-4 w-4 animate-spin" /> : "Search"}
+										</Button>
+										<Button
+											type="button"
+											variant="outline"
+											onClick={() => void handleLookupPrincipalPin(enrollForm.memberPin)}
+											disabled={isLookingUpPin || !enrollForm.memberPin.trim()}
+										>
+											{isLookingUpPin ? <Loader2 className="h-4 w-4 animate-spin" /> : "Lookup PIN"}
+										</Button>
+									</div>
+								</div>
+
+								{/* Search Results dropdown */}
+								{principalSearchResults.length > 0 && (
+									<div className="border rounded-md bg-background shadow-md max-h-40 overflow-y-auto divide-y">
+										{principalSearchResults.map((m) => (
+											<button
+												key={m.pin}
+												type="button"
+												className="w-full text-left p-2 hover:bg-muted text-xs flex justify-between items-center"
+												onClick={() => selectPrincipalMember(m)}
+											>
+												<div>
+													<span className="font-medium text-foreground">{m.firstName} {m.lastName}</span>
+													<span className="text-muted-foreground ml-2">DOB: {m.dob}</span>
+												</div>
+												<span className="font-mono text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded">{m.pin}</span>
+											</button>
+										))}
+									</div>
+								)}
+
+								{/* Read-Only Principal Member Info Block */}
+								{principalMemberInfo ? (
+									<div className="border border-primary/20 bg-muted/40 rounded-lg p-3 space-y-2 text-xs">
+										<div className="flex items-center justify-between border-b pb-1">
+											<span className="font-semibold text-primary flex items-center gap-1">
+												<ShieldCheck className="h-3.5 w-3.5" />
+												Principal Member Info (Read-Only)
+											</span>
+											<Badge variant="outline" className="text-[10px]">Linked</Badge>
+										</div>
+										<div className="grid grid-cols-2 gap-x-4 gap-y-1 text-muted-foreground">
+											<div>
+												<span className="font-medium text-foreground">PIN:</span>{" "}
+												<span className="font-mono text-foreground font-semibold">{principalMemberInfo.pin}</span>
+											</div>
+											<div>
+												<span className="font-medium text-foreground">Date of Birth:</span>{" "}
+												<span>{principalMemberInfo.dob}</span>
+											</div>
+											<div>
+												<span className="font-medium text-foreground">First Name:</span>{" "}
+												<span>{principalMemberInfo.firstName}</span>
+											</div>
+											<div>
+												<span className="font-medium text-foreground">Last Name:</span>{" "}
+												<span>{principalMemberInfo.lastName}</span>
+											</div>
+											<div>
+												<span className="font-medium text-foreground">Middle Name:</span>{" "}
+												<span>{principalMemberInfo.middleName || "—"}</span>
+											</div>
+											<div>
+												<span className="font-medium text-foreground">Ext Name:</span>{" "}
+												<span>{principalMemberInfo.extensionName || "—"}</span>
+											</div>
+										</div>
+									</div>
+								) : (
+									<div className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-950/30 dark:text-amber-400 p-2.5 rounded border border-amber-200 dark:border-amber-800">
+										Please search and link a valid Principal Member to populate the Principal Member Info block before submitting.
+									</div>
+								)}
 							</div>
 						)}
 
@@ -1733,10 +1856,10 @@ function KonsultaValidationPanel({ clinicUid }: { clinicUid: string }) {
 			<CardHeader>
 				<CardTitle className="text-xl flex items-center gap-2">
 					<ShieldCheck className="h-5 w-5 text-primary" />
-					Konsulta Registration Validation
+					PhilHealth Yakap Registration Validation
 				</CardTitle>
 				<CardDescription>
-					Verify registration using Konsulta Kit 1.1 SOAP method{" "}
+					Verify registration using PhilHealth Yakap Kit 1.1 SOAP method{" "}
 					<code>isMemberDependentRegistered(pPin, pType)</code>.
 				</CardDescription>
 			</CardHeader>
@@ -1756,7 +1879,7 @@ function KonsultaValidationPanel({ clinicUid }: { clinicUid: string }) {
 									<SelectValue />
 								</SelectTrigger>
 								<SelectContent>
-									<SelectItem value="MM">Member</SelectItem>
+									<SelectItem value="MM">Principal Member</SelectItem>
 									<SelectItem value="DD">Dependent</SelectItem>
 								</SelectContent>
 							</Select>

@@ -445,6 +445,9 @@ export const enrollPatientPhilHealthAction = withErrorHandling(
         if (!session) throw new Error("Unauthorized");
         if (patientType !== "MM" && patientType !== "DD")
             throw new Error("Patient type must be Member or Dependent.");
+        if (patientType === "DD" && (!memberPin || !memberPin.trim())) {
+            throw new Error("A linked Principal Member PIN is required for Dependent records.");
+        }
 
         const clinicId = await resolveClinicId(clinicUid);
         const effYear = currentEffYear();
@@ -1663,6 +1666,180 @@ export const verifyKonsultaMemberDependentRegistrationAction =
         },
     );
 
+export type PrincipalMemberInfo = {
+    pin: string;
+    firstName: string;
+    lastName: string;
+    middleName: string;
+    extensionName: string;
+    dob: string;
+    userId?: number;
+};
+
+export async function resolvePrincipalMembersByPins(pins: string[]): Promise<Map<string, PrincipalMemberInfo>> {
+    const uniquePins = Array.from(new Set(pins.map((p) => p.trim()).filter(Boolean)));
+    const map = new Map<string, PrincipalMemberInfo>();
+    if (uniquePins.length === 0) return map;
+
+    const records = await prisma.philHealthRecord.findMany({
+        where: {
+            pin: { in: uniquePins },
+            deletedAt: null,
+        },
+        include: {
+            User: true,
+        },
+    });
+
+    for (const r of records) {
+        if (r.pin && r.User) {
+            map.set(r.pin.trim(), {
+                pin: r.pin.trim(),
+                firstName: r.User.firstName ?? "",
+                lastName: r.User.lastName ?? "",
+                middleName: r.User.middleName ?? "",
+                extensionName: r.User.suffix ?? "",
+                dob: r.User.dob ? r.User.dob.toISOString().slice(0, 10) : "1990-01-01",
+                userId: r.User.id,
+            });
+        }
+    }
+
+    const missingPins = uniquePins.filter((p) => !map.has(p));
+    if (missingPins.length > 0) {
+        const cps = await prisma.clinicPatient.findMany({
+            where: {
+                konsultaPatientPin: { in: missingPins },
+                isActive: true,
+                deletedAt: null,
+            },
+            include: {
+                Patient: true,
+            },
+        });
+
+        for (const cp of cps) {
+            const pin = cp.konsultaPatientPin?.trim();
+            if (pin && cp.Patient && !map.has(pin)) {
+                map.set(pin, {
+                    pin,
+                    firstName: cp.Patient.firstName ?? "",
+                    lastName: cp.Patient.lastName ?? "",
+                    middleName: cp.Patient.middleName ?? "",
+                    extensionName: cp.Patient.suffix ?? "",
+                    dob: cp.Patient.dob ? cp.Patient.dob.toISOString().slice(0, 10) : "1990-01-01",
+                    userId: cp.Patient.id,
+                });
+            }
+        }
+    }
+
+    return map;
+}
+
+export const searchPrincipalMemberAction = withErrorHandling(
+    async ({ query }: { query: string; clinicUid?: string }): Promise<{ message: string; data: PrincipalMemberInfo[] }> => {
+        const session = await getCachedSession();
+        if (!session) throw new Error("Unauthorized");
+
+        const q = query.trim();
+        if (!q) return { message: "Empty query", data: [] };
+
+        const philhealthRecords = await prisma.philHealthRecord.findMany({
+            where: {
+                deletedAt: null,
+                memberType: "MM",
+                OR: [
+                    { pin: { contains: q, mode: "insensitive" } },
+                    { User: { firstName: { contains: q, mode: "insensitive" } } },
+                    { User: { lastName: { contains: q, mode: "insensitive" } } },
+                    { User: { middleName: { contains: q, mode: "insensitive" } } },
+                ],
+            },
+            include: {
+                User: true,
+            },
+            take: 20,
+        });
+
+        const clinicPatients = await prisma.clinicPatient.findMany({
+            where: {
+                isActive: true,
+                deletedAt: null,
+                konsultaPatientType: "MM",
+                OR: [
+                    { konsultaPatientPin: { contains: q, mode: "insensitive" } },
+                    { Patient: { firstName: { contains: q, mode: "insensitive" } } },
+                    { Patient: { lastName: { contains: q, mode: "insensitive" } } },
+                ],
+            },
+            include: {
+                Patient: true,
+            },
+            take: 20,
+        });
+
+        const resultsMap = new Map<string, PrincipalMemberInfo>();
+
+        for (const pr of philhealthRecords) {
+            if (!pr.pin) continue;
+            resultsMap.set(pr.pin.trim(), {
+                pin: pr.pin.trim(),
+                firstName: pr.User.firstName ?? "",
+                lastName: pr.User.lastName ?? "",
+                middleName: pr.User.middleName ?? "",
+                extensionName: pr.User.suffix ?? "",
+                dob: pr.User.dob ? pr.User.dob.toISOString().slice(0, 10) : "1990-01-01",
+                userId: pr.User.id,
+            });
+        }
+
+        for (const cp of clinicPatients) {
+            const pin = cp.konsultaPatientPin?.trim();
+            if (!pin || resultsMap.has(pin)) continue;
+            resultsMap.set(pin, {
+                pin,
+                firstName: cp.Patient.firstName ?? "",
+                lastName: cp.Patient.lastName ?? "",
+                middleName: cp.Patient.middleName ?? "",
+                extensionName: cp.Patient.suffix ?? "",
+                dob: cp.Patient.dob ? cp.Patient.dob.toISOString().slice(0, 10) : "1990-01-01",
+                userId: cp.Patient.id,
+            });
+        }
+
+        return {
+            message: "Principal members retrieved successfully",
+            data: Array.from(resultsMap.values()),
+        };
+    },
+);
+
+export const getPrincipalMemberByPinAction = withErrorHandling(
+    async (pin: string): Promise<{ message: string; data: PrincipalMemberInfo | null }> => {
+        const session = await getCachedSession();
+        if (!session) throw new Error("Unauthorized");
+
+        const normalizedPin = pin.trim();
+        if (!normalizedPin) throw new Error("PIN is required.");
+
+        const map = await resolvePrincipalMembersByPins([normalizedPin]);
+        const found = map.get(normalizedPin);
+
+        if (!found) {
+            return {
+                message: `No principal member found with PhilHealth PIN: ${normalizedPin}`,
+                data: null,
+            };
+        }
+
+        return {
+            message: "Principal member retrieved successfully",
+            data: found,
+        };
+    },
+);
+
 // ─── Batches ──────────────────────────────────────────────────────────────────
 
 /** Returns all Konsulta batches for a clinic, newest first. */
@@ -2110,6 +2287,9 @@ export const generateBatchXmlAction = withErrorHandling(
             if (!entry.memberType || (entry.memberType !== "MM" && entry.memberType !== "DD")) {
                 throw new Error(`Patient ${p.firstName} ${p.lastName} is missing or has invalid member type. Must be MM or DD.`);
             }
+            if (entry.memberType === "DD" && (!entry.memberPin || !entry.memberPin.trim())) {
+                throw new Error(`Dependent patient ${p.firstName} ${p.lastName} must be linked to a Principal Member before generating XML report.`);
+            }
         }
 
         try {
@@ -2125,6 +2305,11 @@ export const generateBatchXmlAction = withErrorHandling(
             const periodDate = new Date(parseInt(year, 10), monthIdx, 1);
             const effYear = year;
 
+            const dependentPins = batch.KonsultaEntries
+                .filter((e) => (e.memberType ?? "").trim() === "DD" && e.memberPin)
+                .map((e) => e.memberPin!.trim());
+            const principalMap = await resolvePrincipalMembersByPins(dependentPins);
+
             const enlistments: KonsultaEnlistmentData[] = batch.KonsultaEntries.map(
                 (entry) => {
                     const p = entry.Patient;
@@ -2139,6 +2324,14 @@ export const generateBatchXmlAction = withErrorHandling(
                         patientType === "MM"
                             ? entry.philHealthPin
                             : entry.memberPin || entry.philHealthPin;
+
+                    const principal = patientType === "DD" ? principalMap.get(memberPin.trim()) : null;
+
+                    const pMemFname = patientType === "DD" ? (principal?.firstName ?? "") : (p.firstName ?? "");
+                    const pMemMname = patientType === "DD" ? (principal?.middleName ?? "") : (p.middleName ?? "");
+                    const pMemLname = patientType === "DD" ? (principal?.lastName ?? "") : (p.lastName ?? "");
+                    const pMemExtname = patientType === "DD" ? (principal?.extensionName ?? "") : (p.suffix ?? "");
+                    const pMemDob = patientType === "DD" ? (principal?.dob ?? dob) : dob;
 
                     return {
                         pHciCaseNo:
@@ -2162,11 +2355,11 @@ export const generateBatchXmlAction = withErrorHandling(
                         pEnlistDate: transDate,
                         pPackageType: "K",
                         pMemPin: memberPin,
-                        pMemFname: p.firstName ?? "",
-                        pMemMname: p.middleName ?? "",
-                        pMemLname: p.lastName ?? "",
-                        pMemExtname: p.suffix ?? "",
-                        pMemDob: dob,
+                        pMemFname: pMemFname,
+                        pMemMname: pMemMname,
+                        pMemLname: pMemLname,
+                        pMemExtname: pMemExtname,
+                        pMemDob: pMemDob,
                         pPatientPin: entry.philHealthPin,
                         pPatientFname: p.firstName ?? "",
                         pPatientMname: p.middleName ?? "",

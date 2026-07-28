@@ -146,6 +146,10 @@ export async function enlistKonsultaAction(
       throw new Error("Patient is not registered in this clinic.");
     }
 
+    if (memberPin?.trim() && dependentPin?.trim() && memberPin.trim() === dependentPin.trim()) {
+      throw new Error("Principal Member PIN and Dependent/Patient PIN cannot be the same.");
+    }
+
     const resolvedClinicPatientId = cp.id;
     const year = new Date().getFullYear();
 

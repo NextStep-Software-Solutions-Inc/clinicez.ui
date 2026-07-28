@@ -89,9 +89,23 @@ export function PhilHealthYakapCard({ clinicPatientId, isClinicMode, philHealthR
   }
 
   const handleEnlist = async () => {
-    if (!memberPin) {
-      toast.error("Cannot enlist without a Member PIN in the patient profile.")
+    if (memberType === 'MM' && !memberPin) {
+      toast.error("Cannot enlist without a Principal Member PIN in the patient profile.")
       return
+    }
+    if (memberType === 'DD') {
+      if (!memberPin?.trim()) {
+        toast.error("Cannot enlist Dependent record without Principal Member PIN.")
+        return
+      }
+      if (!dependentPin?.trim()) {
+        toast.error("Cannot enlist Dependent record without Patient PIN (Dependent PIN).")
+        return
+      }
+      if (memberPin.trim() === dependentPin.trim()) {
+        toast.error("Principal Member PIN and Dependent/Patient PIN cannot be the same.")
+        return
+      }
     }
 
     setIsEnlisting(true)

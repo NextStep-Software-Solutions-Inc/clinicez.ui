@@ -219,7 +219,7 @@ export const verifyKonsultaEncounterAtcAction = withErrorHandling(
     if (!ticket.konsultaAtcCode) throw new Error("No ATC code provided in this encounter");
 
     const phRecord = ticket.ClinicPatient?.Patient?.PhilHealthRecords?.[0];
-    const pin = phRecord?.dependentPin || phRecord?.pin;
+    const pin = phRecord?.pin;
 
     if (!pin) {
       throw new Error("Patient does not have a PhilHealth PIN registered");

@@ -1962,6 +1962,94 @@ export const getPrincipalMemberByPinAction = withErrorHandling(
     },
 );
 
+export const registerPrincipalMemberAction = withErrorHandling(
+    async (input: {
+        pin: string;
+        firstName: string;
+        lastName: string;
+        middleName?: string;
+        extensionName?: string;
+        dob?: string;
+        gender?: "MALE" | "FEMALE";
+    }): Promise<{ message: string; data: PrincipalMemberInfo }> => {
+        const session = await getCachedSession();
+        if (!session) throw new Error("Unauthorized");
+
+        const normalizedPin = input.pin.trim().replace(/\D/g, "");
+        if (normalizedPin.length !== 12 && normalizedPin.length !== 15) {
+            throw new Error("Principal Member PIN must be a 12-digit PhilHealth PIN.");
+        }
+        if (!input.firstName.trim() || !input.lastName.trim()) {
+            throw new Error("Principal Member First Name and Last Name are required.");
+        }
+
+        // Check if existing MM record exists
+        const existingRecord = await prisma.philHealthRecord.findFirst({
+            where: { pin: normalizedPin, memberType: "MM", deletedAt: null },
+            include: { User: true },
+        });
+
+        if (existingRecord && existingRecord.User) {
+            return {
+                message: "Principal member already registered",
+                data: {
+                    pin: normalizedPin,
+                    firstName: existingRecord.User.firstName ?? "",
+                    lastName: existingRecord.User.lastName ?? "",
+                    middleName: existingRecord.User.middleName ?? "",
+                    extensionName: existingRecord.User.suffix ?? "",
+                    dob: existingRecord.User.dob ? existingRecord.User.dob.toISOString().slice(0, 10) : "1990-01-01",
+                    userId: existingRecord.User.id,
+                },
+            };
+        }
+
+        // Create new User & PhilHealthRecord for Principal Member
+        const dummyEmail = `ph-pm-${normalizedPin}-${Date.now()}@clinicez.net`;
+        const auth0UserId = `auth0|pm-${normalizedPin}-${Date.now()}`;
+
+        let dobDate: Date | undefined;
+        if (input.dob) {
+            dobDate = new Date(input.dob);
+            if (isNaN(dobDate.getTime())) dobDate = undefined;
+        }
+
+        const newUser = await prisma.user.create({
+            data: {
+                email: dummyEmail,
+                userId: auth0UserId,
+                firstName: input.firstName.trim(),
+                lastName: input.lastName.trim(),
+                middleName: input.middleName?.trim() || "",
+                suffix: input.extensionName?.trim() || "",
+                dob: dobDate,
+                gender: input.gender || "MALE",
+            },
+        });
+
+        await prisma.philHealthRecord.create({
+            data: {
+                userId: newUser.id,
+                pin: normalizedPin,
+                memberType: "MM",
+            },
+        });
+
+        return {
+            message: "Principal member registered successfully",
+            data: {
+                pin: normalizedPin,
+                firstName: newUser.firstName ?? "",
+                lastName: newUser.lastName ?? "",
+                middleName: newUser.middleName ?? "",
+                extensionName: newUser.suffix ?? "",
+                dob: newUser.dob ? newUser.dob.toISOString().slice(0, 10) : "1990-01-01",
+                userId: newUser.id,
+            },
+        };
+    },
+);
+
 // ─── Batches ──────────────────────────────────────────────────────────────────
 
 /** Returns all Konsulta batches for a clinic, newest first. */

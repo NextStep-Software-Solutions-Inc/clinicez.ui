@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button'
 import { Trash2, Plus, UserPlus, X, ShieldAlert, ShieldCheck } from 'lucide-react'
 import { toast } from 'sonner'
-import { getPrincipalMemberByPinAction, type PrincipalMemberInfo } from '@/actions/clinics/konsulta-report.action'
+import { getPrincipalMemberByPinAction, registerPrincipalMemberAction, type PrincipalMemberInfo } from '@/actions/clinics/konsulta-report.action'
 import { philHealthRecordSchema, type PhilHealthRecordFormInput, type PhilHealthDependentFormInput } from '@/schemas/philhealth-record-schema'
 import { formatPhilHealthPin, formatPhilSysId, formatTin, unmaskDigits } from './schemas/mask-utils'
 import { philHealthSchema, dependentSchema } from './schemas/philhealth.schema'
@@ -64,6 +64,14 @@ export function PhilHealthInlineForm({
   const [errors, setErrors] = useState<Record<string, string | undefined>>({})
   const [isLoading, setIsLoading] = useState(false)
   const [principalInfo, setPrincipalInfo] = useState<PrincipalMemberInfo | null>(null)
+  const [principalForm, setPrincipalForm] = useState({
+    firstName: '',
+    lastName: '',
+    middleName: '',
+    extensionName: '',
+    dob: '',
+    gender: 'MALE' as 'MALE' | 'FEMALE',
+  })
 
   // Lookup principal member info when memberType is Dependent and Principal Member PIN is entered
   useEffect(() => {
@@ -161,6 +169,30 @@ export function PhilHealthInlineForm({
     let saveErrorMessage: string | null = null
 
     try {
+      if (formData.memberType === 'DD' && !principalInfo && unmaskDigits(formData.principalMemberPin)) {
+        if (!principalForm.firstName.trim() || !principalForm.lastName.trim()) {
+          const pErrors: Record<string, string> = {}
+          if (!principalForm.firstName.trim()) pErrors.principalFirstName = "Principal Member First Name is required"
+          if (!principalForm.lastName.trim()) pErrors.principalLastName = "Principal Member Last Name is required"
+          setErrors((prev) => ({ ...prev, ...pErrors }))
+          throw new Error("Please enter Principal Member First Name and Last Name.")
+        }
+
+        const regRes = await registerPrincipalMemberAction({
+          pin: unmaskDigits(formData.principalMemberPin),
+          firstName: principalForm.firstName,
+          lastName: principalForm.lastName,
+          middleName: principalForm.middleName,
+          extensionName: principalForm.extensionName,
+          dob: principalForm.dob,
+          gender: principalForm.gender,
+        })
+
+        if (regRes && regRes.data) {
+          setPrincipalInfo(regRes.data)
+        }
+      }
+
       const result = await updatePhilhealthRecord(userId, validationResult.data as PhilHealthRecordFormInput)
 
       if (result.success) {
@@ -408,8 +440,101 @@ export function PhilHealthInlineForm({
               </div>
             </div>
           ) : (
-            <div className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-950/30 dark:text-amber-400 p-2.5 rounded border border-amber-200 dark:border-amber-800">
-              No principal member record found in system matching PIN <span className="font-mono font-semibold">{formatPhilHealthPin(formData.principalMemberPin) || '—'}</span>. Enter the Principal Member's details during clinic enlistment.
+            <div className="border border-amber-200 dark:border-amber-800/70 bg-amber-50/50 dark:bg-amber-950/20 rounded-lg p-3.5 space-y-3 text-xs">
+              <div className="flex items-center gap-2 text-xs font-semibold text-amber-800 dark:text-amber-300">
+                <ShieldAlert className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                <span>
+                  No principal member record found in ClinicEZ matching PIN <span className="font-mono font-bold">{formatPhilHealthPin(formData.principalMemberPin) || '—'}</span>. Enter the Principal Member's details below to register and link them.
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2.5 pt-2 border-t border-amber-200/60 dark:border-amber-900/40">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                    First Name <span className="text-red-500">*</span>
+                  </label>
+                  <Input
+                    value={principalForm.firstName}
+                    onChange={(e) => {
+                      setPrincipalForm((p) => ({ ...p, firstName: e.target.value }))
+                      if (errors.principalFirstName) setErrors((prev) => ({ ...prev, principalFirstName: undefined }))
+                    }}
+                    placeholder="First Name"
+                    className="h-8 text-xs bg-white dark:bg-slate-900"
+                  />
+                  {errors.principalFirstName && (
+                    <span className="text-[10px] text-red-500 block">{errors.principalFirstName}</span>
+                  )}
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                    Last Name <span className="text-red-500">*</span>
+                  </label>
+                  <Input
+                    value={principalForm.lastName}
+                    onChange={(e) => {
+                      setPrincipalForm((p) => ({ ...p, lastName: e.target.value }))
+                      if (errors.principalLastName) setErrors((prev) => ({ ...prev, principalLastName: undefined }))
+                    }}
+                    placeholder="Last Name"
+                    className="h-8 text-xs bg-white dark:bg-slate-900"
+                  />
+                  {errors.principalLastName && (
+                    <span className="text-[10px] text-red-500 block">{errors.principalLastName}</span>
+                  )}
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                    Middle Name
+                  </label>
+                  <Input
+                    value={principalForm.middleName}
+                    onChange={(e) => setPrincipalForm((p) => ({ ...p, middleName: e.target.value }))}
+                    placeholder="Middle Name"
+                    className="h-8 text-xs bg-white dark:bg-slate-900"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                    Ext Name / Suffix
+                  </label>
+                  <Input
+                    value={principalForm.extensionName}
+                    onChange={(e) => setPrincipalForm((p) => ({ ...p, extensionName: e.target.value }))}
+                    placeholder="Jr., Sr., III"
+                    className="h-8 text-xs bg-white dark:bg-slate-900"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                    Date of Birth
+                  </label>
+                  <Input
+                    type="date"
+                    value={principalForm.dob}
+                    onChange={(e) => setPrincipalForm((p) => ({ ...p, dob: e.target.value }))}
+                    className="h-8 text-xs bg-white dark:bg-slate-900"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                    Gender
+                  </label>
+                  <select
+                    value={principalForm.gender}
+                    onChange={(e) => setPrincipalForm((p) => ({ ...p, gender: e.target.value as 'MALE' | 'FEMALE' }))}
+                    className="h-8 text-xs w-full rounded-md border border-input bg-white dark:bg-slate-900 px-2 py-1 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-teal-500"
+                  >
+                    <option value="MALE">Male</option>
+                    <option value="FEMALE">Female</option>
+                  </select>
+                </div>
+              </div>
             </div>
           )}
         </div>

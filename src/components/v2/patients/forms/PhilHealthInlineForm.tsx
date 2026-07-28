@@ -91,15 +91,16 @@ export function PhilHealthInlineForm({
       setDependentLookupStatus('searching')
       void getDependentMemberByPinAction(rawPin, userId).then((res) => {
         if (res.data) {
-          setDependentLookupInfo(res.data)
+          const data = res.data
+          setDependentLookupInfo(data)
           setDependentLookupStatus('found')
           setNewDependent((prev: any) => ({
             ...prev,
-            firstName: res.data.firstName || prev.firstName,
-            lastName: res.data.lastName || prev.lastName,
-            middleName: res.data.middleName || prev.middleName,
-            gender: res.data.gender || prev.gender,
-            dob: res.data.dob || prev.dob,
+            firstName: data.firstName || prev.firstName,
+            lastName: data.lastName || prev.lastName,
+            middleName: data.middleName || prev.middleName,
+            gender: data.gender || prev.gender,
+            dob: data.dob || prev.dob,
           }))
         } else {
           setDependentLookupInfo(null)

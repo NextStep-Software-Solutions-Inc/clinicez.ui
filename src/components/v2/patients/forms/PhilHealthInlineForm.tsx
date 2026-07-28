@@ -10,7 +10,14 @@ import { Button } from '@/components/ui/button'
 import { Trash2, Plus, UserPlus, X, ShieldAlert, ShieldCheck } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
-import { getPrincipalMemberByPinAction, registerPrincipalMemberAction, type PrincipalMemberInfo } from '@/actions/clinics/konsulta-report.action'
+import {
+  getPrincipalMemberByPinAction,
+  registerPrincipalMemberAction,
+  getDependentMemberByPinAction,
+  registerDependentMemberAction,
+  type PrincipalMemberInfo,
+  type DependentMemberInfo,
+} from '@/actions/clinics/konsulta-report.action'
 import { philHealthRecordSchema, type PhilHealthRecordFormInput, type PhilHealthDependentFormInput } from '@/schemas/philhealth-record-schema'
 import { formatPhilHealthPin, formatPhilSysId, formatTin, unmaskDigits } from './schemas/mask-utils'
 import { philHealthSchema, dependentSchema } from './schemas/philhealth.schema'
@@ -55,6 +62,7 @@ export function PhilHealthInlineForm({
   const [dependents, setDependents] = useState<any[]>(currentData?.dependents || [])
   const [isAddingDependent, setIsAddingDependent] = useState(false)
   const [newDependent, setNewDependent] = useState<any>({
+    pin: '',
     firstName: '',
     middleName: '',
     lastName: '',
@@ -62,6 +70,8 @@ export function PhilHealthInlineForm({
     gender: 'MALE',
     dob: '',
   })
+  const [dependentLookupInfo, setDependentLookupInfo] = useState<DependentMemberInfo | null>(null)
+  const [dependentLookupStatus, setDependentLookupStatus] = useState<'idle' | 'searching' | 'found' | 'not_found'>('idle')
   const [errors, setErrors] = useState<Record<string, string | undefined>>({})
   const [isLoading, setIsLoading] = useState(false)
   const [principalInfo, setPrincipalInfo] = useState<PrincipalMemberInfo | null>(null)
@@ -73,6 +83,34 @@ export function PhilHealthInlineForm({
     dob: '',
     gender: 'MALE' as 'MALE' | 'FEMALE',
   })
+
+  // Auto-detect dependent info by PIN
+  useEffect(() => {
+    const rawPin = unmaskDigits(newDependent.pin || '')
+    if (rawPin.length === 12 || rawPin.length === 15) {
+      setDependentLookupStatus('searching')
+      void getDependentMemberByPinAction(rawPin, userId).then((res) => {
+        if (res.data) {
+          setDependentLookupInfo(res.data)
+          setDependentLookupStatus('found')
+          setNewDependent((prev: any) => ({
+            ...prev,
+            firstName: res.data.firstName || prev.firstName,
+            lastName: res.data.lastName || prev.lastName,
+            middleName: res.data.middleName || prev.middleName,
+            gender: res.data.gender || prev.gender,
+            dob: res.data.dob || prev.dob,
+          }))
+        } else {
+          setDependentLookupInfo(null)
+          setDependentLookupStatus('not_found')
+        }
+      })
+    } else {
+      setDependentLookupInfo(null)
+      setDependentLookupStatus('idle')
+    }
+  }, [newDependent.pin, userId])
 
   // Lookup principal member info when memberType is Dependent and Principal Member PIN is entered
   useEffect(() => {
@@ -239,8 +277,21 @@ export function PhilHealthInlineForm({
   }, [saveRef, formData, principalForm, principalInfo, dependents, hasChanges])
 
   const handleAddDependent = async () => {
-    if (!newDependent.firstName) {
+    const rawPin = unmaskDigits(newDependent.pin || '')
+    if (!rawPin || (rawPin.length !== 12 && rawPin.length !== 15)) {
+      toast.error('Dependent PIN must be a 12-digit PhilHealth PIN.')
+      return
+    }
+    if (!newDependent.firstName?.trim()) {
       toast.error('First name is required for dependent')
+      return
+    }
+    if (!newDependent.lastName?.trim()) {
+      toast.error('Last name is required for dependent')
+      return
+    }
+    if (!newDependent.relationship?.trim()) {
+      toast.error('Relationship is required for dependent')
       return
     }
     if (!currentData?.id) {
@@ -250,8 +301,21 @@ export function PhilHealthInlineForm({
 
     setIsLoading(true)
     try {
+      if (dependentLookupStatus === 'not_found' && formData.pin) {
+        await registerDependentMemberAction({
+          pin: rawPin,
+          principalMemberPin: unmaskDigits(formData.pin),
+          firstName: newDependent.firstName,
+          lastName: newDependent.lastName,
+          middleName: newDependent.middleName,
+          dob: newDependent.dob,
+          gender: newDependent.gender,
+        })
+      }
+
       const dependentPayload = {
         ...newDependent,
+        pin: rawPin,
         dob: newDependent.dob ? new Date(newDependent.dob) : null,
       }
       const result = await addPhilHealthDependent(userId, currentData.id, dependentPayload as PhilHealthDependentFormInput)
@@ -261,6 +325,7 @@ export function PhilHealthInlineForm({
         setDependents((prev) => [...prev, result.dependent])
         setIsAddingDependent(false)
         setNewDependent({
+          pin: '',
           firstName: '',
           middleName: '',
           lastName: '',
@@ -268,12 +333,14 @@ export function PhilHealthInlineForm({
           gender: 'MALE',
           dob: '',
         })
+        setDependentLookupInfo(null)
+        setDependentLookupStatus('idle')
         onSuccess?.()
       } else {
         toast.error(result.error || 'Failed to add dependent')
       }
     } catch (err) {
-      toast.error(getActionErrorMessage(err, 'An error occurred adding dependent'))
+      toast.error(getActionErrorMessage(err, 'Failed to add dependent.'))
     } finally {
       setIsLoading(false)
     }
@@ -594,77 +661,113 @@ export function PhilHealthInlineForm({
           {isAddingDependent && (
             <div className="p-4 rounded-xl border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/10 space-y-4 mb-6">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                  <UserPlus className="w-4 h-4 text-teal-600" />
                   New Dependent Info
                 </span>
                 <button
                   type="button"
-                  onClick={() => setIsAddingDependent(false)}
+                  onClick={() => {
+                    setIsAddingDependent(false)
+                    setDependentLookupInfo(null)
+                    setDependentLookupStatus('idle')
+                  }}
                   className="text-slate-400 hover:text-slate-600"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-3.5 gap-y-3">
+              {/* Dependent PIN Input */}
+              <div className="max-w-xs space-y-1">
+                <label className="text-[10px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider block">
+                  Dependent PIN (Patient PIN) <span className="text-red-500">*</span>
+                </label>
+                <Input
+                  value={formatPhilHealthPin(newDependent.pin)}
+                  onChange={(e) => {
+                    const val = formatPhilHealthPin(e.target.value)
+                    setNewDependent((prev: any) => ({ ...prev, pin: val }))
+                  }}
+                  placeholder="00-000000000-0"
+                  className="h-8 text-xs font-mono bg-white dark:bg-slate-900 focus-visible:ring-teal-500"
+                />
+              </div>
+
+              {/* Status Notice */}
+              {dependentLookupStatus === 'found' && dependentLookupInfo && (
+                <div className="text-xs text-teal-700 bg-teal-50 dark:bg-teal-950/40 dark:text-teal-300 p-2.5 rounded-lg border border-teal-200 dark:border-teal-800 flex items-center gap-2 font-medium">
+                  <ShieldCheck className="w-4 h-4 text-teal-600 flex-shrink-0" />
+                  <span>
+                    Patient found in ClinicEZ matching PIN <span className="font-mono font-bold">{formatPhilHealthPin(newDependent.pin)}</span>. Details auto-populated.
+                  </span>
+                </div>
+              )}
+
+              {dependentLookupStatus === 'not_found' && unmaskDigits(newDependent.pin || '').length >= 12 && (
+                <div className="text-xs text-amber-700 bg-amber-50 dark:bg-amber-950/40 dark:text-amber-300 p-2.5 rounded-lg border border-amber-200 dark:border-amber-800 flex items-center gap-2">
+                  <ShieldAlert className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                  <span>
+                    No patient record found matching PIN <span className="font-mono font-bold">{formatPhilHealthPin(newDependent.pin)}</span>. Enter dependent's details below to register and link.
+                  </span>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-x-3.5 gap-y-3">
                 <div className="space-y-1">
-                  <label className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">First Name *</label>
+                  <label className="text-[10px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider block">First Name <span className="text-red-500">*</span></label>
                   <Input
                     value={newDependent.firstName}
                     onChange={(e) => setNewDependent((prev: any) => ({ ...prev, firstName: e.target.value }))}
-                    className="h-8 text-xs focus-visible:ring-teal-500"
+                    className="h-8 text-xs bg-white dark:bg-slate-900 focus-visible:ring-teal-500"
                     placeholder="First Name"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Middle Name</label>
+                  <label className="text-[10px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider block">Middle Name</label>
                   <Input
                     value={newDependent.middleName}
                     onChange={(e) => setNewDependent((prev: any) => ({ ...prev, middleName: e.target.value }))}
-                    className="h-8 text-xs focus-visible:ring-teal-500"
+                    className="h-8 text-xs bg-white dark:bg-slate-900 focus-visible:ring-teal-500"
                     placeholder="Middle Name"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Last Name *</label>
+                  <label className="text-[10px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider block">Last Name <span className="text-red-500">*</span></label>
                   <Input
                     value={newDependent.lastName}
                     onChange={(e) => setNewDependent((prev: any) => ({ ...prev, lastName: e.target.value }))}
-                    className="h-8 text-xs focus-visible:ring-teal-500"
+                    className="h-8 text-xs bg-white dark:bg-slate-900 focus-visible:ring-teal-500"
                     placeholder="Last Name"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Relationship</label>
+                  <label className="text-[10px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider block">Relationship <span className="text-red-500">*</span></label>
                   <Input
                     value={newDependent.relationship}
                     onChange={(e) => setNewDependent((prev: any) => ({ ...prev, relationship: e.target.value }))}
-                    className="h-8 text-xs focus-visible:ring-teal-500"
+                    className="h-8 text-xs bg-white dark:bg-slate-900 focus-visible:ring-teal-500"
                     placeholder="e.g. Child, Spouse"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Gender</label>
-                  <Select
+                  <label className="text-[10px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider block">Gender</label>
+                  <select
                     value={newDependent.gender}
-                    onValueChange={(val) => setNewDependent((prev: any) => ({ ...prev, gender: val }))}
+                    onChange={(e) => setNewDependent((prev: any) => ({ ...prev, gender: e.target.value as 'MALE' | 'FEMALE' }))}
+                    className="h-8 text-xs w-full rounded-md border border-input bg-white dark:bg-slate-900 px-2 py-1 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-teal-500"
                   >
-                    <SelectTrigger className="h-8 text-xs focus:ring-teal-500">
-                      <SelectValue placeholder="Gender" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="MALE">Male</SelectItem>
-                      <SelectItem value="FEMALE">Female</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    <option value="MALE">Male</option>
+                    <option value="FEMALE">Female</option>
+                  </select>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Date of Birth</label>
+                  <label className="text-[10px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider block">Date of Birth</label>
                   <Input
                     type="date"
                     value={newDependent.dob}
                     onChange={(e) => setNewDependent((prev: any) => ({ ...prev, dob: e.target.value }))}
-                    className="h-8 text-xs focus-visible:ring-teal-500"
+                    className="h-8 text-xs bg-white dark:bg-slate-900 focus-visible:ring-teal-500"
                   />
                 </div>
               </div>
@@ -675,7 +778,11 @@ export function PhilHealthInlineForm({
                   variant="outline"
                   size="sm"
                   className="h-8 text-xs"
-                  onClick={() => setIsAddingDependent(false)}
+                  onClick={() => {
+                    setIsAddingDependent(false)
+                    setDependentLookupInfo(null)
+                    setDependentLookupStatus('idle')
+                  }}
                   disabled={isLoading}
                 >
                   Cancel

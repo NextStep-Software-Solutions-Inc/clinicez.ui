@@ -1962,6 +1962,190 @@ export const getPrincipalMemberByPinAction = withErrorHandling(
     },
 );
 
+export type DependentMemberInfo = {
+    pin: string;
+    firstName: string;
+    lastName: string;
+    middleName: string;
+    extensionName: string;
+    dob: string;
+    gender?: "MALE" | "FEMALE";
+    userId?: number;
+};
+
+export const getDependentMemberByPinAction = withErrorHandling(
+    async (pin: string, excludeUserId?: string | number): Promise<{ message: string; data: DependentMemberInfo | null }> => {
+        const session = await getCachedSession();
+        if (!session) throw new Error("Unauthorized");
+
+        const normalizedPin = pin.trim().replace(/\D/g, "");
+        if (!normalizedPin) throw new Error("PIN is required.");
+
+        const record = await prisma.philHealthRecord.findFirst({
+            where: { pin: normalizedPin, deletedAt: null },
+            include: { User: true },
+        });
+
+        if (record && record.User) {
+            if (excludeUserId && record.User.id.toString() === excludeUserId.toString()) {
+                return {
+                    message: "Principal member cannot add themselves as their own dependent.",
+                    data: null,
+                };
+            }
+
+            return {
+                message: "Dependent patient retrieved from ClinicEZ",
+                data: {
+                    pin: normalizedPin,
+                    firstName: record.User.firstName ?? "",
+                    lastName: record.User.lastName ?? "",
+                    middleName: record.User.middleName ?? "",
+                    extensionName: record.User.suffix ?? "",
+                    dob: record.User.dob ? record.User.dob.toISOString().slice(0, 10) : "",
+                    gender: (record.User.gender as "MALE" | "FEMALE") || "MALE",
+                    userId: record.User.id,
+                },
+            };
+        }
+
+        const cp = await prisma.clinicPatient.findFirst({
+            where: { konsultaPatientPin: normalizedPin, isActive: true, deletedAt: null },
+            include: { Patient: true },
+        });
+
+        if (cp && cp.Patient) {
+            if (excludeUserId && cp.Patient.id.toString() === excludeUserId.toString()) {
+                return {
+                    message: "Principal member cannot add themselves as their own dependent.",
+                    data: null,
+                };
+            }
+
+            return {
+                message: "Dependent patient retrieved from ClinicEZ",
+                data: {
+                    pin: normalizedPin,
+                    firstName: cp.Patient.firstName ?? "",
+                    lastName: cp.Patient.lastName ?? "",
+                    middleName: cp.Patient.middleName ?? "",
+                    extensionName: cp.Patient.suffix ?? "",
+                    dob: cp.Patient.dob ? cp.Patient.dob.toISOString().slice(0, 10) : "",
+                    gender: (cp.Patient.gender as "MALE" | "FEMALE") || "MALE",
+                    userId: cp.Patient.id,
+                },
+            };
+        }
+
+        return {
+            message: `No dependent found with PhilHealth PIN: ${normalizedPin}`,
+            data: null,
+        };
+    },
+);
+
+export const registerDependentMemberAction = withErrorHandling(
+    async (input: {
+        pin: string;
+        principalMemberPin: string;
+        firstName: string;
+        lastName: string;
+        middleName?: string;
+        extensionName?: string;
+        dob?: string;
+        gender?: "MALE" | "FEMALE";
+    }): Promise<{ message: string; data: DependentMemberInfo }> => {
+        const session = await getCachedSession();
+        if (!session) throw new Error("Unauthorized: Staff authentication required.");
+
+        const normalizedPin = input.pin.trim().replace(/\D/g, "");
+        if (normalizedPin.length !== 12 && normalizedPin.length !== 15) {
+            throw new Error("Dependent PIN must be a 12-digit PhilHealth PIN.");
+        }
+        if (!input.firstName.trim() || !input.lastName.trim()) {
+            throw new Error("Dependent First Name and Last Name are required.");
+        }
+
+        const normPrincipalPin = input.principalMemberPin.trim().replace(/\D/g, "");
+
+        const existingRecord = await prisma.philHealthRecord.findFirst({
+            where: { pin: normalizedPin, deletedAt: null },
+            include: { User: true },
+        });
+
+        if (existingRecord && existingRecord.User) {
+            if (existingRecord.memberType !== "DD" || existingRecord.principalMemberPin !== normPrincipalPin) {
+                await prisma.philHealthRecord.update({
+                    where: { id: existingRecord.id },
+                    data: {
+                        memberType: "DD",
+                        principalMemberPin: normPrincipalPin,
+                    },
+                });
+            }
+            return {
+                message: "Dependent already registered in ClinicEZ",
+                data: {
+                    pin: normalizedPin,
+                    firstName: existingRecord.User.firstName ?? "",
+                    lastName: existingRecord.User.lastName ?? "",
+                    middleName: existingRecord.User.middleName ?? "",
+                    extensionName: existingRecord.User.suffix ?? "",
+                    dob: existingRecord.User.dob ? existingRecord.User.dob.toISOString().slice(0, 10) : "",
+                    gender: (existingRecord.User.gender as "MALE" | "FEMALE") || "MALE",
+                    userId: existingRecord.User.id,
+                },
+            };
+        }
+
+        const dummyEmail = `ph-dd-${normalizedPin}-${Date.now()}@clinicez.net`;
+        const auth0UserId = `auth0|dd-${normalizedPin}-${Date.now()}`;
+
+        let dobDate: Date | undefined;
+        if (input.dob) {
+            dobDate = new Date(input.dob);
+            if (isNaN(dobDate.getTime())) dobDate = undefined;
+        }
+
+        const newUser = await prisma.user.create({
+            data: {
+                email: dummyEmail,
+                userId: auth0UserId,
+                firstName: input.firstName.trim(),
+                lastName: input.lastName.trim(),
+                middleName: input.middleName?.trim() || "",
+                suffix: input.extensionName?.trim() || "",
+                dob: dobDate,
+                gender: input.gender || "MALE",
+            },
+        });
+
+        await prisma.philHealthRecord.create({
+            data: {
+                userId: newUser.id,
+                pin: normalizedPin,
+                principalMemberPin: normPrincipalPin,
+                memberType: "DD",
+                pinVerificationStatus: "UNVERIFIED_STUB",
+            },
+        });
+
+        return {
+            message: "Dependent registered successfully",
+            data: {
+                pin: normalizedPin,
+                firstName: newUser.firstName ?? "",
+                lastName: newUser.lastName ?? "",
+                middleName: newUser.middleName ?? "",
+                extensionName: newUser.suffix ?? "",
+                dob: newUser.dob ? newUser.dob.toISOString().slice(0, 10) : "",
+                gender: (newUser.gender as "MALE" | "FEMALE") || "MALE",
+                userId: newUser.id,
+            },
+        };
+    },
+);
+
 export const registerPrincipalMemberAction = withErrorHandling(
     async (input: {
         pin: string;

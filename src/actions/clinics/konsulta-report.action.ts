@@ -1973,7 +1973,7 @@ export const registerPrincipalMemberAction = withErrorHandling(
         gender?: "MALE" | "FEMALE";
     }): Promise<{ message: string; data: PrincipalMemberInfo }> => {
         const session = await getCachedSession();
-        if (!session) throw new Error("Unauthorized");
+        if (!session) throw new Error("Unauthorized: Staff authentication required.");
 
         const normalizedPin = input.pin.trim().replace(/\D/g, "");
         if (normalizedPin.length !== 12 && normalizedPin.length !== 15) {
@@ -1983,15 +1983,22 @@ export const registerPrincipalMemberAction = withErrorHandling(
             throw new Error("Principal Member First Name and Last Name are required.");
         }
 
-        // Check if existing MM record exists
+        // Check if ANY PhilHealthRecord already exists for this PIN to prevent duplicate stubs
         const existingRecord = await prisma.philHealthRecord.findFirst({
-            where: { pin: normalizedPin, memberType: "MM", deletedAt: null },
+            where: { pin: normalizedPin, deletedAt: null },
             include: { User: true },
         });
 
         if (existingRecord && existingRecord.User) {
+            // Update to MM if it wasn't set
+            if (existingRecord.memberType !== "MM") {
+                await prisma.philHealthRecord.update({
+                    where: { id: existingRecord.id },
+                    data: { memberType: "MM" },
+                });
+            }
             return {
-                message: "Principal member already registered",
+                message: "Principal member already registered in ClinicEZ",
                 data: {
                     pin: normalizedPin,
                     firstName: existingRecord.User.firstName ?? "",
@@ -2004,7 +2011,7 @@ export const registerPrincipalMemberAction = withErrorHandling(
             };
         }
 
-        // Create new User & PhilHealthRecord for Principal Member
+        // Create new User & PhilHealthRecord marked as UNVERIFIED_STUB
         const dummyEmail = `ph-pm-${normalizedPin}-${Date.now()}@clinicez.net`;
         const auth0UserId = `auth0|pm-${normalizedPin}-${Date.now()}`;
 
@@ -2032,6 +2039,7 @@ export const registerPrincipalMemberAction = withErrorHandling(
                 userId: newUser.id,
                 pin: normalizedPin,
                 memberType: "MM",
+                pinVerificationStatus: "UNVERIFIED_STUB",
             },
         });
 

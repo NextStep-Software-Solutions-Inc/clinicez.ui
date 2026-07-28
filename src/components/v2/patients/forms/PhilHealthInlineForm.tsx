@@ -277,6 +277,23 @@ export function PhilHealthInlineForm({
       {/* Main PhilHealth Insurance Fields */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-3.5 gap-y-3">
         {renderField(
+          'Member Type',
+          'memberType',
+          <Select
+            value={formData.memberType || 'MM'}
+            onValueChange={(val) => handleFieldChange('memberType', val)}
+          >
+            <SelectTrigger className="h-8 text-xs focus:ring-teal-500">
+              <SelectValue placeholder="Select Member Type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="MM">Principal Member</SelectItem>
+              <SelectItem value="DD">Dependent</SelectItem>
+            </SelectContent>
+          </Select>
+        )}
+
+        {renderField(
           formData.memberType === 'DD' ? 'Principal Member PIN' : 'PIN (PhilHealth ID)',
           'pin',
           <Input
@@ -325,23 +342,6 @@ export function PhilHealthInlineForm({
             placeholder="XXXX-XXXX-XXXX-XXXX"
           />
         )}
-
-        {renderField(
-          'Member Type',
-          'memberType',
-          <Select
-            value={formData.memberType || 'MM'}
-            onValueChange={(val) => handleFieldChange('memberType', val)}
-          >
-            <SelectTrigger className="h-8 text-xs focus:ring-teal-500">
-              <SelectValue placeholder="Select Member Type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="MM">Principal Member</SelectItem>
-              <SelectItem value="DD">Dependent</SelectItem>
-            </SelectContent>
-          </Select>
-        )}
       </div>
 
       {/* Read-Only Principal Member Info Block for Dependents */}
@@ -386,6 +386,170 @@ export function PhilHealthInlineForm({
           ) : (
             <div className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-950/30 dark:text-amber-400 p-2.5 rounded border border-amber-200 dark:border-amber-800">
               No principal member record found in system matching PIN <span className="font-mono font-semibold">{formData.pin || '—'}</span>. Enter the Principal Member's details during clinic enlistment.
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Dependents Section (Only displayed for Member Type = Principal Member MM) */}
+      {formData.memberType === 'MM' && (
+        <div className="border-t border-slate-100 dark:border-slate-800 pt-6">
+          <div className="flex items-center justify-between gap-4 mb-4">
+            <div>
+              <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                PhilHealth Dependents
+              </h4>
+              <p className="text-xs text-slate-400 dark:text-slate-500">
+                Family members covered under this insurance plan
+              </p>
+            </div>
+            {!isAddingDependent && currentData?.id && (
+              <Button
+                type="button"
+                onClick={() => setIsAddingDependent(true)}
+                size="sm"
+                className="text-xs flex items-center gap-1.5 h-8"
+                disabled={isLoading}
+              >
+                <UserPlus className="w-3.5 h-3.5" />
+                Add Dependent
+              </Button>
+            )}
+          </div>
+
+          {/* Add Dependent Inline Form */}
+          {isAddingDependent && (
+            <div className="p-4 rounded-xl border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/10 space-y-4 mb-6">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                  New Dependent Info
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setIsAddingDependent(false)}
+                  className="text-slate-400 hover:text-slate-600"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-3.5 gap-y-3">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">First Name *</label>
+                  <Input
+                    value={newDependent.firstName}
+                    onChange={(e) => setNewDependent((prev: any) => ({ ...prev, firstName: e.target.value }))}
+                    className="h-8 text-xs focus-visible:ring-teal-500"
+                    placeholder="First Name"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Middle Name</label>
+                  <Input
+                    value={newDependent.middleName}
+                    onChange={(e) => setNewDependent((prev: any) => ({ ...prev, middleName: e.target.value }))}
+                    className="h-8 text-xs focus-visible:ring-teal-500"
+                    placeholder="Middle Name"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Last Name *</label>
+                  <Input
+                    value={newDependent.lastName}
+                    onChange={(e) => setNewDependent((prev: any) => ({ ...prev, lastName: e.target.value }))}
+                    className="h-8 text-xs focus-visible:ring-teal-500"
+                    placeholder="Last Name"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Relationship</label>
+                  <Input
+                    value={newDependent.relationship}
+                    onChange={(e) => setNewDependent((prev: any) => ({ ...prev, relationship: e.target.value }))}
+                    className="h-8 text-xs focus-visible:ring-teal-500"
+                    placeholder="e.g. Child, Spouse"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Gender</label>
+                  <Select
+                    value={newDependent.gender}
+                    onValueChange={(val) => setNewDependent((prev: any) => ({ ...prev, gender: val }))}
+                  >
+                    <SelectTrigger className="h-8 text-xs focus:ring-teal-500">
+                      <SelectValue placeholder="Gender" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="MALE">Male</SelectItem>
+                      <SelectItem value="FEMALE">Female</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Date of Birth</label>
+                  <Input
+                    type="date"
+                    value={newDependent.dob}
+                    onChange={(e) => setNewDependent((prev: any) => ({ ...prev, dob: e.target.value }))}
+                    className="h-8 text-xs focus-visible:ring-teal-500"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-2 justify-end pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-8 text-xs"
+                  onClick={() => setIsAddingDependent(false)}
+                  disabled={isLoading}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  className="h-8 text-xs bg-teal-600 hover:bg-teal-700 text-white"
+                  onClick={handleAddDependent}
+                  disabled={isLoading}
+                >
+                  Save Dependent
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Dependents list */}
+          {dependents.length === 0 ? (
+            <div className="p-8 text-center rounded-xl border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/10">
+              <p className="text-xs text-slate-400 dark:text-slate-500">No dependents added yet.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+              {dependents.map((dep) => (
+                <div
+                  key={dep.id}
+                  className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-between gap-3 shadow-xs"
+                >
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">
+                      {dep.firstName} {dep.lastName}
+                    </p>
+                    <p className="text-[10px] text-slate-400 dark:text-slate-500 capitalize">
+                      {dep.relationship || 'Dependent'} • {dep.gender?.toLowerCase() || 'unspecified'}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveDependent(dep.id, `${dep.firstName} ${dep.lastName}`)}
+                    className="text-slate-400 hover:text-red-500 transition-colors p-1"
+                    disabled={isLoading}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
             </div>
           )}
         </div>

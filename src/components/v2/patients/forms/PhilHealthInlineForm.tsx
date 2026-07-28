@@ -77,6 +77,30 @@ export function PhilHealthInlineForm({
     }
   }, [formData.memberType, formData.pin])
 
+  // Real-time check for identical PINs when Member Type is Dependent
+  useEffect(() => {
+    const rawPin = unmaskDigits(formData.pin)
+    const rawDepPin = unmaskDigits(formData.dependentPin)
+    if (formData.memberType === 'DD' && rawPin && rawDepPin && rawPin === rawDepPin) {
+      setErrors((prev) => ({
+        ...prev,
+        pin: 'Principal Member PIN and Dependent PIN cannot be the same.',
+        dependentPin: 'Principal Member PIN and Dependent PIN cannot be the same.',
+      }))
+    } else {
+      setErrors((prev) => {
+        const next = { ...prev }
+        if (next.pin === 'Principal Member PIN and Dependent PIN cannot be the same.') {
+          delete next.pin
+        }
+        if (next.dependentPin === 'Principal Member PIN and Dependent PIN cannot be the same.') {
+          delete next.dependentPin
+        }
+        return next
+      })
+    }
+  }, [formData.memberType, formData.pin, formData.dependentPin])
+
   // Track if main form has changes
   const hasChanges = useMemo(() => {
     return JSON.stringify(formData) !== JSON.stringify(initialFormValues)

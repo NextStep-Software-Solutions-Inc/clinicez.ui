@@ -149,31 +149,6 @@ export function PhilHealthInlineForm({
       throw new Error('Please fix input field errors before saving.')
     }
 
-    // Clean data format before validation
-    const parsedData: PhilHealthRecordFormInput = {
-      pin: formData.pin,
-      dependentPin: formData.dependentPin || null,
-      memberType: formData.memberType || 'MM',
-      tin: formData.tin || null,
-      philSysId: formData.philSysId || null,
-      photoUrl: formData.photoUrl || null,
-      dependents: dependents || [],
-    }
-
-    // Validation using zod schema
-    const validationResult = philHealthRecordSchema.safeParse(parsedData)
-    if (!validationResult.success) {
-      const fieldErrors: Record<string, string> = {}
-      validationResult.error.errors.forEach((err) => {
-        if (err.path[0]) {
-          fieldErrors[err.path[0] as string] = err.message
-        }
-      })
-      setErrors(fieldErrors)
-      toast.error('Validation failed. Please check form errors.')
-      throw new Error('Validation failed')
-    }
-
     let saveErrorMessage: string | null = null
 
     try {

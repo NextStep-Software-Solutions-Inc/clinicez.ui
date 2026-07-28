@@ -79,28 +79,38 @@ export function PhilHealthInlineForm({
     }
   }, [formData.memberType, formData.pin])
 
-  // Real-time check for identical PINs when Member Type is Dependent
+  // Comprehensive real-time inline input validation
   useEffect(() => {
+    const newErrors: Record<string, string | undefined> = {}
     const rawPin = unmaskDigits(formData.pin)
     const rawDepPin = unmaskDigits(formData.dependentPin)
-    if (formData.memberType === 'DD' && rawPin && rawDepPin && rawPin === rawDepPin) {
-      setErrors((prev) => ({
-        ...prev,
-        pin: 'Principal Member PIN and Dependent PIN cannot be the same.',
-        dependentPin: 'Principal Member PIN and Dependent PIN cannot be the same.',
-      }))
+
+    if (formData.memberType === 'DD') {
+      if (!rawPin) {
+        newErrors.pin = 'Principal Member PIN is required for dependent profiles.'
+      } else if (rawPin.length !== 12 && rawPin.length !== 15) {
+        newErrors.pin = 'Principal Member PIN must be a 12-digit PhilHealth PIN.'
+      }
+
+      if (!rawDepPin) {
+        newErrors.dependentPin = 'Patient PIN (Dependent PIN) is required for dependent profiles.'
+      } else if (rawDepPin.length !== 12 && rawDepPin.length !== 15) {
+        newErrors.dependentPin = 'Patient PIN (Dependent PIN) must be a 12-digit PhilHealth PIN.'
+      }
+
+      if (rawPin && rawDepPin && rawPin === rawDepPin) {
+        newErrors.pin = 'Principal Member PIN and Dependent/Patient PIN cannot be the same.'
+        newErrors.dependentPin = 'Principal Member PIN and Dependent/Patient PIN cannot be the same.'
+      }
     } else {
-      setErrors((prev) => {
-        const next = { ...prev }
-        if (next.pin === 'Principal Member PIN and Dependent PIN cannot be the same.') {
-          delete next.pin
-        }
-        if (next.dependentPin === 'Principal Member PIN and Dependent PIN cannot be the same.') {
-          delete next.dependentPin
-        }
-        return next
-      })
+      if (!rawPin) {
+        newErrors.pin = 'PhilHealth PIN is required.'
+      } else if (rawPin.length !== 12 && rawPin.length !== 15) {
+        newErrors.pin = 'PhilHealth PIN must be a 12-digit PIN.'
+      }
     }
+
+    setErrors(newErrors)
   }, [formData.memberType, formData.pin, formData.dependentPin])
 
   // Track if main form has changes
@@ -132,52 +142,49 @@ export function PhilHealthInlineForm({
       return
     }
 
-    if (formData.memberType === 'DD') {
-      const rawPin = unmaskDigits(formData.pin)
-      const rawDepPin = unmaskDigits(formData.dependentPin)
+    const currentErrors: Record<string, string> = {}
+    const rawPin = unmaskDigits(formData.pin)
+    const rawDepPin = unmaskDigits(formData.dependentPin)
 
+    if (formData.memberType === 'DD') {
       if (!rawPin) {
-        toast.error('Principal Member PIN is required for dependent profiles.')
-        throw new Error('Principal Member PIN is required.')
-      }
-      if (rawPin.length !== 12 && rawPin.length !== 15) {
-        toast.error('Principal Member PIN must be a valid 12-digit PhilHealth PIN.')
-        throw new Error('Principal Member PIN invalid length.')
+        currentErrors.pin = 'Principal Member PIN is required for dependent profiles.'
+      } else if (rawPin.length !== 12 && rawPin.length !== 15) {
+        currentErrors.pin = 'Principal Member PIN must be a 12-digit PhilHealth PIN.'
       }
 
       if (!rawDepPin) {
-        toast.error('Patient PIN (Dependent PIN) is required for dependent profiles.')
-        throw new Error('Patient PIN is required.')
-      }
-      if (rawDepPin.length !== 12 && rawDepPin.length !== 15) {
-        toast.error('Patient PIN (Dependent PIN) must be a valid 12-digit PhilHealth PIN.')
-        throw new Error('Patient PIN invalid length.')
+        currentErrors.dependentPin = 'Patient PIN (Dependent PIN) is required for dependent profiles.'
+      } else if (rawDepPin.length !== 12 && rawDepPin.length !== 15) {
+        currentErrors.dependentPin = 'Patient PIN (Dependent PIN) must be a 12-digit PhilHealth PIN.'
       }
 
-      if (rawPin === rawDepPin) {
-        toast.error('Principal Member PIN and Dependent/Patient PIN cannot be the same.')
-        throw new Error('Principal Member PIN and Dependent PIN cannot be identical.')
+      if (rawPin && rawDepPin && rawPin === rawDepPin) {
+        currentErrors.pin = 'Principal Member PIN and Dependent/Patient PIN cannot be the same.'
+        currentErrors.dependentPin = 'Principal Member PIN and Dependent/Patient PIN cannot be the same.'
       }
     } else {
-      const rawPin = unmaskDigits(formData.pin)
       if (!rawPin) {
-        toast.error('PhilHealth PIN is required.')
-        throw new Error('PIN is required.')
-      }
-      if (rawPin.length !== 12 && rawPin.length !== 15) {
-        toast.error('PhilHealth PIN must be a valid 12-digit PIN.')
-        throw new Error('PIN invalid length.')
+        currentErrors.pin = 'PhilHealth PIN is required.'
+      } else if (rawPin.length !== 12 && rawPin.length !== 15) {
+        currentErrors.pin = 'PhilHealth PIN must be a 12-digit PIN.'
       }
     }
 
+    if (Object.keys(currentErrors).length > 0) {
+      setErrors(currentErrors)
+      throw new Error('Please fix input field errors before saving.')
+    }
+
     // Clean data format before validation
-    const parsedData: any = {
+    const parsedData: PhilHealthRecordFormInput = {
       pin: formData.pin,
       dependentPin: formData.dependentPin || null,
       memberType: formData.memberType || 'MM',
       tin: formData.tin || null,
       philSysId: formData.philSysId || null,
       photoUrl: formData.photoUrl || null,
+      dependents: dependents || [],
     }
 
     // Validation using zod schema

@@ -236,7 +236,7 @@ export function PhilHealthInlineForm({
     return () => {
       if (saveRef) saveRef.current = null
     }
-  }, [saveRef, formData, hasChanges])
+  }, [saveRef, formData, principalForm, principalInfo, dependents, hasChanges])
 
   const handleAddDependent = async () => {
     if (!newDependent.firstName) {

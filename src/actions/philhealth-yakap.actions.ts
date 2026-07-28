@@ -129,11 +129,29 @@ export async function enlistKonsultaAction(
     const accreNo = setting.philhealthAccreditationNumber;
     const clinicId = setting.clinicId;
 
+    // Resolve ClinicPatient ID (handles both ClinicPatient.id and Patient.id)
+    const cp = await prisma.clinicPatient.findFirst({
+      where: {
+        OR: [
+          { id: clinicPatientId, clinicId },
+          { patientId: clinicPatientId, clinicId }
+        ],
+        isActive: true,
+        deletedAt: null
+      },
+      select: { id: true }
+    });
+
+    if (!cp) {
+      throw new Error("Patient is not registered in this clinic.");
+    }
+
+    const resolvedClinicPatientId = cp.id;
     const year = new Date().getFullYear();
 
     const existing = await prisma.philHealthKonsultaEnlistment.findUnique({
       where: {
-        unique_enlistment_year: { clinicPatientId, year }
+        unique_enlistment_year: { clinicPatientId: resolvedClinicPatientId, year }
       }
     });
 
@@ -148,7 +166,7 @@ export async function enlistKonsultaAction(
     const enlistment = await prisma.philHealthKonsultaEnlistment.upsert({
       where: {
         unique_enlistment_year: {
-          clinicPatientId,
+          clinicPatientId: resolvedClinicPatientId,
           year,
         }
       },
@@ -160,7 +178,7 @@ export async function enlistKonsultaAction(
         enlistmentTransNo,
       },
       create: {
-        clinicPatientId,
+        clinicPatientId: resolvedClinicPatientId,
         year,
         hciCaseNo,
         enlistmentTransNo,
@@ -225,7 +243,15 @@ export async function generateKonsultaIdsAction(
 
 export async function getKonsultaEnlistmentAction(clinicPatientId: number) {
   const year = new Date().getFullYear();
-  return await prisma.philHealthKonsultaEnlistment.findUnique({ where: { unique_enlistment_year: { clinicPatientId, year } } });
+  return await prisma.philHealthKonsultaEnlistment.findFirst({
+    where: {
+      OR: [
+        { clinicPatientId },
+        { ClinicPatient: { patientId: clinicPatientId } }
+      ],
+      year
+    }
+  });
 }
 
 

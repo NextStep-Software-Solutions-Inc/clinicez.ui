@@ -7,8 +7,9 @@ import { getActionErrorMessage } from '@/lib/action-error'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
-import { Trash2, Plus, UserPlus, X, ShieldAlert } from 'lucide-react'
+import { Trash2, Plus, UserPlus, X, ShieldAlert, ShieldCheck } from 'lucide-react'
 import { toast } from 'sonner'
+import { getPrincipalMemberByPinAction, type PrincipalMemberInfo } from '@/actions/clinics/konsulta-report.action'
 import { philHealthRecordSchema, type PhilHealthRecordFormInput, type PhilHealthDependentFormInput } from '@/schemas/philhealth-record-schema'
 import { formatPhilHealthPin, formatPhilSysId, formatTin, unmaskDigits } from './schemas/mask-utils'
 import { philHealthSchema, dependentSchema } from './schemas/philhealth.schema'
@@ -59,6 +60,22 @@ export function PhilHealthInlineForm({
   })
   const [errors, setErrors] = useState<Record<string, string | undefined>>({})
   const [isLoading, setIsLoading] = useState(false)
+  const [principalInfo, setPrincipalInfo] = useState<PrincipalMemberInfo | null>(null)
+
+  // Lookup principal member info when memberType is Dependent and PIN is entered
+  useEffect(() => {
+    if (formData.memberType === 'DD' && formData.pin?.trim()) {
+      void getPrincipalMemberByPinAction(formData.pin.trim()).then((res) => {
+        if (res.data) {
+          setPrincipalInfo(res.data)
+        } else {
+          setPrincipalInfo(null)
+        }
+      })
+    } else {
+      setPrincipalInfo(null)
+    }
+  }, [formData.memberType, formData.pin])
 
   // Track if main form has changes
   const hasChanges = useMemo(() => {
@@ -260,7 +277,7 @@ export function PhilHealthInlineForm({
       {/* Main PhilHealth Insurance Fields */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-3.5 gap-y-3">
         {renderField(
-          'PIN (PhilHealth ID)',
+          formData.memberType === 'DD' ? 'Principal Member PIN' : 'PIN (PhilHealth ID)',
           'pin',
           <Input
             value={formatPhilHealthPin(formData.pin)}
@@ -312,6 +329,53 @@ export function PhilHealthInlineForm({
           </Select>
         )}
       </div>
+
+      {/* Read-Only Principal Member Info Block for Dependents */}
+      {formData.memberType === 'DD' && (
+        <div className="mt-3">
+          {principalInfo ? (
+            <div className="border border-teal-200 dark:border-teal-900 bg-teal-50/50 dark:bg-teal-950/20 rounded-lg p-3 space-y-2 text-xs">
+              <div className="flex items-center justify-between border-b border-teal-100 dark:border-teal-900 pb-1">
+                <span className="font-semibold text-teal-700 dark:text-teal-400 flex items-center gap-1">
+                  <ShieldCheck className="h-3.5 w-3.5" />
+                  Principal Member Info (Read-Only)
+                </span>
+                <span className="text-[10px] bg-teal-100 dark:bg-teal-900 text-teal-800 dark:text-teal-200 px-1.5 py-0.5 rounded font-medium">Linked</span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-x-3 gap-y-1 text-slate-600 dark:text-slate-400">
+                <div>
+                  <span className="font-medium text-slate-900 dark:text-slate-200 block text-[10px] uppercase">PIN</span>
+                  <span className="font-mono text-slate-900 dark:text-slate-100 font-semibold">{principalInfo.pin}</span>
+                </div>
+                <div>
+                  <span className="font-medium text-slate-900 dark:text-slate-200 block text-[10px] uppercase">DOB</span>
+                  <span>{principalInfo.dob}</span>
+                </div>
+                <div>
+                  <span className="font-medium text-slate-900 dark:text-slate-200 block text-[10px] uppercase">First Name</span>
+                  <span>{principalInfo.firstName}</span>
+                </div>
+                <div>
+                  <span className="font-medium text-slate-900 dark:text-slate-200 block text-[10px] uppercase">Last Name</span>
+                  <span>{principalInfo.lastName}</span>
+                </div>
+                <div>
+                  <span className="font-medium text-slate-900 dark:text-slate-200 block text-[10px] uppercase">Middle Name</span>
+                  <span>{principalInfo.middleName || "—"}</span>
+                </div>
+                <div>
+                  <span className="font-medium text-slate-900 dark:text-slate-200 block text-[10px] uppercase">Ext Name</span>
+                  <span>{principalInfo.extensionName || "—"}</span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-950/30 dark:text-amber-400 p-2.5 rounded border border-amber-200 dark:border-amber-800">
+              No principal member record found in system matching PIN <span className="font-mono font-semibold">{formData.pin || '—'}</span>. Enter the Principal Member's details during clinic enlistment.
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Dependents Section */}
       <div className="border-t border-slate-100 dark:border-slate-800 pt-6">

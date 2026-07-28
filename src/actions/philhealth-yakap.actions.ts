@@ -1775,7 +1775,7 @@ export async function importRegistrationListToDbAction(clinicUid: string, entrie
         });
       } catch (err: any) {
         errorCount++;
-        errors.push(`Failed to import PIN ${pinToFind}: ${err.message}`);
+        errors.push(`Failed to import PIN ${patientPin}: ${err.message}`);
       }
     }
 

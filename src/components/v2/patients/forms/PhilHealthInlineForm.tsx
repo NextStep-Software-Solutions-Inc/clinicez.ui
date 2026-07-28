@@ -19,6 +19,7 @@ export interface PhilHealthInlineFormProps {
   currentData?: {
     id?: number
     pin: string
+    principalMemberPin?: string
     dependentPin?: string
     tin?: string
     philSysId?: string
@@ -41,7 +42,7 @@ export function PhilHealthInlineForm({
   const initialFormValues = useMemo(() => {
     return {
       pin: currentData?.pin || '',
-      dependentPin: currentData?.dependentPin || '',
+      principalMemberPin: currentData?.principalMemberPin || currentData?.dependentPin || '',
       tin: currentData?.tin || '',
       philSysId: currentData?.philSysId || '',
       memberType: currentData?.memberType || 'MM',
@@ -66,8 +67,8 @@ export function PhilHealthInlineForm({
 
   // Lookup principal member info when memberType is Dependent and Principal Member PIN is entered
   useEffect(() => {
-    if (formData.memberType === 'DD' && formData.dependentPin?.trim()) {
-      void getPrincipalMemberByPinAction(formData.dependentPin.trim(), userId).then((res) => {
+    if (formData.memberType === 'DD' && formData.principalMemberPin?.trim()) {
+      void getPrincipalMemberByPinAction(formData.principalMemberPin.trim(), userId).then((res) => {
         if (res.data) {
           setPrincipalInfo(res.data)
         } else {
@@ -75,7 +76,7 @@ export function PhilHealthInlineForm({
           if (res.message?.includes('cannot link to themselves')) {
             setErrors((prev) => ({
               ...prev,
-              dependentPin: "Patient cannot link to themselves as the Principal Member. Please enter the Principal Member's PIN.",
+              principalMemberPin: "Patient cannot link to themselves as the Principal Member. Please enter the Principal Member's PIN.",
             }))
           }
         }
@@ -83,13 +84,13 @@ export function PhilHealthInlineForm({
     } else {
       setPrincipalInfo(null)
     }
-  }, [formData.memberType, formData.dependentPin, userId])
+  }, [formData.memberType, formData.principalMemberPin, userId])
 
   // Zod-powered real-time inline input validation
   useEffect(() => {
     const rawData = {
       pin: unmaskDigits(formData.pin),
-      dependentPin: unmaskDigits(formData.dependentPin),
+      dependentPin: unmaskDigits(formData.principalMemberPin),
       tin: unmaskDigits(formData.tin),
       philSysId: unmaskDigits(formData.philSysId),
       memberType: formData.memberType || 'MM',
@@ -102,7 +103,8 @@ export function PhilHealthInlineForm({
       const fieldErrors: Record<string, string> = {}
       validationResult.error.issues.forEach((issue) => {
         if (issue.path[0]) {
-          fieldErrors[issue.path[0] as string] = issue.message
+          const key = issue.path[0] === 'dependentPin' ? 'principalMemberPin' : (issue.path[0] as string)
+          fieldErrors[key] = issue.message
         }
       })
       setErrors(fieldErrors)
@@ -135,7 +137,7 @@ export function PhilHealthInlineForm({
 
     const parsedData = {
       pin: unmaskDigits(formData.pin),
-      dependentPin: unmaskDigits(formData.dependentPin),
+      dependentPin: unmaskDigits(formData.principalMemberPin),
       memberType: formData.memberType || 'MM',
       tin: unmaskDigits(formData.tin) || null,
       philSysId: unmaskDigits(formData.philSysId) || null,
@@ -148,7 +150,8 @@ export function PhilHealthInlineForm({
       const fieldErrors: Record<string, string> = {}
       validationResult.error.issues.forEach((issue) => {
         if (issue.path[0]) {
-          fieldErrors[issue.path[0] as string] = issue.message
+          const key = issue.path[0] === 'dependentPin' ? 'principalMemberPin' : (issue.path[0] as string)
+          fieldErrors[key] = issue.message
         }
       })
       setErrors(fieldErrors)
@@ -329,10 +332,10 @@ export function PhilHealthInlineForm({
         {formData.memberType === 'DD' && (
           renderField(
             'Principal Member PIN',
-            'dependentPin',
+            'principalMemberPin',
             <Input
-              value={formatPhilHealthPin(formData.dependentPin)}
-              onChange={(e) => handleFieldChange('dependentPin', unmaskDigits(e.target.value))}
+              value={formatPhilHealthPin(formData.principalMemberPin)}
+              onChange={(e) => handleFieldChange('principalMemberPin', unmaskDigits(e.target.value))}
               maxLength={14}
               className="h-8 text-xs focus-visible:ring-teal-500 font-mono"
               placeholder="XX-XXXXXXXXX-X"

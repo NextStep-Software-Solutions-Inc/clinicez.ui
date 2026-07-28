@@ -164,7 +164,7 @@ export default function ClinicPatientProfileClient({
     if (!record) return undefined
     return {
       pin: record.pin,
-      dependentPin: (record as any).dependentPin || undefined,
+      principalMemberPin: (record as any).dependentPin || undefined,
       tin: record.tin || undefined,
       philSysId: record.philSysId || undefined,
       memberType: ((record as any).memberType as 'MM' | 'DD') || 'MM',

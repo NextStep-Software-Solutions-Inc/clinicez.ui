@@ -71,7 +71,8 @@ export function PhilHealthInlineForm({
     dob: '',
   })
   const [dependentLookupInfo, setDependentLookupInfo] = useState<DependentMemberInfo | null>(null)
-  const [dependentLookupStatus, setDependentLookupStatus] = useState<'idle' | 'searching' | 'found' | 'not_found'>('idle')
+  const [dependentLookupStatus, setDependentLookupStatus] = useState<'idle' | 'searching' | 'found' | 'not_found' | 'already_linked'>('idle')
+  const [dependentLookupErrorMessage, setDependentLookupErrorMessage] = useState<string>('')
   const [errors, setErrors] = useState<Record<string, string | undefined>>({})
   const [isLoading, setIsLoading] = useState(false)
   const [principalInfo, setPrincipalInfo] = useState<PrincipalMemberInfo | null>(null)
@@ -84,16 +85,26 @@ export function PhilHealthInlineForm({
     gender: 'MALE' as 'MALE' | 'FEMALE',
   })
 
-  // Auto-detect dependent info by PIN
+  // Auto-detect dependent info by PIN with validation guards
   useEffect(() => {
     const rawPin = unmaskDigits(newDependent.pin || '')
+    const mainPin = unmaskDigits(formData.pin || '')
+
+    if (rawPin && mainPin && rawPin === mainPin) {
+      setDependentLookupInfo(null)
+      setDependentLookupStatus('already_linked')
+      setDependentLookupErrorMessage("Dependent PIN cannot be the same as the Principal Member's PIN.")
+      return
+    }
+
     if (rawPin.length === 12 || rawPin.length === 15) {
       setDependentLookupStatus('searching')
-      void getDependentMemberByPinAction(rawPin, userId).then((res) => {
+      void getDependentMemberByPinAction(rawPin, userId, mainPin).then((res) => {
         if (res.data) {
           const data = res.data
           setDependentLookupInfo(data)
           setDependentLookupStatus('found')
+          setDependentLookupErrorMessage('')
           setNewDependent((prev: any) => ({
             ...prev,
             firstName: data.firstName || prev.firstName,
@@ -104,14 +115,26 @@ export function PhilHealthInlineForm({
           }))
         } else {
           setDependentLookupInfo(null)
-          setDependentLookupStatus('not_found')
+          if (
+            res.message?.includes('already linked') ||
+            res.message?.includes('registered as a Principal Member') ||
+            res.message?.includes('cannot add') ||
+            res.message?.includes('same as')
+          ) {
+            setDependentLookupStatus('already_linked')
+            setDependentLookupErrorMessage(res.message)
+          } else {
+            setDependentLookupStatus('not_found')
+            setDependentLookupErrorMessage('')
+          }
         }
       })
     } else {
       setDependentLookupInfo(null)
       setDependentLookupStatus('idle')
+      setDependentLookupErrorMessage('')
     }
-  }, [newDependent.pin, userId])
+  }, [newDependent.pin, formData.pin, userId])
 
   // Lookup principal member info when memberType is Dependent and Principal Member PIN is entered
   useEffect(() => {
@@ -281,6 +304,14 @@ export function PhilHealthInlineForm({
     const rawPin = unmaskDigits(newDependent.pin || '')
     if (!rawPin || (rawPin.length !== 12 && rawPin.length !== 15)) {
       toast.error('Dependent PIN must be a 12-digit PhilHealth PIN.')
+      return
+    }
+    if (rawPin === unmaskDigits(formData.pin || '')) {
+      toast.error("Dependent PIN cannot be the same as the Principal Member's PIN.")
+      return
+    }
+    if (dependentLookupStatus === 'already_linked') {
+      toast.error(dependentLookupErrorMessage || "This Dependent PIN is invalid or already linked to another Principal Member.")
       return
     }
     if (!newDependent.firstName?.trim()) {
@@ -696,6 +727,13 @@ export function PhilHealthInlineForm({
               </div>
 
               {/* Status Notice */}
+              {dependentLookupStatus === 'already_linked' && (
+                <div className="text-xs text-red-700 bg-red-50 dark:bg-red-950/40 dark:text-red-300 p-2.5 rounded-lg border border-red-200 dark:border-red-800 flex items-center gap-2 font-medium">
+                  <ShieldAlert className="w-4 h-4 text-red-600 flex-shrink-0" />
+                  <span>{dependentLookupErrorMessage || "Dependent PIN cannot be added."}</span>
+                </div>
+              )}
+
               {dependentLookupStatus === 'found' && dependentLookupInfo && (
                 <div className="text-xs text-teal-700 bg-teal-50 dark:bg-teal-950/40 dark:text-teal-300 p-2.5 rounded-lg border border-teal-200 dark:border-teal-800 flex items-center gap-2 font-medium">
                   <ShieldCheck className="w-4 h-4 text-teal-600 flex-shrink-0" />

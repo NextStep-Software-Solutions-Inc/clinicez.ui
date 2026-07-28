@@ -1974,12 +1974,20 @@ export type DependentMemberInfo = {
 };
 
 export const getDependentMemberByPinAction = withErrorHandling(
-    async (pin: string, excludeUserId?: string | number): Promise<{ message: string; data: DependentMemberInfo | null }> => {
+    async (pin: string, excludeUserId?: string | number, principalPin?: string): Promise<{ message: string; data: DependentMemberInfo | null }> => {
         const session = await getCachedSession();
         if (!session) throw new Error("Unauthorized");
 
         const normalizedPin = pin.trim().replace(/\D/g, "");
         if (!normalizedPin) throw new Error("PIN is required.");
+
+        const normPrincipalPin = principalPin ? principalPin.trim().replace(/\D/g, "") : "";
+        if (normPrincipalPin && normalizedPin === normPrincipalPin) {
+            return {
+                message: "Dependent PIN cannot be the same as the Principal Member's PIN.",
+                data: null,
+            };
+        }
 
         const record = await prisma.philHealthRecord.findFirst({
             where: { pin: normalizedPin, deletedAt: null },
@@ -1990,6 +1998,20 @@ export const getDependentMemberByPinAction = withErrorHandling(
             if (excludeUserId && record.User.id.toString() === excludeUserId.toString()) {
                 return {
                     message: "Principal member cannot add themselves as their own dependent.",
+                    data: null,
+                };
+            }
+
+            if (record.memberType === "MM") {
+                return {
+                    message: "This PhilHealth PIN is registered as a Principal Member in ClinicEZ and cannot be added as a dependent.",
+                    data: null,
+                };
+            }
+
+            if (record.memberType === "DD" && record.principalMemberPin && normPrincipalPin && record.principalMemberPin !== normPrincipalPin) {
+                return {
+                    message: `This PhilHealth PIN (${normalizedPin}) is already linked to another Principal Member (PIN: ${record.principalMemberPin}).`,
                     data: null,
                 };
             }

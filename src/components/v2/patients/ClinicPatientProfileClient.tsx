@@ -452,7 +452,7 @@ export default function ClinicPatientProfileClient({
                                 No registered dependents on file.
                               </div>
                             )
-                          )}      )}
+                          )}
                         </div>
                       ))
                     ) : (

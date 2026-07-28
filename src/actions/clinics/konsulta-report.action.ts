@@ -81,6 +81,7 @@ type UpsertKonsultaPatientEnrollmentPayload = {
     memberPin?: string | null;
     philSysId?: string | null;
     tin?: string | null;
+    principalMemberDetails?: PrincipalMemberInfo | null;
 };
 
 type ClinicPatientIdentity = {
@@ -549,13 +550,44 @@ export const enrollPatientPhilHealthAction = withErrorHandling(
                     }
                 }
 
+                // Option A: If Dependent and principalMemberDetails provided, auto-create/link Principal Member User/PhilHealthRecord if not existing
+                const normMemberPin = patientType === "MM" ? normalizedPin : memberPin?.trim() || "";
+                if (patientType === "DD" && principalMemberDetails && normMemberPin) {
+                    const existingPMRecord = await tx.philHealthRecord.findFirst({
+                        where: { pin: normMemberPin, deletedAt: null },
+                    });
+
+                    if (!existingPMRecord) {
+                        try {
+                            await tx.user.create({
+                                data: {
+                                    userId: `pm_${normMemberPin}_${Date.now()}`,
+                                    firstName: principalMemberDetails.firstName.trim(),
+                                    lastName: principalMemberDetails.lastName.trim(),
+                                    middleName: principalMemberDetails.middleName?.trim() || null,
+                                    suffix: principalMemberDetails.extensionName?.trim() || null,
+                                    dob: new Date(principalMemberDetails.dob),
+                                    accountType: "PATIENT",
+                                    PhilHealthRecords: {
+                                        create: {
+                                            pin: normMemberPin,
+                                            memberType: "MM",
+                                        },
+                                    },
+                                },
+                            });
+                        } catch {
+                            /* Ignore if already created concurrently */
+                        }
+                    }
+                }
+
                 await tx.clinicPatient.update({
                     where: { id: clinicPatient.id },
                     data: {
                         konsultaPatientType: patientType,
                         konsultaPatientPin: normalizedPin,
-                        konsultaMemberPin:
-                            patientType === "MM" ? normalizedPin : memberPin?.trim() || null,
+                        konsultaMemberPin: normMemberPin || null,
                         konsultaEffYear: effYear,
                         konsultaRegistrationStatus: "PENDING",
                         konsultaRegistrationCheckedAt: null,
@@ -563,6 +595,77 @@ export const enrollPatientPhilHealthAction = withErrorHandling(
                         konsultaUnenrolledAt: null,
                     },
                 });
+
+                // Compute snapshot details for PhilHealthKonsultaEnlistment
+                const effYearInt = parseInt(effYear, 10);
+                let pmFname = clinicPatient.Patient.firstName ?? "";
+                let pmLname = clinicPatient.Patient.lastName ?? "";
+                let pmMname = clinicPatient.Patient.middleName ?? "";
+                let pmExt = clinicPatient.Patient.suffix ?? "";
+                let pmDob: Date | null = clinicPatient.Patient.dob ?? null;
+
+                if (patientType === "DD") {
+                    if (principalMemberDetails) {
+                        pmFname = principalMemberDetails.firstName.trim();
+                        pmLname = principalMemberDetails.lastName.trim();
+                        pmMname = principalMemberDetails.middleName?.trim() ?? "";
+                        pmExt = principalMemberDetails.extensionName?.trim() ?? "";
+                        pmDob = new Date(principalMemberDetails.dob);
+                    } else if (normMemberPin) {
+                        const pmMap = await resolvePrincipalMembersByPins([normMemberPin]);
+                        const pm = pmMap.get(normMemberPin);
+                        if (pm) {
+                            pmFname = pm.firstName;
+                            pmLname = pm.lastName;
+                            pmMname = pm.middleName;
+                            pmExt = pm.extensionName;
+                            pmDob = new Date(pm.dob);
+                        }
+                    }
+                }
+
+                const existingEnlistment = await tx.philHealthKonsultaEnlistment.findFirst({
+                    where: {
+                        clinicPatientId: clinicPatient.id,
+                        year: effYearInt,
+                    },
+                });
+
+                const credentials = await getClinicKonsultaCredentials(clinicId);
+                const periodDate = new Date(effYearInt, 0, 1);
+
+                if (existingEnlistment) {
+                    await tx.philHealthKonsultaEnlistment.update({
+                        where: { id: existingEnlistment.id },
+                        data: {
+                            memberPin: normMemberPin || null,
+                            dependentPin: patientType === "DD" ? normalizedPin : null,
+                            memberFname: pmFname,
+                            memberLname: pmLname,
+                            memberMname: pmMname,
+                            memberExtname: pmExt,
+                            memberDob: pmDob,
+                            patientType,
+                        },
+                    });
+                } else {
+                    await tx.philHealthKonsultaEnlistment.create({
+                        data: {
+                            clinicPatientId: clinicPatient.id,
+                            year: effYearInt,
+                            hciCaseNo: formatKonsultaHciNumber("T", credentials.hciAccreNo, clinicPatient.id, periodDate),
+                            enlistmentTransNo: formatKonsultaHciNumber("E", credentials.hciAccreNo, clinicPatient.id, periodDate),
+                            memberPin: normMemberPin || null,
+                            dependentPin: patientType === "DD" ? normalizedPin : null,
+                            memberFname: pmFname,
+                            memberLname: pmLname,
+                            memberMname: pmMname,
+                            memberExtname: pmExt,
+                            memberDob: pmDob,
+                            patientType,
+                        },
+                    });
+                }
 
                 return {
                     clinicPatientId: clinicPatient.id,
@@ -2310,6 +2413,27 @@ export const generateBatchXmlAction = withErrorHandling(
                 .map((e) => e.memberPin!.trim());
             const principalMap = await resolvePrincipalMembersByPins(dependentPins);
 
+            // Fetch authoritative PhilHealthKonsultaEnlistment snapshots
+            const enlistmentSnapshots = await prisma.philHealthKonsultaEnlistment.findMany({
+                where: {
+                    ClinicPatient: {
+                        clinicId: batch.clinicId,
+                        patientId: { in: batch.KonsultaEntries.map((e) => e.patientUserId) },
+                    },
+                    year: parseInt(year, 10),
+                },
+                include: {
+                    ClinicPatient: {
+                        select: { patientId: true },
+                    },
+                },
+            });
+
+            const snapshotMapByPatientId = new Map<number, typeof enlistmentSnapshots[number]>();
+            for (const snap of enlistmentSnapshots) {
+                snapshotMapByPatientId.set(snap.ClinicPatient.patientId, snap);
+            }
+
             const enlistments: KonsultaEnlistmentData[] = batch.KonsultaEntries.map(
                 (entry) => {
                     const p = entry.Patient;
@@ -2318,20 +2442,22 @@ export const generateBatchXmlAction = withErrorHandling(
                     const transDate = periodDate.toISOString().slice(0, 10);
                     const patientType = (entry.memberType ?? "").trim() as "MM" | "DD";
 
-                    // For MM (member): pMemPin is the patient's own PIN
-                    // For DD (dependent): pMemPin is the member's PIN that they're dependent under
                     const memberPin =
                         patientType === "MM"
                             ? entry.philHealthPin
                             : entry.memberPin || entry.philHealthPin;
 
                     const principal = patientType === "DD" ? principalMap.get(memberPin.trim()) : null;
+                    const snap = snapshotMapByPatientId.get(entry.patientUserId);
 
-                    const pMemFname = patientType === "DD" ? (principal?.firstName ?? "") : (p.firstName ?? "");
-                    const pMemMname = patientType === "DD" ? (principal?.middleName ?? "") : (p.middleName ?? "");
-                    const pMemLname = patientType === "DD" ? (principal?.lastName ?? "") : (p.lastName ?? "");
-                    const pMemExtname = patientType === "DD" ? (principal?.extensionName ?? "") : (p.suffix ?? "");
-                    const pMemDob = patientType === "DD" ? (principal?.dob ?? dob) : dob;
+                    const pMemPinFinal = snap?.memberPin || memberPin;
+                    const pMemFname = snap?.memberFname ?? (patientType === "DD" ? (principal?.firstName ?? "") : (p.firstName ?? ""));
+                    const pMemMname = snap?.memberMname ?? (patientType === "DD" ? (principal?.middleName ?? "") : (p.middleName ?? ""));
+                    const pMemLname = snap?.memberLname ?? (patientType === "DD" ? (principal?.lastName ?? "") : (p.lastName ?? ""));
+                    const pMemExtname = snap?.memberExtname ?? (patientType === "DD" ? (principal?.extensionName ?? "") : (p.suffix ?? ""));
+                    const pMemDob = snap?.memberDob
+                        ? snap.memberDob.toISOString().slice(0, 10)
+                        : patientType === "DD" ? (principal?.dob ?? dob) : dob;
 
                     return {
                         pHciCaseNo:
@@ -2354,7 +2480,7 @@ export const generateBatchXmlAction = withErrorHandling(
                         pEnlistStat: "1",
                         pEnlistDate: transDate,
                         pPackageType: "K",
-                        pMemPin: memberPin,
+                        pMemPin: pMemPinFinal,
                         pMemFname: pMemFname,
                         pMemMname: pMemMname,
                         pMemLname: pMemLname,

@@ -429,6 +429,13 @@ function PatientsPanel({ clinicUid }: { clinicUid: string }) {
 	const [principalSearchResults, setPrincipalSearchResults] = useState<PrincipalMemberInfo[]>([]);
 	const [isSearchingPrincipal, setIsSearchingPrincipal] = useState(false);
 	const [isLookingUpPin, setIsLookingUpPin] = useState(false);
+	const [principalFormDetails, setPrincipalFormDetails] = useState({
+		firstName: "",
+		lastName: "",
+		middleName: "",
+		extensionName: "",
+		dob: "",
+	});
 
 	const loadFeed = useCallback(
 		async (kind: "ENROLLED" | "UNENROLLED", skip: number, replace: boolean) => {
@@ -494,6 +501,13 @@ function PatientsPanel({ clinicUid }: { clinicUid: string }) {
 		setPrincipalMemberInfo(null);
 		setPrincipalSearchQuery("");
 		setPrincipalSearchResults([]);
+		setPrincipalFormDetails({
+			firstName: "",
+			lastName: "",
+			middleName: "",
+			extensionName: "",
+			dob: "",
+		});
 
 		if (patientType === "DD" && memberPin) {
 			void getPrincipalMemberByPinAction(memberPin).then((res) => {
@@ -535,7 +549,7 @@ function PatientsPanel({ clinicUid }: { clinicUid: string }) {
 			toast.success(`Retrieved details for Principal Member: ${res.data.firstName} ${res.data.lastName}`);
 		} else {
 			setPrincipalMemberInfo(null);
-			toast.error(res.message ?? `No principal member found with PIN: ${pin}`);
+			toast.info("Principal Member not found in system. Please enter their details below.");
 		}
 	}
 
@@ -552,9 +566,27 @@ function PatientsPanel({ clinicUid }: { clinicUid: string }) {
 			toast.error("PhilHealth PIN is required");
 			return;
 		}
+
+		const pmDetails = principalMemberInfo || (
+			principalFormDetails.firstName.trim() && principalFormDetails.lastName.trim() && principalFormDetails.dob
+				? {
+						pin: enrollForm.memberPin.trim(),
+						firstName: principalFormDetails.firstName.trim(),
+						lastName: principalFormDetails.lastName.trim(),
+						middleName: principalFormDetails.middleName.trim(),
+						extensionName: principalFormDetails.extensionName.trim(),
+						dob: principalFormDetails.dob,
+				  }
+				: null
+		);
+
 		if (enrollForm.patientType === "DD") {
-			if (!enrollForm.memberPin.trim() || !principalMemberInfo) {
-				toast.error("A linked Principal Member is required for dependent records. Please search and select a valid Principal Member.");
+			if (!enrollForm.memberPin.trim()) {
+				toast.error("Principal Member PIN is required for dependent records.");
+				return;
+			}
+			if (!pmDetails) {
+				toast.error("Please search/link a Principal Member or fill in the Principal Member's details before submitting.");
 				return;
 			}
 		}
@@ -573,6 +605,7 @@ function PatientsPanel({ clinicUid }: { clinicUid: string }) {
 					: enrollForm.pin.trim(),
 			philSysId: enrollForm.philSysId || null,
 			tin: enrollForm.tin || null,
+			principalMemberDetails: pmDetails,
 		});
 		setEnrollLoading(false);
 
@@ -1144,8 +1177,61 @@ function PatientsPanel({ clinicUid }: { clinicUid: string }) {
 										</div>
 									</div>
 								) : (
-									<div className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-950/30 dark:text-amber-400 p-2.5 rounded border border-amber-200 dark:border-amber-800">
-										Please search and link a valid Principal Member to populate the Principal Member Info block before submitting.
+									<div className="border border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/20 rounded-lg p-3 space-y-3 text-xs">
+										<div className="flex items-center gap-1 text-amber-700 dark:text-amber-400 font-semibold border-b pb-1">
+											<AlertCircle className="h-3.5 w-3.5" />
+											Principal Member Details (Non-Registered Member)
+										</div>
+										<p className="text-[11px] text-muted-foreground">
+											Principal Member not found in system. Fill in their details to auto-register them in ClinicEZ and satisfy PhilHealth enlistment requirements.
+										</p>
+										<div className="grid grid-cols-2 gap-2">
+											<div>
+												<Label className="text-[11px]">First Name <span className="text-destructive">*</span></Label>
+												<Input
+													className="h-8 text-xs mt-1"
+													placeholder="First Name"
+													value={principalFormDetails.firstName}
+													onChange={(e) => setPrincipalFormDetails(f => ({ ...f, firstName: e.target.value }))}
+												/>
+											</div>
+											<div>
+												<Label className="text-[11px]">Last Name <span className="text-destructive">*</span></Label>
+												<Input
+													className="h-8 text-xs mt-1"
+													placeholder="Last Name"
+													value={principalFormDetails.lastName}
+													onChange={(e) => setPrincipalFormDetails(f => ({ ...f, lastName: e.target.value }))}
+												/>
+											</div>
+											<div>
+												<Label className="text-[11px]">Middle Name</Label>
+												<Input
+													className="h-8 text-xs mt-1"
+													placeholder="Middle Name"
+													value={principalFormDetails.middleName}
+													onChange={(e) => setPrincipalFormDetails(f => ({ ...f, middleName: e.target.value }))}
+												/>
+											</div>
+											<div>
+												<Label className="text-[11px]">Ext Name / Suffix</Label>
+												<Input
+													className="h-8 text-xs mt-1"
+													placeholder="e.g. Jr, III"
+													value={principalFormDetails.extensionName}
+													onChange={(e) => setPrincipalFormDetails(f => ({ ...f, extensionName: e.target.value }))}
+												/>
+											</div>
+											<div className="col-span-2">
+												<Label className="text-[11px]">Date of Birth <span className="text-destructive">*</span></Label>
+												<Input
+													type="date"
+													className="h-8 text-xs mt-1"
+													value={principalFormDetails.dob}
+													onChange={(e) => setPrincipalFormDetails(f => ({ ...f, dob: e.target.value }))}
+												/>
+											</div>
+										</div>
 									</div>
 								)}
 							</div>

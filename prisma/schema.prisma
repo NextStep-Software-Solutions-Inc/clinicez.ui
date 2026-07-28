@@ -204,6 +204,12 @@ model PhilHealthKonsultaEnlistment {
   profilingTransNo  String? // The P-prefix transaction number (generated during First Patient Encounter)
   memberPin         String? // Snapshot of the member PIN used at enlistment
   dependentPin      String? // Snapshot of the dependent PIN (if applicable)
+  memberFname       String? // Snapshot of principal member first name
+  memberLname       String? // Snapshot of principal member last name
+  memberMname       String? // Snapshot of principal member middle name
+  memberExtname     String? // Snapshot of principal member extension name
+  memberDob         DateTime? // Snapshot of principal member date of birth
+  patientType       String? // Snapshot of patient type ("MM" | "DD")
   status            String   @default("ACTIVE") // ACTIVE, CANCELLED, TRANSFERRED
   atcCode           String? // ATC code for profiling; auto-set to "WALKEDIN" when isWalkedIn
   isWalkedIn        Boolean  @default(false)

@@ -24,13 +24,14 @@ export function PersonalHistoryInlineForm({
   onDirtyChange,
 }: PersonalHistoryInlineFormProps) {
   const initialFormValues = useMemo(() => {
+    const data = currentData || {}
     return {
-      smokingStatus: currentData.smokingStatus ?? null,
-      numberOfPacksPerYear: currentData.numberOfPacksPerYear ?? null,
-      alcoholStatus: currentData.alcoholStatus ?? null,
-      numberOfBottlesPerDay: currentData.numberOfBottlesPerDay ?? null,
-      illicitDrugUse: currentData.illicitDrugUse ?? null,
-      sexuallyActive: currentData.sexuallyActive ?? null,
+      smokingStatus: data.smokingStatus ?? null,
+      numberOfPacksPerYear: data.numberOfPacksPerYear ?? null,
+      alcoholStatus: data.alcoholStatus ?? null,
+      numberOfBottlesPerDay: data.numberOfBottlesPerDay ?? null,
+      illicitDrugUse: data.illicitDrugUse ?? null,
+      sexuallyActive: data.sexuallyActive ?? null,
     }
   }, [currentData])
 

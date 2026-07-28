@@ -105,8 +105,7 @@ type DiagnosisMappingResult = {
 };
 
 const KONSULTA_LIBRARY_BASE_DIR =
-  process.env.KONSULTA_LIBRARY_BASE_DIR?.trim() ||
-  path.join(process.cwd(), "_Konsulta Development Kit v1.1", "LIBRARIES");
+  process.env.KONSULTA_LIBRARY_BASE_DIR?.trim() || "";
 
 function toDomainKey(fileName: string): string {
   return fileName.replace(/\.[^.]+$/, "").trim().toLowerCase();
@@ -399,6 +398,7 @@ const PE_SECTION_DOMAIN_MAP: Record<string, string> = {
   skin: KONSULTA_DOMAIN_KEYS.skinExtremities,
   "skin extremities": KONSULTA_DOMAIN_KEYS.skinExtremities,
   "skin_extremities": KONSULTA_DOMAIN_KEYS.skinExtremities,
+  "skin/extremities": KONSULTA_DOMAIN_KEYS.skinExtremities,
 };
 
 type ReferenceSyncSummary = {
@@ -441,7 +441,10 @@ type MappedPatientCode = {
 };
 
 function normalizeSectionName(section: string): string {
-  return section.trim().toLowerCase().replace(/[_-]+/g, " ");
+  let cleaned = section.trim().toLowerCase().replace(/[_-]+/g, " ");
+  cleaned = cleaned.replace(/^physical examination[\s\–\-]+/, "");
+  cleaned = cleaned.replace(/^pe[\s\–\-]+/, "");
+  return cleaned.trim();
 }
 
 function tokenizeMappedValues(value: string): string[] {
@@ -1505,19 +1508,24 @@ export async function resolveMappedPhysicalExamFindingsForConsultations(
     return { mappedFindings: [], deficiencies: [] };
   }
 
-  const notes = await prisma.consultationNote.findMany({
-    where: {
-      consultationTicketId: { in: consultationIds },
-      section: {
-        in: Object.keys(PE_SECTION_DOMAIN_MAP),
+  const [notes, peRecords] = await Promise.all([
+    prisma.consultationNote.findMany({
+      where: {
+        consultationTicketId: { in: consultationIds },
       },
-    },
-    select: {
-      consultationTicketId: true,
-      section: true,
-      content: true,
-    },
-  });
+      select: {
+        consultationTicketId: true,
+        section: true,
+        content: true,
+      },
+    }),
+    prisma.physicalExamination.findMany({
+      where: {
+        consultationTicketId: { in: consultationIds },
+        deletedAt: null,
+      },
+    }),
+  ]);
 
   const inputs: Array<ResolveInput & { consultationId: number }> = [];
   for (const note of notes) {
@@ -1539,13 +1547,41 @@ export async function resolveMappedPhysicalExamFindingsForConsultations(
 
   const result = await resolveMappedTerms(clinicId, inputs);
 
+  const mappedFindings: Array<MappedConsultationCode & { domainKey: string | null }> = inputs.map((input, index) => ({
+    consultationId: input.consultationId,
+    inputValue: input.value,
+    mappedCode: result.resolvedTerms[index]?.mappedCode ?? null,
+    domainKey: result.resolvedTerms[index]?.domainKey ?? null,
+  }));
+
+  const peFieldDomainMap: Array<{ field: keyof typeof peRecords[0]; domainKey: string }> = [
+    { field: "skinId", domainKey: KONSULTA_DOMAIN_KEYS.skinExtremities },
+    { field: "heentId", domainKey: KONSULTA_DOMAIN_KEYS.heent },
+    { field: "chestId", domainKey: KONSULTA_DOMAIN_KEYS.chest },
+    { field: "heartId", domainKey: KONSULTA_DOMAIN_KEYS.heart },
+    { field: "abdomenId", domainKey: KONSULTA_DOMAIN_KEYS.abdomen },
+    { field: "neuroId", domainKey: KONSULTA_DOMAIN_KEYS.neuro },
+    { field: "guId", domainKey: KONSULTA_DOMAIN_KEYS.genitourinary },
+    { field: "rectalId", domainKey: KONSULTA_DOMAIN_KEYS.digitalRectal },
+  ];
+
+  for (const pe of peRecords) {
+    if (!pe.consultationTicketId) continue;
+    for (const item of peFieldDomainMap) {
+      const val = pe[item.field];
+      if (typeof val === "string" && val.trim().length > 0) {
+        mappedFindings.push({
+          consultationId: pe.consultationTicketId,
+          inputValue: val.trim(),
+          mappedCode: val.trim(),
+          domainKey: item.domainKey,
+        });
+      }
+    }
+  }
+
   return {
-    mappedFindings: inputs.map((input, index) => ({
-      consultationId: input.consultationId,
-      inputValue: input.value,
-      mappedCode: result.resolvedTerms[index]?.mappedCode ?? null,
-      domainKey: result.resolvedTerms[index]?.domainKey ?? null,
-    })),
+    mappedFindings,
     deficiencies: result.deficiencies,
   };
 }

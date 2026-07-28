@@ -2852,16 +2852,17 @@ export const generateBatchXmlAction = withErrorHandling(
                 if (!domainKey || !mappedCode) {
                     return null;
                 }
+                const key = domainKey.toLowerCase().replace(/\.xlsx$/, "").trim();
 
                 return {
-                    pSkinId: domainKey === "lib_skin_extremities" ? mappedCode : "",
-                    pHeentId: domainKey === "lib_heent" ? mappedCode : "",
-                    pChestId: domainKey === "lib_chest" ? mappedCode : "",
-                    pHeartId: domainKey === "lib_heart" ? mappedCode : "",
-                    pAbdomenId: domainKey === "lib_abdomen" ? mappedCode : "",
-                    pNeuroId: domainKey === "lib_neuro" ? mappedCode : "",
-                    pGuId: domainKey === "lib_genitourinary" ? mappedCode : "",
-                    pRectalId: domainKey === "lib_digital_rectal" ? mappedCode : "",
+                    pSkinId: key === "lib_skin_extremities" ? mappedCode : "",
+                    pHeentId: key === "lib_heent" ? mappedCode : "",
+                    pChestId: key === "lib_chest" ? mappedCode : "",
+                    pHeartId: key === "lib_heart" ? mappedCode : "",
+                    pAbdomenId: key === "lib_abdomen" ? mappedCode : "",
+                    pNeuroId: key === "lib_neuro" ? mappedCode : "",
+                    pGuId: key === "lib_genitourinary" ? mappedCode : "",
+                    pRectalId: key === "lib_digital_rectal" ? mappedCode : "",
                     pReportStatus: "U" as const,
                     pDeficiencyRemarks: "",
                 };
@@ -3373,7 +3374,15 @@ export const generateBatchXmlAction = withErrorHandling(
                             : "N",
                     pregCnt: ob?.gravidity != null ? String(ob.gravidity) : "",
                     deliveryCnt: ob?.parity != null ? String(ob.parity) : "",
-                    deliveryTyp: ob?.typeOfDelivery ?? "",
+                    deliveryTyp: !isFemale
+                        ? "X"
+                        : ob?.typeOfDelivery === "VAGINAL"
+                        ? "N"
+                        : ob?.typeOfDelivery === "CESAREAN"
+                        ? "O"
+                        : ob?.typeOfDelivery === "MIXED"
+                        ? "B"
+                        : "X",
                     fullTermCnt: ob?.fullTerm != null ? String(ob.fullTerm) : "",
                     prematureCnt: ob?.premature != null ? String(ob.premature) : "",
                     abortionCnt: ob?.abortion != null ? String(ob.abortion) : "",

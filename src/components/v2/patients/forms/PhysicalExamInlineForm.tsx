@@ -31,25 +31,26 @@ export function PhysicalExamInlineForm({
   const [isDeleting, setIsDeleting] = useState(false)
 
   const initialFormValues = useMemo(() => {
+    const data = currentData || {}
     return {
-      generalSurveyId: currentData.generalSurveyId || '',
-      generalSurveyRemarks: currentData.generalSurveyRemarks || '',
-      heentId: currentData.heentId || '',
-      heentRemarks: currentData.heentRemarks || '',
-      chestId: currentData.chestId || '',
-      chestRemarks: currentData.chestRemarks || '',
-      heartId: currentData.heartId || '',
-      heartRemarks: currentData.heartRemarks || '',
-      abdomenId: currentData.abdomenId || '',
-      abdomenRemarks: currentData.abdomenRemarks || '',
-      guId: currentData.guId || '',
-      guRemarks: currentData.guRemarks || '',
-      skinId: currentData.skinId || '',
-      skinRemarks: currentData.skinRemarks || '',
-      neuroId: currentData.neuroId || '',
-      neuroRemarks: currentData.neuroRemarks || '',
-      rectalId: currentData.rectalId || '',
-      rectalRemarks: currentData.rectalRemarks || '',
+      generalSurveyId: data.generalSurveyId || '',
+      generalSurveyRemarks: data.generalSurveyRemarks || '',
+      heentId: data.heentId || '',
+      heentRemarks: data.heentRemarks || '',
+      chestId: data.chestId || '',
+      chestRemarks: data.chestRemarks || '',
+      heartId: data.heartId || '',
+      heartRemarks: data.heartRemarks || '',
+      abdomenId: data.abdomenId || '',
+      abdomenRemarks: data.abdomenRemarks || '',
+      guId: data.guId || '',
+      guRemarks: data.guRemarks || '',
+      skinId: data.skinId || '',
+      skinRemarks: data.skinRemarks || '',
+      neuroId: data.neuroId || '',
+      neuroRemarks: data.neuroRemarks || '',
+      rectalId: data.rectalId || '',
+      rectalRemarks: data.rectalRemarks || '',
     }
   }, [currentData])
 

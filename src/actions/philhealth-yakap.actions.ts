@@ -129,11 +129,33 @@ export async function enlistKonsultaAction(
     const accreNo = setting.philhealthAccreditationNumber;
     const clinicId = setting.clinicId;
 
+    // Resolve ClinicPatient ID (handles both ClinicPatient.id and Patient.id)
+    const cp = await prisma.clinicPatient.findFirst({
+      where: {
+        OR: [
+          { id: clinicPatientId, clinicId },
+          { patientId: clinicPatientId, clinicId }
+        ],
+        isActive: true,
+        deletedAt: null
+      },
+      select: { id: true }
+    });
+
+    if (!cp) {
+      throw new Error("Patient is not registered in this clinic.");
+    }
+
+    if (memberPin?.trim() && dependentPin?.trim() && memberPin.trim() === dependentPin.trim()) {
+      throw new Error("Principal Member PIN and Dependent/Patient PIN cannot be the same.");
+    }
+
+    const resolvedClinicPatientId = cp.id;
     const year = new Date().getFullYear();
 
     const existing = await prisma.philHealthKonsultaEnlistment.findUnique({
       where: {
-        unique_enlistment_year: { clinicPatientId, year }
+        unique_enlistment_year: { clinicPatientId: resolvedClinicPatientId, year }
       }
     });
 
@@ -148,7 +170,7 @@ export async function enlistKonsultaAction(
     const enlistment = await prisma.philHealthKonsultaEnlistment.upsert({
       where: {
         unique_enlistment_year: {
-          clinicPatientId,
+          clinicPatientId: resolvedClinicPatientId,
           year,
         }
       },
@@ -160,7 +182,7 @@ export async function enlistKonsultaAction(
         enlistmentTransNo,
       },
       create: {
-        clinicPatientId,
+        clinicPatientId: resolvedClinicPatientId,
         year,
         hciCaseNo,
         enlistmentTransNo,
@@ -225,7 +247,15 @@ export async function generateKonsultaIdsAction(
 
 export async function getKonsultaEnlistmentAction(clinicPatientId: number) {
   const year = new Date().getFullYear();
-  return await prisma.philHealthKonsultaEnlistment.findUnique({ where: { unique_enlistment_year: { clinicPatientId, year } } });
+  return await prisma.philHealthKonsultaEnlistment.findFirst({
+    where: {
+      OR: [
+        { clinicPatientId },
+        { ClinicPatient: { patientId: clinicPatientId } }
+      ],
+      year
+    }
+  });
 }
 
 
@@ -618,8 +648,8 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
         });
       }
 
-      const memberPin = phRecord?.pin || "";
-      const patientPin = phRecord?.dependentPin || phRecord?.pin || "";
+      const memberPin = phRecord?.principalMemberPin || phRecord?.pin || "";
+      const patientPin = phRecord?.pin || "";
       const patientType = (phRecord?.memberType as "MM" | "DD") || "MM";
 
       // Compute age
@@ -1682,31 +1712,28 @@ export async function importRegistrationListToDbAction(clinicUid: string, entrie
 
     for (const entry of entries) {
       const isDependent = entry.pAssignedType === "DD";
-      const memberPin = isDependent ? entry.pPrimaryPIN || entry.pAssignedPin : entry.pAssignedPin;
-      const dependentPin = isDependent ? entry.pAssignedPin : null;
+      const patientPin = entry.pAssignedPin?.trim() || "";
+      const principalMemberPin = isDependent ? entry.pPrimaryPIN?.trim() || null : null;
       
-      const pinToFind = isDependent && dependentPin ? dependentPin : memberPin;
-      if (!pinToFind) continue;
+      if (!patientPin) continue;
 
       try {
         await prisma.$transaction(async (tx) => {
-          // 1. Try to find existing patient by their actual PIN (dependent or member)
+          // 1. Try to find existing patient by their actual PIN
           const existingRecord = await tx.philHealthRecord.findFirst({
-            where: isDependent && dependentPin 
-              ? { dependentPin } 
-              : { pin: memberPin },
+            where: { pin: patientPin },
             include: { User: { include: { ClinicPatients: { where: { clinicId: clinic.id } } } } }
           });
 
           if (existingRecord) {
             existingCount++;
             let userId = existingRecord.userId;
-            if (existingRecord.User.ClinicPatients.length === 0) {
+            if (existingRecord.User && existingRecord.User.ClinicPatients.length === 0) {
               await tx.clinicPatient.create({ data: { clinicId: clinic.id, patientId: userId } });
             }
           } else {
             // Create new user (using synthetic email with .net domain)
-            const dummyEmail = `ph-${pinToFind}-${Date.now()}@imported.clinicez.net`;
+            const dummyEmail = `ph-${patientPin}-${Date.now()}@imported.clinicez.net`;
             
             let gender: "MALE" | "FEMALE" | undefined;
             if (entry.pAssignedSex === "M") gender = "MALE";
@@ -1721,7 +1748,7 @@ export async function importRegistrationListToDbAction(clinicUid: string, entrie
             const newUser = await tx.user.create({
               data: {
                 email: dummyEmail,
-                userId: `auth0|${pinToFind}-${Date.now()}`,
+                userId: `auth0|${patientPin}-${Date.now()}`,
                 firstName: entry.pAssignedFirstName || "Imported",
                 lastName: entry.pAssignedLastName || "Patient",
                 middleName: entry.pAssignedMiddleName || "",
@@ -1736,9 +1763,9 @@ export async function importRegistrationListToDbAction(clinicUid: string, entrie
             await tx.philHealthRecord.create({
               data: {
                 userId,
-                pin: memberPin,
-                dependentPin,
-                memberType: entry.pAssignedType || "MM"
+                pin: patientPin,
+                principalMemberPin,
+                memberType: entry.pAssignedType || (isDependent ? "DD" : "MM")
               }
             });
             
@@ -1748,7 +1775,7 @@ export async function importRegistrationListToDbAction(clinicUid: string, entrie
         });
       } catch (err: any) {
         errorCount++;
-        errors.push(`Failed to import PIN ${pinToFind}: ${err.message}`);
+        errors.push(`Failed to import PIN ${patientPin}: ${err.message}`);
       }
     }
 

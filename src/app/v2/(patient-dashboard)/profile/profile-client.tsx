@@ -24,8 +24,10 @@ import {
   Calendar,
   FolderOpen,
   FileText,
-  AlertCircle
+  AlertCircle,
+  ShieldCheck
 } from 'lucide-react'
+import { getPrincipalMemberByPinAction, type PrincipalMemberInfo } from '@/actions/clinics/konsulta-report.action'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import Image from 'next/image'
@@ -138,6 +140,7 @@ export default function ProfileClient({ patient }: ProfileClientProps) {
     if (!record) return undefined
     return {
       pin: record.pin,
+      principalMemberPin: (record as any).principalMemberPin || (record as any).dependentPin || undefined,
       tin: record.tin || undefined,
       philSysId: record.philSysId || undefined,
       memberType: ((record as any).memberType as 'MM' | 'DD') || 'MM',
@@ -146,6 +149,24 @@ export default function ProfileClient({ patient }: ProfileClientProps) {
       id: record.id,
     }
   }, [patientData.philHealthRecords])
+
+  const [readOnlyPrincipalInfo, setReadOnlyPrincipalInfo] = useState<PrincipalMemberInfo | null>(null)
+
+  useEffect(() => {
+    const record = patientData.philHealthRecords?.[0]
+    const pPin = (record as any)?.principalMemberPin || (record as any)?.dependentPin
+    if (record && (record as any).memberType === 'DD' && pPin) {
+      void getPrincipalMemberByPinAction(pPin, patientData.id).then((res) => {
+        if (res.data) {
+          setReadOnlyPrincipalInfo(res.data)
+        } else {
+          setReadOnlyPrincipalInfo(null)
+        }
+      })
+    } else {
+      setReadOnlyPrincipalInfo(null)
+    }
+  }, [patientData.philHealthRecords, patientData.id])
 
   const handleRefresh = useCallback(async () => {
     try {
@@ -375,12 +396,55 @@ export default function ProfileClient({ patient }: ProfileClientProps) {
                         patientData.philHealthRecords.map((record) => (
                           <div key={record.id} className="space-y-6">
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-3 gap-y-2 py-1">
-                              <ViewCell label="PIN (PhilHealth ID)" value={formatPhilHealthPin(record.pin)} className="text-indigo-600 dark:text-indigo-400 font-bold font-mono" />
+                              <ViewCell
+                                label={((record as any).memberType) === 'DD' ? 'Patient PIN (Dependent PIN)' : 'PIN (PhilHealth ID)'}
+                                value={formatPhilHealthPin(record.pin)}
+                                className="text-indigo-600 dark:text-indigo-400 font-bold font-mono"
+                              />
+                              {((record as any).memberType) === 'DD' && (
+                                <ViewCell
+                                  label="Principal Member PIN"
+                                  value={formatPhilHealthPin((record as any).principalMemberPin || (record as any).dependentPin)}
+                                  className="text-indigo-600 dark:text-indigo-400 font-bold font-mono"
+                                />
+                              )}
                               <ViewCell label="Member Type" value={((record as any).memberType) === 'MM' ? 'Formal Member (MM)' : ((record as any).memberType) === 'DD' ? 'Dependent (DD)' : (record as any).memberType || '—'} />
                               <ViewCell label="PhilSys ID" value={formatPhilSysId(record.philSysId)} className="font-mono" />
                               <ViewCell label="TIN" value={formatTin(record.tin)} className="font-mono" />
                               <ViewCell label="Yakap Enlistment" value={patientData.yakapEnlistment ? 'Enlisted' : 'Not Enlisted'} />
                             </div>
+
+                            {/* Read-Only Linked Principal Member Info (Only for Dependents DD) */}
+                            {((record as any).memberType) === 'DD' && (
+                              <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[11px] font-bold text-teal-700 dark:text-teal-400 uppercase tracking-wider flex items-center gap-1">
+                                    <ShieldCheck className="h-3.5 w-3.5" />
+                                    Linked Principal Member Info
+                                  </span>
+                                  {readOnlyPrincipalInfo && (
+                                    <span className="text-[10px] bg-teal-100 dark:bg-teal-950 text-teal-800 dark:text-teal-300 font-semibold px-2 py-0.5 rounded border border-teal-200 dark:border-teal-800">
+                                      Linked
+                                    </span>
+                                  )}
+                                </div>
+
+                                {readOnlyPrincipalInfo ? (
+                                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-x-3 gap-y-2 bg-teal-50/40 dark:bg-teal-950/20 p-2.5 rounded-lg border border-teal-100 dark:border-teal-900/50">
+                                    <ViewCell label="PIN" value={formatPhilHealthPin(readOnlyPrincipalInfo.pin)} className="font-mono text-indigo-600 dark:text-indigo-400 font-bold" />
+                                    <ViewCell label="First Name" value={readOnlyPrincipalInfo.firstName || '—'} />
+                                    <ViewCell label="Last Name" value={readOnlyPrincipalInfo.lastName || '—'} />
+                                    <ViewCell label="Middle Name" value={readOnlyPrincipalInfo.middleName || '—'} />
+                                    <ViewCell label="Ext Name" value={readOnlyPrincipalInfo.extensionName || '—'} />
+                                    <ViewCell label="Date of Birth" value={readOnlyPrincipalInfo.dob || '—'} />
+                                  </div>
+                                ) : (
+                                  <div className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-950/30 dark:text-amber-400 p-2.5 rounded-lg border border-amber-200 dark:border-amber-800">
+                                    No principal member record found in system matching PIN <span className="font-mono font-semibold">{formatPhilHealthPin((record as any).principalMemberPin || (record as any).dependentPin) || '—'}</span>.
+                                  </div>
+                                )}
+                              </div>
+                            )}
 
                             {/* Dependents list */}
                             {record.PhilHealthDependents && record.PhilHealthDependents.length > 0 ? (

@@ -87,7 +87,7 @@ export const philHealthRecordSchema = z.object({
     })
     .optional()
     .nullable()
-    .refine((val) => !val || val.length === 12 || val.length === 15, "Dependent PIN must be 12 or 15 digits"),
+    .refine((val) => !val || val.length === 12 || val.length === 15, "Patient PIN (Dependent PIN) must be 12 or 15 digits"),
 
   memberType: z
     .enum(["MM", "DD"])

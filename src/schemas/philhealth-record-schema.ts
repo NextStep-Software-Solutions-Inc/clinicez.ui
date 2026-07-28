@@ -58,7 +58,7 @@ export const philHealthRecordSchema = z
     pin: z
       .string()
       .transform((val) => val.replace(/\D/g, ""))
-      .refine((val) => val.length === 12 || val.length === 15, "Principal Member PIN must be a 12-digit PhilHealth PIN"),
+      .refine((val) => val.length === 12 || val.length === 15, "Patient PIN must be a 12-digit PhilHealth PIN"),
 
     tin: z
       .string()
@@ -109,13 +109,13 @@ export const philHealthRecordSchema = z
       if (!data.dependentPin) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "Patient PIN (Dependent PIN) is required for dependent profiles.",
+          message: "Principal Member PIN is required for dependent profiles.",
           path: ["dependentPin"],
         });
       } else if (data.dependentPin.length !== 12 && data.dependentPin.length !== 15) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "Patient PIN (Dependent PIN) must be a 12-digit PhilHealth PIN.",
+          message: "Principal Member PIN must be a 12-digit PhilHealth PIN.",
           path: ["dependentPin"],
         });
       }
@@ -123,12 +123,12 @@ export const philHealthRecordSchema = z
       if (data.pin && data.dependentPin && data.pin === data.dependentPin) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "Principal Member PIN and Dependent/Patient PIN cannot be the same.",
+          message: "Patient PIN and Principal Member PIN cannot be the same.",
           path: ["dependentPin"],
         });
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "Principal Member PIN and Dependent/Patient PIN cannot be the same.",
+          message: "Patient PIN and Principal Member PIN cannot be the same.",
           path: ["pin"],
         });
       }

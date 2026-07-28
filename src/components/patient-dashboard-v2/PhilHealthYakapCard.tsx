@@ -200,7 +200,7 @@ export function PhilHealthYakapCard({ clinicPatientId, isClinicMode, philHealthR
 
         <div className="space-y-1">
           <label className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
-            Principal PIN
+            {memberType === 'DD' ? 'Patient PIN (Dependent PIN)' : 'Patient PIN'}
           </label>
           <div className="text-xs font-semibold font-mono text-slate-800 dark:text-slate-200 truncate">
             {formatPhilHealthPIN(memberPin)}
@@ -210,7 +210,7 @@ export function PhilHealthYakapCard({ clinicPatientId, isClinicMode, philHealthR
         {memberType === 'DD' && (
           <div className="space-y-1">
             <label className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
-              Dependent PIN
+              Principal Member PIN
             </label>
             <div className="text-xs font-semibold font-mono text-slate-800 dark:text-slate-200 truncate">
               {formatPhilHealthPIN(dependentPin)}

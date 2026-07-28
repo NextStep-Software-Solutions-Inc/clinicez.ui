@@ -402,13 +402,13 @@ export default function ClinicPatientProfileClient({
                       patientData.philHealthRecords.map((record) => (
                         <div key={record.id} className="space-y-6">                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-3 gap-y-2 py-1">
                             <ViewCell
-                              label={((record as any).memberType) === 'DD' ? 'Principal Member PIN' : 'PIN (PhilHealth ID)'}
+                              label={((record as any).memberType) === 'DD' ? 'Patient PIN (Dependent PIN)' : 'PIN (PhilHealth ID)'}
                               value={formatPhilHealthPin(record.pin)}
                               className="text-indigo-600 dark:text-indigo-400 font-bold font-mono"
                             />
                             {((record as any).memberType) === 'DD' && (
                               <ViewCell
-                                label="Patient PIN (Dependent PIN)"
+                                label="Principal Member PIN"
                                 value={formatPhilHealthPin((record as any).dependentPin)}
                                 className="text-indigo-600 dark:text-indigo-400 font-bold font-mono"
                               />

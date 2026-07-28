@@ -64,10 +64,10 @@ export function PhilHealthInlineForm({
   const [isLoading, setIsLoading] = useState(false)
   const [principalInfo, setPrincipalInfo] = useState<PrincipalMemberInfo | null>(null)
 
-  // Lookup principal member info when memberType is Dependent and PIN is entered
+  // Lookup principal member info when memberType is Dependent and Principal Member PIN is entered
   useEffect(() => {
-    if (formData.memberType === 'DD' && formData.pin?.trim()) {
-      void getPrincipalMemberByPinAction(formData.pin.trim(), userId).then((res) => {
+    if (formData.memberType === 'DD' && formData.dependentPin?.trim()) {
+      void getPrincipalMemberByPinAction(formData.dependentPin.trim(), userId).then((res) => {
         if (res.data) {
           setPrincipalInfo(res.data)
         } else {
@@ -75,7 +75,7 @@ export function PhilHealthInlineForm({
           if (res.message?.includes('cannot link to themselves')) {
             setErrors((prev) => ({
               ...prev,
-              pin: "Patient cannot link to themselves as the Principal Member. Please enter the Principal Member's PIN.",
+              dependentPin: "Patient cannot link to themselves as the Principal Member. Please enter the Principal Member's PIN.",
             }))
           }
         }
@@ -83,7 +83,7 @@ export function PhilHealthInlineForm({
     } else {
       setPrincipalInfo(null)
     }
-  }, [formData.memberType, formData.pin, userId])
+  }, [formData.memberType, formData.dependentPin, userId])
 
   // Zod-powered real-time inline input validation
   useEffect(() => {
@@ -315,7 +315,7 @@ export function PhilHealthInlineForm({
         )}
 
         {renderField(
-          formData.memberType === 'DD' ? 'Principal Member PIN' : 'PIN (PhilHealth ID)',
+          formData.memberType === 'DD' ? 'Patient PIN (Dependent PIN)' : 'PIN (PhilHealth ID)',
           'pin',
           <Input
             value={formatPhilHealthPin(formData.pin)}
@@ -328,7 +328,7 @@ export function PhilHealthInlineForm({
 
         {formData.memberType === 'DD' && (
           renderField(
-            'Patient PIN (Dependent PIN)',
+            'Principal Member PIN',
             'dependentPin',
             <Input
               value={formatPhilHealthPin(formData.dependentPin)}

@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import { Trash2, Plus, UserPlus, X, ShieldAlert, ShieldCheck } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { getPrincipalMemberByPinAction, registerPrincipalMemberAction, type PrincipalMemberInfo } from '@/actions/clinics/konsulta-report.action'
 import { philHealthRecordSchema, type PhilHealthRecordFormInput, type PhilHealthDependentFormInput } from '@/schemas/philhealth-record-schema'
@@ -106,25 +107,42 @@ export function PhilHealthInlineForm({
       dependents: dependents || [],
     }
 
+    const fieldErrors: Record<string, string> = {}
     const validationResult = philHealthRecordSchema.safeParse(rawData)
     if (!validationResult.success) {
-      const fieldErrors: Record<string, string> = {}
       validationResult.error.issues.forEach((issue) => {
         if (issue.path[0]) {
           const key = issue.path[0] === 'dependentPin' ? 'principalMemberPin' : (issue.path[0] as string)
           fieldErrors[key] = issue.message
         }
       })
-      setErrors(fieldErrors)
-    } else {
-      setErrors({})
     }
-  }, [formData, dependents])
+
+    if (formData.memberType === 'DD' && !principalInfo && unmaskDigits(formData.principalMemberPin)) {
+      if (!principalForm.firstName?.trim()) {
+        fieldErrors.principalFirstName = "Principal Member First Name is required."
+      }
+      if (!principalForm.lastName?.trim()) {
+        fieldErrors.principalLastName = "Principal Member Last Name is required."
+      }
+      if (!principalForm.dob?.trim()) {
+        fieldErrors.principalDob = "Principal Member Date of Birth is required."
+      }
+    }
+
+    setErrors(fieldErrors)
+  }, [formData, dependents, principalInfo, principalForm])
 
   // Track if main form has changes
   const hasChanges = useMemo(() => {
-    return JSON.stringify(formData) !== JSON.stringify(initialFormValues)
-  }, [formData, initialFormValues])
+    const isFormDirty = JSON.stringify(formData) !== JSON.stringify(initialFormValues)
+    const isPrincipalDirty = formData.memberType === 'DD' && !principalInfo && (
+      Boolean(principalForm.firstName.trim()) ||
+      Boolean(principalForm.lastName.trim()) ||
+      Boolean(principalForm.dob.trim())
+    )
+    return isFormDirty || isPrincipalDirty
+  }, [formData, initialFormValues, principalInfo, principalForm])
 
   useEffect(() => {
     onDirtyChange?.(hasChanges)
@@ -460,7 +478,7 @@ export function PhilHealthInlineForm({
                       if (errors.principalFirstName) setErrors((prev) => ({ ...prev, principalFirstName: undefined }))
                     }}
                     placeholder="First Name"
-                    className="h-8 text-xs bg-white dark:bg-slate-900"
+                    className={cn("h-8 text-xs bg-white dark:bg-slate-900", errors.principalFirstName && "border-red-500 focus-visible:ring-red-500")}
                   />
                   {errors.principalFirstName && (
                     <span className="text-[10px] text-red-500 block">{errors.principalFirstName}</span>
@@ -478,7 +496,7 @@ export function PhilHealthInlineForm({
                       if (errors.principalLastName) setErrors((prev) => ({ ...prev, principalLastName: undefined }))
                     }}
                     placeholder="Last Name"
-                    className="h-8 text-xs bg-white dark:bg-slate-900"
+                    className={cn("h-8 text-xs bg-white dark:bg-slate-900", errors.principalLastName && "border-red-500 focus-visible:ring-red-500")}
                   />
                   {errors.principalLastName && (
                     <span className="text-[10px] text-red-500 block">{errors.principalLastName}</span>
@@ -511,14 +529,20 @@ export function PhilHealthInlineForm({
 
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-                    Date of Birth
+                    Date of Birth <span className="text-red-500">*</span>
                   </label>
                   <Input
                     type="date"
                     value={principalForm.dob}
-                    onChange={(e) => setPrincipalForm((p) => ({ ...p, dob: e.target.value }))}
-                    className="h-8 text-xs bg-white dark:bg-slate-900"
+                    onChange={(e) => {
+                      setPrincipalForm((p) => ({ ...p, dob: e.target.value }))
+                      if (errors.principalDob) setErrors((prev) => ({ ...prev, principalDob: undefined }))
+                    }}
+                    className={cn("h-8 text-xs bg-white dark:bg-slate-900", errors.principalDob && "border-red-500 focus-visible:ring-red-500")}
                   />
+                  {errors.principalDob && (
+                    <span className="text-[10px] text-red-500 block">{errors.principalDob}</span>
+                  )}
                 </div>
 
                 <div className="space-y-1">

@@ -441,6 +441,7 @@ export const enrollPatientPhilHealthAction = withErrorHandling(
         memberPin,
         philSysId,
         tin,
+        principalMemberDetails,
     }: UpsertKonsultaPatientEnrollmentPayload) => {
         const session = await getCachedSession();
         if (!session) throw new Error("Unauthorized");
@@ -473,6 +474,9 @@ export const enrollPatientPhilHealthAction = withErrorHandling(
                                 userId: true,
                                 firstName: true,
                                 lastName: true,
+                                middleName: true,
+                                suffix: true,
+                                dob: true,
                                 PhilHealthRecords: {
                                     where: { deletedAt: null },
                                     select: { id: true },
@@ -567,7 +571,7 @@ export const enrollPatientPhilHealthAction = withErrorHandling(
                                     middleName: principalMemberDetails.middleName?.trim() || null,
                                     suffix: principalMemberDetails.extensionName?.trim() || null,
                                     dob: new Date(principalMemberDetails.dob),
-                                    accountType: "PATIENT",
+                                    accountType: "SHELL",
                                     PhilHealthRecords: {
                                         create: {
                                             pin: normMemberPin,

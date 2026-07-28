@@ -456,6 +456,7 @@ export async function getClinicPatientProfileAction({
                 createdAt: p.createdAt.toISOString(),
                 updatedAt: p.updatedAt.toISOString(),
                 deletedAt: p.deletedAt ? p.deletedAt.toISOString() : null,
+                pinVerifiedAt: p.pinVerifiedAt ? p.pinVerifiedAt.toISOString() : null,
             })),
             yakapEnlistment: clinicPatientRecord.PhilHealthKonsultaEnlistments?.[0] ? {
                 id: clinicPatientRecord.PhilHealthKonsultaEnlistments[0].id,
@@ -494,9 +495,7 @@ export async function getClinicPatientProfileAction({
             })),
         } as SerializedPatientHealthRecordsResponse;
     } catch (error) {
-        console.error("[GET_CLINIC_PATIENT_PROFILE_ACTION]", {
-            message: error instanceof Error ? error.message : String(error),
-        });
+        console.error("[GET_CLINIC_PATIENT_PROFILE_ACTION]", error);
         return null;
     }
 }

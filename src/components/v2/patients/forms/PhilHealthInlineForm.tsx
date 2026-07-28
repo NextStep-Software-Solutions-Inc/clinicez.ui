@@ -79,39 +79,31 @@ export function PhilHealthInlineForm({
     }
   }, [formData.memberType, formData.pin])
 
-  // Comprehensive real-time inline input validation
+  // Zod-powered real-time inline input validation
   useEffect(() => {
-    const newErrors: Record<string, string | undefined> = {}
-    const rawPin = unmaskDigits(formData.pin)
-    const rawDepPin = unmaskDigits(formData.dependentPin)
-
-    if (formData.memberType === 'DD') {
-      if (!rawPin) {
-        newErrors.pin = 'Principal Member PIN is required for dependent profiles.'
-      } else if (rawPin.length !== 12 && rawPin.length !== 15) {
-        newErrors.pin = 'Principal Member PIN must be a 12-digit PhilHealth PIN.'
-      }
-
-      if (!rawDepPin) {
-        newErrors.dependentPin = 'Patient PIN (Dependent PIN) is required for dependent profiles.'
-      } else if (rawDepPin.length !== 12 && rawDepPin.length !== 15) {
-        newErrors.dependentPin = 'Patient PIN (Dependent PIN) must be a 12-digit PhilHealth PIN.'
-      }
-
-      if (rawPin && rawDepPin && rawPin === rawDepPin) {
-        newErrors.pin = 'Principal Member PIN and Dependent/Patient PIN cannot be the same.'
-        newErrors.dependentPin = 'Principal Member PIN and Dependent/Patient PIN cannot be the same.'
-      }
-    } else {
-      if (!rawPin) {
-        newErrors.pin = 'PhilHealth PIN is required.'
-      } else if (rawPin.length !== 12 && rawPin.length !== 15) {
-        newErrors.pin = 'PhilHealth PIN must be a 12-digit PIN.'
-      }
+    const rawData = {
+      pin: unmaskDigits(formData.pin),
+      dependentPin: unmaskDigits(formData.dependentPin),
+      tin: unmaskDigits(formData.tin),
+      philSysId: unmaskDigits(formData.philSysId),
+      memberType: formData.memberType || 'MM',
+      photoUrl: formData.photoUrl || null,
+      dependents: dependents || [],
     }
 
-    setErrors(newErrors)
-  }, [formData.memberType, formData.pin, formData.dependentPin])
+    const validationResult = philHealthRecordSchema.safeParse(rawData)
+    if (!validationResult.success) {
+      const fieldErrors: Record<string, string> = {}
+      validationResult.error.issues.forEach((issue) => {
+        if (issue.path[0]) {
+          fieldErrors[issue.path[0] as string] = issue.message
+        }
+      })
+      setErrors(fieldErrors)
+    } else {
+      setErrors({})
+    }
+  }, [formData, dependents])
 
   // Track if main form has changes
   const hasChanges = useMemo(() => {
@@ -127,13 +119,6 @@ export function PhilHealthInlineForm({
       ...prev,
       [field]: value === '' ? null : value,
     }))
-    if (errors[field]) {
-      setErrors((prev) => {
-        const next = { ...prev }
-        delete next[field]
-        return next
-      })
-    }
   }
 
   const handleSubmit = async () => {
@@ -142,37 +127,25 @@ export function PhilHealthInlineForm({
       return
     }
 
-    const currentErrors: Record<string, string> = {}
-    const rawPin = unmaskDigits(formData.pin)
-    const rawDepPin = unmaskDigits(formData.dependentPin)
-
-    if (formData.memberType === 'DD') {
-      if (!rawPin) {
-        currentErrors.pin = 'Principal Member PIN is required for dependent profiles.'
-      } else if (rawPin.length !== 12 && rawPin.length !== 15) {
-        currentErrors.pin = 'Principal Member PIN must be a 12-digit PhilHealth PIN.'
-      }
-
-      if (!rawDepPin) {
-        currentErrors.dependentPin = 'Patient PIN (Dependent PIN) is required for dependent profiles.'
-      } else if (rawDepPin.length !== 12 && rawDepPin.length !== 15) {
-        currentErrors.dependentPin = 'Patient PIN (Dependent PIN) must be a 12-digit PhilHealth PIN.'
-      }
-
-      if (rawPin && rawDepPin && rawPin === rawDepPin) {
-        currentErrors.pin = 'Principal Member PIN and Dependent/Patient PIN cannot be the same.'
-        currentErrors.dependentPin = 'Principal Member PIN and Dependent/Patient PIN cannot be the same.'
-      }
-    } else {
-      if (!rawPin) {
-        currentErrors.pin = 'PhilHealth PIN is required.'
-      } else if (rawPin.length !== 12 && rawPin.length !== 15) {
-        currentErrors.pin = 'PhilHealth PIN must be a 12-digit PIN.'
-      }
+    const parsedData = {
+      pin: unmaskDigits(formData.pin),
+      dependentPin: unmaskDigits(formData.dependentPin),
+      memberType: formData.memberType || 'MM',
+      tin: unmaskDigits(formData.tin) || null,
+      philSysId: unmaskDigits(formData.philSysId) || null,
+      photoUrl: formData.photoUrl || null,
+      dependents: dependents || [],
     }
 
-    if (Object.keys(currentErrors).length > 0) {
-      setErrors(currentErrors)
+    const validationResult = philHealthRecordSchema.safeParse(parsedData)
+    if (!validationResult.success) {
+      const fieldErrors: Record<string, string> = {}
+      validationResult.error.issues.forEach((issue) => {
+        if (issue.path[0]) {
+          fieldErrors[issue.path[0] as string] = issue.message
+        }
+      })
+      setErrors(fieldErrors)
       throw new Error('Please fix input field errors before saving.')
     }
 

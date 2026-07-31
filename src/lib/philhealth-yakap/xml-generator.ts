@@ -327,13 +327,13 @@ function buildMedHists(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
   if (hists.length > 0) {
     for (const h of hists) {
       medhists.ele('MEDHIST', withStatus({
-        pMdiseaseCode: h.code,
+        pMdiseaseCode: h.code || '001',
       })).up();
     }
   } else {
-    // DTD requires at least one MEDHIST - emit placeholder
+    // DTD requires at least one MEDHIST - emit default code 001
     medhists.ele('MEDHIST', withStatus({
-      pMdiseaseCode: '',
+      pMdiseaseCode: '001',
     })).up();
   }
   return medhists.up();
@@ -346,13 +346,13 @@ function buildMhSpecifics(parent: XmlNode, patient: KonsultaPatientData): XmlNod
   if (hists.length > 0) {
     for (const h of hists) {
       specifics.ele('MHSPECIFIC', withStatus({
-        pMdiseaseCode: h.code,
+        pMdiseaseCode: h.code || '001',
         pSpecificDesc: h.mhsOthers || '',
       })).up();
     }
   } else {
     specifics.ele('MHSPECIFIC', withStatus({
-      pMdiseaseCode: '',
+      pMdiseaseCode: '001',
       pSpecificDesc: '',
     })).up();
   }
@@ -386,12 +386,12 @@ function buildFamHists(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
   if (hists.length > 0) {
     for (const h of hists) {
       famhists.ele('FAMHIST', withStatus({
-        pMdiseaseCode: h.code,
+        pMdiseaseCode: h.code || '001',
       })).up();
     }
   } else {
     famhists.ele('FAMHIST', withStatus({
-      pMdiseaseCode: '',
+      pMdiseaseCode: '001',
     })).up();
   }
   return famhists.up();
@@ -404,13 +404,13 @@ function buildFhSpecifics(parent: XmlNode, patient: KonsultaPatientData): XmlNod
   if (hists.length > 0) {
     for (const h of hists) {
       specifics.ele('FHSPECIFIC', withStatus({
-        pMdiseaseCode: h.code,
+        pMdiseaseCode: h.code || '001',
         pSpecificDesc: h.specificDesc || '',
       })).up();
     }
   } else {
     specifics.ele('FHSPECIFIC', withStatus({
-      pMdiseaseCode: '',
+      pMdiseaseCode: '001',
       pSpecificDesc: '',
     })).up();
   }
@@ -503,27 +503,14 @@ function mapSocValue(val?: string | null): string {
 
 function buildSocHist(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
   const soc = patient.profile.socialHistory;
-  let isSexuallyActiveVal = mapSocValue(soc?.isSexuallyActive);
-
-  if (patient.patient.dob) {
-    const dob = new Date(patient.patient.dob);
-    const now = new Date();
-    let age = now.getFullYear() - dob.getFullYear();
-    const m = now.getMonth() - dob.getMonth();
-    if (m < 0 || (m === 0 && now.getDate() < dob.getDate())) {
-      age--;
-    }
-    if (age < 15) {
-      isSexuallyActiveVal = 'X';
-    }
-  }
+  const isSexuallyActiveVal = mapSocValue(soc?.isSexuallyActive) === 'Y' ? 'Y' : 'N';
 
   parent.ele('SOCHIST', withStatus({
     pIsSmoker: mapSocValue(soc?.isSmoker),
     pNoCigpk: soc?.noCigpk || '0',
     pIsAdrinker: mapSocValue(soc?.isAdrinker),
     pNoBottles: soc?.noBottles || '0',
-    pIllDrugUser: mapSocValue(soc?.illDrugUser),
+    pIllDrugUser: mapSocValue(soc?.illDrugUser) === 'Y' ? 'Y' : 'N',
     pIsSexuallyActive: isSexuallyActiveVal,
   })).up();
   return parent;

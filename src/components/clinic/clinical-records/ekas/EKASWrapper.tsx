@@ -1,6 +1,6 @@
 "use client"
 
-import { DownloadEKASButton } from "@/components/patient/DownloadEKASButton"
+import DownloadEkasButton from "@/components/v2/consultations/DownloadEkasButton"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
 interface EKASWrapperProps {
@@ -30,33 +30,21 @@ interface EKASWrapperProps {
 export default function EKASWrapper({
   consultationTicketId,
   clinicUid,
-  userInfo,
-  appointment
 }: EKASWrapperProps) {
-  const patient = appointment?.Requesters?.[0]?.User
-  const userId = patient?.userId || ""
-  const clinicId = appointment?.Clinic?.id || 0
-  const patientName = `${userInfo?.lastName || patient?.lastName || ''}, ${userInfo?.firstName || patient?.firstName || ''}`.trim()
-
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Electronic Yakap Availment Slip (EKAS) and Electronic Prescription Slip (EPRESS)</CardTitle>
+        <CardTitle>eKAS & ePRESS Forms</CardTitle>
         <CardDescription>
-          Download the Electronic Yakap Availment Slip for this consultation.
+          Download separate Electronic Konsulta Availment Slip (eKAS) or Electronic Prescription Slip (ePRESS) for this consultation.
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="flex items-center gap-2">
-          <DownloadEKASButton
-            userId={userId}
-            consultationTicketId={consultationTicketId}
-            clinicId={clinicId}
-            patientName={patientName}
+        <div className="flex items-center gap-4">
+          <DownloadEkasButton
+            ticketId={consultationTicketId}
+            clinicUid={clinicUid}
           />
-          <p className="text-sm text-muted-foreground">
-            Generate EKAS with transaction number and authorization code
-          </p>
         </div>
       </CardContent>
     </Card>

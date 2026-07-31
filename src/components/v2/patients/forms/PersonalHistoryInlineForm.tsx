@@ -11,6 +11,8 @@ import { toast } from 'sonner'
 export interface PersonalHistoryInlineFormProps {
   userId: string
   currentData?: Partial<PersonalHistoryFormInput>
+  patientDob?: Date | string | null
+  patientAge?: number | null
   onSuccess?: () => void
   saveRef?: React.MutableRefObject<{ submit: () => Promise<void>; hasChanges: boolean } | null>
   onDirtyChange?: (isDirty: boolean) => void
@@ -19,10 +21,26 @@ export interface PersonalHistoryInlineFormProps {
 export function PersonalHistoryInlineForm({
   userId,
   currentData = {},
+  patientDob,
+  patientAge: rawPatientAge,
   onSuccess,
   saveRef,
   onDirtyChange,
 }: PersonalHistoryInlineFormProps) {
+  const calculatedAge = useMemo(() => {
+    if (rawPatientAge !== undefined && rawPatientAge !== null) return rawPatientAge;
+    if (!patientDob) return null;
+    const date = typeof patientDob === 'string' ? new Date(patientDob) : patientDob;
+    if (isNaN(date.getTime())) return null;
+    const today = new Date();
+    let age = today.getFullYear() - date.getFullYear();
+    const m = today.getMonth() - date.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < date.getDate())) age--;
+    return age;
+  }, [patientDob, rawPatientAge])
+
+  const isSexuallyActiveApplicable = calculatedAge === null || calculatedAge >= 15;
+
   const initialFormValues = useMemo(() => {
     return {
       smokingStatus: currentData.smokingStatus ?? null,
@@ -246,22 +264,34 @@ export function PersonalHistoryInlineForm({
         </Select>
       )}
 
-      {renderField(
-        'Sexually Active',
-        'sexuallyActive',
-        <Select
-          value={formData.sexuallyActive || ''}
-          onValueChange={(val) => handleFieldChange('sexuallyActive', val || null)}
-        >
-          <SelectTrigger className="h-8 text-xs focus:ring-teal-500">
-            <SelectValue placeholder="Select Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="YES">Yes, currently active</SelectItem>
-            <SelectItem value="NO">No, not active</SelectItem>
-            <SelectItem value="INACTIVE">Prefer not to answer</SelectItem>
-          </SelectContent>
-        </Select>
+      {isSexuallyActiveApplicable ? (
+        renderField(
+          'Sexually Active',
+          'sexuallyActive',
+          <Select
+            value={formData.sexuallyActive || ''}
+            onValueChange={(val) => handleFieldChange('sexuallyActive', val || null)}
+          >
+            <SelectTrigger className="h-8 text-xs focus:ring-teal-500">
+              <SelectValue placeholder="Select Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="YES">Yes, currently active</SelectItem>
+              <SelectItem value="NO">No, not active</SelectItem>
+              <SelectItem value="INACTIVE">Prefer not to answer</SelectItem>
+            </SelectContent>
+          </Select>
+        )
+      ) : (
+        renderField(
+          'Sexually Active',
+          'sexuallyActive',
+          <Input
+            disabled
+            value="N/A (Patient < 15 yrs)"
+            className="h-8 text-xs bg-slate-100 dark:bg-slate-800 text-slate-500"
+          />
+        )
       )}
     </div>
   )

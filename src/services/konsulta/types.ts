@@ -175,7 +175,7 @@ export interface KonsultaEncryptedPayload {
 export type KonsultaPatientType = "MM" | "DD";
 export type KonsultaPackageType = "P" | "E" | "K";
 export type KonsultaReportStatus = "U" | "V" | "F";
-export type KonsultaYN = "Y" | "N";
+export type KonsultaYN = "Y" | "N" | "X";
 export type KonsultaDeliveryType = "N" | "X";
 
 export interface KonsultaEnlistmentData {

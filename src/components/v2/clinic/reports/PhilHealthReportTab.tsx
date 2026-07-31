@@ -2355,7 +2355,7 @@ function InfoField({
 /** Expandable detail panel showing all parsed PROFILE data for one row. */
 function ProfileDetailPanel({ profile }: { profile: ParsedProfileData }) {
 	const yn = (v: string) =>
-		v.toUpperCase() === "Y" ? "Yes" : v.toUpperCase() === "N" ? "No" : v || "—";
+		v.toUpperCase() === "Y" ? "Yes" : v.toUpperCase() === "N" ? "No" : v.toUpperCase() === "X" ? "N/A" : v || "—";
 
 	const hasVitals = [
 		profile.systolic, profile.diastolic, profile.hr, profile.rr,

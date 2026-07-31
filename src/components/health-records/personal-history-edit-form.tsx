@@ -106,6 +106,7 @@ export function PersonalHistoryEditForm({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="_empty">Prefer not to answer</SelectItem>
+              <SelectItem value="NOT_APPLICABLE">{personalHistoryLabels.smokingStatus.NOT_APPLICABLE}</SelectItem>
               <SelectItem value="NEVER">{personalHistoryLabels.smokingStatus.NEVER}</SelectItem>
               <SelectItem value="FORMER">{personalHistoryLabels.smokingStatus.FORMER}</SelectItem>
               <SelectItem value="CURRENT">{personalHistoryLabels.smokingStatus.CURRENT}</SelectItem>
@@ -126,7 +127,7 @@ export function PersonalHistoryEditForm({
               min="0"
               max="100"
               value={formData.numberOfPacksPerYear || ''}
-              onChange={(e) => handleFieldChange('numberOfPacksPerYear', e.target.value ? parseInt(e.target.value) : null)}
+              onChange={(e) => handleFieldChange('numberOfPacksPerYear', e.target.value ? parseInt(e.target.value, 10) : null)}
               placeholder="e.g., 10"
             />
           </FormField>
@@ -140,13 +141,14 @@ export function PersonalHistoryEditForm({
         <FormField label="Alcohol Status" htmlFor="alcoholStatus" helpText="Select your alcohol consumption pattern">
           <Select
             value={formData.alcoholStatus || ''}
-            onValueChange={(value) => handleFieldChange('alcoholStatus', value === '_empty' ? undefined : value)}
+            onValueChange={(value) => handleFieldChange('alcoholStatus', value)}
           >
             <SelectTrigger id="alcoholStatus">
               <SelectValue placeholder="Select status..." />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="_empty">Prefer not to answer</SelectItem>
+              <SelectItem value="NOT_APPLICABLE">{personalHistoryLabels.alcoholStatus.NOT_APPLICABLE}</SelectItem>
               <SelectItem value="NEVER">{personalHistoryLabels.alcoholStatus.NEVER}</SelectItem>
               <SelectItem value="OCCASIONAL">{personalHistoryLabels.alcoholStatus.OCCASIONAL}</SelectItem>
               <SelectItem value="REGULAR">{personalHistoryLabels.alcoholStatus.REGULAR}</SelectItem>
@@ -155,8 +157,8 @@ export function PersonalHistoryEditForm({
           </Select>
         </FormField>
 
-        {/* Conditional: Show bottle count for non-NEVER drinkers */}
-        {formData.alcoholStatus && formData.alcoholStatus !== 'NEVER' && (
+        {/* Conditional: Show bottle count for active drinkers */}
+        {formData.alcoholStatus && formData.alcoholStatus !== 'NEVER' && formData.alcoholStatus !== 'NOT_APPLICABLE' && (
           <FormField
             label="Bottles per Day"
             htmlFor="numberOfBottlesPerDay"
@@ -183,13 +185,14 @@ export function PersonalHistoryEditForm({
         <FormField label="Illicit Drug Use" htmlFor="illicitDrugUse" helpText="History of non-prescription drug use">
           <Select
             value={formData.illicitDrugUse || ''}
-            onValueChange={(value) => handleFieldChange('illicitDrugUse', value === '_empty' ? undefined : value)}
+            onValueChange={(value) => handleFieldChange('illicitDrugUse', value)}
           >
             <SelectTrigger id="illicitDrugUse">
               <SelectValue placeholder="Select status..." />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="_empty">Prefer not to answer</SelectItem>
+              <SelectItem value="NOT_APPLICABLE">{personalHistoryLabels.illicitDrugUse.NOT_APPLICABLE}</SelectItem>
               <SelectItem value="NEVER">{personalHistoryLabels.illicitDrugUse.NEVER}</SelectItem>
               <SelectItem value="FORMER">{personalHistoryLabels.illicitDrugUse.FORMER}</SelectItem>
               <SelectItem value="CURRENT">{personalHistoryLabels.illicitDrugUse.CURRENT}</SelectItem>
@@ -205,13 +208,14 @@ export function PersonalHistoryEditForm({
         <FormField label="Sexual Activity Status" htmlFor="sexuallyActive" helpText="Current sexual activity status">
           <Select
             value={formData.sexuallyActive || ''}
-            onValueChange={(value) => handleFieldChange('sexuallyActive', value === '_empty' ? undefined : value)}
+            onValueChange={(value) => handleFieldChange('sexuallyActive', value)}
           >
             <SelectTrigger id="sexuallyActive">
               <SelectValue placeholder="Select status..." />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="_empty">Prefer not to answer</SelectItem>
+              <SelectItem value="NOT_APPLICABLE">{personalHistoryLabels.sexuallyActive.NOT_APPLICABLE}</SelectItem>
               <SelectItem value="YES">{personalHistoryLabels.sexuallyActive.YES}</SelectItem>
               <SelectItem value="NO">{personalHistoryLabels.sexuallyActive.NO}</SelectItem>
               <SelectItem value="INACTIVE">{personalHistoryLabels.sexuallyActive.INACTIVE}</SelectItem>

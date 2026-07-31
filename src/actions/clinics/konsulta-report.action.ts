@@ -37,10 +37,9 @@ import type {
     KonsultaSoapSubData,
     KonsultaYN,
 } from "@/services/konsulta/types";
-import {
-    decryptXmlPayload,
-    encryptXmlPayload,
-} from "@/services/konsulta/xml-encryption.service";
+import { decryptXmlPayload, encryptXmlPayload } from "@/services/konsulta/xml-encryption.service";
+import { calculateAge } from "@/lib/utils";
+import { calculateAgeInMonths } from "@/lib/pediatric-growth-utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -2615,21 +2614,40 @@ function mapBloodType(bloodType: string | null | undefined): string {
 }
 
 function mapSmokerStatus(status: string | null | undefined): KonsultaYN {
-    return status === "CURRENT" || status === "FORMER" ? "Y" : "N";
+    if (status === "CURRENT") return "Y";
+    if (status === "NEVER" || status === "FORMER") return "N";
+    if (status === "NOT_APPLICABLE") return "X";
+    return "N";
 }
 
 function mapDrinkerStatus(status: string | null | undefined): KonsultaYN {
-    return status && status !== "NEVER" ? "Y" : "N";
+    if (status === "NEVER") return "N";
+    if (status === "OCCASIONAL" || status === "REGULAR" || status === "HEAVY") return "Y";
+    if (status === "NOT_APPLICABLE") return "X";
+    return "N";
 }
 
 function mapDrugStatus(status: string | null | undefined): KonsultaYN {
-    return status === "CURRENT" || status === "FORMER" ? "Y" : "N";
+    if (status === "NEVER") return "N";
+    if (status === "CURRENT" || status === "FORMER") return "Y";
+    if (status === "NOT_APPLICABLE") return "X";
+    return "N";
 }
 
 function mapSexuallyActiveStatus(
     status: string | null | undefined,
+    dob?: Date | null,
 ): KonsultaYN {
-    return status === "YES" ? "Y" : "N";
+    if (dob) {
+        const age = calculateAge(dob);
+        if (age != null && age < 15) {
+            return "X";
+        }
+    }
+    if (status === "YES") return "Y";
+    if (status === "NO" || status === "INACTIVE") return "N";
+    if (status === "NOT_APPLICABLE") return "X";
+    return "X";
 }
 
 // ─── Generate XML ─────────────────────────────────────────────────────────────
@@ -2936,6 +2954,8 @@ export const generateBatchXmlAction = withErrorHandling(
                     where: { id: { in: patientUserIds } },
                     select: {
                         id: true,
+                        dob: true,
+                        gender: true,
                         bloodType: true,
                         PersonalHistory: {
                             select: {
@@ -3278,6 +3298,7 @@ export const generateBatchXmlAction = withErrorHandling(
             const buildProfileSubData = (
                 patientId: number,
                 gender: string | null,
+                patientDob?: Date | null,
             ): KonsultaProfileSubData => {
                 const hp = patientProfileMap.get(patientId);
                 if (!hp) return {};
@@ -3285,7 +3306,31 @@ export const generateBatchXmlAction = withErrorHandling(
                 const ph = hp.PersonalHistory;
                 const ob = hp.ObGyneHistory;
                 const vs = hp.VitalSigns[0];
-                const isFemale = gender === "FEMALE";
+                const isFemale = (gender ?? hp.gender) === "FEMALE";
+                const dob = patientDob ?? hp.dob ?? null;
+
+                if (dob) {
+                    const ageMonths = calculateAgeInMonths(dob);
+                    if (ageMonths <= 24) {
+                        const missingPediatric: string[] = [];
+                        if (vs?.length == null || String(vs.length).trim() === "") missingPediatric.push("Length (pLength)");
+                        if (vs?.headCircumference == null || String(vs.headCircumference).trim() === "") missingPediatric.push("Head Circumference (pHeadCirc)");
+                        if (vs?.skinfoldThickness == null || String(vs.skinfoldThickness).trim() === "") missingPediatric.push("Skinfold Thickness (pSkinfoldThickness)");
+                        if (vs?.waistCircumference == null || String(vs.waistCircumference).trim() === "") missingPediatric.push("Waist (pWaist)");
+                        if (vs?.hipCircumference == null || String(vs.hipCircumference).trim() === "") missingPediatric.push("Hip (pHip)");
+                        if (vs?.limbCircumference == null || String(vs.limbCircumference).trim() === "") missingPediatric.push("Limbs (pLimbs)");
+                        if (vs?.midUpperArmCircumference == null || String(vs.midUpperArmCircumference).trim() === "") missingPediatric.push("Mid-Upper Arm (pMidUpperArmCirc)");
+
+                        if (missingPediatric.length > 0) {
+                            pushPatientDeficiency(
+                                "physicalExam",
+                                patientId,
+                                "Pediatric Physical Exam (PEPERT)",
+                                `Patient (aged ${ageMonths} month(s)) is missing required PEPERT fields: ${missingPediatric.join(", ")}.`,
+                            );
+                        }
+                    }
+                }
 
                 return {
                     // SOCHIST
@@ -3300,7 +3345,7 @@ export const generateBatchXmlAction = withErrorHandling(
                             ? String(ph.numberOfBottlesPerDay)
                             : "",
                     illDrugUser: mapDrugStatus(ph?.illicitDrugUse),
-                    isSexuallyActive: mapSexuallyActiveStatus(ph?.sexuallyActive),
+                    isSexuallyActive: mapSexuallyActiveStatus(ph?.sexuallyActive, dob),
 
                     // BLOODTYPE
                     bloodType: mapBloodType(hp.bloodType),
@@ -3465,7 +3510,7 @@ export const generateBatchXmlAction = withErrorHandling(
                             immunizations:
                                 mappedImmunizationsByPatientId.get(entry.patientUserId) ??
                                 [],
-                            subData: buildProfileSubData(p.id, p.gender ?? null),
+                            subData: buildProfileSubData(p.id, p.gender ?? null, p.dob ?? null),
                         };
                     })
                     : consultationRows.map((consultation) => {
@@ -3535,7 +3580,7 @@ export const generateBatchXmlAction = withErrorHandling(
                                 mappedPhysicalExamFindingsByConsultationId.get(
                                     consultation.id,
                                 ) ?? [],
-                            subData: buildProfileSubData(p.id, p.gender ?? null),
+                            subData: buildProfileSubData(p.id, p.gender ?? null, p.dob ?? null),
                         };
                     });
 

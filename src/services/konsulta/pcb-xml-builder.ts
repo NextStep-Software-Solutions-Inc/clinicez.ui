@@ -227,7 +227,7 @@ function addProfileSubElements(profile: XMLNode, profileData: KonsultaProfileDat
         pIsAdrinker: data?.isAdrinker ?? "N",
         pNoBottles: data?.noBottles ?? "",
         pIllDrugUser: data?.illDrugUser ?? "N",
-        pIsSexuallyActive: data?.isSexuallyActive ?? "N",
+        pIsSexuallyActive: data?.isSexuallyActive ?? "X",
         pReportStatus: "U",
         pDeficiencyRemarks: "",
     });

@@ -447,13 +447,28 @@ function mapSocValue(val?: string | null): string {
 
 function buildSocHist(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
   const soc = patient.profile.socialHistory;
+  let isSexuallyActiveVal = mapSocValue(soc?.isSexuallyActive);
+
+  if (patient.patient.dob) {
+    const dob = new Date(patient.patient.dob);
+    const now = new Date();
+    let age = now.getFullYear() - dob.getFullYear();
+    const m = now.getMonth() - dob.getMonth();
+    if (m < 0 || (m === 0 && now.getDate() < dob.getDate())) {
+      age--;
+    }
+    if (age < 15) {
+      isSexuallyActiveVal = 'X';
+    }
+  }
+
   parent.ele('SOCHIST', withStatus({
     pIsSmoker: mapSocValue(soc?.isSmoker),
     pNoCigpk: soc?.noCigpk || '0',
     pIsAdrinker: mapSocValue(soc?.isAdrinker),
     pNoBottles: soc?.noBottles || '0',
     pIllDrugUser: mapSocValue(soc?.illDrugUser),
-    pIsSexuallyActive: mapSocValue(soc?.isSexuallyActive),
+    pIsSexuallyActive: isSexuallyActiveVal,
   })).up();
   return parent;
 }

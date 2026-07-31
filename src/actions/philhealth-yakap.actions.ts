@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache";
 import { generatePhilHealthKonsultaTransactionNumber } from "@/services/sequence-generator.service";
 import { generateKonsultaXml, type KonsultaPatientData, type KonsultaConsultationData, type KonsultaMedicineData, type KonsultaDiagnosticExamData } from "@/lib/philhealth-yakap/xml-generator";
 import { getKonsultaRecommendedService } from "./consultation/konsulta-recommended-services.action";
+import { resolvePrincipalMembersByPins } from "@/actions/clinics/konsulta-report.action";
 
 const getClinicCredentials = async (clinicUid: string) => {
   const session = await getCachedSession();
@@ -806,6 +807,42 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
           }))
         : undefined;
 
+      let memberFirstName = (patient.firstName || "").toUpperCase();
+      let memberMiddleName = (patient.middleName || "").toUpperCase();
+      let memberLastName = (patient.lastName || "").toUpperCase();
+      let memberExtName = (patient.suffix || "").toUpperCase();
+      let memberDobStr = formatDate(patient.dob);
+
+      if (patientType === "DD") {
+        const pmMap = memberPin ? await resolvePrincipalMembersByPins([memberPin]) : new Map();
+        const pm = memberPin ? pmMap.get(memberPin.trim()) : null;
+
+        const isEnlistmentSameAsPatient = enlistment && (
+          enlistment.memberFname?.trim().toUpperCase() === patient.firstName?.trim().toUpperCase() &&
+          enlistment.memberLname?.trim().toUpperCase() === patient.lastName?.trim().toUpperCase()
+        );
+
+        if (pm) {
+          memberFirstName = pm.firstName.toUpperCase();
+          memberMiddleName = pm.middleName.toUpperCase();
+          memberLastName = pm.lastName.toUpperCase();
+          memberExtName = pm.extensionName.toUpperCase();
+          memberDobStr = pm.dob;
+        } else if (enlistment && enlistment.memberFname && !isEnlistmentSameAsPatient) {
+          memberFirstName = enlistment.memberFname.toUpperCase();
+          memberMiddleName = (enlistment.memberMname || "").toUpperCase();
+          memberLastName = (enlistment.memberLname || "").toUpperCase();
+          memberExtName = (enlistment.memberExtname || "").toUpperCase();
+          memberDobStr = enlistment.memberDob ? formatDate(enlistment.memberDob) : "";
+        } else {
+          memberFirstName = "";
+          memberMiddleName = "";
+          memberLastName = "";
+          memberExtName = "";
+          memberDobStr = "";
+        }
+      }
+
       return {
         enlistment: {
           hciCaseNo: enlistment?.hciCaseNo || "",
@@ -819,11 +856,11 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
         },
         member: {
           pin: memberPin,
-          firstName: (patient.firstName || "").toUpperCase(),
-          middleName: (patient.middleName || "").toUpperCase(),
-          lastName: (patient.lastName || "").toUpperCase(),
-          extName: (patient.suffix || "").toUpperCase(),
-          dob: formatDate(patient.dob),
+          firstName: memberFirstName,
+          middleName: memberMiddleName,
+          lastName: memberLastName,
+          extName: memberExtName,
+          dob: memberDobStr,
         },
         patient: {
           pin: patientPin,

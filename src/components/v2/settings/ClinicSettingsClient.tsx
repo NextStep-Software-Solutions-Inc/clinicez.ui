@@ -249,6 +249,8 @@ const philhealthSchema = z.object({
   philhealthYakapUsername: z.string().optional(),
   philhealthYakapPassword: z.string().optional(),
   philhealthYakapPmccNumber: z.string().optional(),
+  konsultaCertificationId: z.string().optional(),
+  konsultaCipherKey: z.string().optional(),
 });
 type PhilHealthFormValues = z.infer<typeof philhealthSchema>;
 
@@ -745,6 +747,8 @@ function PhilHealthTab({
       philhealthYakapUsername: clinicSetting?.philhealthYakapUsername ?? "",
       philhealthYakapPassword: clinicSetting?.philhealthYakapPassword ?? "",
       philhealthYakapPmccNumber: clinicSetting?.philhealthYakapPmccNumber ?? "",
+      konsultaCertificationId: clinicSetting?.konsultaCertificationId ?? "",
+      konsultaCipherKey: clinicSetting?.konsultaCipherKey ?? "",
     },
   });
 
@@ -756,6 +760,8 @@ function PhilHealthTab({
         philhealthYakapUsername: values.philhealthYakapUsername || undefined,
         philhealthYakapPassword: values.philhealthYakapPassword || undefined,
         philhealthYakapPmccNumber: values.philhealthYakapPmccNumber || undefined,
+        konsultaCertificationId: values.konsultaCertificationId || undefined,
+        konsultaCipherKey: values.konsultaCipherKey || undefined,
       });
 
       if (result.status) {
@@ -849,6 +855,38 @@ function PhilHealthTab({
                   </FormControl>
                   <FormDescription>
                     PMCC Number required for Yakap Integration
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="konsultaCertificationId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Software Certification ID</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. KON-DUMMYCERTS-Z15445" {...field} />
+                  </FormControl>
+                  <FormDescription>
+                    YAKAP Software Certification ID issued by PhilHealth ITMD.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="konsultaCipherKey"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Cipher Key</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. PHilheaLthDuMmyZ15445" {...field} />
+                  </FormControl>
+                  <FormDescription>
+                    Secret Cipher Key for AES XML Encryption.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

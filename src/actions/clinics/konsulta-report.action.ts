@@ -608,11 +608,11 @@ export const enrollPatientPhilHealthAction = withErrorHandling(
 
                 // Compute snapshot details for PhilHealthKonsultaEnlistment
                 const effYearInt = parseInt(effYear, 10);
-                let pmFname = clinicPatient.Patient.firstName ?? "";
-                let pmLname = clinicPatient.Patient.lastName ?? "";
-                let pmMname = clinicPatient.Patient.middleName ?? "";
-                let pmExt = clinicPatient.Patient.suffix ?? "";
-                let pmDob: Date | null = clinicPatient.Patient.dob ?? null;
+                let pmFname = patientType === "MM" ? (clinicPatient.Patient.firstName ?? "") : "";
+                let pmLname = patientType === "MM" ? (clinicPatient.Patient.lastName ?? "") : "";
+                let pmMname = patientType === "MM" ? (clinicPatient.Patient.middleName ?? "") : "";
+                let pmExt = patientType === "MM" ? (clinicPatient.Patient.suffix ?? "") : "";
+                let pmDob: Date | null = patientType === "MM" ? (clinicPatient.Patient.dob ?? null) : null;
 
                 if (patientType === "DD") {
                     if (principalMemberDetails) {
@@ -1797,7 +1797,6 @@ export async function resolvePrincipalMembersByPins(pins: string[]): Promise<Map
     const records = await prisma.philHealthRecord.findMany({
         where: {
             pin: { in: uniquePins },
-            memberType: "MM",
             deletedAt: null,
         },
         include: {
@@ -1843,6 +1842,31 @@ export async function resolvePrincipalMembersByPins(pins: string[]): Promise<Map
                     extensionName: cp.Patient.suffix ?? "",
                     dob: cp.Patient.dob ? cp.Patient.dob.toISOString().slice(0, 10) : "1990-01-01",
                     userId: cp.Patient.id,
+                });
+            }
+        }
+    }
+
+    const missingPins2 = uniquePins.filter((p) => !map.has(p));
+    if (missingPins2.length > 0) {
+        const enlistments = await prisma.philHealthKonsultaEnlistment.findMany({
+            where: {
+                memberPin: { in: missingPins2 },
+                memberFname: { not: null },
+            },
+            orderBy: { id: "desc" },
+        });
+
+        for (const enl of enlistments) {
+            const pin = enl.memberPin?.trim();
+            if (pin && enl.memberFname && !map.has(pin)) {
+                map.set(pin, {
+                    pin,
+                    firstName: enl.memberFname,
+                    lastName: enl.memberLname ?? "",
+                    middleName: enl.memberMname ?? "",
+                    extensionName: enl.memberExtname ?? "",
+                    dob: enl.memberDob ? enl.memberDob.toISOString().slice(0, 10) : "1990-01-01",
                 });
             }
         }
@@ -2789,14 +2813,47 @@ export const generateBatchXmlAction = withErrorHandling(
                     const principal = patientType === "DD" ? principalMap.get(memberPin.trim()) : null;
                     const snap = snapshotMapByPatientId.get(entry.patientUserId);
 
-                    const pMemPinFinal = snap?.memberPin || memberPin;
-                    const pMemFname = snap?.memberFname ?? (patientType === "DD" ? (principal?.firstName ?? "") : (p.firstName ?? ""));
-                    const pMemMname = snap?.memberMname ?? (patientType === "DD" ? (principal?.middleName ?? "") : (p.middleName ?? ""));
-                    const pMemLname = snap?.memberLname ?? (patientType === "DD" ? (principal?.lastName ?? "") : (p.lastName ?? ""));
-                    const pMemExtname = snap?.memberExtname ?? (patientType === "DD" ? (principal?.extensionName ?? "") : (p.suffix ?? ""));
-                    const pMemDob = snap?.memberDob
-                        ? snap.memberDob.toISOString().slice(0, 10)
-                        : patientType === "DD" ? (principal?.dob ?? dob) : dob;
+                    const isSnapSameAsPatient = snap && (
+                        snap.memberFname?.trim().toUpperCase() === p.firstName?.trim().toUpperCase() &&
+                        snap.memberLname?.trim().toUpperCase() === p.lastName?.trim().toUpperCase()
+                    );
+
+                    const pMemPinFinal = patientType === "MM" ? entry.philHealthPin : (snap?.memberPin || memberPin);
+
+                    let pMemFname = "";
+                    let pMemMname = "";
+                    let pMemLname = "";
+                    let pMemExtname = "";
+                    let pMemDob = "";
+
+                    if (patientType === "MM") {
+                        pMemFname = snap?.memberFname || p.firstName || "";
+                        pMemMname = snap?.memberMname || p.middleName || "";
+                        pMemLname = snap?.memberLname || p.lastName || "";
+                        pMemExtname = snap?.memberExtname || p.suffix || "";
+                        pMemDob = snap?.memberDob ? snap.memberDob.toISOString().slice(0, 10) : dob;
+                    } else {
+                        // patientType === "DD"
+                        if (principal) {
+                            pMemFname = principal.firstName;
+                            pMemMname = principal.middleName;
+                            pMemLname = principal.lastName;
+                            pMemExtname = principal.extensionName;
+                            pMemDob = principal.dob;
+                        } else if (snap && snap.memberFname && !isSnapSameAsPatient) {
+                            pMemFname = snap.memberFname;
+                            pMemMname = snap.memberMname ?? "";
+                            pMemLname = snap.memberLname ?? "";
+                            pMemExtname = snap.memberExtname ?? "";
+                            pMemDob = snap.memberDob ? snap.memberDob.toISOString().slice(0, 10) : "";
+                        } else {
+                            pMemFname = "";
+                            pMemMname = "";
+                            pMemLname = "";
+                            pMemExtname = "";
+                            pMemDob = "";
+                        }
+                    }
 
                     return {
                         pHciCaseNo:

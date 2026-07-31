@@ -1,8 +1,9 @@
 "use server";
 // ─── System-level Konsulta Credentials (never exposed to client) ────────────
 const KONSULTA_SOFTWARE_CERT_ID =
-    process.env.PHILHEALTH_KONSULTA_SOFTWARE_CERT_ID;
-const KONSULTA_CIPHER_KEY = process.env.PHILHEALTH_KONSULTA_CIPHER_KEY;
+    process.env.PHILHEALTH_KONSULTA_SOFTWARE_CERT_ID || process.env.PHILHEALTH_KONSULTA_CERT_ID || "KON-DUMMYCERTS-Z15445";
+const KONSULTA_CIPHER_KEY =
+    process.env.PHILHEALTH_KONSULTA_CIPHER_KEY || "PHilheaLthDuMmyZ15445";
 
 import { getCachedSession } from "@actions/session.action";
 import prisma from "@lib/prisma";

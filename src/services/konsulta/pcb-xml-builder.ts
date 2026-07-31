@@ -87,34 +87,73 @@ function addPemiscs(
     findings?: KonsultaPhysicalExamFindingData[],
 ): void {
     const pemiscsEle = parent.ele("PEMISCS");
+    let addedCount = 0;
+
+    const categories: Array<{ attr: string; key: keyof KonsultaPhysicalExamFindingData & keyof KonsultaPeMiscItem }> = [
+        { attr: "pSkinId", key: "pSkinId" },
+        { attr: "pHeentId", key: "pHeentId" },
+        { attr: "pChestId", key: "pChestId" },
+        { attr: "pHeartId", key: "pHeartId" },
+        { attr: "pAbdomenId", key: "pAbdomenId" },
+        { attr: "pNeuroId", key: "pNeuroId" },
+        { attr: "pGuId", key: "pGuId" },
+        { attr: "pRectalId", key: "pRectalId" },
+    ];
+
     if (findings && findings.length > 0) {
         for (const finding of findings) {
-            pemiscsEle.ele("PEMISC", {
-                pSkinId: finding.pSkinId ?? "",
-                pHeentId: finding.pHeentId ?? "",
-                pChestId: finding.pChestId ?? "",
-                pHeartId: finding.pHeartId ?? "",
-                pAbdomenId: finding.pAbdomenId ?? "",
-                pNeuroId: finding.pNeuroId ?? "",
-                pGuId: finding.pGuId ?? "",
-                pRectalId: finding.pRectalId ?? "",
-                pReportStatus: finding.pReportStatus ?? "U",
-                pDeficiencyRemarks: finding.pDeficiencyRemarks ?? "",
-            });
+            for (const cat of categories) {
+                const val = finding[cat.key];
+                if (val != null && String(val).trim().length > 0) {
+                    pemiscsEle.ele("PEMISC", {
+                        pSkinId: cat.attr === "pSkinId" ? String(val) : "",
+                        pHeentId: cat.attr === "pHeentId" ? String(val) : "",
+                        pChestId: cat.attr === "pChestId" ? String(val) : "",
+                        pHeartId: cat.attr === "pHeartId" ? String(val) : "",
+                        pAbdomenId: cat.attr === "pAbdomenId" ? String(val) : "",
+                        pNeuroId: cat.attr === "pNeuroId" ? String(val) : "",
+                        pGuId: cat.attr === "pGuId" ? String(val) : "",
+                        pRectalId: cat.attr === "pRectalId" ? String(val) : "",
+                        pReportStatus: finding.pReportStatus ?? "U",
+                        pDeficiencyRemarks: finding.pDeficiencyRemarks ?? "",
+                    });
+                    addedCount++;
+                }
+            }
         }
-        return;
+    } else if (items && items.length > 0) {
+        for (const item of items) {
+            for (const cat of categories) {
+                const val = item[cat.key];
+                if (val != null && String(val).trim().length > 0) {
+                    pemiscsEle.ele("PEMISC", {
+                        pSkinId: cat.attr === "pSkinId" ? String(val) : "",
+                        pHeentId: cat.attr === "pHeentId" ? String(val) : "",
+                        pChestId: cat.attr === "pChestId" ? String(val) : "",
+                        pHeartId: cat.attr === "pHeartId" ? String(val) : "",
+                        pAbdomenId: cat.attr === "pAbdomenId" ? String(val) : "",
+                        pNeuroId: cat.attr === "pNeuroId" ? String(val) : "",
+                        pGuId: cat.attr === "pGuId" ? String(val) : "",
+                        pRectalId: cat.attr === "pRectalId" ? String(val) : "",
+                        pReportStatus: "U",
+                        pDeficiencyRemarks: "",
+                    });
+                    addedCount++;
+                }
+            }
+        }
     }
-    const rows: KonsultaPeMiscItem[] = (items && items.length > 0) ? items : [{}];
-    for (const item of rows) {
+
+    if (addedCount === 0) {
         pemiscsEle.ele("PEMISC", {
-            pSkinId: item.pSkinId ?? "",
-            pHeentId: item.pHeentId ?? "",
-            pChestId: item.pChestId ?? "",
-            pHeartId: item.pHeartId ?? "",
-            pAbdomenId: item.pAbdomenId ?? "",
-            pNeuroId: item.pNeuroId ?? "",
-            pGuId: item.pGuId ?? "",
-            pRectalId: item.pRectalId ?? "",
+            pSkinId: "",
+            pHeentId: "",
+            pChestId: "",
+            pHeartId: "",
+            pAbdomenId: "",
+            pNeuroId: "",
+            pGuId: "",
+            pRectalId: "",
             pReportStatus: "U",
             pDeficiencyRemarks: "",
         });
@@ -282,17 +321,26 @@ function addProfileSubElements(profile: XMLNode, profileData: KonsultaProfileDat
     });
 
     // ── PREGHIST ────────────────────────────────────────────────────────────────────
+    const isPreghApp = data?.isPreghApplicable ?? "N";
+    const mappedDeliveryTyp = isPreghApp === "N" ? "X" : (() => {
+        const d = (data?.deliveryTyp ?? "").trim().toUpperCase();
+        if (d === "N" || d === "VAGINAL" || d === "NORMAL" || d === "NSD") return "N";
+        if (d === "O" || d === "CESAREAN" || d === "OPERATIVE" || d === "CSD") return "O";
+        if (d === "B" || d === "MIXED" || d === "BOTH") return "B";
+        return "X";
+    })();
+
     profile.ele("PREGHIST", {
         pPregCnt: data?.pregCnt ?? "",
         pDeliveryCnt: data?.deliveryCnt ?? "",
-        pDeliveryTyp: data?.deliveryTyp ?? "",
+        pDeliveryTyp: mappedDeliveryTyp,
         pFullTermCnt: data?.fullTermCnt ?? "",
         pPrematureCnt: data?.prematureCnt ?? "",
         pAbortionCnt: data?.abortionCnt ?? "",
         pLivChildrenCnt: data?.livChildrenCnt ?? "",
         pWPregIndhyp: data?.wPregIndhyp ?? "",
         pWFamPlan: data?.wFamPlan ?? "",
-        pIsApplicable: data?.isPreghApplicable ?? "N",
+        pIsApplicable: isPreghApp,
         pReportStatus: "U",
         pDeficiencyRemarks: "",
     });

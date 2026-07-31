@@ -418,11 +418,67 @@ function buildFhSpecifics(parent: XmlNode, patient: KonsultaPatientData): XmlNod
 }
 
 function mapDeliveryType(val?: string | null): string {
-  if (!val || val === 'NONE' || val === 'N/A' || val === 'X' || val === 'NOT APPLICABLE' || val === 'NOT_APPLICABLE') return 'X';
-  if (val === 'VAGINAL' || val === 'N' || val === 'NORMAL' || val === 'NSD') return 'N';
-  if (val === 'CESAREAN' || val === 'CSD' || val === 'O' || val === 'OPERATIVE') return 'O';
-  if (val === 'MIXED' || val === 'B' || val === 'BOTH') return 'B';
+  if (!val) return 'X';
+  const norm = val.trim().toUpperCase();
+  if (norm === 'NONE' || norm === 'N/A' || norm === 'X' || norm === 'NOT APPLICABLE' || norm === 'NOT_APPLICABLE') return 'X';
+  if (norm === 'VAGINAL' || norm === 'N' || norm === 'NORMAL' || norm === 'NSD') return 'N';
+  if (norm === 'CESAREAN' || norm === 'CSD' || norm === 'O' || norm === 'OPERATIVE') return 'O';
+  if (norm === 'MIXED' || norm === 'B' || norm === 'BOTH') return 'B';
   return 'X';
+}
+
+function emitPeMiscFields(pemiscs: XmlNode, pe: any): boolean {
+  let added = false;
+  const categories: Array<{ attr: string; val: any }> = [
+    { attr: 'pSkinId', val: pe.skinId },
+    { attr: 'pHeentId', val: pe.heentId },
+    { attr: 'pChestId', val: pe.chestId },
+    { attr: 'pHeartId', val: pe.heartId },
+    { attr: 'pAbdomenId', val: pe.abdomenId },
+    { attr: 'pNeuroId', val: pe.neuroId },
+    { attr: 'pRectalId', val: pe.rectalId },
+    { attr: 'pGuId', val: pe.guId },
+  ];
+
+  for (const cat of categories) {
+    if (cat.val != null && String(cat.val).trim().length > 0) {
+      pemiscs.ele('PEMISC', withStatus({
+        pSkinId: cat.attr === 'pSkinId' ? String(cat.val) : '',
+        pHeentId: cat.attr === 'pHeentId' ? String(cat.val) : '',
+        pChestId: cat.attr === 'pChestId' ? String(cat.val) : '',
+        pHeartId: cat.attr === 'pHeartId' ? String(cat.val) : '',
+        pAbdomenId: cat.attr === 'pAbdomenId' ? String(cat.val) : '',
+        pNeuroId: cat.attr === 'pNeuroId' ? String(cat.val) : '',
+        pRectalId: cat.attr === 'pRectalId' ? String(cat.val) : '',
+        pGuId: cat.attr === 'pGuId' ? String(cat.val) : '',
+      })).up();
+      added = true;
+    }
+  }
+
+  return added;
+}
+
+function buildProfilePeMiscs(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
+  const pes = patient.profile.physicalExaminations || [];
+  const pemiscs = parent.ele('PEMISCS');
+
+  let added = false;
+  for (const pe of pes) {
+    if (emitPeMiscFields(pemiscs, pe)) {
+      added = true;
+    }
+  }
+
+  if (!added) {
+    pemiscs.ele('PEMISC', withStatus({
+      pSkinId: '', pHeentId: '', pChestId: '', pHeartId: '',
+      pAbdomenId: '', pNeuroId: '', pRectalId: '', pGuId: '',
+    })).up();
+  }
+
+  pemiscs.up();
+  return parent;
 }
 
 function mapBloodType(val?: string | null): string {
@@ -589,39 +645,6 @@ function buildPeGenSurvey(parent: XmlNode, patient: KonsultaPatientData): XmlNod
   return parent;
 }
 
-function buildProfilePeMiscs(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
-  const pes = patient.profile.physicalExaminations || [];
-  const pemiscs = parent.ele('PEMISCS');
-
-  let added = false;
-  // For profiles, we can generate one PEMISC per historical PE
-  for (const pe of pes) {
-    const hasAnyId = pe.skinId || pe.heentId || pe.chestId || pe.heartId || pe.abdomenId || pe.neuroId || pe.rectalId || pe.guId;
-    if (hasAnyId) {
-      pemiscs.ele('PEMISC', withStatus({
-        pSkinId: pe.skinId ? String(pe.skinId) : '',
-        pHeentId: pe.heentId ? String(pe.heentId) : '',
-        pChestId: pe.chestId ? String(pe.chestId) : '',
-        pHeartId: pe.heartId ? String(pe.heartId) : '',
-        pAbdomenId: pe.abdomenId ? String(pe.abdomenId) : '',
-        pNeuroId: pe.neuroId ? String(pe.neuroId) : '',
-        pRectalId: pe.rectalId ? String(pe.rectalId) : '',
-        pGuId: pe.guId ? String(pe.guId) : '',
-      })).up();
-      added = true;
-    }
-  }
-
-  if (!added) {
-    pemiscs.ele('PEMISC', withStatus({
-      pSkinId: '', pHeentId: '', pChestId: '', pHeartId: '',
-      pAbdomenId: '', pNeuroId: '', pRectalId: '', pGuId: '',
-    })).up();
-  }
-
-  pemiscs.up();
-  return parent;
-}
 
 function buildProfilePeSpecific(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
   const pes = patient.profile.physicalExaminations || [];
@@ -794,26 +817,12 @@ function buildSoapPeMiscs(parent: XmlNode, consultation: KonsultaConsultationDat
   const pe = consultation.physicalExam;
   const pemiscs = parent.ele('PEMISCS');
 
+  let added = false;
   if (pe) {
-    const hasAnyId = pe.skinId || pe.heentId || pe.chestId || pe.heartId || pe.abdomenId || pe.neuroId || pe.rectalId || pe.guId;
-    if (hasAnyId) {
-      pemiscs.ele('PEMISC', withStatus({
-        pSkinId: pe.skinId ? String(pe.skinId) : '',
-        pHeentId: pe.heentId ? String(pe.heentId) : '',
-        pChestId: pe.chestId ? String(pe.chestId) : '',
-        pHeartId: pe.heartId ? String(pe.heartId) : '',
-        pAbdomenId: pe.abdomenId ? String(pe.abdomenId) : '',
-        pNeuroId: pe.neuroId ? String(pe.neuroId) : '',
-        pRectalId: pe.rectalId ? String(pe.rectalId) : '',
-        pGuId: pe.guId ? String(pe.guId) : '',
-      })).up();
-    } else {
-      pemiscs.ele('PEMISC', withStatus({
-        pSkinId: '', pHeentId: '', pChestId: '', pHeartId: '',
-        pAbdomenId: '', pNeuroId: '', pRectalId: '', pGuId: '',
-      })).up();
-    }
-  } else {
+    added = emitPeMiscFields(pemiscs, pe);
+  }
+
+  if (!added) {
     pemiscs.ele('PEMISC', withStatus({
       pSkinId: '', pHeentId: '', pChestId: '', pHeartId: '',
       pAbdomenId: '', pNeuroId: '', pRectalId: '', pGuId: '',

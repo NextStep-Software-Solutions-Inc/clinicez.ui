@@ -27,8 +27,12 @@ const getClinicCredentials = async (clinicUid: string) => {
 
   if (!setting) throw new Error("Clinic settings not found");
 
-  const pSoftwareCertificationId = setting.konsultaCertificationId || process.env.PHILHEALTH_KONSULTA_SOFTWARE_CERT_ID || process.env.PHILHEALTH_KONSULTA_CERT_ID || 'KON-DUMMYCERTS-Z15445';
-  const cipherKey = setting.konsultaCipherKey || process.env.PHILHEALTH_KONSULTA_CIPHER_KEY || 'PHilheaLthDuMmyZ15445';
+  const pSoftwareCertificationId = setting.konsultaCertificationId || process.env.PHILHEALTH_KONSULTA_SOFTWARE_CERT_ID || process.env.PHILHEALTH_KONSULTA_CERT_ID || '';
+  const cipherKey = setting.konsultaCipherKey || process.env.PHILHEALTH_KONSULTA_CIPHER_KEY || '';
+
+  if (!pSoftwareCertificationId || !cipherKey) {
+    throw new Error("PhilHealth Software Certification ID or Cipher Key is not set in Clinic Settings or environment variables.");
+  }
 
   return {
     pHospitalCode: setting.philhealthAccreditationNumber || '',

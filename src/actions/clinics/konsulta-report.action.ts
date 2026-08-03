@@ -1,9 +1,9 @@
 "use server";
 // ─── System-level Konsulta Credentials (never exposed to client) ────────────
 const KONSULTA_SOFTWARE_CERT_ID =
-    process.env.PHILHEALTH_KONSULTA_SOFTWARE_CERT_ID || process.env.PHILHEALTH_KONSULTA_CERT_ID || "KON-DUMMYCERTS-Z15445";
+    process.env.PHILHEALTH_KONSULTA_SOFTWARE_CERT_ID || process.env.PHILHEALTH_KONSULTA_CERT_ID || "";
 const KONSULTA_CIPHER_KEY =
-    process.env.PHILHEALTH_KONSULTA_CIPHER_KEY || "PHilheaLthDuMmyZ15445";
+    process.env.PHILHEALTH_KONSULTA_CIPHER_KEY || "";
 
 import { getCachedSession } from "@actions/session.action";
 import prisma from "@lib/prisma";
@@ -3152,6 +3152,12 @@ export const generateBatchXmlAction = withErrorHandling(
                     },
                     new Map<number, string[]>(),
                 );
+            const mappedMedicalHistoryLookup = new Map<string, string>();
+            for (const item of medicalHistoryMappingResult.mappedMedicalHistory) {
+                if (item.mappedCode) {
+                    mappedMedicalHistoryLookup.set(`${item.patientUserId}-${item.inputValue.toLowerCase()}`, item.mappedCode);
+                }
+            }
             const mappedImmunizationsByPatientId =
                 immunizationMappingResult.mappedImmunizations.reduce<
                     Map<number, KonsultaGeneratedImmunization[]>
@@ -3495,15 +3501,18 @@ export const generateBatchXmlAction = withErrorHandling(
                         ob?.hasPreEclampsia != null ? (ob.hasPreEclampsia ? "Y" : "N") : "",
                     wFamPlan: "N",
 
-                    // MEDHISTS + MHSPECIFICS: use "999" (Other) with condition name as description
+                    // MEDHISTS + MHSPECIFICS: use resolved code if mapped, otherwise use "999" (Other)
                     medHistItems:
                         hp.MedicalHistories.length > 0
-                            ? hp.MedicalHistories.map((h) => ({
-                                code: "999",
-                                specificDesc: [h.Condition.name, h.details]
-                                    .filter(Boolean)
-                                    .join(": "),
-                            }))
+                            ? hp.MedicalHistories.map((h) => {
+                                const mapped = mappedMedicalHistoryLookup.get(`${patientId}-${h.Condition.name.toLowerCase()}`);
+                                return {
+                                    code: mapped || "999",
+                                    specificDesc: mapped ? h.details || "" : [h.Condition.name, h.details]
+                                        .filter(Boolean)
+                                        .join(": "),
+                                };
+                            })
                             : undefined,
 
                     // SURGHISTS

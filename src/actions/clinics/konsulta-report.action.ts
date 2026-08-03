@@ -3501,13 +3501,13 @@ export const generateBatchXmlAction = withErrorHandling(
                         ob?.hasPreEclampsia != null ? (ob.hasPreEclampsia ? "Y" : "N") : "",
                     wFamPlan: "N",
 
-                    // MEDHISTS + MHSPECIFICS: use resolved code if mapped, otherwise use "999" (Other)
+                    // MEDHISTS + MHSPECIFICS: use resolved code if mapped, otherwise use ""
                     medHistItems:
                         hp.MedicalHistories.length > 0
                             ? hp.MedicalHistories.map((h) => {
                                 const mapped = mappedMedicalHistoryLookup.get(`${patientId}-${h.Condition.name.toLowerCase()}`);
                                 return {
-                                    code: mapped || "999",
+                                    code: mapped || "",
                                     specificDesc: mapped ? h.details || "" : [h.Condition.name, h.details]
                                         .filter(Boolean)
                                         .join(": "),
@@ -3526,11 +3526,11 @@ export const generateBatchXmlAction = withErrorHandling(
                             }))
                             : undefined,
 
-                    // FAMHISTS + FHSPECIFICS: use "999" (Other) with condition name as description
+                    // FAMHISTS + FHSPECIFICS: use "" with condition name as description
                     famHistItems:
                         hp.FamilyMedicalHistories.length > 0
                             ? hp.FamilyMedicalHistories.map((h) => ({
-                                code: "999",
+                                code: "",
                                 specificDesc: [h.Condition.name, h.details]
                                     .filter(Boolean)
                                     .join(": "),

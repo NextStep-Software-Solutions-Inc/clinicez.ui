@@ -327,13 +327,13 @@ function buildMedHists(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
   if (hists.length > 0) {
     for (const h of hists) {
       medhists.ele('MEDHIST', withStatus({
-        pMdiseaseCode: h.code || '999',
+        pMdiseaseCode: h.code || '',
       })).up();
     }
   } else {
-    // DTD requires at least one MEDHIST - emit default code 999
+    // DTD requires at least one MEDHIST - emit default code ''
     medhists.ele('MEDHIST', withStatus({
-      pMdiseaseCode: '999',
+      pMdiseaseCode: '',
     })).up();
   }
   return medhists.up();
@@ -346,13 +346,13 @@ function buildMhSpecifics(parent: XmlNode, patient: KonsultaPatientData): XmlNod
   if (hists.length > 0) {
     for (const h of hists) {
       specifics.ele('MHSPECIFIC', withStatus({
-        pMdiseaseCode: h.code || '999',
+        pMdiseaseCode: h.code || '',
         pSpecificDesc: h.mhsOthers || '',
       })).up();
     }
   } else {
     specifics.ele('MHSPECIFIC', withStatus({
-      pMdiseaseCode: '999',
+      pMdiseaseCode: '',
       pSpecificDesc: '',
     })).up();
   }
@@ -386,12 +386,12 @@ function buildFamHists(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
   if (hists.length > 0) {
     for (const h of hists) {
       famhists.ele('FAMHIST', withStatus({
-        pMdiseaseCode: h.code || '999',
+        pMdiseaseCode: h.code || '',
       })).up();
     }
   } else {
     famhists.ele('FAMHIST', withStatus({
-      pMdiseaseCode: '999',
+      pMdiseaseCode: '',
     })).up();
   }
   return famhists.up();
@@ -404,13 +404,13 @@ function buildFhSpecifics(parent: XmlNode, patient: KonsultaPatientData): XmlNod
   if (hists.length > 0) {
     for (const h of hists) {
       specifics.ele('FHSPECIFIC', withStatus({
-        pMdiseaseCode: h.code || '999',
+        pMdiseaseCode: h.code || '',
         pSpecificDesc: h.specificDesc || '',
       })).up();
     }
   } else {
     specifics.ele('FHSPECIFIC', withStatus({
-      pMdiseaseCode: '999',
+      pMdiseaseCode: '',
       pSpecificDesc: '',
     })).up();
   }

@@ -1,7 +1,7 @@
 "use server";
 // ─── System-level Konsulta Credentials (never exposed to client) ────────────
 const KONSULTA_SOFTWARE_CERT_ID =
-    process.env.PHILHEALTH_KONSULTA_SOFTWARE_CERT_ID || process.env.PHILHEALTH_KONSULTA_CERT_ID || "";
+    process.env.PHILHEALTH_KONSULTA_CERT_ID || "";
 const KONSULTA_CIPHER_KEY =
     process.env.PHILHEALTH_KONSULTA_CIPHER_KEY || "";
 
@@ -1567,7 +1567,7 @@ export const validateKonsultaAtcAction = withErrorHandling(
                 id: true,
                 createdAt: true,
                 Appointment: {
-                    select: { 
+                    select: {
                         AppointmentAttribute: { select: { date: true } },
                         Requesters: {
                             select: {
@@ -1629,7 +1629,7 @@ export const validateKonsultaAtcAction = withErrorHandling(
             consultation.ClinicPatient?.Patient.PhilHealthRecords[0]?.pin ||
             consultation.ClinicPatient?.konsultaMemberPin ||
             consultation.Appointment?.Requesters[0]?.User.PhilHealthRecords[0]?.pin;
-            
+
         if (!pin) throw new Error("Patient has no PhilHealth PIN.");
 
         const effectivityDate = (
@@ -3486,12 +3486,12 @@ export const generateBatchXmlAction = withErrorHandling(
                     deliveryTyp: !isFemale
                         ? "X"
                         : ob?.typeOfDelivery === "VAGINAL"
-                        ? "N"
-                        : ob?.typeOfDelivery === "CESAREAN"
-                        ? "O"
-                        : ob?.typeOfDelivery === "MIXED"
-                        ? "B"
-                        : "X",
+                            ? "N"
+                            : ob?.typeOfDelivery === "CESAREAN"
+                                ? "O"
+                                : ob?.typeOfDelivery === "MIXED"
+                                    ? "B"
+                                    : "X",
                     fullTermCnt: ob?.fullTerm != null ? String(ob.fullTerm) : "",
                     prematureCnt: ob?.premature != null ? String(ob.premature) : "",
                     abortionCnt: ob?.abortion != null ? String(ob.abortion) : "",
@@ -3611,7 +3611,7 @@ export const generateBatchXmlAction = withErrorHandling(
                             .slice(0, 10);
                         const isWalkIn =
                             consultation.konsultaIsWalkedIn ||
-                            consultation.Appointment?.AppointmentAttribute?.isWalkIn
+                                consultation.Appointment?.AppointmentAttribute?.isWalkIn
                                 ? "Y"
                                 : "N";
 
@@ -3674,7 +3674,7 @@ export const generateBatchXmlAction = withErrorHandling(
                             .slice(0, 10);
                         const isWalkIn =
                             consultation.konsultaIsWalkedIn ||
-                            consultation.Appointment?.AppointmentAttribute?.isWalkIn
+                                consultation.Appointment?.AppointmentAttribute?.isWalkIn
                                 ? "Y"
                                 : "N";
                         const transDate = consultation.createdAt.toISOString().slice(0, 10);

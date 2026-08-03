@@ -20,18 +20,16 @@ const getClinicCredentials = async (clinicUid: string) => {
       philhealthYakapUsername: true,
       philhealthYakapPassword: true,
       philhealthYakapPmccNumber: true,
-      konsultaCertificationId: true,
-      konsultaCipherKey: true,
     }
   });
 
   if (!setting) throw new Error("Clinic settings not found");
 
-  const pSoftwareCertificationId = setting.konsultaCertificationId || process.env.PHILHEALTH_KONSULTA_SOFTWARE_CERT_ID || process.env.PHILHEALTH_KONSULTA_CERT_ID || '';
-  const cipherKey = setting.konsultaCipherKey || process.env.PHILHEALTH_KONSULTA_CIPHER_KEY || '';
+  const pSoftwareCertificationId = process.env.PHILHEALTH_KONSULTA_CERT_ID || '';
+  const cipherKey = process.env.PHILHEALTH_KONSULTA_CIPHER_KEY || '';
 
   if (!pSoftwareCertificationId || !cipherKey) {
-    throw new Error("PhilHealth Software Certification ID or Cipher Key is not set in Clinic Settings or environment variables.");
+    throw new Error("PhilHealth Software Certification ID or Cipher Key is not set in environment variables (PHILHEALTH_KONSULTA_CERT_ID / PHILHEALTH_KONSULTA_CIPHER_KEY).");
   }
 
   return {
@@ -1061,7 +1059,7 @@ export async function validateBatchReportAction(clinicUid: string, batchId: stri
       return { status: false, message: "PhilHealth Accreditation Number is missing in Clinic Settings." };
     }
     if (!credentials.pSoftwareCertificationId) {
-      return { status: false, message: "PHILHEALTH_KONSULTA_SOFTWARE_CERT_ID environment variable is missing." };
+      return { status: false, message: "PHILHEALTH_KONSULTA_CERT_ID environment variable is missing." };
     }
 
     const apiClient = new YakapApiClient();

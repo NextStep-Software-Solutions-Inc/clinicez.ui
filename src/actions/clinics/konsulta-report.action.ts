@@ -1,8 +1,9 @@
 "use server";
 // ─── System-level Konsulta Credentials (never exposed to client) ────────────
 const KONSULTA_SOFTWARE_CERT_ID =
-    process.env.PHILHEALTH_KONSULTA_SOFTWARE_CERT_ID;
-const KONSULTA_CIPHER_KEY = process.env.PHILHEALTH_KONSULTA_CIPHER_KEY;
+    process.env.PHILHEALTH_KONSULTA_CERT_ID || "";
+const KONSULTA_CIPHER_KEY =
+    process.env.PHILHEALTH_KONSULTA_CIPHER_KEY || "";
 
 import { getCachedSession } from "@actions/session.action";
 import prisma from "@lib/prisma";
@@ -608,11 +609,11 @@ export const enrollPatientPhilHealthAction = withErrorHandling(
 
                 // Compute snapshot details for PhilHealthKonsultaEnlistment
                 const effYearInt = parseInt(effYear, 10);
-                let pmFname = clinicPatient.Patient.firstName ?? "";
-                let pmLname = clinicPatient.Patient.lastName ?? "";
-                let pmMname = clinicPatient.Patient.middleName ?? "";
-                let pmExt = clinicPatient.Patient.suffix ?? "";
-                let pmDob: Date | null = clinicPatient.Patient.dob ?? null;
+                let pmFname = patientType === "MM" ? (clinicPatient.Patient.firstName ?? "") : "";
+                let pmLname = patientType === "MM" ? (clinicPatient.Patient.lastName ?? "") : "";
+                let pmMname = patientType === "MM" ? (clinicPatient.Patient.middleName ?? "") : "";
+                let pmExt = patientType === "MM" ? (clinicPatient.Patient.suffix ?? "") : "";
+                let pmDob: Date | null = patientType === "MM" ? (clinicPatient.Patient.dob ?? null) : null;
 
                 if (patientType === "DD") {
                     if (principalMemberDetails) {
@@ -1566,7 +1567,7 @@ export const validateKonsultaAtcAction = withErrorHandling(
                 id: true,
                 createdAt: true,
                 Appointment: {
-                    select: { 
+                    select: {
                         AppointmentAttribute: { select: { date: true } },
                         Requesters: {
                             select: {
@@ -1628,7 +1629,7 @@ export const validateKonsultaAtcAction = withErrorHandling(
             consultation.ClinicPatient?.Patient.PhilHealthRecords[0]?.pin ||
             consultation.ClinicPatient?.konsultaMemberPin ||
             consultation.Appointment?.Requesters[0]?.User.PhilHealthRecords[0]?.pin;
-            
+
         if (!pin) throw new Error("Patient has no PhilHealth PIN.");
 
         const effectivityDate = (
@@ -1797,7 +1798,6 @@ export async function resolvePrincipalMembersByPins(pins: string[]): Promise<Map
     const records = await prisma.philHealthRecord.findMany({
         where: {
             pin: { in: uniquePins },
-            memberType: "MM",
             deletedAt: null,
         },
         include: {
@@ -1843,6 +1843,31 @@ export async function resolvePrincipalMembersByPins(pins: string[]): Promise<Map
                     extensionName: cp.Patient.suffix ?? "",
                     dob: cp.Patient.dob ? cp.Patient.dob.toISOString().slice(0, 10) : "1990-01-01",
                     userId: cp.Patient.id,
+                });
+            }
+        }
+    }
+
+    const missingPins2 = uniquePins.filter((p) => !map.has(p));
+    if (missingPins2.length > 0) {
+        const enlistments = await prisma.philHealthKonsultaEnlistment.findMany({
+            where: {
+                memberPin: { in: missingPins2 },
+                memberFname: { not: null },
+            },
+            orderBy: { id: "desc" },
+        });
+
+        for (const enl of enlistments) {
+            const pin = enl.memberPin?.trim();
+            if (pin && enl.memberFname && !map.has(pin)) {
+                map.set(pin, {
+                    pin,
+                    firstName: enl.memberFname,
+                    lastName: enl.memberLname ?? "",
+                    middleName: enl.memberMname ?? "",
+                    extensionName: enl.memberExtname ?? "",
+                    dob: enl.memberDob ? enl.memberDob.toISOString().slice(0, 10) : "1990-01-01",
                 });
             }
         }
@@ -2789,14 +2814,47 @@ export const generateBatchXmlAction = withErrorHandling(
                     const principal = patientType === "DD" ? principalMap.get(memberPin.trim()) : null;
                     const snap = snapshotMapByPatientId.get(entry.patientUserId);
 
-                    const pMemPinFinal = snap?.memberPin || memberPin;
-                    const pMemFname = snap?.memberFname ?? (patientType === "DD" ? (principal?.firstName ?? "") : (p.firstName ?? ""));
-                    const pMemMname = snap?.memberMname ?? (patientType === "DD" ? (principal?.middleName ?? "") : (p.middleName ?? ""));
-                    const pMemLname = snap?.memberLname ?? (patientType === "DD" ? (principal?.lastName ?? "") : (p.lastName ?? ""));
-                    const pMemExtname = snap?.memberExtname ?? (patientType === "DD" ? (principal?.extensionName ?? "") : (p.suffix ?? ""));
-                    const pMemDob = snap?.memberDob
-                        ? snap.memberDob.toISOString().slice(0, 10)
-                        : patientType === "DD" ? (principal?.dob ?? dob) : dob;
+                    const isSnapSameAsPatient = snap && (
+                        snap.memberFname?.trim().toUpperCase() === p.firstName?.trim().toUpperCase() &&
+                        snap.memberLname?.trim().toUpperCase() === p.lastName?.trim().toUpperCase()
+                    );
+
+                    const pMemPinFinal = patientType === "MM" ? entry.philHealthPin : (snap?.memberPin || memberPin);
+
+                    let pMemFname = "";
+                    let pMemMname = "";
+                    let pMemLname = "";
+                    let pMemExtname = "";
+                    let pMemDob = "";
+
+                    if (patientType === "MM") {
+                        pMemFname = snap?.memberFname || p.firstName || "";
+                        pMemMname = snap?.memberMname || p.middleName || "";
+                        pMemLname = snap?.memberLname || p.lastName || "";
+                        pMemExtname = snap?.memberExtname || p.suffix || "";
+                        pMemDob = snap?.memberDob ? snap.memberDob.toISOString().slice(0, 10) : dob;
+                    } else {
+                        // patientType === "DD"
+                        if (principal) {
+                            pMemFname = principal.firstName;
+                            pMemMname = principal.middleName;
+                            pMemLname = principal.lastName;
+                            pMemExtname = principal.extensionName;
+                            pMemDob = principal.dob;
+                        } else if (snap && snap.memberFname && !isSnapSameAsPatient) {
+                            pMemFname = snap.memberFname;
+                            pMemMname = snap.memberMname ?? "";
+                            pMemLname = snap.memberLname ?? "";
+                            pMemExtname = snap.memberExtname ?? "";
+                            pMemDob = snap.memberDob ? snap.memberDob.toISOString().slice(0, 10) : "";
+                        } else {
+                            pMemFname = "";
+                            pMemMname = "";
+                            pMemLname = "";
+                            pMemExtname = "";
+                            pMemDob = "";
+                        }
+                    }
 
                     return {
                         pHciCaseNo:
@@ -3094,6 +3152,12 @@ export const generateBatchXmlAction = withErrorHandling(
                     },
                     new Map<number, string[]>(),
                 );
+            const mappedMedicalHistoryLookup = new Map<string, string>();
+            for (const item of medicalHistoryMappingResult.mappedMedicalHistory) {
+                if (item.mappedCode) {
+                    mappedMedicalHistoryLookup.set(`${item.patientUserId}-${item.inputValue.toLowerCase()}`, item.mappedCode);
+                }
+            }
             const mappedImmunizationsByPatientId =
                 immunizationMappingResult.mappedImmunizations.reduce<
                     Map<number, KonsultaGeneratedImmunization[]>
@@ -3422,12 +3486,12 @@ export const generateBatchXmlAction = withErrorHandling(
                     deliveryTyp: !isFemale
                         ? "X"
                         : ob?.typeOfDelivery === "VAGINAL"
-                        ? "N"
-                        : ob?.typeOfDelivery === "CESAREAN"
-                        ? "O"
-                        : ob?.typeOfDelivery === "MIXED"
-                        ? "B"
-                        : "X",
+                            ? "N"
+                            : ob?.typeOfDelivery === "CESAREAN"
+                                ? "O"
+                                : ob?.typeOfDelivery === "MIXED"
+                                    ? "B"
+                                    : "X",
                     fullTermCnt: ob?.fullTerm != null ? String(ob.fullTerm) : "",
                     prematureCnt: ob?.premature != null ? String(ob.premature) : "",
                     abortionCnt: ob?.abortion != null ? String(ob.abortion) : "",
@@ -3437,15 +3501,18 @@ export const generateBatchXmlAction = withErrorHandling(
                         ob?.hasPreEclampsia != null ? (ob.hasPreEclampsia ? "Y" : "N") : "",
                     wFamPlan: "N",
 
-                    // MEDHISTS + MHSPECIFICS: use "999" (Other) with condition name as description
+                    // MEDHISTS + MHSPECIFICS: use resolved code if mapped, otherwise use ""
                     medHistItems:
                         hp.MedicalHistories.length > 0
-                            ? hp.MedicalHistories.map((h) => ({
-                                code: "999",
-                                specificDesc: [h.Condition.name, h.details]
-                                    .filter(Boolean)
-                                    .join(": "),
-                            }))
+                            ? hp.MedicalHistories.map((h) => {
+                                const mapped = mappedMedicalHistoryLookup.get(`${patientId}-${h.Condition.name.toLowerCase()}`);
+                                return {
+                                    code: mapped || "",
+                                    specificDesc: mapped ? h.details || "" : [h.Condition.name, h.details]
+                                        .filter(Boolean)
+                                        .join(": "),
+                                };
+                            })
                             : undefined,
 
                     // SURGHISTS
@@ -3459,11 +3526,11 @@ export const generateBatchXmlAction = withErrorHandling(
                             }))
                             : undefined,
 
-                    // FAMHISTS + FHSPECIFICS: use "999" (Other) with condition name as description
+                    // FAMHISTS + FHSPECIFICS: use "" with condition name as description
                     famHistItems:
                         hp.FamilyMedicalHistories.length > 0
                             ? hp.FamilyMedicalHistories.map((h) => ({
-                                code: "999",
+                                code: "",
                                 specificDesc: [h.Condition.name, h.details]
                                     .filter(Boolean)
                                     .join(": "),
@@ -3544,7 +3611,7 @@ export const generateBatchXmlAction = withErrorHandling(
                             .slice(0, 10);
                         const isWalkIn =
                             consultation.konsultaIsWalkedIn ||
-                            consultation.Appointment?.AppointmentAttribute?.isWalkIn
+                                consultation.Appointment?.AppointmentAttribute?.isWalkIn
                                 ? "Y"
                                 : "N";
 
@@ -3607,7 +3674,7 @@ export const generateBatchXmlAction = withErrorHandling(
                             .slice(0, 10);
                         const isWalkIn =
                             consultation.konsultaIsWalkedIn ||
-                            consultation.Appointment?.AppointmentAttribute?.isWalkIn
+                                consultation.Appointment?.AppointmentAttribute?.isWalkIn
                                 ? "Y"
                                 : "N";
                         const transDate = consultation.createdAt.toISOString().slice(0, 10);

@@ -196,7 +196,7 @@ function addProfileSubElements(profile: XMLNode, profileData: KonsultaProfileDat
             medHistsEle.ele("MEDHIST", { pMdiseaseCode: code, pReportStatus: "U", pDeficiencyRemarks: "" });
         }
     } else {
-        medHistsEle.ele("MEDHIST", { pMdiseaseCode: "001", pReportStatus: "U", pDeficiencyRemarks: "" });
+        medHistsEle.ele("MEDHIST", { pMdiseaseCode: "", pReportStatus: "U", pDeficiencyRemarks: "" });
     }
 
     // ── MHSPECIFICS ────────────────────────────────────────────────────────────
@@ -212,7 +212,7 @@ function addProfileSubElements(profile: XMLNode, profileData: KonsultaProfileDat
             });
         }
     } else {
-        const defaultDiseaseCode = data?.medHistItems?.[0]?.code ?? profileData.medicalHistoryCodes?.[0] ?? "001";
+        const defaultDiseaseCode = data?.medHistItems?.[0]?.code ?? profileData.medicalHistoryCodes?.[0] ?? "";
         mhSpecificsEle.ele("MHSPECIFIC", {
             pMdiseaseCode: defaultDiseaseCode,
             pSpecificDesc: "",
@@ -240,7 +240,7 @@ function addProfileSubElements(profile: XMLNode, profileData: KonsultaProfileDat
             famHistsEle.ele("FAMHIST", { pMdiseaseCode: item.code, pReportStatus: "U", pDeficiencyRemarks: "" });
         }
     } else {
-        famHistsEle.ele("FAMHIST", { pMdiseaseCode: "001", pReportStatus: "U", pDeficiencyRemarks: "" });
+        famHistsEle.ele("FAMHIST", { pMdiseaseCode: "", pReportStatus: "U", pDeficiencyRemarks: "" });
     }
 
     // ── FHSPECIFICS ───────────────────────────────────────────────────────────

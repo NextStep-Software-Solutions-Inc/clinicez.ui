@@ -16,6 +16,7 @@ import {
   Copy,
   Download,
   XCircle,
+  RotateCcw,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -57,6 +58,7 @@ import {
   regenerateBatchXmlAction,
   deleteBatchReportAction,
   downloadEncryptedBatchXmlAction,
+  unsubmitBatchReportAction,
 } from "@/actions/philhealth-yakap.actions";
 
 interface PhilHealthBatchReportsProps {
@@ -255,6 +257,22 @@ export default function PhilHealthBatchReports({ clinicUid }: PhilHealthBatchRep
         loadBatches();
       } else {
         toast.error(result.message || "Failed to regenerate XML");
+      }
+      setLoadingAction(null);
+    });
+  };
+
+  const handleUnsubmit = () => {
+    if (!selectedBatch) return;
+    setLoadingAction("unsubmit");
+    startTransition(async () => {
+      const result = await unsubmitBatchReportAction(clinicUid, selectedBatch.id);
+      if (result.status) {
+        toast.success("Batch unsubmitted — status reset to DRAFT for testing");
+        loadBatchDetail(selectedBatch.id);
+        loadBatches();
+      } else {
+        toast.error(result.message || "Failed to unsubmit batch");
       }
       setLoadingAction(null);
     });
@@ -464,6 +482,13 @@ export default function PhilHealthBatchReports({ clinicUid }: PhilHealthBatchRep
                 Submit Report
               </Button>
             </>
+          )}
+
+          {selectedBatch.status === "SUBMITTED" && (
+            <Button variant="outline" onClick={handleUnsubmit} disabled={!!loadingAction} className="gap-2 text-amber-600 border-amber-500 hover:bg-amber-50 dark:hover:bg-amber-950/20">
+              {loadingAction === "unsubmit" ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
+              Unsubmit (Testing)
+            </Button>
           )}
 
           {!isReadOnly && selectedBatch.status === "DRAFT" && (

@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache";
 import { generatePhilHealthKonsultaTransactionNumber } from "@/services/sequence-generator.service";
 import { generateKonsultaXml, type KonsultaPatientData, type KonsultaConsultationData, type KonsultaMedicineData, type KonsultaDiagnosticExamData } from "@/lib/philhealth-yakap/xml-generator";
 import { getKonsultaRecommendedService } from "./consultation/konsulta-recommended-services.action";
+import { resolvePrincipalMembersByPins } from "@/actions/clinics/konsulta-report.action";
 
 const getClinicCredentials = async (clinicUid: string) => {
   const session = await getCachedSession();
@@ -24,8 +25,12 @@ const getClinicCredentials = async (clinicUid: string) => {
 
   if (!setting) throw new Error("Clinic settings not found");
 
-  const pSoftwareCertificationId = process.env.PHILHEALTH_KONSULTA_SOFTWARE_CERT_ID || '';
+  const pSoftwareCertificationId = process.env.PHILHEALTH_KONSULTA_CERT_ID || '';
   const cipherKey = process.env.PHILHEALTH_KONSULTA_CIPHER_KEY || '';
+
+  if (!pSoftwareCertificationId || !cipherKey) {
+    throw new Error("PhilHealth Software Certification ID or Cipher Key is not set in environment variables (PHILHEALTH_KONSULTA_CERT_ID / PHILHEALTH_KONSULTA_CIPHER_KEY).");
+  }
 
   return {
     pHospitalCode: setting.philhealthAccreditationNumber || '',
@@ -711,7 +716,7 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
                 const ph = med.PhilHealthData;
 
                 const isCustom = ph?.drugCode?.startsWith("NOMED") || false;
-                
+
                 medicines.push({
                   hciCaseNo: enlistment?.hciCaseNo || "",
                   hciTransNo: t.soapTransNo || "",
@@ -783,28 +788,64 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
       const diagRecords = await prisma.konsultaDiagnosticResult.findMany({
         where: ticketIds.length > 0
           ? {
-              OR: [
-                { consultationTicketId: { in: ticketIds } },
-                { consultationTicketId: null, clinicPatientId: bp.ClinicPatient.id }
-              ]
-            }
+            OR: [
+              { consultationTicketId: { in: ticketIds } },
+              { consultationTicketId: null, clinicPatientId: bp.ClinicPatient.id }
+            ]
+          }
           : { clinicPatientId: bp.ClinicPatient.id },
         orderBy: { createdAt: "asc" },
       });
       const diagnosticResults = diagRecords.length > 0
         ? diagRecords.map(dr => ({
-            hciCaseNo: dr.hciCaseNo || enlistment?.hciCaseNo || "",
-            hciTransNo: dr.hciTransNo || enlistment?.profilingTransNo || "",
-            patientPin: patientPin,
-            patientType: patientType,
-            memPin: memberPin,
-            effYear: String(enlistment?.year || new Date().getFullYear()),
-            resultType: dr.resultType,
-            resultData: (dr.resultData && typeof dr.resultData === 'object' && !Array.isArray(dr.resultData))
-              ? dr.resultData as Record<string, string>
-              : {},
-          }))
+          hciCaseNo: dr.hciCaseNo || enlistment?.hciCaseNo || "",
+          hciTransNo: dr.hciTransNo || enlistment?.profilingTransNo || "",
+          patientPin: patientPin,
+          patientType: patientType,
+          memPin: memberPin,
+          effYear: String(enlistment?.year || new Date().getFullYear()),
+          resultType: dr.resultType,
+          resultData: (dr.resultData && typeof dr.resultData === 'object' && !Array.isArray(dr.resultData))
+            ? dr.resultData as Record<string, string>
+            : {},
+        }))
         : undefined;
+
+      let memberFirstName = (patient.firstName || "").toUpperCase();
+      let memberMiddleName = (patient.middleName || "").toUpperCase();
+      let memberLastName = (patient.lastName || "").toUpperCase();
+      let memberExtName = (patient.suffix || "").toUpperCase();
+      let memberDobStr = formatDate(patient.dob);
+
+      if (patientType === "DD") {
+        const pmMap = memberPin ? await resolvePrincipalMembersByPins([memberPin]) : new Map();
+        const pm = memberPin ? pmMap.get(memberPin.trim()) : null;
+
+        const isEnlistmentSameAsPatient = enlistment && (
+          enlistment.memberFname?.trim().toUpperCase() === patient.firstName?.trim().toUpperCase() &&
+          enlistment.memberLname?.trim().toUpperCase() === patient.lastName?.trim().toUpperCase()
+        );
+
+        if (pm) {
+          memberFirstName = pm.firstName.toUpperCase();
+          memberMiddleName = pm.middleName.toUpperCase();
+          memberLastName = pm.lastName.toUpperCase();
+          memberExtName = pm.extensionName.toUpperCase();
+          memberDobStr = pm.dob;
+        } else if (enlistment && enlistment.memberFname && !isEnlistmentSameAsPatient) {
+          memberFirstName = enlistment.memberFname.toUpperCase();
+          memberMiddleName = (enlistment.memberMname || "").toUpperCase();
+          memberLastName = (enlistment.memberLname || "").toUpperCase();
+          memberExtName = (enlistment.memberExtname || "").toUpperCase();
+          memberDobStr = enlistment.memberDob ? formatDate(enlistment.memberDob) : "";
+        } else {
+          memberFirstName = "";
+          memberMiddleName = "";
+          memberLastName = "";
+          memberExtName = "";
+          memberDobStr = "";
+        }
+      }
 
       return {
         enlistment: {
@@ -819,11 +860,11 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
         },
         member: {
           pin: memberPin,
-          firstName: (patient.firstName || "").toUpperCase(),
-          middleName: (patient.middleName || "").toUpperCase(),
-          lastName: (patient.lastName || "").toUpperCase(),
-          extName: (patient.suffix || "").toUpperCase(),
-          dob: formatDate(patient.dob),
+          firstName: memberFirstName,
+          middleName: memberMiddleName,
+          lastName: memberLastName,
+          extName: memberExtName,
+          dob: memberDobStr,
         },
         patient: {
           pin: patientPin,
@@ -847,13 +888,13 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
           vitals: mapVitals(latestVitals as any),
           physicalExaminations: patient.PhysicalExaminations.map(pe => mapPhysicalExam(pe)).filter((x): x is NonNullable<typeof x> => !!x),
           bloodType: patient.bloodType === 'A_POSITIVE' ? 'A+' :
-                     patient.bloodType === 'A_NEGATIVE' ? 'A-' :
-                     patient.bloodType === 'B_POSITIVE' ? 'B+' :
-                     patient.bloodType === 'B_NEGATIVE' ? 'B-' :
-                     patient.bloodType === 'AB_POSITIVE' ? 'AB+' :
-                     patient.bloodType === 'AB_NEGATIVE' ? 'AB-' :
-                     patient.bloodType === 'O_POSITIVE' ? 'O+' :
-                     patient.bloodType === 'O_NEGATIVE' ? 'O-' : '',
+            patient.bloodType === 'A_NEGATIVE' ? 'A-' :
+              patient.bloodType === 'B_POSITIVE' ? 'B+' :
+                patient.bloodType === 'B_NEGATIVE' ? 'B-' :
+                  patient.bloodType === 'AB_POSITIVE' ? 'AB+' :
+                    patient.bloodType === 'AB_NEGATIVE' ? 'AB-' :
+                      patient.bloodType === 'O_POSITIVE' ? 'O+' :
+                        patient.bloodType === 'O_NEGATIVE' ? 'O-' : '',
           medicalHistories: patient.MedicalHistories.map(mh => {
             const code = mh.Condition.code;
             if (code) {
@@ -873,9 +914,9 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
           familyHistories: patient.FamilyMedicalHistories.map(fh => {
             const code = fh.Condition.code;
             if (code) {
-              return { 
+              return {
                 code,
-                specificDesc: fh.details || '' 
+                specificDesc: fh.details || ''
               };
             }
             return {
@@ -911,9 +952,9 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
             premature: patient.ObGyneHistory.premature?.toString() || '',
             abortion: patient.ObGyneHistory.abortion?.toString() || '',
             livingChildren: patient.ObGyneHistory.livingChildren?.toString() || '',
-            typeLasDelivery: patient.ObGyneHistory.typeOfDelivery === 'VAGINAL' ? 'N' : 
-                             patient.ObGyneHistory.typeOfDelivery === 'CESAREAN' ? 'O' : 
-                             patient.ObGyneHistory.typeOfDelivery === 'MIXED' ? 'B' : 'X',
+            typeLasDelivery: patient.ObGyneHistory.typeOfDelivery === 'VAGINAL' ? 'N' :
+              patient.ObGyneHistory.typeOfDelivery === 'CESAREAN' ? 'O' :
+                patient.ObGyneHistory.typeOfDelivery === 'MIXED' ? 'B' : 'X',
             isPreEclampsia: patient.ObGyneHistory.hasPreEclampsia ? 'Y' : 'N',
             wFamPlan: patient.ObGyneHistory.isFamilyPlanning ? 'Y' : 'N',
           } : undefined,
@@ -1011,6 +1052,16 @@ export async function validateBatchReportAction(clinicUid: string, batchId: stri
     if (batch.status === "SUBMITTED") return { status: false, message: "Cannot validate a submitted batch" };
 
     const credentials = await getClinicCredentials(clinicUid);
+    if (!credentials.pUsername || !credentials.pUserPassword) {
+      return { status: false, message: "PhilHealth Yakap Username and Password must be configured in Clinic Settings -> PhilHealth & Insurance." };
+    }
+    if (!credentials.pHospitalCode) {
+      return { status: false, message: "PhilHealth Accreditation Number is missing in Clinic Settings." };
+    }
+    if (!credentials.pSoftwareCertificationId) {
+      return { status: false, message: "PHILHEALTH_KONSULTA_CERT_ID environment variable is missing." };
+    }
+
     const apiClient = new YakapApiClient();
 
     const tokenResult = await apiClient.getToken(
@@ -1018,8 +1069,11 @@ export async function validateBatchReportAction(clinicUid: string, batchId: stri
       credentials.pSoftwareCertificationId, credentials.pHospitalCode
     );
 
-    const token = tokenResult?.result || tokenResult?.token || "";
-    if (!token) return { status: false, message: "Failed to get API token" };
+    const token = typeof tokenResult === "string" ? tokenResult : (tokenResult?.result || tokenResult?.token || "");
+    if (!token) {
+      const apiMsg = typeof tokenResult === "object" && tokenResult ? (tokenResult.message || tokenResult.error || JSON.stringify(tokenResult)) : "Invalid API token returned";
+      return { status: false, message: `Failed to acquire PhilHealth API token: ${apiMsg}` };
+    }
 
     const validationResult = await apiClient.validateReport(
       batch.xmlPayload, batch.tagging, token, credentials.cipherKey
@@ -1105,6 +1159,10 @@ export async function submitBatchReportAction(clinicUid: string, batchId: string
     if (batch.status !== "VALIDATED") return { status: false, message: "Batch must be validated first" };
 
     const credentials = await getClinicCredentials(clinicUid);
+    if (!credentials.pUsername || !credentials.pUserPassword) {
+      return { status: false, message: "PhilHealth Yakap Username and Password must be configured in Clinic Settings." };
+    }
+
     const apiClient = new YakapApiClient();
 
     const tokenResult = await apiClient.getToken(
@@ -1112,21 +1170,26 @@ export async function submitBatchReportAction(clinicUid: string, batchId: string
       credentials.pSoftwareCertificationId, credentials.pHospitalCode
     );
 
-    const token = tokenResult?.result || tokenResult?.token || "";
-    if (!token) return { status: false, message: "Failed to get API token" };
+    const token = typeof tokenResult === "string" ? tokenResult : (tokenResult?.result || tokenResult?.token || "");
+    if (!token) {
+      const apiMsg = typeof tokenResult === "object" && tokenResult ? (tokenResult.message || tokenResult.error || JSON.stringify(tokenResult)) : "Invalid API token returned";
+      return { status: false, message: `Failed to acquire PhilHealth API token: ${apiMsg}` };
+    }
 
     const submissionResult = await apiClient.submitReport(
       batch.transmittalNo, batch.xmlPayload, batch.tagging, token, credentials.cipherKey
     );
 
-    const isSuccess = submissionResult?.success === true || submissionResult?.success === "true" || submissionResult?.success === "True";
-    
+    const resStr = JSON.stringify(submissionResult || {});
+    const isAlreadyUploaded = resStr.includes("FILE ALREADY UPLOADED") || resStr.includes("ALREADY UPLOADED");
+    const isSuccess = submissionResult?.success === true || submissionResult?.success === "true" || submissionResult?.success === "True" || isAlreadyUploaded;
+
     await prisma.konsultaBatchReport.update({
       where: { id: batchId },
       data: {
         status: isSuccess ? "SUBMITTED" : "VALIDATED",
         submissionResult: JSON.stringify(submissionResult, null, 2),
-        submittedAt: isSuccess ? new Date() : null,
+        submittedAt: isSuccess ? (batch.submittedAt || new Date()) : null,
       },
     });
 
@@ -1145,13 +1208,13 @@ export async function regenerateBatchXmlAction(clinicUid: string, batchId: strin
 
     const batch = await prisma.konsultaBatchReport.findUnique({ where: { id: batchId } });
     if (!batch) return { status: false, message: "Batch not found" };
-    if (batch.status === "SUBMITTED") return { status: false, message: "Cannot modify a submitted batch" };
 
-    // Clear validation, keep transmittalNo for reuse
+    // Clear validation and transmittalNo so a fresh transmittal number is generated
     await prisma.konsultaBatchReport.update({
       where: { id: batchId },
       data: {
         status: "DRAFT",
+        transmittalNo: null,
         xmlPayload: null,
         validationResult: null,
         validatedAt: null,
@@ -1164,6 +1227,34 @@ export async function regenerateBatchXmlAction(clinicUid: string, batchId: strin
     return await generateBatchXmlAction(clinicUid, batchId);
   } catch (error: any) {
     return { status: false, message: error?.message || "Failed to regenerate XML" };
+  }
+}
+
+export async function unsubmitBatchReportAction(clinicUid: string, batchId: string) {
+  try {
+    const session = await getCachedSession();
+    if (!session?.user) return { status: false, message: "Unauthorized" };
+
+    const batch = await prisma.konsultaBatchReport.findUnique({ where: { id: batchId } });
+    if (!batch) return { status: false, message: "Batch not found" };
+
+    await prisma.konsultaBatchReport.update({
+      where: { id: batchId },
+      data: {
+        status: "DRAFT",
+        transmittalNo: null,
+        xmlPayload: null,
+        validationResult: null,
+        validatedAt: null,
+        submissionResult: null,
+        submittedAt: null,
+      },
+    });
+
+    revalidatePath(`/v2/clinic/${clinicUid}/philhealth`);
+    return { status: true, message: "Batch status reset to DRAFT for testing" };
+  } catch (error: any) {
+    return { status: false, message: error?.message || "Failed to unsubmit batch" };
   }
 }
 
@@ -1355,7 +1446,7 @@ export async function validateTransferredXmlAction(clinicUid: string, xmlString:
 
     const credentials = await getClinicCredentials(clinicUid);
     const client = new YakapApiClient();
-    
+
     const tokenRes = await client.getToken(
       credentials.pUsername,
       credentials.pUserPassword,
@@ -1369,7 +1460,7 @@ export async function validateTransferredXmlAction(clinicUid: string, xmlString:
       const errMsg = typeof tokenRes === 'object' && tokenRes !== null ? (tokenRes as any).message : "Failed to authenticate with PhilHealth";
       return { status: false, message: errMsg || "Failed to authenticate with PhilHealth" };
     }
-    
+
     // validateReport takes the raw XML, encrypts it internally using the cipherKey, and calls SOAP
     const result = await client.validateReport(xmlString, tagging, token, credentials.cipherKey);
     return { status: true, data: result };
@@ -1382,7 +1473,7 @@ export async function validateTransferredXmlAction(clinicUid: string, xmlString:
 export async function parseXmlImportAction(clinicUid: string, xmlString: string) {
   try {
     let finalXml = xmlString;
-    
+
     // Check if the input is an encrypted JSON string
     if (xmlString.trim().startsWith('{') && xmlString.includes('"iv"') && xmlString.includes('"doc"')) {
       const { decryptReport } = await import("@/lib/philhealth-yakap/api");
@@ -1480,10 +1571,10 @@ export async function parseXmlImportAction(clinicUid: string, xmlString: string)
           const processed = processElement(item, "MEDICINE");
           const caseNo = processed.attributes.pHciCaseNo;
           if (caseNo) {
-             getPatient(caseNo).medicines.push(processed);
+            getPatient(caseNo).medicines.push(processed);
           } else {
-             // Fallback if missing pHciCaseNo
-             getPatient("UNKNOWN").medicines.push(processed);
+            // Fallback if missing pHciCaseNo
+            getPatient("UNKNOWN").medicines.push(processed);
           }
         }
       }
@@ -1499,17 +1590,17 @@ export async function importKonsultaDataAction(clinicUid: string, records: any[]
   try {
     const session = await getCachedSession();
     if (!session?.user) return { status: false, message: "Unauthorized" };
-    
+
     const clinic = await prisma.clinic.findUnique({ where: { clinicUid } });
     if (!clinic) return { status: false, message: "Clinic not found" };
 
     const selected = new Set(selectedItems);
-    
+
     // Group selected items
     const patientsToImport = records.filter(p => selected.has(`patient-${p.pHciCaseNo}`));
 
     if (patientsToImport.length === 0) {
-       return { status: false, message: "No patients selected for import." };
+      return { status: false, message: "No patients selected for import." };
     }
 
     const summary = { imported: 0, existing: 0, error: 0, errors: [] as string[] };
@@ -1517,164 +1608,164 @@ export async function importKonsultaDataAction(clinicUid: string, records: any[]
     for (const patient of patientsToImport) {
       try {
         const result = await prisma.$transaction(async (tx) => {
-        const caseNo = patient.pHciCaseNo;
-        const pin = patient.enlistment?.attributes?.pMemPin 
-                 || patient.enlistment?.attributes?.pPatientPin 
-                 || patient.profiles?.[0]?.attributes?.pPatientPin 
-                 || patient.soaps?.[0]?.attributes?.pPatientPin 
-                 || `UNKNOWN-${caseNo}`;
+          const caseNo = patient.pHciCaseNo;
+          const pin = patient.enlistment?.attributes?.pMemPin
+            || patient.enlistment?.attributes?.pPatientPin
+            || patient.profiles?.[0]?.attributes?.pPatientPin
+            || patient.soaps?.[0]?.attributes?.pPatientPin
+            || `UNKNOWN-${caseNo}`;
 
-        const enlistmentSelected = selected.has(`enlistment-${caseNo}`);
-        
-        let clinicPatientId: number | undefined;
+          const enlistmentSelected = selected.has(`enlistment-${caseNo}`);
 
-        // 1. Try to find existing patient by PIN
-        const existingRecord = await tx.philHealthRecord.findFirst({
-          where: { pin },
-          include: { User: { include: { ClinicPatients: { where: { clinicId: clinic.id } } } } }
-        });
+          let clinicPatientId: number | undefined;
 
-        let userId: number;
-        let isExisting = false;
-        if (existingRecord) {
-          isExisting = true;
-          userId = existingRecord.userId;
-          if (existingRecord.User.ClinicPatients.length > 0) {
-            clinicPatientId = existingRecord.User.ClinicPatients[0].id;
+          // 1. Try to find existing patient by PIN
+          const existingRecord = await tx.philHealthRecord.findFirst({
+            where: { pin },
+            include: { User: { include: { ClinicPatients: { where: { clinicId: clinic.id } } } } }
+          });
+
+          let userId: number;
+          let isExisting = false;
+          if (existingRecord) {
+            isExisting = true;
+            userId = existingRecord.userId;
+            if (existingRecord.User.ClinicPatients.length > 0) {
+              clinicPatientId = existingRecord.User.ClinicPatients[0].id;
+            } else {
+              const cp = await tx.clinicPatient.create({ data: { clinicId: clinic.id, patientId: userId } });
+              clinicPatientId = cp.id;
+            }
           } else {
+            // Create new user (using dummy email if needed)
+            const dummyEmail = `ph-${pin}-${Date.now()}@imported.clinicez.com`;
+            const attrs = patient.enlistment?.attributes || {};
+
+            const newUser = await tx.user.create({
+              data: {
+                email: dummyEmail,
+                userId: `auth0|${pin}-${Date.now()}`,
+                firstName: attrs.pMemFname || "Imported",
+                lastName: attrs.pMemLname || "Patient",
+                middleName: attrs.pMemMname || "",
+                suffix: attrs.pMemExtname || "",
+                dob: attrs.pPatientDob ? new Date(attrs.pPatientDob) : undefined,
+                gender: attrs.pPatientSex === "M" ? "MALE" : (attrs.pPatientSex === "F" ? "FEMALE" : undefined),
+                mobile: attrs.pPatientMobileNo || "",
+              }
+            });
+            userId = newUser.id;
+
+            await tx.philHealthRecord.create({
+              data: {
+                userId,
+                pin,
+                memberType: attrs.pPatientType || "MM"
+              }
+            });
+
             const cp = await tx.clinicPatient.create({ data: { clinicId: clinic.id, patientId: userId } });
             clinicPatientId = cp.id;
           }
-        } else {
-          // Create new user (using dummy email if needed)
-          const dummyEmail = `ph-${pin}-${Date.now()}@imported.clinicez.com`;
-          const attrs = patient.enlistment?.attributes || {};
-          
-          const newUser = await tx.user.create({
-            data: {
-              email: dummyEmail,
-              userId: `auth0|${pin}-${Date.now()}`,
-              firstName: attrs.pMemFname || "Imported",
-              lastName: attrs.pMemLname || "Patient",
-              middleName: attrs.pMemMname || "",
-              suffix: attrs.pMemExtname || "",
-              dob: attrs.pPatientDob ? new Date(attrs.pPatientDob) : undefined,
-              gender: attrs.pPatientSex === "M" ? "MALE" : (attrs.pPatientSex === "F" ? "FEMALE" : undefined),
-              mobile: attrs.pPatientMobileNo || "",
-            }
-          });
-          userId = newUser.id;
 
-          await tx.philHealthRecord.create({
-            data: {
-              userId,
-              pin,
-              memberType: attrs.pPatientType || "MM"
-            }
-          });
+          // 2. Import Enlistment
+          if (enlistmentSelected && patient.enlistment) {
+            const attrs = patient.enlistment.attributes;
+            // Ensure no duplicate enlistment year for this patient
+            const year = parseInt(attrs.pEffYear || String(new Date().getFullYear()));
 
-          const cp = await tx.clinicPatient.create({ data: { clinicId: clinic.id, patientId: userId } });
-          clinicPatientId = cp.id;
-        }
-
-        // 2. Import Enlistment
-        if (enlistmentSelected && patient.enlistment) {
-          const attrs = patient.enlistment.attributes;
-          // Ensure no duplicate enlistment year for this patient
-          const year = parseInt(attrs.pEffYear || String(new Date().getFullYear()));
-          
-          const existingEnlistment = await tx.philHealthKonsultaEnlistment.findFirst({
-            where: { clinicPatientId, year }
-          });
-
-          if (!existingEnlistment) {
-            await tx.philHealthKonsultaEnlistment.create({
-              data: {
-                clinicPatientId,
-                year,
-                hciCaseNo: attrs.pHciCaseNo || "",
-                enlistmentTransNo: attrs.pHciTransNo || "",
-                profilingTransNo: "", // Extracted later if needed
-                memberPin: attrs.pMemPin || pin,
-                status: "ACTIVE"
-              }
+            const existingEnlistment = await tx.philHealthKonsultaEnlistment.findFirst({
+              where: { clinicPatientId, year }
             });
-          }
-        }
 
-        // 3. Import SOAPs
-        const importedSoaps = new Map<string, number>(); // Map pHciTransNo to consultationTicketId
-        
-        for (let i = 0; i < patient.soaps.length; i++) {
-          if (selected.has(`soap-${caseNo}-${i}`)) {
-            const soap = patient.soaps[i];
-            const attrs = soap.attributes;
-            const transNo = attrs.pHciTransNo;
-            
-            // Avoid duplicate soap trans numbers
-            const existingSoap = await tx.consultationTicket.findFirst({ where: { soapTransNo: transNo } });
-            
-            let ticketId: number;
-            if (existingSoap) {
-              ticketId = existingSoap.id;
-            } else {
-              const ticket = await tx.consultationTicket.create({
+            if (!existingEnlistment) {
+              await tx.philHealthKonsultaEnlistment.create({
                 data: {
-                  clinicId: clinic.id,
                   clinicPatientId,
-                  subject: "Imported Yakap Encounter",
-                  soapTransNo: transNo,
-                  caseNumber: attrs.pHciCaseNo,
-                  createdAt: attrs.pSoapDate ? new Date(attrs.pSoapDate) : new Date()
+                  year,
+                  hciCaseNo: attrs.pHciCaseNo || "",
+                  enlistmentTransNo: attrs.pHciTransNo || "",
+                  profilingTransNo: "", // Extracted later if needed
+                  memberPin: attrs.pMemPin || pin,
+                  status: "ACTIVE"
                 }
               });
-              ticketId = ticket.id;
+            }
+          }
 
-              // Import ICD Codes
-              const icds = soap.children?.find((c: any) => c.type === "ICDS")?.children || [];
-              for (const icd of icds) {
-                if (icd.attributes?.pIcdCode) {
-                   await tx.consultationDiagnosis.create({
-                     data: {
-                       consultationTicketId: ticketId,
-                       hpId: 1, // Defaulting to an admin HP or dummy for imported records?
-                       icd10Code: icd.attributes.pIcdCode,
-                       description: "Imported Diagnosis",
-                       type: "PRIMARY"
-                     }
-                   });
+          // 3. Import SOAPs
+          const importedSoaps = new Map<string, number>(); // Map pHciTransNo to consultationTicketId
+
+          for (let i = 0; i < patient.soaps.length; i++) {
+            if (selected.has(`soap-${caseNo}-${i}`)) {
+              const soap = patient.soaps[i];
+              const attrs = soap.attributes;
+              const transNo = attrs.pHciTransNo;
+
+              // Avoid duplicate soap trans numbers
+              const existingSoap = await tx.consultationTicket.findFirst({ where: { soapTransNo: transNo } });
+
+              let ticketId: number;
+              if (existingSoap) {
+                ticketId = existingSoap.id;
+              } else {
+                const ticket = await tx.consultationTicket.create({
+                  data: {
+                    clinicId: clinic.id,
+                    clinicPatientId,
+                    subject: "Imported Yakap Encounter",
+                    soapTransNo: transNo,
+                    caseNumber: attrs.pHciCaseNo,
+                    createdAt: attrs.pSoapDate ? new Date(attrs.pSoapDate) : new Date()
+                  }
+                });
+                ticketId = ticket.id;
+
+                // Import ICD Codes
+                const icds = soap.children?.find((c: any) => c.type === "ICDS")?.children || [];
+                for (const icd of icds) {
+                  if (icd.attributes?.pIcdCode) {
+                    await tx.consultationDiagnosis.create({
+                      data: {
+                        consultationTicketId: ticketId,
+                        hpId: 1, // Defaulting to an admin HP or dummy for imported records?
+                        icd10Code: icd.attributes.pIcdCode,
+                        description: "Imported Diagnosis",
+                        type: "PRIMARY"
+                      }
+                    });
+                  }
                 }
               }
+              importedSoaps.set(transNo, ticketId);
             }
-            importedSoaps.set(transNo, ticketId);
           }
-        }
 
-        // 4. Import Medicines
-        for (let i = 0; i < patient.medicines.length; i++) {
-          if (selected.has(`medicine-${caseNo}-${i}`)) {
-            const med = patient.medicines[i];
-            const attrs = med.attributes;
-            const transNo = attrs.pHciTransNo;
-            const ticketId = importedSoaps.get(transNo);
-            
-            if (ticketId) {
-              await tx.medication.create({
-                data: {
-                  clinicId: clinic.id,
-                  patientId: userId,
-                  hpId: 1,
-                  consultationTicketId: ticketId,
-                  name: attrs.pDrugCode || "Imported Medicine",
-                }
-              });
+          // 4. Import Medicines
+          for (let i = 0; i < patient.medicines.length; i++) {
+            if (selected.has(`medicine-${caseNo}-${i}`)) {
+              const med = patient.medicines[i];
+              const attrs = med.attributes;
+              const transNo = attrs.pHciTransNo;
+              const ticketId = importedSoaps.get(transNo);
+
+              if (ticketId) {
+                await tx.medication.create({
+                  data: {
+                    clinicId: clinic.id,
+                    patientId: userId,
+                    hpId: 1,
+                    consultationTicketId: ticketId,
+                    name: attrs.pDrugCode || "Imported Medicine",
+                  }
+                });
+              }
             }
           }
-        }
-        // End of patient import logic
+          // End of patient import logic
           return { isExisting };
         });
-        
+
         if (result.isExisting) {
           summary.existing++;
         } else {
@@ -1685,7 +1776,7 @@ export async function importKonsultaDataAction(clinicUid: string, records: any[]
         summary.errors.push(`Case ${patient.pHciCaseNo}: ${e.message}`);
       }
     }
-    
+
     return { status: true, summary, message: `Successfully processed ${patientsToImport.length} patients!` };
   } catch (error: any) {
     console.error("[importKonsultaDataAction]", error);
@@ -1697,12 +1788,12 @@ export async function importRegistrationListToDbAction(clinicUid: string, entrie
   try {
     const session = await getCachedSession();
     if (!session?.user) return { status: false, message: "Unauthorized" };
-    
+
     const clinic = await prisma.clinic.findUnique({ where: { clinicUid } });
     if (!clinic) return { status: false, message: "Clinic not found" };
 
     if (!entries || entries.length === 0) {
-       return { status: false, message: "No patients selected for import." };
+      return { status: false, message: "No patients selected for import." };
     }
 
     let importedCount = 0;
@@ -1714,7 +1805,7 @@ export async function importRegistrationListToDbAction(clinicUid: string, entrie
       const isDependent = entry.pAssignedType === "DD";
       const patientPin = entry.pAssignedPin?.trim() || "";
       const principalMemberPin = isDependent ? entry.pPrimaryPIN?.trim() || null : null;
-      
+
       if (!patientPin) continue;
 
       try {
@@ -1734,11 +1825,11 @@ export async function importRegistrationListToDbAction(clinicUid: string, entrie
           } else {
             // Create new user (using synthetic email with .net domain)
             const dummyEmail = `ph-${patientPin}-${Date.now()}@imported.clinicez.net`;
-            
+
             let gender: "MALE" | "FEMALE" | undefined;
             if (entry.pAssignedSex === "M") gender = "MALE";
             else if (entry.pAssignedSex === "F") gender = "FEMALE";
-            
+
             let dob;
             if (entry.pAssignedDateOfBirth) {
               dob = new Date(entry.pAssignedDateOfBirth);
@@ -1768,7 +1859,7 @@ export async function importRegistrationListToDbAction(clinicUid: string, entrie
                 memberType: entry.pAssignedType || (isDependent ? "DD" : "MM")
               }
             });
-            
+
             await tx.clinicPatient.create({ data: { clinicId: clinic.id, patientId: userId } });
             importedCount++;
           }
@@ -1779,8 +1870,8 @@ export async function importRegistrationListToDbAction(clinicUid: string, entrie
       }
     }
 
-    return { 
-      status: true, 
+    return {
+      status: true,
       message: `Import complete. Imported: ${importedCount}, Existing: ${existingCount}, Errors: ${errorCount}`,
       summary: { imported: importedCount, existing: existingCount, error: errorCount, errors }
     };

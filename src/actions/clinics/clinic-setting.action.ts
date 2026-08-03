@@ -105,8 +105,6 @@ export type UpdatePhilHealthSettings = {
   philhealthYakapUsername?: string;
   philhealthYakapPassword?: string;
   philhealthYakapPmccNumber?: string;
-  konsultaCertificationId?: string;
-  konsultaCipherKey?: string;
 };
 export const updatePhilHealthSettingsAction = async (clinicUid: string, data: UpdatePhilHealthSettings) => {
 
@@ -143,8 +141,6 @@ export const updatePhilHealthSettingsAction = async (clinicUid: string, data: Up
         philhealthYakapUsername: data.philhealthYakapUsername,
         philhealthYakapPassword: data.philhealthYakapPassword,
         philhealthYakapPmccNumber: data.philhealthYakapPmccNumber,
-        konsultaCertificationId: data.konsultaCertificationId,
-        konsultaCipherKey: data.konsultaCipherKey,
       },
       update: {
         philhealthAccreditationNumber: data.philhealthAccreditationNumber,
@@ -152,8 +148,6 @@ export const updatePhilHealthSettingsAction = async (clinicUid: string, data: Up
         philhealthYakapUsername: data.philhealthYakapUsername,
         philhealthYakapPassword: data.philhealthYakapPassword,
         philhealthYakapPmccNumber: data.philhealthYakapPmccNumber,
-        konsultaCertificationId: data.konsultaCertificationId,
-        konsultaCipherKey: data.konsultaCipherKey,
       }
     });
     return { status: true, message, data: clinicSetting }

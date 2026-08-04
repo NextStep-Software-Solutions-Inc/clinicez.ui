@@ -58,6 +58,7 @@ import { SurgicalHistoryInlineForm } from '@/components/v2/patients/forms/Surgic
 import { PhysicalExamInlineForm } from '@/components/v2/patients/forms/PhysicalExamInlineForm'
 import { getPhysicalExamLibrariesAction } from '@/actions/super-admin/physical-exam-library.action'
 import type { SerializedPatientHealthRecordsResponse } from '@/types/patient-profile'
+import type { PhysicalExamLibrary } from '@prisma/client'
 import { formatBloodType, calculateDetailedAge } from '@/lib/utils'
 import { DownloadPHRButton } from '@/components/v2/phr/DownloadPHRButton'
 import { getPatientHealthRecords } from '@/actions/patient-profile/get-patient-health-records'
@@ -125,7 +126,7 @@ export default function ProfileClient({ patient }: ProfileClientProps) {
   const [patientData, setPatientData] = useState<SerializedPatientHealthRecordsResponse>(patient)
   const [editingSections, setEditingSections] = useState<Record<string, boolean>>({})
   const [savingSections, setSavingSections] = useState<Record<string, boolean>>({})
-  const [peLibraries, setPeLibraries] = useState<any[]>([])
+  const [peLibraries, setPeLibraries] = useState<PhysicalExamLibrary[]>([])
 
   useEffect(() => {
     async function loadPELibraries() {
@@ -143,7 +144,7 @@ export default function ProfileClient({ patient }: ProfileClientProps) {
 
   const peLibraryMap = useMemo(() => {
     const map = new Map<string, string>()
-    peLibraries.forEach((item: any) => {
+    peLibraries.forEach((item: PhysicalExamLibrary) => {
       map.set(`${item.category}:${item.code}`, item.description)
     })
     return map
@@ -168,10 +169,10 @@ export default function ProfileClient({ patient }: ProfileClientProps) {
     if (!record) return undefined
     return {
       pin: record.pin,
-      principalMemberPin: (record as any).principalMemberPin || (record as any).dependentPin || undefined,
+      principalMemberPin: record.principalMemberPin || undefined,
       tin: record.tin || undefined,
       philSysId: record.philSysId || undefined,
-      memberType: ((record as any).memberType as 'MM' | 'DD') || 'MM',
+      memberType: (record.memberType as 'MM' | 'DD') || 'MM',
       photoUrl: record.photoUrl || undefined,
       dependents: record.PhilHealthDependents || [],
       id: record.id,
@@ -182,8 +183,8 @@ export default function ProfileClient({ patient }: ProfileClientProps) {
 
   useEffect(() => {
     const record = patientData.philHealthRecords?.[0]
-    const pPin = (record as any)?.principalMemberPin || (record as any)?.dependentPin
-    if (record && (record as any).memberType === 'DD' && pPin) {
+    const pPin = record?.principalMemberPin
+    if (record && record.memberType === 'DD' && pPin) {
       void getPrincipalMemberByPinAction(pPin, patientData.id).then((res) => {
         if (res.data) {
           setReadOnlyPrincipalInfo(res.data)
@@ -414,7 +415,7 @@ export default function ProfileClient({ patient }: ProfileClientProps) {
                   {editingSections['philhealth'] ? (
                     <PhilHealthInlineForm
                       userId={patientData.userId}
-                      currentData={philHealthCurrentData as any}
+                      currentData={philHealthCurrentData}
                       onSuccess={handleRefresh}
                       saveRef={philhealthSaveRef}
                     />
@@ -425,25 +426,25 @@ export default function ProfileClient({ patient }: ProfileClientProps) {
                           <div key={record.id} className="space-y-6">
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-3 gap-y-2 py-1">
                               <ViewCell
-                                label={((record as any).memberType) === 'DD' ? 'Patient PIN (Dependent PIN)' : 'PIN (PhilHealth ID)'}
+                                label={record.memberType === 'DD' ? 'Patient PIN (Dependent PIN)' : 'PIN (PhilHealth ID)'}
                                 value={formatPhilHealthPin(record.pin)}
                                 className="text-indigo-600 dark:text-indigo-400 font-bold font-mono"
                               />
-                              {((record as any).memberType) === 'DD' && (
+                              {record.memberType === 'DD' && (
                                 <ViewCell
                                   label="Principal Member PIN"
-                                  value={formatPhilHealthPin((record as any).principalMemberPin || (record as any).dependentPin)}
+                                  value={formatPhilHealthPin(record.principalMemberPin)}
                                   className="text-indigo-600 dark:text-indigo-400 font-bold font-mono"
                                 />
                               )}
-                              <ViewCell label="Member Type" value={((record as any).memberType) === 'MM' ? 'Formal Member (MM)' : ((record as any).memberType) === 'DD' ? 'Dependent (DD)' : (record as any).memberType || '—'} />
+                              <ViewCell label="Member Type" value={record.memberType === 'MM' ? 'Formal Member (MM)' : record.memberType === 'DD' ? 'Dependent (DD)' : record.memberType || '—'} />
                               <ViewCell label="PhilSys ID" value={formatPhilSysId(record.philSysId)} className="font-mono" />
                               <ViewCell label="TIN" value={formatTin(record.tin)} className="font-mono" />
                               <ViewCell label="Yakap Enlistment" value={patientData.yakapEnlistment ? 'Enlisted' : 'Not Enlisted'} />
                             </div>
 
                             {/* Read-Only Linked Principal Member Info (Only for Dependents DD) */}
-                            {((record as any).memberType) === 'DD' && (
+                            {record.memberType === 'DD' && (
                               <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2">
                                 <div className="flex items-center justify-between">
                                   <span className="text-[11px] font-bold text-teal-700 dark:text-teal-400 uppercase tracking-wider flex items-center gap-1">
@@ -468,7 +469,7 @@ export default function ProfileClient({ patient }: ProfileClientProps) {
                                   </div>
                                 ) : (
                                   <div className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-950/30 dark:text-amber-400 p-2.5 rounded-lg border border-amber-200 dark:border-amber-800">
-                                    No principal member record found in system matching PIN <span className="font-mono font-semibold">{formatPhilHealthPin((record as any).principalMemberPin || (record as any).dependentPin) || '—'}</span>.
+                                    No principal member record found in system matching PIN <span className="font-mono font-semibold">{formatPhilHealthPin(record.principalMemberPin) || '—'}</span>.
                                   </div>
                                 )}
                               </div>
@@ -711,7 +712,7 @@ export default function ProfileClient({ patient }: ProfileClientProps) {
                   {editingSections['vital-signs'] ? (
                     <VitalSignsInlineForm
                       userId={patientData.userId}
-                      currentData={vitalSignData as any}
+                      currentData={vitalSignData}
                       patientDob={patientData.dob}
                       onSuccess={handleRefresh}
                       saveRef={vitalSignsSaveRef}
@@ -763,11 +764,11 @@ export default function ProfileClient({ patient }: ProfileClientProps) {
                               <ViewCell label="SpO₂ (O2 Saturation)" value={patientData.latestVitals.spo2 ? `${patientData.latestVitals.spo2}%` : null} />
                               <ViewCell label="Resp Rate" value={patientData.latestVitals.respRate ? `${patientData.latestVitals.respRate} br/min` : null} />
                               <ViewCell label="BMI" value={patientData.latestVitals.bmi} />
-                              <ViewCell label="Z-Score" value={(patientData.latestVitals as any)?.zScore} />
-                              <ViewCell label="Length/Height" value={(patientData.latestVitals as any)?.length ? `${(patientData.latestVitals as any).length} cm` : null} />
-                              <ViewCell label="Head Circ." value={(patientData.latestVitals as any)?.headCircumference ? `${(patientData.latestVitals as any).headCircumference} cm` : null} />
-                              <ViewCell label="Waist Circ." value={(patientData.latestVitals as any)?.waistCircumference ? `${(patientData.latestVitals as any).waistCircumference} cm` : null} />
-                              <ViewCell label="Hip Circ." value={(patientData.latestVitals as any)?.hipCircumference ? `${(patientData.latestVitals as any).hipCircumference} cm` : null} />
+                              <ViewCell label="Z-Score" value={patientData.latestVitals.zScore} />
+                              <ViewCell label="Length/Height" value={patientData.latestVitals.length ? `${patientData.latestVitals.length} cm` : null} />
+                              <ViewCell label="Head Circ." value={patientData.latestVitals.headCircumference ? `${patientData.latestVitals.headCircumference} cm` : null} />
+                              <ViewCell label="Waist Circ." value={patientData.latestVitals.waistCircumference ? `${patientData.latestVitals.waistCircumference} cm` : null} />
+                              <ViewCell label="Hip Circ." value={patientData.latestVitals.hipCircumference ? `${patientData.latestVitals.hipCircumference} cm` : null} />
                             </div>
                           </div>
 
@@ -1296,7 +1297,7 @@ export default function ProfileClient({ patient }: ProfileClientProps) {
                   {editingSections['ob-gyne'] ? (
                     <ObGyneHistoryInlineForm
                       userId={patientData.userId}
-                      currentData={patientData.obGyneHistory as any}
+                      currentData={patientData.obGyneHistory ?? undefined}
                       onSuccess={handleRefresh}
                       saveRef={obGyneSaveRef}
                     />
@@ -1330,7 +1331,7 @@ export default function ProfileClient({ patient }: ProfileClientProps) {
 interface TabButtonProps {
   active: boolean
   onClick: () => void
-  icon: React.ComponentType<any>
+  icon: React.ComponentType<{ className?: string }>
   label: string
 }
 
@@ -1361,7 +1362,7 @@ function TabButton({ active, onClick, icon: Icon, label }: TabButtonProps) {
 /* UI Helper: Card Container */
 interface CardContainerProps {
   title: string
-  icon: React.ComponentType<any>
+  icon: React.ComponentType<{ className?: string }>
   accentColor: string
   editing: boolean
   onEdit: () => void

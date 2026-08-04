@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
-import { Loader2, Trash2 } from 'lucide-react'
+import { Loader2, Trash2, Save } from 'lucide-react'
 
 export interface PhysicalExamInlineFormProps {
   patientId: number
@@ -29,6 +29,7 @@ export function PhysicalExamInlineForm({
   const [libraries, setLibraries] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
 
   const initialFormValues = useMemo(() => {
     const data = currentData || {}
@@ -93,6 +94,7 @@ export function PhysicalExamInlineForm({
       return
     }
 
+    setIsSaving(true)
     try {
       const result = await savePhysicalExaminationAction(patientId, formData, examId)
       if (result.error) {
@@ -105,6 +107,8 @@ export function PhysicalExamInlineForm({
     } catch (err) {
       toast.error(getActionErrorMessage(err, 'Failed to save physical exam'))
       throw err
+    } finally {
+      setIsSaving(false)
     }
   }
 
@@ -204,19 +208,35 @@ export function PhysicalExamInlineForm({
         })}
       </div>
 
-      {examId && (
-        <div className="flex justify-start pt-4 border-t border-slate-100 dark:border-slate-800">
-          <Button
-            type="button"
-            variant="destructive"
-            size="sm"
-            onClick={handleDelete}
-            disabled={isDeleting}
-            className="text-xs h-8 flex items-center gap-1.5"
-          >
-            {isDeleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
-            Delete Exam Record
-          </Button>
+      {(examId || !saveRef) && (
+        <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-800">
+          <div>
+            {examId && (
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                onClick={handleDelete}
+                disabled={isDeleting || isSaving}
+                className="text-xs h-8 flex items-center gap-1.5"
+              >
+                {isDeleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                Delete Exam Record
+              </Button>
+            )}
+          </div>
+
+          {!saveRef && (
+            <Button
+              type="button"
+              onClick={handleSubmit}
+              disabled={isSaving || isDeleting}
+              className="text-xs h-8 flex items-center gap-1.5 bg-teal-600 hover:bg-teal-700 text-white font-bold"
+            >
+              {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5 text-white" />}
+              Save Changes
+            </Button>
+          )}
         </div>
       )}
     </div>

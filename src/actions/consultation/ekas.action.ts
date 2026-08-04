@@ -3,7 +3,7 @@
 import prisma from "@lib/prisma";
 import { getCachedSession } from "@actions/session.action";
 import { withErrorHandling } from "@/lib/with-error-handling";
-import { PDFDocument } from "pdf-lib";
+import { PDFDocument, PDFName, PDFArray, rgb, StandardFonts } from "pdf-lib";
 import fs from "fs/promises";
 import path from "path";
 import { format } from "date-fns";
@@ -32,6 +32,7 @@ async function fetchConsultationData(ticketId: number, clinicUid: string) {
       },
       ClinicPatient: {
         select: {
+          id: true,
           Patient: {
             select: {
               dob: true,
@@ -58,6 +59,9 @@ async function fetchConsultationData(ticketId: number, clinicUid: string) {
             select: {
               HPProfile: {
                 select: { title: true, suffix: true }
+              },
+              ProfessionalDetails: {
+                select: { licenseNumber: true, ptrNumber: true }
               },
               User: {
                 select: { firstName: true, lastName: true }
@@ -94,8 +98,50 @@ async function fetchConsultationData(ticketId: number, clinicUid: string) {
   if (!ticket) throw new Error("Consultation ticket not found");
   if (!ticket.ClinicPatient?.Patient) throw new Error("Patient not attached to consultation");
 
-  return ticket;
+  // Fetch all diagnostic results for this consultation ticket OR for this patient
+  const diagnosticResults = await prisma.konsultaDiagnosticResult.findMany({
+    where: {
+      OR: [
+        { consultationTicketId: ticket.id },
+        { clinicPatientId: ticket.ClinicPatient.id },
+      ],
+    },
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      resultType: true,
+      resultData: true,
+      transDate: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+
+  return {
+    ...ticket,
+    KonsultaDiagnosticResults: diagnosticResults,
+  };
 }
+
+const EXAM_TYPE_TO_SERVICE_CODE: Record<string, number> = {
+  CBC: 1,
+  LIPIDPROFILE: 2,
+  FBS: 3,
+  RBS: 3,
+  OGTT: 4,
+  HBA1C: 5,
+  HBA1CTEST: 5,
+  CREATININE: 6,
+  CHESTXRAY: 7,
+  CHESTXRAYTEST: 7,
+  SPUTUM: 8,
+  SPUTUMMICROSCOPY: 8,
+  ECG: 9,
+  URINALYSIS: 13,
+  PAPSMEAR: 14,
+  FECALYSIS: 15,
+  FOBT: 18,
+};
 
 async function prepareFilledPdf(ticket: any, templateFileName: string) {
   const clinic = ticket.Clinic;
@@ -103,8 +149,10 @@ async function prepareFilledPdf(ticket: any, templateFileName: string) {
   const enlistment = ticket.ClinicPatient.PhilHealthKonsultaEnlistments?.[0];
 
   const hp = ticket.ConsultationTicketHPs[0]?.HealthCareProvider;
+  const hpProfile = hp?.HPProfile;
+  const profDetails = hp?.ProfessionalDetails;
   const physicianName = hp
-    ? `${hp.HPProfile?.title || ""} ${hp.User?.firstName || ""} ${hp.User?.lastName || ""} ${hp.HPProfile?.suffix || ""}`.trim()
+    ? `${hpProfile?.title || ""} ${hp.User?.firstName || ""} ${hp.User?.lastName || ""} ${hpProfile?.suffix || ""}`.trim()
     : "";
 
   const rx = ticket.Prescriptions[0];
@@ -116,9 +164,14 @@ async function prepareFilledPdf(ticket: any, templateFileName: string) {
 
   const calculateAge = (dob: Date | null) => {
     if (!dob) return "";
-    const diff = Date.now() - dob.getTime();
-    const ageDate = new Date(diff);
-    return Math.abs(ageDate.getUTCFullYear() - 1970).toString();
+    const birthDate = new Date(dob);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age >= 0 ? age.toString() : "";
   };
 
   const pin = enlistment?.dependentPin || enlistment?.memberPin || "";
@@ -137,22 +190,17 @@ async function prepareFilledPdf(ticket: any, templateFileName: string) {
     membershipCategory: "",
     membershipType: memberType,
     physicianName: physicianName,
-    prcLicense: "",
-    ptr: "",
+    prcLicense: profDetails?.licenseNumber || "",
+    ptr: profDetails?.ptrNumber || "",
     s2No: "",
     prescriptionText: prescriptionText,
     nextDispenseDate: "",
   };
 
-  const diagnostics = ticket.ConsultationDiagnoses.map((diag: any) => ({
-    id: diag.id,
-    datePerformed: diag.createdAt ? format(diag.createdAt, "MM/dd/yyyy") : "",
-    performer: diag.HealthCareProvider?.User ? `${diag.HealthCareProvider.User.firstName} ${diag.HealthCareProvider.User.lastName}` : ""
-  }));
-
   const templatePath = path.join(process.cwd(), "public", "pdfs", "phr", templateFileName);
   const existingPdfBytes = await fs.readFile(templatePath);
   const pdfDoc = await PDFDocument.load(existingPdfBytes);
+
   const form = pdfDoc.getForm();
 
   const setTextField = (fieldName: string, value: string) => {
@@ -185,21 +233,115 @@ async function prepareFilledPdf(ticket: any, templateFileName: string) {
     }
   } catch (e) { }
 
-  diagnostics.forEach((diag: any) => {
-    try {
-      const checkBox = form.getCheckBox(`checkbox_diag_${diag.id}`);
-      if (checkBox) checkBox.check();
-      setTextField(`text_diag_${diag.id}_date`, diag.datePerformed);
-      setTextField(`text_diag_${diag.id}_performer`, diag.performer);
-    } catch (e) { }
-  });
+  // Fix template bug for Row 9 (ECG) where Date box Widget 0 was attached to text_diag_9_performer
+  try {
+    const perfField = form.getTextField("text_diag_9_performer");
+    const widgets = perfField.acroField.getWidgets();
+
+    if (widgets.length >= 2) {
+      const dateWidget = widgets[0];
+
+      // 1. Remove dateWidget (Widget 0) from perfField acroField Kids array
+      const kids = perfField.acroField.dict.get(PDFName.of("Kids"));
+      if (kids instanceof PDFArray) {
+        kids.remove(0);
+      }
+
+      // 2. Remove dateWidget from Page 0 Annots array
+      const page0 = pdfDoc.getPages()[0];
+      const annots = page0.node.Annots();
+      if (annots) {
+        const idx = annots.indexOf((dateWidget as any).ref);
+        if (typeof idx === "number" && idx >= 0) {
+          annots.remove(idx);
+        }
+      }
+    }
+  } catch (e) {
+    // ignore
+  }
+
+  // Map KonsultaDiagnosticResults to eKAS PDF Checkboxes and Tables
+  // Note: The PDF fillable template has swapped/mismatched field names relative to PhilHealth service codes.
+  // This map matches PhilHealth service codes to the actual physical form fields in "eKAS (PC 2024-0013) FILLABLE.pdf".
+  const SERVICE_CODE_TO_PDF_FIELDS: Record<number, { cb: string; date: string; perf: string }> = {
+    1:  { cb: "checkbox_diag_1",  date: "text_diag_1_date",  perf: "text_diag_1_performer" },  // CBC (Row 1)
+    2:  { cb: "checkbox_diag_6",  date: "text_diag_6_date",  perf: "text_diag_6_performer" },  // Lipid profile (Row 2)
+    3:  { cb: "checkbox_diag_7",  date: "text_diag_7_date",  perf: "text_diag_7_performer" },  // FBS (Row 3)
+    4:  { cb: "checkbox_diag_14", date: "text_diag_14_date", perf: "text_diag_14_performer" }, // OGTT (Row 4)
+    5:  { cb: "checkbox_18",      date: "text_diag_18_date", perf: "text_diag_18_performer" }, // HbA1c (Row 5)
+    6:  { cb: "checkbox_diag_8",  date: "text_diag_8_date",  perf: "text_diag_8_performer" },  // Creatinine (Row 6)
+    7:  { cb: "checkbox_diag_4",  date: "text_diag_4_date",  perf: "text_diag_4_performer" },  // Chest X-Ray (Row 7)
+    8:  { cb: "checkbox_diag_5",  date: "text_diag_5_date",  perf: "text_diag_5_performer" },  // Sputum (Row 8)
+    9:  { cb: "checkbox_diag_9",  date: "text_diag_9_date",  perf: "text_diag_9_performer" },  // ECG (Row 9)
+    13: { cb: "checkbox_diag_2",  date: "text_diag_2_date",  perf: "text_diag_2_performer" },  // Urinalysis (Row 10)
+    14: { cb: "checkbox_diag_13", date: "text_diag_13_date", perf: "text_diag_13_performer" }, // Pap smear (Row 11)
+    15: { cb: "checkbox_diag_3",  date: "text_diag_3_date",  perf: "text_diag_3_performer" },  // Fecalysis (Row 12)
+    18: { cb: "checkbox_diag_15", date: "text_diag_15_date", perf: "text_diag_15_performer" }, // FOBT (Row 13)
+  };
+
+  let ecgDateToDraw: string | null = null;
+
+  const diagResults = ticket.KonsultaDiagnosticResults || [];
+  for (const diag of diagResults) {
+    const typeClean = (diag.resultType || "").toUpperCase().replace(/[\s\-_]/g, "");
+    const serviceCode = EXAM_TYPE_TO_SERVICE_CODE[typeClean];
+    const pdfFields = serviceCode ? SERVICE_CODE_TO_PDF_FIELDS[serviceCode] : null;
+
+    if (pdfFields) {
+      try {
+        const checkBox = form.getCheckBox(pdfFields.cb);
+        if (checkBox) checkBox.check();
+
+        const rawDate = diag.resultData?.labDate || diag.transDate || diag.createdAt;
+        const dateVal = rawDate ? format(new Date(rawDate), "MM/dd/yyyy") : "";
+
+        const performerVal =
+          diag.resultData?.performer ||
+          diag.resultData?.performedBy ||
+          patientData.physicianName;
+
+        setTextField(pdfFields.perf, performerVal);
+
+        if (serviceCode === 9) {
+          if (dateVal) ecgDateToDraw = dateVal;
+        } else {
+          setTextField(pdfFields.date, dateVal);
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+  }
 
   setTextField("textarea_rx", patientData.prescriptionText);
-  setTextField("text_nextDespensDate", patientData.nextDispenseDate);
+  setTextField("text_nextDispenseDate", patientData.nextDispenseDate);
   setTextField("text_physicianName", patientData.physicianName);
   setTextField("text_prcLicense", patientData.prcLicense);
   setTextField("text_ptr", patientData.ptr);
   setTextField("text_s2No", patientData.s2No);
+
+  try {
+    form.updateFieldAppearances();
+  } catch (e) {
+    // ignore
+  }
+
+  if (ecgDateToDraw) {
+    try {
+      const page0 = pdfDoc.getPages()[0];
+      const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+      page0.drawText(ecgDateToDraw, {
+        x: 408.24 + 4,
+        y: 306.65 + 5,
+        size: 9,
+        font: font,
+        color: rgb(0, 0, 0),
+      });
+    } catch (e) {
+      // ignore
+    }
+  }
 
   const filledBytes = await pdfDoc.save();
   return { filledBytes, patientName, caseNumber: ticket.caseNumber };

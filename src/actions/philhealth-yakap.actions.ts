@@ -685,6 +685,35 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
         allDiagProcs.map(dp => [dp.id, dp.philhealthDiagnosticId])
       );
 
+      // Fetch diagnostic results — query by selected consultation ticket IDs (most reliable)
+      // for Tagging 1 fall back to clinicPatientId
+      const ticketIds = bp.selectedTicketIds ?? [];
+      const diagRecords = await prisma.konsultaDiagnosticResult.findMany({
+        where: ticketIds.length > 0
+          ? {
+            OR: [
+              { consultationTicketId: { in: ticketIds } },
+              { consultationTicketId: null, clinicPatientId: bp.ClinicPatient.id }
+            ]
+          }
+          : { clinicPatientId: bp.ClinicPatient.id },
+        orderBy: { createdAt: "asc" },
+      });
+      const diagnosticResults = diagRecords.length > 0
+        ? diagRecords.map(dr => ({
+          hciCaseNo: dr.hciCaseNo || enlistment?.hciCaseNo || "",
+          hciTransNo: dr.hciTransNo || enlistment?.profilingTransNo || "",
+          patientPin: patientPin,
+          patientType: patientType,
+          memPin: memberPin,
+          effYear: String(enlistment?.year || new Date().getFullYear()),
+          resultType: dr.resultType,
+          resultData: (dr.resultData && typeof dr.resultData === 'object' && !Array.isArray(dr.resultData))
+            ? dr.resultData as Record<string, string>
+            : {},
+        }))
+        : undefined;
+
       // Build consultations for Tagging 2
       let consultations: KonsultaConsultationData[] | undefined;
       if (batch.tagging === "2" && bp.selectedTicketIds.length > 0) {
@@ -778,38 +807,10 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
                 }));
               }).filter(d => d.philhealthDiagnosticId !== null),
               allRecommendedDiagnosticIds,
+              diagnosticResults,
             };
           }));
       }
-
-      // Fetch diagnostic results — query by selected consultation ticket IDs (most reliable)
-      // for Tagging 1 fall back to clinicPatientId
-      const ticketIds = bp.selectedTicketIds ?? [];
-      const diagRecords = await prisma.konsultaDiagnosticResult.findMany({
-        where: ticketIds.length > 0
-          ? {
-            OR: [
-              { consultationTicketId: { in: ticketIds } },
-              { consultationTicketId: null, clinicPatientId: bp.ClinicPatient.id }
-            ]
-          }
-          : { clinicPatientId: bp.ClinicPatient.id },
-        orderBy: { createdAt: "asc" },
-      });
-      const diagnosticResults = diagRecords.length > 0
-        ? diagRecords.map(dr => ({
-          hciCaseNo: dr.hciCaseNo || enlistment?.hciCaseNo || "",
-          hciTransNo: dr.hciTransNo || enlistment?.profilingTransNo || "",
-          patientPin: patientPin,
-          patientType: patientType,
-          memPin: memberPin,
-          effYear: String(enlistment?.year || new Date().getFullYear()),
-          resultType: dr.resultType,
-          resultData: (dr.resultData && typeof dr.resultData === 'object' && !Array.isArray(dr.resultData))
-            ? dr.resultData as Record<string, string>
-            : {},
-        }))
-        : undefined;
 
       let memberFirstName = (patient.firstName || "").toUpperCase();
       let memberMiddleName = (patient.middleName || "").toUpperCase();

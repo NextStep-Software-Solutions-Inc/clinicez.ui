@@ -234,6 +234,7 @@ export interface KonsultaConsultationData {
   konsultaRecommendedDiagnosticOptions?: { philhealthDiagnosticId: string; status: 'RQ' | 'RF' | 'XX' }[];
   diagnosticRequests?: { philhealthDiagnosticId: string | null }[];
   allRecommendedDiagnosticIds?: string[];
+  diagnosticResults?: KonsultaDiagnosticExamData[];
 }
 
 export interface KonsultaMedicineData {
@@ -852,20 +853,60 @@ function buildSoapIcds(parent: XmlNode, consultation: KonsultaConsultationData):
   return icds.up();
 }
 
-function buildSoapDiagnostics(parent: XmlNode, consultation: KonsultaConsultationData, patient: KonsultaPatientData): XmlNode {
+const EXAM_TYPE_TO_DIAGNOSTIC_ID: Record<string, string> = {
+  CBC: '1',
+  LIPIDPROFILE: '2',
+  FBS: '3',
+  RBS: '3',
+  OGTT: '4',
+  HBA1C: '5',
+  HBA1C_TEST: '5',
+  CREATININE: '6',
+  CHESTXRAY: '7',
+  SPUTUM: '8',
+  ECG: '9',
+  URINALYSIS: '13',
+  PAPSMEAR: '14',
+  FECALYSIS: '15',
+  FOBT: '18',
+};
+
+function buildSoapDiagnostics(
+  parent: XmlNode,
+  consultation: KonsultaConsultationData,
+  patientRecord?: KonsultaPatientData
+): XmlNode {
   const diagnostics = parent.ele('DIAGNOSTICS');
   const addedIds = new Set<string>();
+
+  // Add items from diagnosticResults (if results were entered for this consultation/patient)
+  const results = consultation.diagnosticResults || patientRecord?.diagnosticResults || [];
+  for (const dr of results) {
+    const typeUpper = (dr.resultType || '').toUpperCase();
+    const diagId = EXAM_TYPE_TO_DIAGNOSTIC_ID[typeUpper];
+    if (diagId && !addedIds.has(diagId)) {
+      diagnostics.ele('DIAGNOSTIC', withStatus({
+        pDiagnosticId: diagId,
+        pOthRemarks: '',
+        pIsPhysicianRecommendation: 'Y',
+        pPatientRemarks: 'RQ',
+      })).up();
+      addedIds.add(diagId);
+    }
+  }
 
   // Add recommended options
   if (consultation.konsultaRecommendedDiagnosticOptions) {
     for (const opt of consultation.konsultaRecommendedDiagnosticOptions) {
-      diagnostics.ele('DIAGNOSTIC', withStatus({
-        pDiagnosticId: opt.philhealthDiagnosticId,
-        pOthRemarks: '',
-        pIsPhysicianRecommendation: 'Y',
-        pPatientRemarks: opt.status,
-      })).up();
-      addedIds.add(opt.philhealthDiagnosticId);
+      if (!addedIds.has(opt.philhealthDiagnosticId)) {
+        diagnostics.ele('DIAGNOSTIC', withStatus({
+          pDiagnosticId: opt.philhealthDiagnosticId,
+          pOthRemarks: '',
+          pIsPhysicianRecommendation: 'Y',
+          pPatientRemarks: opt.status,
+        })).up();
+        addedIds.add(opt.philhealthDiagnosticId);
+      }
     }
   }
 
@@ -1203,33 +1244,45 @@ export function generateKonsultaXml(options: KonsultaXmlOptions): string {
 
   // ── SOAPS ─────────────────────────────────────────────────────────────────
   const soaps = doc.ele('SOAPS');
-  for (const patient of patients) {
-    const consultations = patient.consultations ?? [];
-    for (const consultation of consultations) {
-      const soapNode = soaps.ele('SOAP', withStatus({
-        pHciCaseNo: consultation.hciCaseNo,
-        pHciTransNo: consultation.hciTransNo,
-        pPatientPin: patient.patient.pin,
-        pMemPin: patient.member.pin,
-        pSoapDate: consultation.soapDate,
-        pPatientType: patient.patient.type,
-        pEffYear: patient.enlistment.effYear,
-        pATC: consultation.atc,
-        pIsWalkedIn: consultation.isWalkedIn,
-        pCoPay: consultation.coPay,
-        pTransDate: consultation.transDate,
-      }));
+  if (tagging === '1') {
+    // Tagging 1: emit one stub SOAP per patient (all attrs empty)
+    for (const patient of patients) {
+      buildStubSoap(soaps, patient);
+    }
+  } else {
+    // Tagging 2: emit populated SOAPs from consultations
+    for (const patient of patients) {
+      const consultations = patient.consultations ?? [];
+      if (consultations.length === 0) {
+        buildStubSoap(soaps, patient);
+      } else {
+        for (const consultation of consultations) {
+          const soapNode = soaps.ele('SOAP', withStatus({
+            pHciCaseNo: consultation.hciCaseNo,
+            pHciTransNo: consultation.hciTransNo,
+            pPatientPin: patient.patient.pin,
+            pMemPin: patient.member.pin,
+            pSoapDate: consultation.soapDate,
+            pPatientType: patient.patient.type,
+            pEffYear: patient.enlistment.effYear,
+            pATC: consultation.atc,
+            pIsWalkedIn: consultation.isWalkedIn,
+            pCoPay: consultation.coPay,
+            pTransDate: consultation.transDate,
+          }));
 
-      buildSoapSubjective(soapNode, consultation);
-      buildSoapPepert(soapNode, consultation);
-      buildSoapPeMiscs(soapNode, consultation);
-      buildSoapPeSpecific(soapNode, consultation);
-      buildSoapIcds(soapNode, consultation);
-      buildSoapDiagnostics(soapNode, consultation, patient);
-      buildSoapManagements(soapNode, consultation);
-      buildSoapAdvice(soapNode, consultation);
+          buildSoapSubjective(soapNode, consultation);
+          buildSoapPepert(soapNode, consultation);
+          buildSoapPeMiscs(soapNode, consultation);
+          buildSoapPeSpecific(soapNode, consultation);
+          buildSoapIcds(soapNode, consultation);
+          buildSoapDiagnostics(soapNode, consultation, patient);
+          buildSoapManagements(soapNode, consultation);
+          buildSoapAdvice(soapNode, consultation);
 
-      soapNode.up();
+          soapNode.up();
+        }
+      }
     }
   }
   soaps.up();

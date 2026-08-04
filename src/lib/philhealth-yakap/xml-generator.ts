@@ -852,7 +852,7 @@ function buildSoapIcds(parent: XmlNode, consultation: KonsultaConsultationData):
   return icds.up();
 }
 
-function buildSoapDiagnostics(parent: XmlNode, consultation: KonsultaConsultationData): XmlNode {
+function buildSoapDiagnostics(parent: XmlNode, consultation: KonsultaConsultationData, patient: KonsultaPatientData): XmlNode {
   const diagnostics = parent.ele('DIAGNOSTICS');
   const addedIds = new Set<string>();
 
@@ -1095,14 +1095,8 @@ export function generateKonsultaXml(options: KonsultaXmlOptions): string {
   const enlistCount = patients.length;
   const profileCount = patients.length;
   let soapCount = 0;
-  if (tagging === '2') {
-    for (const p of patients) {
-      soapCount += p.consultations?.length ?? 0;
-    }
-  }
-  // For Tagging 1, we still emit 1 stub SOAP per patient
-  if (tagging === '1') {
-    soapCount = patients.length;
+  for (const p of patients) {
+    soapCount += p.consultations?.length ?? 0;
   }
 
   // Collect all medicines across all consultations for Tagging 2
@@ -1209,45 +1203,33 @@ export function generateKonsultaXml(options: KonsultaXmlOptions): string {
 
   // ── SOAPS ─────────────────────────────────────────────────────────────────
   const soaps = doc.ele('SOAPS');
-  if (tagging === '1') {
-    // Tagging 1: emit one stub SOAP per patient (all attrs empty)
-    for (const patient of patients) {
-      buildStubSoap(soaps, patient);
-    }
-  } else {
-    // Tagging 2: emit populated SOAPs from consultations
-    for (const patient of patients) {
-      const consultations = patient.consultations ?? [];
-      if (consultations.length === 0) {
-        buildStubSoap(soaps, patient);
-      } else {
-        for (const consultation of consultations) {
-          const soapNode = soaps.ele('SOAP', withStatus({
-            pHciCaseNo: consultation.hciCaseNo,
-            pHciTransNo: consultation.hciTransNo,
-            pPatientPin: patient.patient.pin,
-            pMemPin: patient.member.pin,
-            pSoapDate: consultation.soapDate,
-            pPatientType: patient.patient.type,
-            pEffYear: patient.enlistment.effYear,
-            pATC: consultation.atc,
-            pIsWalkedIn: consultation.isWalkedIn,
-            pCoPay: consultation.coPay,
-            pTransDate: consultation.transDate,
-          }));
+  for (const patient of patients) {
+    const consultations = patient.consultations ?? [];
+    for (const consultation of consultations) {
+      const soapNode = soaps.ele('SOAP', withStatus({
+        pHciCaseNo: consultation.hciCaseNo,
+        pHciTransNo: consultation.hciTransNo,
+        pPatientPin: patient.patient.pin,
+        pMemPin: patient.member.pin,
+        pSoapDate: consultation.soapDate,
+        pPatientType: patient.patient.type,
+        pEffYear: patient.enlistment.effYear,
+        pATC: consultation.atc,
+        pIsWalkedIn: consultation.isWalkedIn,
+        pCoPay: consultation.coPay,
+        pTransDate: consultation.transDate,
+      }));
 
-          buildSoapSubjective(soapNode, consultation);
-          buildSoapPepert(soapNode, consultation);
-          buildSoapPeMiscs(soapNode, consultation);
-          buildSoapPeSpecific(soapNode, consultation);
-          buildSoapIcds(soapNode, consultation);
-          buildSoapDiagnostics(soapNode, consultation);
-          buildSoapManagements(soapNode, consultation);
-          buildSoapAdvice(soapNode, consultation);
+      buildSoapSubjective(soapNode, consultation);
+      buildSoapPepert(soapNode, consultation);
+      buildSoapPeMiscs(soapNode, consultation);
+      buildSoapPeSpecific(soapNode, consultation);
+      buildSoapIcds(soapNode, consultation);
+      buildSoapDiagnostics(soapNode, consultation, patient);
+      buildSoapManagements(soapNode, consultation);
+      buildSoapAdvice(soapNode, consultation);
 
-          soapNode.up();
-        }
-      }
+      soapNode.up();
     }
   }
   soaps.up();

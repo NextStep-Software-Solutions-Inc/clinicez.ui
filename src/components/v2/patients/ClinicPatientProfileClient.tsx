@@ -61,6 +61,7 @@ import { SurgicalHistoryInlineForm } from './forms/SurgicalHistoryInlineForm'
 import { PhysicalExamInlineForm } from './forms/PhysicalExamInlineForm'
 import { getPhysicalExamLibrariesAction } from '@/actions/super-admin/physical-exam-library.action'
 import type { PatientHealthRecordsResponse } from '@/types/patient-profile'
+import type { PhysicalExamLibrary } from '@prisma/client'
 import { formatBloodType, calculateDetailedAge } from '@/lib/utils'
 import { DownloadPHRButton } from '@/components/v2/phr/DownloadPHRButton'
 import { PatientAIInsightButton } from '@/components/v2/patients/PatientAIInsightButton'
@@ -149,7 +150,7 @@ export default function ClinicPatientProfileClient({
   const [patientData, setPatientData] = useState<PatientHealthRecordsResponse>(initialData)
   const [editingSections, setEditingSections] = useState<Record<string, boolean>>({})
   const [savingSections, setSavingSections] = useState<Record<string, boolean>>({})
-  const [peLibraries, setPeLibraries] = useState<any[]>([])
+  const [peLibraries, setPeLibraries] = useState<PhysicalExamLibrary[]>([])
 
   useEffect(() => {
     async function loadPELibraries() {
@@ -167,7 +168,7 @@ export default function ClinicPatientProfileClient({
 
   const peLibraryMap = useMemo(() => {
     const map = new Map<string, string>()
-    peLibraries.forEach((item: any) => {
+    peLibraries.forEach((item: PhysicalExamLibrary) => {
       map.set(`${item.category}:${item.code}`, item.description)
     })
     return map
@@ -437,7 +438,7 @@ export default function ClinicPatientProfileClient({
                 {editingSections['philhealth'] ? (
                   <PhilHealthInlineForm
                     userId={patientData.userId}
-                    currentData={philHealthCurrentData as any}
+                    currentData={philHealthCurrentData}
                     onSuccess={handleRefresh}
                     saveRef={philhealthSaveRef}
                   />
@@ -746,7 +747,7 @@ export default function ClinicPatientProfileClient({
                 {editingSections['vital-signs'] ? (
                   <VitalSignsInlineForm
                     userId={patientData.userId}
-                    currentData={vitalSignData as any}
+                    currentData={vitalSignData}
                     patientDob={patientData.dob}
                     onSuccess={handleRefresh}
                     saveRef={vitalSignsSaveRef}
@@ -798,11 +799,11 @@ export default function ClinicPatientProfileClient({
                             <ViewCell label="SpO₂ (O2 Saturation)" value={patientData.latestVitals.spo2 ? `${patientData.latestVitals.spo2}%` : null} />
                             <ViewCell label="Resp Rate" value={patientData.latestVitals.respRate ? `${patientData.latestVitals.respRate} br/min` : null} />
                             <ViewCell label="BMI" value={patientData.latestVitals.bmi} />
-                            <ViewCell label="Z-Score" value={(patientData.latestVitals as any)?.zScore} />
-                            <ViewCell label="Length/Height" value={(patientData.latestVitals as any)?.length ? `${(patientData.latestVitals as any).length} cm` : null} />
-                            <ViewCell label="Head Circ." value={(patientData.latestVitals as any)?.headCircumference ? `${(patientData.latestVitals as any).headCircumference} cm` : null} />
-                            <ViewCell label="Waist Circ." value={(patientData.latestVitals as any)?.waistCircumference ? `${(patientData.latestVitals as any).waistCircumference} cm` : null} />
-                            <ViewCell label="Hip Circ." value={(patientData.latestVitals as any)?.hipCircumference ? `${(patientData.latestVitals as any).hipCircumference} cm` : null} />
+                            <ViewCell label="Z-Score" value={patientData.latestVitals.zScore} />
+                            <ViewCell label="Length/Height" value={patientData.latestVitals.length ? `${patientData.latestVitals.length} cm` : null} />
+                            <ViewCell label="Head Circ." value={patientData.latestVitals.headCircumference ? `${patientData.latestVitals.headCircumference} cm` : null} />
+                            <ViewCell label="Waist Circ." value={patientData.latestVitals.waistCircumference ? `${patientData.latestVitals.waistCircumference} cm` : null} />
+                            <ViewCell label="Hip Circ." value={patientData.latestVitals.hipCircumference ? `${patientData.latestVitals.hipCircumference} cm` : null} />
                           </div>
                         </div>
 
@@ -1191,7 +1192,7 @@ export default function ClinicPatientProfileClient({
                               Reaction: <span className="font-semibold text-slate-700 dark:text-slate-355">{all.reaction}</span>
                             </p>
                             {all.notes && (
-                              <p className="text-xs text-slate-550 dark:text-slate-450 mt-0.5">
+                              <p className="text-xs text-slate-550 dark:text-slate-400 mt-0.5">
                                 Notes: {all.notes}
                               </p>
                             )}
@@ -1331,7 +1332,7 @@ export default function ClinicPatientProfileClient({
                 {editingSections['ob-gyne'] ? (
                   <ObGyneHistoryInlineForm
                     userId={patientData.userId}
-                    currentData={patientData.obGyneHistory as any}
+                    currentData={patientData.obGyneHistory ?? undefined}
                     onSuccess={handleRefresh}
                     saveRef={obGyneSaveRef}
                   />
@@ -1364,7 +1365,7 @@ export default function ClinicPatientProfileClient({
 interface TabButtonProps {
   active: boolean
   onClick: () => void
-  icon: React.ComponentType<any>
+  icon: React.ComponentType<{ className?: string }>
   label: string
 }
 
@@ -1395,7 +1396,7 @@ function TabButton({ active, onClick, icon: Icon, label }: TabButtonProps) {
 /* UI Helper: Card Container */
 interface CardContainerProps {
   title: string
-  icon: React.ComponentType<any>
+  icon: React.ComponentType<{ className?: string }>
   accentColor: string
   editing: boolean
   onEdit: () => void

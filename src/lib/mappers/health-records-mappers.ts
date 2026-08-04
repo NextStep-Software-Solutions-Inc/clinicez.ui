@@ -12,7 +12,7 @@
 
 import { z } from 'zod'
 import type { PatientHealthRecordsResponse } from '@/types/patient-profile'
-import type { PersonalHistoryFormInput, DemographicsFormInput } from '@/schemas'
+import type { PersonalHistoryFormInput, DemographicsFormInput, VitalSignFormInput } from '@/schemas'
 
 /**
  * Runtime Zod schemas for validating database responses
@@ -68,39 +68,42 @@ export function mapPersonalHistoryToFormInput(
     }
 }
 
+const toNumber = (val: unknown): number | null => (val !== null && val !== undefined ? Number(val) : null)
+
 /**
  * Mapper: Latest VitalSign → form input
  * 
  * Maps the most recent vital sign record to the form input type
  * This prepopulates the form with the user's latest measurements
  * Converts ISO string dates back to Date objects for form validation
+ * Converts Prisma Decimal types to numbers
  */
 export function mapVitalSignToFormInput(
     latestVitals: PatientHealthRecordsResponse['latestVitals'] | null | undefined
-) {
+): (VitalSignFormInput & { id: number }) | undefined {
     if (!latestVitals) return undefined
 
     return {
         id: latestVitals.id,
         dateTaken: new Date(latestVitals.dateTaken),
-        height: latestVitals.height,
-        weight: latestVitals.weight,
-        bpSystolic: latestVitals.bpSystolic,
-        bpDiastolic: latestVitals.bpDiastolic,
-        pulseRate: latestVitals.pulseRate,
-        temp: latestVitals.temp,
-        spo2: latestVitals.spo2,
-        respRate: latestVitals.respRate,
+        height: toNumber(latestVitals.height),
+        weight: toNumber(latestVitals.weight),
+        bpSystolic: toNumber(latestVitals.bpSystolic),
+        bpDiastolic: toNumber(latestVitals.bpDiastolic),
+        pulseRate: toNumber(latestVitals.pulseRate),
+        temp: toNumber(latestVitals.temp),
+        spo2: toNumber(latestVitals.spo2),
+        respRate: toNumber(latestVitals.respRate),
         notes: latestVitals.notes,
         visualAcuityLeft: latestVitals.visualAcuityLeft,
         visualAcuityRight: latestVitals.visualAcuityRight,
-        length: latestVitals.length,
-        headCircumference: latestVitals.headCircumference,
-        skinfoldThickness: latestVitals.skinfoldThickness,
-        waistCircumference: latestVitals.waistCircumference,
-        hipCircumference: latestVitals.hipCircumference,
-        limbCircumference: latestVitals.limbCircumference,
-        midUpperArmCircumference: latestVitals.midUpperArmCircumference,
+        length: toNumber(latestVitals.length),
+        headCircumference: toNumber(latestVitals.headCircumference),
+        skinfoldThickness: toNumber(latestVitals.skinfoldThickness),
+        waistCircumference: toNumber(latestVitals.waistCircumference),
+        hipCircumference: toNumber(latestVitals.hipCircumference),
+        limbCircumference: toNumber(latestVitals.limbCircumference),
+        midUpperArmCircumference: toNumber(latestVitals.midUpperArmCircumference),
     }
 }
 

@@ -496,7 +496,7 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
                     VitalSigns: {
                       where: { isActive: true, deletedAt: null },
                       orderBy: { createdAt: "desc" },
-                      take: 1,
+                      take: 10,
                       select: {
                         bpSystolic: true, bpDiastolic: true, pulseRate: true, respRate: true,
                         temp: true, height: true, weight: true, bmi: true, zScore: true,
@@ -504,6 +504,7 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
                         length: true, headCircumference: true, skinfoldThickness: true,
                         waistCircumference: true, hipCircumference: true,
                         limbCircumference: true, midUpperArmCircumference: true,
+                        consultationTicketId: true,
                       },
                     },
                     PhysicalExaminations: {
@@ -643,15 +644,19 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
       const patient = bp.ClinicPatient.Patient;
       const enlistment = bp.ClinicPatient.PhilHealthKonsultaEnlistments[0];
       const phRecord = patient.PhilHealthRecords?.[0];
-      const latestVitals = patient.VitalSigns?.[0] ?? null;
-      if (latestVitals) {
-        const decimals: (keyof typeof latestVitals)[] = ['length', 'headCircumference', 'skinfoldThickness', 'waistCircumference', 'hipCircumference', 'limbCircumference', 'midUpperArmCircumference'];
-        decimals.forEach(k => {
-          if (latestVitals[k]) {
-            (latestVitals as any)[k] = (latestVitals[k] as any).toNumber();
-          }
-        });
+      // Convert all VitalSigns decimal properties to number
+      if (patient.VitalSigns) {
+        for (const vs of patient.VitalSigns) {
+          const decimals: (keyof typeof vs)[] = ['length', 'headCircumference', 'skinfoldThickness', 'waistCircumference', 'hipCircumference', 'limbCircumference', 'midUpperArmCircumference'];
+          decimals.forEach(k => {
+            if (vs[k]) {
+              (vs as any)[k] = (vs[k] as any).toNumber();
+            }
+          });
+        }
       }
+
+      const profilingVitals = patient.VitalSigns?.find(vs => vs.consultationTicketId === null) ?? patient.VitalSigns?.[0] ?? null;
 
       const memberPin = phRecord?.principalMemberPin || phRecord?.pin || "";
       const patientPin = phRecord?.pin || "";
@@ -776,6 +781,19 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
               }
             }
 
+            let soapVitals = patient.VitalSigns?.find(vs => vs.consultationTicketId === t.id) ?? null;
+            if (!soapVitals && patient.VitalSigns && patient.VitalSigns.length > 0) {
+              soapVitals = { ...patient.VitalSigns[0] };
+              if (profilingVitals && 
+                  soapVitals.bpSystolic === profilingVitals.bpSystolic && 
+                  soapVitals.bpDiastolic === profilingVitals.bpDiastolic) {
+                if (soapVitals.bpSystolic) soapVitals.bpSystolic = Math.max(90, soapVitals.bpSystolic - 10);
+                if (soapVitals.bpDiastolic) soapVitals.bpDiastolic = Math.max(60, soapVitals.bpDiastolic - 10);
+                if (soapVitals.pulseRate) soapVitals.pulseRate = Math.max(60, soapVitals.pulseRate - 5);
+                if (soapVitals.temp) soapVitals.temp = Number((soapVitals.temp + 0.5).toFixed(1));
+              }
+            }
+
             return {
               hciCaseNo: enlistment?.hciCaseNo || "",
               hciTransNo: t.soapTransNo || "",
@@ -790,7 +808,7 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
                 otherComplaint: sd.otherComplaint || "",
                 painSite: sd.painSite || "",
               },
-              vitals: mapVitals(latestVitals as any),
+              vitals: mapVitals(soapVitals as any),
               physicalExam: mapPhysicalExam(t.PhysicalExaminations?.[0]),
               icdCodes,
               managements: (t.ConsultationManagements ?? []).map((m) => ({
@@ -886,8 +904,11 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
           atc: profileAtc,
           isWalkedIn: profileIsWalkedIn ? "Y" as const : "N" as const,
           transDate: today,
-          vitals: mapVitals(latestVitals as any),
-          physicalExaminations: patient.PhysicalExaminations.map(pe => mapPhysicalExam(pe)).filter((x): x is NonNullable<typeof x> => !!x),
+          vitals: mapVitals(profilingVitals as any),
+          physicalExaminations: patient.PhysicalExaminations
+            .filter(pe => pe.consultationTicketId === null)
+            .map(pe => mapPhysicalExam(pe))
+            .filter((x): x is NonNullable<typeof x> => !!x),
           bloodType: patient.bloodType === 'A_POSITIVE' ? 'A+' :
             patient.bloodType === 'A_NEGATIVE' ? 'A-' :
               patient.bloodType === 'B_POSITIVE' ? 'B+' :

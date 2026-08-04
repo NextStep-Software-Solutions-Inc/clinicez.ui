@@ -583,7 +583,7 @@ function buildPregHist(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
   return parent;
 }
 
-function buildProfilePepert(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
+function buildProfilePepert(parent: XmlNode, patient: KonsultaPatientData, isOver5Years: boolean): XmlNode {
   const v = patient.profile.vitals;
   parent.ele('PEPERT', withStatus({
     pSystolic: v.systolic,
@@ -594,7 +594,7 @@ function buildProfilePepert(parent: XmlNode, patient: KonsultaPatientData): XmlN
     pHeight: v.height,
     pWeight: v.weight,
     pBMI: v.bmi,
-    pZScore: v.zScore,
+    pZScore: isOver5Years ? '' : v.zScore,
     pLeftVision: v.leftVision,
     pRightVision: v.rightVision,
     pLength: v.length,
@@ -776,7 +776,7 @@ function buildSoapSubjective(parent: XmlNode, consultation: KonsultaConsultation
   return parent;
 }
 
-function buildSoapPepert(parent: XmlNode, consultation: KonsultaConsultationData): XmlNode {
+function buildSoapPepert(parent: XmlNode, consultation: KonsultaConsultationData, isOver5Years: boolean): XmlNode {
   const v = consultation.vitals;
   parent.ele('PEPERT', withStatus({
     pSystolic: v.systolic,
@@ -787,7 +787,7 @@ function buildSoapPepert(parent: XmlNode, consultation: KonsultaConsultationData
     pHeight: v.height,
     pWeight: v.weight,
     pBMI: v.bmi,
-    pZScore: v.zScore,
+    pZScore: isOver5Years ? '' : v.zScore,
     pLeftVision: v.leftVision,
     pRightVision: v.rightVision,
     pLength: v.length,
@@ -1088,6 +1088,37 @@ function buildStubSoap(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
   return soap.up();
 }
 
+function buildNomedMedicine(parent: XmlNode, caseNo: string, transNo: string): XmlNode {
+  parent.ele('MEDICINE', withStatus({
+    pHciCaseNo: caseNo,
+    pHciTransNo: transNo,
+    pCategory: '-',
+    pDrugCode: 'NOMED00000000000000000000000',
+    pGenericCode: 'NOMED',
+    pSaltCode: '00000',
+    pStrengthCode: '00000',
+    pFormCode: '00000',
+    pUnitCode: '00000',
+    pPackageCode: '00000',
+    pOtherMedicine: '',
+    pOthMedDrugGrouping: '',
+    pRoute: '',
+    pQuantity: '0',
+    pActualUnitPrice: '0.00',
+    pTotalAmtPrice: '0.00',
+    pInstructionQuantity: '',
+    pInstructionStrength: '',
+    pInstructionFrequency: '',
+    pPrescribingPhysician: '',
+    pIsDispensed: 'N',
+    pDateDispensed: '',
+    pDispensingPersonnel: '',
+    pIsApplicable: 'N',
+    pDateAdded: '',
+  })).up();
+  return parent;
+}
+
 function buildStubMedicine(parent: XmlNode): XmlNode {
   parent.ele('MEDICINE', withStatus({
     pHciCaseNo: '',
@@ -1207,6 +1238,14 @@ export function generateKonsultaXml(options: KonsultaXmlOptions): string {
     const p = patient.patient;
     const m = patient.member;
 
+    const dob = new Date(p.dob);
+    const now = new Date();
+    const years = now.getFullYear() - dob.getFullYear();
+    const months = now.getMonth() - dob.getMonth();
+    const days = now.getDate() - dob.getDate();
+    const totalMonths = years * 12 + months + (days < 0 ? -1 : 0);
+    const isOver5Years = totalMonths > 60;
+
     const profile = profiling.ele('PROFILE', withStatus({
       pHciCaseNo: patient.enlistment.hciCaseNo,
       pHciTransNo: pr.hciTransNo,
@@ -1231,7 +1270,7 @@ export function generateKonsultaXml(options: KonsultaXmlOptions): string {
     buildImmunizations(profile, patient);
     buildMensHist(profile, patient);
     buildPregHist(profile, patient);
-    buildProfilePepert(profile, patient);
+    buildProfilePepert(profile, patient, isOver5Years);
     buildBloodType(profile, patient);
     buildPeGenSurvey(profile, patient);
     buildProfilePeMiscs(profile, patient);
@@ -1245,6 +1284,14 @@ export function generateKonsultaXml(options: KonsultaXmlOptions): string {
   // ── SOAPS ─────────────────────────────────────────────────────────────────
   const soaps = doc.ele('SOAPS');
   for (const patient of patients) {
+    const dob = new Date(patient.patient.dob);
+    const now = new Date();
+    const years = now.getFullYear() - dob.getFullYear();
+    const months = now.getMonth() - dob.getMonth();
+    const days = now.getDate() - dob.getDate();
+    const totalMonths = years * 12 + months + (days < 0 ? -1 : 0);
+    const isOver5Years = totalMonths > 60;
+
     const consultations = patient.consultations ?? [];
     for (const consultation of consultations) {
       const soapNode = soaps.ele('SOAP', withStatus({
@@ -1262,7 +1309,7 @@ export function generateKonsultaXml(options: KonsultaXmlOptions): string {
       }));
 
           buildSoapSubjective(soapNode, consultation);
-          buildSoapPepert(soapNode, consultation);
+          buildSoapPepert(soapNode, consultation, isOver5Years);
           buildSoapPeMiscs(soapNode, consultation);
           buildSoapPeSpecific(soapNode, consultation);
           buildSoapIcds(soapNode, consultation);
@@ -1565,8 +1612,18 @@ export function generateKonsultaXml(options: KonsultaXmlOptions): string {
         })).up();
       }
     } else {
-      // DTD requires at least one MEDICINE — emit stub
-      buildStubMedicine(medicines);
+      // DTD requires at least one MEDICINE — emit stub.
+      // For Tagging 2, we emit a NOMED stub for each patient's consultation to satisfy ePRES validation.
+      let emitted = false;
+      for (const p of patients) {
+        for (const c of p.consultations ?? []) {
+          buildNomedMedicine(medicines, p.enlistment.hciCaseNo, c.hciTransNo);
+          emitted = true;
+        }
+      }
+      if (!emitted) {
+        buildStubMedicine(medicines);
+      }
     }
   }
   medicines.up();

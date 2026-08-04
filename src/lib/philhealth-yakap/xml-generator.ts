@@ -1,4 +1,5 @@
-import { create } from 'xmlbuilder2';
+import { create, builder } from 'xmlbuilder2';
+import type { XMLBuilder } from 'xmlbuilder2/lib/interfaces';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Interfaces
@@ -298,7 +299,7 @@ const DEFAULT_DRUG_CODE = 'NOMED00000000000000000000000';
 // Helper: Common attributes added to every element
 // ─────────────────────────────────────────────────────────────────────────────
 
-function toUpperAttr(attrs: Record<string, string>): Record<string, string> {
+function toUpperAttr(attrs: Record<string, string | undefined>): Record<string, string> {
   const result: Record<string, string> = {};
   for (const [k, v] of Object.entries(attrs)) {
     result[k] = v ? String(v).toUpperCase() : '';
@@ -306,7 +307,7 @@ function toUpperAttr(attrs: Record<string, string>): Record<string, string> {
   return result;
 }
 
-function withStatus(attrs: Record<string, string>): Record<string, string> {
+function withStatus(attrs: Record<string, string | undefined>): Record<string, string> {
   return {
     ...toUpperAttr(attrs),
     pReportStatus: REPORT_STATUS,
@@ -318,8 +319,7 @@ function withStatus(attrs: Record<string, string>): Record<string, string> {
 // Builder helpers for Profile child elements
 // ─────────────────────────────────────────────────────────────────────────────
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type XmlNode = any;
+type XmlNode = XMLBuilder;
 
 function buildMedHists(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
   const medhists = parent.ele('MEDHISTS');
@@ -428,9 +428,9 @@ function mapDeliveryType(val?: string | null): string {
   return 'X';
 }
 
-function emitPeMiscFields(pemiscs: XmlNode, pe: any): boolean {
+function emitPeMiscFields(pemiscs: XmlNode, pe: Record<string, string | null | undefined>): boolean {
   let added = false;
-  const categories: Array<{ attr: string; val: any }> = [
+  const categories: Array<{ attr: string; val: string | null | undefined }> = [
     { attr: 'pSkinId', val: pe.skinId },
     { attr: 'pHeentId', val: pe.heentId },
     { attr: 'pChestId', val: pe.chestId },
@@ -721,7 +721,7 @@ function buildNcdQAns(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
     pQid23_Yn: mapNA(patient.profile.ncdqans?.q23),
     pQid24_Yn: mapNA(patient.profile.ncdqans?.q24),
   };
-  parent.ele('NCDQANS', withStatus(attrs as any)).up();
+  parent.ele('NCDQANS', withStatus(attrs)).up();
   return parent;
 }
 

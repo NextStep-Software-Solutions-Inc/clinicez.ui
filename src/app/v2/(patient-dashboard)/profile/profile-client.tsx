@@ -56,6 +56,7 @@ import { VaccinationsInlineForm } from '@/components/v2/patients/forms/Vaccinati
 import { DisabilitiesInlineForm } from '@/components/v2/patients/forms/DisabilitiesInlineForm'
 import { SurgicalHistoryInlineForm } from '@/components/v2/patients/forms/SurgicalHistoryInlineForm'
 import { PhysicalExamInlineForm } from '@/components/v2/patients/forms/PhysicalExamInlineForm'
+import { getPhysicalExamLibrariesAction } from '@/actions/super-admin/physical-exam-library.action'
 import type { SerializedPatientHealthRecordsResponse } from '@/types/patient-profile'
 import { formatBloodType, calculateDetailedAge } from '@/lib/utils'
 import { DownloadPHRButton } from '@/components/v2/phr/DownloadPHRButton'
@@ -124,6 +125,29 @@ export default function ProfileClient({ patient }: ProfileClientProps) {
   const [patientData, setPatientData] = useState<SerializedPatientHealthRecordsResponse>(patient)
   const [editingSections, setEditingSections] = useState<Record<string, boolean>>({})
   const [savingSections, setSavingSections] = useState<Record<string, boolean>>({})
+  const [peLibraries, setPeLibraries] = useState<any[]>([])
+
+  useEffect(() => {
+    async function loadPELibraries() {
+      try {
+        const res = await getPhysicalExamLibrariesAction()
+        if (res && 'data' in res && res.data) {
+          setPeLibraries(res.data)
+        }
+      } catch (err) {
+        console.error('Failed to load PE libraries:', err)
+      }
+    }
+    loadPELibraries()
+  }, [])
+
+  const peLibraryMap = useMemo(() => {
+    const map = new Map<string, string>()
+    peLibraries.forEach((item: any) => {
+      map.set(`${item.category}:${item.code}`, item.description)
+    })
+    return map
+  }, [peLibraries])
 
   // Batch edit form refs
   const demographicsSaveRef = useRef<{ submit: () => Promise<void>; hasChanges: boolean } | null>(null)
@@ -133,6 +157,7 @@ export default function ProfileClient({ patient }: ProfileClientProps) {
   const medicalSaveRef = useRef<{ submit: () => Promise<void>; hasChanges: boolean } | null>(null)
   const familySaveRef = useRef<{ submit: () => Promise<void>; hasChanges: boolean } | null>(null)
   const philhealthSaveRef = useRef<{ submit: () => Promise<void>; hasChanges: boolean } | null>(null)
+  const physicalExamSaveRef = useRef<{ submit: () => Promise<void>; hasChanges: boolean } | null>(null)
 
   // Mappers
   const demographicsData = useMemo(() => mapPatientDataToDemographicsFormInput(patientData), [patientData])
@@ -800,13 +825,15 @@ export default function ProfileClient({ patient }: ProfileClientProps) {
                   editing={editingSections['physical-exam']}
                   onEdit={() => toggleEdit('physical-exam', true)}
                   onCancel={() => toggleEdit('physical-exam', false)}
-                  isAutoSaveForm
+                  onSave={() => handleSaveSection('physical-exam', physicalExamSaveRef)}
+                  saving={savingSections['physical-exam']}
                 >
                   {editingSections['physical-exam'] ? (
                     <PhysicalExamInlineForm
                       patientId={patientData.id}
                       currentData={patientData.physicalExaminations?.[0] || {}}
                       onSuccess={handleRefresh}
+                      saveRef={physicalExamSaveRef}
                     />
                   ) : (
                     <div className="space-y-4">
@@ -814,16 +841,22 @@ export default function ProfileClient({ patient }: ProfileClientProps) {
                         <div className="space-y-3">
                           {patientData.physicalExaminations.map((exam) => {
                             const findings = [
-                              { label: 'General Survey', value: exam.generalSurveyRemarks },
-                              { label: 'HEENT', value: exam.heentRemarks },
-                              { label: 'Chest', value: exam.chestRemarks },
-                              { label: 'Heart', value: exam.heartRemarks },
-                              { label: 'Abdomen', value: exam.abdomenRemarks },
-                              { label: 'GU', value: exam.guRemarks },
-                              { label: 'Skin', value: exam.skinRemarks },
-                              { label: 'Neuro', value: exam.neuroRemarks },
-                              { label: 'Rectal', value: exam.rectalRemarks },
-                            ].filter((f) => !!f.value)
+                              { label: 'General Survey', category: 'GENSURVEY', id: exam.generalSurveyId, remarks: exam.generalSurveyRemarks },
+                              { label: 'HEENT', category: 'HEENT', id: exam.heentId, remarks: exam.heentRemarks },
+                              { label: 'Chest/Lungs', category: 'CHEST', id: exam.chestId, remarks: exam.chestRemarks },
+                              { label: 'Cardiovascular System', category: 'HEART', id: exam.heartId, remarks: exam.heartRemarks },
+                              { label: 'Abdomen', category: 'ABDOMEN', id: exam.abdomenId, remarks: exam.abdomenRemarks },
+                              { label: 'Genitourinary', category: 'GU', id: exam.guId, remarks: exam.guRemarks },
+                              { label: 'Skin/Extremities', category: 'SKIN', id: exam.skinId, remarks: exam.skinRemarks },
+                              { label: 'Neurological', category: 'NEURO', id: exam.neuroId, remarks: exam.neuroRemarks },
+                              { label: 'Rectal', category: 'RECTAL', id: exam.rectalId, remarks: exam.rectalRemarks },
+                            ]
+                              .map((item) => {
+                                const statusDesc = item.id ? (peLibraryMap.get(`${item.category}:${item.id}`) || item.id) : null
+                                const value = [statusDesc, item.remarks].filter(Boolean).join(' — ')
+                                return { label: item.label, value }
+                              })
+                              .filter((f) => !!f.value)
 
                             return (
                               <div key={exam.id} className="p-4 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30">

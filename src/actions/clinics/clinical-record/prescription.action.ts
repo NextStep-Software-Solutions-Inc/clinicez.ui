@@ -9,6 +9,55 @@ import { Prisma } from "@prisma/client";
 import { createNotification } from "@/actions/notifications/notification.action";
 import { getNextSequenceNumber } from "@/lib/sequence-generator";
 import { formatKonsultaHciNumber } from "@/lib/format-sequence";
+const DEFAULT_PRESCRIPTION_HTML_TEMPLATE = `
+<div style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; color: #333;">
+  <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px;">
+    <h2 style="margin: 0; font-size: 24px; text-transform: uppercase;">{{ doctorName }}</h2>
+    <p style="margin: 4px 0 0 0; font-size: 14px;">PRC Lic No: {{ licenseNo }} | PTR No: {{ ptrNo }}</p>
+    <p style="margin: 2px 0 0 0; font-size: 14px;">{{ doctorAddress }}</p>
+  </div>
+
+  <div style="display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 14px; border-bottom: 1px solid #ccc; padding-bottom: 10px;">
+    <div>
+      <p style="margin: 2px 0;"><strong>Patient:</strong> {{ name }}</p>
+      <p style="margin: 2px 0;"><strong>Address:</strong> {{ address }}</p>
+    </div>
+    <div style="text-align: right;">
+      <p style="margin: 2px 0;"><strong>Age / Gender:</strong> {{ age }} / {{ gender }}</p>
+      <p style="margin: 2px 0;"><strong>Date:</strong> {{ requestDate }}</p>
+    </div>
+  </div>
+
+  <div style="font-size: 32px; font-weight: bold; font-family: serif; margin-bottom: 15px;">Rx</div>
+
+  <div style="min-height: 250px; font-size: 15px; line-height: 1.6;">
+    {% if medicines and medicines.size > 0 %}
+      {% for med in medicines %}
+        <div style="margin-bottom: 12px;">
+          <strong>{{ med.index }}.) {{ med.label }}</strong>
+          {% if med.sig %}<div style="margin-left: 20px; font-style: italic;">Sig: {{ med.sig }}</div>{% endif %}
+        </div>
+      {% endfor %}
+    {% elsif medicine %}
+      {{ medicine }}
+    {% endif %}
+  </div>
+
+  <div style="margin-top: 40px; display: flex; justify-content: flex-end; text-align: center;">
+    <div style="width: 250px;">
+      {% if eSignatureUrl %}
+        <div style="margin-bottom: -15px;">
+          <img src="{{ eSignatureUrl }}" style="max-height: 60px; object-fit: contain;" alt="Doctor Signature" />
+        </div>
+      {% endif %}
+      <div style="border-top: 1px solid #000; padding-top: 5px; font-weight: bold;">
+        {{ doctorName }}
+      </div>
+      <div style="font-size: 12px; color: #555;">Lic No. {{ licenseNo }}</div>
+    </div>
+  </div>
+</div>
+`;
 
 export type GetPrescriptionFilters = {
   clinicUid: string;
@@ -250,16 +299,77 @@ export const createPrescriptionAction = withErrorHandling(async (input: CreatePr
       "create prescriptions"
     );
 
-    const documentTemplate = await prisma.documentTemplate.findFirst({
+    // Resolve prescription document template with fallback:
+    // 1) Clinic prescription setting
+    const prescriptionSetting = await prisma.clinicPrescriptionSetting.findFirst({
       where: {
-        isActive: true,
         Clinic: { clinicUid },
-        DocumentTemplateType: {
-          name: "prescription"
-        }
-      }
+        PrescriptionTemplate: { isActive: true, deletedAt: null }
+      },
+      select: { PrescriptionTemplate: true }
     });
-    if (!documentTemplate) throw new Error("Prescription template not found");
+
+    let documentTemplate = prescriptionSetting?.PrescriptionTemplate ?? null;
+
+    // 2) Active prescription template belonging to this clinic
+    if (!documentTemplate) {
+      documentTemplate = await prisma.documentTemplate.findFirst({
+        where: {
+          isActive: true,
+          deletedAt: null,
+          Clinic: { clinicUid },
+          DocumentTemplateType: {
+            name: { equals: "prescription", mode: "insensitive" }
+          }
+        }
+      });
+    }
+
+    // 3) Any active system-wide prescription template
+    if (!documentTemplate) {
+      documentTemplate = await prisma.documentTemplate.findFirst({
+        where: {
+          isActive: true,
+          deletedAt: null,
+          DocumentTemplateType: {
+            name: { equals: "prescription", mode: "insensitive" }
+          }
+        }
+      });
+    }
+
+    // 4) Auto-create default template if none exists in the database
+    if (!documentTemplate) {
+      let docType = await prisma.documentTemplateType.findFirst({
+        where: { name: { equals: "prescription", mode: "insensitive" } }
+      });
+
+      if (!docType) {
+        docType = await prisma.documentTemplateType.create({
+          data: {
+            name: "prescription",
+            description: "Prescription document template"
+          }
+        });
+      }
+
+      const clinicObj = await prisma.clinic.findUnique({
+        where: { clinicUid },
+        select: { id: true }
+      });
+
+      if (!clinicObj) throw new Error("Clinic not found");
+
+      documentTemplate = await prisma.documentTemplate.create({
+        data: {
+          clinicId: clinicObj.id,
+          name: "Default Prescription Template",
+          type: docType.id,
+          isActive: true,
+          htmlContent: DEFAULT_PRESCRIPTION_HTML_TEMPLATE,
+        }
+      });
+    }
 
     const clinic = await prisma.clinic.findUniqueOrThrow({
       where: { clinicUid },

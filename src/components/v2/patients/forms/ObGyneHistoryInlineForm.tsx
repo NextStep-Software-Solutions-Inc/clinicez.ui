@@ -12,7 +12,13 @@ import { toast } from 'sonner'
 
 export interface ObGyneHistoryInlineFormProps {
   userId: string
-  currentData?: Partial<ObGyneHistoryFormInput>
+  currentData?: Partial<
+    Omit<ObGyneHistoryFormInput, 'menopauseStatus' | 'typeOfDelivery' | 'lastMenstrualPeriod'> & {
+      menopauseStatus?: string | null
+      typeOfDelivery?: string | null
+      lastMenstrualPeriod?: Date | string | null
+    }
+  >
   onSuccess?: () => void
   saveRef?: React.MutableRefObject<{ submit: () => Promise<void>; hasChanges: boolean } | null>
   onDirtyChange?: (isDirty: boolean) => void
@@ -31,7 +37,7 @@ export function ObGyneHistoryInlineForm({
       menarche: data.menarche ?? null,
       lastMenstrualPeriod: data.lastMenstrualPeriod ? new Date(data.lastMenstrualPeriod) : null,
       menopauseAge: data.menopauseAge ?? null,
-      menopauseStatus: data.menopauseStatus ?? null,
+      menopauseStatus: (data.menopauseStatus as ObGyneHistoryFormInput['menopauseStatus']) ?? null,
       ageAtFirstSexualIntercourse: data.ageAtFirstSexualIntercourse ?? null,
       isFamilyPlanning: data.isFamilyPlanning ?? false,
       birthControlMethod: data.birthControlMethod ?? '',
@@ -44,7 +50,7 @@ export function ObGyneHistoryInlineForm({
       premature: data.premature ?? null,
       abortion: data.abortion ?? null,
       livingChildren: data.livingChildren ?? null,
-      typeOfDelivery: data.typeOfDelivery ?? null,
+      typeOfDelivery: (data.typeOfDelivery as ObGyneHistoryFormInput['typeOfDelivery']) ?? null,
       hasPreEclampsia: data.hasPreEclampsia ?? false,
     }
   }, [currentData])

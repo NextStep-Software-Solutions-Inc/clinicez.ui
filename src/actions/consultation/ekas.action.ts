@@ -88,14 +88,28 @@ async function fetchConsultationData(ticketId: number, clinicUid: string) {
         select: {
           Medicines: {
             where: { isActive: true },
-            select: { name: true, genericName: true, dosage: true, qty: true, unit: true, frequency: true, duration: true }
+            select: {
+              name: true,
+              genericName: true,
+              dosage: true,
+              qty: true,
+              unit: true,
+              frequency: true,
+              duration: true,
+              PhilHealthData: {
+                select: {
+                  drugCode: true,
+                  genericCode: true,
+                }
+              }
+            }
           }
         }
       }
     }
   });
 
-  if (!ticket) throw new Error("Consultation ticket not found");
+  if (!ticket) throw new Error("Consultation ticket not fouPnd");
   if (!ticket.ClinicPatient?.Patient) throw new Error("Patient not attached to consultation");
 
   // Fetch all diagnostic results for this consultation ticket OR for this patient
@@ -119,6 +133,7 @@ async function fetchConsultationData(ticketId: number, clinicUid: string) {
 
   return {
     ...ticket,
+    ClinicPatient: ticket.ClinicPatient!,
     KonsultaDiagnosticResults: diagnosticResults,
   };
 }
@@ -143,7 +158,9 @@ const EXAM_TYPE_TO_SERVICE_CODE: Record<string, number> = {
   FOBT: 18,
 };
 
-async function prepareFilledPdf(ticket: any, templateFileName: string) {
+type ConsultationData = Awaited<ReturnType<typeof fetchConsultationData>>;
+
+async function prepareFilledPdf(ticket: ConsultationData, templateFileName: string) {
   const clinic = ticket.Clinic;
   const patientUser = ticket.ClinicPatient.Patient;
   const enlistment = ticket.ClinicPatient.PhilHealthKonsultaEnlistments?.[0];
@@ -157,7 +174,7 @@ async function prepareFilledPdf(ticket: any, templateFileName: string) {
 
   const rx = ticket.Prescriptions[0];
   const prescriptionText = rx?.Medicines?.map(
-    (m: any) => `${m.genericName || m.name} ${m.dosage || ""} - ${m.qty} ${m.unit || "tabs"}\nSig: ${m.frequency || ""} ${m.duration ? `for ${m.duration}` : ""}`
+    (m) => `${m.genericName || m.name} ${m.dosage || ""} - ${m.qty} ${m.unit || "tabs"}\nSig: ${m.frequency || ""} ${m.duration ? `for ${m.duration}` : ""}`
   ).join("\n\n") || "";
 
   const patientName = `${patientUser.firstName || ""} ${patientUser.lastName || ""}`.trim();
@@ -177,6 +194,20 @@ async function prepareFilledPdf(ticket: any, templateFileName: string) {
   const pin = enlistment?.dependentPin || enlistment?.memberPin || "";
   const memberType = enlistment?.dependentPin ? "DEPENDENT" : "MEMBER";
 
+  const isEpress = templateFileName.toLowerCase().includes("epress");
+  const hasActualMedicines = ticket.Prescriptions?.some((rx) =>
+    rx.Medicines?.some((m) => {
+      const isNomed =
+        m.name?.toUpperCase() === "NOMED" ||
+        m.genericName?.toUpperCase() === "NOMED" ||
+        m.PhilHealthData?.genericCode?.toUpperCase() === "NOMED" ||
+        m.PhilHealthData?.drugCode?.toUpperCase().startsWith("NOMED");
+      return !isNomed;
+    })
+  ) ?? false;
+
+  const shouldBlankPhysician = isEpress && !hasActualMedicines;
+
   const patientData = {
     hciName: clinic?.name || "",
     caseNo: ticket.caseNumber || enlistment?.hciCaseNo || "",
@@ -189,9 +220,9 @@ async function prepareFilledPdf(ticket: any, templateFileName: string) {
     pin: pin,
     membershipCategory: "",
     membershipType: memberType,
-    physicianName: physicianName,
-    prcLicense: profDetails?.licenseNumber || "",
-    ptr: profDetails?.ptrNumber || "",
+    physicianName: shouldBlankPhysician ? "" : physicianName,
+    prcLicense: shouldBlankPhysician ? "" : (profDetails?.licenseNumber || ""),
+    ptr: shouldBlankPhysician ? "" : (profDetails?.ptrNumber || ""),
     s2No: "",
     prescriptionText: prescriptionText,
     nextDispenseDate: "",
@@ -206,7 +237,7 @@ async function prepareFilledPdf(ticket: any, templateFileName: string) {
   const setTextField = (fieldName: string, value: string) => {
     try {
       const field = form.getTextField(fieldName);
-      if (field && value) field.setText(value);
+      if (field) field.setText(value || "");
     } catch (e) {
       // ignore
     }
@@ -251,9 +282,12 @@ async function prepareFilledPdf(ticket: any, templateFileName: string) {
       const page0 = pdfDoc.getPages()[0];
       const annots = page0.node.Annots();
       if (annots) {
-        const idx = annots.indexOf((dateWidget as any).ref);
-        if (typeof idx === "number" && idx >= 0) {
-          annots.remove(idx);
+        const dateWidgetRef = pdfDoc.context.getObjectRef(dateWidget.dict);
+        if (dateWidgetRef) {
+          const idx = annots.indexOf(dateWidgetRef);
+          if (typeof idx === "number" && idx >= 0) {
+            annots.remove(idx);
+          }
         }
       }
     }
@@ -293,12 +327,13 @@ async function prepareFilledPdf(ticket: any, templateFileName: string) {
         const checkBox = form.getCheckBox(pdfFields.cb);
         if (checkBox) checkBox.check();
 
-        const rawDate = diag.resultData?.labDate || diag.transDate || diag.createdAt;
+        const resultDataObj = diag.resultData as Record<string, any> | null;
+        const rawDate = resultDataObj?.labDate || diag.transDate || diag.createdAt;
         const dateVal = rawDate ? format(new Date(rawDate), "MM/dd/yyyy") : "";
 
         const performerVal =
-          diag.resultData?.performer ||
-          diag.resultData?.performedBy ||
+          resultDataObj?.performer ||
+          resultDataObj?.performedBy ||
           patientData.physicianName;
 
         setTextField(pdfFields.perf, performerVal);

@@ -15,6 +15,7 @@ import type {
   User,
   VerificationStatus,
 } from '@prisma/client'
+import type { NcdQuestionnaireSchemaType } from '@/schemas/ncd-questionnaire-schema'
 
 export interface MedicalHistoryData {
   id: number
@@ -92,7 +93,7 @@ export interface SerializedPatientHealthRecordsResponse {
     updatedAt: string
     deletedAt: string | null
   }>
-  ncdQuestionnaire: { id: number } | null
+  ncdQuestionnaire: NcdQuestionnaireSchemaType | null
 
   vitalSigns: Array<Omit<VitalSign, 'dateTaken' | 'createdAt' | 'updatedAt' | 'deletedAt'> & { dateTaken: string; createdAt: string; updatedAt: string; deletedAt: string | null }>
   latestVitals: (Omit<VitalSign, 'dateTaken' | 'createdAt' | 'updatedAt' | 'deletedAt'> & { dateTaken: string; createdAt: string; updatedAt: string; deletedAt: string | null }) | null

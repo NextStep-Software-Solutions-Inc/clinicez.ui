@@ -59,6 +59,7 @@ import { VaccinationsInlineForm } from './forms/VaccinationsInlineForm'
 import { DisabilitiesInlineForm } from './forms/DisabilitiesInlineForm'
 import { SurgicalHistoryInlineForm } from './forms/SurgicalHistoryInlineForm'
 import { PhysicalExamInlineForm } from './forms/PhysicalExamInlineForm'
+import { NcdQuestionnaireEditForm } from '@/components/health-records/ncd-questionnaire-edit-form'
 import { getPhysicalExamLibrariesAction } from '@/actions/super-admin/physical-exam-library.action'
 import type { PatientHealthRecordsResponse } from '@/types/patient-profile'
 import type { PhysicalExamLibrary } from '@prisma/client'
@@ -273,6 +274,7 @@ export default function ClinicPatientProfileClient({
   }
 
   const isFemale = patientData.gender === 'FEMALE'
+  const isEligibleForNcd = patientData.dob ? (calculateAge(patientData.dob) ?? 0) >= 25 : false
 
   return (
     <div className="w-full space-y-3.5 sm:space-y-5 pb-20 sm:pb-24">
@@ -1305,6 +1307,62 @@ export default function ClinicPatientProfileClient({
                 )}
               </CardContainer>
             </motion.div>
+
+            {/* NCD High Risk Assessment Card */}
+            {isEligibleForNcd && (
+              <motion.div variants={cardVariants}>
+                <CardContainer
+                  title="NCD High Risk Assessment"
+                  icon={ClipboardList}
+                  accentColor="bg-teal-500"
+                  editing={editingSections['ncd']}
+                  onEdit={() => toggleEdit('ncd', true)}
+                  onCancel={() => toggleEdit('ncd', false)}
+                  isAutoSaveForm
+                >
+                  {editingSections['ncd'] ? (
+                    <NcdQuestionnaireEditForm
+                      patientId={patientId}
+                      initialData={patientData.ncdQuestionnaire}
+                      onClose={() => {
+                        toggleEdit('ncd', false);
+                        handleRefresh();
+                      }}
+                    />
+                  ) : (
+                    <div className="space-y-4">
+                      {patientData.ncdQuestionnaire ? (
+                        <div className="space-y-2">
+                          <div className="p-4 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30 flex flex-col gap-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-bold text-teal-700 dark:text-teal-400 uppercase tracking-wider">
+                                Assessment Status
+                              </span>
+                              <span className="text-[10px] bg-green-100 dark:bg-green-950 text-green-800 dark:text-green-300 font-semibold px-2 py-0.5 rounded border border-green-200 dark:border-green-800">
+                                Completed
+                              </span>
+                            </div>
+                            <p className="text-sm text-slate-700 dark:text-slate-300">
+                              The NCD High Risk Assessment questionnaire has been recorded for this patient.
+                            </p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">
+                              Click "Edit" above to view, modify, or update questionnaire responses.
+                            </p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-center py-8 text-slate-500 dark:text-slate-400 text-sm">
+                          <ClipboardList className="w-10 h-10 mx-auto text-teal-400/40 mb-2" />
+                          <p className="font-semibold text-slate-700 dark:text-slate-300">No NCD Risk Assessment recorded.</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Click "Edit" above to answer the NCD High Risk Assessment questionnaire.</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </CardContainer>
+              </motion.div>
+            )}
+
           </motion.div>
         )}
 

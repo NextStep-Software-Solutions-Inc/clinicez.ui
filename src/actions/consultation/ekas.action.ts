@@ -119,6 +119,7 @@ async function fetchConsultationData(ticketId: number, clinicUid: string) {
 
   return {
     ...ticket,
+    ClinicPatient: ticket.ClinicPatient!,
     KonsultaDiagnosticResults: diagnosticResults,
   };
 }
@@ -143,7 +144,9 @@ const EXAM_TYPE_TO_SERVICE_CODE: Record<string, number> = {
   FOBT: 18,
 };
 
-async function prepareFilledPdf(ticket: any, templateFileName: string) {
+type ConsultationData = Awaited<ReturnType<typeof fetchConsultationData>>;
+
+async function prepareFilledPdf(ticket: ConsultationData, templateFileName: string) {
   const clinic = ticket.Clinic;
   const patientUser = ticket.ClinicPatient.Patient;
   const enlistment = ticket.ClinicPatient.PhilHealthKonsultaEnlistments?.[0];
@@ -157,7 +160,7 @@ async function prepareFilledPdf(ticket: any, templateFileName: string) {
 
   const rx = ticket.Prescriptions[0];
   const prescriptionText = rx?.Medicines?.map(
-    (m: any) => `${m.genericName || m.name} ${m.dosage || ""} - ${m.qty} ${m.unit || "tabs"}\nSig: ${m.frequency || ""} ${m.duration ? `for ${m.duration}` : ""}`
+    (m) => `${m.genericName || m.name} ${m.dosage || ""} - ${m.qty} ${m.unit || "tabs"}\nSig: ${m.frequency || ""} ${m.duration ? `for ${m.duration}` : ""}`
   ).join("\n\n") || "";
 
   const patientName = `${patientUser.firstName || ""} ${patientUser.lastName || ""}`.trim();
@@ -251,9 +254,12 @@ async function prepareFilledPdf(ticket: any, templateFileName: string) {
       const page0 = pdfDoc.getPages()[0];
       const annots = page0.node.Annots();
       if (annots) {
-        const idx = annots.indexOf((dateWidget as any).ref);
-        if (typeof idx === "number" && idx >= 0) {
-          annots.remove(idx);
+        const dateWidgetRef = pdfDoc.context.getObjectRef(dateWidget.dict);
+        if (dateWidgetRef) {
+          const idx = annots.indexOf(dateWidgetRef);
+          if (typeof idx === "number" && idx >= 0) {
+            annots.remove(idx);
+          }
         }
       }
     }
@@ -293,12 +299,13 @@ async function prepareFilledPdf(ticket: any, templateFileName: string) {
         const checkBox = form.getCheckBox(pdfFields.cb);
         if (checkBox) checkBox.check();
 
-        const rawDate = diag.resultData?.labDate || diag.transDate || diag.createdAt;
+        const resultDataObj = diag.resultData as Record<string, any> | null;
+        const rawDate = resultDataObj?.labDate || diag.transDate || diag.createdAt;
         const dateVal = rawDate ? format(new Date(rawDate), "MM/dd/yyyy") : "";
 
         const performerVal =
-          diag.resultData?.performer ||
-          diag.resultData?.performedBy ||
+          resultDataObj?.performer ||
+          resultDataObj?.performedBy ||
           patientData.physicianName;
 
         setTextField(pdfFields.perf, performerVal);

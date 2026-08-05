@@ -265,18 +265,18 @@ async function prepareFilledPdf(ticket: any, templateFileName: string) {
   // Note: The PDF fillable template has swapped/mismatched field names relative to PhilHealth service codes.
   // This map matches PhilHealth service codes to the actual physical form fields in "eKAS (PC 2024-0013) FILLABLE.pdf".
   const SERVICE_CODE_TO_PDF_FIELDS: Record<number, { cb: string; date: string; perf: string }> = {
-    1: { cb: "checkbox_diag_1", date: "text_diag_1_date", perf: "text_diag_1_performer" },  // CBC (Row 1)
-    2: { cb: "checkbox_diag_6", date: "text_diag_6_date", perf: "text_diag_6_performer" },  // Lipid profile (Row 2)
-    3: { cb: "checkbox_diag_7", date: "text_diag_7_date", perf: "text_diag_7_performer" },  // FBS (Row 3)
-    4: { cb: "checkbox_diag_14", date: "text_diag_14_date", perf: "text_diag_14_performer" }, // OGTT (Row 4)
-    5: { cb: "checkbox_18", date: "text_diag_18_date", perf: "text_diag_18_performer" }, // HbA1c (Row 5)
-    6: { cb: "checkbox_diag_8", date: "text_diag_8_date", perf: "text_diag_8_performer" },  // Creatinine (Row 6)
-    7: { cb: "checkbox_diag_4", date: "text_diag_4_date", perf: "text_diag_4_performer" },  // Chest X-Ray (Row 7)
-    8: { cb: "checkbox_diag_5", date: "text_diag_5_date", perf: "text_diag_5_performer" },  // Sputum (Row 8)
-    9: { cb: "checkbox_diag_9", date: "text_diag_9_date", perf: "text_diag_9_performer" },  // ECG (Row 9)
-    13: { cb: "checkbox_diag_2", date: "text_diag_2_date", perf: "text_diag_2_performer" },  // Urinalysis (Row 10)
+    1:  { cb: "checkbox_diag_1",  date: "text_diag_1_date",  perf: "text_diag_1_performer" },  // CBC (Row 1)
+    2:  { cb: "checkbox_diag_6",  date: "text_diag_6_date",  perf: "text_diag_6_performer" },  // Lipid profile (Row 2)
+    3:  { cb: "checkbox_diag_7",  date: "text_diag_7_date",  perf: "text_diag_7_performer" },  // FBS (Row 3)
+    4:  { cb: "checkbox_diag_14", date: "text_diag_14_date", perf: "text_diag_14_performer" }, // OGTT (Row 4)
+    5:  { cb: "checkbox_18",      date: "text_diag_18_date", perf: "text_diag_18_performer" }, // HbA1c (Row 5)
+    6:  { cb: "checkbox_diag_8",  date: "text_diag_8_date",  perf: "text_diag_8_performer" },  // Creatinine (Row 6)
+    7:  { cb: "checkbox_diag_4",  date: "text_diag_4_date",  perf: "text_diag_4_performer" },  // Chest X-Ray (Row 7)
+    8:  { cb: "checkbox_diag_5",  date: "text_diag_5_date",  perf: "text_diag_5_performer" },  // Sputum (Row 8)
+    9:  { cb: "checkbox_diag_9",  date: "text_diag_9_date",  perf: "text_diag_9_performer" },  // ECG (Row 9)
+    13: { cb: "checkbox_diag_2",  date: "text_diag_2_date",  perf: "text_diag_2_performer" },  // Urinalysis (Row 10)
     14: { cb: "checkbox_diag_13", date: "text_diag_13_date", perf: "text_diag_13_performer" }, // Pap smear (Row 11)
-    15: { cb: "checkbox_diag_3", date: "text_diag_3_date", perf: "text_diag_3_performer" },  // Fecalysis (Row 12)
+    15: { cb: "checkbox_diag_3",  date: "text_diag_3_date",  perf: "text_diag_3_performer" },  // Fecalysis (Row 12)
     18: { cb: "checkbox_diag_15", date: "text_diag_15_date", perf: "text_diag_15_performer" }, // FOBT (Row 13)
   };
 

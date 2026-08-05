@@ -250,77 +250,16 @@ export const createPrescriptionAction = withErrorHandling(async (input: CreatePr
       "create prescriptions"
     );
 
-    // Resolve prescription document template with fallback:
-    // 1) Clinic prescription setting
-    const prescriptionSetting = await prisma.clinicPrescriptionSetting.findFirst({
+    const documentTemplate = await prisma.documentTemplate.findFirst({
       where: {
+        isActive: true,
         Clinic: { clinicUid },
-        PrescriptionTemplate: { isActive: true, deletedAt: null }
-      },
-      select: { PrescriptionTemplate: true }
-    });
-
-    let documentTemplate = prescriptionSetting?.PrescriptionTemplate ?? null;
-
-    // 2) Active prescription template belonging to this clinic
-    if (!documentTemplate) {
-      documentTemplate = await prisma.documentTemplate.findFirst({
-        where: {
-          isActive: true,
-          deletedAt: null,
-          Clinic: { clinicUid },
-          DocumentTemplateType: {
-            name: { equals: "prescription", mode: "insensitive" }
-          }
+        DocumentTemplateType: {
+          name: "prescription"
         }
-      });
-    }
-
-    // 3) Any active system-wide prescription template
-    if (!documentTemplate) {
-      documentTemplate = await prisma.documentTemplate.findFirst({
-        where: {
-          isActive: true,
-          deletedAt: null,
-          DocumentTemplateType: {
-            name: { equals: "prescription", mode: "insensitive" }
-          }
-        }
-      });
-    }
-
-    // 4) Auto-create default template if none exists in the database
-    if (!documentTemplate) {
-      let docType = await prisma.documentTemplateType.findFirst({
-        where: { name: { equals: "prescription", mode: "insensitive" } }
-      });
-
-      if (!docType) {
-        docType = await prisma.documentTemplateType.create({
-          data: {
-            name: "prescription",
-            description: "Prescription document template"
-          }
-        });
       }
-
-      const clinicObj = await prisma.clinic.findUnique({
-        where: { clinicUid },
-        select: { id: true }
-      });
-
-      if (!clinicObj) throw new Error("Clinic not found");
-
-      documentTemplate = await prisma.documentTemplate.create({
-        data: {
-          clinicId: clinicObj.id,
-          name: "Default Prescription Template",
-          type: docType.id,
-          isActive: true,
-          htmlContent: "",
-        }
-      });
-    }
+    });
+    if (!documentTemplate) throw new Error("Prescription template not found");
 
     const clinic = await prisma.clinic.findUniqueOrThrow({
       where: { clinicUid },

@@ -887,7 +887,7 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
                 otherComplaint: sd.otherComplaint || "",
                 painSite: sd.painSite || "",
               },
-              vitals: mapSoapVitals(latestVitals as unknown as VitalSignInput),
+              vitals: mapSoapVitals(soapVitals as unknown as VitalSignInput),
               physicalExam: mapPhysicalExam(t.PhysicalExaminations?.[0]),
               icdCodes,
               managements: (t.ConsultationManagements ?? []).map((m) => ({

@@ -8,10 +8,8 @@ export async function getKonsultaRecommendedService(
   gender: Gender | null
 ) {
   try {
-    // Find the matching configuration
-    // We check where minAgeMonths <= ageMonths and (maxAgeMonths >= ageMonths or maxAgeMonths is null)
-    // And gender matches or is null
-    const recommendedService = await prisma.konsultaRecommendedService.findFirst({
+    // Find all matching configurations
+    const recommendedServices = await prisma.konsultaRecommendedService.findMany({
       where: {
         AND: [
           {
@@ -29,14 +27,34 @@ export async function getKonsultaRecommendedService(
           {
             OR: [
               { gender: null },
-              { gender: gender }
+              { gender: gender || undefined }
             ]
           }
         ]
       },
     });
 
-    return recommendedService;
+    if (recommendedServices.length === 0) {
+      return null;
+    }
+
+    // Merge all matching diagnostic IDs and join consultation descriptions
+    const allIds = Array.from(
+      new Set(recommendedServices.flatMap((s) => s.philhealthDiagnosticIds))
+    );
+    const allDescriptions = recommendedServices
+      .map((s) => s.consultationDescription)
+      .filter(Boolean)
+      .join(", ");
+
+    return {
+      id: recommendedServices[0].id,
+      minAgeMonths: recommendedServices[0].minAgeMonths,
+      maxAgeMonths: recommendedServices[0].maxAgeMonths,
+      gender: recommendedServices[0].gender,
+      consultationDescription: allDescriptions,
+      philhealthDiagnosticIds: allIds,
+    };
   } catch (error) {
     console.error("Failed to fetch Yakap recommended service:", error);
     return null;

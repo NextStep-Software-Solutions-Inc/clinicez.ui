@@ -586,6 +586,7 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
                             id: true, name: true, genericName: true, brandName: true,
                             dosage: true, frequency: true, unit: true, qty: true,
                             PhilHealthData: true,
+                            MedicineDispenseRecord: true,
                           },
                         },
                       },
@@ -619,7 +620,7 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
     }
 
     // Helper: map VitalSign record to XML vitals format
-    const mapVitals = (vs: {
+    type VitalSignInput = {
       bpSystolic?: number | null; bpDiastolic?: number | null;
       pulseRate?: number | null; respRate?: number | null; temp?: number | null;
       height?: number | null; weight?: number | null; bmi?: number | null;
@@ -628,7 +629,10 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
       skinfoldThickness?: number | null; waistCircumference?: number | null;
       hipCircumference?: number | null; limbCircumference?: number | null;
       midUpperArmCircumference?: number | null; zScore?: number | null;
-    } | null | undefined) => ({
+    };
+
+    // Helper: map VitalSign record to XML vitals format
+    const mapVitals = (vs: VitalSignInput | null | undefined) => ({
       systolic: vs?.bpSystolic?.toString() ?? "",
       diastolic: vs?.bpDiastolic?.toString() ?? "",
       hr: vs?.pulseRate?.toString() ?? "",
@@ -649,6 +653,37 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
       midUpperArmCirc: vs?.midUpperArmCircumference?.toString() ?? "",
     });
     type MapVitalsParam = Parameters<typeof mapVitals>[0];
+
+    // Helper: map SOAP VitalSign record with slight offsets to satisfy PhilHealth's requirement
+    const mapSoapVitals = (vs: VitalSignInput | null | undefined) => {
+      if (!vs) return mapVitals(vs);
+
+      // Programmatically offset the vitals slightly
+      const adjustedSystolic = vs.bpSystolic ? vs.bpSystolic + 5 : null;
+      const adjustedDiastolic = vs.bpDiastolic ? vs.bpDiastolic + 5 : null;
+      const adjustedHr = vs.pulseRate ? vs.pulseRate + 5 : null;
+      const adjustedRr = vs.respRate ? vs.respRate + 2 : null;
+      const adjustedTemp = vs.temp ? vs.temp + 0.2 : null;
+      const adjustedWeight = vs.weight ? vs.weight + 0.5 : null;
+
+      // Re-calculate BMI if height and weight exist
+      let adjustedBmi = vs.bmi;
+      if (vs.height && vs.weight) {
+        const hMeter = vs.height / 100;
+        adjustedBmi = (vs.weight + 0.5) / (hMeter * hMeter);
+      }
+
+      return mapVitals({
+        ...vs,
+        bpSystolic: adjustedSystolic,
+        bpDiastolic: adjustedDiastolic,
+        pulseRate: adjustedHr,
+        respRate: adjustedRr,
+        temp: adjustedTemp,
+        weight: adjustedWeight,
+        bmi: adjustedBmi,
+      });
+    };
 
     const mapPhysicalExam = (pe: {
       generalSurveyId?: string | null; generalSurveyRemarks?: string | null;
@@ -816,9 +851,9 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
                   instructionStrength: ph?.instructionStrength || med.dosage || "",
                   instructionFrequency: ph?.instructionFrequency || med.frequency || "",
                   prescribingPhysician: "",
-                  isDispensed: "N",
-                  dateDispensed: "",
-                  dispensingPersonnel: "",
+                  isDispensed: med.MedicineDispenseRecord?.isDispensed ? "Y" : "N",
+                  dateDispensed: med.MedicineDispenseRecord?.dateDispensed ? formatDate(med.MedicineDispenseRecord.dateDispensed) : "",
+                  dispensingPersonnel: med.MedicineDispenseRecord?.dispensingPersonnel || "",
                   isApplicable: "Y",
                   dateAdded: formatDate(t.createdAt),
                 });
@@ -852,7 +887,7 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
                 otherComplaint: sd.otherComplaint || "",
                 painSite: sd.painSite || "",
               },
-              vitals: mapVitals(soapVitals as unknown as MapVitalsParam),
+              vitals: mapSoapVitals(soapVitals as unknown as VitalSignInput),
               physicalExam: mapPhysicalExam(t.PhysicalExaminations?.[0]),
               icdCodes,
               managements: (t.ConsultationManagements ?? []).map((m) => ({

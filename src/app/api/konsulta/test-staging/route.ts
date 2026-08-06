@@ -145,19 +145,19 @@ async function resolveCredentials(
                 pmccNumber: setting.philhealthYakapPmccNumber,
                 certificationId: `KON-DUMMYCERTS-${setting.philhealthYakapPmccNumber}`,
                 cipherKey:
-                    process.env.PHILHEALTH_KONSULTA_CIPHER_KEY ?? "PHilheaLthDuMmyZ15445",
+                    process.env.PHILHEALTH_KONSULTA_CIPHER_KEY ?? "",
             };
         }
     }
     return {
         username: process.env.PHILHEALTH_KONSULTA_USERNAME ?? "",
         password: process.env.PHILHEALTH_KONSULTA_PASSWORD ?? "",
-        hciAccreNo: process.env.PHILHEALTH_KONSULTA_HCI_ACCRE_NO ?? "P10038831",
-        pmccNumber: process.env.PHILHEALTH_KONSULTA_PMCC_NO ?? "Z15445",
+        hciAccreNo: process.env.PHILHEALTH_KONSULTA_HCI_ACCRE_NO ?? "",
+        pmccNumber: process.env.PHILHEALTH_KONSULTA_PMCC_NO ?? "",
         certificationId:
-            process.env.PHILHEALTH_KONSULTA_CERT_ID ?? "KON-DUMMYCERTS-Z15445",
+            process.env.PHILHEALTH_KONSULTA_CERT_ID ?? "",
         cipherKey:
-            process.env.PHILHEALTH_KONSULTA_CIPHER_KEY ?? "PHilheaLthDuMmyZ15445",
+            process.env.PHILHEALTH_KONSULTA_CIPHER_KEY ?? "",
     };
 }
 

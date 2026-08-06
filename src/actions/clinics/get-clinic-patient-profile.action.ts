@@ -286,7 +286,44 @@ export async function getClinicPatientProfileAction({
             createdAt: patient.createdAt.toISOString(),
             updatedAt: patient.updatedAt.toISOString(),
             clinic: clinicPatientRecord.Clinic ?? null,
-            ncdQuestionnaire: null,
+            ncdQuestionnaire: ncdQuestionnaire
+                ? {
+                    id: ncdQuestionnaire.id,
+                    q1: ncdQuestionnaire.q1 || '',
+                    q2: ncdQuestionnaire.q2 || '',
+                    q3: ncdQuestionnaire.q3 || '',
+                    q4: ncdQuestionnaire.q4 || '',
+                    q5: ncdQuestionnaire.q5 || '',
+                    q6: ncdQuestionnaire.q6 || '',
+                    q7: ncdQuestionnaire.q7 || '',
+                    q8: ncdQuestionnaire.q8 || '',
+                    q9: ncdQuestionnaire.q9 || '',
+                    q10: ncdQuestionnaire.q10 || '',
+                    q11: ncdQuestionnaire.q11 || '',
+                    q12: ncdQuestionnaire.q12 || '',
+                    q13: ncdQuestionnaire.q13 || '',
+                    q14: ncdQuestionnaire.q14 || '',
+                    q15: ncdQuestionnaire.q15 || '',
+                    q16: ncdQuestionnaire.q16 || '',
+                    q17: ncdQuestionnaire.q17 || '',
+                    q18: ncdQuestionnaire.q18 || '',
+                    q19: ncdQuestionnaire.q19 || '',
+                    q19_Fbsmg: ncdQuestionnaire.q19_Fbsmg || '',
+                    q19_Fbsmmol: ncdQuestionnaire.q19_Fbsmmol || '',
+                    q19_Fbsdate: ncdQuestionnaire.q19_Fbsdate ? ncdQuestionnaire.q19_Fbsdate.toISOString() : null,
+                    q20: ncdQuestionnaire.q20 || '',
+                    q20_Choleval: ncdQuestionnaire.q20_Choleval || '',
+                    q20_Choledate: ncdQuestionnaire.q20_Choledate ? ncdQuestionnaire.q20_Choledate.toISOString() : null,
+                    q21: ncdQuestionnaire.q21 || '',
+                    q21_Ketonval: ncdQuestionnaire.q21_Ketonval || '',
+                    q21_Ketondate: ncdQuestionnaire.q21_Ketondate ? ncdQuestionnaire.q21_Ketondate.toISOString() : null,
+                    q22: ncdQuestionnaire.q22 || '',
+                    q22_Proteinval: ncdQuestionnaire.q22_Proteinval || '',
+                    q22_Proteindate: ncdQuestionnaire.q22_Proteindate ? ncdQuestionnaire.q22_Proteindate.toISOString() : null,
+                    q23: ncdQuestionnaire.q23 || '',
+                    q24: ncdQuestionnaire.q24 || '',
+                  }
+                : null,
 
             // Medical Profile
             medicalHistories: medical.map((h) => ({
@@ -456,6 +493,7 @@ export async function getClinicPatientProfileAction({
                 createdAt: p.createdAt.toISOString(),
                 updatedAt: p.updatedAt.toISOString(),
                 deletedAt: p.deletedAt ? p.deletedAt.toISOString() : null,
+                pinVerifiedAt: p.pinVerifiedAt ? p.pinVerifiedAt.toISOString() : null,
             })),
             yakapEnlistment: clinicPatientRecord.PhilHealthKonsultaEnlistments?.[0] ? {
                 id: clinicPatientRecord.PhilHealthKonsultaEnlistments[0].id,
@@ -494,9 +532,7 @@ export async function getClinicPatientProfileAction({
             })),
         } as SerializedPatientHealthRecordsResponse;
     } catch (error) {
-        console.error("[GET_CLINIC_PATIENT_PROFILE_ACTION]", {
-            message: error instanceof Error ? error.message : String(error),
-        });
+        console.error("[GET_CLINIC_PATIENT_PROFILE_ACTION]", error);
         return null;
     }
 }

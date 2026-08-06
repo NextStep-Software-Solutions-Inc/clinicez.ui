@@ -86,17 +86,24 @@ function toDatetimeLocal(d: Date): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+import { calculateAgeInMonths } from "@/lib/pediatric-growth-utils";
+
 interface AddVitalsDialogProps {
   /** The Clerk userId of the patient (used by createUserVitalSignAction) */
   patientUserId: string;
+  /** Patient Date of Birth for age-based validation */
+  patientDob?: Date | string | null;
   /** Callback after successful save */
   onSaved?: () => void;
 }
 
-export function AddVitalsDialog({ patientUserId, onSaved }: AddVitalsDialogProps) {
+export function AddVitalsDialog({ patientUserId, patientDob, onSaved }: AddVitalsDialogProps) {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showExtended, setShowExtended] = useState(false);
+
+  const ageMonths = patientDob ? calculateAgeInMonths(new Date(patientDob)) : null;
+  const isPediatric = ageMonths !== null && ageMonths <= 24;
 
   const form = useForm<VitalSignsFormData>({
     resolver: zodResolver(vitalSignsSchema),
@@ -106,12 +113,38 @@ export function AddVitalsDialog({ patientUserId, onSaved }: AddVitalsDialogProps
     },
   });
 
+  const handleOpenChange = useCallback((isOpen: boolean) => {
+    setOpen(isOpen);
+    if (isOpen && isPediatric) {
+      setShowExtended(true);
+    }
+  }, [isPediatric]);
+
   const handleSubmit = useCallback(async () => {
     const valid = await form.trigger();
     if (!valid) {
       const rootMsg = form.formState.errors.root?.message;
       toast.error(rootMsg ?? "Please check the form and fix any errors before saving.");
       return;
+    }
+
+    if (isPediatric) {
+      const vals = form.getValues();
+      const requiredPediatric: { key: keyof VitalSignsFormData; label: string }[] = [
+        { key: "length", label: "Length" },
+        { key: "headCircumference", label: "Head Circumference" },
+        { key: "skinfoldThickness", label: "Skinfold Thickness" },
+        { key: "waistCircumference", label: "Waist Circumference" },
+        { key: "hipCircumference", label: "Hip Circumference" },
+        { key: "limbCircumference", label: "Limb Circumference" },
+        { key: "midUpperArmCircumference", label: "Mid-Upper Arm Circumference" },
+      ];
+      const missing = requiredPediatric.filter((f) => vals[f.key] === undefined || vals[f.key] === null);
+      if (missing.length > 0) {
+        setShowExtended(true);
+        toast.error(`Required pediatric PEPERT fields missing for 0–24 mos patient: ${missing.map(m => m.label).join(", ")}`);
+        return;
+      }
     }
 
     const data = form.getValues();
@@ -139,7 +172,7 @@ export function AddVitalsDialog({ patientUserId, onSaved }: AddVitalsDialogProps
   const selectOnFocus = (e: React.FocusEvent<HTMLInputElement>) => e.target.select();
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <button
           type="button"

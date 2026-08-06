@@ -6,10 +6,10 @@ import { z } from "zod"
  * User-centric: non-judgmental language, optional numeric details
  */
 
-const SMOKING_STATUS = ["NEVER", "FORMER", "CURRENT"] as const
-const ALCOHOL_STATUS = ["NEVER", "OCCASIONAL", "REGULAR", "HEAVY"] as const
-const DRUG_STATUS = ["NEVER", "FORMER", "CURRENT"] as const
-const SEXUALLY_ACTIVE = ["YES", "NO", "INACTIVE"] as const
+const SMOKING_STATUS = ["NEVER", "FORMER", "CURRENT", "NOT_APPLICABLE"] as const
+const ALCOHOL_STATUS = ["NEVER", "OCCASIONAL", "REGULAR", "HEAVY", "NOT_APPLICABLE"] as const
+const DRUG_STATUS = ["NEVER", "FORMER", "CURRENT", "NOT_APPLICABLE"] as const
+const SEXUALLY_ACTIVE = ["YES", "NO", "INACTIVE", "NOT_APPLICABLE"] as const
 
 export const personalHistorySchema = z
   .object({
@@ -71,9 +71,9 @@ export const personalHistorySchema = z
   )
   .refine(
     (data) => {
-      // Only allow bottle count if alcohol use is not "NEVER"
+      // Only allow bottle count if alcohol use is not "NEVER" or "NOT_APPLICABLE"
       if (data.numberOfBottlesPerDay !== null && data.numberOfBottlesPerDay !== undefined) {
-        return data.alcoholStatus !== "NEVER"
+        return data.alcoholStatus !== "NEVER" && data.alcoholStatus !== "NOT_APPLICABLE"
       }
       return true
     },
@@ -93,21 +93,25 @@ export const personalHistoryLabels = {
     NEVER: "Never smoked",
     FORMER: "Former smoker",
     CURRENT: "Currently smoking",
+    NOT_APPLICABLE: "Not Applicable (N/A)",
   },
   alcoholStatus: {
     NEVER: "Never drink alcohol",
     OCCASIONAL: "Occasional (a few times per year)",
     REGULAR: "Regular (weekly)",
     HEAVY: "Heavy use (daily or near-daily)",
+    NOT_APPLICABLE: "Not Applicable (N/A)",
   },
   illicitDrugUse: {
     NEVER: "Never used",
     FORMER: "Former use",
     CURRENT: "Currently using",
+    NOT_APPLICABLE: "Not Applicable (N/A)",
   },
   sexuallyActive: {
     YES: "Yes, currently active",
     NO: "No, not active",
     INACTIVE: "Prefer not to answer",
+    NOT_APPLICABLE: "Not Applicable (N/A)",
   },
 }

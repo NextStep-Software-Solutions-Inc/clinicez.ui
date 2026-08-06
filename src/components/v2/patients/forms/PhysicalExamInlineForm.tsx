@@ -8,11 +8,13 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
-import { Loader2, Trash2 } from 'lucide-react'
+import { Loader2, Trash2, Save } from 'lucide-react'
+import type { PhysicalExamLibrary } from '@prisma/client'
+import type { PhysicalExaminationFormInput } from '@/schemas/physical-examination-schema'
 
 export interface PhysicalExamInlineFormProps {
   patientId: number
-  currentData?: any
+  currentData?: Partial<PhysicalExaminationFormInput> & { id?: string | number }
   onSuccess?: () => void
   saveRef?: React.MutableRefObject<{ submit: () => Promise<void>; hasChanges: boolean } | null>
   onDirtyChange?: (isDirty: boolean) => void
@@ -25,35 +27,37 @@ export function PhysicalExamInlineForm({
   saveRef,
   onDirtyChange,
 }: PhysicalExamInlineFormProps) {
-  const examId = currentData?.id || null
-  const [libraries, setLibraries] = useState<any[]>([])
+  const examId = currentData?.id ? String(currentData.id) : undefined
+  const [libraries, setLibraries] = useState<PhysicalExamLibrary[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
 
   const initialFormValues = useMemo(() => {
+    const data = currentData || {}
     return {
-      generalSurveyId: currentData.generalSurveyId || '',
-      generalSurveyRemarks: currentData.generalSurveyRemarks || '',
-      heentId: currentData.heentId || '',
-      heentRemarks: currentData.heentRemarks || '',
-      chestId: currentData.chestId || '',
-      chestRemarks: currentData.chestRemarks || '',
-      heartId: currentData.heartId || '',
-      heartRemarks: currentData.heartRemarks || '',
-      abdomenId: currentData.abdomenId || '',
-      abdomenRemarks: currentData.abdomenRemarks || '',
-      guId: currentData.guId || '',
-      guRemarks: currentData.guRemarks || '',
-      skinId: currentData.skinId || '',
-      skinRemarks: currentData.skinRemarks || '',
-      neuroId: currentData.neuroId || '',
-      neuroRemarks: currentData.neuroRemarks || '',
-      rectalId: currentData.rectalId || '',
-      rectalRemarks: currentData.rectalRemarks || '',
+      generalSurveyId: data.generalSurveyId || '',
+      generalSurveyRemarks: data.generalSurveyRemarks || '',
+      heentId: data.heentId || '',
+      heentRemarks: data.heentRemarks || '',
+      chestId: data.chestId || '',
+      chestRemarks: data.chestRemarks || '',
+      heartId: data.heartId || '',
+      heartRemarks: data.heartRemarks || '',
+      abdomenId: data.abdomenId || '',
+      abdomenRemarks: data.abdomenRemarks || '',
+      guId: data.guId || '',
+      guRemarks: data.guRemarks || '',
+      skinId: data.skinId || '',
+      skinRemarks: data.skinRemarks || '',
+      neuroId: data.neuroId || '',
+      neuroRemarks: data.neuroRemarks || '',
+      rectalId: data.rectalId || '',
+      rectalRemarks: data.rectalRemarks || '',
     }
   }, [currentData])
 
-  const [formData, setFormData] = useState<any>(initialFormValues)
+  const [formData, setFormData] = useState<PhysicalExaminationFormInput>(initialFormValues)
 
   useEffect(() => {
     async function loadLibraries() {
@@ -79,8 +83,8 @@ export function PhysicalExamInlineForm({
     onDirtyChange?.(hasChanges)
   }, [hasChanges, onDirtyChange])
 
-  const handleFieldChange = (field: string, value: any) => {
-    setFormData((prev: any) => ({
+  const handleFieldChange = (field: keyof PhysicalExaminationFormInput, value: string | null) => {
+    setFormData((prev) => ({
       ...prev,
       [field]: value === '' ? null : value,
     }))
@@ -92,8 +96,9 @@ export function PhysicalExamInlineForm({
       return
     }
 
+    setIsSaving(true)
     try {
-      const result = await savePhysicalExaminationAction(patientId, formData, examId)
+      const result = await savePhysicalExaminationAction(patientId, formData, examId || undefined)
       if (result.error) {
         toast.error(result.error)
         throw new Error(result.error)
@@ -104,6 +109,8 @@ export function PhysicalExamInlineForm({
     } catch (err) {
       toast.error(getActionErrorMessage(err, 'Failed to save physical exam'))
       throw err
+    } finally {
+      setIsSaving(false)
     }
   }
 
@@ -172,8 +179,8 @@ export function PhysicalExamInlineForm({
                 <div className="space-y-1">
                   <label className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Status</label>
                   <Select
-                    value={formData[`${sys.key}Id`] || ''}
-                    onValueChange={(val) => handleFieldChange(`${sys.key}Id`, val)}
+                    value={formData[`${sys.key}Id` as keyof PhysicalExaminationFormInput] || ''}
+                    onValueChange={(val) => handleFieldChange(`${sys.key}Id` as keyof PhysicalExaminationFormInput, val)}
                   >
                     <SelectTrigger className="h-8 text-xs focus:ring-teal-500">
                       <SelectValue placeholder="Select status..." />
@@ -191,8 +198,8 @@ export function PhysicalExamInlineForm({
                 <div className="space-y-1">
                   <label className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Remarks</label>
                   <Input
-                    value={formData[`${sys.key}Remarks`] || ''}
-                    onChange={(e) => handleFieldChange(`${sys.key}Remarks`, e.target.value)}
+                    value={formData[`${sys.key}Remarks` as keyof PhysicalExaminationFormInput] || ''}
+                    onChange={(e) => handleFieldChange(`${sys.key}Remarks` as keyof PhysicalExaminationFormInput, e.target.value)}
                     className="h-8 text-xs focus-visible:ring-teal-500"
                     placeholder="Additional details..."
                   />
@@ -203,19 +210,35 @@ export function PhysicalExamInlineForm({
         })}
       </div>
 
-      {examId && (
-        <div className="flex justify-start pt-4 border-t border-slate-100 dark:border-slate-800">
-          <Button
-            type="button"
-            variant="destructive"
-            size="sm"
-            onClick={handleDelete}
-            disabled={isDeleting}
-            className="text-xs h-8 flex items-center gap-1.5"
-          >
-            {isDeleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
-            Delete Exam Record
-          </Button>
+      {(examId || !saveRef) && (
+        <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-800">
+          <div>
+            {examId && (
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                onClick={handleDelete}
+                disabled={isDeleting || isSaving}
+                className="text-xs h-8 flex items-center gap-1.5"
+              >
+                {isDeleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                Delete Exam Record
+              </Button>
+            )}
+          </div>
+
+          {!saveRef && (
+            <Button
+              type="button"
+              onClick={handleSubmit}
+              disabled={isSaving || isDeleting}
+              className="text-xs h-8 flex items-center gap-1.5 bg-teal-600 hover:bg-teal-700 text-white font-bold"
+            >
+              {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5 text-white" />}
+              Save Changes
+            </Button>
+          )}
         </div>
       )}
     </div>

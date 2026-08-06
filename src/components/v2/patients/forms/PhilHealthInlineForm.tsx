@@ -7,8 +7,17 @@ import { getActionErrorMessage } from '@/lib/action-error'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
-import { Trash2, Plus, UserPlus, X, ShieldAlert } from 'lucide-react'
+import { Trash2, Plus, UserPlus, X, ShieldAlert, ShieldCheck } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
+import {
+  getPrincipalMemberByPinAction,
+  registerPrincipalMemberAction,
+  getDependentMemberByPinAction,
+  registerDependentMemberAction,
+  type PrincipalMemberInfo,
+  type DependentMemberInfo,
+} from '@/actions/clinics/konsulta-report.action'
 import { philHealthRecordSchema, type PhilHealthRecordFormInput, type PhilHealthDependentFormInput } from '@/schemas/philhealth-record-schema'
 import { formatPhilHealthPin, formatPhilSysId, formatTin, unmaskDigits } from './schemas/mask-utils'
 import { philHealthSchema, dependentSchema } from './schemas/philhealth.schema'
@@ -18,6 +27,8 @@ export interface PhilHealthInlineFormProps {
   currentData?: {
     id?: number
     pin: string
+    principalMemberPin?: string
+    dependentPin?: string
     tin?: string
     philSysId?: string
     memberType: 'MM' | 'DD'
@@ -39,6 +50,7 @@ export function PhilHealthInlineForm({
   const initialFormValues = useMemo(() => {
     return {
       pin: currentData?.pin || '',
+      principalMemberPin: currentData?.principalMemberPin || currentData?.dependentPin || '',
       tin: currentData?.tin || '',
       philSysId: currentData?.philSysId || '',
       memberType: currentData?.memberType || 'MM',
@@ -50,6 +62,7 @@ export function PhilHealthInlineForm({
   const [dependents, setDependents] = useState<any[]>(currentData?.dependents || [])
   const [isAddingDependent, setIsAddingDependent] = useState(false)
   const [newDependent, setNewDependent] = useState<any>({
+    pin: '',
     firstName: '',
     middleName: '',
     lastName: '',
@@ -57,13 +70,141 @@ export function PhilHealthInlineForm({
     gender: 'MALE',
     dob: '',
   })
+  const [dependentLookupInfo, setDependentLookupInfo] = useState<DependentMemberInfo | null>(null)
+  const [dependentLookupStatus, setDependentLookupStatus] = useState<'idle' | 'searching' | 'found' | 'not_found' | 'already_linked'>('idle')
+  const [dependentLookupErrorMessage, setDependentLookupErrorMessage] = useState<string>('')
   const [errors, setErrors] = useState<Record<string, string | undefined>>({})
   const [isLoading, setIsLoading] = useState(false)
+  const [principalInfo, setPrincipalInfo] = useState<PrincipalMemberInfo | null>(null)
+  const [principalForm, setPrincipalForm] = useState({
+    firstName: '',
+    lastName: '',
+    middleName: '',
+    extensionName: '',
+    dob: '',
+    gender: 'MALE' as 'MALE' | 'FEMALE',
+  })
+
+  // Auto-detect dependent info by PIN with validation guards
+  useEffect(() => {
+    const rawPin = unmaskDigits(newDependent.pin || '')
+    const mainPin = unmaskDigits(formData.pin || '')
+
+    if (rawPin && mainPin && rawPin === mainPin) {
+      setDependentLookupInfo(null)
+      setDependentLookupStatus('already_linked')
+      setDependentLookupErrorMessage("Dependent PIN cannot be the same as the Principal Member's PIN.")
+      return
+    }
+
+    if (rawPin.length === 12 || rawPin.length === 15) {
+      setDependentLookupStatus('searching')
+      void getDependentMemberByPinAction(rawPin, userId, mainPin).then((res) => {
+        if (res.data) {
+          const data = res.data
+          setDependentLookupInfo(data)
+          setDependentLookupStatus('found')
+          setDependentLookupErrorMessage('')
+          setNewDependent((prev: any) => ({
+            ...prev,
+            firstName: data.firstName || prev.firstName,
+            lastName: data.lastName || prev.lastName,
+            middleName: data.middleName || prev.middleName,
+            gender: data.gender || prev.gender,
+            dob: data.dob || prev.dob,
+          }))
+        } else {
+          setDependentLookupInfo(null)
+          if (
+            res.message?.includes('already linked') ||
+            res.message?.includes('registered as a Principal Member') ||
+            res.message?.includes('cannot add') ||
+            res.message?.includes('same as')
+          ) {
+            setDependentLookupStatus('already_linked')
+            setDependentLookupErrorMessage(res.message)
+          } else {
+            setDependentLookupStatus('not_found')
+            setDependentLookupErrorMessage('')
+          }
+        }
+      })
+    } else {
+      setDependentLookupInfo(null)
+      setDependentLookupStatus('idle')
+      setDependentLookupErrorMessage('')
+    }
+  }, [newDependent.pin, formData.pin, userId])
+
+  // Lookup principal member info when memberType is Dependent and Principal Member PIN is entered
+  useEffect(() => {
+    if (formData.memberType === 'DD' && formData.principalMemberPin?.trim()) {
+      void getPrincipalMemberByPinAction(formData.principalMemberPin.trim(), userId).then((res) => {
+        if (res.data) {
+          setPrincipalInfo(res.data)
+        } else {
+          setPrincipalInfo(null)
+          if (res.message?.includes('cannot link to themselves')) {
+            setErrors((prev) => ({
+              ...prev,
+              principalMemberPin: "Patient cannot link to themselves as the Principal Member. Please enter the Principal Member's PIN.",
+            }))
+          }
+        }
+      })
+    } else {
+      setPrincipalInfo(null)
+    }
+  }, [formData.memberType, formData.principalMemberPin, userId])
+
+  // Zod-powered real-time inline input validation
+  useEffect(() => {
+    const rawData = {
+      pin: unmaskDigits(formData.pin),
+      dependentPin: unmaskDigits(formData.principalMemberPin),
+      tin: unmaskDigits(formData.tin),
+      philSysId: unmaskDigits(formData.philSysId),
+      memberType: formData.memberType || 'MM',
+      photoUrl: formData.photoUrl || null,
+      dependents: dependents || [],
+    }
+
+    const fieldErrors: Record<string, string> = {}
+    const validationResult = philHealthRecordSchema.safeParse(rawData)
+    if (!validationResult.success) {
+      validationResult.error.issues.forEach((issue) => {
+        if (issue.path[0]) {
+          const key = issue.path[0] === 'dependentPin' ? 'principalMemberPin' : (issue.path[0] as string)
+          fieldErrors[key] = issue.message
+        }
+      })
+    }
+
+    if (formData.memberType === 'DD' && !principalInfo && unmaskDigits(formData.principalMemberPin)) {
+      if (!principalForm.firstName?.trim()) {
+        fieldErrors.principalFirstName = "Principal Member First Name is required."
+      }
+      if (!principalForm.lastName?.trim()) {
+        fieldErrors.principalLastName = "Principal Member Last Name is required."
+      }
+      if (!principalForm.dob?.trim()) {
+        fieldErrors.principalDob = "Principal Member Date of Birth is required."
+      }
+    }
+
+    setErrors(fieldErrors)
+  }, [formData, dependents, principalInfo, principalForm])
 
   // Track if main form has changes
   const hasChanges = useMemo(() => {
-    return JSON.stringify(formData) !== JSON.stringify(initialFormValues)
-  }, [formData, initialFormValues])
+    const isFormDirty = JSON.stringify(formData) !== JSON.stringify(initialFormValues)
+    const isPrincipalDirty = formData.memberType === 'DD' && !principalInfo && (
+      Boolean(principalForm.firstName.trim()) ||
+      Boolean(principalForm.lastName.trim()) ||
+      Boolean(principalForm.dob.trim())
+    )
+    return isFormDirty || isPrincipalDirty
+  }, [formData, initialFormValues, principalInfo, principalForm])
 
   useEffect(() => {
     onDirtyChange?.(hasChanges)
@@ -74,13 +215,6 @@ export function PhilHealthInlineForm({
       ...prev,
       [field]: value === '' ? null : value,
     }))
-    if (errors[field]) {
-      setErrors((prev) => {
-        const next = { ...prev }
-        delete next[field]
-        return next
-      })
-    }
   }
 
   const handleSubmit = async () => {
@@ -89,37 +223,56 @@ export function PhilHealthInlineForm({
       return
     }
 
-    if (!formData.pin) {
-      toast.error('PhilHealth PIN is required')
-      throw new Error('PIN is required')
-    }
-
-    // Clean data format before validation
-    const parsedData: any = {
-      pin: formData.pin,
+    const parsedData = {
+      pin: unmaskDigits(formData.pin),
+      dependentPin: unmaskDigits(formData.principalMemberPin),
       memberType: formData.memberType || 'MM',
-      tin: formData.tin || null,
-      philSysId: formData.philSysId || null,
+      tin: unmaskDigits(formData.tin) || null,
+      philSysId: unmaskDigits(formData.philSysId) || null,
       photoUrl: formData.photoUrl || null,
+      dependents: dependents || [],
     }
 
-    // Validation using zod schema
     const validationResult = philHealthRecordSchema.safeParse(parsedData)
     if (!validationResult.success) {
       const fieldErrors: Record<string, string> = {}
-      validationResult.error.errors.forEach((err) => {
-        if (err.path[0]) {
-          fieldErrors[err.path[0] as string] = err.message
+      validationResult.error.issues.forEach((issue) => {
+        if (issue.path[0]) {
+          const key = issue.path[0] === 'dependentPin' ? 'principalMemberPin' : (issue.path[0] as string)
+          fieldErrors[key] = issue.message
         }
       })
       setErrors(fieldErrors)
-      toast.error('Validation failed. Please check form errors.')
-      throw new Error('Validation failed')
+      throw new Error('Please fix input field errors before saving.')
     }
 
     let saveErrorMessage: string | null = null
 
     try {
+      if (formData.memberType === 'DD' && !principalInfo && unmaskDigits(formData.principalMemberPin)) {
+        if (!principalForm.firstName.trim() || !principalForm.lastName.trim()) {
+          const pErrors: Record<string, string> = {}
+          if (!principalForm.firstName.trim()) pErrors.principalFirstName = "Principal Member First Name is required"
+          if (!principalForm.lastName.trim()) pErrors.principalLastName = "Principal Member Last Name is required"
+          setErrors((prev) => ({ ...prev, ...pErrors }))
+          throw new Error("Please enter Principal Member First Name and Last Name.")
+        }
+
+        const regRes = await registerPrincipalMemberAction({
+          pin: unmaskDigits(formData.principalMemberPin),
+          firstName: principalForm.firstName,
+          lastName: principalForm.lastName,
+          middleName: principalForm.middleName,
+          extensionName: principalForm.extensionName,
+          dob: principalForm.dob,
+          gender: principalForm.gender,
+        })
+
+        if (regRes && regRes.data) {
+          setPrincipalInfo(regRes.data)
+        }
+      }
+
       const result = await updatePhilhealthRecord(userId, validationResult.data as PhilHealthRecordFormInput)
 
       if (result.success) {
@@ -145,11 +298,32 @@ export function PhilHealthInlineForm({
     return () => {
       if (saveRef) saveRef.current = null
     }
-  }, [saveRef, formData, hasChanges])
+  }, [saveRef, formData, principalForm, principalInfo, dependents, hasChanges])
 
   const handleAddDependent = async () => {
-    if (!newDependent.firstName) {
+    const rawPin = unmaskDigits(newDependent.pin || '')
+    if (!rawPin || (rawPin.length !== 12 && rawPin.length !== 15)) {
+      toast.error('Dependent PIN must be a 12-digit PhilHealth PIN.')
+      return
+    }
+    if (rawPin === unmaskDigits(formData.pin || '')) {
+      toast.error("Dependent PIN cannot be the same as the Principal Member's PIN.")
+      return
+    }
+    if (dependentLookupStatus === 'already_linked') {
+      toast.error(dependentLookupErrorMessage || "This Dependent PIN is invalid or already linked to another Principal Member.")
+      return
+    }
+    if (!newDependent.firstName?.trim()) {
       toast.error('First name is required for dependent')
+      return
+    }
+    if (!newDependent.lastName?.trim()) {
+      toast.error('Last name is required for dependent')
+      return
+    }
+    if (!newDependent.relationship?.trim()) {
+      toast.error('Relationship is required for dependent')
       return
     }
     if (!currentData?.id) {
@@ -159,8 +333,21 @@ export function PhilHealthInlineForm({
 
     setIsLoading(true)
     try {
+      if (dependentLookupStatus === 'not_found' && formData.pin) {
+        await registerDependentMemberAction({
+          pin: rawPin,
+          principalMemberPin: unmaskDigits(formData.pin),
+          firstName: newDependent.firstName,
+          lastName: newDependent.lastName,
+          middleName: newDependent.middleName,
+          dob: newDependent.dob,
+          gender: newDependent.gender,
+        })
+      }
+
       const dependentPayload = {
         ...newDependent,
+        pin: rawPin,
         dob: newDependent.dob ? new Date(newDependent.dob) : null,
       }
       const result = await addPhilHealthDependent(userId, currentData.id, dependentPayload as PhilHealthDependentFormInput)
@@ -170,6 +357,7 @@ export function PhilHealthInlineForm({
         setDependents((prev) => [...prev, result.dependent])
         setIsAddingDependent(false)
         setNewDependent({
+          pin: '',
           firstName: '',
           middleName: '',
           lastName: '',
@@ -177,12 +365,14 @@ export function PhilHealthInlineForm({
           gender: 'MALE',
           dob: '',
         })
+        setDependentLookupInfo(null)
+        setDependentLookupStatus('idle')
         onSuccess?.()
       } else {
         toast.error(result.error || 'Failed to add dependent')
       }
     } catch (err) {
-      toast.error(getActionErrorMessage(err, 'An error occurred adding dependent'))
+      toast.error(getActionErrorMessage(err, 'Failed to add dependent.'))
     } finally {
       setIsLoading(false)
     }
@@ -260,7 +450,24 @@ export function PhilHealthInlineForm({
       {/* Main PhilHealth Insurance Fields */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-3.5 gap-y-3">
         {renderField(
-          'PIN (PhilHealth ID)',
+          'Member Type',
+          'memberType',
+          <Select
+            value={formData.memberType || 'MM'}
+            onValueChange={(val) => handleFieldChange('memberType', val)}
+          >
+            <SelectTrigger className="h-8 text-xs focus:ring-teal-500">
+              <SelectValue placeholder="Select Member Type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="MM">Principal Member</SelectItem>
+              <SelectItem value="DD">Dependent</SelectItem>
+            </SelectContent>
+          </Select>
+        )}
+
+        {renderField(
+          formData.memberType === 'DD' ? 'Patient PIN (Dependent PIN)' : 'PIN (PhilHealth ID)',
           'pin',
           <Input
             value={formatPhilHealthPin(formData.pin)}
@@ -269,6 +476,20 @@ export function PhilHealthInlineForm({
             className="h-8 text-xs focus-visible:ring-teal-500 font-mono"
             placeholder="XX-XXXXXXXXX-X"
           />
+        )}
+
+        {formData.memberType === 'DD' && (
+          renderField(
+            'Principal Member PIN',
+            'principalMemberPin',
+            <Input
+              value={formatPhilHealthPin(formData.principalMemberPin)}
+              onChange={(e) => handleFieldChange('principalMemberPin', unmaskDigits(e.target.value))}
+              maxLength={14}
+              className="h-8 text-xs focus-visible:ring-teal-500 font-mono"
+              placeholder="XX-XXXXXXXXX-X"
+            />
+          )
         )}
 
         {renderField(
@@ -294,205 +515,364 @@ export function PhilHealthInlineForm({
             placeholder="XXXX-XXXX-XXXX-XXXX"
           />
         )}
-
-        {renderField(
-          'Member Type',
-          'memberType',
-          <Select
-            value={formData.memberType || 'MM'}
-            onValueChange={(val) => handleFieldChange('memberType', val)}
-          >
-            <SelectTrigger className="h-8 text-xs focus:ring-teal-500">
-              <SelectValue placeholder="Select Member Type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="MM">Principal Member</SelectItem>
-              <SelectItem value="DD">Dependent</SelectItem>
-            </SelectContent>
-          </Select>
-        )}
       </div>
 
-      {/* Dependents Section */}
-      <div className="border-t border-slate-100 dark:border-slate-800 pt-6">
-        <div className="flex items-center justify-between gap-4 mb-4">
-          <div>
-            <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">
-              PhilHealth Dependents
-            </h4>
-            <p className="text-xs text-slate-400 dark:text-slate-500">
-              Family members covered under this insurance plan
-            </p>
-          </div>
-          {!isAddingDependent && currentData?.id && (
-            <Button
-              type="button"
-              onClick={() => setIsAddingDependent(true)}
-              size="sm"
-              className="text-xs flex items-center gap-1.5 h-8"
-              disabled={isLoading}
-            >
-              <UserPlus className="w-3.5 h-3.5" />
-              Add Dependent
-            </Button>
+      {/* Read-Only Principal Member Info Block for Dependents */}
+      {formData.memberType === 'DD' && (
+        <div className="mt-3">
+          {principalInfo ? (
+            <div className="border border-teal-200 dark:border-teal-900 bg-teal-50/50 dark:bg-teal-950/20 rounded-lg p-3 space-y-2 text-xs">
+              <div className="flex items-center justify-between border-b border-teal-100 dark:border-teal-900 pb-1">
+                <span className="font-semibold text-teal-700 dark:text-teal-400 flex items-center gap-1">
+                  <ShieldCheck className="h-3.5 w-3.5" />
+                  Principal Member Info (Read-Only)
+                </span>
+                <span className="text-[10px] bg-teal-100 dark:bg-teal-900 text-teal-800 dark:text-teal-200 px-1.5 py-0.5 rounded font-medium">Linked</span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-x-3 gap-y-1 text-slate-600 dark:text-slate-400">
+                <div>
+                  <span className="font-medium text-slate-900 dark:text-slate-200 block text-[10px] uppercase">PIN</span>
+                  <span className="font-mono text-slate-900 dark:text-slate-100 font-semibold">{formatPhilHealthPin(principalInfo.pin)}</span>
+                </div>
+                <div>
+                  <span className="font-medium text-slate-900 dark:text-slate-200 block text-[10px] uppercase">DOB</span>
+                  <span>{principalInfo.dob}</span>
+                </div>
+                <div>
+                  <span className="font-medium text-slate-900 dark:text-slate-200 block text-[10px] uppercase">First Name</span>
+                  <span>{principalInfo.firstName}</span>
+                </div>
+                <div>
+                  <span className="font-medium text-slate-900 dark:text-slate-200 block text-[10px] uppercase">Last Name</span>
+                  <span>{principalInfo.lastName}</span>
+                </div>
+                <div>
+                  <span className="font-medium text-slate-900 dark:text-slate-200 block text-[10px] uppercase">Middle Name</span>
+                  <span>{principalInfo.middleName || "—"}</span>
+                </div>
+                <div>
+                  <span className="font-medium text-slate-900 dark:text-slate-200 block text-[10px] uppercase">Ext Name</span>
+                  <span>{principalInfo.extensionName || "—"}</span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="border border-amber-200 dark:border-amber-800/70 bg-amber-50/50 dark:bg-amber-950/20 rounded-lg p-3.5 space-y-3 text-xs">
+              <div className="flex items-center gap-2 text-xs font-semibold text-amber-800 dark:text-amber-300">
+                <ShieldAlert className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                <span>
+                  No principal member record found in ClinicEZ matching PIN <span className="font-mono font-bold">{formatPhilHealthPin(formData.principalMemberPin) || '—'}</span>. Enter the Principal Member's details below to register and link them.
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2.5 pt-2 border-t border-amber-200/60 dark:border-amber-900/40">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                    First Name <span className="text-red-500">*</span>
+                  </label>
+                  <Input
+                    value={principalForm.firstName}
+                    onChange={(e) => {
+                      setPrincipalForm((p) => ({ ...p, firstName: e.target.value }))
+                      if (errors.principalFirstName) setErrors((prev) => ({ ...prev, principalFirstName: undefined }))
+                    }}
+                    placeholder="First Name"
+                    className={cn("h-8 text-xs bg-white dark:bg-slate-900", errors.principalFirstName && "border-red-500 focus-visible:ring-red-500")}
+                  />
+                  {errors.principalFirstName && (
+                    <span className="text-[10px] text-red-500 block">{errors.principalFirstName}</span>
+                  )}
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                    Last Name <span className="text-red-500">*</span>
+                  </label>
+                  <Input
+                    value={principalForm.lastName}
+                    onChange={(e) => {
+                      setPrincipalForm((p) => ({ ...p, lastName: e.target.value }))
+                      if (errors.principalLastName) setErrors((prev) => ({ ...prev, principalLastName: undefined }))
+                    }}
+                    placeholder="Last Name"
+                    className={cn("h-8 text-xs bg-white dark:bg-slate-900", errors.principalLastName && "border-red-500 focus-visible:ring-red-500")}
+                  />
+                  {errors.principalLastName && (
+                    <span className="text-[10px] text-red-500 block">{errors.principalLastName}</span>
+                  )}
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                    Middle Name
+                  </label>
+                  <Input
+                    value={principalForm.middleName}
+                    onChange={(e) => setPrincipalForm((p) => ({ ...p, middleName: e.target.value }))}
+                    placeholder="Middle Name"
+                    className="h-8 text-xs bg-white dark:bg-slate-900"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                    Ext Name / Suffix
+                  </label>
+                  <Input
+                    value={principalForm.extensionName}
+                    onChange={(e) => setPrincipalForm((p) => ({ ...p, extensionName: e.target.value }))}
+                    placeholder="Jr., Sr., III"
+                    className="h-8 text-xs bg-white dark:bg-slate-900"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                    Date of Birth <span className="text-red-500">*</span>
+                  </label>
+                  <Input
+                    type="date"
+                    value={principalForm.dob}
+                    onChange={(e) => {
+                      setPrincipalForm((p) => ({ ...p, dob: e.target.value }))
+                      if (errors.principalDob) setErrors((prev) => ({ ...prev, principalDob: undefined }))
+                    }}
+                    className={cn("h-8 text-xs bg-white dark:bg-slate-900", errors.principalDob && "border-red-500 focus-visible:ring-red-500")}
+                  />
+                  {errors.principalDob && (
+                    <span className="text-[10px] text-red-500 block">{errors.principalDob}</span>
+                  )}
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                    Gender
+                  </label>
+                  <select
+                    value={principalForm.gender}
+                    onChange={(e) => setPrincipalForm((p) => ({ ...p, gender: e.target.value as 'MALE' | 'FEMALE' }))}
+                    className="h-8 text-xs w-full rounded-md border border-input bg-white dark:bg-slate-900 px-2 py-1 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-teal-500"
+                  >
+                    <option value="MALE">Male</option>
+                    <option value="FEMALE">Female</option>
+                  </select>
+                </div>
+              </div>
+            </div>
           )}
         </div>
+      )}
 
-        {/* Add Dependent Inline Form */}
-        {isAddingDependent && (
-          <div className="p-4 rounded-xl border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/10 space-y-4 mb-6">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
-                New Dependent Info
-              </span>
-              <button
-                type="button"
-                onClick={() => setIsAddingDependent(false)}
-                className="text-slate-400 hover:text-slate-600"
-              >
-                <X className="w-4 h-4" />
-              </button>
+      {/* Dependents Section (Only displayed for Member Type = Principal Member MM) */}
+      {formData.memberType === 'MM' && (
+        <div className="border-t border-slate-100 dark:border-slate-800 pt-6">
+          <div className="flex items-center justify-between gap-4 mb-4">
+            <div>
+              <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                PhilHealth Dependents
+              </h4>
+              <p className="text-xs text-slate-400 dark:text-slate-500">
+                Family members covered under this insurance plan
+              </p>
             </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-3.5 gap-y-3">
-              <div className="space-y-1">
-                <label className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">First Name *</label>
-                <Input
-                  value={newDependent.firstName}
-                  onChange={(e) => setNewDependent((prev: any) => ({ ...prev, firstName: e.target.value }))}
-                  className="h-8 text-xs focus-visible:ring-teal-500"
-                  placeholder="First Name"
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Middle Name</label>
-                <Input
-                  value={newDependent.middleName}
-                  onChange={(e) => setNewDependent((prev: any) => ({ ...prev, middleName: e.target.value }))}
-                  className="h-8 text-xs focus-visible:ring-teal-500"
-                  placeholder="Middle Name"
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Last Name *</label>
-                <Input
-                  value={newDependent.lastName}
-                  onChange={(e) => setNewDependent((prev: any) => ({ ...prev, lastName: e.target.value }))}
-                  className="h-8 text-xs focus-visible:ring-teal-500"
-                  placeholder="Last Name"
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Relationship</label>
-                <Input
-                  value={newDependent.relationship}
-                  onChange={(e) => setNewDependent((prev: any) => ({ ...prev, relationship: e.target.value }))}
-                  className="h-8 text-xs focus-visible:ring-teal-500"
-                  placeholder="e.g. Child, Spouse"
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Gender</label>
-                <Select
-                  value={newDependent.gender}
-                  onValueChange={(val) => setNewDependent((prev: any) => ({ ...prev, gender: val }))}
-                >
-                  <SelectTrigger className="h-8 text-xs focus:ring-teal-500">
-                    <SelectValue placeholder="Gender" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="MALE">Male</SelectItem>
-                    <SelectItem value="FEMALE">Female</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1">
-                <label className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Date of Birth</label>
-                <Input
-                  type="date"
-                  value={newDependent.dob}
-                  onChange={(e) => setNewDependent((prev: any) => ({ ...prev, dob: e.target.value }))}
-                  className="h-8 text-xs focus-visible:ring-teal-500"
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-2 justify-end pt-2">
+            {!isAddingDependent && currentData?.id && (
               <Button
                 type="button"
-                variant="outline"
+                onClick={() => setIsAddingDependent(true)}
                 size="sm"
-                className="h-8 text-xs"
-                onClick={() => setIsAddingDependent(false)}
+                className="text-xs flex items-center gap-1.5 h-8"
                 disabled={isLoading}
               >
-                Cancel
+                <UserPlus className="w-3.5 h-3.5" />
+                Add Dependent
               </Button>
-              <Button
-                type="button"
-                size="sm"
-                className="h-8 text-xs bg-teal-600 hover:bg-teal-700 text-white"
-                onClick={handleAddDependent}
-                disabled={isLoading}
-              >
-                Save Dependent
-              </Button>
-            </div>
+            )}
           </div>
-        )}
 
-        {/* Dependents list */}
-        {dependents.length > 0 ? (
-          <div className="overflow-x-auto rounded-xl border border-slate-100 dark:border-slate-800 text-xs">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50/75 dark:bg-slate-900/50 text-slate-400 dark:text-slate-500 font-bold border-b border-slate-100 dark:border-slate-800">
-                  <th className="px-4 py-3">Full Name</th>
-                  <th className="px-4 py-3">Relationship</th>
-                  <th className="px-4 py-3">Gender</th>
-                  <th className="px-4 py-3 text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-slate-700 dark:text-slate-350">
-                {dependents.map((dep) => (
-                  <tr key={dep.id}>
-                    <td className="px-4 py-3">
-                      {dep.firstName} {dep.lastName}
-                    </td>
-                    <td className="px-4 py-3 capitalize">{dep.relationship ? dep.relationship.toLowerCase() : '—'}</td>
-                    <td className="px-4 py-3 capitalize">{dep.gender ? dep.gender.toLowerCase() : '—'}</td>
-                    <td className="px-4 py-3 text-right">
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveDependent(dep.id, `${dep.firstName} ${dep.lastName}`)}
-                        className="p-1 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/20 dark:hover:text-red-400 rounded transition-colors text-slate-400"
-                        disabled={isLoading}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          !isAddingDependent && (
-            <div className="text-center py-6 border border-dashed border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-900/5">
-              {!currentData?.id ? (
-                <div className="flex flex-col items-center gap-1 text-slate-400 text-xs font-semibold p-4">
-                  <ShieldAlert className="w-5 h-5 text-amber-500 mb-1" />
-                  <span>Save insurance records first before managing dependents.</span>
-                </div>
-              ) : (
-                <span className="text-xs text-slate-400 dark:text-slate-500 font-semibold">
-                  No dependents added yet.
+          {/* Add Dependent Inline Form */}
+          {isAddingDependent && (
+            <div className="p-4 rounded-xl border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/10 space-y-4 mb-6">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                  <UserPlus className="w-4 h-4 text-teal-600" />
+                  New Dependent Info
                 </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsAddingDependent(false)
+                    setDependentLookupInfo(null)
+                    setDependentLookupStatus('idle')
+                  }}
+                  className="text-slate-400 hover:text-slate-600"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Dependent PIN Input */}
+              <div className="max-w-xs space-y-1">
+                <label className="text-[10px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider block">
+                  Dependent PIN (Patient PIN) <span className="text-red-500">*</span>
+                </label>
+                <Input
+                  value={formatPhilHealthPin(newDependent.pin)}
+                  onChange={(e) => {
+                    const val = formatPhilHealthPin(e.target.value)
+                    setNewDependent((prev: any) => ({ ...prev, pin: val }))
+                  }}
+                  placeholder="00-000000000-0"
+                  className="h-8 text-xs font-mono bg-white dark:bg-slate-900 focus-visible:ring-teal-500"
+                />
+              </div>
+
+              {/* Status Notice */}
+              {dependentLookupStatus === 'already_linked' && (
+                <div className="text-xs text-red-700 bg-red-50 dark:bg-red-950/40 dark:text-red-300 p-2.5 rounded-lg border border-red-200 dark:border-red-800 flex items-center gap-2 font-medium">
+                  <ShieldAlert className="w-4 h-4 text-red-600 flex-shrink-0" />
+                  <span>{dependentLookupErrorMessage || "Dependent PIN cannot be added."}</span>
+                </div>
               )}
+
+              {dependentLookupStatus === 'found' && dependentLookupInfo && (
+                <div className="text-xs text-teal-700 bg-teal-50 dark:bg-teal-950/40 dark:text-teal-300 p-2.5 rounded-lg border border-teal-200 dark:border-teal-800 flex items-center gap-2 font-medium">
+                  <ShieldCheck className="w-4 h-4 text-teal-600 flex-shrink-0" />
+                  <span>
+                    Patient found in ClinicEZ matching PIN <span className="font-mono font-bold">{formatPhilHealthPin(newDependent.pin)}</span>. Details auto-populated.
+                  </span>
+                </div>
+              )}
+
+              {dependentLookupStatus === 'not_found' && unmaskDigits(newDependent.pin || '').length >= 12 && (
+                <div className="text-xs text-amber-700 bg-amber-50 dark:bg-amber-950/40 dark:text-amber-300 p-2.5 rounded-lg border border-amber-200 dark:border-amber-800 flex items-center gap-2">
+                  <ShieldAlert className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                  <span>
+                    No patient record found matching PIN <span className="font-mono font-bold">{formatPhilHealthPin(newDependent.pin)}</span>. Enter dependent's details below to register and link.
+                  </span>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-x-3.5 gap-y-3">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider block">First Name <span className="text-red-500">*</span></label>
+                  <Input
+                    value={newDependent.firstName}
+                    onChange={(e) => setNewDependent((prev: any) => ({ ...prev, firstName: e.target.value }))}
+                    className="h-8 text-xs bg-white dark:bg-slate-900 focus-visible:ring-teal-500"
+                    placeholder="First Name"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider block">Middle Name</label>
+                  <Input
+                    value={newDependent.middleName}
+                    onChange={(e) => setNewDependent((prev: any) => ({ ...prev, middleName: e.target.value }))}
+                    className="h-8 text-xs bg-white dark:bg-slate-900 focus-visible:ring-teal-500"
+                    placeholder="Middle Name"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider block">Last Name <span className="text-red-500">*</span></label>
+                  <Input
+                    value={newDependent.lastName}
+                    onChange={(e) => setNewDependent((prev: any) => ({ ...prev, lastName: e.target.value }))}
+                    className="h-8 text-xs bg-white dark:bg-slate-900 focus-visible:ring-teal-500"
+                    placeholder="Last Name"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider block">Relationship <span className="text-red-500">*</span></label>
+                  <Input
+                    value={newDependent.relationship}
+                    onChange={(e) => setNewDependent((prev: any) => ({ ...prev, relationship: e.target.value }))}
+                    className="h-8 text-xs bg-white dark:bg-slate-900 focus-visible:ring-teal-500"
+                    placeholder="e.g. Child, Spouse"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider block">Gender</label>
+                  <select
+                    value={newDependent.gender}
+                    onChange={(e) => setNewDependent((prev: any) => ({ ...prev, gender: e.target.value as 'MALE' | 'FEMALE' }))}
+                    className="h-8 text-xs w-full rounded-md border border-input bg-white dark:bg-slate-900 px-2 py-1 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-teal-500"
+                  >
+                    <option value="MALE">Male</option>
+                    <option value="FEMALE">Female</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider block">Date of Birth</label>
+                  <Input
+                    type="date"
+                    value={newDependent.dob}
+                    onChange={(e) => setNewDependent((prev: any) => ({ ...prev, dob: e.target.value }))}
+                    className="h-8 text-xs bg-white dark:bg-slate-900 focus-visible:ring-teal-500"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-2 justify-end pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-8 text-xs"
+                  onClick={() => {
+                    setIsAddingDependent(false)
+                    setDependentLookupInfo(null)
+                    setDependentLookupStatus('idle')
+                  }}
+                  disabled={isLoading}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  className="h-8 text-xs bg-teal-600 hover:bg-teal-700 text-white"
+                  onClick={handleAddDependent}
+                  disabled={isLoading}
+                >
+                  Save Dependent
+                </Button>
+              </div>
             </div>
-          )
-        )}
-      </div>
+          )}
+
+          {/* Dependents list */}
+          {dependents.length === 0 ? (
+            <div className="p-8 text-center rounded-xl border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/10">
+              <p className="text-xs text-slate-400 dark:text-slate-500">No dependents added yet.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+              {dependents.map((dep) => (
+                <div
+                  key={dep.id}
+                  className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-between gap-3 shadow-xs"
+                >
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">
+                      {dep.firstName} {dep.lastName}
+                    </p>
+                    <p className="text-[10px] text-slate-400 dark:text-slate-500 capitalize">
+                      {dep.relationship || 'Dependent'} • {dep.gender?.toLowerCase() || 'unspecified'}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveDependent(dep.id, `${dep.firstName} ${dep.lastName}`)}
+                    className="text-slate-400 hover:text-red-500 transition-colors p-1"
+                    disabled={isLoading}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }

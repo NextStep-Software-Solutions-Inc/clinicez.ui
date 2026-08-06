@@ -12,7 +12,13 @@ import { toast } from 'sonner'
 
 export interface ObGyneHistoryInlineFormProps {
   userId: string
-  currentData?: Partial<ObGyneHistoryFormInput>
+  currentData?: Partial<
+    Omit<ObGyneHistoryFormInput, 'menopauseStatus' | 'typeOfDelivery' | 'lastMenstrualPeriod'> & {
+      menopauseStatus?: string | null
+      typeOfDelivery?: string | null
+      lastMenstrualPeriod?: Date | string | null
+    }
+  >
   onSuccess?: () => void
   saveRef?: React.MutableRefObject<{ submit: () => Promise<void>; hasChanges: boolean } | null>
   onDirtyChange?: (isDirty: boolean) => void
@@ -26,25 +32,26 @@ export function ObGyneHistoryInlineForm({
   onDirtyChange,
 }: ObGyneHistoryInlineFormProps) {
   const initialFormValues = useMemo(() => {
+    const data = currentData || {}
     return {
-      menarche: currentData.menarche ?? null,
-      lastMenstrualPeriod: currentData.lastMenstrualPeriod ? new Date(currentData.lastMenstrualPeriod) : null,
-      menopauseAge: currentData.menopauseAge ?? null,
-      menopauseStatus: currentData.menopauseStatus ?? null,
-      ageAtFirstSexualIntercourse: currentData.ageAtFirstSexualIntercourse ?? null,
-      isFamilyPlanning: currentData.isFamilyPlanning ?? false,
-      birthControlMethod: currentData.birthControlMethod ?? '',
-      menstrualPeriodDuration: currentData.menstrualPeriodDuration ?? null,
-      menstrualCycleInterval: currentData.menstrualCycleInterval ?? null,
-      numberOfPadsPerDay: currentData.numberOfPadsPerDay ?? null,
-      gravidity: currentData.gravidity ?? null,
-      parity: currentData.parity ?? null,
-      fullTerm: currentData.fullTerm ?? null,
-      premature: currentData.premature ?? null,
-      abortion: currentData.abortion ?? null,
-      livingChildren: currentData.livingChildren ?? null,
-      typeOfDelivery: currentData.typeOfDelivery ?? null,
-      hasPreEclampsia: currentData.hasPreEclampsia ?? false,
+      menarche: data.menarche ?? null,
+      lastMenstrualPeriod: data.lastMenstrualPeriod ? new Date(data.lastMenstrualPeriod) : null,
+      menopauseAge: data.menopauseAge ?? null,
+      menopauseStatus: (data.menopauseStatus as ObGyneHistoryFormInput['menopauseStatus']) ?? null,
+      ageAtFirstSexualIntercourse: data.ageAtFirstSexualIntercourse ?? null,
+      isFamilyPlanning: data.isFamilyPlanning ?? false,
+      birthControlMethod: data.birthControlMethod ?? '',
+      menstrualPeriodDuration: data.menstrualPeriodDuration ?? null,
+      menstrualCycleInterval: data.menstrualCycleInterval ?? null,
+      numberOfPadsPerDay: data.numberOfPadsPerDay ?? null,
+      gravidity: data.gravidity ?? null,
+      parity: data.parity ?? null,
+      fullTerm: data.fullTerm ?? null,
+      premature: data.premature ?? null,
+      abortion: data.abortion ?? null,
+      livingChildren: data.livingChildren ?? null,
+      typeOfDelivery: (data.typeOfDelivery as ObGyneHistoryFormInput['typeOfDelivery']) ?? null,
+      hasPreEclampsia: data.hasPreEclampsia ?? false,
     }
   }, [currentData])
 

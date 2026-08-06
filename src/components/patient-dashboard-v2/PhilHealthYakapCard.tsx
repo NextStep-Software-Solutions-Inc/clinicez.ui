@@ -57,22 +57,22 @@ export function PhilHealthYakapCard({ clinicPatientId, isClinicMode, philHealthR
   }
 
   const memberType = philHealthRecord?.memberType || 'MM'
-  const memberPin = philHealthRecord?.pin
-  const dependentPin = philHealthRecord?.dependentPin
+  const patientPin = philHealthRecord?.pin
+  const principalMemberPin = philHealthRecord?.principalMemberPin
 
   const handleVerify = async () => {
-    if (memberType === 'MM' && !memberPin) {
+    if (memberType === 'MM' && !patientPin) {
       toast.error("Patient profile is missing the Member PIN")
       return
     }
-    if (memberType === 'DD' && (!memberPin || !dependentPin)) {
+    if (memberType === 'DD' && (!patientPin || !principalMemberPin)) {
       toast.error("Patient profile is missing Member or Dependent PIN")
       return
     }
 
     setIsVerifying(true)
     try {
-      const pinToVerify = memberType === 'MM' ? memberPin : dependentPin
+      const pinToVerify = memberType === 'MM' ? patientPin : principalMemberPin
       const res = await verifyKonsultaPinAction(clinicUid, pinToVerify, memberType)
 
       if (res.success && res.data) {
@@ -89,14 +89,30 @@ export function PhilHealthYakapCard({ clinicPatientId, isClinicMode, philHealthR
   }
 
   const handleEnlist = async () => {
-    if (!memberPin) {
-      toast.error("Cannot enlist without a Member PIN in the patient profile.")
+    if (memberType === 'MM' && !patientPin) {
+      toast.error("Cannot enlist without a Principal Member PIN in the patient profile.")
       return
+    }
+    if (memberType === 'DD') {
+      if (!principalMemberPin?.trim()) {
+        toast.error("Cannot enlist Dependent record without Principal Member PIN.")
+        return
+      }
+      if (!patientPin?.trim()) {
+        toast.error("Cannot enlist Dependent record without Patient PIN (Dependent PIN).")
+        return
+      }
+      if (principalMemberPin.trim() === patientPin.trim()) {
+        toast.error("Principal Member PIN and Dependent/Patient PIN cannot be the same.")
+        return
+      }
     }
 
     setIsEnlisting(true)
     try {
-      const res = await enlistKonsultaAction(clinicUid, clinicPatientId, memberPin, dependentPin)
+      const memberPinParam = memberType === 'MM' ? patientPin : principalMemberPin
+      const dependentPinParam = memberType === 'DD' ? patientPin : undefined
+      const res = await enlistKonsultaAction(clinicUid, clinicPatientId, memberPinParam, dependentPinParam)
 
       if (res.success && res.enlistment) {
         toast.success("Successfully enlisted in Yakap!")
@@ -145,61 +161,67 @@ export function PhilHealthYakapCard({ clinicPatientId, isClinicMode, philHealthR
   }
 
   return (
-    <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl p-4 sm:p-5 shadow-sm space-y-4">
-      {/* Header Bar */}
-      <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+    <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm space-y-4">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center font-bold">
-            <ShieldCheck className="w-4 h-4" />
+          <div className="p-2 rounded-lg bg-teal-50 dark:bg-teal-950/50 text-teal-600 dark:text-teal-400">
+            <ShieldCheck className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-800 dark:text-slate-200">
-              PhilHealth Yakap API Integration & Case Generator
+            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+              PHILHEALTH YAKAP API INTEGRATION & CASE GENERATOR
             </h3>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
               Real-time API verification, Konsulta enlistment, and transaction numbers
             </p>
           </div>
         </div>
 
-        {enlistment ? (
-          <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-bold text-[10px] uppercase tracking-wider px-2.5 py-0.5">
-            <CheckCircle2 className="w-3 h-3 mr-1" /> Enlisted & Verified
-          </Badge>
-        ) : (
-          <Badge className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 font-bold text-[10px] uppercase tracking-wider px-2.5 py-0.5">
-            Pending Enlistment
-          </Badge>
-        )}
+        <div>
+          {isLoading ? (
+            <Badge variant="outline" className="text-xs font-medium py-1 px-2.5">
+              <Loader2 className="w-3 h-3 animate-spin mr-1" /> Checking...
+            </Badge>
+          ) : enlistment ? (
+            <Badge className="bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800 text-xs font-semibold py-1 px-2.5 flex items-center gap-1.5">
+              <CheckCircle2 className="w-3.5 h-3.5" /> ENLISTED ({enlistment.year})
+            </Badge>
+          ) : (
+            <Badge variant="secondary" className="text-amber-700 bg-amber-50 dark:bg-amber-950/50 dark:text-amber-300 border-amber-200 dark:border-amber-800 text-xs font-semibold py-1 px-2.5">
+              PENDING ENLISTMENT
+            </Badge>
+          )}
+        </div>
       </div>
 
-      {/* Dense 5-Column Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-3.5 gap-y-3 py-1">
+      {/* Details Grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
         <div className="space-y-1">
           <label className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
             Member Type
           </label>
           <div className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">
-            {memberType === 'DD' ? 'Dependent (DD)' : 'Principal (MM)'}
+            {memberType === 'MM' ? 'Formal Member (MM)' : 'Dependent (DD)'}
           </div>
         </div>
 
         <div className="space-y-1">
           <label className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
-            Principal PIN
+            {memberType === 'DD' ? 'Patient PIN (Dependent PIN)' : 'Patient PIN'}
           </label>
           <div className="text-xs font-semibold font-mono text-slate-800 dark:text-slate-200 truncate">
-            {formatPhilHealthPIN(memberPin)}
+            {formatPhilHealthPIN(patientPin)}
           </div>
         </div>
 
         {memberType === 'DD' && (
           <div className="space-y-1">
             <label className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
-              Dependent PIN
+              Principal Member PIN
             </label>
             <div className="text-xs font-semibold font-mono text-slate-800 dark:text-slate-200 truncate">
-              {formatPhilHealthPIN(dependentPin)}
+              {formatPhilHealthPIN(principalMemberPin)}
             </div>
           </div>
         )}
@@ -234,7 +256,7 @@ export function PhilHealthYakapCard({ clinicPatientId, isClinicMode, philHealthR
 
       {/* Action Toolbar */}
       <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3">
-        {!memberPin ? (
+        {!patientPin ? (
           <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 text-xs font-medium bg-amber-50 dark:bg-amber-950/20 px-3 py-2 rounded-lg border border-amber-200/60 dark:border-amber-900/30 w-full sm:w-auto">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
             <span>Update PhilHealth PIN in record above to enable Yakap API integration.</span>

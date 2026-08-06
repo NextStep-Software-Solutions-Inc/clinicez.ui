@@ -195,15 +195,29 @@ export const createReferralSlipAction = withErrorHandling(async (input: CreateRe
       "create referral slips"
     );
 
-    const documentTemplate = await prisma.documentTemplate.findFirst({
+    let documentTemplate = await prisma.documentTemplate.findFirst({
       where: {
         isActive: true,
+        deletedAt: null,
         Clinic: { clinicUid },
         DocumentTemplateType: {
-          name: "referral"
+          name: { equals: "referral", mode: "insensitive" }
         }
       }
     });
+
+    if (!documentTemplate) {
+      documentTemplate = await prisma.documentTemplate.findFirst({
+        where: {
+          isActive: true,
+          deletedAt: null,
+          DocumentTemplateType: {
+            name: { equals: "referral", mode: "insensitive" }
+          }
+        }
+      });
+    }
+
     if (!documentTemplate) throw new Error("Referral slip template not found");
 
     const shouldConnectAppointment = appointmentId && await prisma.appointment.findUnique({

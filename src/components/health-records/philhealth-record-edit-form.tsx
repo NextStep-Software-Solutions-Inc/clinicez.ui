@@ -11,9 +11,10 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { X, Upload, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { getActionErrorMessage } from '@/lib/action-error'
+import { getPrincipalMemberByPinAction, type PrincipalMemberInfo } from '@/actions/clinics/konsulta-report.action'
+import { X, Upload, Loader2, ShieldCheck } from 'lucide-react'
 
 export interface PhilHealthRecordEditFormProps {
   userId: string
@@ -47,6 +48,22 @@ export function PhilHealthRecordEditForm({
   const [newDependent, setNewDependent] = useState<Partial<PhilHealthDependentFormInput>>({})
   const [isAddingDependent, setIsAddingDependent] = useState(false)
   const [isReplacingPhoto, setIsReplacingPhoto] = useState(false)
+  const [principalInfo, setPrincipalInfo] = useState<PrincipalMemberInfo | null>(null)
+
+  // Lookup principal member info when memberType is Dependent and pin is entered
+  useEffect(() => {
+    if (formData.memberType === 'DD' && formData.pin?.trim()) {
+      void getPrincipalMemberByPinAction(formData.pin.trim()).then((res) => {
+        if (res.data) {
+          setPrincipalInfo(res.data)
+        } else {
+          setPrincipalInfo(null)
+        }
+      })
+    } else {
+      setPrincipalInfo(null)
+    }
+  }, [formData.memberType, formData.pin])
 
   // Sync form data when currentData changes
   useEffect(() => {
@@ -331,17 +348,55 @@ export function PhilHealthRecordEditForm({
         </FormField>
 
         {formData.memberType === 'DD' && (
-          <FormField label="Your Dependent PIN" htmlFor="dependentPin" helpText={philHealthRecordLabels.dependentPin}>
-            <Input
-              id="dependentPin"
-              value={formData.dependentPin || ''}
-              onChange={(e) => handleFieldChange('dependentPin', formatPhilHealthPIN(e.target.value))}
-              placeholder="00-000000000-0"
-              maxLength={14}
-              className="font-mono"
-              required
-            />
-          </FormField>
+          <div className="space-y-3">
+            {principalInfo && (
+              <div className="border border-primary/20 bg-muted/40 rounded-lg p-3 space-y-2 text-xs">
+                <div className="flex items-center justify-between border-b pb-1">
+                  <span className="font-semibold text-primary flex items-center gap-1">
+                    <ShieldCheck className="h-3.5 w-3.5" />
+                    Principal Member Info (Read-Only)
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-muted-foreground">
+                  <div>
+                    <span className="font-medium text-foreground">PIN:</span>{" "}
+                    <span className="font-mono text-foreground font-semibold">{formatPhilHealthPIN(principalInfo.pin)}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-foreground">Date of Birth:</span>{" "}
+                    <span>{principalInfo.dob}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-foreground">First Name:</span>{" "}
+                    <span>{principalInfo.firstName}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-foreground">Last Name:</span>{" "}
+                    <span>{principalInfo.lastName}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-foreground">Middle Name:</span>{" "}
+                    <span>{principalInfo.middleName || "—"}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-foreground">Ext Name:</span>{" "}
+                    <span>{principalInfo.extensionName || "—"}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <FormField label="Your Dependent PIN (Optional)" htmlFor="dependentPin" helpText={philHealthRecordLabels.dependentPin}>
+              <Input
+                id="dependentPin"
+                value={formData.dependentPin || ''}
+                onChange={(e) => handleFieldChange('dependentPin', formatPhilHealthPIN(e.target.value))}
+                placeholder="00-000000000-0"
+                maxLength={14}
+                className="font-mono"
+              />
+            </FormField>
+          </div>
         )}
       </div>
 

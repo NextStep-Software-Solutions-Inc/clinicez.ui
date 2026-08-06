@@ -121,7 +121,7 @@ export async function updatePhilhealthRecord(
 
     const updateData = {
       pin: validatedInput.pin,
-      dependentPin: validatedInput.dependentPin,
+      principalMemberPin: validatedInput.dependentPin,
       tin: validatedInput.tin,
       philSysId: validatedInput.philSysId,
       memberType: validatedInput.memberType,

@@ -267,9 +267,9 @@ export const ClinicalRecords = ({
     },
     {
       value: "ekas",
-      tabTitle: "EKAS & EPRESS",
-      cardTitle: "Electronic Yakap Availment Slip & Electronic Prescription Slip",
-      description: "Download the Electronic Yakap Availment Slip for this consultation.",
+      tabTitle: "eKAS & ePRESS",
+      cardTitle: "eKAS & ePRESS Forms",
+      description: "Download separate Electronic Konsulta Availment Slip (eKAS) or Electronic Prescription Slip (ePRESS) for this consultation.",
       Component: EKASWrapper,
     }
   ];

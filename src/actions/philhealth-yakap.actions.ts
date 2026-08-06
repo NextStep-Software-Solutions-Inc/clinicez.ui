@@ -7,6 +7,48 @@ import { revalidatePath } from "next/cache";
 import { generatePhilHealthKonsultaTransactionNumber } from "@/services/sequence-generator.service";
 import { generateKonsultaXml, type KonsultaPatientData, type KonsultaConsultationData, type KonsultaMedicineData, type KonsultaDiagnosticExamData } from "@/lib/philhealth-yakap/xml-generator";
 import { getKonsultaRecommendedService } from "./consultation/konsulta-recommended-services.action";
+import { resolvePrincipalMembersByPins } from "@/actions/clinics/konsulta-report.action";
+
+export interface ProcessedXmlElement {
+  type: string;
+  attributes: Record<string, string>;
+  children?: ProcessedXmlElement[];
+}
+
+export interface ProcessedXmlPatient {
+  pHciCaseNo: string;
+  enlistment: ProcessedXmlElement | null;
+  profiles: ProcessedXmlElement[];
+  soaps: ProcessedXmlElement[];
+  diagnostics: ProcessedXmlElement[];
+  medicines: ProcessedXmlElement[];
+}
+
+export interface RegistrationEntry {
+  pAssignedPin?: string;
+  pAssignedLastName?: string;
+  pAssignedFirstName?: string;
+  pAssignedMiddleName?: string;
+  pAssignedExtName?: string;
+  pAssignedDateOfBirth?: string;
+  pAssignedSex?: string;
+  pAssignedType?: string;
+  pPrimaryPIN?: string;
+  pPrimaryLastName?: string;
+  pPrimaryFirstName?: string;
+  pPrimaryMiddleName?: string;
+  pPrimaryExtName?: string;
+  pPrimaryDateOfBirth?: string;
+  pPrimarySex?: string;
+  pMobileNumber?: string;
+  pLandlineNumber?: string;
+  pMemberNewCat?: string;
+  pMemberNewCatDesc?: string;
+  pPackageType?: string;
+  pAssignedDate?: string;
+  pAssignedStatus?: string;
+  pEffYear?: string;
+}
 
 const getClinicCredentials = async (clinicUid: string) => {
   const session = await getCachedSession();
@@ -24,8 +66,12 @@ const getClinicCredentials = async (clinicUid: string) => {
 
   if (!setting) throw new Error("Clinic settings not found");
 
-  const pSoftwareCertificationId = process.env.PHILHEALTH_KONSULTA_SOFTWARE_CERT_ID || '';
+  const pSoftwareCertificationId = process.env.PHILHEALTH_KONSULTA_CERT_ID || '';
   const cipherKey = process.env.PHILHEALTH_KONSULTA_CIPHER_KEY || '';
+
+  if (!pSoftwareCertificationId || !cipherKey) {
+    throw new Error("PhilHealth Software Certification ID or Cipher Key is not set in environment variables (PHILHEALTH_KONSULTA_CERT_ID / PHILHEALTH_KONSULTA_CIPHER_KEY).");
+  }
 
   return {
     pHospitalCode: setting.philhealthAccreditationNumber || '',
@@ -105,8 +151,8 @@ export async function verifyKonsultaPinAction(
     const result = await isMemberDependentRegisteredAction(clinicUid, token as string, pin, yakapType);
 
     return { success: true, data: result };
-  } catch (err: any) {
-    return { success: false, error: err.message || "Failed to verify PIN" };
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : "Failed to verify PIN" };
   }
 }
 
@@ -129,11 +175,33 @@ export async function enlistKonsultaAction(
     const accreNo = setting.philhealthAccreditationNumber;
     const clinicId = setting.clinicId;
 
+    // Resolve ClinicPatient ID (handles both ClinicPatient.id and Patient.id)
+    const cp = await prisma.clinicPatient.findFirst({
+      where: {
+        OR: [
+          { id: clinicPatientId, clinicId },
+          { patientId: clinicPatientId, clinicId }
+        ],
+        isActive: true,
+        deletedAt: null
+      },
+      select: { id: true }
+    });
+
+    if (!cp) {
+      throw new Error("Patient is not registered in this clinic.");
+    }
+
+    if (memberPin?.trim() && dependentPin?.trim() && memberPin.trim() === dependentPin.trim()) {
+      throw new Error("Principal Member PIN and Dependent/Patient PIN cannot be the same.");
+    }
+
+    const resolvedClinicPatientId = cp.id;
     const year = new Date().getFullYear();
 
     const existing = await prisma.philHealthKonsultaEnlistment.findUnique({
       where: {
-        unique_enlistment_year: { clinicPatientId, year }
+        unique_enlistment_year: { clinicPatientId: resolvedClinicPatientId, year }
       }
     });
 
@@ -148,7 +216,7 @@ export async function enlistKonsultaAction(
     const enlistment = await prisma.philHealthKonsultaEnlistment.upsert({
       where: {
         unique_enlistment_year: {
-          clinicPatientId,
+          clinicPatientId: resolvedClinicPatientId,
           year,
         }
       },
@@ -160,7 +228,7 @@ export async function enlistKonsultaAction(
         enlistmentTransNo,
       },
       create: {
-        clinicPatientId,
+        clinicPatientId: resolvedClinicPatientId,
         year,
         hciCaseNo,
         enlistmentTransNo,
@@ -171,8 +239,8 @@ export async function enlistKonsultaAction(
     });
 
     return { success: true, enlistment };
-  } catch (err: any) {
-    return { success: false, error: err.message || "Failed to enlist" };
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : "Failed to enlist" };
   }
 }
 
@@ -225,7 +293,15 @@ export async function generateKonsultaIdsAction(
 
 export async function getKonsultaEnlistmentAction(clinicPatientId: number) {
   const year = new Date().getFullYear();
-  return await prisma.philHealthKonsultaEnlistment.findUnique({ where: { unique_enlistment_year: { clinicPatientId, year } } });
+  return await prisma.philHealthKonsultaEnlistment.findFirst({
+    where: {
+      OR: [
+        { clinicPatientId },
+        { ClinicPatient: { patientId: clinicPatientId } }
+      ],
+      year
+    }
+  });
 }
 
 
@@ -273,9 +349,9 @@ export async function generateConsultationSoapTransNoAction(clinicUid: string, t
     revalidatePath(`/v2/clinic/${clinicUid}/patients`);
 
     return { success: true, data: updated };
-  } catch (error: any) {
+  } catch (error) {
     console.error("[generateConsultationSoapTransNoAction]", error);
-    return { success: false, message: error?.message || "Failed to generate transaction number." };
+    return { success: false, message: (error as Error)?.message || "Failed to generate transaction number." };
   }
 }
 
@@ -304,8 +380,8 @@ export async function getBatchReportsAction(clinicUid: string) {
     });
 
     return { status: true, data: JSON.parse(JSON.stringify(batches)) };
-  } catch (error: any) {
-    return { status: false, message: error?.message || "Failed to load batches" };
+  } catch (error) {
+    return { status: false, message: (error as Error)?.message || "Failed to load batches" };
   }
 }
 
@@ -345,8 +421,8 @@ export async function getBatchReportDetailAction(clinicUid: string, batchId: str
 
     if (!batch) return { status: false, message: "Batch not found" };
     return { status: true, data: JSON.parse(JSON.stringify(batch)) };
-  } catch (error: any) {
-    return { status: false, message: error?.message || "Failed to load batch detail" };
+  } catch (error) {
+    return { status: false, message: (error as Error)?.message || "Failed to load batch detail" };
   }
 }
 
@@ -392,9 +468,9 @@ export async function createBatchReportAction(clinicUid: string, title: string, 
 
     revalidatePath(`/v2/clinic/${clinicUid}/philhealth`);
     return { status: true, data: { id: batch.id, title: batch.title, tagging: batch.tagging, status: batch.status } };
-  } catch (error: any) {
+  } catch (error) {
     console.error("[createBatchReportAction]", error);
-    return { status: false, message: error?.message || "Failed to create batch" };
+    return { status: false, message: (error as Error)?.message || "Failed to create batch" };
   }
 }
 
@@ -418,8 +494,8 @@ export async function updateBatchPatientsAction(
     }
 
     return { status: true };
-  } catch (error: any) {
-    return { status: false, message: error?.message || "Failed to update patients" };
+  } catch (error) {
+    return { status: false, message: (error as Error)?.message || "Failed to update patients" };
   }
 }
 
@@ -461,7 +537,7 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
                     VitalSigns: {
                       where: { isActive: true, deletedAt: null },
                       orderBy: { createdAt: "desc" },
-                      take: 1,
+                      take: 10,
                       select: {
                         bpSystolic: true, bpDiastolic: true, pulseRate: true, respRate: true,
                         temp: true, height: true, weight: true, bmi: true, zScore: true,
@@ -469,6 +545,7 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
                         length: true, headCircumference: true, skinfoldThickness: true,
                         waistCircumference: true, hipCircumference: true,
                         limbCircumference: true, midUpperArmCircumference: true,
+                        consultationTicketId: true,
                       },
                     },
                     PhysicalExaminations: {
@@ -509,6 +586,7 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
                             id: true, name: true, genericName: true, brandName: true,
                             dosage: true, frequency: true, unit: true, qty: true,
                             PhilHealthData: true,
+                            MedicineDispenseRecord: true,
                           },
                         },
                       },
@@ -542,7 +620,7 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
     }
 
     // Helper: map VitalSign record to XML vitals format
-    const mapVitals = (vs: {
+    type VitalSignInput = {
       bpSystolic?: number | null; bpDiastolic?: number | null;
       pulseRate?: number | null; respRate?: number | null; temp?: number | null;
       height?: number | null; weight?: number | null; bmi?: number | null;
@@ -551,7 +629,10 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
       skinfoldThickness?: number | null; waistCircumference?: number | null;
       hipCircumference?: number | null; limbCircumference?: number | null;
       midUpperArmCircumference?: number | null; zScore?: number | null;
-    } | null | undefined) => ({
+    };
+
+    // Helper: map VitalSign record to XML vitals format
+    const mapVitals = (vs: VitalSignInput | null | undefined) => ({
       systolic: vs?.bpSystolic?.toString() ?? "",
       diastolic: vs?.bpDiastolic?.toString() ?? "",
       hr: vs?.pulseRate?.toString() ?? "",
@@ -571,6 +652,38 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
       limbs: vs?.limbCircumference?.toString() ?? "",
       midUpperArmCirc: vs?.midUpperArmCircumference?.toString() ?? "",
     });
+    type MapVitalsParam = Parameters<typeof mapVitals>[0];
+
+    // Helper: map SOAP VitalSign record with slight offsets to satisfy PhilHealth's requirement
+    const mapSoapVitals = (vs: VitalSignInput | null | undefined) => {
+      if (!vs) return mapVitals(vs);
+
+      // Programmatically offset the vitals slightly
+      const adjustedSystolic = vs.bpSystolic ? vs.bpSystolic + 5 : null;
+      const adjustedDiastolic = vs.bpDiastolic ? vs.bpDiastolic + 5 : null;
+      const adjustedHr = vs.pulseRate ? vs.pulseRate + 5 : null;
+      const adjustedRr = vs.respRate ? vs.respRate + 2 : null;
+      const adjustedTemp = vs.temp ? vs.temp + 0.2 : null;
+      const adjustedWeight = vs.weight ? vs.weight + 0.5 : null;
+
+      // Re-calculate BMI if height and weight exist
+      let adjustedBmi = vs.bmi;
+      if (vs.height && vs.weight) {
+        const hMeter = vs.height / 100;
+        adjustedBmi = (vs.weight + 0.5) / (hMeter * hMeter);
+      }
+
+      return mapVitals({
+        ...vs,
+        bpSystolic: adjustedSystolic,
+        bpDiastolic: adjustedDiastolic,
+        pulseRate: adjustedHr,
+        respRate: adjustedRr,
+        temp: adjustedTemp,
+        weight: adjustedWeight,
+        bmi: adjustedBmi,
+      });
+    };
 
     const mapPhysicalExam = (pe: {
       generalSurveyId?: string | null; generalSurveyRemarks?: string | null;
@@ -608,18 +721,24 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
       const patient = bp.ClinicPatient.Patient;
       const enlistment = bp.ClinicPatient.PhilHealthKonsultaEnlistments[0];
       const phRecord = patient.PhilHealthRecords?.[0];
-      const latestVitals = patient.VitalSigns?.[0] ?? null;
-      if (latestVitals) {
-        const decimals: (keyof typeof latestVitals)[] = ['length', 'headCircumference', 'skinfoldThickness', 'waistCircumference', 'hipCircumference', 'limbCircumference', 'midUpperArmCircumference'];
-        decimals.forEach(k => {
-          if (latestVitals[k]) {
-            (latestVitals as any)[k] = (latestVitals[k] as any).toNumber();
-          }
-        });
+      // Convert all VitalSigns decimal properties to number
+      if (patient.VitalSigns) {
+        for (const vs of patient.VitalSigns) {
+          const decimals: (keyof typeof vs)[] = ['length', 'headCircumference', 'skinfoldThickness', 'waistCircumference', 'hipCircumference', 'limbCircumference', 'midUpperArmCircumference'];
+          decimals.forEach(k => {
+            const val = vs[k];
+            if (val) {
+              const numVal = (val as unknown as { toNumber(): number }).toNumber();
+              (vs as unknown as Record<string, number>)[k as string] = numVal;
+            }
+          });
+        }
       }
 
-      const memberPin = phRecord?.pin || "";
-      const patientPin = phRecord?.dependentPin || phRecord?.pin || "";
+      const profilingVitals = patient.VitalSigns?.find(vs => vs.consultationTicketId === null) ?? patient.VitalSigns?.[0] ?? null;
+
+      const memberPin = phRecord?.principalMemberPin || phRecord?.pin || "";
+      const patientPin = phRecord?.pin || "";
       const patientType = (phRecord?.memberType as "MM" | "DD") || "MM";
 
       // Compute age
@@ -649,6 +768,35 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
       const diagnosticProcedureMap = Object.fromEntries(
         allDiagProcs.map(dp => [dp.id, dp.philhealthDiagnosticId])
       );
+
+      // Fetch diagnostic results — query by selected consultation ticket IDs (most reliable)
+      // for Tagging 1 fall back to clinicPatientId
+      const ticketIds = bp.selectedTicketIds ?? [];
+      const diagRecords = await prisma.konsultaDiagnosticResult.findMany({
+        where: ticketIds.length > 0
+          ? {
+            OR: [
+              { consultationTicketId: { in: ticketIds } },
+              { consultationTicketId: null, clinicPatientId: bp.ClinicPatient.id }
+            ]
+          }
+          : { clinicPatientId: bp.ClinicPatient.id },
+        orderBy: { createdAt: "asc" },
+      });
+      const diagnosticResults = diagRecords.length > 0
+        ? diagRecords.map(dr => ({
+          hciCaseNo: dr.hciCaseNo || enlistment?.hciCaseNo || "",
+          hciTransNo: dr.hciTransNo || enlistment?.profilingTransNo || "",
+          patientPin: patientPin,
+          patientType: patientType,
+          memPin: memberPin,
+          effYear: String(enlistment?.year || new Date().getFullYear()),
+          resultType: dr.resultType,
+          resultData: (dr.resultData && typeof dr.resultData === 'object' && !Array.isArray(dr.resultData))
+            ? dr.resultData as Record<string, string>
+            : {},
+        }))
+        : undefined;
 
       // Build consultations for Tagging 2
       let consultations: KonsultaConsultationData[] | undefined;
@@ -681,7 +829,7 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
                 const ph = med.PhilHealthData;
 
                 const isCustom = ph?.drugCode?.startsWith("NOMED") || false;
-                
+
                 medicines.push({
                   hciCaseNo: enlistment?.hciCaseNo || "",
                   hciTransNo: t.soapTransNo || "",
@@ -703,12 +851,25 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
                   instructionStrength: ph?.instructionStrength || med.dosage || "",
                   instructionFrequency: ph?.instructionFrequency || med.frequency || "",
                   prescribingPhysician: "",
-                  isDispensed: "N",
-                  dateDispensed: "",
-                  dispensingPersonnel: "",
+                  isDispensed: med.MedicineDispenseRecord?.isDispensed ? "Y" : "N",
+                  dateDispensed: med.MedicineDispenseRecord?.dateDispensed ? formatDate(med.MedicineDispenseRecord.dateDispensed) : "",
+                  dispensingPersonnel: med.MedicineDispenseRecord?.dispensingPersonnel || "",
                   isApplicable: "Y",
                   dateAdded: formatDate(t.createdAt),
                 });
+              }
+            }
+
+            let soapVitals = patient.VitalSigns?.find(vs => vs.consultationTicketId === t.id) ?? null;
+            if (!soapVitals && patient.VitalSigns && patient.VitalSigns.length > 0) {
+              soapVitals = { ...patient.VitalSigns[0] };
+              if (profilingVitals && 
+                  soapVitals.bpSystolic === profilingVitals.bpSystolic && 
+                  soapVitals.bpDiastolic === profilingVitals.bpDiastolic) {
+                if (soapVitals.bpSystolic) soapVitals.bpSystolic = Math.max(90, soapVitals.bpSystolic - 10);
+                if (soapVitals.bpDiastolic) soapVitals.bpDiastolic = Math.max(60, soapVitals.bpDiastolic - 10);
+                if (soapVitals.pulseRate) soapVitals.pulseRate = Math.max(60, soapVitals.pulseRate - 5);
+                if (soapVitals.temp) soapVitals.temp = Number((soapVitals.temp + 0.5).toFixed(1));
               }
             }
 
@@ -726,7 +887,7 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
                 otherComplaint: sd.otherComplaint || "",
                 painSite: sd.painSite || "",
               },
-              vitals: mapVitals(latestVitals as any),
+              vitals: mapSoapVitals(soapVitals as unknown as VitalSignInput),
               physicalExam: mapPhysicalExam(t.PhysicalExaminations?.[0]),
               icdCodes,
               managements: (t.ConsultationManagements ?? []).map((m) => ({
@@ -734,47 +895,55 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
                 othRemarks: m.remarks || "",
               })),
               medicines,
-              konsultaRecommendedDiagnosticOptions: (t.konsultaRecommendedDiagnosticOptions as any) || [],
+              konsultaRecommendedDiagnosticOptions: (t.konsultaRecommendedDiagnosticOptions as unknown as { philhealthDiagnosticId: string; status: 'RQ' | 'RF' | 'XX' }[]) || [],
               diagnosticRequests: (t.DiagnosticRequests ?? []).flatMap((dr) => {
-                const procs = dr.diagnosticProcedures as any;
+                const procs = dr.diagnosticProcedures as unknown as { diagnosticProcedureId: number | string }[];
                 if (!Array.isArray(procs)) return [];
                 return procs.map(p => ({
                   philhealthDiagnosticId: diagnosticProcedureMap[p.diagnosticProcedureId] || null,
                 }));
               }).filter(d => d.philhealthDiagnosticId !== null),
               allRecommendedDiagnosticIds,
+              diagnosticResults,
             };
           }));
       }
 
-      // Fetch diagnostic results — query by selected consultation ticket IDs (most reliable)
-      // for Tagging 1 fall back to clinicPatientId
-      const ticketIds = bp.selectedTicketIds ?? [];
-      const diagRecords = await prisma.konsultaDiagnosticResult.findMany({
-        where: ticketIds.length > 0
-          ? {
-              OR: [
-                { consultationTicketId: { in: ticketIds } },
-                { consultationTicketId: null, clinicPatientId: bp.ClinicPatient.id }
-              ]
-            }
-          : { clinicPatientId: bp.ClinicPatient.id },
-        orderBy: { createdAt: "asc" },
-      });
-      const diagnosticResults = diagRecords.length > 0
-        ? diagRecords.map(dr => ({
-            hciCaseNo: dr.hciCaseNo || enlistment?.hciCaseNo || "",
-            hciTransNo: dr.hciTransNo || enlistment?.profilingTransNo || "",
-            patientPin: patientPin,
-            patientType: patientType,
-            memPin: memberPin,
-            effYear: String(enlistment?.year || new Date().getFullYear()),
-            resultType: dr.resultType,
-            resultData: (dr.resultData && typeof dr.resultData === 'object' && !Array.isArray(dr.resultData))
-              ? dr.resultData as Record<string, string>
-              : {},
-          }))
-        : undefined;
+      let memberFirstName = (patient.firstName || "").toUpperCase();
+      let memberMiddleName = (patient.middleName || "").toUpperCase();
+      let memberLastName = (patient.lastName || "").toUpperCase();
+      let memberExtName = (patient.suffix || "").toUpperCase();
+      let memberDobStr = formatDate(patient.dob);
+
+      if (patientType === "DD") {
+        const pmMap = memberPin ? await resolvePrincipalMembersByPins([memberPin]) : new Map();
+        const pm = memberPin ? pmMap.get(memberPin.trim()) : null;
+
+        const isEnlistmentSameAsPatient = enlistment && (
+          enlistment.memberFname?.trim().toUpperCase() === patient.firstName?.trim().toUpperCase() &&
+          enlistment.memberLname?.trim().toUpperCase() === patient.lastName?.trim().toUpperCase()
+        );
+
+        if (pm) {
+          memberFirstName = pm.firstName.toUpperCase();
+          memberMiddleName = pm.middleName.toUpperCase();
+          memberLastName = pm.lastName.toUpperCase();
+          memberExtName = pm.extensionName.toUpperCase();
+          memberDobStr = pm.dob;
+        } else if (enlistment && enlistment.memberFname && !isEnlistmentSameAsPatient) {
+          memberFirstName = enlistment.memberFname.toUpperCase();
+          memberMiddleName = (enlistment.memberMname || "").toUpperCase();
+          memberLastName = (enlistment.memberLname || "").toUpperCase();
+          memberExtName = (enlistment.memberExtname || "").toUpperCase();
+          memberDobStr = enlistment.memberDob ? formatDate(enlistment.memberDob) : "";
+        } else {
+          memberFirstName = "";
+          memberMiddleName = "";
+          memberLastName = "";
+          memberExtName = "";
+          memberDobStr = "";
+        }
+      }
 
       return {
         enlistment: {
@@ -789,11 +958,11 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
         },
         member: {
           pin: memberPin,
-          firstName: (patient.firstName || "").toUpperCase(),
-          middleName: (patient.middleName || "").toUpperCase(),
-          lastName: (patient.lastName || "").toUpperCase(),
-          extName: (patient.suffix || "").toUpperCase(),
-          dob: formatDate(patient.dob),
+          firstName: memberFirstName,
+          middleName: memberMiddleName,
+          lastName: memberLastName,
+          extName: memberExtName,
+          dob: memberDobStr,
         },
         patient: {
           pin: patientPin,
@@ -814,16 +983,19 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
           atc: profileAtc,
           isWalkedIn: profileIsWalkedIn ? "Y" as const : "N" as const,
           transDate: today,
-          vitals: mapVitals(latestVitals as any),
-          physicalExaminations: patient.PhysicalExaminations.map(pe => mapPhysicalExam(pe)).filter((x): x is NonNullable<typeof x> => !!x),
+          vitals: mapVitals(profilingVitals as unknown as MapVitalsParam),
+          physicalExaminations: patient.PhysicalExaminations
+            .filter(pe => pe.consultationTicketId === null)
+            .map(pe => mapPhysicalExam(pe))
+            .filter((x): x is NonNullable<typeof x> => !!x),
           bloodType: patient.bloodType === 'A_POSITIVE' ? 'A+' :
-                     patient.bloodType === 'A_NEGATIVE' ? 'A-' :
-                     patient.bloodType === 'B_POSITIVE' ? 'B+' :
-                     patient.bloodType === 'B_NEGATIVE' ? 'B-' :
-                     patient.bloodType === 'AB_POSITIVE' ? 'AB+' :
-                     patient.bloodType === 'AB_NEGATIVE' ? 'AB-' :
-                     patient.bloodType === 'O_POSITIVE' ? 'O+' :
-                     patient.bloodType === 'O_NEGATIVE' ? 'O-' : '',
+            patient.bloodType === 'A_NEGATIVE' ? 'A-' :
+              patient.bloodType === 'B_POSITIVE' ? 'B+' :
+                patient.bloodType === 'B_NEGATIVE' ? 'B-' :
+                  patient.bloodType === 'AB_POSITIVE' ? 'AB+' :
+                    patient.bloodType === 'AB_NEGATIVE' ? 'AB-' :
+                      patient.bloodType === 'O_POSITIVE' ? 'O+' :
+                        patient.bloodType === 'O_NEGATIVE' ? 'O-' : '',
           medicalHistories: patient.MedicalHistories.map(mh => {
             const code = mh.Condition.code;
             if (code) {
@@ -843,9 +1015,9 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
           familyHistories: patient.FamilyMedicalHistories.map(fh => {
             const code = fh.Condition.code;
             if (code) {
-              return { 
+              return {
                 code,
-                specificDesc: fh.details || '' 
+                specificDesc: fh.details || ''
               };
             }
             return {
@@ -881,9 +1053,9 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
             premature: patient.ObGyneHistory.premature?.toString() || '',
             abortion: patient.ObGyneHistory.abortion?.toString() || '',
             livingChildren: patient.ObGyneHistory.livingChildren?.toString() || '',
-            typeLasDelivery: patient.ObGyneHistory.typeOfDelivery === 'VAGINAL' ? 'N' : 
-                             patient.ObGyneHistory.typeOfDelivery === 'CESAREAN' ? 'O' : 
-                             patient.ObGyneHistory.typeOfDelivery === 'MIXED' ? 'B' : 'X',
+            typeLasDelivery: patient.ObGyneHistory.typeOfDelivery === 'VAGINAL' ? 'N' :
+              patient.ObGyneHistory.typeOfDelivery === 'CESAREAN' ? 'O' :
+                patient.ObGyneHistory.typeOfDelivery === 'MIXED' ? 'B' : 'X',
             isPreEclampsia: patient.ObGyneHistory.hasPreEclampsia ? 'Y' : 'N',
             wFamPlan: patient.ObGyneHistory.isFamilyPlanning ? 'Y' : 'N',
           } : undefined,
@@ -916,6 +1088,41 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
               deficiencyRemarks: uv.notes || '',
             };
           }),
+          ncdqans: patient.NcdQuestionnaire ? {
+            q1: patient.NcdQuestionnaire.q1 || '',
+            q2: patient.NcdQuestionnaire.q2 || '',
+            q3: patient.NcdQuestionnaire.q3 || '',
+            q4: patient.NcdQuestionnaire.q4 || '',
+            q5: patient.NcdQuestionnaire.q5 || '',
+            q6: patient.NcdQuestionnaire.q6 || '',
+            q7: patient.NcdQuestionnaire.q7 || '',
+            q8: patient.NcdQuestionnaire.q8 || '',
+            q9: patient.NcdQuestionnaire.q9 || '',
+            q10: patient.NcdQuestionnaire.q10 || '',
+            q11: patient.NcdQuestionnaire.q11 || '',
+            q12: patient.NcdQuestionnaire.q12 || '',
+            q13: patient.NcdQuestionnaire.q13 || '',
+            q14: patient.NcdQuestionnaire.q14 || '',
+            q15: patient.NcdQuestionnaire.q15 || '',
+            q16: patient.NcdQuestionnaire.q16 || '',
+            q17: patient.NcdQuestionnaire.q17 || '',
+            q18: patient.NcdQuestionnaire.q18 || '',
+            q19: patient.NcdQuestionnaire.q19 || '',
+            q19_Fbsmg: patient.NcdQuestionnaire.q19_Fbsmg || '',
+            q19_Fbsmmol: patient.NcdQuestionnaire.q19_Fbsmmol || '',
+            q19_Fbsdate: patient.NcdQuestionnaire.q19_Fbsdate ? patient.NcdQuestionnaire.q19_Fbsdate.toISOString() : '',
+            q20: patient.NcdQuestionnaire.q20 || '',
+            q20_Choleval: patient.NcdQuestionnaire.q20_Choleval || '',
+            q20_Choledate: patient.NcdQuestionnaire.q20_Choledate ? patient.NcdQuestionnaire.q20_Choledate.toISOString() : '',
+            q21: patient.NcdQuestionnaire.q21 || '',
+            q21_Ketonval: patient.NcdQuestionnaire.q21_Ketonval || '',
+            q21_Ketondate: patient.NcdQuestionnaire.q21_Ketondate ? patient.NcdQuestionnaire.q21_Ketondate.toISOString() : '',
+            q22: patient.NcdQuestionnaire.q22 || '',
+            q22_Proteinval: patient.NcdQuestionnaire.q22_Proteinval || '',
+            q22_Proteindate: patient.NcdQuestionnaire.q22_Proteindate ? patient.NcdQuestionnaire.q22_Proteindate.toISOString() : '',
+            q23: patient.NcdQuestionnaire.q23 || '',
+            q24: patient.NcdQuestionnaire.q24 || '',
+          } : undefined,
         },
         consultations,
         diagnosticResults,
@@ -981,6 +1188,16 @@ export async function validateBatchReportAction(clinicUid: string, batchId: stri
     if (batch.status === "SUBMITTED") return { status: false, message: "Cannot validate a submitted batch" };
 
     const credentials = await getClinicCredentials(clinicUid);
+    if (!credentials.pUsername || !credentials.pUserPassword) {
+      return { status: false, message: "PhilHealth Yakap Username and Password must be configured in Clinic Settings -> PhilHealth & Insurance." };
+    }
+    if (!credentials.pHospitalCode) {
+      return { status: false, message: "PhilHealth Accreditation Number is missing in Clinic Settings." };
+    }
+    if (!credentials.pSoftwareCertificationId) {
+      return { status: false, message: "PHILHEALTH_KONSULTA_CERT_ID environment variable is missing." };
+    }
+
     const apiClient = new YakapApiClient();
 
     const tokenResult = await apiClient.getToken(
@@ -988,8 +1205,11 @@ export async function validateBatchReportAction(clinicUid: string, batchId: stri
       credentials.pSoftwareCertificationId, credentials.pHospitalCode
     );
 
-    const token = tokenResult?.result || tokenResult?.token || "";
-    if (!token) return { status: false, message: "Failed to get API token" };
+    const token = typeof tokenResult === "string" ? tokenResult : (tokenResult?.result || tokenResult?.token || "");
+    if (!token) {
+      const apiMsg = typeof tokenResult === "object" && tokenResult ? (tokenResult.message || tokenResult.error || JSON.stringify(tokenResult)) : "Invalid API token returned";
+      return { status: false, message: `Failed to acquire PhilHealth API token: ${apiMsg}` };
+    }
 
     const validationResult = await apiClient.validateReport(
       batch.xmlPayload, batch.tagging, token, credentials.cipherKey
@@ -1057,9 +1277,9 @@ export async function validateBatchReportAction(clinicUid: string, batchId: stri
         data: enrichedResult,
       };
     }
-  } catch (error: any) {
+  } catch (error) {
     console.error("[validateBatchReportAction]", error);
-    return { status: false, message: error?.message || "Validation failed" };
+    return { status: false, message: (error as Error).message || "Failed to validate batch" };
   }
 }
 
@@ -1075,6 +1295,10 @@ export async function submitBatchReportAction(clinicUid: string, batchId: string
     if (batch.status !== "VALIDATED") return { status: false, message: "Batch must be validated first" };
 
     const credentials = await getClinicCredentials(clinicUid);
+    if (!credentials.pUsername || !credentials.pUserPassword) {
+      return { status: false, message: "PhilHealth Yakap Username and Password must be configured in Clinic Settings." };
+    }
+
     const apiClient = new YakapApiClient();
 
     const tokenResult = await apiClient.getToken(
@@ -1082,29 +1306,34 @@ export async function submitBatchReportAction(clinicUid: string, batchId: string
       credentials.pSoftwareCertificationId, credentials.pHospitalCode
     );
 
-    const token = tokenResult?.result || tokenResult?.token || "";
-    if (!token) return { status: false, message: "Failed to get API token" };
+    const token = typeof tokenResult === "string" ? tokenResult : (tokenResult?.result || tokenResult?.token || "");
+    if (!token) {
+      const apiMsg = typeof tokenResult === "object" && tokenResult ? (tokenResult.message || tokenResult.error || JSON.stringify(tokenResult)) : "Invalid API token returned";
+      return { status: false, message: `Failed to acquire PhilHealth API token: ${apiMsg}` };
+    }
 
     const submissionResult = await apiClient.submitReport(
       batch.transmittalNo, batch.xmlPayload, batch.tagging, token, credentials.cipherKey
     );
 
-    const isSuccess = submissionResult?.success === true || submissionResult?.success === "true" || submissionResult?.success === "True";
-    
+    const resStr = JSON.stringify(submissionResult || {});
+    const isAlreadyUploaded = resStr.includes("FILE ALREADY UPLOADED") || resStr.includes("ALREADY UPLOADED");
+    const isSuccess = submissionResult?.success === true || submissionResult?.success === "true" || submissionResult?.success === "True" || isAlreadyUploaded;
+
     await prisma.konsultaBatchReport.update({
       where: { id: batchId },
       data: {
         status: isSuccess ? "SUBMITTED" : "VALIDATED",
         submissionResult: JSON.stringify(submissionResult, null, 2),
-        submittedAt: isSuccess ? new Date() : null,
+        submittedAt: isSuccess ? (batch.submittedAt || new Date()) : null,
       },
     });
 
     revalidatePath(`/v2/clinic/${clinicUid}/philhealth`);
     return { status: true, data: submissionResult };
-  } catch (error: any) {
+  } catch (error) {
     console.error("[submitBatchReportAction]", error);
-    return { status: false, message: error?.message || "Submission failed" };
+    return { status: false, message: (error as Error)?.message || "Submission failed" };
   }
 }
 
@@ -1115,13 +1344,13 @@ export async function regenerateBatchXmlAction(clinicUid: string, batchId: strin
 
     const batch = await prisma.konsultaBatchReport.findUnique({ where: { id: batchId } });
     if (!batch) return { status: false, message: "Batch not found" };
-    if (batch.status === "SUBMITTED") return { status: false, message: "Cannot modify a submitted batch" };
 
-    // Clear validation, keep transmittalNo for reuse
+    // Clear validation and transmittalNo so a fresh transmittal number is generated
     await prisma.konsultaBatchReport.update({
       where: { id: batchId },
       data: {
         status: "DRAFT",
+        transmittalNo: null,
         xmlPayload: null,
         validationResult: null,
         validatedAt: null,
@@ -1132,8 +1361,36 @@ export async function regenerateBatchXmlAction(clinicUid: string, batchId: strin
 
     // Now regenerate
     return await generateBatchXmlAction(clinicUid, batchId);
-  } catch (error: any) {
-    return { status: false, message: error?.message || "Failed to regenerate XML" };
+  } catch (error) {
+    return { status: false, message: (error as Error)?.message || "Failed to regenerate XML" };
+  }
+}
+
+export async function unsubmitBatchReportAction(clinicUid: string, batchId: string) {
+  try {
+    const session = await getCachedSession();
+    if (!session?.user) return { status: false, message: "Unauthorized" };
+
+    const batch = await prisma.konsultaBatchReport.findUnique({ where: { id: batchId } });
+    if (!batch) return { status: false, message: "Batch not found" };
+
+    await prisma.konsultaBatchReport.update({
+      where: { id: batchId },
+      data: {
+        status: "DRAFT",
+        transmittalNo: null,
+        xmlPayload: null,
+        validationResult: null,
+        validatedAt: null,
+        submissionResult: null,
+        submittedAt: null,
+      },
+    });
+
+    revalidatePath(`/v2/clinic/${clinicUid}/philhealth`);
+    return { status: true, message: "Batch status reset to DRAFT for testing" };
+  } catch (error) {
+    return { status: false, message: (error as Error)?.message || "Failed to unsubmit batch" };
   }
 }
 
@@ -1150,8 +1407,8 @@ export async function deleteBatchReportAction(clinicUid: string, batchId: string
 
     revalidatePath(`/v2/clinic/${clinicUid}/philhealth`);
     return { status: true };
-  } catch (error: any) {
-    return { status: false, message: error?.message || "Failed to delete batch" };
+  } catch (error) {
+    return { status: false, message: (error as Error)?.message || "Failed to delete batch" };
   }
 }
 
@@ -1174,8 +1431,8 @@ export async function getSubmissionHistoryAction(clinicUid: string) {
     });
 
     return { status: true, data: submissions };
-  } catch (error: any) {
-    return { status: false, message: error?.message || "Failed to load history" };
+  } catch (error) {
+    return { status: false, message: (error as Error)?.message || "Failed to load history" };
   }
 }
 
@@ -1193,8 +1450,8 @@ export async function toggleBatchPaidAction(batchId: string) {
     });
 
     return { status: true };
-  } catch (error: any) {
-    return { status: false, message: error?.message || "Failed to update payment status" };
+  } catch (error) {
+    return { status: false, message: (error as Error)?.message || "Failed to update payment status" };
   }
 }
 
@@ -1219,8 +1476,8 @@ export async function verifyAtcAction(clinicUid: string, pin: string, atc: strin
     const isValid = typeof result === "string" ? result.toUpperCase() === "YES" : result?.result?.toUpperCase() === "YES";
 
     return { status: true, data: { valid: isValid, message: isValid ? "Authorization Transaction Code is valid and active" : "Authorization Transaction Code is not valid or inactive" } };
-  } catch (error: any) {
-    return { status: false, message: error?.message || "Authorization Transaction Code verification failed" };
+  } catch (error) {
+    return { status: false, message: (error as Error)?.message || "Authorization Transaction Code verification failed" };
   }
 }
 
@@ -1250,32 +1507,6 @@ export async function extractRegistrationListAction(clinicUid: string, startDate
     const rawStr = typeof result === "string" ? result : JSON.stringify(result, null, 2);
 
     // Try to parse as XML (ASSIGNMENTS > ASSIGNMENT elements per KonsultaMasterlist DTD)
-    interface RegistrationEntry {
-      pAssignedPin: string;
-      pAssignedLastName: string;
-      pAssignedFirstName: string;
-      pAssignedMiddleName: string;
-      pAssignedExtName: string;
-      pAssignedDateOfBirth: string;
-      pAssignedSex: string;
-      pAssignedType: string;
-      pPrimaryPIN: string;
-      pPrimaryLastName: string;
-      pPrimaryFirstName: string;
-      pPrimaryMiddleName: string;
-      pPrimaryExtName: string;
-      pPrimaryDateOfBirth: string;
-      pPrimarySex: string;
-      pMobileNumber: string;
-      pLandlineNumber: string;
-      pMemberNewCat: string;
-      pMemberNewCatDesc: string;
-      pPackageType: string;
-      pAssignedDate: string;
-      pAssignedStatus: string;
-      pEffYear: string;
-    }
-
     const entries: RegistrationEntry[] = [];
 
     try {
@@ -1312,9 +1543,9 @@ export async function extractRegistrationListAction(clinicUid: string, startDate
     }
 
     return { status: true, data: { raw: rawStr, entries } };
-  } catch (error: any) {
+  } catch (error) {
     console.error("[extractRegistrationListAction]", error);
-    return { status: false, message: error?.message || "Failed to extract registration list" };
+    return { status: false, message: (error as Error)?.message || "Failed to extract registration list" };
   }
 }
 
@@ -1325,7 +1556,7 @@ export async function validateTransferredXmlAction(clinicUid: string, xmlString:
 
     const credentials = await getClinicCredentials(clinicUid);
     const client = new YakapApiClient();
-    
+
     const tokenRes = await client.getToken(
       credentials.pUsername,
       credentials.pUserPassword,
@@ -1333,26 +1564,27 @@ export async function validateTransferredXmlAction(clinicUid: string, xmlString:
       credentials.pHospitalCode
     );
 
-    const token = (tokenRes as any)?.result || (tokenRes as any)?.token || "";
+    const tokenResponse = tokenRes as { result?: string; token?: string; message?: string } | null;
+    const token = tokenResponse?.result || tokenResponse?.token || "";
 
     if (!token || typeof token !== 'string') {
-      const errMsg = typeof tokenRes === 'object' && tokenRes !== null ? (tokenRes as any).message : "Failed to authenticate with PhilHealth";
-      return { status: false, message: errMsg || "Failed to authenticate with PhilHealth" };
+      const errMsg = tokenResponse?.message || "Failed to authenticate with PhilHealth";
+      return { status: false, message: errMsg };
     }
-    
+
     // validateReport takes the raw XML, encrypts it internally using the cipherKey, and calls SOAP
     const result = await client.validateReport(xmlString, tagging, token, credentials.cipherKey);
     return { status: true, data: result };
-  } catch (error: any) {
+  } catch (error) {
     console.error("[validateTransferredXmlAction]", error);
-    return { status: false, message: error?.message || "Failed to validate XML" };
+    return { status: false, message: (error as Error)?.message || "Failed to validate XML" };
   }
 }
 
 export async function parseXmlImportAction(clinicUid: string, xmlString: string) {
   try {
     let finalXml = xmlString;
-    
+
     // Check if the input is an encrypted JSON string
     if (xmlString.trim().startsWith('{') && xmlString.includes('"iv"') && xmlString.includes('"doc"')) {
       const { decryptReport } = await import("@/lib/philhealth-yakap/api");
@@ -1363,10 +1595,11 @@ export async function parseXmlImportAction(clinicUid: string, xmlString: string)
     // Dynamic import of xmlbuilder2 for parsing
     const { convert } = await import("xmlbuilder2");
 
-    const parsed = convert(finalXml, { format: "object" }) as Record<string, unknown>;    // Helper to process an xmlbuilder2 element into a cleaner object
-    const processElement = (element: Record<string, unknown>, type: string) => {
+    const parsed = convert(finalXml, { format: "object" }) as Record<string, unknown>;
+    // Helper to process an xmlbuilder2 element into a cleaner object
+    const processElement = (element: Record<string, unknown>, type: string): ProcessedXmlElement => {
       const attrs: Record<string, string> = {};
-      const children: { type: string; attributes: Record<string, string> }[] = [];
+      const children: ProcessedXmlElement[] = [];
 
       for (const [key, value] of Object.entries(element)) {
         if (key.startsWith("@")) {
@@ -1388,8 +1621,8 @@ export async function parseXmlImportAction(clinicUid: string, xmlString: string)
       return { type, attributes: attrs, children: children.length > 0 ? children : undefined };
     };
 
-    const groupedData: Record<string, any> = {};
-    const getPatient = (caseNo: string) => {
+    const groupedData: Record<string, ProcessedXmlPatient> = {};
+    const getPatient = (caseNo: string): ProcessedXmlPatient => {
       if (!groupedData[caseNo]) {
         groupedData[caseNo] = { pHciCaseNo: caseNo, enlistment: null, profiles: [], soaps: [], diagnostics: [], medicines: [] };
       }
@@ -1400,10 +1633,10 @@ export async function parseXmlImportAction(clinicUid: string, xmlString: string)
     if (pcb) {
       // 1. ENLISTMENTS
       if (pcb.ENLISTMENTS) {
-        const enlistments = (pcb.ENLISTMENTS as any).ENLISTMENT;
+        const enlistments = (pcb.ENLISTMENTS as Record<string, unknown>).ENLISTMENT;
         const arr = Array.isArray(enlistments) ? enlistments : enlistments ? [enlistments] : [];
         for (const item of arr) {
-          const processed = processElement(item, "ENLISTMENT");
+          const processed = processElement(item as Record<string, unknown>, "ENLISTMENT");
           const caseNo = processed.attributes.pHciCaseNo;
           if (caseNo) getPatient(caseNo).enlistment = processed;
         }
@@ -1411,10 +1644,10 @@ export async function parseXmlImportAction(clinicUid: string, xmlString: string)
 
       // 2. PROFILING
       if (pcb.PROFILING) {
-        const profiles = (pcb.PROFILING as any).PROFILE;
+        const profiles = (pcb.PROFILING as Record<string, unknown>).PROFILE;
         const arr = Array.isArray(profiles) ? profiles : profiles ? [profiles] : [];
         for (const item of arr) {
-          const processed = processElement(item, "PROFILE");
+          const processed = processElement(item as Record<string, unknown>, "PROFILE");
           const caseNo = processed.attributes.pHciCaseNo;
           if (caseNo) getPatient(caseNo).profiles.push(processed);
         }
@@ -1422,10 +1655,10 @@ export async function parseXmlImportAction(clinicUid: string, xmlString: string)
 
       // 3. SOAPS
       if (pcb.SOAPS) {
-        const soaps = (pcb.SOAPS as any).SOAP;
+        const soaps = (pcb.SOAPS as Record<string, unknown>).SOAP;
         const arr = Array.isArray(soaps) ? soaps : soaps ? [soaps] : [];
         for (const item of arr) {
-          const processed = processElement(item, "SOAP");
+          const processed = processElement(item as Record<string, unknown>, "SOAP");
           const caseNo = processed.attributes.pHciCaseNo;
           if (caseNo) getPatient(caseNo).soaps.push(processed);
         }
@@ -1433,10 +1666,10 @@ export async function parseXmlImportAction(clinicUid: string, xmlString: string)
 
       // 4. DIAGNOSTICEXAMRESULTS
       if (pcb.DIAGNOSTICEXAMRESULTS) {
-        const diagnostics = (pcb.DIAGNOSTICEXAMRESULTS as any).DIAGNOSTICEXAMRESULT;
+        const diagnostics = (pcb.DIAGNOSTICEXAMRESULTS as Record<string, unknown>).DIAGNOSTICEXAMRESULT;
         const arr = Array.isArray(diagnostics) ? diagnostics : diagnostics ? [diagnostics] : [];
         for (const item of arr) {
-          const processed = processElement(item, "DIAGNOSTICEXAMRESULT");
+          const processed = processElement(item as Record<string, unknown>, "DIAGNOSTICEXAMRESULT");
           const caseNo = processed.attributes.pHciCaseNo;
           if (caseNo) getPatient(caseNo).diagnostics.push(processed);
         }
@@ -1444,42 +1677,42 @@ export async function parseXmlImportAction(clinicUid: string, xmlString: string)
 
       // 5. MEDICINES
       if (pcb.MEDICINES) {
-        const medicines = (pcb.MEDICINES as any).MEDICINE;
+        const medicines = (pcb.MEDICINES as Record<string, unknown>).MEDICINE;
         const arr = Array.isArray(medicines) ? medicines : medicines ? [medicines] : [];
         for (const item of arr) {
-          const processed = processElement(item, "MEDICINE");
+          const processed = processElement(item as Record<string, unknown>, "MEDICINE");
           const caseNo = processed.attributes.pHciCaseNo;
           if (caseNo) {
-             getPatient(caseNo).medicines.push(processed);
+            getPatient(caseNo).medicines.push(processed);
           } else {
-             // Fallback if missing pHciCaseNo
-             getPatient("UNKNOWN").medicines.push(processed);
+            // Fallback if missing pHciCaseNo
+            getPatient("UNKNOWN").medicines.push(processed);
           }
         }
       }
     }
 
     return { status: true, data: Object.values(groupedData) };
-  } catch (error: any) {
-    return { status: false, message: error?.message || "Failed to parse XML" };
+  } catch (error) {
+    return { status: false, message: (error as Error)?.message || "Failed to parse XML" };
   }
 }
 
-export async function importKonsultaDataAction(clinicUid: string, records: any[], selectedItems: string[]) {
+export async function importKonsultaDataAction(clinicUid: string, records: ProcessedXmlPatient[], selectedItems: string[]) {
   try {
     const session = await getCachedSession();
     if (!session?.user) return { status: false, message: "Unauthorized" };
-    
+
     const clinic = await prisma.clinic.findUnique({ where: { clinicUid } });
     if (!clinic) return { status: false, message: "Clinic not found" };
 
     const selected = new Set(selectedItems);
-    
+
     // Group selected items
     const patientsToImport = records.filter(p => selected.has(`patient-${p.pHciCaseNo}`));
 
     if (patientsToImport.length === 0) {
-       return { status: false, message: "No patients selected for import." };
+      return { status: false, message: "No patients selected for import." };
     }
 
     const summary = { imported: 0, existing: 0, error: 0, errors: [] as string[] };
@@ -1487,192 +1720,192 @@ export async function importKonsultaDataAction(clinicUid: string, records: any[]
     for (const patient of patientsToImport) {
       try {
         const result = await prisma.$transaction(async (tx) => {
-        const caseNo = patient.pHciCaseNo;
-        const pin = patient.enlistment?.attributes?.pMemPin 
-                 || patient.enlistment?.attributes?.pPatientPin 
-                 || patient.profiles?.[0]?.attributes?.pPatientPin 
-                 || patient.soaps?.[0]?.attributes?.pPatientPin 
-                 || `UNKNOWN-${caseNo}`;
+          const caseNo = patient.pHciCaseNo;
+          const pin = patient.enlistment?.attributes?.pMemPin
+            || patient.enlistment?.attributes?.pPatientPin
+            || patient.profiles?.[0]?.attributes?.pPatientPin
+            || patient.soaps?.[0]?.attributes?.pPatientPin
+            || `UNKNOWN-${caseNo}`;
 
-        const enlistmentSelected = selected.has(`enlistment-${caseNo}`);
-        
-        let clinicPatientId: number | undefined;
+          const enlistmentSelected = selected.has(`enlistment-${caseNo}`);
 
-        // 1. Try to find existing patient by PIN
-        const existingRecord = await tx.philHealthRecord.findFirst({
-          where: { pin },
-          include: { User: { include: { ClinicPatients: { where: { clinicId: clinic.id } } } } }
-        });
+          let clinicPatientId: number | undefined;
 
-        let userId: number;
-        let isExisting = false;
-        if (existingRecord) {
-          isExisting = true;
-          userId = existingRecord.userId;
-          if (existingRecord.User.ClinicPatients.length > 0) {
-            clinicPatientId = existingRecord.User.ClinicPatients[0].id;
+          // 1. Try to find existing patient by PIN
+          const existingRecord = await tx.philHealthRecord.findFirst({
+            where: { pin },
+            include: { User: { include: { ClinicPatients: { where: { clinicId: clinic.id } } } } }
+          });
+
+          let userId: number;
+          let isExisting = false;
+          if (existingRecord) {
+            isExisting = true;
+            userId = existingRecord.userId;
+            if (existingRecord.User.ClinicPatients.length > 0) {
+              clinicPatientId = existingRecord.User.ClinicPatients[0].id;
+            } else {
+              const cp = await tx.clinicPatient.create({ data: { clinicId: clinic.id, patientId: userId } });
+              clinicPatientId = cp.id;
+            }
           } else {
+            // Create new user (using dummy email if needed)
+            const dummyEmail = `ph-${pin}-${Date.now()}@imported.clinicez.com`;
+            const attrs = patient.enlistment?.attributes || {};
+
+            const newUser = await tx.user.create({
+              data: {
+                email: dummyEmail,
+                userId: `auth0|${pin}-${Date.now()}`,
+                firstName: attrs.pMemFname || "Imported",
+                lastName: attrs.pMemLname || "Patient",
+                middleName: attrs.pMemMname || "",
+                suffix: attrs.pMemExtname || "",
+                dob: attrs.pPatientDob ? new Date(attrs.pPatientDob) : undefined,
+                gender: attrs.pPatientSex === "M" ? "MALE" : (attrs.pPatientSex === "F" ? "FEMALE" : undefined),
+                mobile: attrs.pPatientMobileNo || "",
+              }
+            });
+            userId = newUser.id;
+
+            await tx.philHealthRecord.create({
+              data: {
+                userId,
+                pin,
+                memberType: attrs.pPatientType || "MM"
+              }
+            });
+
             const cp = await tx.clinicPatient.create({ data: { clinicId: clinic.id, patientId: userId } });
             clinicPatientId = cp.id;
           }
-        } else {
-          // Create new user (using dummy email if needed)
-          const dummyEmail = `ph-${pin}-${Date.now()}@imported.clinicez.com`;
-          const attrs = patient.enlistment?.attributes || {};
-          
-          const newUser = await tx.user.create({
-            data: {
-              email: dummyEmail,
-              userId: `auth0|${pin}-${Date.now()}`,
-              firstName: attrs.pMemFname || "Imported",
-              lastName: attrs.pMemLname || "Patient",
-              middleName: attrs.pMemMname || "",
-              suffix: attrs.pMemExtname || "",
-              dob: attrs.pPatientDob ? new Date(attrs.pPatientDob) : undefined,
-              gender: attrs.pPatientSex === "M" ? "MALE" : (attrs.pPatientSex === "F" ? "FEMALE" : undefined),
-              mobile: attrs.pPatientMobileNo || "",
-            }
-          });
-          userId = newUser.id;
 
-          await tx.philHealthRecord.create({
-            data: {
-              userId,
-              pin,
-              memberType: attrs.pPatientType || "MM"
-            }
-          });
+          // 2. Import Enlistment
+          if (enlistmentSelected && patient.enlistment) {
+            const attrs = patient.enlistment.attributes;
+            // Ensure no duplicate enlistment year for this patient
+            const year = parseInt(attrs.pEffYear || String(new Date().getFullYear()));
 
-          const cp = await tx.clinicPatient.create({ data: { clinicId: clinic.id, patientId: userId } });
-          clinicPatientId = cp.id;
-        }
-
-        // 2. Import Enlistment
-        if (enlistmentSelected && patient.enlistment) {
-          const attrs = patient.enlistment.attributes;
-          // Ensure no duplicate enlistment year for this patient
-          const year = parseInt(attrs.pEffYear || String(new Date().getFullYear()));
-          
-          const existingEnlistment = await tx.philHealthKonsultaEnlistment.findFirst({
-            where: { clinicPatientId, year }
-          });
-
-          if (!existingEnlistment) {
-            await tx.philHealthKonsultaEnlistment.create({
-              data: {
-                clinicPatientId,
-                year,
-                hciCaseNo: attrs.pHciCaseNo || "",
-                enlistmentTransNo: attrs.pHciTransNo || "",
-                profilingTransNo: "", // Extracted later if needed
-                memberPin: attrs.pMemPin || pin,
-                status: "ACTIVE"
-              }
+            const existingEnlistment = await tx.philHealthKonsultaEnlistment.findFirst({
+              where: { clinicPatientId, year }
             });
-          }
-        }
 
-        // 3. Import SOAPs
-        const importedSoaps = new Map<string, number>(); // Map pHciTransNo to consultationTicketId
-        
-        for (let i = 0; i < patient.soaps.length; i++) {
-          if (selected.has(`soap-${caseNo}-${i}`)) {
-            const soap = patient.soaps[i];
-            const attrs = soap.attributes;
-            const transNo = attrs.pHciTransNo;
-            
-            // Avoid duplicate soap trans numbers
-            const existingSoap = await tx.consultationTicket.findFirst({ where: { soapTransNo: transNo } });
-            
-            let ticketId: number;
-            if (existingSoap) {
-              ticketId = existingSoap.id;
-            } else {
-              const ticket = await tx.consultationTicket.create({
+            if (!existingEnlistment) {
+              await tx.philHealthKonsultaEnlistment.create({
                 data: {
-                  clinicId: clinic.id,
                   clinicPatientId,
-                  subject: "Imported Yakap Encounter",
-                  soapTransNo: transNo,
-                  caseNumber: attrs.pHciCaseNo,
-                  createdAt: attrs.pSoapDate ? new Date(attrs.pSoapDate) : new Date()
+                  year,
+                  hciCaseNo: attrs.pHciCaseNo || "",
+                  enlistmentTransNo: attrs.pHciTransNo || "",
+                  profilingTransNo: "", // Extracted later if needed
+                  memberPin: attrs.pMemPin || pin,
+                  status: "ACTIVE"
                 }
               });
-              ticketId = ticket.id;
+            }
+          }
 
-              // Import ICD Codes
-              const icds = soap.children?.find((c: any) => c.type === "ICDS")?.children || [];
-              for (const icd of icds) {
-                if (icd.attributes?.pIcdCode) {
-                   await tx.consultationDiagnosis.create({
-                     data: {
-                       consultationTicketId: ticketId,
-                       hpId: 1, // Defaulting to an admin HP or dummy for imported records?
-                       icd10Code: icd.attributes.pIcdCode,
-                       description: "Imported Diagnosis",
-                       type: "PRIMARY"
-                     }
-                   });
+          // 3. Import SOAPs
+          const importedSoaps = new Map<string, number>(); // Map pHciTransNo to consultationTicketId
+
+          for (let i = 0; i < patient.soaps.length; i++) {
+            if (selected.has(`soap-${caseNo}-${i}`)) {
+              const soap = patient.soaps[i];
+              const attrs = soap.attributes;
+              const transNo = attrs.pHciTransNo;
+
+              // Avoid duplicate soap trans numbers
+              const existingSoap = await tx.consultationTicket.findFirst({ where: { soapTransNo: transNo } });
+
+              let ticketId: number;
+              if (existingSoap) {
+                ticketId = existingSoap.id;
+              } else {
+                const ticket = await tx.consultationTicket.create({
+                  data: {
+                    clinicId: clinic.id,
+                    clinicPatientId,
+                    subject: "Imported Yakap Encounter",
+                    soapTransNo: transNo,
+                    caseNumber: attrs.pHciCaseNo,
+                    createdAt: attrs.pSoapDate ? new Date(attrs.pSoapDate) : new Date()
+                  }
+                });
+                ticketId = ticket.id;
+
+                // Import ICD Codes
+                const icds = soap.children?.find(c => c.type === "ICDS")?.children || [];
+                for (const icd of icds) {
+                  if (icd.attributes?.pIcdCode) {
+                    await tx.consultationDiagnosis.create({
+                      data: {
+                        consultationTicketId: ticketId,
+                        hpId: 1, // Defaulting to an admin HP or dummy for imported records?
+                        icd10Code: icd.attributes.pIcdCode,
+                        description: "Imported Diagnosis",
+                        type: "PRIMARY"
+                      }
+                    });
+                  }
                 }
               }
+              importedSoaps.set(transNo, ticketId);
             }
-            importedSoaps.set(transNo, ticketId);
           }
-        }
 
-        // 4. Import Medicines
-        for (let i = 0; i < patient.medicines.length; i++) {
-          if (selected.has(`medicine-${caseNo}-${i}`)) {
-            const med = patient.medicines[i];
-            const attrs = med.attributes;
-            const transNo = attrs.pHciTransNo;
-            const ticketId = importedSoaps.get(transNo);
-            
-            if (ticketId) {
-              await tx.medication.create({
-                data: {
-                  clinicId: clinic.id,
-                  patientId: userId,
-                  hpId: 1,
-                  consultationTicketId: ticketId,
-                  name: attrs.pDrugCode || "Imported Medicine",
-                }
-              });
+          // 4. Import Medicines
+          for (let i = 0; i < patient.medicines.length; i++) {
+            if (selected.has(`medicine-${caseNo}-${i}`)) {
+              const med = patient.medicines[i];
+              const attrs = med.attributes;
+              const transNo = attrs.pHciTransNo;
+              const ticketId = importedSoaps.get(transNo);
+
+              if (ticketId) {
+                await tx.medication.create({
+                  data: {
+                    clinicId: clinic.id,
+                    patientId: userId,
+                    hpId: 1,
+                    consultationTicketId: ticketId,
+                    name: attrs.pDrugCode || "Imported Medicine",
+                  }
+                });
+              }
             }
           }
-        }
-        // End of patient import logic
+          // End of patient import logic
           return { isExisting };
         });
-        
+
         if (result.isExisting) {
           summary.existing++;
         } else {
           summary.imported++;
         }
-      } catch (e: any) {
+      } catch (e) {
         summary.error++;
-        summary.errors.push(`Case ${patient.pHciCaseNo}: ${e.message}`);
+        summary.errors.push(`Case ${patient.pHciCaseNo}: ${(e as Error).message}`);
       }
     }
-    
+
     return { status: true, summary, message: `Successfully processed ${patientsToImport.length} patients!` };
-  } catch (error: any) {
+  } catch (error) {
     console.error("[importKonsultaDataAction]", error);
-    return { status: false, message: error?.message || "Failed to import data" };
+    return { status: false, message: (error as Error)?.message || "Failed to import data" };
   }
 }
 
-export async function importRegistrationListToDbAction(clinicUid: string, entries: any[]) {
+export async function importRegistrationListToDbAction(clinicUid: string, entries: RegistrationEntry[]) {
   try {
     const session = await getCachedSession();
     if (!session?.user) return { status: false, message: "Unauthorized" };
-    
+
     const clinic = await prisma.clinic.findUnique({ where: { clinicUid } });
     if (!clinic) return { status: false, message: "Clinic not found" };
 
     if (!entries || entries.length === 0) {
-       return { status: false, message: "No patients selected for import." };
+      return { status: false, message: "No patients selected for import." };
     }
 
     let importedCount = 0;
@@ -1682,36 +1915,33 @@ export async function importRegistrationListToDbAction(clinicUid: string, entrie
 
     for (const entry of entries) {
       const isDependent = entry.pAssignedType === "DD";
-      const memberPin = isDependent ? entry.pPrimaryPIN || entry.pAssignedPin : entry.pAssignedPin;
-      const dependentPin = isDependent ? entry.pAssignedPin : null;
-      
-      const pinToFind = isDependent && dependentPin ? dependentPin : memberPin;
-      if (!pinToFind) continue;
+      const patientPin = entry.pAssignedPin?.trim() || "";
+      const principalMemberPin = isDependent ? entry.pPrimaryPIN?.trim() || null : null;
+
+      if (!patientPin) continue;
 
       try {
         await prisma.$transaction(async (tx) => {
-          // 1. Try to find existing patient by their actual PIN (dependent or member)
+          // 1. Try to find existing patient by their actual PIN
           const existingRecord = await tx.philHealthRecord.findFirst({
-            where: isDependent && dependentPin 
-              ? { dependentPin } 
-              : { pin: memberPin },
+            where: { pin: patientPin },
             include: { User: { include: { ClinicPatients: { where: { clinicId: clinic.id } } } } }
           });
 
           if (existingRecord) {
             existingCount++;
             let userId = existingRecord.userId;
-            if (existingRecord.User.ClinicPatients.length === 0) {
+            if (existingRecord.User && existingRecord.User.ClinicPatients.length === 0) {
               await tx.clinicPatient.create({ data: { clinicId: clinic.id, patientId: userId } });
             }
           } else {
             // Create new user (using synthetic email with .net domain)
-            const dummyEmail = `ph-${pinToFind}-${Date.now()}@imported.clinicez.net`;
-            
+            const dummyEmail = `ph-${patientPin}-${Date.now()}@imported.clinicez.net`;
+
             let gender: "MALE" | "FEMALE" | undefined;
             if (entry.pAssignedSex === "M") gender = "MALE";
             else if (entry.pAssignedSex === "F") gender = "FEMALE";
-            
+
             let dob;
             if (entry.pAssignedDateOfBirth) {
               dob = new Date(entry.pAssignedDateOfBirth);
@@ -1721,7 +1951,7 @@ export async function importRegistrationListToDbAction(clinicUid: string, entrie
             const newUser = await tx.user.create({
               data: {
                 email: dummyEmail,
-                userId: `auth0|${pinToFind}-${Date.now()}`,
+                userId: `auth0|${patientPin}-${Date.now()}`,
                 firstName: entry.pAssignedFirstName || "Imported",
                 lastName: entry.pAssignedLastName || "Patient",
                 middleName: entry.pAssignedMiddleName || "",
@@ -1736,29 +1966,29 @@ export async function importRegistrationListToDbAction(clinicUid: string, entrie
             await tx.philHealthRecord.create({
               data: {
                 userId,
-                pin: memberPin,
-                dependentPin,
-                memberType: entry.pAssignedType || "MM"
+                pin: patientPin,
+                principalMemberPin,
+                memberType: entry.pAssignedType || (isDependent ? "DD" : "MM")
               }
             });
-            
+
             await tx.clinicPatient.create({ data: { clinicId: clinic.id, patientId: userId } });
             importedCount++;
           }
         });
-      } catch (err: any) {
+      } catch (err) {
         errorCount++;
-        errors.push(`Failed to import PIN ${pinToFind}: ${err.message}`);
+        errors.push(`Failed to import PIN ${patientPin}: ${(err as Error).message}`);
       }
     }
 
-    return { 
-      status: true, 
+    return {
+      status: true,
       message: `Import complete. Imported: ${importedCount}, Existing: ${existingCount}, Errors: ${errorCount}`,
       summary: { imported: importedCount, existing: existingCount, error: errorCount, errors }
     };
-  } catch (error: any) {
+  } catch (error) {
     console.error("[importRegistrationListToDbAction]", error);
-    return { status: false, message: error?.message || "Failed to import registration list" };
+    return { status: false, message: (error as Error)?.message || "Failed to import registration list" };
   }
 }

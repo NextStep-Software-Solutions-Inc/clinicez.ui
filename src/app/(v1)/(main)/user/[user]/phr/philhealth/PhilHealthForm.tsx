@@ -110,7 +110,9 @@ export function PhilHealthForm({ userUid, readonly = false, philhealth }: PhilHe
           name="pin"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>PhilHealth Identification Number (PIN)</FormLabel>
+              <FormLabel>
+                {form.watch("memberType") === "DD" ? "Principal Member PIN" : "PhilHealth Identification Number (PIN)"}
+              </FormLabel>
               <FormControl>
                 <Input
                   {...field}

@@ -29,12 +29,12 @@ export const getClinicSettingAction = cache(async (clinicUid: string) => {
         }
       }
     });
-    return { status: true, message, data: clinicSetting  }
+    return { status: true, message, data: clinicSetting }
   } catch (error) {
     console.error(error);
     message = "Error while fetching clinic settings";
-    if(error instanceof Error) message = error.message;
-    if(hasCodeProperty(error) && error.code === 'P2025') message = "Clinic not found";
+    if (error instanceof Error) message = error.message;
+    if (hasCodeProperty(error) && error.code === 'P2025') message = "Clinic not found";
     return { status: false, message, data: null }
   }
 });
@@ -51,7 +51,7 @@ export const updateClinicSettingsAction = async (clinicSettingId: number, { enab
   try {
 
     const session = await getCachedSession();
-    if(!session) throw new Error("User not authenticated.");
+    if (!session) throw new Error("User not authenticated.");
 
     const myPermissions = await getPermissionsAction({ userId: session.user.sub, type: "CLINIC" });
     const myPermissionArray = myPermissions.map(p => p.name);
@@ -59,7 +59,7 @@ export const updateClinicSettingsAction = async (clinicSettingId: number, { enab
     if (!canUpdateSettings) throw new Error("You do not have permission to update clinic settings.");
 
     const clinicSetting = await prisma.clinicSetting.update({
-      where: { 
+      where: {
         id: clinicSettingId
       },
       data: {
@@ -72,8 +72,8 @@ export const updateClinicSettingsAction = async (clinicSettingId: number, { enab
                     clinicUid
                   }
                 },
-                create: { },
-                update: { }
+                create: {},
+                update: {}
               }
             }
           }
@@ -94,18 +94,18 @@ export const updateClinicSettingsAction = async (clinicSettingId: number, { enab
   } catch (error) {
     console.error(`Error updating clinic settings: ${error}`);
     message = "Failed to update clinic settings";
-    if(error instanceof Error) message = error.message;
+    if (error instanceof Error) message = error.message;
     return { status: false, message, data: null }
   }
 };
 
-type UpdatePhilHealthSettings = {
+export type UpdatePhilHealthSettings = {
   philhealthAccreditationNumber?: string;
   facilityName?: string;
   philhealthYakapUsername?: string;
   philhealthYakapPassword?: string;
   philhealthYakapPmccNumber?: string;
-}
+};
 export const updatePhilHealthSettingsAction = async (clinicUid: string, data: UpdatePhilHealthSettings) => {
 
   let message = "PhilHealth settings updated successfully";
@@ -113,7 +113,7 @@ export const updatePhilHealthSettingsAction = async (clinicUid: string, data: Up
   try {
 
     const session = await getCachedSession();
-    if(!session) throw new Error("User not authenticated.");
+    if (!session) throw new Error("User not authenticated.");
 
     const myPermissions = await getPermissionsAction({ userId: session.user.sub, type: "CLINIC" });
     const myPermissionArray = myPermissions.map(p => p.name);
@@ -131,7 +131,7 @@ export const updatePhilHealthSettingsAction = async (clinicUid: string, data: Up
 
     // Upsert clinic setting - create if doesn't exist, update if it does
     const clinicSetting = await prisma.clinicSetting.upsert({
-      where: { 
+      where: {
         clinicId: clinic.id
       },
       create: {
@@ -154,7 +154,7 @@ export const updatePhilHealthSettingsAction = async (clinicUid: string, data: Up
   } catch (error) {
     console.error(`Error updating PhilHealth settings: ${error}`);
     message = "Failed to update PhilHealth settings";
-    if(error instanceof Error) message = error.message;
+    if (error instanceof Error) message = error.message;
     return { status: false, message, data: null }
   }
 };

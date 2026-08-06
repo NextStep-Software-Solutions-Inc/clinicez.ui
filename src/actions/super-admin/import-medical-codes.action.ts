@@ -217,16 +217,26 @@ export async function searchICD10CodesAction(
   query: string,
   limit = 20
 ): Promise<ICD10SearchResult[]> {
-  if (!query || query.trim().length < 2) return [];
+  const trimmed = query?.trim() || "";
+
+  if (trimmed.length < 2) {
+    const results = await prisma.iCD10Code.findMany({
+      where: { isActive: true },
+      select: { code: true, description: true, category: true },
+      orderBy: [{ code: "asc" }],
+      take: limit,
+    });
+    return results;
+  }
 
   const results = await prisma.iCD10Code.findMany({
     where: {
       isActive: true,
       OR: [
-        { code: { contains: query.trim(), mode: "insensitive" } },
-        { description: { contains: query.trim(), mode: "insensitive" } },
-        { shortDescription: { contains: query.trim(), mode: "insensitive" } },
-        { longDescription: { contains: query.trim(), mode: "insensitive" } },
+        { code: { contains: trimmed, mode: "insensitive" } },
+        { description: { contains: trimmed, mode: "insensitive" } },
+        { shortDescription: { contains: trimmed, mode: "insensitive" } },
+        { longDescription: { contains: trimmed, mode: "insensitive" } },
       ],
     },
     select: { code: true, description: true, category: true },

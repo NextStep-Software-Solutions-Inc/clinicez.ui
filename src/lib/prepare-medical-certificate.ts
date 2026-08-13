@@ -26,6 +26,65 @@ type PrepareMedicalCertificatePayload = {
   };
 };
 
+const DEFAULT_MEDICAL_CERTIFICATE_TEMPLATE = `
+<div style="font-family: Arial, Helvetica, sans-serif; max-width: 800px; margin: 0 auto; padding: 24px; color: #1e293b; line-height: 1.5; background: #ffffff;">
+  <div style="text-align: center; border-bottom: 2px solid #0284c7; padding-bottom: 12px; margin-bottom: 20px;">
+    <h2 style="margin: 0; color: #0f172a; font-size: 22px; font-weight: 700;">{{ doctorName }}</h2>
+    <p style="margin: 2px 0 0; font-size: 12px; color: #64748b;">License No: {{ licenseNo }} &nbsp;|&nbsp; PTR No: {{ ptrNo }}</p>
+  </div>
+
+  <h3 style="text-align: center; margin: 10px 0 24px; font-size: 20px; text-transform: uppercase; letter-spacing: 1.5px; color: #0369a1;">Medical Certificate</h3>
+
+  <div style="text-align: right; margin-bottom: 20px; font-size: 13px;">
+    <strong>Date:</strong> {{ createdDate }}
+  </div>
+
+  <div style="font-size: 14px; line-height: 1.8; margin-bottom: 30px; text-align: justify;">
+    <p style="margin-bottom: 16px;"><strong>TO WHOM IT MAY CONCERN:</strong></p>
+
+    <p style="margin-bottom: 16px;">
+      This is to certify that <strong>{{ name }}</strong>, {{ age }} years old, {{ gender }}, residing at {{ address }}, was examined and treated at this clinic on <strong>{{ createdDate }}</strong>.
+    </p>
+
+    {% if finding %}
+    <p style="margin-bottom: 16px;">
+      <strong>Clinical Findings:</strong> {{ finding }}
+    </p>
+    {% endif %}
+
+    {% if impression %}
+    <p style="margin-bottom: 16px;">
+      <strong>Diagnosis / Impression:</strong> {{ impression }}
+    </p>
+    {% endif %}
+
+    {% if recommendations %}
+    <p style="margin-bottom: 16px;">
+      <strong>Recommendations & Remarks:</strong> {{ recommendations }}
+    </p>
+    {% endif %}
+
+    <p style="margin-top: 24px;">
+      This medical certificate is issued upon the request of the patient for <strong>{{ reason }}</strong>.
+    </p>
+  </div>
+
+  <div style="display: flex; justify-content: flex-end; margin-top: 50px; page-break-inside: avoid;">
+    <div style="text-align: center; min-width: 220px;">
+      <div style="min-height: 70px; display: flex; align-items: center; justify-content: center;">
+        {% if eSignatureUrl != "" %}<img src="{{ eSignatureUrl }}" alt="Doctor e-signature" style="max-height: 96px;" />{% endif %}
+      </div>
+      <div style="border-top: 1px solid #334155; padding-top: 6px; font-size: 14px; font-weight: 700; color: #0f172a;">
+        {{ doctorName }}
+      </div>
+      <div style="font-size: 11px; color: #64748b; margin-top: 2px;">
+        Lic. No: {{ licenseNo }}
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
 export const prepareMedicalCertificate = (payload: PrepareMedicalCertificatePayload): string => {
   const { template, patient, doctor, certificate } = payload;
   const { name: patientName, age, gender, address } = patient;
@@ -40,6 +99,16 @@ export const prepareMedicalCertificate = (payload: PrepareMedicalCertificatePayl
     createdAt,
   } = certificate;
 
+  const rawTemplate = (template || "").trim();
+  const hasPlaceholders = Boolean(
+    rawTemplate &&
+    (rawTemplate.includes("{{") || rawTemplate.includes("@{") || rawTemplate.toLowerCase().includes("name") || rawTemplate.toLowerCase().includes("finding"))
+  );
+
+  const effectiveTemplate = hasPlaceholders
+    ? rawTemplate
+    : DEFAULT_MEDICAL_CERTIFICATE_TEMPLATE;
+
   const createdDate = dayjs(createdAt).format("MM/DD/YYYY");
   const createdDateTime = dayjs(createdAt).format("MM/DD/YYYY h:mm A");
 
@@ -49,7 +118,7 @@ export const prepareMedicalCertificate = (payload: PrepareMedicalCertificatePayl
   const variables = {
     createdDate,
     createdDateTime,
-    patientName,
+    name: patientName,
     age,
     gender,
     address,
@@ -57,15 +126,15 @@ export const prepareMedicalCertificate = (payload: PrepareMedicalCertificatePayl
     licenseNo,
     ptrNo,
     eSignatureUrl: eSignatureBase64 || "",
-    selectedClassification: shouldShowClassification ? classification : "",
-    selectedClassificationDescription: shouldShowClassification ? classificationDescription : "",
-    selectedReason: reason,
-    selectedFinding: finding,
-    recommendations: recommendations || "No recommendations provided.",
-    impression: impression || "No impressions provided.",
+    classification: shouldShowClassification ? classification : "",
+    classificationDescription: shouldShowClassification ? classificationDescription : "",
+    reason: reason || "whatever legal purpose it may serve",
+    finding: finding || "N/A",
+    recommendations: recommendations || "N/A",
+    impression: impression || "N/A",
   };
 
-  return renderLiquidTemplate(template, variables);
+  return renderLiquidTemplate(effectiveTemplate, variables);
 };
 
 import type { TemplateVariableSchema } from "./document-template-schema";

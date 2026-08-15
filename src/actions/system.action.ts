@@ -4,11 +4,11 @@ import prisma from "@lib/prisma";
 import { cache } from "react";
 
 export type GetSystems = Awaited<ReturnType<typeof getSystemsAction>>;
-export const getSystemsAction = cache(async (clinicUid?:string) => {
+export const getSystemsAction = cache(async (clinicUid?: string) => {
   return await prisma.system.findMany({
     where: { 
       isActive: true,
-      ...(clinicUid ? { Clinic: {clinicUid}} : {})
+      ...(clinicUid ? { Clinic: { OR: [{ clinicUid }, { customUrl: clinicUid }] } } : {})
     },
     select: {
       id: true,

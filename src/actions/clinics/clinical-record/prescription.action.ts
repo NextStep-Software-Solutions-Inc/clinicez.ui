@@ -268,18 +268,51 @@ export const createPrescriptionAction = withErrorHandling(async (input: CreatePr
         ClinicSetting: { select: { philhealthAccreditationNumber: true } },
       }
     });
-    const serialNumber = generateSerialNumber();
+    let serialNumber = generateSerialNumber();
+    let existingSerial = await prisma.prescription.findFirst({
+      where: { serialNumber },
+      select: { id: true },
+    });
+    while (existingSerial) {
+      serialNumber = generateSerialNumber();
+      existingSerial = await prisma.prescription.findFirst({
+        where: { serialNumber },
+        select: { id: true },
+      });
+    }
+
     const hciAccreNo = clinic.ClinicSetting?.philhealthAccreditationNumber ?? null;
-    const transactionSequence = hciAccreNo
-      ? await getNextSequenceNumber("KONSULTA_MEDICINE_TRANSACTION", clinic.id)
-      : null;
+    let finalTxNumber: string | undefined = undefined;
+    let finalTxGeneratedAt: Date | undefined = undefined;
+
+    if (hciAccreNo) {
+      let seq = await getNextSequenceNumber("KONSULTA_MEDICINE_TRANSACTION", clinic.id);
+      let candidateTx = formatKonsultaHciNumber("M", hciAccreNo, seq);
+
+      let existingTx = await prisma.prescription.findFirst({
+        where: { transactionNumber: candidateTx },
+        select: { id: true },
+      });
+
+      while (existingTx) {
+        seq = await getNextSequenceNumber("KONSULTA_MEDICINE_TRANSACTION", clinic.id);
+        candidateTx = formatKonsultaHciNumber("M", hciAccreNo, seq);
+        existingTx = await prisma.prescription.findFirst({
+          where: { transactionNumber: candidateTx },
+          select: { id: true },
+        });
+      }
+
+      finalTxNumber = candidateTx;
+      finalTxGeneratedAt = new Date();
+    }
 
     const prescription = await prisma.prescription.create({
       data: {
         serialNumber,
-        ...(hciAccreNo && transactionSequence ? {
-          transactionNumber: formatKonsultaHciNumber("M", hciAccreNo, transactionSequence),
-          transactionGeneratedAt: new Date(),
+        ...(finalTxNumber ? {
+          transactionNumber: finalTxNumber,
+          transactionGeneratedAt: finalTxGeneratedAt,
         } : {}),
         name: name || "",
         remarks: remarks || "",

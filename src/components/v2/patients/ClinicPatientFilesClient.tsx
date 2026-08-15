@@ -53,6 +53,7 @@ import {
   createFolderForPatientAction,
   generateClinicPatientUploadSasAction,
   registerClinicPatientFileUploadAction,
+  uploadFileForPatientAction,
   deletePatientFolderAction,
   deletePatientFileAction,
   renamePatientFolderAction,
@@ -301,55 +302,82 @@ export function ClinicPatientFilesClient({
   const handleUploadFile = () => {
     if (!uploadFile || !uploadFileTypeId || !selectedFolder) return;
     startTransition(async () => {
-      let fileToUpload = uploadFile;
-      if (fileToUpload.type.startsWith("image/")) {
-        fileToUpload = await compressImageAsync(fileToUpload);
-      }
+      try {
+        let fileToUpload = uploadFile;
+        if (fileToUpload.type.startsWith("image/")) {
+          fileToUpload = await compressImageAsync(fileToUpload);
+        }
 
-      const sasResult = await generateClinicPatientUploadSasAction({
-        patientId,
-        clinicUid,
-        folderId: selectedFolder.id,
-        fileName: fileToUpload.name,
-        mimeType: fileToUpload.type || "application/octet-stream",
-        size: fileToUpload.size,
-        fileTypeId: Number(uploadFileTypeId),
-      });
-      if (!sasResult.status || !sasResult.data) {
-        toast.error(sasResult.message || "Failed to prepare upload");
-        return;
-      }
-      const { sasUrl, blobUrl } = sasResult.data;
-      const putRes = await fetch(sasUrl, {
-        method: "PUT",
-        headers: {
-          "x-ms-blob-type": "BlockBlob",
-          "Content-Type": fileToUpload.type || "application/octet-stream",
-        },
-        body: fileToUpload,
-      });
-      if (!putRes.ok) {
-        toast.error(`Failed to upload file to storage (status: ${putRes.status})`);
-        return;
-      }
-      const result = await registerClinicPatientFileUploadAction({
-        patientId,
-        clinicUid,
-        folderId: selectedFolder.id,
-        fileTypeId: Number(uploadFileTypeId),
-        fileName: fileToUpload.name,
-        mimeType: fileToUpload.type || "application/octet-stream",
-        size: fileToUpload.size,
-        blobUrl,
-      });
-      if (result.status && result.data) {
+        let uploadSuccess = false;
+
+        // Try direct SAS URL upload first
+        try {
+          const sasResult = await generateClinicPatientUploadSasAction({
+            patientId,
+            clinicUid,
+            folderId: selectedFolder.id,
+            fileName: fileToUpload.name,
+            mimeType: fileToUpload.type || "application/octet-stream",
+            size: fileToUpload.size,
+            fileTypeId: Number(uploadFileTypeId),
+          });
+
+          if (sasResult.status && sasResult.data) {
+            const { sasUrl, blobUrl } = sasResult.data;
+            const putRes = await fetch(sasUrl, {
+              method: "PUT",
+              headers: {
+                "x-ms-blob-type": "BlockBlob",
+                "Content-Type": fileToUpload.type || "application/octet-stream",
+              },
+              body: fileToUpload,
+            });
+
+            if (putRes.ok) {
+              const result = await registerClinicPatientFileUploadAction({
+                patientId,
+                clinicUid,
+                folderId: selectedFolder.id,
+                fileTypeId: Number(uploadFileTypeId),
+                fileName: fileToUpload.name,
+                mimeType: fileToUpload.type || "application/octet-stream",
+                size: fileToUpload.size,
+                blobUrl,
+              });
+
+              if (result.status && result.data) {
+                uploadSuccess = true;
+              }
+            }
+          }
+        } catch (sasErr) {
+          console.warn("Direct SAS upload failed or was blocked by CORS, falling back to server-side upload:", sasErr);
+        }
+
+        // Fall back to server-side upload action if direct SAS upload was not successful
+        if (!uploadSuccess) {
+          const formData = new FormData();
+          formData.append("file", fileToUpload);
+          formData.append("patientId", String(patientId));
+          formData.append("clinicUid", clinicUid);
+          formData.append("folderId", String(selectedFolder.id));
+          formData.append("fileTypeId", String(uploadFileTypeId));
+
+          const serverResult = await uploadFileForPatientAction(formData);
+          if (!serverResult.status) {
+            toast.error(serverResult.message || "Failed to upload file");
+            return;
+          }
+        }
+
         refreshFolders();
         setShowUpload(false);
         setUploadFile(null);
         setUploadFileTypeId("");
         toast.success("File uploaded successfully");
-      } else {
-        toast.error(result.message || "Failed to upload file");
+      } catch (err: any) {
+        console.error("Upload error:", err);
+        toast.error(err?.message || "An error occurred while uploading the file");
       }
     });
   };

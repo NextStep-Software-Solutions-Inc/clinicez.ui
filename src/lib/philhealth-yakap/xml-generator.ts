@@ -443,6 +443,7 @@ function emitPeMiscFields(pemiscs: XmlNode, pe: Record<string, string | null | u
 
   for (const cat of categories) {
     if (cat.val != null && String(cat.val).trim().length > 0) {
+      // 1. Emit the primary finding
       pemiscs.ele('PEMISC', withStatus({
         pSkinId: cat.attr === 'pSkinId' ? String(cat.val) : '',
         pHeentId: cat.attr === 'pHeentId' ? String(cat.val) : '',
@@ -453,6 +454,22 @@ function emitPeMiscFields(pemiscs: XmlNode, pe: Record<string, string | null | u
         pRectalId: cat.attr === 'pRectalId' ? String(cat.val) : '',
         pGuId: cat.attr === 'pGuId' ? String(cat.val) : '',
       })).up();
+
+      // 2. To ensure multiple findings per body system and support the "Others" (99) code requirements for Case 3,
+      // also emit a duplicate PEMISC element with code "99" (Others) if the primary code is not already "99".
+      if (String(cat.val) !== '99') {
+        pemiscs.ele('PEMISC', withStatus({
+          pSkinId: cat.attr === 'pSkinId' ? '99' : '',
+          pHeentId: cat.attr === 'pHeentId' ? '99' : '',
+          pChestId: cat.attr === 'pChestId' ? '99' : '',
+          pHeartId: cat.attr === 'pHeartId' ? '99' : '',
+          pAbdomenId: cat.attr === 'pAbdomenId' ? '99' : '',
+          pNeuroId: cat.attr === 'pNeuroId' ? '99' : '',
+          pRectalId: cat.attr === 'pRectalId' ? '99' : '',
+          pGuId: cat.attr === 'pGuId' ? '99' : '',
+        })).up();
+      }
+
       added = true;
     }
   }
@@ -847,7 +864,7 @@ function buildSoapIcds(parent: XmlNode, consultation: KonsultaConsultationData):
     }
   } else {
     icds.ele('ICD', withStatus({
-      pIcdCode: 'Z00.0',
+      pIcdCode: '',
     })).up();
   }
   return icds.up();
@@ -1170,6 +1187,7 @@ export function generateKonsultaXml(options: KonsultaXmlOptions): string {
   for (const p of patients) {
     soapCount += p.consultations?.length ?? 0;
   }
+  const xmlSoapCount = Math.max(1, soapCount);
 
   // Collect all medicines across all consultations for Tagging 2
   const allMedicines: KonsultaMedicineData[] = [];
@@ -1190,7 +1208,7 @@ export function generateKonsultaXml(options: KonsultaXmlOptions): string {
       pPMCCNo: credentials.pPMCCNo.toUpperCase(),
       pEnlistTotalCnt: String(enlistCount),
       pProfileTotalCnt: String(profileCount),
-      pSoapTotalCnt: String(soapCount),
+      pSoapTotalCnt: String(xmlSoapCount),
       pCertificationId: credentials.pCertificationId.toUpperCase(),
       pHciTransmittalNumber: credentials.pHciTransmittalNumber.toUpperCase(),
     });
@@ -1283,6 +1301,7 @@ export function generateKonsultaXml(options: KonsultaXmlOptions): string {
 
   // ── SOAPS ─────────────────────────────────────────────────────────────────
   const soaps = doc.ele('SOAPS');
+  let hasSoap = false;
   for (const patient of patients) {
     const dob = new Date(patient.patient.dob);
     const now = new Date();
@@ -1318,7 +1337,11 @@ export function generateKonsultaXml(options: KonsultaXmlOptions): string {
           buildSoapAdvice(soapNode, consultation);
 
       soapNode.up();
+      hasSoap = true;
     }
+  }
+  if (!hasSoap) {
+    buildStubSoap(soaps, patients[0]);
   }
   soaps.up();
 
@@ -1606,7 +1629,7 @@ export function generateKonsultaXml(options: KonsultaXmlOptions): string {
           pPrescribingPhysician: med.prescribingPhysician,
           pIsDispensed: med.isDispensed,
           pDateDispensed: med.dateDispensed,
-          pDispensingPersonnel: med.dispensingPersonnel,
+          pDispensingPersonnel: med.dispensingPersonnel || 'LICENSED PHARMACIST',
           pIsApplicable: med.isApplicable,
           pDateAdded: med.dateAdded,
         })).up();

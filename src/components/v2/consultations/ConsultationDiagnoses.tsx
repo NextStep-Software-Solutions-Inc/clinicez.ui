@@ -93,8 +93,11 @@ function ICD10Combobox({
     setQuery(val);
     if (debounceRef.current) clearTimeout(debounceRef.current);
     if (val.length < 2) {
-      setSuggestions([]);
-      setIsSearching(false);
+      setIsSearching(true);
+      searchICD10CodesAction("", 10).then((results) => {
+        setSuggestions(results);
+        setIsSearching(false);
+      });
       return;
     }
     setIsSearching(true);
@@ -118,6 +121,12 @@ function ICD10Combobox({
       setQuery("");
       setSuggestions([]);
       setIsSearching(false);
+    } else {
+      setIsSearching(true);
+      searchICD10CodesAction("", 10).then((results) => {
+        setSuggestions(results);
+        setIsSearching(false);
+      });
     }
   };
 
@@ -182,7 +191,7 @@ function ICD10Combobox({
                 <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
               </div>
             )}
-            {!isSearching && query.length >= 2 && suggestions.length === 0 && (
+            {!isSearching && suggestions.length === 0 && (
               <CommandEmpty>No ICD-10 codes found</CommandEmpty>
             )}
             {!isSearching &&
@@ -568,9 +577,8 @@ export default function ConsultationDiagnoses({
                       {diagnosis.icd10Code}
                     </span>
                     <Badge
-                      className={`text-[10px] px-1.5 py-0 h-4 border-0 font-medium ${
-                        TYPE_COLORS[diagnosis.type] ?? ""
-                      }`}
+                      className={`text-[10px] px-1.5 py-0 h-4 border-0 font-medium ${TYPE_COLORS[diagnosis.type] ?? ""
+                        }`}
                       variant="outline"
                     >
                       {
@@ -586,9 +594,8 @@ export default function ConsultationDiagnoses({
                   <p className="text-[10px] text-muted-foreground mt-1">
                     By{" "}
                     {diagnosis.HealthCareProvider.HPProfile?.name ??
-                      `${diagnosis.HealthCareProvider.User?.firstName ?? ""} ${
-                        diagnosis.HealthCareProvider.User?.lastName ?? ""
-                      }`.trim()}
+                      `${diagnosis.HealthCareProvider.User?.firstName ?? ""} ${diagnosis.HealthCareProvider.User?.lastName ?? ""
+                        }`.trim()}
                   </p>
                 </div>
                 {!isResolved && myActiveHp && (

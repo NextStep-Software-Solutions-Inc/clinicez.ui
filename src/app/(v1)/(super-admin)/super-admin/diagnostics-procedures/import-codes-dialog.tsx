@@ -62,10 +62,10 @@ interface ICD10TxtConfig {
 }
 
 const CMS_DEFAULTS: ICD10TxtConfig = {
-  order:         { start: 1,  length: 5  },
-  code:          { start: 7,  length: 7  },
-  hipaa:         { start: 15, length: 1  },
-  shortDesc:     { start: 17, length: 60 },
+  order: { start: 1, length: 5 },
+  code: { start: 7, length: 7 },
+  hipaa: { start: 15, length: 1 },
+  shortDesc: { start: 17, length: 60 },
   longDescStart: 78,
 };
 
@@ -628,16 +628,16 @@ export function ImportCodesDialog({
       const rows: UploadRow[] =
         importType === "icd10"
           ? (icd10TxtRows
-              ? icd10TxtRows
-              : (parsedRows ?? [])
-                  .map((r) => normalizeICD10Row(r, headers))
-                  .filter((r): r is ICD10Row => r !== null && r.code.trim() !== ""))
+            ? icd10TxtRows
+            : (parsedRows ?? [])
+              .map((r) => normalizeICD10Row(r, headers))
+              .filter((r): r is ICD10Row => r !== null && r.code.trim() !== ""))
           : (parsedRows ?? [])
-              .map((r) => normalizeRVSRow(r, headers))
-              .filter(
-                (r): r is RVSProcedureRow & { procedureType?: RVSProcedureType } =>
-                  r !== null && r.name.trim() !== ""
-              );
+            .map((r) => normalizeRVSRow(r, headers))
+            .filter(
+              (r): r is RVSProcedureRow & { procedureType?: RVSProcedureType } =>
+                r !== null && r.name.trim() !== ""
+            );
 
       const { promise, cancel } = runUploadWorker(
         importType,
@@ -879,9 +879,9 @@ export function ImportCodesDialog({
 
                   {(
                     [
-                      { label: "Order number",     key: "order"     },
-                      { label: "Code",              key: "code"      },
-                      { label: "HIPAA indicator",   key: "hipaa"     },
+                      { label: "Order number", key: "order" },
+                      { label: "Code", key: "code" },
+                      { label: "HIPAA indicator", key: "hipaa" },
                       { label: "Short description", key: "shortDesc" },
                     ] as const
                   ).map(({ label, key }) => (

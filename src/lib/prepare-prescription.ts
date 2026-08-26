@@ -94,11 +94,63 @@ type PreparePrescriptionPayload = {
 // medicine list never overflows into the signature / doctor section.
 const MEDICINES_PER_PAGE = 7;
 
+const DEFAULT_PRESCRIPTION_TEMPLATE = `
+<div style="font-family: Arial, Helvetica, sans-serif; max-width: 800px; margin: 0 auto; padding: 24px; color: #1e293b; line-height: 1.5; background: #ffffff;">
+  <div style="text-align: center; border-bottom: 2px solid #0284c7; padding-bottom: 12px; margin-bottom: 20px;">
+    <h2 style="margin: 0; color: #0f172a; font-size: 22px; font-weight: 700;">{{ doctorName }}</h2>
+    <p style="margin: 4px 0 0; font-size: 13px; color: #475569;">{{ doctorAddress }}</p>
+    <p style="margin: 2px 0 0; font-size: 12px; color: #64748b;">License No: {{ licenseNo }} &nbsp;|&nbsp; PTR No: {{ ptrNo }}</p>
+  </div>
+
+  <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 13px;">
+    <tr>
+      <td style="padding: 4px 0; width: 60%;"><strong>Patient Name:</strong> {{ name }}</td>
+      <td style="padding: 4px 0; text-align: right;"><strong>Date:</strong> {{ requestDate }}</td>
+    </tr>
+    <tr>
+      <td style="padding: 4px 0;"><strong>Address:</strong> {{ address }}</td>
+      <td style="padding: 4px 0; text-align: right;"><strong>Age / Sex:</strong> {{ age }} yrs / {{ gender }}</td>
+    </tr>
+  </table>
+
+  <div style="margin-bottom: 30px; min-height: 250px;">
+    <div style="font-size: 38px; font-weight: bold; font-family: Georgia, serif; color: #0284c7; margin-bottom: 12px;">Rx</div>
+    <div style="font-size: 14px; line-height: 1.8; padding-left: 10px;">
+      {{ medicine }}
+    </div>
+  </div>
+
+  <div style="display: flex; justify-content: flex-end; margin-top: 40px; page-break-inside: avoid;">
+    <div style="text-align: center; min-width: 220px;">
+      <div style="min-height: 70px; display: flex; align-items: center; justify-content: center;">
+        {{ eSignatureUrl }}
+      </div>
+      <div style="border-top: 1px solid #334155; padding-top: 6px; font-size: 14px; font-weight: 700; color: #0f172a;">
+        {{ doctorName }}
+      </div>
+      <div style="font-size: 11px; color: #64748b; margin-top: 2px;">
+        Lic. No: {{ licenseNo }}
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
 export const preparePrescription = (payload: PreparePrescriptionPayload): string => {
   const { template, patient, prescription, doctor } = payload;
   const { name: patientName, age, gender, address } = patient;
   const { medicines, createdAt } = prescription;
   const { name: doctorName, licenseNo, ptrNo, address: doctorAddress, eSignatureBase64 } = doctor;
+
+  const rawTemplate = (template || "").trim();
+  const hasPlaceholders = Boolean(
+    rawTemplate &&
+    (rawTemplate.includes("{{") || rawTemplate.includes("@{") || rawTemplate.toLowerCase().includes("medicine"))
+  );
+
+  const effectiveTemplate = hasPlaceholders
+    ? rawTemplate
+    : DEFAULT_PRESCRIPTION_TEMPLATE;
 
   const signaturePlaceholderUsedAsUrl = [
     // Legacy @{} syntax inside src attributes / CSS url()
@@ -112,7 +164,7 @@ export const preparePrescription = (payload: PreparePrescriptionPayload): string
     /url\(\s*"\{\{-?\s*eSignatureUrl\s*-?\}\}"\s*\)/i,
     /url\(\s*'\{\{-?\s*eSignatureUrl\s*-?\}\}'\s*\)/i,
     /url\(\s*\{\{-?\s*eSignatureUrl\s*-?\}\}\s*\)/i,
-  ].some((pattern) => pattern.test(template));
+  ].some((pattern) => pattern.test(effectiveTemplate));
 
   const signatureMarkup = eSignatureBase64
     ? signaturePlaceholderUsedAsUrl
@@ -167,7 +219,7 @@ export const preparePrescription = (payload: PreparePrescriptionPayload): string
       .map((med) => `${med.index}.) ${med.label}${med.sig ? `<br/>Sig: ${med.sig}` : ""}`)
       .join("<br/><br/>");
 
-    return renderLiquidTemplate(template, {
+    return renderLiquidTemplate(effectiveTemplate, {
       ...baseVariables,
       medicines: pageMedicines,
       medicine: pageMedicines.length === 0 ? "" : medicineLegacyHtml,

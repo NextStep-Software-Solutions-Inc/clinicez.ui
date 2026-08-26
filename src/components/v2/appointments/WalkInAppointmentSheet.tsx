@@ -184,10 +184,6 @@ export function WalkInAppointmentSheet({
       toast.error("Please fill in appointment mode, type, and service.");
       return;
     }
-    if (!systemId) {
-      toast.error("Please select a system / department.");
-      return;
-    }
 
     setIsPending(true);
     const result = await createWalkInAppointmentAction({
@@ -199,7 +195,7 @@ export function WalkInAppointmentSheet({
       modeId: parseInt(modeId),
       typeId: parseInt(typeId),
       serviceId: parseInt(serviceId),
-      systemId: parseInt(systemId),
+      systemId: systemId ? parseInt(systemId) : undefined,
       hpId: hpId ? parseInt(hpId) : undefined,
       date: date ? (() => { const [y, m, d] = date.split("-").map(Number); return new Date(y, m - 1, d); })() : undefined,
       timeStart: timeStart || undefined,
@@ -429,10 +425,10 @@ export function WalkInAppointmentSheet({
           {/* ── System / Department ───────────────────────────────────────── */}
           <div className="space-y-1.5">
             <Label className="text-xs font-medium">
-              System / Department <span className="text-destructive">*</span>
+              System / Department <span className="text-muted-foreground font-normal">(optional)</span>
             </Label>
             <Select value={systemId} onValueChange={setSystemId}>
-              <SelectTrigger><SelectValue placeholder="Select system / department" /></SelectTrigger>
+              <SelectTrigger><SelectValue placeholder="Select system / department (optional)" /></SelectTrigger>
               <SelectContent>
                 {systems.map((system) => (
                   <SelectItem key={system.id} value={String(system.id)}>{system.name}</SelectItem>

@@ -56,6 +56,7 @@ import {
   updatePatientFolderPrivacyAction,
   generatePatientUploadSasAction,
   registerPatientFileUploadAction,
+  uploadPatientFileAction,
   deletePatientFileAction,
   updatePatientFilePrivacyAction,
   sharePatientFolderWithClinicAction,
@@ -287,51 +288,76 @@ export function PatientFilesClient({
   const handleUploadFile = () => {
     if (!selectedFolder || !uploadFile || !uploadFileTypeId) return;
     startTransition(async () => {
-      let fileToUpload = uploadFile;
-      if (fileToUpload.type.startsWith("image/")) {
-        fileToUpload = await compressImageAsync(fileToUpload);
-      }
+      try {
+        let fileToUpload = uploadFile;
+        if (fileToUpload.type.startsWith("image/")) {
+          fileToUpload = await compressImageAsync(fileToUpload);
+        }
 
-      const sasResult = await generatePatientUploadSasAction({
-        folderId: selectedFolder.id,
-        fileName: fileToUpload.name,
-        mimeType: fileToUpload.type || "application/octet-stream",
-        size: fileToUpload.size,
-        fileTypeId: Number(uploadFileTypeId),
-      });
-      if (!sasResult.status || !sasResult.data) {
-        toast.error(sasResult.message || "Failed to prepare upload");
-        return;
-      }
-      const { sasUrl, blobUrl } = sasResult.data;
-      const putRes = await fetch(sasUrl, {
-        method: "PUT",
-        headers: {
-          "x-ms-blob-type": "BlockBlob",
-          "Content-Type": fileToUpload.type || "application/octet-stream",
-        },
-        body: fileToUpload,
-      });
-      if (!putRes.ok) {
-        toast.error(`Failed to upload file to storage (status: ${putRes.status})`);
-        return;
-      }
-      const result = await registerPatientFileUploadAction({
-        folderId: selectedFolder.id,
-        fileTypeId: Number(uploadFileTypeId),
-        fileName: fileToUpload.name,
-        mimeType: fileToUpload.type || "application/octet-stream",
-        size: fileToUpload.size,
-        blobUrl,
-      });
-      if (result.status) {
+        let uploadSuccess = false;
+
+        // Try direct SAS URL upload first
+        try {
+          const sasResult = await generatePatientUploadSasAction({
+            folderId: selectedFolder.id,
+            fileName: fileToUpload.name,
+            mimeType: fileToUpload.type || "application/octet-stream",
+            size: fileToUpload.size,
+            fileTypeId: Number(uploadFileTypeId),
+          });
+
+          if (sasResult.status && sasResult.data) {
+            const { sasUrl, blobUrl } = sasResult.data;
+            const putRes = await fetch(sasUrl, {
+              method: "PUT",
+              headers: {
+                "x-ms-blob-type": "BlockBlob",
+                "Content-Type": fileToUpload.type || "application/octet-stream",
+              },
+              body: fileToUpload,
+            });
+
+            if (putRes.ok) {
+              const result = await registerPatientFileUploadAction({
+                folderId: selectedFolder.id,
+                fileTypeId: Number(uploadFileTypeId),
+                fileName: fileToUpload.name,
+                mimeType: fileToUpload.type || "application/octet-stream",
+                size: fileToUpload.size,
+                blobUrl,
+              });
+
+              if (result.status) {
+                uploadSuccess = true;
+              }
+            }
+          }
+        } catch (sasErr) {
+          console.warn("Direct SAS upload failed or was blocked by CORS, falling back to server-side upload:", sasErr);
+        }
+
+        // Fall back to server-side upload action if direct SAS upload was not successful
+        if (!uploadSuccess) {
+          const formData = new FormData();
+          formData.append("file", fileToUpload);
+          formData.append("folderId", String(selectedFolder.id));
+          formData.append("fileTypeId", String(uploadFileTypeId));
+
+          const serverResult = await uploadPatientFileAction(formData);
+          if (!serverResult.status) {
+            toast.error(serverResult.message || "Failed to upload file");
+            return;
+          }
+        }
+
         refreshFolders();
         setShowUpload(false);
         setUploadFile(null);
         setUploadFileTypeId("");
         toast.success("File uploaded");
-      } else {
-        toast.error(result.message || "Failed to upload file");
+      } catch (err: any) {
+        console.error("Upload error:", err);
+        toast.error(err?.message || "An error occurred while uploading the file");
       }
     });
   };

@@ -172,10 +172,21 @@ async function prepareFilledPdf(ticket: ConsultationData, templateFileName: stri
     ? `${hpProfile?.title || ""} ${hp.User?.firstName || ""} ${hp.User?.lastName || ""} ${hpProfile?.suffix || ""}`.trim()
     : "";
 
-  const rx = ticket.Prescriptions[0];
-  const prescriptionText = rx?.Medicines?.map(
-    (m) => `${m.genericName || m.name} ${m.dosage || ""} - ${m.qty} ${m.unit || "tabs"}\nSig: ${m.frequency || ""} ${m.duration ? `for ${m.duration}` : ""}`
-  ).join("\n\n") || "";
+  const activeMedicines = ticket.Prescriptions?.flatMap((rx) => rx.Medicines || []) || [];
+  const actualMedicines = activeMedicines.filter((m) => {
+    const isNomed =
+      m.name?.toUpperCase() === "NOMED" ||
+      m.genericName?.toUpperCase() === "NOMED" ||
+      m.PhilHealthData?.genericCode?.toUpperCase() === "NOMED" ||
+      m.PhilHealthData?.drugCode?.toUpperCase().startsWith("NOMED");
+    return !isNomed;
+  });
+
+  const prescriptionText = actualMedicines
+    .map(
+      (m) => `${m.genericName || m.name} ${m.dosage || ""} - ${m.qty} ${m.unit || "tabs"}\nSig: ${m.frequency || ""} ${m.duration ? `for ${m.duration}` : ""}`
+    )
+    .join("\n\n");
 
   const patientName = `${patientUser.firstName || ""} ${patientUser.lastName || ""}`.trim();
 
@@ -195,16 +206,7 @@ async function prepareFilledPdf(ticket: ConsultationData, templateFileName: stri
   const memberType = enlistment?.dependentPin ? "DEPENDENT" : "MEMBER";
 
   const isEpress = templateFileName.toLowerCase().includes("epress");
-  const hasActualMedicines = ticket.Prescriptions?.some((rx) =>
-    rx.Medicines?.some((m) => {
-      const isNomed =
-        m.name?.toUpperCase() === "NOMED" ||
-        m.genericName?.toUpperCase() === "NOMED" ||
-        m.PhilHealthData?.genericCode?.toUpperCase() === "NOMED" ||
-        m.PhilHealthData?.drugCode?.toUpperCase().startsWith("NOMED");
-      return !isNomed;
-    })
-  ) ?? false;
+  const hasActualMedicines = actualMedicines.length > 0;
 
   const shouldBlankPhysician = isEpress && !hasActualMedicines;
 

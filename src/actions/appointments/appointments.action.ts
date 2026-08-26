@@ -798,7 +798,7 @@ type CreateWalkInAppointmentPayload = {
   modeId: number;
   typeId: number;
   serviceId: number;
-  systemId: number;
+  systemId?: number;
   hpId?: number;
   date?: Date;
   timeStart?: string;

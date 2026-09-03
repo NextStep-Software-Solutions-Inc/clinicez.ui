@@ -302,17 +302,21 @@ const DEFAULT_DRUG_CODE = 'NOMED00000000000000000000000';
 function toUpperAttr(attrs: Record<string, string | undefined>): Record<string, string> {
   const result: Record<string, string> = {};
   for (const [k, v] of Object.entries(attrs)) {
-    result[k] = v ? String(v).toUpperCase() : '';
+    result[k] = v != null ? String(v).toUpperCase() : '';
   }
   return result;
 }
 
 function withStatus(attrs: Record<string, string | undefined>): Record<string, string> {
-  return {
-    ...toUpperAttr(attrs),
-    pReportStatus: REPORT_STATUS,
-    pDeficiencyRemarks: DEFICIENCY_REMARKS,
+  const result: Record<string, string> = {
+    pReportStatus: attrs.pReportStatus || REPORT_STATUS,
+    pDeficiencyRemarks: attrs.pDeficiencyRemarks ?? DEFICIENCY_REMARKS,
   };
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === 'pReportStatus' || k === 'pDeficiencyRemarks') continue;
+    result[k] = v != null ? String(v).toUpperCase() : '';
+  }
+  return result;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

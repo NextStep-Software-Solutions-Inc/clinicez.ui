@@ -8,6 +8,7 @@ import { generatePhilHealthKonsultaTransactionNumber } from "@/services/sequence
 import { generateKonsultaXml, type KonsultaPatientData, type KonsultaConsultationData, type KonsultaMedicineData, type KonsultaDiagnosticExamData } from "@/lib/philhealth-yakap/xml-generator";
 import { getKonsultaRecommendedService } from "./consultation/konsulta-recommended-services.action";
 import { resolvePrincipalMembersByPins } from "@/actions/clinics/konsulta-report.action";
+import { calculateAge } from "@/lib/utils";
 
 export interface ProcessedXmlElement {
   type: string;
@@ -533,6 +534,7 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
                     SurgicalHistories: true,
                     PersonalHistory: true,
                     ObGyneHistory: true,
+                    UserAllergies: { include: { Allergen: true } },
                     UserVaccinations: { include: { Vaccine: { include: { PhilHealthData: true } } } },
                     VitalSigns: {
                       where: { isActive: true, deletedAt: null },
@@ -996,22 +998,44 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
                     patient.bloodType === 'AB_NEGATIVE' ? 'AB-' :
                       patient.bloodType === 'O_POSITIVE' ? 'O+' :
                         patient.bloodType === 'O_NEGATIVE' ? 'O-' : '',
-          medicalHistories: patient.MedicalHistories.map(mh => {
-            const code = mh.Condition.code;
-            if (code) {
+          medicalHistories: (() => {
+            const allergiesList = (patient.UserAllergies || [])
+              .map(ua => ua.Allergen?.name)
+              .filter((name): name is string => Boolean(name && name.trim()));
+            const allergyDesc = allergiesList.join(', ');
+
+            let hasAllergyInMedHist = false;
+            const mapped = patient.MedicalHistories.map(mh => {
+              const code = mh.Condition.code;
+              const isAllergy = code === '002' || (mh.Condition.name && mh.Condition.name.toLowerCase().includes('allerg'));
+              if (isAllergy) {
+                hasAllergyInMedHist = true;
+              }
+              if (code) {
+                return {
+                  code,
+                  isRelevant: 'Y' as const,
+                  mhsOthers: isAllergy ? (mh.details || allergyDesc || '') : (mh.details || ''),
+                };
+              }
               return {
-                code,
+                code: '998',
                 isRelevant: 'Y' as const,
-                mhsOthers: mh.details || '',
+                mhsCode: '998',
+                mhsOthers: mh.details || mh.Condition.name,
               };
+            });
+
+            if (!hasAllergyInMedHist && allergyDesc) {
+              mapped.push({
+                code: '002',
+                isRelevant: 'Y' as const,
+                mhsOthers: allergyDesc,
+              });
             }
-            return {
-              code: '998',
-              isRelevant: 'Y' as const,
-              mhsCode: '998',
-              mhsOthers: mh.details || mh.Condition.name,
-            };
-          }),
+
+            return mapped;
+          })(),
           familyHistories: patient.FamilyMedicalHistories.map(fh => {
             const code = fh.Condition.code;
             if (code) {
@@ -1059,35 +1083,49 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
             isPreEclampsia: patient.ObGyneHistory.hasPreEclampsia ? 'Y' : 'N',
             wFamPlan: patient.ObGyneHistory.isFamilyPlanning ? 'Y' : 'N',
           } : undefined,
-          immunizations: patient.UserVaccinations.map(uv => {
-            const vName = (uv.Vaccine.name || '').toUpperCase().trim();
-            const phData = uv.Vaccine.PhilHealthData;
+          immunizations: (() => {
+            const patientAgeInYears = patient.dob ? (calculateAge(patient.dob) ?? 0) : 0;
 
-            let childCode = phData?.childImmcode || '';
-            let youngwCode = phData?.youngwImmcode || '';
-            let pregwCode = phData?.pregwImmcode || '';
-            let elderlyCode = phData?.elderlyImmcode || '';
-            let otherImm = phData?.otherImm || '';
+            return patient.UserVaccinations.map(uv => {
+              const vName = (uv.Vaccine.name || '').trim();
+              const phData = uv.Vaccine.PhilHealthData;
 
-            // If the vaccine has NO mapping at all, fallback to "999" and put name in otherImm
-            if (!phData) {
-              childCode = '999';
-              youngwCode = '999';
-              pregwCode = '999';
-              elderlyCode = '999';
-              otherImm = vName;
-            }
+              let childCode = phData?.childImmcode || '';
+              let youngwCode = phData?.youngwImmcode || '';
+              let pregwCode = phData?.pregwImmcode || '';
+              let elderlyCode = phData?.elderlyImmcode || '';
+              let otherImm = phData?.otherImm || '';
 
-            return {
-              childImmcode: childCode || '999',
-              youngwImmcode: youngwCode || '999',
-              pregwImmcode: pregwCode || '999',
-              elderlyImmcode: elderlyCode || '999',
-              otherImm: otherImm,
-              reportStatus: 'U', // U = Updated
-              deficiencyRemarks: uv.notes || '',
-            };
-          }),
+              // If phData explicitly specifies a code for a category, use only that category
+              if (childCode || youngwCode || pregwCode || elderlyCode) {
+                if (!otherImm && (childCode === '999' || youngwCode === '999' || pregwCode === '999' || elderlyCode === '999')) {
+                  otherImm = vName;
+                }
+              } else {
+                // Fallback based on patient age demographics:
+                otherImm = vName;
+                if (patientAgeInYears <= 12) {
+                  childCode = '999';
+                } else if (patientAgeInYears >= 60) {
+                  elderlyCode = '999';
+                } else if (patient.gender === 'FEMALE' && patient.ObGyneHistory?.gravidity && Number(patient.ObGyneHistory.gravidity) > 0) {
+                  pregwCode = '999';
+                } else {
+                  youngwCode = '999';
+                }
+              }
+
+              return {
+                childImmcode: childCode || '',
+                youngwImmcode: youngwCode || '',
+                pregwImmcode: pregwCode || '',
+                elderlyImmcode: elderlyCode || '',
+                otherImm: otherImm || '',
+                reportStatus: 'U',
+                deficiencyRemarks: uv.notes || '',
+              };
+            });
+          })(),
           ncdqans: patient.NcdQuestionnaire ? {
             q1: patient.NcdQuestionnaire.q1 || '',
             q2: patient.NcdQuestionnaire.q2 || '',

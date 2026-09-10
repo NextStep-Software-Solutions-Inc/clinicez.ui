@@ -5,7 +5,6 @@ import RootHeader from "@components/RootHeader";
 import RootFooter from "@components/RootFooter";
 import Link from "next/link";
 import { Separator } from "@components/ui/separator";
-import ClassicButton from "@/components/ClassicButton";
 
 const APP_EMAIL = process.env.NEXT_PUBLIC_APP_EMAIL;
 
@@ -23,8 +22,6 @@ export default function RootLayoutV2({
             <Link href={`mailto:${APP_EMAIL}`}>{APP_EMAIL}</Link>
             <Separator orientation="vertical"/>
             <Link href="/tenants/register">Become a Tenant</Link>
-            <Separator orientation="vertical"/>
-            <ClassicButton />
           </div>
         </div>
       </div>

@@ -31,6 +31,7 @@ import {
   Paperclip,
   X as XIcon,
   Ban,
+  UserPlus,
 } from "lucide-react";
 import {
   Sheet,
@@ -252,6 +253,8 @@ export function AppointmentDetailSheet({
   const isWalkIn = isWalkInAppointment(appointment);
   const fullName = getAppointmentPatientName(appointment);
   const initials = getAppointmentInitials(appointment);
+  const clinicPatient = (requester as any)?.ClinicPatients?.[0];
+  const isPendingPatientEnrollment = !isWalkIn && (!clinicPatient || clinicPatient.onboardingStatus !== "COMPLETED");
 
   const scheduledDate = appointment.AppointmentAttribute?.date;
   const timeStart = appointment.AppointmentAttribute?.timeStart;
@@ -518,7 +521,21 @@ export function AppointmentDetailSheet({
                   Walk-In
                 </Badge>
               )}
+              {isPendingPatientEnrollment && (
+                <Badge variant="outline" className="text-xs px-2.5 py-0.5 border-amber-500/40 bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400 gap-1 font-medium">
+                  <UserPlus className="h-3 w-3" />
+                  Not in Patient List
+                </Badge>
+              )}
             </div>
+            {isPendingPatientEnrollment && (
+              <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 text-amber-800 dark:text-amber-200 text-xs">
+                <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
+                <div>
+                  <span className="font-semibold">Self-Enrolled Patient:</span> This patient is not officially on the clinic roster yet. Approving this appointment will enroll them as an active patient.
+                </div>
+              </div>
+            )}
             {appointment.AppointmentAttribute?.receivedAt && (
               <p className="flex items-center gap-1 text-xs text-muted-foreground">
                 <Lock className="h-3 w-3 shrink-0" />
@@ -1295,17 +1312,17 @@ export function AppointmentDetailSheet({
             </h3>
             <div className="flex flex-wrap gap-2">
 
-              {/* PENDING: Receive (lock) + Reject (no tagging while pending) */}
+              {/* PENDING: Approve (lock & enroll) + Decline */}
               {status === "PENDING" && (
                 <>
                   <Button
                     size="sm"
-                    className="gap-1.5 bg-primary/90 hover:bg-primary"
+                    className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white"
                     disabled={isPending}
                     onClick={handleReceive}
                   >
-                    <Lock className="h-4 w-4" />
-                    Receive &amp; Lock
+                    <CheckCircle className="h-4 w-4" />
+                    {isPendingPatientEnrollment ? "Approve & Enroll" : "Approve"}
                   </Button>
                   {!showRejectForm && (
                     <Button
@@ -1316,7 +1333,7 @@ export function AppointmentDetailSheet({
                       onClick={() => setShowRejectForm(true)}
                     >
                       <AlertTriangle className="h-4 w-4" />
-                      Reject
+                      Decline
                     </Button>
                   )}
                 </>

@@ -600,7 +600,7 @@ export const getCurrentUserAction = withErrorHandling(cache(async () => {
     }
   });
 
-  // Fallback: migrated users have their old auth provider ID stored as externalId in Clerk
+  // Fallback 1: migrated users have their old auth provider ID stored as externalId in Clerk
   // but still stored as userId in the database. Detect and migrate these users.
   if (!user && session.user.external_id) {
     const userByExternalId = await prisma.user.findUnique({
@@ -623,8 +623,112 @@ export const getCurrentUserAction = withErrorHandling(cache(async () => {
     }
   }
 
+  // Fallback 2: Find by email to link existing user record if external_id wasn't set
+  if (!user && session.user.email) {
+    const userByEmail = await prisma.user.findUnique({
+      where: {
+        email: session.user.email
+      }
+    });
+
+    if (userByEmail) {
+      user = await prisma.user.update({
+        where: { id: userByEmail.id },
+        data: {
+          userId: session.user.sub,
+          firstName: session.user.given_name || userByEmail.firstName,
+          lastName: session.user.family_name || userByEmail.lastName,
+        }
+      });
+      console.log(`Linked existing user by email ${session.user.email} -> ${session.user.sub}`);
+    }
+  }
+
+  // Fallback 3: Just-In-Time Provisioning
+  // If user still doesn't exist in DB (e.g., local development without webhooks, or webhook delivery delayed/failed),
+  // automatically create the user in the database so they can use the platform.
   if (!user) {
-    // User doesn't exist in database - this shouldn't happen if webhook is properly configured
+    try {
+      let email = session.user.email;
+      let firstName = session.user.given_name || "";
+      let lastName = session.user.family_name || "";
+      let picture: string | null = null;
+
+      // If details are missing from session, fetch from Clerk API
+      try {
+        const client = await clerkClient();
+        const clerkUser = await client.users.getUser(session.user.sub);
+        if (!email) {
+          email = clerkUser.emailAddresses?.[0]?.emailAddress ?? null;
+        }
+        firstName = firstName || clerkUser.firstName || "";
+        lastName = lastName || clerkUser.lastName || "";
+        picture = clerkUser.imageUrl || null;
+      } catch (clerkErr) {
+        console.warn("Could not fetch Clerk user details via clerkClient:", clerkErr);
+      }
+
+      const userEmail = email || `${session.user.sub}@clerk.local`;
+
+      // Check if user with this email already exists before inserting
+      const existingUserByEmail = await prisma.user.findUnique({
+        where: { email: userEmail }
+      });
+
+      if (existingUserByEmail) {
+        user = await prisma.user.update({
+          where: { id: existingUserByEmail.id },
+          data: {
+            userId: session.user.sub,
+            ...(firstName && { firstName }),
+            ...(lastName && { lastName }),
+            ...(picture && { picture }),
+          }
+        });
+        console.log(`Updated existing user by email match: ${userEmail}`);
+      } else {
+        user = await prisma.$transaction(async (tx) => {
+          const newUser = await tx.user.create({
+            data: {
+              userId: session.user.sub,
+              email: userEmail,
+              firstName,
+              lastName,
+              mobile: "",
+              picture,
+              isActive: true,
+              onboardingStatus: $Enums.OnboardingStatus.NOT_STARTED,
+              profileCompletionStatus: $Enums.ProfileCompletionStatus.INCOMPLETE,
+              accountType: $Enums.AccountType.FULL,
+            }
+          });
+
+          // Assign default USER permissions (excluding SUPER_ADMIN)
+          const permissions = await tx.permission.findMany({
+            where: { isActive: true, type: "USER" },
+          });
+          const filtered = permissions.filter((p) => p.name !== "SUPER_ADMIN");
+          if (filtered.length > 0) {
+            await tx.userPermission.createMany({
+              skipDuplicates: true,
+              data: filtered.map((p) => ({
+                userId: newUser.id,
+                permissionId: p.id,
+              })),
+            });
+          }
+
+          return newUser;
+        });
+        console.log(`Just-in-time provisioned user ${session.user.sub} (${userEmail})`);
+      }
+    } catch (provisionErr) {
+      console.error(`Failed to just-in-time provision user ${session.user.sub}:`, provisionErr);
+    }
+  }
+
+  if (!user) {
+    // User doesn't exist in database - this shouldn't happen if webhook or JIT provisioning succeeds
     console.error(`User ${session.user.sub} not found in database. Webhook may not be configured.`);
     return {
       success: false,

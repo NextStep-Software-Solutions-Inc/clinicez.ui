@@ -1,6 +1,6 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 import maintenanceCheck from '@middlewares/maintenanceCheck';
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 const isProtectedRoute = createRouteMatcher([
   '/clinics(.*)',
@@ -37,6 +37,14 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
   if (isProtectedRoute(request) && !isPublicRoute(request)) {
     await auth.protect();
   }
+
+  const reqHeaders = new Headers(request.headers);
+  reqHeaders.set('x-pathname', request.nextUrl.pathname);
+  return NextResponse.next({
+    request: {
+      headers: reqHeaders,
+    },
+  });
 });
 
 export const config = {

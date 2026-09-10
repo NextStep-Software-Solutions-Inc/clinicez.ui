@@ -45,7 +45,7 @@ export default async function VerificationPage() {
     },
   })
 
-  if (!dbUser) redirect('/sign-in?error=user-not-found')
+  if (!dbUser) redirect('/user-sync-error')
 
   const validIdTypes = await prisma.validIDType.findMany({
     where: { isActive: true },

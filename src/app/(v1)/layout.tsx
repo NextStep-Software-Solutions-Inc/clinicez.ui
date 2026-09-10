@@ -1,5 +1,6 @@
 import { Plus_Jakarta_Sans } from "next/font/google";
 
+import { headers } from "next/headers";
 import { getCachedSession } from "@actions/session.action";
 import { getCurrentUserAction } from "@actions/users/user.action";
 import { redirect } from "next/navigation";
@@ -30,6 +31,17 @@ interface Props {
  * Styling comes from root layout + globals.css.
  */
 export default async function V1Layout({ children }: Props) {
+  const headersList = await headers();
+  const pathname = headersList.get("x-pathname") || "";
+  const isAuthOrErrorRoute =
+    pathname.startsWith("/sign-in") ||
+    pathname.startsWith("/sign-up") ||
+    pathname.startsWith("/user-sync-error");
+
+  if (isAuthOrErrorRoute) {
+    return <div className={`${plusJakartaSans.className}`}>{children}</div>;
+  }
+
   const [session, dbUser] = await Promise.all([
     getCachedSession(),
     getCurrentUserAction()
@@ -44,9 +56,9 @@ export default async function V1Layout({ children }: Props) {
 
   if (session) {
     if (!dbUser.data) {
-      // User not found in database - redirect to error page
-      // This should not happen if Clerk webhook is properly configured
-      redirect(`/sign-in?error=user-not-found`);
+      // User not found in database - redirect to dedicated sync error page
+      // to avoid infinite redirect loop back to /sign-in
+      redirect(`/user-sync-error`);
     }
     onboardingStatus = dbUser.data.onboardingStatus;
     firstName = dbUser.data.firstName;

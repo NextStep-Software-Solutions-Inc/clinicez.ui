@@ -91,10 +91,26 @@ export const receiveAppointmentAction = withErrorHandling(async (formData: FormD
       where: { id: appointmentId },
       select: {
         subject: true,
+        clinicId: true,
         Requesters: { select: { User: { select: { id: true } } } },
       },
     });
     if (appointment) {
+      // Auto-approve and enroll any self-enrolled patient for this clinic
+      const requesterUserIds = appointment.Requesters.map((r) => r.User.id);
+      if (requesterUserIds.length > 0) {
+        await prismaClient.clinicPatient.updateMany({
+          where: {
+            clinicId: appointment.clinicId,
+            patientId: { in: requesterUserIds },
+            onboardingStatus: { not: "COMPLETED" },
+          },
+          data: {
+            onboardingStatus: "COMPLETED",
+          },
+        });
+      }
+
       await createNotifications(
         appointment.Requesters.map((r) => ({
           userId: r.User.id,
@@ -104,8 +120,8 @@ export const receiveAppointmentAction = withErrorHandling(async (formData: FormD
         })),
       );
     }
-  } catch {
-    // non-critical
+  } catch (error) {
+    console.error("Failed to send appointment received notification or approve patient:", error);
   }
   return { message: 'Appointment received', data: undefined };
 }, async error => {

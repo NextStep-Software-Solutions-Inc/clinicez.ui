@@ -15,7 +15,7 @@ interface VersionProps {
 }
 
 interface IRootHeaderProps extends DetailedHTMLProps<HTMLAttributes<HTMLElement>, HTMLElement>, VersionProps { }
-export default function RootHeader({ className = "", version = "v1", ...rest }: IRootHeaderProps) {
+export default function RootHeader({ className = "", version = "v2", ...rest }: IRootHeaderProps) {
 
   return (
     <header
@@ -28,7 +28,7 @@ export default function RootHeader({ className = "", version = "v1", ...rest }: 
       <div className="container mx-auto">
         <div className="flex items-center justify-between h-16 lg:h-20">
           <div className="hidden lg:flex flex-shrink-0">
-            <a href={`/${version ? version : ''}`} title="" className="flex h-40">
+            <a href="/" title="" className="flex h-40">
               <AnimatedLogo />
             </a>
           </div>

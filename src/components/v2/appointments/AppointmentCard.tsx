@@ -14,6 +14,7 @@ import {
   AlertTriangle,
   X,
   Paperclip,
+  UserPlus,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -85,6 +86,8 @@ export function AppointmentCard({
   const displaySubject = isWalkIn ? appointment.complaint ?? "" : appointment.subject;
   const initials = getAppointmentInitials(appointment);
   const patientPicture = appointment.Requesters?.[0]?.User?.picture ?? null;
+  const clinicPatient = (appointment.Requesters?.[0]?.User as any)?.ClinicPatients?.[0];
+  const isPendingPatientEnrollment = !isWalkIn && (!clinicPatient || clinicPatient.onboardingStatus !== "COMPLETED");
 
   const activeRouting = appointment.AppointmentRouting?.find(
     (r) => r.status === "ACCEPTED" || r.status === "PENDING"
@@ -182,6 +185,12 @@ export function AppointmentCard({
                   Walk-In
                 </Badge>
               )}
+              {isPendingPatientEnrollment && (
+                <Badge variant="outline" className="text-xs px-2 py-0.5 border-amber-500/40 bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400 gap-1 font-medium">
+                  <UserPlus className="h-2.5 w-2.5" />
+                  Not in Patient List
+                </Badge>
+              )}
               {appointment.AppointmentAttribute?.AppointmentType && (
                 <span className="text-xs text-muted-foreground/60 hidden sm:inline">
                   {appointment.AppointmentAttribute.AppointmentType.name}
@@ -259,12 +268,13 @@ export function AppointmentCard({
               <Button
                 size="sm"
                 variant="outline"
-                className="h-7 text-xs border-primary/40 text-primary hover:bg-primary hover:text-primary-foreground"
+                className="h-7 text-xs border-emerald-500/40 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-600 hover:text-white"
                 disabled={isPending}
                 onClick={handleReceive}
+                title={isPendingPatientEnrollment ? "Approve appointment & enroll patient" : "Approve appointment"}
               >
-                <Lock className="h-3 w-3 mr-1" />
-                Receive
+                <CheckCircle className="h-3 w-3 mr-1" />
+                Approve
               </Button>
               {!showRejectForm && (
                 <Button
@@ -273,9 +283,10 @@ export function AppointmentCard({
                   className="h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
                   disabled={isPending}
                   onClick={() => setShowRejectForm(true)}
+                  title="Decline appointment request"
                 >
                   <AlertTriangle className="h-3 w-3 mr-1" />
-                  Reject
+                  Decline
                 </Button>
               )}
             </>

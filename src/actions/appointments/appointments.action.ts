@@ -1,7 +1,7 @@
 "use server";
 
 import prisma from "@lib/prisma";
-import { Prisma } from "@prisma/client";
+import { Prisma, $Enums } from "@prisma/client";
 import { getCachedSession } from "@actions/session.action";
 import { getPermissionsAction } from "@actions/permission.action";
 import { cache } from "react";
@@ -56,8 +56,17 @@ export const createAppointmentAction = withErrorHandling(async (payload: CreateA
   const canCreateAppointment = createAppointmentPermissions.every(p => userPermissionArray.includes(p));
   const canBookAFriend = bookAFriendPermissions.every(p => userPermissionArray.includes(p));
 
-  if (!canCreateAppointment) throw new Error("You do not have permission to create an appointment in this organization");
-  if (requesters.some((requester) => requester !== session.user.sub) && !canBookAFriend) throw new Error("You cannot book an appointment for another user");
+  const isSelfBooking = requesters.length === 1 && requesters[0] === session.user.sub;
+
+  // Allow self-enrollment booking: an authenticated patient booking for themselves can proceed even
+  // if they don't yet have WRITE:CLINIC:APPOINTMENT permission. They will be auto-enrolled as a pending patient.
+  if (!canCreateAppointment && !isSelfBooking) {
+    throw new Error("You do not have permission to create an appointment in this organization");
+  }
+
+  if (requesters.some((requester) => requester !== session.user.sub) && !canBookAFriend) {
+    throw new Error("You cannot book an appointment for another user");
+  }
 
   const newAppointment = await prisma.$transaction(async (prisma) => {
     const numberOfAppointments = await prisma.appointment.count({
@@ -162,7 +171,8 @@ export const createAppointmentAction = withErrorHandling(async (payload: CreateA
       try {
         const clinicPatientData = usersNeedingClinicPatient.map(user => ({
           clinicId: clinic.id,
-          patientId: user.id
+          patientId: user.id,
+          onboardingStatus: $Enums.OnboardingStatus.NOT_STARTED,
         }));
 
         // Use createMany for better performance with batch inserts
@@ -561,6 +571,16 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
               picture: true,
               gender: true,
               dob: true,
+              ClinicPatients: {
+                where: {
+                  ...(clinicUid ? { Clinic: { clinicUid } } : {})
+                },
+                select: {
+                  id: true,
+                  onboardingStatus: true,
+                  createdAt: true
+                }
+              },
               StudentRecords: {
                 select: {
                   organizationId: true,
@@ -982,8 +1002,12 @@ export const getAppointmentAction = withErrorHandling(cache(async (id: number, c
               nickname: true,
               dob: true,
               ClinicPatients: {
+                where: {
+                  ...(clinicUid ? { Clinic: { clinicUid } } : {})
+                },
                 select: {
                   id: true,
+                  onboardingStatus: true,
                 },
                 take: 1,
               },

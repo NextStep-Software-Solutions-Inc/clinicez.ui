@@ -71,7 +71,7 @@ const legalTerms = [
 const fullYear = new Date().getFullYear()
 const appEmail = process.env.NEXT_PUBLIC_APP_EMAIL
 
-const RootFooter = ({ version = "v1" }: FooterProps) => {
+const RootFooter = ({ version = "v2" }: FooterProps) => {
   if (version === "v2") {
     return (
       <footer className="bg-slate-50 py-12">

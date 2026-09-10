@@ -14,7 +14,7 @@ function getVersionFromStorage(): Version {
       return savedVersion
     }
   }
-  return "v1"
+  return "v2"
 }
 
 // Global state to sync across components (lazy initialized)

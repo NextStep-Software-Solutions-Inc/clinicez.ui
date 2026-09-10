@@ -33,7 +33,6 @@ import {
 } from "@/schemas/onboarding.schema";
 import { completeBasicOnboardingAction } from "@/actions/onboarding/user-onboarding.action";
 import { capitalize } from "@lib/utils";
-import { useLandingPageVersion } from "@/components/VersionSwitcher";
 
 interface UserOnboardingData {
   id: number;
@@ -60,7 +59,6 @@ export default function UserOnboardingPage({
   userData,
 }: UserOnboardingPageProps) {
   const router = useRouter();
-  const version = useLandingPageVersion();
   const [isLoading, setIsLoading] = useState(false);
   const isShellAccount = userData.accountType === "SHELL";
 
@@ -82,7 +80,7 @@ export default function UserOnboardingPage({
         const result = await completeBasicOnboardingAction(values);
         if (result.status) {
           toast.success("Welcome to Clinic EZ! Your profile is all set.");
-          router.replace(version === "v2" ? "/v2/select-dashboard" : "/");
+          router.replace("/v2/select-dashboard");
         } else {
           toast.error(result.message);
         }
@@ -92,7 +90,7 @@ export default function UserOnboardingPage({
         setIsLoading(false);
       }
     },
-    [router, version]
+    [router]
   );
 
   return (

@@ -1,10 +1,12 @@
 'use client';
 
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { toast } from 'sonner';
+import { LoaderCircle } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -24,9 +26,14 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Checkbox } from '@/components/ui/checkbox';
-import ActionButton from '@/components/ActionButton';
+import { Button } from '@/components/ui/button';
 import { selfEnrollAsClinicPatientAction } from '@/actions/clinics/clinic-patient.action';
 import { promiseWrapper } from '@/lib/with-error-handling';
+
+const DEFAULT_TERMS_URL =
+  'https://www.healthcare.gov.au/sites/default/files/2021-04/Terms%20and%20Conditions%20for%20Healthcare%20Providers%20and%20Healthcare%20Organisations.pdf';
+const DEFAULT_PRIVACY_URL =
+  'https://www.healthcare.gov.au/sites/default/files/2021-04/Privacy%20Policy%20for%20Healthcare%20Providers%20and%20Healthcare%20Organisations.pdf';
 
 const consentSchema = z.object({
   certify: z.literal(true, {
@@ -47,6 +54,10 @@ interface JoinAsPatientDialogV2Props {
   clinicUid: string;
   /** Clinic display name shown in the dialog */
   clinicName: string;
+  /** Optional custom terms & conditions URL */
+  termsUrl?: string | null;
+  /** Optional custom privacy policy URL */
+  privacyUrl?: string | null;
   isOpen: boolean;
   onClose: () => void;
   /** Called after successful enrollment so the parent can proceed to booking */
@@ -56,29 +67,47 @@ interface JoinAsPatientDialogV2Props {
 export function JoinAsPatientDialogV2({
   clinicUid,
   clinicName,
+  termsUrl,
+  privacyUrl,
   isOpen,
   onClose,
   onSuccess,
 }: JoinAsPatientDialogV2Props) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const form = useForm<ConsentFormValues>({
     resolver: zodResolver(consentSchema),
+    mode: 'onChange',
+    defaultValues: {
+      certify: undefined,
+      agreeTerms: undefined,
+      agreePrivacy: undefined,
+    },
   });
 
-  const handleSubmit = () => {
+  const resolvedTermsUrl = termsUrl?.trim() || DEFAULT_TERMS_URL;
+  const resolvedPrivacyUrl = privacyUrl?.trim() || DEFAULT_PRIVACY_URL;
+
+  const handleSubmit = form.handleSubmit(async () => {
+    setIsSubmitting(true);
     toast.promise(promiseWrapper(selfEnrollAsClinicPatientAction)({ clinicUid }), {
       loading: 'Enrolling you as a patient…',
       success: (res) => {
+        setIsSubmitting(false);
         form.reset();
         onClose();
         onSuccess();
         return res.message;
       },
-      error: (err: string) => err,
+      error: (err: string) => {
+        setIsSubmitting(false);
+        return err;
+      },
     });
-  };
+  });
 
   const handleOpenChange = (open: boolean) => {
-    if (!open) {
+    if (!open && !isSubmitting) {
       form.reset();
       onClose();
     }
@@ -96,14 +125,18 @@ export function JoinAsPatientDialogV2({
         </AlertDialogHeader>
 
         <Form {...form}>
-          <form action={handleSubmit} className="space-y-2">
+          <form onSubmit={handleSubmit} className="space-y-2">
             <FormField
               control={form.control}
               name="certify"
               render={({ field }) => (
                 <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
                   <FormControl>
-                    <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                      disabled={isSubmitting}
+                    />
                   </FormControl>
                   <div className="space-y-1 leading-none">
                     <FormLabel>Certify that all my information is accurate</FormLabel>
@@ -123,15 +156,20 @@ export function JoinAsPatientDialogV2({
               render={({ field }) => (
                 <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
                   <FormControl>
-                    <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                      disabled={isSubmitting}
+                    />
                   </FormControl>
                   <div className="space-y-1 leading-none">
                     <FormLabel>Terms and Conditions</FormLabel>
                     <FormDescription>
                       I agree to the{' '}
                       <Link
-                        href="https://www.healthcare.gov.au/sites/default/files/2021-04/Terms%20and%20Conditions%20for%20Healthcare%20Providers%20and%20Healthcare%20Organisations.pdf"
+                        href={resolvedTermsUrl}
                         target="_blank"
+                        rel="noopener noreferrer"
                         className="underline"
                       >
                         Terms and Conditions
@@ -150,15 +188,20 @@ export function JoinAsPatientDialogV2({
               render={({ field }) => (
                 <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
                   <FormControl>
-                    <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                      disabled={isSubmitting}
+                    />
                   </FormControl>
                   <div className="space-y-1 leading-none">
                     <FormLabel>Privacy Policy</FormLabel>
                     <FormDescription>
                       I agree to the{' '}
                       <Link
-                        href="https://www.healthcare.gov.au/sites/default/files/2021-04/Privacy%20Policy%20for%20Healthcare%20Providers%20and%20Healthcare%20Organisations.pdf"
+                        href={resolvedPrivacyUrl}
                         target="_blank"
+                        rel="noopener noreferrer"
                         className="underline"
                       >
                         Privacy Policy
@@ -172,10 +215,17 @@ export function JoinAsPatientDialogV2({
             />
 
             <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <ActionButton disabled={!form.formState.isValid} type="submit">
-                Continue
-              </ActionButton>
+              <AlertDialogCancel disabled={isSubmitting}>Cancel</AlertDialogCancel>
+              <Button disabled={!form.formState.isValid || isSubmitting} type="submit">
+                {isSubmitting ? (
+                  <>
+                    <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                    Enrolling…
+                  </>
+                ) : (
+                  'Continue'
+                )}
+              </Button>
             </AlertDialogFooter>
           </form>
         </Form>

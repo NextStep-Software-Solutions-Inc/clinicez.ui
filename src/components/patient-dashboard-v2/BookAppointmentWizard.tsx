@@ -34,6 +34,7 @@ import { useClinicAppointmentTypes } from '@/hooks/useOrgAppointmentType'
 import { useClinicAppointmentModes } from '@/hooks/useOrgAppointmentMode'
 import BookingCalendar from '@/components/patient-dashboard-v2/BookingCalendar'
 import BookingTimeSlots from '@/components/patient-dashboard-v2/BookingTimeSlots'
+import { JoinAsPatientDialogV2 } from '@/components/patient-dashboard-v2/JoinAsPatientDialogV2'
 import {
   Select,
   SelectContent,
@@ -78,6 +79,7 @@ interface BookAppointmentWizardProps {
   termsUrl: string | null
   privacyUrl: string | null
   preferredHpId?: number
+  isInitialPatient?: boolean
 }
 
 const DEFAULT_TERMS_URL =
@@ -1070,12 +1072,39 @@ export default function BookAppointmentWizard({
   termsUrl,
   privacyUrl,
   preferredHpId,
+  isInitialPatient,
 }: BookAppointmentWizardProps) {
   const router = useRouter()
   const { setOverrideTitle, setOverrideBack } = useHeaderTitle()
   const [form, setForm] = useAtom(bookAppointmentAtom)
   const [currentStep, setCurrentStep] = useState(1)
   const [isComplete, setIsComplete] = useState(false)
+  const [isEnrolled, setIsEnrolled] = useState(isInitialPatient ?? true)
+  const [showEnrollDialog, setShowEnrollDialog] = useState(isInitialPatient === false)
+
+  useEffect(() => {
+    if (isInitialPatient === false) {
+      setShowEnrollDialog(true)
+    }
+  }, [isInitialPatient])
+
+  const handleEnrollSuccess = useCallback(() => {
+    setIsEnrolled(true)
+    setShowEnrollDialog(false)
+    setForm((p) => ({
+      ...p,
+      certify: true,
+      agreeTerms: true,
+      agreePrivacy: true,
+    }))
+  }, [setForm])
+
+  const handleEnrollClose = useCallback(() => {
+    setShowEnrollDialog(false)
+    if (!isEnrolled) {
+      router.push('/v2/book-appointment')
+    }
+  }, [isEnrolled, router])
 
   // Push clinic name into the MobileHeader title slot; clear on unmount
   useEffect(() => {
@@ -1186,6 +1215,17 @@ export default function BookAppointmentWizard({
           <Step5Review clinicName={clinicName} onSuccess={handleSuccess} />
         )}
       </div>
+
+      {/* Self-enroll consent dialog when user is not a registered patient */}
+      <JoinAsPatientDialogV2
+        clinicUid={clinicUid}
+        clinicName={clinicName}
+        termsUrl={termsUrl}
+        privacyUrl={privacyUrl}
+        isOpen={showEnrollDialog}
+        onClose={handleEnrollClose}
+        onSuccess={handleEnrollSuccess}
+      />
     </div>
   )
 }

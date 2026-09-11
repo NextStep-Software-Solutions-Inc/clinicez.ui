@@ -3,8 +3,11 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Building2, Loader2, ChevronRight, CalendarPlus, Globe } from 'lucide-react'
+import { toast } from 'sonner'
 import { getOrgAssociatedClinicOptionsAction } from '@/actions/dashboard/clinic-org-select.action'
 import { getClinicsV2Action } from '@/actions/clinics/clinic.action'
+import { checkIsClinicPatientAction } from '@/actions/clinics/clinic-patient.action'
+import { JoinAsPatientDialogV2 } from '@/components/patient-dashboard-v2'
 
 type OrgClinic = { clinicUid: string; name: string; logo: string | null }
 type PublicClinic = { clinicUid: string; name: string; description: string | null; logo: string | null; memberCount: number }
@@ -20,6 +23,7 @@ function ClinicCard({
   subtitle,
   gradientFrom = 'from-teal-500',
   gradientTo = 'to-cyan-500',
+  isChecking = false,
   onSelect,
 }: {
   clinicUid: string
@@ -28,13 +32,15 @@ function ClinicCard({
   subtitle: string
   gradientFrom?: string
   gradientTo?: string
-  onSelect: (uid: string) => void
+  isChecking?: boolean
+  onSelect: (uid: string, name: string) => void
 }) {
   return (
     <button
       type="button"
-      onClick={() => onSelect(clinicUid)}
-      className="w-full bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 p-4 flex items-center gap-4 text-left hover:border-teal-300 dark:hover:border-teal-700 hover:shadow-md transition-all active:scale-[0.99] group"
+      disabled={isChecking}
+      onClick={() => onSelect(clinicUid, name)}
+      className="w-full bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 p-4 flex items-center gap-4 text-left hover:border-teal-300 dark:hover:border-teal-700 hover:shadow-md transition-all active:scale-[0.99] group disabled:opacity-60 disabled:cursor-not-allowed"
     >
       <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${gradientFrom} ${gradientTo} flex items-center justify-center shrink-0 overflow-hidden shadow-md`}>
         {logo ? (
@@ -51,7 +57,11 @@ function ClinicCard({
         <p className="text-sm text-teal-600 dark:text-teal-400 mt-0.5 font-medium">{subtitle}</p>
       </div>
       <div className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 group-hover:bg-teal-50 dark:group-hover:bg-teal-900/20 flex items-center justify-center transition-colors shrink-0">
-        <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-teal-500 transition-colors" />
+        {isChecking ? (
+          <Loader2 className="w-5 h-5 text-teal-500 animate-spin" />
+        ) : (
+          <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-teal-500 transition-colors" />
+        )}
       </div>
     </button>
   )
@@ -62,6 +72,9 @@ export default function SelectClinicPage() {
   const [enrolledClinics, setEnrolledClinics] = useState<OrgClinic[]>([])
   const [publicClinics, setPublicClinics] = useState<PublicClinic[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [checkingClinicUid, setCheckingClinicUid] = useState<string | null>(null)
+  const [pendingClinic, setPendingClinic] = useState<{ clinicUid: string; clinicName: string } | null>(null)
+  const [showJoinDialog, setShowJoinDialog] = useState(false)
 
   useEffect(() => {
     Promise.all([
@@ -78,8 +91,32 @@ export default function SelectClinicPage() {
     }).finally(() => setIsLoading(false))
   }, [])
 
-  const handleSelectClinic = (clinicUid: string) => {
-    router.push(`/v2/book-appointment?clinic=${clinicUid}`)
+  const handleSelectClinic = async (clinicUid: string, clinicName: string) => {
+    if (checkingClinicUid) return
+
+    setCheckingClinicUid(clinicUid)
+    try {
+      const isAlreadyPatient = await checkIsClinicPatientAction(clinicUid)
+      if (isAlreadyPatient) {
+        router.push(`/v2/book-appointment?clinic=${clinicUid}`)
+      } else {
+        setPendingClinic({ clinicUid, clinicName })
+        setShowJoinDialog(true)
+      }
+    } catch {
+      toast.error('Unable to verify patient status. Please try again.')
+    } finally {
+      setCheckingClinicUid(null)
+    }
+  }
+
+  const handleJoinSuccess = () => {
+    const clinicUid = pendingClinic?.clinicUid
+    setShowJoinDialog(false)
+    setPendingClinic(null)
+    if (clinicUid) {
+      router.push(`/v2/book-appointment?clinic=${clinicUid}`)
+    }
   }
 
   return (
@@ -129,6 +166,7 @@ export default function SelectClinicPage() {
                     name={clinic.name}
                     logo={clinic.logo}
                     subtitle="Book Now →"
+                    isChecking={checkingClinicUid === clinic.clinicUid}
                     onSelect={handleSelectClinic}
                   />
                 ))}
@@ -158,6 +196,7 @@ export default function SelectClinicPage() {
                     subtitle={clinic.memberCount > 0 ? `${clinic.memberCount} members · Book Now →` : 'Book Now →'}
                     gradientFrom="from-indigo-500"
                     gradientTo="to-violet-500"
+                    isChecking={checkingClinicUid === clinic.clinicUid}
                     onSelect={handleSelectClinic}
                   />
                 ))}
@@ -165,6 +204,20 @@ export default function SelectClinicPage() {
             </div>
           )}
         </>
+      )}
+
+      {/* Self-enroll consent dialog */}
+      {pendingClinic && (
+        <JoinAsPatientDialogV2
+          clinicUid={pendingClinic.clinicUid}
+          clinicName={pendingClinic.clinicName}
+          isOpen={showJoinDialog}
+          onClose={() => {
+            setShowJoinDialog(false)
+            setPendingClinic(null)
+          }}
+          onSuccess={handleJoinSuccess}
+        />
       )}
     </div>
   )

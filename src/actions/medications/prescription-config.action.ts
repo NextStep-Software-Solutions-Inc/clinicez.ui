@@ -64,5 +64,18 @@ export const upsertClinicPrescriptionConfigAction = withErrorHandling(async (cli
       }
     }
   });
+
+  if (prescriptionTemplateId) {
+    await prismaClient.prescription.updateMany({
+      where: {
+        Clinic: { clinicUid },
+        isActive: true,
+      },
+      data: {
+        templateId: prescriptionTemplateId,
+      },
+    });
+  }
+
   return { message: "Prescription settings updated successfully", data: clinicPrescriptionConfig}
 })

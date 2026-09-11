@@ -112,6 +112,8 @@ export async function getClinicPatientProfileAction({
             surgical,
             physicalExaminations,
             ncdQuestionnaire,
+            studentRecords,
+            userEmployments,
         ] = await Promise.all([
             prisma.medicalHistory.findMany({
                 where: { userId: patient.id },
@@ -219,6 +221,27 @@ export async function getClinicPatientProfileAction({
             }),
             prisma.patientNcdQuestionnaire.findUnique({
                 where: { patientId: patient.id },
+            }),
+            prisma.userStudentRecord.findMany({
+                where: { userId: patient.id, isActive: true },
+                include: {
+                    Organization: { select: { name: true } },
+                    Program: { select: { name: true } },
+                    OrganizationYearLevel: { select: { name: true } },
+                    College: { select: { name: true } },
+                    Department: { select: { name: true } },
+                },
+                orderBy: { createdAt: "desc" },
+            }),
+            prisma.userEmploymentRecord.findMany({
+                where: { userId: patient.id, isActive: true },
+                include: {
+                    Organization: { select: { name: true } },
+                    Department: { select: { name: true } },
+                    College: { select: { name: true } },
+                    Office: { select: { name: true } },
+                },
+                orderBy: { createdAt: "desc" },
             }),
         ]);
 
@@ -529,6 +552,29 @@ export async function getClinicPatientProfileAction({
                 createdBy: slip.CreatedBy
                     ? `${slip.CreatedBy.firstName} ${slip.CreatedBy.lastName}`
                     : "Unknown",
+            })),
+
+            // Student & Employment Records
+            studentRecords: studentRecords.map((sr) => ({
+                id: sr.id,
+                studentId: sr.studentId,
+                lrn: sr.lrn,
+                level: sr.level,
+                organizationName: sr.Organization?.name ?? null,
+                programName: sr.Program?.name ?? null,
+                yearLevelName: sr.OrganizationYearLevel?.name ?? null,
+                collegeName: sr.College?.name ?? null,
+                departmentName: sr.Department?.name ?? null,
+            })),
+            userEmployments: userEmployments.map((emp) => ({
+                id: emp.id,
+                employeeId: emp.employeeId,
+                position: emp.position,
+                designation: emp.designation,
+                organizationName: emp.Organization?.name ?? null,
+                departmentName: emp.Department?.name ?? null,
+                collegeName: emp.College?.name ?? null,
+                officeName: emp.Office?.name ?? null,
             })),
         } as SerializedPatientHealthRecordsResponse;
     } catch (error) {

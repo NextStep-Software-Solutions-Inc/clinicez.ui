@@ -515,7 +515,7 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
             },
           ]
         }] : []),
-        // Server-side search filter (patient name, subject, or complaint)
+        // Server-side search filter (patient name, ID, subject, or complaint)
         ...(searchTerm
           ? [{
             OR: [
@@ -527,7 +527,38 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
                     User: {
                       OR: [
                         { firstName: { contains: searchTerm, mode: "insensitive" as const } },
+                        { middleName: { contains: searchTerm, mode: "insensitive" as const } },
                         { lastName: { contains: searchTerm, mode: "insensitive" as const } },
+                        { email: { contains: searchTerm, mode: "insensitive" as const } },
+                        {
+                          StudentRecords: {
+                            some: {
+                              OR: [
+                                { studentId: { contains: searchTerm, mode: "insensitive" as const } },
+                                { lrn: { contains: searchTerm, mode: "insensitive" as const } },
+                              ],
+                              isActive: true,
+                            },
+                          },
+                        },
+                        {
+                          UserEmployments: {
+                            some: {
+                              employeeId: { contains: searchTerm, mode: "insensitive" as const },
+                              isActive: true,
+                            },
+                          },
+                        },
+                        // Multi-word full-name search: each word must match at least one name field
+                        ...(searchTerm.includes(' ') ? [{
+                          AND: searchTerm.split(/\s+/).filter(Boolean).map(part => ({
+                            OR: [
+                              { firstName: { contains: part, mode: "insensitive" as const } },
+                              { middleName: { contains: part, mode: "insensitive" as const } },
+                              { lastName: { contains: part, mode: "insensitive" as const } },
+                            ]
+                          }))
+                        }] : []),
                       ],
                     },
                   },
@@ -562,12 +593,22 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
               gender: true,
               dob: true,
               StudentRecords: {
+                where: { isActive: true },
                 select: {
+                  id: true,
+                  studentId: true,
+                  lrn: true,
                   organizationId: true,
                   programId: true,
                   departmentId: true,
                   collegeId: true,
                   yearLevel: true,
+                  Organization: {
+                    select: {
+                      id: true,
+                      name: true
+                    }
+                  },
                   College: {
                     select: {
                       id: true,
@@ -596,10 +637,21 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
                 }
               },
               UserEmployments: {
+                where: { isActive: true },
                 select: {
+                  id: true,
+                  employeeId: true,
+                  position: true,
+                  designation: true,
                   departmentId: true,
                   collegeId: true,
                   officeId: true,
+                  Organization: {
+                    select: {
+                      id: true,
+                      name: true
+                    }
+                  },
                   College: {
                     select: {
                       id: true,
@@ -902,6 +954,51 @@ export const createWalkInAppointmentAction = withErrorHandling(async (payload: C
           status: "PENDING",
         },
       });
+    }
+
+    // Ensure the patient has a ClinicPatient record for this clinic
+    if (patientId) {
+      const patientUser = await tx.user.findUnique({
+        where: { userId: patientId },
+        select: { id: true },
+      });
+      if (patientUser) {
+        const existingCp = await tx.clinicPatient.findFirst({
+          where: { clinicId: clinic.id, patientId: patientUser.id },
+          select: { id: true },
+        });
+        if (!existingCp) {
+          const patientRole = await tx.clinicRole.findFirst({
+            where: { name: { equals: "Patient", mode: "insensitive" } },
+            select: { id: true },
+          });
+          const newCp = await tx.clinicPatient.create({
+            data: {
+              clinicId: clinic.id,
+              patientId: patientUser.id,
+            },
+            select: { id: true },
+          });
+          if (patientRole) {
+            const rolePermissions = await tx.clinicRoleInitialPermission.findMany({
+              where: {
+                clinicId: clinic.id,
+                clinicRoleId: patientRole.id,
+              },
+              select: { permissionId: true },
+            });
+            if (rolePermissions.length > 0) {
+              await tx.clinicPatientPermission.createMany({
+                data: rolePermissions.map((rp) => ({
+                  clinicPatientId: newCp.id,
+                  permissionId: rp.permissionId,
+                })),
+                skipDuplicates: true,
+              });
+            }
+          }
+        }
+      }
     }
   });
 

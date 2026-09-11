@@ -31,6 +31,8 @@ import {
   Paperclip,
   X as XIcon,
   Ban,
+  GraduationCap,
+  Briefcase,
 } from "lucide-react";
 import {
   Sheet,
@@ -252,6 +254,9 @@ export function AppointmentDetailSheet({
   const isWalkIn = isWalkInAppointment(appointment);
   const fullName = getAppointmentPatientName(appointment);
   const initials = getAppointmentInitials(appointment);
+
+  const primaryStudentRecord = requester?.StudentRecords?.[0];
+  const primaryEmploymentRecord = requester?.UserEmployments?.[0];
 
   const scheduledDate = appointment.AppointmentAttribute?.date;
   const timeStart = appointment.AppointmentAttribute?.timeStart;
@@ -574,8 +579,44 @@ export function AppointmentDetailSheet({
                   {initials || <User className="h-4 w-4" />}
                 </AvatarFallback>
               </Avatar>
-              <div>
-                <p className="font-semibold text-sm">{fullName}</p>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="font-semibold text-sm">{fullName}</p>
+                  {primaryStudentRecord?.studentId && (
+                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-normal bg-blue-50/80 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800">
+                      ID: {primaryStudentRecord.studentId}
+                    </Badge>
+                  )}
+                  {primaryEmploymentRecord?.employeeId && (
+                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-normal bg-purple-50/80 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800">
+                      Emp: {primaryEmploymentRecord.employeeId}
+                    </Badge>
+                  )}
+                </div>
+                {primaryStudentRecord && (
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
+                    <GraduationCap className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
+                    <span>
+                      {[
+                        primaryStudentRecord.Program?.name,
+                        primaryStudentRecord.yearLevel ? `Year ${primaryStudentRecord.yearLevel}` : null,
+                        primaryStudentRecord.Organization?.name,
+                      ].filter(Boolean).join(" • ")}
+                    </span>
+                  </div>
+                )}
+                {primaryEmploymentRecord && (
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
+                    <Briefcase className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400 shrink-0" />
+                    <span>
+                      {[
+                        primaryEmploymentRecord.position || primaryEmploymentRecord.designation,
+                        primaryEmploymentRecord.Department?.name,
+                        primaryEmploymentRecord.Organization?.name,
+                      ].filter(Boolean).join(" • ")}
+                    </span>
+                  </div>
+                )}
                 {requester?.email && (
                   <div className="flex items-center gap-1 mt-0.5">
                     <Mail className="h-3 w-3 text-muted-foreground" />

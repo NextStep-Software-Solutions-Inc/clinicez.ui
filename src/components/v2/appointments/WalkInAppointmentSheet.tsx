@@ -242,7 +242,7 @@ export function WalkInAppointmentSheet({
                     if (dropdownRef.current?.contains(e.relatedTarget as Node)) return;
                     setTimeout(() => setShowDropdown(false), DROPDOWN_CLOSE_DELAY);
                   }}
-                  placeholder="Search by name, email..."
+                  placeholder="Search by name, email, student ID, employee ID..."
                   className="pl-8 pr-8"
                   autoFocus
                   disabled={!!selectedPatient}
@@ -275,20 +275,36 @@ export function WalkInAppointmentSheet({
                     </div>
                   ) : patientResults.length > 0 ? (
                     <ul className="max-h-52 overflow-y-auto divide-y divide-border/30">
-                      {patientResults.map((p) => (
-                        <li key={p.id}>
-                          <button
-                            type="button"
-                            className="w-full px-3 py-2.5 text-left hover:bg-muted/50 transition-colors"
-                            onMouseDown={() => handleSelectPatient(p)}
-                          >
-                            <p className="text-sm font-medium">
-                              {p.Patient.firstName} {p.Patient.lastName}
-                            </p>
-                            <p className="text-xs text-muted-foreground">{p.Patient.email}</p>
-                          </button>
-                        </li>
-                      ))}
+                      {patientResults.map((p) => {
+                        const sid = p.Patient.StudentRecords?.[0]?.studentId;
+                        const eid = p.Patient.UserEmployments?.[0]?.employeeId;
+                        return (
+                          <li key={p.id}>
+                            <button
+                              type="button"
+                              className="w-full px-3 py-2.5 text-left hover:bg-muted/50 transition-colors"
+                              onMouseDown={() => handleSelectPatient(p)}
+                            >
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <p className="text-sm font-medium">
+                                  {p.Patient.firstName} {p.Patient.lastName}
+                                </p>
+                                {sid && (
+                                  <span className="text-[10px] px-1.5 py-0.5 rounded font-medium bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                                    ID: {sid}
+                                  </span>
+                                )}
+                                {eid && (
+                                  <span className="text-[10px] px-1.5 py-0.5 rounded font-medium bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
+                                    Emp: {eid}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-xs text-muted-foreground">{p.Patient.email}</p>
+                            </button>
+                          </li>
+                        );
+                      })}
                     </ul>
                   ) : noPatientFound ? (
                     <div className="px-3 py-3 space-y-2">
@@ -335,6 +351,8 @@ export function WalkInAppointmentSheet({
             {selectedPatient && (
               <p className="text-xs text-teal-700 dark:text-teal-400">
                 ✓ Registered patient: {selectedPatient.Patient.firstName} {selectedPatient.Patient.lastName}
+                {selectedPatient.Patient.StudentRecords?.[0]?.studentId && ` (ID: ${selectedPatient.Patient.StudentRecords[0].studentId})`}
+                {selectedPatient.Patient.UserEmployments?.[0]?.employeeId && ` (Emp ID: ${selectedPatient.Patient.UserEmployments[0].employeeId})`}
               </p>
             )}
             {!selectedPatient && unregisteredName && !showDropdown && (

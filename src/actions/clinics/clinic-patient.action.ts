@@ -107,7 +107,19 @@ export interface GetClinicPatientsResult {
       bloodType: string | null;
       nickname: string | null;
       picture: string | null;
-      StudentRecords: Array<{ studentId: number }>;
+      StudentRecords?: Array<{
+        id?: number;
+        studentId: string;
+        lrn?: string | null;
+        Organization?: { name: string } | null;
+      }>;
+      UserEmployments?: Array<{
+        id?: number;
+        employeeId: string;
+        position?: string | null;
+        designation?: string | null;
+        Organization?: { name: string } | null;
+      }>;
     };
     PhilHealthKonsultaEnlistments: Array<{ id: number; profilingTransNo: string | null; hciCaseNo: string | null; }>;
   }>;
@@ -118,17 +130,37 @@ export interface GetClinicPatientsResult {
 
 export type GetClinicPatients = GetClinicPatientsResult;
 
-/** Build a Prisma OR filter array for patient name/email search, supporting multi-word full-name queries. */
+/** Build a Prisma OR filter array for patient name/email/ID search, supporting multi-word full-name queries and student/employee IDs. */
 function buildPatientSearchFilter(search: string) {
+  const trimmed = search.trim();
   return {
     OR: [
-      { firstName: { contains: search, mode: "insensitive" as const } },
-      { middleName: { contains: search, mode: "insensitive" as const } },
-      { lastName: { contains: search, mode: "insensitive" as const } },
-      { email: { contains: search, mode: "insensitive" as const } },
+      { firstName: { contains: trimmed, mode: "insensitive" as const } },
+      { middleName: { contains: trimmed, mode: "insensitive" as const } },
+      { lastName: { contains: trimmed, mode: "insensitive" as const } },
+      { email: { contains: trimmed, mode: "insensitive" as const } },
+      {
+        StudentRecords: {
+          some: {
+            OR: [
+              { studentId: { contains: trimmed, mode: "insensitive" as const } },
+              { lrn: { contains: trimmed, mode: "insensitive" as const } },
+            ],
+            isActive: true,
+          },
+        },
+      },
+      {
+        UserEmployments: {
+          some: {
+            employeeId: { contains: trimmed, mode: "insensitive" as const },
+            isActive: true,
+          },
+        },
+      },
       // Multi-word full-name search: each word must match at least one name field
-      ...(search.includes(' ') ? [{
-        AND: search.split(/\s+/).filter(Boolean).map(part => ({
+      ...(trimmed.includes(' ') ? [{
+        AND: trimmed.split(/\s+/).filter(Boolean).map(part => ({
           OR: [
             { firstName: { contains: part, mode: "insensitive" as const } },
             { middleName: { contains: part, mode: "insensitive" as const } },
@@ -229,7 +261,30 @@ export const getClinicPatientsAction = async (filters: GetClinicPatientFilters):
               isActive: true
             },
             select: {
-              studentId: true
+              id: true,
+              studentId: true,
+              lrn: true,
+              Organization: {
+                select: {
+                  name: true
+                }
+              }
+            }
+          },
+          UserEmployments: {
+            where: {
+              isActive: true
+            },
+            select: {
+              id: true,
+              employeeId: true,
+              position: true,
+              designation: true,
+              Organization: {
+                select: {
+                  name: true
+                }
+              }
             }
           }
         }
@@ -501,6 +556,8 @@ export type SearchNonClinicPatientsResult = {
   } | null;
   partnerOrgNames: string[];
   warnings: string[];
+  studentId?: string | null;
+  employeeId?: string | null;
 };
 
 export const searchNonClinicPatientsAction = withErrorHandling(async ({
@@ -578,6 +635,16 @@ export const searchNonClinicPatientsAction = withErrorHandling(async ({
       dob: true,
       mobile: true,
       verificationStatus: true,
+      StudentRecords: {
+        where: { isActive: true },
+        select: { studentId: true },
+        take: 1,
+      },
+      UserEmployments: {
+        where: { isActive: true },
+        select: { employeeId: true },
+        take: 1,
+      },
       OrganizationMembers: {
         where: {
           Organization: {
@@ -690,6 +757,8 @@ export const searchNonClinicPatientsAction = withErrorHandling(async ({
       partnerOrgDetails,
       partnerOrgNames,
       warnings,
+      studentId: user.StudentRecords?.[0]?.studentId ?? null,
+      employeeId: user.UserEmployments?.[0]?.employeeId ?? null,
     };
   });
 

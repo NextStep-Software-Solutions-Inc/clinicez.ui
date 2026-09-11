@@ -209,6 +209,29 @@ export interface SerializedPatientHealthRecordsResponse {
   // Clinical Documents
   medicalCertificates: CertificateData[]
   referralSlips: ReferralData[]
+
+  // Student & Employment Records
+  studentRecords?: Array<{
+    id: number
+    studentId: string
+    lrn: string | null
+    level?: number
+    organizationName?: string | null
+    programName?: string | null
+    yearLevelName?: string | null
+    collegeName?: string | null
+    departmentName?: string | null
+  }>
+  userEmployments?: Array<{
+    id: number
+    employeeId: string
+    position: string
+    designation: string | null
+    organizationName?: string | null
+    departmentName?: string | null
+    collegeName?: string | null
+    officeName?: string | null
+  }>
 }
 
 // Original type for backwards compatibility

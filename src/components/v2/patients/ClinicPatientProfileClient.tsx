@@ -30,7 +30,9 @@ import {
   XCircle,
   AlertCircle,
   ArrowLeft,
-  ShieldCheck
+  ShieldCheck,
+  GraduationCap,
+  Briefcase,
 } from 'lucide-react'
 import { getPrincipalMemberByPinAction, type PrincipalMemberInfo } from '@/actions/clinics/konsulta-report.action'
 import { Badge } from '@/components/ui/badge'
@@ -328,6 +330,22 @@ export default function ClinicPatientProfileClient({
                 <span className="px-2 py-0.5 rounded bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 font-bold">
                   PhilHealth PIN: {philHealthCurrentData?.pin || patientData.philHealthRecords?.[0]?.pin || 'Not Registered'}
                 </span>
+                {patientData.studentRecords?.[0]?.studentId && (
+                  <span
+                    className="px-2 py-0.5 rounded bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-500/30 font-bold"
+                    title={patientData.studentRecords[0].organizationName ? `${patientData.studentRecords[0].organizationName} Student ID` : "Student ID"}
+                  >
+                    Student ID: {patientData.studentRecords[0].studentId}
+                  </span>
+                )}
+                {patientData.userEmployments?.[0]?.employeeId && (
+                  <span
+                    className="px-2 py-0.5 rounded bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/30 font-bold"
+                    title={patientData.userEmployments[0].position ? `${patientData.userEmployments[0].position} (${patientData.userEmployments[0].organizationName ?? 'Employee'})` : "Employee ID"}
+                  >
+                    Employee ID: {patientData.userEmployments[0].employeeId}
+                  </span>
+                )}
                 <span className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/50 dark:border-slate-700/50">
                   Case: {patientData.caseNumber || 'N/A'}
                 </span>
@@ -609,6 +627,85 @@ export default function ClinicPatientProfileClient({
                 )}
               </CardContainer>
             </motion.div>
+
+            {/* Academic & Employment Records Card */}
+            {(patientData.studentRecords?.length || patientData.userEmployments?.length) ? (
+              <motion.div variants={cardVariants}>
+                <CardContainer
+                  title="Academic & Employment Records"
+                  icon={GraduationCap}
+                  accentColor="bg-blue-500"
+                >
+                  <div className="space-y-6">
+                    {/* Student Records */}
+                    {patientData.studentRecords && patientData.studentRecords.length > 0 && (
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                          <GraduationCap className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                          <span>Student Records ({patientData.studentRecords.length})</span>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {patientData.studentRecords.map((sr) => (
+                            <div key={sr.id} className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 space-y-2">
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                                  ID: {sr.studentId}
+                                </span>
+                                {sr.organizationName && (
+                                  <Badge variant="outline" className="text-[10px] bg-blue-50/50 text-blue-700 dark:text-blue-300 border-blue-200">
+                                    {sr.organizationName}
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-slate-600 dark:text-slate-400">
+                                {sr.lrn && <div><span className="text-slate-400">LRN:</span> {sr.lrn}</div>}
+                                {sr.programName && <div><span className="text-slate-400">Program:</span> {sr.programName}</div>}
+                                {sr.yearLevelName && <div><span className="text-slate-400">Year Level:</span> {sr.yearLevelName}</div>}
+                                {sr.collegeName && <div><span className="text-slate-400">College:</span> {sr.collegeName}</div>}
+                                {sr.departmentName && <div><span className="text-slate-400">Dept:</span> {sr.departmentName}</div>}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Employment Records */}
+                    {patientData.userEmployments && patientData.userEmployments.length > 0 && (
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                          <Briefcase className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                          <span>Employment Records ({patientData.userEmployments.length})</span>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {patientData.userEmployments.map((emp) => (
+                            <div key={emp.id} className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 space-y-2">
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                                  Emp ID: {emp.employeeId}
+                                </span>
+                                {emp.organizationName && (
+                                  <Badge variant="outline" className="text-[10px] bg-purple-50/50 text-purple-700 dark:text-purple-300 border-purple-200">
+                                    {emp.organizationName}
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-slate-600 dark:text-slate-400">
+                                <div><span className="text-slate-400">Position:</span> {emp.position}</div>
+                                {emp.designation && <div><span className="text-slate-400">Designation:</span> {emp.designation}</div>}
+                                {emp.departmentName && <div><span className="text-slate-400">Department:</span> {emp.departmentName}</div>}
+                                {emp.collegeName && <div><span className="text-slate-400">College:</span> {emp.collegeName}</div>}
+                                {emp.officeName && <div><span className="text-slate-400">Office:</span> {emp.officeName}</div>}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </CardContainer>
+              </motion.div>
+            ) : null}
 
             {/* Addresses Card */}
             <motion.div variants={cardVariants}>
@@ -1456,9 +1553,9 @@ interface CardContainerProps {
   title: string
   icon: React.ComponentType<{ className?: string }>
   accentColor: string
-  editing: boolean
-  onEdit: () => void
-  onCancel: () => void
+  editing?: boolean
+  onEdit?: () => void
+  onCancel?: () => void
   onSave?: () => void
   saving?: boolean
   isAutoSaveForm?: boolean
@@ -1469,7 +1566,7 @@ function CardContainer({
   title,
   icon: Icon,
   accentColor,
-  editing,
+  editing = false,
   onEdit,
   onCancel,
   onSave,
@@ -1494,7 +1591,7 @@ function CardContainer({
         </div>
 
         {/* Edit/Action triggers */}
-        {!editing ? (
+        {onEdit && (!editing ? (
           <button
             onClick={onEdit}
             className="flex items-center gap-1 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 text-[11px] font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 transition-all shrink-0"
@@ -1503,7 +1600,7 @@ function CardContainer({
             <span>{isAutoSaveForm ? 'Manage' : 'Edit'}</span>
           </button>
         ) : (
-          isAutoSaveForm && (
+          isAutoSaveForm && onCancel && (
             <button
               onClick={onCancel}
               className="flex items-center gap-1 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 text-[11px] font-bold text-slate-600 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-slate-900 transition-all shrink-0"
@@ -1512,7 +1609,7 @@ function CardContainer({
               <span>Done</span>
             </button>
           )
-        )}
+        ))}
       </div>
 
       {/* Content */}

@@ -95,6 +95,11 @@ export const PatientCard = memo(function PatientCard({
   const isYakapEnlisted = !!activeYakapEnlistment;
   const isYakapProfiled = !!activeYakapEnlistment?.profilingTransNo;
 
+  const studentRecord = patient.Patient.StudentRecords?.[0];
+  const employmentRecord = patient.Patient.UserEmployments?.[0];
+  const studentId = studentRecord?.studentId;
+  const employeeId = employmentRecord?.employeeId;
+
   /* ── Grid View ─────────────────────────────────────────────────────────── */
   if (viewMode === "grid") {
     return (
@@ -137,6 +142,28 @@ export const PatientCard = memo(function PatientCard({
                   </Badge>
                 )}
               </div>
+              {(studentId || employeeId) && (
+                <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                  {studentId && (
+                    <Badge
+                      variant="outline"
+                      className="text-[10px] px-1.5 py-0 font-medium bg-blue-50/80 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800"
+                      title={studentRecord?.Organization?.name ? `${studentRecord.Organization.name} Student ID` : "Student ID"}
+                    >
+                      ID: {studentId}
+                    </Badge>
+                  )}
+                  {employeeId && (
+                    <Badge
+                      variant="outline"
+                      className="text-[10px] px-1.5 py-0 font-medium bg-purple-50/80 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800"
+                      title={employmentRecord?.position ? `${employmentRecord.position} (${employmentRecord.Organization?.name ?? 'Employee'})` : "Employee ID"}
+                    >
+                      Emp: {employeeId}
+                    </Badge>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
@@ -240,6 +267,28 @@ export const PatientCard = memo(function PatientCard({
               </Badge>
             )}
           </div>
+          {(studentId || employeeId) && (
+            <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+              {studentId && (
+                <Badge
+                  variant="outline"
+                  className="text-[10px] px-1.5 py-0 font-medium bg-blue-50/80 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800"
+                  title={studentRecord?.Organization?.name ? `${studentRecord.Organization.name} Student ID` : "Student ID"}
+                >
+                  ID: {studentId}
+                </Badge>
+              )}
+              {employeeId && (
+                <Badge
+                  variant="outline"
+                  className="text-[10px] px-1.5 py-0 font-medium bg-purple-50/80 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800"
+                  title={employmentRecord?.position ? `${employmentRecord.position} (${employmentRecord.Organization?.name ?? 'Employee'})` : "Employee ID"}
+                >
+                  Emp: {employeeId}
+                </Badge>
+              )}
+            </div>
+          )}
           <div className="flex items-center gap-2 mt-0.5 flex-wrap">
             <ProfileStatusBadge status={profileCompletionStatus} />
             {isYakapEnlisted && <YakapBadge isProfiled={isYakapProfiled} />}

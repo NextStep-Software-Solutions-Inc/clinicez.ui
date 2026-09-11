@@ -6,6 +6,7 @@ import { getImagingStudiesAction } from "@/actions/clinics/clinical-record/imagi
 import { getHeartStationRequestsAction } from "@/actions/clinics/clinical-record/heart-station.action";
 import { getMedicalCertificatesAction } from "@/actions/clinics/clinical-record/medical-certificate.action";
 import { getReferralSlipsAction } from "@/actions/clinics/clinical-record/referral-slip.action";
+import { syncClinicRecordsTemplatesAction } from "@/actions/clinics/clinic-document-setting.action";
 import { ClinicRecordsClient } from "@/components/v2/clinic/records/ClinicRecordsClient";
 
 export const metadata: Metadata = {
@@ -24,6 +25,9 @@ export default async function ClinicRecordsPage({ params }: ClinicRecordsPagePro
 
   const session = await getCachedSession();
   if (!session?.user?.sub) throw new Error("User not authenticated");
+
+  // Synchronize existing records to clinic default templates if needed
+  await syncClinicRecordsTemplatesAction(clinicUid);
 
   const [
     prescriptionsResult,

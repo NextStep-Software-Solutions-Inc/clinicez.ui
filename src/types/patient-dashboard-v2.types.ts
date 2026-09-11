@@ -55,6 +55,9 @@ export interface DashboardAppointment {
     name: string
   }
 
+  // Pre-assessment info
+  homeInstructions?: string | null
+
   createdAt: Date
   updatedAt: Date
 }

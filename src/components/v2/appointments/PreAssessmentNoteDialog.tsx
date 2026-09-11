@@ -89,10 +89,6 @@ export function PreAssessmentNoteDialog({
       toast.error("Assessment is required.");
       return;
     }
-    if (!remarks.trim()) {
-      toast.error("Remarks are required.");
-      return;
-    }
 
     setIsPending(true);
     const result = await upsertPreAssessmentNoteAction({
@@ -100,7 +96,7 @@ export function PreAssessmentNoteDialog({
       clinicUid,
       assessment,
       homeInstructions: homeInstructions.trim() ? homeInstructions : undefined,
-      remarks,
+      remarks: remarks.trim() ? remarks : undefined,
     });
     setIsPending(false);
 
@@ -254,7 +250,8 @@ export function PreAssessmentNoteDialog({
 
           <div className="space-y-1.5">
             <Label className="text-xs font-medium">
-              Remarks <span className="text-destructive">*</span>
+              Remarks{" "}
+              <span className="text-muted-foreground font-normal">(optional)</span>
             </Label>
             <MarkdownEditor
               value={remarks}

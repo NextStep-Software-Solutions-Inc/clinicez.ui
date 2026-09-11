@@ -29,7 +29,7 @@ type UpsertPreAssessmentNotePayload = {
   appointmentId: number;
   assessment: string;
   homeInstructions?: string;
-  remarks: string;
+  remarks?: string;
   clinicUid: string;
 }
 
@@ -44,6 +44,8 @@ export const upsertPreAssessmentNoteAction = withErrorHandling(async ({ appointm
   const canWritePermission = writePreAssessmentNotePermissions.every(permission => myPermissionArray.includes(permission))
 
   if (!canWritePermission) throw new Error("You do not have permission to write pre-assessment note.")
+
+  const finalRemarks = remarks?.trim() ?? ""
 
   await prisma.$transaction(async (prisma) => {
     const user = await prisma.user.findUniqueOrThrow({
@@ -69,7 +71,7 @@ export const upsertPreAssessmentNoteAction = withErrorHandling(async ({ appointm
         },
         assessment,
         homeInstructions,
-        remarks,
+        remarks: finalRemarks,
         CreatedBy: {
           connect: {
             userId: session.user.sub
@@ -82,7 +84,7 @@ export const upsertPreAssessmentNoteAction = withErrorHandling(async ({ appointm
       update: {
         assessment,
         homeInstructions,
-        remarks,
+        remarks: finalRemarks,
       }
     })
   }, {

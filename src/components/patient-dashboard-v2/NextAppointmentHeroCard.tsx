@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Calendar, Clock, MapPin, Video, Stethoscope, History } from 'lucide-react';
+import { Calendar, Clock, MapPin, Video, Stethoscope, History, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatTime12Hr, combineDateWithTime } from '@/lib/day-utils';
 import dayjs from '@/lib/day-utils';
 import type { NextAppointmentData } from '@/types/patient-dashboard-v2.types';
+import { MarkdownRenderer } from '@/components/markdown/MarkdownRenderer';
 
 interface NextAppointmentHeroCardProps {
   appointment: NextAppointmentData | null;
@@ -266,6 +267,19 @@ export function NextAppointmentHeroCard({ appointment, isLoading }: NextAppointm
       >
         {hasMeetLink ? 'Join Now' : 'View Details'}
       </Button>
+
+      {/* Pre-Assessment Home Instructions */}
+      {apt.homeInstructions && (
+        <div className="w-full mt-1 pt-2.5 border-t dark:border-white/10 border-slate-200/70 flex items-start gap-2 text-xs">
+          <div className="flex items-center gap-1.5 font-semibold text-teal-600 dark:text-teal-400 shrink-0 mt-0.5">
+            <Home className="w-3.5 h-3.5" />
+            <span>Home Instructions:</span>
+          </div>
+          <div className="flex-1 min-w-0 text-slate-700 dark:text-slate-300">
+            <MarkdownRenderer content={apt.homeInstructions} className="text-xs" />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

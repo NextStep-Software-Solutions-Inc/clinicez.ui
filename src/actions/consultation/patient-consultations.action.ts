@@ -104,6 +104,7 @@ export const getPatientConsultationsAction = withErrorHandling(
               take: 1,
               select: {
                 assessment: true,
+                homeInstructions: true,
                 remarks: true,
               },
             },

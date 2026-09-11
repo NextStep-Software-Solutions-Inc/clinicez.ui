@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { getBookingClinicAction } from '@/actions/patient-dashboard/get-booking-clinic'
+import { checkIsClinicPatientAction } from '@/actions/clinics/clinic-patient.action'
 import BookAppointmentWizard from '@/components/patient-dashboard-v2/BookAppointmentWizard'
 import SelectClinicPage from './SelectClinicPage'
 
@@ -22,7 +23,10 @@ export default async function BookAppointmentPage({ searchParams }: PageProps) {
     return <SelectClinicPage />
   }
 
-  const result = await getBookingClinicAction({ clinicUid })
+  const [result, isPatient] = await Promise.all([
+    getBookingClinicAction({ clinicUid }),
+    checkIsClinicPatientAction(clinicUid),
+  ])
 
   if (!result.status || !result.data) {
     notFound()
@@ -39,6 +43,7 @@ export default async function BookAppointmentPage({ searchParams }: PageProps) {
       termsUrl={termsUrl}
       privacyUrl={privacyUrl}
       preferredHpId={preferredHpId}
+      isInitialPatient={isPatient}
     />
   )
 }

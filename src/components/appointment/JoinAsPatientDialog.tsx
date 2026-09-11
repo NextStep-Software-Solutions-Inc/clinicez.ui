@@ -36,6 +36,9 @@ const confirmationFormSchema = z.object({
   })
 })
 
+/**
+ * @deprecated Legacy V1 join-as-patient dialog. Use JoinAsPatientDialogV2 in @/components/patient-dashboard-v2 instead.
+ */
 export function JoinAsPatientDialog() {
 
   const { user } = useUser();

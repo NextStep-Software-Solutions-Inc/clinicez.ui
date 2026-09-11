@@ -1,47 +1,39 @@
 "use client";
 
 import React from "react";
+import { useRouter } from "next/navigation";
 import "@/styles/shiny-button.css";
-import { useClinicPatients } from "@/hooks/useClinicPatient";
-import { toast } from "sonner";
 
 type BookAppointmentBtnProps = Readonly<{
-    className?: string;
-    children?: React.ReactNode;
-    userId: string;
-    clinicUid: string;
-}>
+  className?: string;
+  children?: React.ReactNode;
+  userId?: string;
+  clinicUid: string;
+}>;
 
-export default function BookAppointmentBtn({className, children, userId, clinicUid}: BookAppointmentBtnProps) {
-  const {data: clinicPatient, isLoading} = useClinicPatients({
-    clinicUid, userId
-  })
+/**
+ * @deprecated Legacy booking trigger. Now routes to modern V2 booking wizard at /v2/book-appointment?clinic=[clinicUid]
+ */
+export default function BookAppointmentBtn({
+  className,
+  children,
+  clinicUid,
+}: BookAppointmentBtnProps) {
+  const router = useRouter();
 
   const handleOpenBooking = () => {
-    if (isLoading) {
-      toast.info("Please wait while we check your eligibility to book an appointment");
-      return;
-    }
-
-    const searchParams = new URLSearchParams(window.location.search);
-
-    if(!clinicPatient?.data?.length) {
-      searchParams.set("join-as-patient", "true");
-    } else {
-      searchParams.set("book-appointment", "true");
-    }
-    window.history.pushState({}, "", `${window.location.pathname}?${searchParams.toString()}`);
+    router.push(`/v2/book-appointment?clinic=${clinicUid}`);
   };
 
   return (
-    <div onClick={handleOpenBooking}>
-      {
-        children ? children :
-          <button className={className} > 
-            Book Appointment
-          </button>
-      }
+    <div onClick={handleOpenBooking} className="cursor-pointer">
+      {children ? (
+        children
+      ) : (
+        <button className={className} type="button">
+          Book Appointment
+        </button>
+      )}
     </div>
-    
   );
 }

@@ -20,6 +20,9 @@ import SelectService from "./SelectService";
 import { useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 
+/**
+ * @deprecated Legacy V1 booking drawer. Use BookAppointmentWizard in @/components/patient-dashboard-v2 instead.
+ */
 export default function BookAppointmentSheet() {
   
   const searchParams = useSearchParams();

@@ -202,6 +202,21 @@ export function AddPatientSheet({
   const userInitials = (user: SearchNonClinicPatientsResult) =>
     `${user.firstName?.[0] ?? ""}${user.lastName?.[0] ?? ""}`.toUpperCase() || "U";
 
+  const getUserDemographics = (u: SearchNonClinicPatientsResult) => {
+    const parts: string[] = [];
+    if (u.gender) {
+      parts.push(u.gender.charAt(0).toUpperCase() + u.gender.slice(1).toLowerCase());
+    }
+    if (u.dob) {
+      const age = dayjs().diff(dayjs(u.dob), "year");
+      if (!isNaN(age) && age >= 0) parts.push(`${age} yrs old`);
+    }
+    if (u.mobile) {
+      parts.push(u.mobile);
+    }
+    return parts.join(" • ");
+  };
+
   return (
     <>
       <Sheet open={open} onOpenChange={(o) => !o && handleClose()}>
@@ -331,11 +346,16 @@ export function AddPatientSheet({
                     <div className="min-w-0 flex-1 space-y-1">
                       <div className="flex items-center justify-between">
                         <p className="text-sm font-medium">
-                          {selectedUser.firstName} {selectedUser.lastName}
+                          {selectedUser.firstName} {selectedUser.middleName ? `${selectedUser.middleName} ` : ""}{selectedUser.lastName}
                         </p>
                         <User className="h-4 w-4 text-primary shrink-0" />
                       </div>
                       <p className="text-xs text-muted-foreground">{selectedUser.email}</p>
+                      {getUserDemographics(selectedUser) && (
+                        <p className="text-[11px] text-muted-foreground/90">
+                          {getUserDemographics(selectedUser)}
+                        </p>
+                      )}
                       <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
                         {selectedUser.isVerified ? (
                           <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px] px-1.5 py-0 font-medium dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800">
@@ -356,6 +376,7 @@ export function AddPatientSheet({
                           <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-[10px] px-1.5 py-0 font-medium dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800">
                             <Building2 className="h-2.5 w-2.5 mr-1" />
                             {selectedUser.partnerOrgDetails?.orgName ? `${selectedUser.partnerOrgDetails.orgName} Member` : "Partner Member"}
+                            {selectedUser.partnerOrgDetails?.roleName ? ` • ${selectedUser.partnerOrgDetails.roleName}` : ""}
                           </Badge>
                         ) : selectedUser.partnerOrgStatus === "PENDING" ? (
                           <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 text-[10px] px-1.5 py-0 font-medium dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800">
@@ -507,25 +528,103 @@ export function AddPatientSheet({
           </AlertDialogTitle>
           <AlertDialogDescription asChild>
             <div className="space-y-3 pt-2 text-sm text-foreground">
-              <div className="p-2.5 rounded-md bg-muted/60 text-xs space-y-0.5">
-                <p className="font-semibold text-foreground">
-                  {selectedUser?.firstName} {selectedUser?.lastName}
-                </p>
-                <p className="text-muted-foreground">{selectedUser?.email}</p>
+              {/* Patient Identity & Membership Card */}
+              <div className="p-3 rounded-lg border bg-muted/40 space-y-2.5">
+                <div className="flex items-start gap-3">
+                  <Avatar className="h-10 w-10 shrink-0 border mt-0.5">
+                    <AvatarImage src={selectedUser?.picture ?? undefined} />
+                    <AvatarFallback className="text-xs font-semibold bg-primary/10 text-primary">
+                      {selectedUser ? userInitials(selectedUser) : "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0 flex-1 space-y-0.5">
+                    <p className="font-semibold text-sm text-foreground leading-tight">
+                      {selectedUser?.firstName} {selectedUser?.middleName ? `${selectedUser.middleName} ` : ""}{selectedUser?.lastName}
+                    </p>
+                    <p className="text-xs text-muted-foreground break-all">{selectedUser?.email}</p>
+                    {selectedUser && getUserDemographics(selectedUser) && (
+                      <p className="text-[11px] text-muted-foreground/90 pt-0.5">
+                        {getUserDemographics(selectedUser)}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Status Badges Row in Dialog */}
+                <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-border/40">
+                  {selectedUser?.isVerified ? (
+                    <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px] px-1.5 py-0 font-medium dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800">
+                      <ShieldCheck className="h-2.5 w-2.5 mr-1" />
+                      Verified Account
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 text-[10px] px-1.5 py-0 font-medium dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800">
+                      <ShieldAlert className="h-2.5 w-2.5 mr-1" />
+                      {selectedUser?.verificationStatus === "PENDING"
+                        ? "Pending Verification"
+                        : selectedUser?.verificationStatus === "REJECTED"
+                        ? "Verification Rejected"
+                        : "Unverified Account"}
+                    </Badge>
+                  )}
+
+                  {selectedUser?.partnerOrgStatus === "ACTIVE" ? (
+                    <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-[10px] px-1.5 py-0 font-medium dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800">
+                      <Building2 className="h-2.5 w-2.5 mr-1" />
+                      {selectedUser?.partnerOrgDetails?.orgName ? `${selectedUser.partnerOrgDetails.orgName} Member` : "Partner Member"}
+                      {selectedUser?.partnerOrgDetails?.roleName ? ` • ${selectedUser.partnerOrgDetails.roleName}` : ""}
+                    </Badge>
+                  ) : selectedUser?.partnerOrgStatus === "PENDING" ? (
+                    <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 text-[10px] px-1.5 py-0 font-medium dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800">
+                      <Building2 className="h-2.5 w-2.5 mr-1" />
+                      Applied to {selectedUser?.partnerOrgDetails?.orgName || "Partner Org"} (Pending Activation)
+                    </Badge>
+                  ) : selectedUser?.partnerOrgStatus === "NOT_MEMBER" ? (
+                    <Badge variant="outline" className="bg-slate-100 text-slate-600 border-slate-200 text-[10px] px-1.5 py-0 font-medium dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700">
+                      Not a Partner Org Member
+                    </Badge>
+                  ) : null}
+                </div>
+
+                {/* Membership Breakdown */}
+                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border/40 text-[11px]">
+                  <div>
+                    <span className="text-muted-foreground block text-[10px] uppercase font-medium tracking-wide">
+                      Partner Organization
+                    </span>
+                    <span className="font-semibold text-foreground truncate block">
+                      {selectedUser?.partnerOrgDetails?.orgName || (selectedUser?.partnerOrgNames?.length ? selectedUser.partnerOrgNames.join(", ") : "None affiliated")}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground block text-[10px] uppercase font-medium tracking-wide">
+                      Membership Status
+                    </span>
+                    <span className="font-semibold text-foreground block">
+                      {selectedUser?.partnerOrgStatus === "ACTIVE"
+                        ? `Active${selectedUser?.partnerOrgDetails?.roleName ? ` (${selectedUser.partnerOrgDetails.roleName})` : ""}`
+                        : selectedUser?.partnerOrgStatus === "PENDING"
+                        ? `Pending Activation${selectedUser?.partnerOrgDetails?.roleName ? ` (${selectedUser.partnerOrgDetails.roleName})` : ""}`
+                        : "Not a Member"}
+                    </span>
+                  </div>
+                </div>
               </div>
 
-              <div className="space-y-1.5">
-                <p className="text-xs font-medium text-muted-foreground">
+              {/* Status Warnings */}
+              <div className="rounded-lg border border-amber-200 bg-amber-50/80 dark:border-amber-900/50 dark:bg-amber-950/20 p-3 space-y-1.5">
+                <p className="text-xs font-semibold text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
+                  <AlertTriangle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
                   Please review the following status notices:
                 </p>
-                <ul className="text-xs text-amber-700 dark:text-amber-400 space-y-1.5 pl-4 list-disc">
+                <ul className="text-xs text-amber-700 dark:text-amber-400 space-y-1.5 pl-5 list-disc">
                   {selectedUser?.warnings?.map((w, idx) => (
                     <li key={idx} className="leading-snug">{w}</li>
                   ))}
                 </ul>
               </div>
 
-              <p className="text-xs text-muted-foreground pt-1">
+              <p className="text-xs text-muted-foreground pt-0.5">
                 Do you want to proceed and add this patient to the clinic anyway?
               </p>
             </div>

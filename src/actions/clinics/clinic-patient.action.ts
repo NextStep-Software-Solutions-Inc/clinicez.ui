@@ -488,6 +488,9 @@ export type SearchNonClinicPatientsResult = {
   middleName: string | null;
   email: string;
   picture: string | null;
+  gender?: string | null;
+  dob?: Date | null;
+  mobile?: string | null;
   verificationStatus: $Enums.VerificationStatus;
   isVerified: boolean;
   partnerOrgStatus: "ACTIVE" | "PENDING" | "NOT_MEMBER" | "NO_PARTNER_ORGS";
@@ -571,6 +574,9 @@ export const searchNonClinicPatientsAction = withErrorHandling(async ({
       middleName: true,
       email: true,
       picture: true,
+      gender: true,
+      dob: true,
+      mobile: true,
       verificationStatus: true,
       OrganizationMembers: {
         where: {
@@ -675,6 +681,9 @@ export const searchNonClinicPatientsAction = withErrorHandling(async ({
       middleName: user.middleName,
       email: user.email,
       picture: user.picture,
+      gender: user.gender,
+      dob: user.dob,
+      mobile: user.mobile,
       verificationStatus: user.verificationStatus,
       isVerified,
       partnerOrgStatus,

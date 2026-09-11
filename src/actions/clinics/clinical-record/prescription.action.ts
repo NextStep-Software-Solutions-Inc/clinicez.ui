@@ -9,7 +9,7 @@ import { Prisma } from "@prisma/client";
 import { createNotification } from "@/actions/notifications/notification.action";
 import { getNextSequenceNumber } from "@/lib/sequence-generator";
 import { formatKonsultaHciNumber } from "@/lib/format-sequence";
-import { resolveClinicTemplateId, resolveClinicEffectiveTemplate } from "@/lib/resolve-clinic-template";
+import { resolveClinicTemplateId } from "@/lib/resolve-clinic-template";
 
 export type GetPrescriptionFilters = {
   clinicUid: string;
@@ -216,16 +216,6 @@ export const getPrescriptionAction = withErrorHandling(async (id: number) => {
   });
 
   if (!prescription) throw new Error("Prescription not found");
-
-  const effectiveTemplate = await resolveClinicEffectiveTemplate(
-    prisma,
-    prescription.clinicId,
-    "prescription",
-    prescription.DocumentTemplate
-  );
-  if (effectiveTemplate) {
-    prescription.DocumentTemplate = effectiveTemplate;
-  }
 
   return { message: "Prescription fetched successfully", data: prescription };
 });

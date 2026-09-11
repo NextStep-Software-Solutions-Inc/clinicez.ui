@@ -10,7 +10,7 @@ import {
 } from "@/lib/healthcare-provider-auth";
 import { generateSerialNumber } from "@/lib/utils";
 import { withErrorHandling } from "@/lib/with-error-handling";
-import { resolveClinicTemplateId, resolveClinicEffectiveTemplate } from "@/lib/resolve-clinic-template";
+import { resolveClinicTemplateId } from "@/lib/resolve-clinic-template";
 import prisma from "@/lib/prisma";
 
 export type GetMedicalCertificateFilters = {
@@ -143,16 +143,6 @@ export const getMedicalCertificateAction = withErrorHandling(
       },
     });
     if (!certificate) throw new Error("Medical Certificate not found");
-
-    const effectiveTemplate = await resolveClinicEffectiveTemplate(
-      prismaClient,
-      certificate.clinicId,
-      "medcert",
-      certificate.DocumentTemplate
-    );
-    if (effectiveTemplate) {
-      certificate.DocumentTemplate = effectiveTemplate;
-    }
 
     return {
       message: "Medical Certificate fetched successfully",

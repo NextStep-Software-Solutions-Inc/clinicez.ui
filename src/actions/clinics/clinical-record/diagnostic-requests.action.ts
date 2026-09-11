@@ -4,7 +4,7 @@ import prisma from "@/lib/prisma";
 import { withErrorHandling } from "@/lib/with-error-handling";
 import { getCachedSession } from "@/actions/session.action";
 import { DocumentTemplateType } from "@prisma/client";
-import { resolveClinicTemplateId, resolveClinicEffectiveTemplate } from "@/lib/resolve-clinic-template";
+import { resolveClinicTemplateId } from "@/lib/resolve-clinic-template";
 
 export type CreateDiagnosticRequestPayload = {
   clinicUid: string;
@@ -100,16 +100,6 @@ export const getDiagnosticRequestAction = withErrorHandling(
     });
 
     if (!request) throw new Error("Request not found");
-
-    const effectiveTemplate = await resolveClinicEffectiveTemplate(
-      prisma,
-      request.clinicId,
-      "laboratory",
-      request.DocumentTemplate
-    );
-    if (effectiveTemplate) {
-      request.DocumentTemplate = effectiveTemplate;
-    }
 
     return { message: "Fetched request detail", data: request };
   }

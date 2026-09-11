@@ -14,6 +14,9 @@ export const getClinicPrescriptionConfigAction = withErrorHandling(async (clinic
         clinicUid
       }
     },
+    orderBy: {
+      id: "desc"
+    },
     include: {
       PrescriptionTemplate: {
         include: {
@@ -40,42 +43,78 @@ export const upsertClinicPrescriptionConfigAction = withErrorHandling(async (cli
   if (!session) throw new Error("User not authenticated.");
   
   const { clinicUid, prescriptionTemplateId } = data;
-  const clinicPrescriptionConfig = await prismaClient.clinicPrescriptionSetting.upsert({
-    where: {
-      id: clinicPrescriptionConfigId
-    },
-    create: {
-      Clinic: {
-        connect: {
-          clinicUid
-        }
+
+  const clinic = await prismaClient.clinic.findUnique({
+    where: { clinicUid },
+    select: { id: true },
+  });
+  if (!clinic) throw new Error("Clinic not found.");
+
+  let clinicPrescriptionConfig;
+  if (clinicPrescriptionConfigId > 0) {
+    clinicPrescriptionConfig = await prismaClient.clinicPrescriptionSetting.upsert({
+      where: {
+        id: clinicPrescriptionConfigId
       },
-      PrescriptionTemplate: {
-        connect: {
-          id: prescriptionTemplateId
-        }
+      create: {
+        Clinic: {
+          connect: {
+            clinicUid
+          }
+        },
+        PrescriptionTemplate: {
+          connect: {
+            id: prescriptionTemplateId
+          }
+        },
       },
-    },
-    update: {
-      PrescriptionTemplate: {
-        connect: {
-          id: prescriptionTemplateId
+      update: {
+        PrescriptionTemplate: {
+          connect: {
+            id: prescriptionTemplateId
+          }
         }
       }
-    }
-  });
-
-  if (prescriptionTemplateId) {
-    await prismaClient.prescription.updateMany({
-      where: {
-        Clinic: { clinicUid },
-        isActive: true,
-      },
-      data: {
-        templateId: prescriptionTemplateId,
-      },
     });
+  } else {
+    const existing = await prismaClient.clinicPrescriptionSetting.findFirst({
+      where: { clinicId: clinic.id },
+      orderBy: { id: "desc" },
+      select: { id: true },
+    });
+    if (existing) {
+      clinicPrescriptionConfig = await prismaClient.clinicPrescriptionSetting.update({
+        where: { id: existing.id },
+        data: {
+          prescriptionTemplateId: prescriptionTemplateId!,
+        },
+      });
+    } else {
+      clinicPrescriptionConfig = await prismaClient.clinicPrescriptionSetting.create({
+        data: {
+          clinicId: clinic.id,
+          prescriptionTemplateId: prescriptionTemplateId!,
+        },
+      });
+    }
   }
 
-  return { message: "Prescription settings updated successfully", data: clinicPrescriptionConfig}
+  // Also synchronize ClinicDocumentDefaultTemplate for prescription so both settings stay identical
+  if (prescriptionTemplateId) {
+    const rxDocType = await prismaClient.documentTemplateType.findFirst({
+      where: { name: { in: ["prescription"], mode: "insensitive" } },
+      select: { id: true },
+    });
+    if (rxDocType) {
+      await prismaClient.clinicDocumentDefaultTemplate.upsert({
+        where: { clinicId_documentTypeId: { clinicId: clinic.id, documentTypeId: rxDocType.id } },
+        create: { clinicId: clinic.id, documentTypeId: rxDocType.id, templateId: prescriptionTemplateId },
+        update: { templateId: prescriptionTemplateId },
+      });
+    }
+  }
+
+  // NOTE: Existing records are NOT updated. Only newly added records created after this change will receive this template.
+
+  return { message: "Prescription settings updated successfully", data: clinicPrescriptionConfig};
 })

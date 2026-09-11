@@ -11,7 +11,7 @@ import { getPermissionsAction } from "@/actions/permission.action";
 import { PERMISSIONS } from "@/lib/permissions";
 import { getHPsAction, GetHPsType } from "@/actions/hp.actions";
 import { createNotification } from "@/actions/notifications/notification.action";
-import { resolveClinicTemplateId, resolveClinicEffectiveTemplate } from "@/lib/resolve-clinic-template";
+import { resolveClinicTemplateId } from "@/lib/resolve-clinic-template";
 
 export type GetHeartStationRequestsFilters = {
   clinicUid?: string;
@@ -243,16 +243,6 @@ export const getHeartStationRequestAction = withErrorHandling(async (id: number)
   });
 
   if (!request) throw new Error("Heart station request not found");
-
-  const effectiveTemplate = await resolveClinicEffectiveTemplate(
-    prisma,
-    request.clinicId,
-    "heart_station",
-    request.DocumentTemplate
-  );
-  if (effectiveTemplate) {
-    request.DocumentTemplate = effectiveTemplate;
-  }
 
   return { message: "Successfully fetched heart station request", data: request };
 });

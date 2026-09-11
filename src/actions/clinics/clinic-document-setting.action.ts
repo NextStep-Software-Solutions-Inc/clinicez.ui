@@ -38,8 +38,6 @@ export type UpsertClinicDocumentDefaultTemplatesPayload = Array<{
   templateId: number | null;
 }>;
 
-import { syncClinicRecordsTemplates } from "@/lib/resolve-clinic-template";
-
 export const upsertClinicDocumentDefaultTemplatesAction = withErrorHandling(
   async (clinicUid: string, entries: UpsertClinicDocumentDefaultTemplatesPayload) => {
     const session = await getCachedSession();
@@ -66,8 +64,36 @@ export const upsertClinicDocumentDefaultTemplatesAction = withErrorHandling(
       })
     );
 
-    // Synchronize all existing records to point to newly selected templates
-    await syncClinicRecordsTemplates(prismaClient, clinic.id);
+    // If prescription template is configured, keep legacy ClinicPrescriptionSetting aligned
+    const rxDocType = await prismaClient.documentTemplateType.findFirst({
+      where: { name: { in: ["prescription"], mode: "insensitive" } },
+      select: { id: true },
+    });
+    if (rxDocType) {
+      const rxEntry = entries.find((e) => e.documentTypeId === rxDocType.id);
+      if (rxEntry) {
+        if (rxEntry.templateId == null) {
+          await prismaClient.clinicPrescriptionSetting.deleteMany({
+            where: { clinicId: clinic.id },
+          });
+        } else {
+          const existingRx = await prismaClient.clinicPrescriptionSetting.findFirst({
+            where: { clinicId: clinic.id },
+            select: { id: true },
+          });
+          if (existingRx) {
+            await prismaClient.clinicPrescriptionSetting.update({
+              where: { id: existingRx.id },
+              data: { prescriptionTemplateId: rxEntry.templateId },
+            });
+          } else {
+            await prismaClient.clinicPrescriptionSetting.create({
+              data: { clinicId: clinic.id, prescriptionTemplateId: rxEntry.templateId },
+            });
+          }
+        }
+      }
+    }
 
     return { message: "Document defaults updated successfully.", data: null };
   },
@@ -75,18 +101,12 @@ export const upsertClinicDocumentDefaultTemplatesAction = withErrorHandling(
 );
 
 export const syncClinicRecordsTemplatesAction = withErrorHandling(
-  async (clinicUid: string) => {
+  async (_clinicUid: string) => {
     const session = await getCachedSession();
     if (!session) throw new Error("Unauthorized");
 
-    const clinic = await prismaClient.clinic.findUnique({
-      where: { clinicUid },
-      select: { id: true },
-    });
-    if (!clinic) throw new Error("Clinic not found.");
-
-    await syncClinicRecordsTemplates(prismaClient, clinic.id);
-    return { message: "Clinic records synchronized with default templates.", data: null };
+    // Existing records preserve their issued templates; only new records adopt the selected template.
+    return { message: "Clinic records preserved.", data: null };
   },
   documentDefaultErrorHandler
 );

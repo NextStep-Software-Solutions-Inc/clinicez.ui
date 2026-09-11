@@ -164,6 +164,9 @@ const getClinicPrescriptionSetting = async (clinicUid: string) => {
       Clinic: {
         clinicUid
       }
+    },
+    orderBy: {
+      id: "desc"
     }
   })
 }

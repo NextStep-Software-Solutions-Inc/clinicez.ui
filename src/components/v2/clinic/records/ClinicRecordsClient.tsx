@@ -37,7 +37,6 @@ import { getImagingStudiesAction } from "@/actions/clinics/clinical-record/imagi
 import { getHeartStationRequestsAction } from "@/actions/clinics/clinical-record/heart-station.action";
 import { getMedicalCertificatesAction } from "@/actions/clinics/clinical-record/medical-certificate.action";
 import { getReferralSlipsAction } from "@/actions/clinics/clinical-record/referral-slip.action";
-import { syncClinicRecordsTemplatesAction } from "@/actions/clinics/clinic-document-setting.action";
 
 import {
   buildPrescriptionHtml,
@@ -730,8 +729,6 @@ export function ClinicRecordsClient({
 
   const handleRefresh = useCallback(() => {
     startTransition(async () => {
-      await syncClinicRecordsTemplatesAction(clinicUid);
-
       const [
         prescriptionsResult,
         labResult,

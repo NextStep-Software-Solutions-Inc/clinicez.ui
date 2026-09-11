@@ -1,5 +1,4 @@
 import defaultPrisma from "@/lib/prisma";
-import type { DocumentTemplate } from "@prisma/client";
 
 export type DocumentCategory =
   | "prescription"
@@ -33,18 +32,7 @@ export async function resolveClinicTemplateId(
 ): Promise<number> {
   const aliases = TYPE_ALIASES[category] ?? [category];
 
-  // 1. Check Prescription Setting
-  if (category === "prescription") {
-    const rxSetting = await prisma.clinicPrescriptionSetting.findFirst({
-      where: { clinicId },
-      select: { prescriptionTemplateId: true },
-    });
-    if (rxSetting?.prescriptionTemplateId) {
-      return rxSetting.prescriptionTemplateId;
-    }
-  }
-
-  // 2. Check ClinicDocumentDefaultTemplate
+  // 1. Check ClinicDocumentDefaultTemplate (unified v2 default template setting)
   const defaultEntry = await prisma.clinicDocumentDefaultTemplate.findFirst({
     where: {
       clinicId,
@@ -52,10 +40,23 @@ export async function resolveClinicTemplateId(
         name: { in: aliases, mode: "insensitive" },
       },
     },
+    orderBy: { id: "desc" },
     select: { templateId: true },
   });
   if (defaultEntry?.templateId) {
     return defaultEntry.templateId;
+  }
+
+  // 2. Fallback for prescription: ClinicPrescriptionSetting
+  if (category === "prescription") {
+    const rxSetting = await prisma.clinicPrescriptionSetting.findFirst({
+      where: { clinicId },
+      orderBy: { id: "desc" },
+      select: { prescriptionTemplateId: true },
+    });
+    if (rxSetting?.prescriptionTemplateId) {
+      return rxSetting.prescriptionTemplateId;
+    }
   }
 
   // 3. Fallback: Clinic-scoped active template
@@ -92,110 +93,3 @@ export async function resolveClinicTemplateId(
   throw new Error(`No document template found for document type: ${category}`);
 }
 
-/**
- * Returns the effective DocumentTemplate entity for rendering/previewing.
- * Prioritizes the clinic's configured default template; falls back to the record's existing template.
- */
-export async function resolveClinicEffectiveTemplate<T = DocumentTemplate>(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  prisma: any = defaultPrisma,
-  clinicId: number,
-  category: DocumentCategory,
-  fallbackTemplate?: T | null
-): Promise<T | null> {
-  const aliases = TYPE_ALIASES[category] ?? [category];
-
-  // Check prescription setting
-  if (category === "prescription") {
-    const rxSetting = await prisma.clinicPrescriptionSetting.findFirst({
-      where: { clinicId },
-      include: { PrescriptionTemplate: true },
-    });
-    if (rxSetting?.PrescriptionTemplate && rxSetting.PrescriptionTemplate.isActive) {
-      return rxSetting.PrescriptionTemplate as unknown as T;
-    }
-  }
-
-  // Check ClinicDocumentDefaultTemplate
-  const defaultEntry = await prisma.clinicDocumentDefaultTemplate.findFirst({
-    where: {
-      clinicId,
-      DocumentType: {
-        name: { in: aliases, mode: "insensitive" },
-      },
-    },
-    include: { Template: true },
-  });
-
-  if (defaultEntry?.Template && defaultEntry.Template.isActive) {
-    return defaultEntry.Template as unknown as T;
-  }
-
-  return fallbackTemplate ?? null;
-}
-
-/**
- * Synchronizes existing clinic records to use the currently configured default templates.
- */
-export async function syncClinicRecordsTemplates(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  prisma: any = defaultPrisma,
-  clinicId: number
-): Promise<void> {
-  // 1. Prescription
-  const rxSetting = await prisma.clinicPrescriptionSetting.findFirst({
-    where: { clinicId },
-    select: { prescriptionTemplateId: true },
-  });
-  if (rxSetting?.prescriptionTemplateId) {
-    await prisma.prescription.updateMany({
-      where: { clinicId, isActive: true },
-      data: { templateId: rxSetting.prescriptionTemplateId },
-    });
-  }
-
-  // 2. Document defaults
-  const defaults = await prisma.clinicDocumentDefaultTemplate.findMany({
-    where: { clinicId },
-    include: {
-      DocumentType: { select: { name: true } },
-    },
-  });
-
-  for (const item of defaults) {
-    if (!item.templateId || !item.DocumentType?.name) continue;
-    const name = item.DocumentType.name.toLowerCase();
-
-    if (name === "laboratory" || name === "diagnostic_request") {
-      await prisma.clinicLaboratoryRequest.updateMany({
-        where: { clinicId, isActive: true },
-        data: { documentTemplateId: item.templateId },
-      });
-    } else if (name === "imaging" || name === "imaging_study") {
-      await prisma.clinicImagingRequest.updateMany({
-        where: { clinicId, isActive: true },
-        data: { documentTemplateId: item.templateId },
-      });
-    } else if (name === "heart_station" || name === "heart-station" || name === "heart station") {
-      await prisma.clinicHeartStationRequest.updateMany({
-        where: { clinicId, isActive: true },
-        data: { documentTemplateId: item.templateId },
-      });
-    } else if (name === "medcert" || name === "medical_certificate" || name === "medical-certificate") {
-      await prisma.clinicMedicalCertificate.updateMany({
-        where: { clinicId, isActive: true },
-        data: { documentTemplateId: item.templateId },
-      });
-    } else if (name === "referral" || name === "referral_slip" || name === "referral-slip") {
-      await prisma.clinicReferralSlip.updateMany({
-        where: { clinicId, isActive: true },
-        data: { documentTemplateId: item.templateId },
-      });
-    } else if (name === "prescription") {
-      await prisma.prescription.updateMany({
-        where: { clinicId, isActive: true },
-        data: { templateId: item.templateId },
-      });
-    }
-  }
-}

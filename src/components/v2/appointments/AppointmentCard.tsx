@@ -85,6 +85,24 @@ export function AppointmentCard({
   const displaySubject = isWalkIn ? appointment.complaint ?? "" : appointment.subject;
   const initials = getAppointmentInitials(appointment);
   const patientPicture = appointment.Requesters?.[0]?.User?.picture ?? null;
+  const studentRecord = appointment.Requesters?.[0]?.User?.StudentRecords?.[0];
+  const employmentRecord = appointment.Requesters?.[0]?.User?.UserEmployments?.[0];
+  const studentId = studentRecord?.studentId;
+  const employeeId = employmentRecord?.employeeId;
+
+  const studentAffiliation = [
+    studentRecord?.Program?.name,
+    studentRecord?.College?.name,
+    studentRecord?.Department?.name,
+    studentRecord?.yearLevel ? `Yr ${studentRecord.yearLevel}` : null,
+  ].filter(Boolean).join(" • ") || studentRecord?.Organization?.name || "";
+
+  const employeeAffiliation = [
+    employmentRecord?.position || employmentRecord?.designation,
+    employmentRecord?.Department?.name,
+    employmentRecord?.Office?.name,
+    employmentRecord?.College?.name,
+  ].filter(Boolean).join(" • ") || employmentRecord?.Organization?.name || "";
 
   const activeRouting = appointment.AppointmentRouting?.find(
     (r) => r.status === "ACCEPTED" || r.status === "PENDING"
@@ -226,6 +244,24 @@ export function AppointmentCard({
                 </AvatarFallback>
               </Avatar>
               <span className="text-xs text-muted-foreground font-bold">{fullName}</span>
+              {studentId && (
+                <Badge
+                  variant="outline"
+                  className="text-[10px] px-1 py-0 font-normal bg-blue-50/80 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800"
+                  title={studentAffiliation || "Student ID"}
+                >
+                  STU: {studentId}
+                </Badge>
+              )}
+              {employeeId && (
+                <Badge
+                  variant="outline"
+                  className="text-[10px] px-1 py-0 font-normal bg-purple-50/80 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800"
+                  title={employeeAffiliation || "Employee ID"}
+                >
+                  EMP: {employeeId}
+                </Badge>
+              )}
             </div>
             {doctorName && (
               <span className="flex items-center gap-1 text-xs text-muted-foreground">

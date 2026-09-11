@@ -40,9 +40,7 @@ const preAssessmentNotesSchema = z.object({
     required_error: "Assessment is required",
   }),
   homeInstructions: z.string().optional(),
-  remarks: z.string({
-    required_error: "Remarks are required",
-  })
+  remarks: z.string().optional(),
 })
 
 type PreConsultationNotes = z.infer<typeof preAssessmentNotesSchema>
@@ -52,7 +50,7 @@ interface PreAssessmentNoteSheetProps {
   preAssessmentNotes: {
     assessment: string
     homeInstructions?: string
-    remarks: string
+    remarks?: string
     appointmentId: number
     clinicUid: string
     CreatedBy?: {
@@ -309,13 +307,14 @@ export default function PreAssessmentNoteSheet({ children, disabled, preAssessme
                   name="remarks"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Remarks</FormLabel>
+                      <FormLabel>Remarks (optional)</FormLabel>
                       <FormControl>
                         <Textarea
                           placeholder="Write remarks here"
                           className="resize-y min-h-[100px]"
                           disabled={isQuickGenerating}
                           {...field}
+                          value={field.value ?? ""}
                         />
                       </FormControl>
                       <FormDescription>

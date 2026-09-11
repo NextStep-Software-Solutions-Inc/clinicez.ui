@@ -101,16 +101,15 @@ export function ModernUserButton({ isDark }: ModernUserButtonProps) {
             ))}
 
             {/* Dynamic HP Profiles */}
-            {hpProfiles?.map((item) => (
+            {hpProfiles && hpProfiles.length > 0 && (
               <UserButton.Action
-                key={item.id}
-                label={`My ${item.HPType.name.replaceAll("_", " ").toLowerCase()} Profile`}
+                label="My Healthcare Profile"
                 labelIcon={<Stethoscope size={16} />}
                 onClick={() => {
-                  router.push(`/hp/${item.id}`);
+                  router.push(`/hp/${hpProfiles[0].id}`);
                 }}
               />
-            ))}
+            )}
 
             <UserButton.Action
               label="Account Settings"

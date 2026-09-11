@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { X, Sparkles, ArrowRight } from "lucide-react"
-import Link from "next/link"
+import { X, Sparkles } from "lucide-react"
 import { useLandingPageVersion } from "@/components/VersionSwitcher"
 
 const NOTIFICATION_VERSION = "v2-announcement-2024"
@@ -84,17 +83,6 @@ export function NotificationBanner() {
         </div>
 
         <div className="flex flex-shrink-0 items-center gap-1.5">
-          <Button
-            asChild
-            size="sm"
-            className="h-8 bg-white text-teal-700 hover:bg-white/90 font-semibold text-xs px-3 shadow-sm dark:text-teal-800"
-          >
-            <Link href="/v2" className="flex items-center gap-1">
-              Try V2
-              <ArrowRight className="h-3 w-3" />
-            </Link>
-          </Button>
-
           <Button
             variant="ghost"
             size="sm"

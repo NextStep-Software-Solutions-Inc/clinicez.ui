@@ -15,6 +15,7 @@ import {
   AlertCircle,
   User,
   ArrowLeft,
+  Home,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -22,6 +23,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import dayjs from '@/lib/day-utils'
 import type { GetPatientHistoryResult } from '@/actions/clinics/get-patient-history.action'
 import type { PatientHistoryAccess } from '@/actions/clinics/get-patient-history.action'
+import { MarkdownRenderer } from '@/components/markdown/MarkdownRenderer'
 
 type HistoryData = NonNullable<GetPatientHistoryResult['data']>
 type Appointment = HistoryData['appointments'][number]
@@ -210,6 +212,19 @@ function ConsultationTimelineEntry({
             </div>
           )}
 
+          {/* Pre-Assessment Home Instructions */}
+          {appointment?.PreAssessmentNotes?.[0]?.homeInstructions && (
+            <div className="rounded-lg bg-teal-50/60 dark:bg-teal-950/20 p-2.5 border border-teal-200/60 dark:border-teal-800/30">
+              <span className="text-[9px] font-extrabold text-teal-700 dark:text-teal-400 uppercase tracking-wider flex items-center gap-1 mb-0.5">
+                <Home className="h-3 w-3" /> Home Instructions
+              </span>
+              <MarkdownRenderer
+                content={appointment.PreAssessmentNotes[0].homeInstructions}
+                className="text-xs text-slate-700 dark:text-slate-300"
+              />
+            </div>
+          )}
+
           {/* Key Findings Preview */}
           {filledFields.length > 0 ? (
             <div className="space-y-1.5 pt-1.5 border-t border-slate-100 dark:border-slate-800">
@@ -357,6 +372,19 @@ function AppointmentTimelineEntry({
               <p className="text-[11px] font-medium text-slate-700 dark:text-slate-300">
                 {appointment.complaint}
               </p>
+            </div>
+          )}
+
+          {/* Pre-Assessment Home Instructions */}
+          {appointment.PreAssessmentNotes?.[0]?.homeInstructions && (
+            <div className="rounded-lg bg-teal-50/60 dark:bg-teal-950/20 p-2.5 border border-teal-200/60 dark:border-teal-800/30">
+              <span className="text-[9px] font-extrabold text-teal-700 dark:text-teal-400 uppercase tracking-wider flex items-center gap-1 mb-0.5">
+                <Home className="h-3 w-3" /> Home Instructions
+              </span>
+              <MarkdownRenderer
+                content={appointment.PreAssessmentNotes[0].homeInstructions}
+                className="text-xs text-slate-700 dark:text-slate-300"
+              />
             </div>
           )}
         </div>

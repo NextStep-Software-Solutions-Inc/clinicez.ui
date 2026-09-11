@@ -74,6 +74,13 @@ const APPOINTMENT_INCLUDE = {
       clinicUid: true,
     },
   },
+  PreAssessmentNotes: {
+    orderBy: { createdAt: 'desc' as const },
+    take: 1,
+    select: {
+      homeInstructions: true,
+    },
+  },
 } as const
 
 type PrismaAppointmentWithIncludes = Awaited<ReturnType<typeof prisma.appointment.findFirst<{ include: typeof APPOINTMENT_INCLUDE }>>>
@@ -121,6 +128,7 @@ function mapRowToDashboardAppointment(row: NonNullable<PrismaAppointmentWithIncl
     clinic: { id: row.Clinic.id, name: row.Clinic.name, uid: row.Clinic.clinicUid },
     mode: { id: attr.AppointmentMode?.id ?? 0, name: attr.AppointmentMode?.name ?? 'Unknown' },
     service: { id: attr.Service?.id ?? 0, name: attr.Service?.name ?? 'General' },
+    homeInstructions: row.PreAssessmentNotes?.[0]?.homeInstructions ?? null,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   }

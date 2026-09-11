@@ -96,6 +96,17 @@ export const getPatientSelfHistoryAction = withErrorHandling(async () => {
         take: 1,
         select: { id: true, caseNumber: true },
       },
+      PreAssessmentNotes: {
+        orderBy: { createdAt: 'desc' },
+        take: 1,
+        select: {
+          id: true,
+          assessment: true,
+          homeInstructions: true,
+          remarks: true,
+          createdAt: true,
+        },
+      },
     },
   })
 
@@ -218,6 +229,17 @@ export const getPatientSelfHistoryAction = withErrorHandling(async () => {
                   HPType: { select: { name: true } },
                 },
               },
+            },
+          },
+          PreAssessmentNotes: {
+            orderBy: { createdAt: 'desc' },
+            take: 1,
+            select: {
+              id: true,
+              assessment: true,
+              homeInstructions: true,
+              remarks: true,
+              createdAt: true,
             },
           },
         },

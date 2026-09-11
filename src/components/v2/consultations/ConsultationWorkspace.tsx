@@ -19,6 +19,7 @@ import {
   Ban,
   ShieldCheck,
   Activity,
+  Home,
 } from "lucide-react";
 import Link from "next/link";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -373,10 +374,28 @@ export default function ConsultationWorkspace({
             </p>
           )}
           {/* Pre-assessment */}
-          {preAssessment?.assessment && (
-            <div className="mt-1 text-xs text-muted-foreground">
-              <span className="font-medium text-foreground/70">Pre-assessment: </span>
-              <MarkdownRenderer content={preAssessment.assessment} className="text-xs" />
+          {preAssessment && (preAssessment.assessment || preAssessment.homeInstructions || preAssessment.remarks) && (
+            <div className="mt-2 space-y-1.5 rounded-lg border border-border/40 bg-muted/20 p-2.5 text-xs text-muted-foreground">
+              {preAssessment.assessment && (
+                <div>
+                  <span className="font-semibold text-foreground/80">Pre-assessment: </span>
+                  <MarkdownRenderer content={preAssessment.assessment} className="text-xs mt-0.5" />
+                </div>
+              )}
+              {preAssessment.homeInstructions && (
+                <div className="pt-1.5 border-t border-border/30">
+                  <span className="font-semibold text-teal-700 dark:text-teal-400 flex items-center gap-1">
+                    <Home className="h-3 w-3" /> Home Instructions:
+                  </span>
+                  <MarkdownRenderer content={preAssessment.homeInstructions} className="text-xs mt-0.5 text-foreground/90" />
+                </div>
+              )}
+              {preAssessment.remarks && (
+                <div className="pt-1.5 border-t border-border/30">
+                  <span className="font-semibold text-foreground/70">Remarks: </span>
+                  <MarkdownRenderer content={preAssessment.remarks} className="text-xs mt-0.5" />
+                </div>
+              )}
             </div>
           )}
           {/* AI Patient Insight */}

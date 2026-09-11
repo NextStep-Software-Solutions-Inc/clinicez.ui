@@ -23,6 +23,7 @@ import {
   Download,
   Search,
   ChevronDown,
+  Home,
 } from 'lucide-react'
 import type { GetPatientSelfHistory } from '@/actions/patient-dashboard/get-self-history'
 import { formatTime12Hr } from '@/lib/day-utils'
@@ -32,6 +33,7 @@ import DownloadLaboratoryRequestAction from '@/components/laboratory-requests/Do
 import DownloadImagingStudiesAction from '@/components/imaging-studies/DownloadImagingStudiesAction'
 import DownloadHeartStationRequestAction from '@/components/heart-station-requests/DownloadHeartStationRequestAction'
 import DownloadReferralSlipAction from '@/components/referral-slip/DownloadReferralSlipAction'
+import { MarkdownRenderer } from '@/components/markdown/MarkdownRenderer'
 
 type HistoryData = NonNullable<GetPatientSelfHistory['data']>
 type Appointment = HistoryData['appointments'][number]
@@ -333,6 +335,27 @@ function ConsultationDetailPanel({ ticket }: { ticket: ConsultationTicket }) {
           </section>
         )}
 
+        {/* Pre-Assessment Home Instructions */}
+        {ticket.Appointment?.PreAssessmentNotes?.[0]?.homeInstructions && (
+          <section>
+            <p className="text-xs font-semibold dark:text-slate-400 text-slate-500 uppercase tracking-widest mb-2.5">
+              Home Instructions
+            </p>
+            <div className="dark:bg-emerald-950/20 bg-emerald-50/70 rounded-xl p-4 dark:border-emerald-800/30 border-emerald-200/70 border shadow-xs">
+              <div className="flex items-center gap-2 mb-2 text-emerald-700 dark:text-emerald-400 font-semibold text-xs">
+                <Home className="h-4 w-4 shrink-0" />
+                <span>Pre-Assessment Home Care Instructions</span>
+              </div>
+              <div className="text-sm dark:text-slate-200 text-slate-800">
+                <MarkdownRenderer
+                  content={ticket.Appointment.PreAssessmentNotes[0].homeInstructions}
+                  className="text-sm dark:text-slate-200 text-slate-800"
+                />
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* Consultation Notes */}
         <section>
           <p className="text-xs font-semibold dark:text-slate-400 text-slate-500 uppercase tracking-widest mb-2.5">
@@ -600,6 +623,27 @@ function AppointmentDetailPanel({ appointment }: { appointment: Appointment }) {
             <p className="text-sm dark:text-slate-200 text-slate-800 dark:bg-slate-800/40 bg-slate-100/60 rounded-xl px-4 py-3 leading-relaxed">
               {appointment.complaint}
             </p>
+          </section>
+        )}
+
+        {/* Pre-Assessment Home Instructions */}
+        {appointment.PreAssessmentNotes?.[0]?.homeInstructions && (
+          <section>
+            <p className="text-xs font-semibold dark:text-slate-400 text-slate-500 uppercase tracking-widest mb-2.5">
+              Home Instructions
+            </p>
+            <div className="dark:bg-emerald-950/20 bg-emerald-50/70 rounded-xl p-4 dark:border-emerald-800/30 border-emerald-200/70 border shadow-xs">
+              <div className="flex items-center gap-2 mb-2 text-emerald-700 dark:text-emerald-400 font-semibold text-xs">
+                <Home className="h-4 w-4 shrink-0" />
+                <span>Pre-Assessment Home Care Instructions</span>
+              </div>
+              <div className="text-sm dark:text-slate-200 text-slate-800">
+                <MarkdownRenderer
+                  content={appointment.PreAssessmentNotes[0].homeInstructions}
+                  className="text-sm dark:text-slate-200 text-slate-800"
+                />
+              </div>
+            </div>
           </section>
         )}
 

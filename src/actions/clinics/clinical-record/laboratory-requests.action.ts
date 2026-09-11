@@ -254,6 +254,14 @@ export const getLaboratoryRequestAction = withErrorHandling(async (id: number) =
 
   if (!request) throw new Error("Laboratory request not found");
 
+  if (
+    request.DocumentTemplate?.createdAt &&
+    request.createdAt &&
+    new Date(request.createdAt).getTime() < new Date(request.DocumentTemplate.createdAt).getTime()
+  ) {
+    request.DocumentTemplate = null as any;
+  }
+
   return { message: "Successfully fetched laboratory request", data: request };
 });
 

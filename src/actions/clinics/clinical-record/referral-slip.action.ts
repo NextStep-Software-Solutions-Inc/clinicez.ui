@@ -143,6 +143,14 @@ export const getReferralSlipAction = withErrorHandling(async (id: number) => {
 
   if (!referralSlip) throw new Error("Referral slip not found");
 
+  if (
+    referralSlip.DocumentTemplate?.createdAt &&
+    referralSlip.createdAt &&
+    new Date(referralSlip.createdAt).getTime() < new Date(referralSlip.DocumentTemplate.createdAt).getTime()
+  ) {
+    referralSlip.DocumentTemplate = null as any;
+  }
+
   return { message: "Referral slip fetched successfully", data: referralSlip };
 });
 

@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Heart, AlertCircle, Pill, ChevronRight, User, CheckCircle2, Clock, XCircle, UserPlus } from "lucide-react";
+import { Heart, AlertCircle, Pill, ChevronRight, User, CheckCircle2, Clock, XCircle, UserPlus, GraduationCap, Briefcase } from "lucide-react";
 import { calculateDetailedAge, formatBloodType } from "@/lib/utils";
 import type { ClinicPatientListItem } from "@/types/clinic-patients-v2.types";
 import { PatientAIInsightButton } from "./PatientAIInsightButton";
@@ -100,6 +100,22 @@ export const PatientCard = memo(function PatientCard({
   const studentId = studentRecord?.studentId;
   const employeeId = employmentRecord?.employeeId;
 
+  // Student affiliation: Program / Major, College, Department, Year Level
+  const studentAffiliation = [
+    studentRecord?.Program?.name ? `${studentRecord.Program.name}${studentRecord.Program.major ? ` (${studentRecord.Program.major})` : ""}` : null,
+    studentRecord?.College?.name,
+    studentRecord?.Department?.name,
+    studentRecord?.yearLevel ? `Yr ${studentRecord.yearLevel}` : null,
+  ].filter(Boolean).join(" • ") || studentRecord?.Organization?.name || "";
+
+  // Employee affiliation: Position / Designation, Department, Office, College
+  const employeeAffiliation = [
+    employmentRecord?.position || employmentRecord?.designation,
+    employmentRecord?.Department?.name,
+    employmentRecord?.Office?.name,
+    employmentRecord?.College?.name,
+  ].filter(Boolean).join(" • ") || employmentRecord?.Organization?.name || "";
+
   /* ── Grid View ─────────────────────────────────────────────────────────── */
   if (viewMode === "grid") {
     return (
@@ -143,24 +159,40 @@ export const PatientCard = memo(function PatientCard({
                 )}
               </div>
               {(studentId || employeeId) && (
-                <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                <div className="flex flex-col gap-1 mt-1.5">
                   {studentId && (
-                    <Badge
-                      variant="outline"
-                      className="text-[10px] px-1.5 py-0 font-medium bg-blue-50/80 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800"
-                      title={studentRecord?.Organization?.name ? `${studentRecord.Organization.name} Student ID` : "Student ID"}
-                    >
-                      ID: {studentId}
-                    </Badge>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <Badge
+                        variant="outline"
+                        className="text-[10px] px-1.5 py-0 font-medium bg-blue-50/80 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800 shrink-0"
+                        title={studentAffiliation || "Student ID"}
+                      >
+                        STU: {studentId}
+                      </Badge>
+                      {studentAffiliation && (
+                        <span className="text-[11px] text-muted-foreground flex items-center gap-1 truncate max-w-[220px]" title={studentAffiliation}>
+                          <GraduationCap className="h-3 w-3 text-blue-600 dark:text-blue-400 shrink-0" />
+                          <span className="truncate">{studentAffiliation}</span>
+                        </span>
+                      )}
+                    </div>
                   )}
                   {employeeId && (
-                    <Badge
-                      variant="outline"
-                      className="text-[10px] px-1.5 py-0 font-medium bg-purple-50/80 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800"
-                      title={employmentRecord?.position ? `${employmentRecord.position} (${employmentRecord.Organization?.name ?? 'Employee'})` : "Employee ID"}
-                    >
-                      Emp: {employeeId}
-                    </Badge>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <Badge
+                        variant="outline"
+                        className="text-[10px] px-1.5 py-0 font-medium bg-purple-50/80 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800 shrink-0"
+                        title={employeeAffiliation || "Employee ID"}
+                      >
+                        EMP: {employeeId}
+                      </Badge>
+                      {employeeAffiliation && (
+                        <span className="text-[11px] text-muted-foreground flex items-center gap-1 truncate max-w-[220px]" title={employeeAffiliation}>
+                          <Briefcase className="h-3 w-3 text-purple-600 dark:text-purple-400 shrink-0" />
+                          <span className="truncate">{employeeAffiliation}</span>
+                        </span>
+                      )}
+                    </div>
                   )}
                 </div>
               )}
@@ -268,24 +300,44 @@ export const PatientCard = memo(function PatientCard({
             )}
           </div>
           {(studentId || employeeId) && (
-            <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+            <div className="flex items-center gap-2 mt-0.5 flex-wrap">
               {studentId && (
-                <Badge
-                  variant="outline"
-                  className="text-[10px] px-1.5 py-0 font-medium bg-blue-50/80 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800"
-                  title={studentRecord?.Organization?.name ? `${studentRecord.Organization.name} Student ID` : "Student ID"}
-                >
-                  ID: {studentId}
-                </Badge>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <Badge
+                    variant="outline"
+                    className="text-[10px] px-1.5 py-0 font-medium bg-blue-50/80 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800 shrink-0"
+                    title={studentAffiliation || "Student ID"}
+                  >
+                    STU: {studentId}
+                  </Badge>
+                  {studentAffiliation && (
+                    <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+                      <GraduationCap className="h-3 w-3 text-blue-600 dark:text-blue-400 shrink-0" />
+                      <span className="truncate max-w-[260px] sm:max-w-[420px]" title={studentAffiliation}>
+                        {studentAffiliation}
+                      </span>
+                    </span>
+                  )}
+                </div>
               )}
               {employeeId && (
-                <Badge
-                  variant="outline"
-                  className="text-[10px] px-1.5 py-0 font-medium bg-purple-50/80 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800"
-                  title={employmentRecord?.position ? `${employmentRecord.position} (${employmentRecord.Organization?.name ?? 'Employee'})` : "Employee ID"}
-                >
-                  Emp: {employeeId}
-                </Badge>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <Badge
+                    variant="outline"
+                    className="text-[10px] px-1.5 py-0 font-medium bg-purple-50/80 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800 shrink-0"
+                    title={employeeAffiliation || "Employee ID"}
+                  >
+                    EMP: {employeeId}
+                  </Badge>
+                  {employeeAffiliation && (
+                    <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+                      <Briefcase className="h-3 w-3 text-purple-600 dark:text-purple-400 shrink-0" />
+                      <span className="truncate max-w-[260px] sm:max-w-[420px]" title={employeeAffiliation}>
+                        {employeeAffiliation}
+                      </span>
+                    </span>
+                  )}
+                </div>
               )}
             </div>
           )}

@@ -111,6 +111,10 @@ export interface GetClinicPatientsResult {
         id?: number;
         studentId: string;
         lrn?: string | null;
+        yearLevel?: number | null;
+        Program?: { id?: number; name: string; major?: string | null } | null;
+        College?: { id?: number; name: string } | null;
+        Department?: { id?: number; name: string } | null;
         Organization?: { name: string } | null;
       }>;
       UserEmployments?: Array<{
@@ -118,6 +122,9 @@ export interface GetClinicPatientsResult {
         employeeId: string;
         position?: string | null;
         designation?: string | null;
+        Department?: { id?: number; name: string } | null;
+        Office?: { id?: number; name: string } | null;
+        College?: { id?: number; name: string } | null;
         Organization?: { name: string } | null;
       }>;
     };
@@ -260,10 +267,33 @@ export const getClinicPatientsAction = async (filters: GetClinicPatientFilters):
             where: {
               isActive: true
             },
+            orderBy: {
+              id: "desc"
+            },
             select: {
               id: true,
               studentId: true,
               lrn: true,
+              yearLevel: true,
+              Program: {
+                select: {
+                  id: true,
+                  name: true,
+                  major: true
+                }
+              },
+              College: {
+                select: {
+                  id: true,
+                  name: true
+                }
+              },
+              Department: {
+                select: {
+                  id: true,
+                  name: true
+                }
+              },
               Organization: {
                 select: {
                   name: true
@@ -275,11 +305,32 @@ export const getClinicPatientsAction = async (filters: GetClinicPatientFilters):
             where: {
               isActive: true
             },
+            orderBy: {
+              id: "desc"
+            },
             select: {
               id: true,
               employeeId: true,
               position: true,
               designation: true,
+              Department: {
+                select: {
+                  id: true,
+                  name: true
+                }
+              },
+              Office: {
+                select: {
+                  id: true,
+                  name: true
+                }
+              },
+              College: {
+                select: {
+                  id: true,
+                  name: true
+                }
+              },
               Organization: {
                 select: {
                   name: true

@@ -323,12 +323,12 @@ export function AddPatientSheet({
                                 ) : null}
                                 {u.studentId && (
                                   <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800">
-                                    ID: {u.studentId}
+                                    STU: {u.studentId}
                                   </span>
                                 )}
                                 {u.employeeId && (
                                   <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-950/40 dark:text-purple-400 dark:border-purple-800">
-                                    Emp: {u.employeeId}
+                                    EMP: {u.employeeId}
                                   </span>
                                 )}
                               </div>
@@ -400,12 +400,12 @@ export function AddPatientSheet({
                         ) : null}
                         {selectedUser.studentId && (
                           <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-[10px] px-1.5 py-0 font-medium dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800">
-                            Student ID: {selectedUser.studentId}
+                            STU: {selectedUser.studentId}
                           </Badge>
                         )}
                         {selectedUser.employeeId && (
                           <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 text-[10px] px-1.5 py-0 font-medium dark:bg-purple-950/40 dark:text-purple-400 dark:border-purple-800">
-                            Employee ID: {selectedUser.employeeId}
+                            EMP: {selectedUser.employeeId}
                           </Badge>
                         )}
                       </div>

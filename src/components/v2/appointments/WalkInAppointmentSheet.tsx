@@ -291,12 +291,12 @@ export function WalkInAppointmentSheet({
                                 </p>
                                 {sid && (
                                   <span className="text-[10px] px-1.5 py-0.5 rounded font-medium bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                                    ID: {sid}
+                                    STU: {sid}
                                   </span>
                                 )}
                                 {eid && (
                                   <span className="text-[10px] px-1.5 py-0.5 rounded font-medium bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
-                                    Emp: {eid}
+                                    EMP: {eid}
                                   </span>
                                 )}
                               </div>
@@ -351,8 +351,8 @@ export function WalkInAppointmentSheet({
             {selectedPatient && (
               <p className="text-xs text-teal-700 dark:text-teal-400">
                 ✓ Registered patient: {selectedPatient.Patient.firstName} {selectedPatient.Patient.lastName}
-                {selectedPatient.Patient.StudentRecords?.[0]?.studentId && ` (ID: ${selectedPatient.Patient.StudentRecords[0].studentId})`}
-                {selectedPatient.Patient.UserEmployments?.[0]?.employeeId && ` (Emp ID: ${selectedPatient.Patient.UserEmployments[0].employeeId})`}
+                {selectedPatient.Patient.StudentRecords?.[0]?.studentId && ` (STU: ${selectedPatient.Patient.StudentRecords[0].studentId})`}
+                {selectedPatient.Patient.UserEmployments?.[0]?.employeeId && ` (EMP: ${selectedPatient.Patient.UserEmployments[0].employeeId})`}
               </p>
             )}
             {!selectedPatient && unregisteredName && !showDropdown && (

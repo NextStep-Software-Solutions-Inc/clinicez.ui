@@ -663,6 +663,12 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
                       id: true,
                       name: true
                     }
+                  },
+                  Office: {
+                    select: {
+                      id: true,
+                      name: true
+                    }
                   }
                 }
               }

@@ -584,12 +584,12 @@ export function AppointmentDetailSheet({
                   <p className="font-semibold text-sm">{fullName}</p>
                   {primaryStudentRecord?.studentId && (
                     <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-normal bg-blue-50/80 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800">
-                      ID: {primaryStudentRecord.studentId}
+                      STU: {primaryStudentRecord.studentId}
                     </Badge>
                   )}
                   {primaryEmploymentRecord?.employeeId && (
                     <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-normal bg-purple-50/80 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800">
-                      Emp: {primaryEmploymentRecord.employeeId}
+                      EMP: {primaryEmploymentRecord.employeeId}
                     </Badge>
                   )}
                 </div>
@@ -599,6 +599,8 @@ export function AppointmentDetailSheet({
                     <span>
                       {[
                         primaryStudentRecord.Program?.name,
+                        primaryStudentRecord.College?.name,
+                        primaryStudentRecord.Department?.name,
                         primaryStudentRecord.yearLevel ? `Year ${primaryStudentRecord.yearLevel}` : null,
                         primaryStudentRecord.Organization?.name,
                       ].filter(Boolean).join(" • ")}
@@ -612,6 +614,8 @@ export function AppointmentDetailSheet({
                       {[
                         primaryEmploymentRecord.position || primaryEmploymentRecord.designation,
                         primaryEmploymentRecord.Department?.name,
+                        primaryEmploymentRecord.Office?.name,
+                        primaryEmploymentRecord.College?.name,
                         primaryEmploymentRecord.Organization?.name,
                       ].filter(Boolean).join(" • ")}
                     </span>

@@ -335,7 +335,7 @@ export default function ClinicPatientProfileClient({
                     className="px-2 py-0.5 rounded bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-500/30 font-bold"
                     title={patientData.studentRecords[0].organizationName ? `${patientData.studentRecords[0].organizationName} Student ID` : "Student ID"}
                   >
-                    Student ID: {patientData.studentRecords[0].studentId}
+                    STU: {patientData.studentRecords[0].studentId}
                   </span>
                 )}
                 {patientData.userEmployments?.[0]?.employeeId && (
@@ -343,7 +343,7 @@ export default function ClinicPatientProfileClient({
                     className="px-2 py-0.5 rounded bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/30 font-bold"
                     title={patientData.userEmployments[0].position ? `${patientData.userEmployments[0].position} (${patientData.userEmployments[0].organizationName ?? 'Employee'})` : "Employee ID"}
                   >
-                    Employee ID: {patientData.userEmployments[0].employeeId}
+                    EMP: {patientData.userEmployments[0].employeeId}
                   </span>
                 )}
                 <span className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/50 dark:border-slate-700/50">
@@ -649,7 +649,7 @@ export default function ClinicPatientProfileClient({
                             <div key={sr.id} className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 space-y-2">
                               <div className="flex items-center justify-between">
                                 <span className="text-sm font-bold text-slate-800 dark:text-slate-200">
-                                  ID: {sr.studentId}
+                                  STU: {sr.studentId}
                                 </span>
                                 {sr.organizationName && (
                                   <Badge variant="outline" className="text-[10px] bg-blue-50/50 text-blue-700 dark:text-blue-300 border-blue-200">
@@ -682,7 +682,7 @@ export default function ClinicPatientProfileClient({
                             <div key={emp.id} className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 space-y-2">
                               <div className="flex items-center justify-between">
                                 <span className="text-sm font-bold text-slate-800 dark:text-slate-200">
-                                  Emp ID: {emp.employeeId}
+                                  EMP: {emp.employeeId}
                                 </span>
                                 {emp.organizationName && (
                                   <Badge variant="outline" className="text-[10px] bg-purple-50/50 text-purple-700 dark:text-purple-300 border-purple-200">

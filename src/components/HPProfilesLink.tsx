@@ -23,7 +23,7 @@ export default function HPProfilesLink({ userId }: { userId?: string }) {
         <a href={`/hp/${item.id}`}>
           <DropdownMenuItem>
             <User className="mr-2 h-4 w-4" />
-            <span className="capitalize">My {item.HPType.name.replaceAll("_", " ").toLowerCase()} Profile</span>
+            <span className="capitalize">My Healthcare Profile</span>
           </DropdownMenuItem>
         </a>
       )}

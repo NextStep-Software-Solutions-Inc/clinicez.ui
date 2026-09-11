@@ -92,6 +92,7 @@ export const getReferralSlipAction = withErrorHandling(async (id: number) => {
     where: { id },
     select: {
       id: true,
+      clinicId: true,
       serialNumber: true,
       createdAt: true,
       history: true,

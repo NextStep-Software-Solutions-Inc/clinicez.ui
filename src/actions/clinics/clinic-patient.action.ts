@@ -488,6 +488,19 @@ export type SearchNonClinicPatientsResult = {
   middleName: string | null;
   email: string;
   picture: string | null;
+  gender?: string | null;
+  dob?: Date | null;
+  mobile?: string | null;
+  verificationStatus: $Enums.VerificationStatus;
+  isVerified: boolean;
+  partnerOrgStatus: "ACTIVE" | "PENDING" | "NOT_MEMBER" | "NO_PARTNER_ORGS";
+  partnerOrgDetails?: {
+    orgName: string;
+    status: string;
+    roleName?: string | null;
+  } | null;
+  partnerOrgNames: string[];
+  warnings: string[];
 };
 
 export const searchNonClinicPatientsAction = withErrorHandling(async ({
@@ -510,6 +523,37 @@ export const searchNonClinicPatientsAction = withErrorHandling(async ({
     return { message: "No search query", data: [] as SearchNonClinicPatientsResult[] };
   }
 
+  // Look up clinic's partner organizations
+  const clinic = await prismaClient.clinic.findFirst({
+    where: { clinicUid, isActive: true },
+    select: {
+      id: true,
+      ClinicOrganizations: {
+        where: {
+          isActive: true,
+          deletedAt: null,
+          Organization: {
+            isActive: true,
+            deletedAt: null,
+          },
+        },
+        select: {
+          Organization: {
+            select: {
+              id: true,
+              orgUid: true,
+              name: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  const partnerOrgs = clinic?.ClinicOrganizations.map((co) => co.Organization) ?? [];
+  const partnerOrgIds = partnerOrgs.map((o) => o.id);
+  const partnerOrgNames = partnerOrgs.map((o) => o.name);
+
   // Find users who are NOT already patients of this clinic
   const users = await prismaClient.user.findMany({
     take: 10,
@@ -530,10 +574,126 @@ export const searchNonClinicPatientsAction = withErrorHandling(async ({
       middleName: true,
       email: true,
       picture: true,
+      gender: true,
+      dob: true,
+      mobile: true,
+      verificationStatus: true,
+      OrganizationMembers: {
+        where: {
+          Organization: {
+            isActive: true,
+            deletedAt: null,
+          },
+        },
+        select: {
+          id: true,
+          status: true,
+          organizationId: true,
+          Organization: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          OrganizationRole: {
+            select: {
+              name: true,
+            },
+          },
+        },
+      },
     },
   });
 
-  return { message: "Users found", data: users };
+  const results: SearchNonClinicPatientsResult[] = users.map((user) => {
+    const isVerified = user.verificationStatus === "VERIFIED";
+    const warnings: string[] = [];
+
+    // 1. Verification warning
+    if (!isVerified) {
+      const statusLabel =
+        user.verificationStatus === "PENDING"
+          ? "Verification Pending"
+          : user.verificationStatus === "REJECTED"
+          ? "Verification Rejected"
+          : "Unverified";
+      warnings.push(`User account is not verified (${statusLabel})`);
+    }
+
+    // 2. Partner Organization Membership status
+    let partnerOrgStatus: "ACTIVE" | "PENDING" | "NOT_MEMBER" | "NO_PARTNER_ORGS" = "NOT_MEMBER";
+    let partnerOrgDetails: { orgName: string; status: string; roleName?: string | null } | null = null;
+
+    if (partnerOrgIds.length > 0) {
+      const partnerMemberships = user.OrganizationMembers.filter((m) =>
+        partnerOrgIds.includes(m.organizationId)
+      );
+
+      const activeMembership = partnerMemberships.find((m) => m.status === "ACTIVE");
+      if (activeMembership) {
+        partnerOrgStatus = "ACTIVE";
+        partnerOrgDetails = {
+          orgName: activeMembership.Organization.name,
+          status: "ACTIVE",
+          roleName: activeMembership.OrganizationRole?.name,
+        };
+      } else if (partnerMemberships.length > 0) {
+        // User applied to a partner org, but status is not ACTIVE (e.g. PENDING, SUSPENDED, INACTIVE)
+        const pendingMembership =
+          partnerMemberships.find((m) => m.status === "PENDING") || partnerMemberships[0];
+        partnerOrgStatus = "PENDING";
+        partnerOrgDetails = {
+          orgName: pendingMembership.Organization.name,
+          status: pendingMembership.status,
+          roleName: pendingMembership.OrganizationRole?.name,
+        };
+        const displayStatus =
+          pendingMembership.status.charAt(0) + pendingMembership.status.slice(1).toLowerCase();
+        warnings.push(
+          `Applied as member of ${pendingMembership.Organization.name} but not activated (Status: ${displayStatus})`
+        );
+      } else {
+        // User has no membership in any partner org
+        partnerOrgStatus = "NOT_MEMBER";
+        const orgNamesStr = partnerOrgNames.join(", ");
+        warnings.push(
+          partnerOrgNames.length === 1
+            ? `Not a member of clinic partner organization (${orgNamesStr})`
+            : `Not a member of any clinic partner organization (${orgNamesStr})`
+        );
+      }
+    } else {
+      // Clinic has no partner organizations linked
+      partnerOrgStatus = "NO_PARTNER_ORGS";
+      const anyPending = user.OrganizationMembers.find((m) => m.status === "PENDING");
+      if (anyPending) {
+        warnings.push(
+          `Applied as member of ${anyPending.Organization.name} but not activated (Status: Pending)`
+        );
+      }
+    }
+
+    return {
+      id: user.id,
+      userId: user.userId,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      middleName: user.middleName,
+      email: user.email,
+      picture: user.picture,
+      gender: user.gender,
+      dob: user.dob,
+      mobile: user.mobile,
+      verificationStatus: user.verificationStatus,
+      isVerified,
+      partnerOrgStatus,
+      partnerOrgDetails,
+      partnerOrgNames,
+      warnings,
+    };
+  });
+
+  return { message: "Users found", data: results };
 });
 
 

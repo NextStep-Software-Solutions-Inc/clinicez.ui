@@ -11,6 +11,7 @@ import { getPermissionsAction } from "@/actions/permission.action";
 import { PERMISSIONS } from "@/lib/permissions";
 import { getHPsAction, GetHPsType } from "@/actions/hp.actions";
 import { createNotification } from "@/actions/notifications/notification.action";
+import { resolveClinicTemplateId, resolveClinicEffectiveTemplate } from "@/lib/resolve-clinic-template";
 
 export type GetHeartStationRequestsFilters = {
   clinicUid?: string;
@@ -243,6 +244,16 @@ export const getHeartStationRequestAction = withErrorHandling(async (id: number)
 
   if (!request) throw new Error("Heart station request not found");
 
+  const effectiveTemplate = await resolveClinicEffectiveTemplate(
+    prisma,
+    request.clinicId,
+    "heart_station",
+    request.DocumentTemplate
+  );
+  if (effectiveTemplate) {
+    request.DocumentTemplate = effectiveTemplate;
+  }
+
   return { message: "Successfully fetched heart station request", data: request };
 });
 
@@ -287,16 +298,7 @@ export const createHeartStationRequestAction = withErrorHandling(async (input: C
     });
     if (!clinic) throw new Error("Clinic not found");
 
-    const heartStationTemplate = await prisma.documentTemplate.findFirst({
-      where: {
-        isActive: true,
-        DocumentTemplateType: {
-          name: "heart_station"
-        }
-      },
-      select: { id: true }
-    });
-    if (!heartStationTemplate) throw new Error("Heart station document template not found");
+    const templateId = await resolveClinicTemplateId(prisma, clinic.id, "heart_station");
 
     const request = await prisma.clinicHeartStationRequest.create({
       data: {
@@ -308,7 +310,7 @@ export const createHeartStationRequestAction = withErrorHandling(async (input: C
         Clinic: { connect: { id: clinic.id } },
         ClinicPatient: { connect: { id: patientId } },
         HealthCareProvider: { connect: { id: authorizedHpId } },
-        DocumentTemplate: { connect: { id: heartStationTemplate.id } },
+        DocumentTemplate: { connect: { id: templateId } },
         CreatedBy: { connect: { id: createdBy } },
         HeartStationRequestProcedures: {
           create: procedureIds.map(procedureId => ({

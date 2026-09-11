@@ -10,11 +10,13 @@ type Version = "v1" | "v2"
 function getVersionFromStorage(): Version {
   if (typeof window !== "undefined") {
     const savedVersion = localStorage.getItem(LANDING_VERSION_KEY)
-    if (savedVersion === "v1" || savedVersion === "v2") {
+    if (savedVersion === "v2") {
       return savedVersion
     }
+    // Default to official v2 and update localStorage
+    localStorage.setItem(LANDING_VERSION_KEY, "v2")
   }
-  return "v1"
+  return "v2"
 }
 
 // Global state to sync across components (lazy initialized)

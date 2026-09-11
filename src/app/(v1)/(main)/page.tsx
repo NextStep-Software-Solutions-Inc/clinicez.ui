@@ -1,7 +1,7 @@
 import { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { getCachedSession } from "@actions/session.action";
 import { getCurrentUserAction } from "@actions/users/user.action";
-import LandingPageContent from "@components/LandingPageVersionHandler";
 
 export const metadata: Metadata = {
   title: "Home | Clinic EZ ",
@@ -17,19 +17,18 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const params = await searchParams;
   const isPostSignIn = params.signin === "1";
 
-  let onboardingStatus: string | null = null;
   if (session && isPostSignIn) {
     const userResult = await getCurrentUserAction();
-    if (userResult.status && userResult.data) {
-      onboardingStatus = userResult.data.onboardingStatus ?? null;
+    const onboardingStatus =
+      userResult.status && userResult.data ? (userResult.data.onboardingStatus ?? null) : null;
+    const isIncomplete =
+      !onboardingStatus || onboardingStatus === "NOT_STARTED" || onboardingStatus === "IN_PROGRESS";
+    if (isIncomplete) {
+      redirect("/onboarding");
+    } else {
+      redirect("/v2/select-dashboard");
     }
   }
 
-  return (
-    <LandingPageContent
-      authenticated={!!session}
-      onboardingStatus={onboardingStatus}
-      isPostSignIn={isPostSignIn}
-    />
-  );
+  redirect("/v2");
 }

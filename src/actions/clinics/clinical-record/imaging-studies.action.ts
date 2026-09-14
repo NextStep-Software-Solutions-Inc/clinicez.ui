@@ -253,14 +253,6 @@ export const getImagingStudyAction = withErrorHandling(async (id: number) => {
 
   if (!study) throw new Error("Imaging study not found");
 
-  if (
-    study.DocumentTemplate?.createdAt &&
-    study.createdAt &&
-    new Date(study.createdAt).getTime() < new Date(study.DocumentTemplate.createdAt).getTime()
-  ) {
-    study.DocumentTemplate = null as any;
-  }
-
   return { message: "Successfully fetched imaging study", data: study };
 });
 

@@ -217,14 +217,6 @@ export const getPrescriptionAction = withErrorHandling(async (id: number) => {
 
   if (!prescription) throw new Error("Prescription not found");
 
-  if (
-    prescription.DocumentTemplate?.createdAt &&
-    prescription.createdAt &&
-    new Date(prescription.createdAt).getTime() < new Date(prescription.DocumentTemplate.createdAt).getTime()
-  ) {
-    prescription.DocumentTemplate = null as any;
-  }
-
   return { message: "Prescription fetched successfully", data: prescription };
 });
 

@@ -66,7 +66,7 @@ export const upsertClinicDocumentDefaultTemplatesAction = withErrorHandling(
 
     // If prescription template is configured, keep legacy ClinicPrescriptionSetting aligned
     const rxDocType = await prismaClient.documentTemplateType.findFirst({
-      where: { name: { in: ["prescription"], mode: "insensitive" } },
+      where: { name: { equals: "prescription", mode: "insensitive" } },
       select: { id: true },
     });
     if (rxDocType) {

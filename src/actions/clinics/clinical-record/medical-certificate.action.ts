@@ -144,14 +144,6 @@ export const getMedicalCertificateAction = withErrorHandling(
     });
     if (!certificate) throw new Error("Medical Certificate not found");
 
-    if (
-      certificate.DocumentTemplate?.createdAt &&
-      certificate.createdAt &&
-      new Date(certificate.createdAt).getTime() < new Date(certificate.DocumentTemplate.createdAt).getTime()
-    ) {
-      certificate.DocumentTemplate = null as any;
-    }
-
     return {
       message: "Medical Certificate fetched successfully",
       data: certificate,
@@ -214,7 +206,7 @@ export const createMedicalCertificateAction = withErrorHandling(
 
       let effectiveTemplateId = documentTemplateId;
       try {
-        effectiveTemplateId = await resolveClinicTemplateId(prisma, clinic.id, "medcert");
+        effectiveTemplateId = await resolveClinicTemplateId(prisma, clinic.id, "medical_certificate");
       } catch {
         // Fallback to provided documentTemplateId
       }

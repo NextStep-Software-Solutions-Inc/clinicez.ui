@@ -5,39 +5,36 @@ export type DocumentCategory =
   | "laboratory"
   | "imaging"
   | "heart_station"
-  | "medcert"
+  | "medical_certificate"
   | "referral";
 
-const TYPE_ALIASES: Record<DocumentCategory, string[]> = {
-  prescription: ["prescription"],
-  laboratory: ["laboratory", "diagnostic_request"],
-  imaging: ["imaging", "imaging_study"],
-  heart_station: ["heart_station", "heart-station", "heart station"],
-  medcert: ["medcert", "medical_certificate", "medical-certificate"],
-  referral: ["referral", "referral_slip", "referral-slip"],
-};
-
 /**
- * Resolves the configured default template ID for a clinic.
+ * Resolves the configured default template ID for a clinic using its document key.
+ *
  * Priority:
- * 1. ClinicPrescriptionSetting (if prescription) or ClinicDocumentDefaultTemplate
- * 2. Scoped active DocumentTemplate for this clinic
- * 3. Any active DocumentTemplate matching the category
+ * 1. ClinicDocumentDefaultTemplate (unified default template configured in settings)
+ * 2. ClinicPrescriptionSetting (if prescription)
+ * 3. Scoped active DocumentTemplate for this clinic matching the document key
+ * 4. Global active DocumentTemplate matching the document key
  */
 export async function resolveClinicTemplateId(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   prisma: any = defaultPrisma,
   clinicId: number,
-  category: DocumentCategory
+  documentKey: DocumentCategory | string
 ): Promise<number> {
-  const aliases = TYPE_ALIASES[category] ?? [category];
+  const key = documentKey.trim();
 
-  // 1. Check ClinicDocumentDefaultTemplate (unified v2 default template setting)
+  // 1. Check ClinicDocumentDefaultTemplate (configured default template stored in settings)
   const defaultEntry = await prisma.clinicDocumentDefaultTemplate.findFirst({
     where: {
       clinicId,
       DocumentType: {
-        name: { in: aliases, mode: "insensitive" },
+        OR: [
+          { name: { equals: key, mode: "insensitive" } },
+          { name: { equals: key.replace(/_/g, " "), mode: "insensitive" } },
+          { name: { equals: key.replace(/\s+/g, "_"), mode: "insensitive" } },
+        ],
       },
     },
     orderBy: { id: "desc" },
@@ -48,7 +45,7 @@ export async function resolveClinicTemplateId(
   }
 
   // 2. Fallback for prescription: ClinicPrescriptionSetting
-  if (category === "prescription") {
+  if (key.toLowerCase().replace(/[\s-]+/g, "_") === "prescription") {
     const rxSetting = await prisma.clinicPrescriptionSetting.findFirst({
       where: { clinicId },
       orderBy: { id: "desc" },
@@ -59,14 +56,18 @@ export async function resolveClinicTemplateId(
     }
   }
 
-  // 3. Fallback: Clinic-scoped active template
+  // 3. Fallback: Clinic-scoped active template matching the document key
   const clinicTemplate = await prisma.documentTemplate.findFirst({
     where: {
       isActive: true,
       deletedAt: null,
       clinicId,
       DocumentTemplateType: {
-        name: { in: aliases, mode: "insensitive" },
+        OR: [
+          { name: { equals: key, mode: "insensitive" } },
+          { name: { equals: key.replace(/_/g, " "), mode: "insensitive" } },
+          { name: { equals: key.replace(/\s+/g, "_"), mode: "insensitive" } },
+        ],
       },
     },
     select: { id: true },
@@ -75,13 +76,17 @@ export async function resolveClinicTemplateId(
     return clinicTemplate.id;
   }
 
-  // 4. Global active template fallback
+  // 4. Global active template fallback matching the document key
   const globalTemplate = await prisma.documentTemplate.findFirst({
     where: {
       isActive: true,
       deletedAt: null,
       DocumentTemplateType: {
-        name: { in: aliases, mode: "insensitive" },
+        OR: [
+          { name: { equals: key, mode: "insensitive" } },
+          { name: { equals: key.replace(/_/g, " "), mode: "insensitive" } },
+          { name: { equals: key.replace(/\s+/g, "_"), mode: "insensitive" } },
+        ],
       },
     },
     select: { id: true },
@@ -90,6 +95,6 @@ export async function resolveClinicTemplateId(
     return globalTemplate.id;
   }
 
-  throw new Error(`No document template found for document type: ${category}`);
+  throw new Error(`No document template found for document key: ${documentKey}`);
 }
 

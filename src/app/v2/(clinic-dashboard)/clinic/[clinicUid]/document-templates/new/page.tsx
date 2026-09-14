@@ -23,12 +23,12 @@ export default async function NewDocumentTemplatePage({
   const { clinicUid } = await params;
   const { type, label } = await searchParams;
 
-  const docTypesResult = await getDocumentTypesAction({ name: type });
+  const docTypesResult = await getDocumentTypesAction({});
   if (!docTypesResult.status) notFound();
 
   const documentTypes = docTypesResult.data ?? [];
 
-  // If a specific type was pre-selected, find its ID
+  // If a specific type was pre-selected, find its ID by canonical key
   const preSelectedType = type
     ? documentTypes.find((t) => t.name.toLowerCase() === type.toLowerCase())
     : undefined;

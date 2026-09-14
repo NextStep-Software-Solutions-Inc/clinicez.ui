@@ -8,6 +8,7 @@ import { Prisma } from "@prisma/client";
 import { generateSerialNumber } from "@/lib/utils";
 import { validateHealthcareProviderAuth, USER_WITH_HEALTHCARE_PROVIDERS_SELECT } from "@/lib/healthcare-provider-auth";
 import { createNotification } from "@/actions/notifications/notification.action";
+import { resolveClinicTemplateId } from "@/lib/resolve-clinic-template";
 
 export type GetReferralSlipFilters = {
   clinicUid: string;
@@ -91,6 +92,7 @@ export const getReferralSlipAction = withErrorHandling(async (id: number) => {
     where: { id },
     select: {
       id: true,
+      clinicId: true,
       serialNumber: true,
       createdAt: true,
       history: true,
@@ -140,6 +142,7 @@ export const getReferralSlipAction = withErrorHandling(async (id: number) => {
   });
 
   if (!referralSlip) throw new Error("Referral slip not found");
+
   return { message: "Referral slip fetched successfully", data: referralSlip };
 });
 
@@ -195,30 +198,13 @@ export const createReferralSlipAction = withErrorHandling(async (input: CreateRe
       "create referral slips"
     );
 
-    let documentTemplate = await prisma.documentTemplate.findFirst({
-      where: {
-        isActive: true,
-        deletedAt: null,
-        Clinic: { clinicUid },
-        DocumentTemplateType: {
-          name: { equals: "referral", mode: "insensitive" }
-        }
-      }
+    const clinic = await prisma.clinic.findUnique({
+      where: { clinicUid },
+      select: { id: true },
     });
+    if (!clinic) throw new Error("Clinic not found");
 
-    if (!documentTemplate) {
-      documentTemplate = await prisma.documentTemplate.findFirst({
-        where: {
-          isActive: true,
-          deletedAt: null,
-          DocumentTemplateType: {
-            name: { equals: "referral", mode: "insensitive" }
-          }
-        }
-      });
-    }
-
-    if (!documentTemplate) throw new Error("Referral slip template not found");
+    const templateId = await resolveClinicTemplateId(prisma, clinic.id, "referral");
 
     const shouldConnectAppointment = appointmentId && await prisma.appointment.findUnique({
       where: { id: appointmentId },
@@ -237,7 +223,7 @@ export const createReferralSlipAction = withErrorHandling(async (input: CreateRe
       serialNumber: serialNumber,
       Clinic: { connect: { clinicUid } },
       ClinicPatient: { connect: { id: patientId } },
-      DocumentTemplate: { connect: { id: documentTemplate.id } },
+      DocumentTemplate: { connect: { id: templateId } },
       referredTo: referredTo,
       reason: reason,
       CreatedBy: { connect: { id: createdBy } },

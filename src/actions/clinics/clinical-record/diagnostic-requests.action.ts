@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import { withErrorHandling } from "@/lib/with-error-handling";
 import { getCachedSession } from "@/actions/session.action";
 import { DocumentTemplateType } from "@prisma/client";
+import { resolveClinicTemplateId } from "@/lib/resolve-clinic-template";
 
 export type CreateDiagnosticRequestPayload = {
   clinicUid: string;
@@ -25,22 +26,7 @@ export const createDiagnosticRequestAction = withErrorHandling(
     });
     if (!clinic) throw new Error("Clinic not found");
 
-    // Get template
-    const template = await prisma.documentTemplate.findFirst({
-      where: { 
-        isActive: true,
-        DocumentTemplateType: {
-          name: {
-            in: ["diagnostic_request", "laboratory"]
-          }
-        }
-      },
-      orderBy: { id: 'asc' }
-    });
-    
-    if (!template) {
-      throw new Error("No diagnostic document template found in the system.");
-    }
+    const templateId = await resolveClinicTemplateId(prisma, clinic.id, "laboratory");
 
     const request = await prisma.diagnosticRequest.create({
       data: {
@@ -48,7 +34,7 @@ export const createDiagnosticRequestAction = withErrorHandling(
         hpId: payload.hpId,
         patientId: payload.patientId,
         consultationTicketId: payload.consultationTicketId,
-        documentTemplateId: template.id,
+        documentTemplateId: templateId,
         remarks: payload.remarks,
         diagnosticProcedures: payload.diagnosticProcedures,
       },
@@ -114,6 +100,7 @@ export const getDiagnosticRequestAction = withErrorHandling(
     });
 
     if (!request) throw new Error("Request not found");
+
     return { message: "Fetched request detail", data: request };
   }
 );

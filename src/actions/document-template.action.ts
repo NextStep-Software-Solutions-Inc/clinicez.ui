@@ -71,36 +71,57 @@ export const getDocumentTemplateByIdAction = withErrorHandling(async (id: number
 });
 
 type CreateDocumentTemplatePayload = {
-  name: string,
-  typeId: number,
-  clinicUid: string
-  htmlContent: string
-}
+  name: string;
+  typeId?: number;
+  typeKey?: string;
+  clinicUid: string;
+  htmlContent: string;
+};
 
 export const createDocumentTemplateAction = withErrorHandling(async (payload: CreateDocumentTemplatePayload) => {
+  const session = await getCachedSession();
+  if (!session) throw new Error("Unauthorized");
 
-  const session = await getCachedSession()
-  if(!session) throw new Error("Unauthorized")
+  const { name, typeId, typeKey, clinicUid, htmlContent } = payload;
 
-  const { name, typeId, clinicUid, htmlContent } = payload
+  let resolvedTypeId = typeId;
+  if (!resolvedTypeId && typeKey) {
+    const key = typeKey.trim();
+    const docType = await prismaClient.documentTemplateType.findFirst({
+      where: {
+        OR: [
+          { name: { equals: key, mode: "insensitive" } },
+          { name: { equals: key.replace(/_/g, " "), mode: "insensitive" } },
+          { name: { equals: key.replace(/\s+/g, "_"), mode: "insensitive" } },
+        ],
+      },
+      select: { id: true },
+    });
+    if (docType) {
+      resolvedTypeId = docType.id;
+    }
+  }
+
+  if (!resolvedTypeId) throw new Error("Document template type is required");
+
   const documentTemplate = await prismaClient.documentTemplate.create({
     data: {
       name,
       htmlContent,
       Clinic: {
         connect: {
-          clinicUid
-        }
+          clinicUid,
+        },
       },
       DocumentTemplateType: {
         connect: {
-          id: typeId
-        }
-      }
-    }
-  })
-  return {message: "Document template created successfully", data: documentTemplate}
-})
+          id: resolvedTypeId,
+        },
+      },
+    },
+  });
+  return { message: "Document template created successfully", data: documentTemplate };
+});
 
 type UpdateDocumentTemplatePayload = {
   id: number,

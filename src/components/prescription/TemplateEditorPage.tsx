@@ -136,7 +136,11 @@ export default function TemplateEditorPage({
         );
       } else {
         toast.promise(
-          promiseWrapper(createDocumentTemplateAction)({ ...data, clinicUid }),
+          promiseWrapper(createDocumentTemplateAction)({
+            ...data,
+            typeKey: resolvedTypeName ?? undefined,
+            clinicUid,
+          }),
           {
             loading: "Creating template…",
             success: (res) => {

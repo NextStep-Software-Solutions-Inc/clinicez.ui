@@ -2989,10 +2989,20 @@ function DocumentsTab({ clinicUid }: { clinicUid: string }) {
           })
         : { status: true as const, message: "", data: null };
 
-      const entries = nonPrescriptionTypes.map((type) => ({
-        documentTypeId: type.id,
-        templateId: defaultTemplateIds[type.id] ? Number(defaultTemplateIds[type.id]) : null,
-      }));
+      const entries = [
+        ...nonPrescriptionTypes.map((type) => ({
+          documentTypeId: type.id,
+          templateId: defaultTemplateIds[type.id] ? Number(defaultTemplateIds[type.id]) : null,
+        })),
+        ...(prescriptionType
+          ? [
+              {
+                documentTypeId: prescriptionType.id,
+                templateId: prescriptionTemplateId ? Number(prescriptionTemplateId) : null,
+              },
+            ]
+          : []),
+      ];
 
       const documentResult = await upsertClinicDocumentDefaultTemplatesAction(clinicUid, entries);
 

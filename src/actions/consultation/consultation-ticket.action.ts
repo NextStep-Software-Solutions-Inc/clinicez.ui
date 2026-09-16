@@ -8,8 +8,6 @@ import { PERMISSIONS } from '@lib/permissions';
 import { hasCodeProperty } from '@lib/utils';
 import { withErrorHandling } from '@/lib/with-error-handling';
 import { getHPsAction, GetHPsType } from '@actions/hp.actions';
-import { getNextSequenceNumber } from '@/lib/sequence-generator';
-import { formatKonsultaHciNumber } from '@/lib/format-sequence';
 
 type CreateConsultationTicketPayload = {
   systemId?: number;
@@ -44,13 +42,59 @@ export const createConsultationTicketAction = withErrorHandling(async ({ systemI
   });
   const hciAccreNo = clinicForKonsulta?.ClinicSetting?.philhealthAccreditationNumber ?? null;
   const clinicIdForKonsulta = clinicForKonsulta?.id ?? null;
-  const caseSequence = hciAccreNo && clinicIdForKonsulta
-    ? await getNextSequenceNumber("KONSULTA_HCI_CASE", clinicIdForKonsulta)
-    : null;
-  const soapSequence = hciAccreNo && clinicIdForKonsulta
-    ? await getNextSequenceNumber("KONSULTA_SOAP_TRANSACTION", clinicIdForKonsulta)
-    : null;
   const now = new Date();
+  let konsultaHciCaseNo: string | null = null;
+  let konsultaHciTransNo: string | null = null;
+
+  if (hciAccreNo && clinicIdForKonsulta) {
+    const accre = hciAccreNo.replace(/\D/g, "").padStart(9, "0").slice(-9);
+    const yearMonth = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}`;
+    const casePrefix = `T${accre}${yearMonth}`;
+    const transPrefix = `S${accre}${yearMonth}`;
+
+    // Find highest existing case number for this accreditation number and month
+    const lastCase = await prismaClient.consultationTicket.findFirst({
+      where: {
+        konsultaHciCaseNo: {
+          startsWith: casePrefix,
+        },
+      },
+      orderBy: { konsultaHciCaseNo: "desc" },
+      select: { konsultaHciCaseNo: true },
+    });
+
+    let nextCaseSeq = 1;
+    if (lastCase?.konsultaHciCaseNo) {
+      const seqStr = lastCase.konsultaHciCaseNo.slice(-5);
+      const parsed = parseInt(seqStr, 10);
+      if (!isNaN(parsed)) {
+        nextCaseSeq = parsed + 1;
+      }
+    }
+
+    // Find highest existing soap transaction number for this accreditation number and month
+    const lastTrans = await prismaClient.consultationTicket.findFirst({
+      where: {
+        konsultaHciTransNo: {
+          startsWith: transPrefix,
+        },
+      },
+      orderBy: { konsultaHciTransNo: "desc" },
+      select: { konsultaHciTransNo: true },
+    });
+
+    let nextTransSeq = 1;
+    if (lastTrans?.konsultaHciTransNo) {
+      const seqStr = lastTrans.konsultaHciTransNo.slice(-5);
+      const parsed = parseInt(seqStr, 10);
+      if (!isNaN(parsed)) {
+        nextTransSeq = parsed + 1;
+      }
+    }
+
+    konsultaHciCaseNo = `${casePrefix}${String(nextCaseSeq).padStart(5, "0")}`;
+    konsultaHciTransNo = `${transPrefix}${String(nextTransSeq).padStart(5, "0")}`;
+  }
 
   const consultationTicket = await prismaClient.$transaction(async (prisma) => {
     let consultationConfig = await prismaClient.consultationConfig.findFirst({
@@ -106,9 +150,9 @@ export const createConsultationTicketAction = withErrorHandling(async ({ systemI
         Clinic: {
           connect: { clinicUid }
         },
-        ...(hciAccreNo && caseSequence && soapSequence ? {
-          konsultaHciCaseNo: formatKonsultaHciNumber("T", hciAccreNo, caseSequence, now),
-          konsultaHciTransNo: formatKonsultaHciNumber("S", hciAccreNo, soapSequence, now),
+        ...(konsultaHciCaseNo && konsultaHciTransNo ? {
+          konsultaHciCaseNo,
+          konsultaHciTransNo,
         } : {}),
         ConsultationTicketHPs: {
           createMany: {

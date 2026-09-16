@@ -353,6 +353,32 @@ export const PERMISSIONS = {
       name: "create:clinic:imaging_request",
       description: "User can create imaging study requests within the clinic.",
     },
+    // --- Billing & Cashier ---
+    "VIEW:CLINIC:BILLING": {
+      name: "view:clinic:billing",
+      description: "User can view invoices, receipts, and cashier point of sale.",
+    },
+    "MANAGE:CLINIC:BILLING": {
+      name: "manage:clinic:billing",
+      description: "User can create invoices, manage billing, and process payments.",
+    },
+    "VOID:CLINIC:INVOICE": {
+      name: "void:clinic:invoice",
+      description: "User can void or cancel issued invoices and receipts.",
+    },
+    "MANAGE:CLINIC:PRICE_LIST": {
+      name: "manage:clinic:price_list",
+      description: "User can create, update, and manage clinic price catalog items.",
+    },
+    // --- Accounting & Reports ---
+    "VIEW:CLINIC:ACCOUNTING": {
+      name: "view:clinic:accounting",
+      description: "User can view revenue reports, shift balances, and financial metrics.",
+    },
+    "MANAGE:CLINIC:ACCOUNTING": {
+      name: "manage:clinic:accounting",
+      description: "User can manage doctor payouts, reconcile cashier shifts, and export tax books.",
+    },
   },
   ORGANIZATION: {
     "UPDATE:ORG:INFO": {

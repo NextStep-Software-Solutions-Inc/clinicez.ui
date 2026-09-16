@@ -37,6 +37,9 @@ import {
   Heart,
   Stethoscope,
   ShieldCheck,
+  CreditCard,
+  Calculator,
+  Receipt,
   type LucideIcon,
 } from "lucide-react";
 
@@ -78,6 +81,9 @@ const ICON_MAP: Record<string, LucideIcon> = {
   heart: Heart,
   stethoscope: Stethoscope,
   shield: ShieldCheck,
+  "credit-card": CreditCard,
+  calculator: Calculator,
+  receipt: Receipt,
 };
 
 function resolveIcon(name: string): LucideIcon {

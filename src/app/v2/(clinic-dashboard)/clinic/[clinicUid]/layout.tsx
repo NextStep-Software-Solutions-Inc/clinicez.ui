@@ -3,6 +3,7 @@ import { DashboardShell } from "@/components/v2/dashboard";
 import type { NavItem } from "@/components/v2/dashboard";
 import { getClinicWithUserRoleAction, getUserClinicsWithRolesAction } from "@/actions/clinics/clinic.action";
 import { getAppointmentCountsAction } from "@/actions/appointments/appointments.action";
+import { getClinicBillingSettingAction } from "@/actions/clinics/clinic-billing-setting.action";
 import { notFound } from "next/navigation";
 import UnauthorizedWarning from "@/components/UnauthorizedWarning";
 import { NotificationBell } from "@/components/v2/notifications/NotificationBell";
@@ -47,6 +48,14 @@ export default async function ClinicUidLayout(
   const appointmentCountsResult = await getAppointmentCountsAction(clinicUid);
   const pendingAppointmentCount = appointmentCountsResult.data?.["PENDING"] ?? 0;
 
+  // Load billing settings for dynamic commercial module gating
+  const billingSettingResult = await getClinicBillingSettingAction(clinicUid);
+  const billingSetting = billingSettingResult.data;
+  const isCommercialOrHybrid =
+    billingSetting?.billingMode === "COMMERCIAL" || billingSetting?.billingMode === "HYBRID";
+  const isPhilHealthActive =
+    billingSetting?.billingMode === "HYBRID" || billingSetting?.billingMode === "DISABLED" || !billingSetting;
+
   // Navigation items for clinic dashboard
   const navItems: NavItem[] = [
     {
@@ -80,6 +89,22 @@ export default async function ClinicUidLayout(
       icon: "stethoscope",
       badgeCount: undefined,
     },
+    ...(isCommercialOrHybrid
+      ? [
+          {
+            name: "Billing & Cashier",
+            href: `/v2/clinic/${clinicUid}/billing`,
+            icon: "credit-card",
+            badgeCount: undefined,
+          },
+          {
+            name: "Accounting",
+            href: `/v2/clinic/${clinicUid}/accounting`,
+            icon: "calculator",
+            badgeCount: undefined,
+          },
+        ]
+      : []),
     {
       name: "Records",
       href: `/v2/clinic/${clinicUid}/records`,
@@ -98,12 +123,16 @@ export default async function ClinicUidLayout(
       icon: "bar-chart",
       badgeCount: undefined,
     },
-    {
-      name: "PhilHealth Yakap",
-      href: `/v2/clinic/${clinicUid}/philhealth`,
-      icon: "shield",
-      badgeCount: undefined,
-    },
+    ...(isPhilHealthActive
+      ? [
+          {
+            name: "PhilHealth Yakap",
+            href: `/v2/clinic/${clinicUid}/philhealth`,
+            icon: "shield",
+            badgeCount: undefined,
+          },
+        ]
+      : []),
     {
       name: "Settings",
       href: `/v2/clinic/${clinicUid}/settings`,

@@ -39,7 +39,9 @@ import {
   AlertTriangle,
   FileText,
   HelpCircle,
+  CreditCard,
 } from "lucide-react";
+import { BillingSettingsTab } from "./BillingSettingsTab";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Card,
@@ -214,6 +216,7 @@ interface ClinicSettingsClientProps {
   googleCalendarEvents?: CalendarEventItem[];
   initialSystems: SystemsData;
   canUpdateSettings?: boolean;
+  billingSetting?: any;
 }
 
 /* ─────────────────────────────────────────────────────────────────── */
@@ -3159,6 +3162,7 @@ export function ClinicSettingsClient({
   googleCalendarEvents = [],
   initialSystems,
   canUpdateSettings = false,
+  billingSetting = null,
 }: ClinicSettingsClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -3202,6 +3206,10 @@ export function ClinicSettingsClient({
           <TabsTrigger value="services" className="gap-1.5 flex-shrink-0">
             <Package className="h-3.5 w-3.5" />
             Services
+          </TabsTrigger>
+          <TabsTrigger value="billing" className="gap-1.5 flex-shrink-0">
+            <CreditCard className="h-3.5 w-3.5" />
+            Billing & Invoicing
           </TabsTrigger>
           <TabsTrigger value="systems" className="gap-1.5 flex-shrink-0">
             <Zap className="h-3.5 w-3.5" />
@@ -3261,6 +3269,14 @@ export function ClinicSettingsClient({
 
         <TabsContent value="services" className="mt-6">
           <ServicesTab clinicUid={clinicUid} initialCategories={serviceCategories} />
+        </TabsContent>
+
+        <TabsContent value="billing" className="mt-6">
+          <BillingSettingsTab
+            clinicUid={clinicUid}
+            initialBillingSetting={billingSetting}
+            canManageSettings={canUpdateSettings}
+          />
         </TabsContent>
 
         <TabsContent value="systems" className="mt-6">

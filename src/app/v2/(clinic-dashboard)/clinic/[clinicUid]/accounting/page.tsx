@@ -9,6 +9,7 @@ import {
   getDoctorPayoutVouchersAction,
 } from "@/actions/accounting/doctor-payout.action";
 import { getHmoArSummaryAction } from "@/actions/accounting/hmo-receivables.action";
+import { getClinicChartOfAccountsAction } from "@/actions/accounting/export.action";
 import { AccountingDashboardClient } from "@/components/v2/accounting/AccountingDashboardClient";
 
 export const dynamic = "force-dynamic";
@@ -25,7 +26,7 @@ interface AccountingPageProps {
 export default async function AccountingPage({ params }: AccountingPageProps) {
   const { clinicUid } = await params;
 
-  // Parallel server fetches for operational sub-ledger
+  // Parallel server fetches for operational sub-ledger & compliance
   const [
     billingSettingRes,
     currentShiftRes,
@@ -33,6 +34,7 @@ export default async function AccountingPage({ params }: AccountingPageProps) {
     doctorSummariesRes,
     doctorVouchersRes,
     hmoArRes,
+    coaRes,
   ] = await Promise.all([
     getClinicBillingSettingAction(clinicUid),
     getCurrentShiftAction(clinicUid),
@@ -40,6 +42,7 @@ export default async function AccountingPage({ params }: AccountingPageProps) {
     getUnliquidatedDoctorFeesAction(clinicUid),
     getDoctorPayoutVouchersAction(clinicUid),
     getHmoArSummaryAction(clinicUid),
+    getClinicChartOfAccountsAction(clinicUid),
   ]);
 
   const billingSetting = billingSettingRes.data;
@@ -55,6 +58,7 @@ export default async function AccountingPage({ params }: AccountingPageProps) {
     providers: [],
     claims: [],
   };
+  const chartOfAccounts = coaRes.data;
 
   return (
     <AccountingDashboardClient
@@ -65,6 +69,7 @@ export default async function AccountingPage({ params }: AccountingPageProps) {
       initialDoctorVouchers={doctorVouchers}
       initialHmoAr={hmoAr}
       billingSetting={billingSetting}
+      initialChartOfAccounts={chartOfAccounts}
     />
   );
 }

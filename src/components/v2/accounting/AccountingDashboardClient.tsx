@@ -23,6 +23,9 @@ import {
   FileText,
   BadgeCheck,
   Settings,
+  Download,
+  FileSpreadsheet,
+  Database,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -66,6 +69,12 @@ import {
   settleHmoClaimAction,
   getHmoArSummaryAction,
 } from "@/actions/accounting/hmo-receivables.action";
+import {
+  getBirSalesBookAction,
+  getBirCashReceiptsBookAction,
+  getGeneralJournalExportAction,
+  updateClinicChartOfAccountsAction,
+} from "@/actions/accounting/export.action";
 import { DoctorPayoutVoucherPrint } from "./DoctorPayoutVoucherPrint";
 
 interface AccountingDashboardClientProps {
@@ -76,6 +85,7 @@ interface AccountingDashboardClientProps {
   initialDoctorVouchers: any[];
   initialHmoAr: any;
   billingSetting: any;
+  initialChartOfAccounts?: any;
 }
 
 export function AccountingDashboardClient({
@@ -86,6 +96,7 @@ export function AccountingDashboardClient({
   initialDoctorVouchers,
   initialHmoAr,
   billingSetting,
+  initialChartOfAccounts,
 }: AccountingDashboardClientProps) {
   const [isPending, startTransition] = useTransition();
 
@@ -129,6 +140,94 @@ export function AccountingDashboardClient({
   const [claimSettledAmtInput, setClaimSettledAmtInput] = useState("");
   const [claimDeductionInput, setClaimDeductionInput] = useState("0.00");
   const [claimCheckRefInput, setClaimCheckRefInput] = useState("");
+
+  // State: Chart of Accounts & Compliance Exports
+  const [coa, setCoa] = useState(initialChartOfAccounts || {});
+  const now = new Date();
+  const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
+  const todayStr = now.toISOString().split("T")[0];
+  const [exportStartDate, setExportStartDate] = useState(firstDayOfMonth);
+  const [exportEndDate, setExportEndDate] = useState(todayStr);
+
+  const [coaForm, setCoaForm] = useState({
+    cashAccountCode: initialChartOfAccounts?.cashAccountCode || "1010",
+    eWalletAccountCode: initialChartOfAccounts?.eWalletAccountCode || "1020",
+    bankAccountCode: initialChartOfAccounts?.bankAccountCode || "1030",
+    hmoReceivableAccountCode: initialChartOfAccounts?.hmoReceivableAccountCode || "1100",
+    consultationRevenueCode: initialChartOfAccounts?.consultationRevenueCode || "4010",
+    labRevenueCode: initialChartOfAccounts?.labRevenueCode || "4020",
+    imagingRevenueCode: initialChartOfAccounts?.imagingRevenueCode || "4030",
+    pharmacyRevenueCode: initialChartOfAccounts?.pharmacyRevenueCode || "4040",
+    vatPayableAccountCode: initialChartOfAccounts?.vatPayableAccountCode || "2100",
+    doctorPfPayableCode: initialChartOfAccounts?.doctorPfPayableCode || "2200",
+    withholdingTaxCode: initialChartOfAccounts?.withholdingTaxCode || "2300",
+  });
+
+  // Browser file download helper
+  const triggerDownload = (csvContent: string, filename: string) => {
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExportBirSalesBook = () => {
+    startTransition(async () => {
+      const res = await getBirSalesBookAction(clinicUid, exportStartDate, exportEndDate);
+      if (res.status && res.data) {
+        triggerDownload(res.data.csvString, res.data.filename);
+        toast.success(`Downloaded BIR Sales Book (${res.data.invoiceCount} records)`);
+      } else {
+        toast.error(res.message);
+      }
+    });
+  };
+
+  const handleExportBirCashReceipts = () => {
+    startTransition(async () => {
+      const res = await getBirCashReceiptsBookAction(clinicUid, exportStartDate, exportEndDate);
+      if (res.status && res.data) {
+        triggerDownload(res.data.csvString, res.data.filename);
+        toast.success(`Downloaded BIR Cash Receipts Book (${res.data.receiptCount} records)`);
+      } else {
+        toast.error(res.message);
+      }
+    });
+  };
+
+  const handleExportGeneralJournal = (format: "XERO" | "QUICKBOOKS" | "GENERIC") => {
+    startTransition(async () => {
+      const res = await getGeneralJournalExportAction(
+        clinicUid,
+        format,
+        exportStartDate,
+        exportEndDate
+      );
+      if (res.status && res.data) {
+        triggerDownload(res.data.csvString, res.data.filename);
+        toast.success(`Exported ${format} General Journal CSV`);
+      } else {
+        toast.error(res.message);
+      }
+    });
+  };
+
+  const handleSaveCoa = () => {
+    startTransition(async () => {
+      const res = await updateClinicChartOfAccountsAction(clinicUid, coaForm);
+      if (res.status) {
+        toast.success(res.message);
+        setCoa(res.data);
+      } else {
+        toast.error(res.message);
+      }
+    });
+  };
 
   // Refresh Shift Data
   const refreshShiftData = async () => {
@@ -446,7 +545,7 @@ export function AccountingDashboardClient({
 
       {/* Main Tabs */}
       <Tabs defaultValue="shifts" className="space-y-4">
-        <TabsList className="grid grid-cols-3 w-full max-w-xl">
+        <TabsList className="grid grid-cols-4 w-full max-w-2xl">
           <TabsTrigger value="shifts" className="gap-2">
             <Wallet className="h-4 w-4" />
             Cashier Shifts
@@ -458,6 +557,10 @@ export function AccountingDashboardClient({
           <TabsTrigger value="hmo-ar" className="gap-2">
             <ShieldAlert className="h-4 w-4" />
             HMO Aging (AR)
+          </TabsTrigger>
+          <TabsTrigger value="compliance" className="gap-2">
+            <FileSpreadsheet className="h-4 w-4" />
+            BIR Books & GL Sync
           </TabsTrigger>
         </TabsList>
 
@@ -1093,6 +1196,453 @@ export function AccountingDashboardClient({
                     )}
                   </TableBody>
                 </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* TAB 4: BIR COMPLIANCE & GL EXPORT */}
+        <TabsContent value="compliance" className="space-y-6">
+          {/* Period Filter Bar */}
+          <Card className="bg-muted/30">
+            <CardContent className="p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div className="space-y-0.5">
+                <div className="font-semibold text-sm flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-primary" />
+                  Statutory & Audit Reporting Period
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Select the date range for BIR tax books and General Ledger journal export files.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <div className="space-y-1">
+                    <Label htmlFor="export-start" className="text-[11px] text-muted-foreground">
+                      From
+                    </Label>
+                    <Input
+                      id="export-start"
+                      type="date"
+                      value={exportStartDate}
+                      onChange={(e) => setExportStartDate(e.target.value)}
+                      className="h-8 text-xs font-mono w-36"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="export-end" className="text-[11px] text-muted-foreground">
+                      To
+                    </Label>
+                    <Input
+                      id="export-end"
+                      type="date"
+                      value={exportEndDate}
+                      onChange={(e) => setExportEndDate(e.target.value)}
+                      className="h-8 text-xs font-mono w-36"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1.5 pt-4">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const d = new Date();
+                      setExportStartDate(
+                        new Date(d.getFullYear(), d.getMonth(), 1).toISOString().split("T")[0]
+                      );
+                      setExportEndDate(d.toISOString().split("T")[0]);
+                    }}
+                    className="h-8 text-xs px-2.5"
+                  >
+                    This Month
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const d = new Date();
+                      d.setDate(d.getDate() - 30);
+                      setExportStartDate(d.toISOString().split("T")[0]);
+                      setExportEndDate(new Date().toISOString().split("T")[0]);
+                    }}
+                    className="h-8 text-xs px-2.5"
+                  >
+                    Last 30 Days
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* SECTION 1: BIR STATUTORY BOOKS */}
+          <div className="space-y-3">
+            <div>
+              <h3 className="text-base font-semibold tracking-tight flex items-center gap-2">
+                <FileSpreadsheet className="h-5 w-5 text-primary" />
+                Philippine BIR Statutory Tax Books
+              </h3>
+              <p className="text-xs text-muted-foreground">
+                Official Computerized Accounting System (CAS) and loose-leaf format books required under Philippine tax law (RA 11976 / EOPT Act).
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* BIR Sales Book */}
+              <Card className="hover:border-primary/50 transition-colors">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <Badge variant="outline" className="border-primary/40 text-primary">
+                      BIR Revenue Journal
+                    </Badge>
+                    <FileSpreadsheet className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                  <CardTitle className="text-base mt-2">BIR Sales Book</CardTitle>
+                  <CardDescription className="text-xs">
+                    Itemized register of all issued sales invoices, detailing customer name, TIN/Senior ID, gross billing, 12% output VAT, senior/PWD exemptions, and discounts.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <Button
+                    onClick={handleExportBirSalesBook}
+                    disabled={isPending}
+                    className="w-full gap-2 text-xs h-9"
+                  >
+                    <Download className="h-4 w-4" />
+                    Download BIR Sales Book (.CSV)
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* BIR Cash Receipts Book */}
+              <Card className="hover:border-primary/50 transition-colors">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <Badge variant="outline" className="border-emerald-500/40 text-emerald-700">
+                      BIR Collection Journal
+                    </Badge>
+                    <FileSpreadsheet className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                  <CardTitle className="text-base mt-2">BIR Cash Receipts Book</CardTitle>
+                  <CardDescription className="text-xs">
+                    Audited ledger of all Official and Collection Receipts tracking cash on hand, e-wallets (GCash/Maya), card settlements, and HMO receivable credits.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <Button
+                    onClick={handleExportBirCashReceipts}
+                    disabled={isPending}
+                    variant="outline"
+                    className="w-full gap-2 text-xs h-9 border-emerald-600 text-emerald-700 hover:bg-emerald-50"
+                  >
+                    <Download className="h-4 w-4" />
+                    Download Cash Receipts Book (.CSV)
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+
+          {/* SECTION 2: GENERAL LEDGER SYNC */}
+          <div className="space-y-3">
+            <div>
+              <h3 className="text-base font-semibold tracking-tight flex items-center gap-2">
+                <Database className="h-5 w-5 text-primary" />
+                External General Ledger (GL) Sync
+              </h3>
+              <p className="text-xs text-muted-foreground">
+                1-click general journal entries formatted for instant upload into third-party accounting platforms.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Xero */}
+              <Card className="space-y-2">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <Badge variant="secondary">Xero</Badge>
+                    <span className="text-[10px] text-muted-foreground font-mono">Manual Journal</span>
+                  </div>
+                  <CardTitle className="text-sm">Xero Accounting</CardTitle>
+                  <CardDescription className="text-xs">
+                    Directly formatted for Xero journal entry import with tax types and account codes.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleExportGeneralJournal("XERO")}
+                    disabled={isPending}
+                    className="w-full gap-1.5 text-xs"
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    Export Xero Journal
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* QuickBooks Online */}
+              <Card className="space-y-2">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <Badge variant="secondary">Intuit QuickBooks</Badge>
+                    <span className="text-[10px] text-muted-foreground font-mono">Journal Entry</span>
+                  </div>
+                  <CardTitle className="text-sm">QuickBooks Online</CardTitle>
+                  <CardDescription className="text-xs">
+                    Pre-mapped for QuickBooks Online journal entry batch upload with debits and credits.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleExportGeneralJournal("QUICKBOOKS")}
+                    disabled={isPending}
+                    className="w-full gap-1.5 text-xs"
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    Export QuickBooks Journal
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* Generic General Journal */}
+              <Card className="space-y-2">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <Badge variant="secondary">Universal ERP</Badge>
+                    <span className="text-[10px] text-muted-foreground font-mono">Double-Entry</span>
+                  </div>
+                  <CardTitle className="text-sm">Standard General Journal</CardTitle>
+                  <CardDescription className="text-xs">
+                    Balanced double-entry journal suitable for Zoho Books, SAP, Oracle NetSuite, or Excel.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleExportGeneralJournal("GENERIC")}
+                    disabled={isPending}
+                    className="w-full gap-1.5 text-xs"
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    Export Standard GL CSV
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+
+          {/* SECTION 3: CHART OF ACCOUNTS MAPPING */}
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Settings className="h-4 w-4 text-primary" />
+                    Chart of Accounts (COA) Account Codes
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    Map ClinicEZ revenue, tender, and liability items to your accountant's existing General Ledger codes.
+                  </CardDescription>
+                </div>
+                <Button size="sm" onClick={handleSaveCoa} disabled={isPending} className="gap-1.5">
+                  Save Account Codes
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2 text-xs">
+                {/* Assets */}
+                <div className="space-y-3">
+                  <div className="font-semibold text-xs text-primary uppercase tracking-wider border-b pb-1">
+                    Asset / Tender Accounts
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label htmlFor="code-cash" className="text-xs">
+                      Cash on Hand Account Code
+                    </Label>
+                    <Input
+                      id="code-cash"
+                      value={coaForm.cashAccountCode}
+                      onChange={(e) =>
+                        setCoaForm({ ...coaForm, cashAccountCode: e.target.value })
+                      }
+                      className="font-mono text-xs h-8"
+                      placeholder="1010"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label htmlFor="code-ewallet" className="text-xs">
+                      E-Wallets (GCash / Maya) Code
+                    </Label>
+                    <Input
+                      id="code-ewallet"
+                      value={coaForm.eWalletAccountCode}
+                      onChange={(e) =>
+                        setCoaForm({ ...coaForm, eWalletAccountCode: e.target.value })
+                      }
+                      className="font-mono text-xs h-8"
+                      placeholder="1020"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label htmlFor="code-bank" className="text-xs">
+                      Bank Clearing / Cards Code
+                    </Label>
+                    <Input
+                      id="code-bank"
+                      value={coaForm.bankAccountCode}
+                      onChange={(e) =>
+                        setCoaForm({ ...coaForm, bankAccountCode: e.target.value })
+                      }
+                      className="font-mono text-xs h-8"
+                      placeholder="1030"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label htmlFor="code-hmo-ar" className="text-xs">
+                      HMO Accounts Receivable (AR) Code
+                    </Label>
+                    <Input
+                      id="code-hmo-ar"
+                      value={coaForm.hmoReceivableAccountCode}
+                      onChange={(e) =>
+                        setCoaForm({ ...coaForm, hmoReceivableAccountCode: e.target.value })
+                      }
+                      className="font-mono text-xs h-8"
+                      placeholder="1100"
+                    />
+                  </div>
+                </div>
+
+                {/* Revenues */}
+                <div className="space-y-3">
+                  <div className="font-semibold text-xs text-emerald-700 uppercase tracking-wider border-b pb-1">
+                    Operating Revenue Accounts
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label htmlFor="code-consult" className="text-xs">
+                      Consultation Revenue Code
+                    </Label>
+                    <Input
+                      id="code-consult"
+                      value={coaForm.consultationRevenueCode}
+                      onChange={(e) =>
+                        setCoaForm({ ...coaForm, consultationRevenueCode: e.target.value })
+                      }
+                      className="font-mono text-xs h-8"
+                      placeholder="4010"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label htmlFor="code-lab" className="text-xs">
+                      Diagnostic Laboratory Revenue Code
+                    </Label>
+                    <Input
+                      id="code-lab"
+                      value={coaForm.labRevenueCode}
+                      onChange={(e) =>
+                        setCoaForm({ ...coaForm, labRevenueCode: e.target.value })
+                      }
+                      className="font-mono text-xs h-8"
+                      placeholder="4020"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label htmlFor="code-imaging" className="text-xs">
+                      Imaging / Radiology Revenue Code
+                    </Label>
+                    <Input
+                      id="code-imaging"
+                      value={coaForm.imagingRevenueCode}
+                      onChange={(e) =>
+                        setCoaForm({ ...coaForm, imagingRevenueCode: e.target.value })
+                      }
+                      className="font-mono text-xs h-8"
+                      placeholder="4030"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label htmlFor="code-pharmacy" className="text-xs">
+                      Pharmacy / Supplies Revenue Code
+                    </Label>
+                    <Input
+                      id="code-pharmacy"
+                      value={coaForm.pharmacyRevenueCode}
+                      onChange={(e) =>
+                        setCoaForm({ ...coaForm, pharmacyRevenueCode: e.target.value })
+                      }
+                      className="font-mono text-xs h-8"
+                      placeholder="4040"
+                    />
+                  </div>
+                </div>
+
+                {/* Liabilities & Taxes */}
+                <div className="space-y-3">
+                  <div className="font-semibold text-xs text-amber-700 uppercase tracking-wider border-b pb-1">
+                    Liability & Tax Accounts
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label htmlFor="code-vat" className="text-xs">
+                      Output VAT Payable Code (12%)
+                    </Label>
+                    <Input
+                      id="code-vat"
+                      value={coaForm.vatPayableAccountCode}
+                      onChange={(e) =>
+                        setCoaForm({ ...coaForm, vatPayableAccountCode: e.target.value })
+                      }
+                      className="font-mono text-xs h-8"
+                      placeholder="2100"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label htmlFor="code-doc-pf" className="text-xs">
+                      Doctor PF Payable Code
+                    </Label>
+                    <Input
+                      id="code-doc-pf"
+                      value={coaForm.doctorPfPayableCode}
+                      onChange={(e) =>
+                        setCoaForm({ ...coaForm, doctorPfPayableCode: e.target.value })
+                      }
+                      className="font-mono text-xs h-8"
+                      placeholder="2200"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label htmlFor="code-ewt" className="text-xs">
+                      Withholding Tax (EWT) Payable Code
+                    </Label>
+                    <Input
+                      id="code-ewt"
+                      value={coaForm.withholdingTaxCode}
+                      onChange={(e) =>
+                        setCoaForm({ ...coaForm, withholdingTaxCode: e.target.value })
+                      }
+                      className="font-mono text-xs h-8"
+                      placeholder="2300"
+                    />
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>

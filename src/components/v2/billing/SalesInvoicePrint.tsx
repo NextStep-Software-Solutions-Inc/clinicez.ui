@@ -19,7 +19,7 @@ export function SalesInvoicePrint({ invoice, onBack }: SalesInvoicePrintProps) {
 
   const clinic = invoice.Clinic;
   const billingSetting = clinic?.ClinicBillingSetting;
-  const patientUser = invoice.ClinicPatient?.User;
+  const patientUser = invoice.ClinicPatient?.Patient || invoice.ClinicPatient?.User;
   const items = invoice.Items || [];
   const payments = invoice.Payments || [];
 

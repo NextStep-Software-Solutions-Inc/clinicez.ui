@@ -162,7 +162,7 @@ export const getPaymentReceiptDetailAction = cache(async (receiptId: number) => 
         },
         ClinicPatient: {
           include: {
-            User: {
+            Patient: {
               select: {
                 id: true,
                 firstName: true,

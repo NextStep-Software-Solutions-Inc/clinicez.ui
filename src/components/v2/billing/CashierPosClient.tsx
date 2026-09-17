@@ -130,7 +130,7 @@ export function CashierPosClient({
         // Load full invoice details
         const fullRes = await getInvoiceDetailAction(res.data.id);
         if (fullRes.status && fullRes.data) {
-          const inv = fullRes.data;
+          const inv = fullRes.data as any;
           setActiveInvoice(inv);
           setDiscountType(inv.discountType);
           setDiscountIdNumber(inv.discountIdNumber || "");

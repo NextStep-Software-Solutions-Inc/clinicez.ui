@@ -47,7 +47,7 @@ export const getPendingBillingEncountersAction = async (clinicUid: string) => {
       include: {
         ClinicPatient: {
           include: {
-            User: {
+            Patient: {
               select: { id: true, firstName: true, lastName: true, middleName: true },
             },
           },
@@ -85,7 +85,7 @@ export const getPendingBillingEncountersAction = async (clinicUid: string) => {
       // If already fully paid, skip
       if (activeInvoice && activeInvoice.status === "PAID") continue;
 
-      const patientUser = c.ClinicPatient?.User;
+      const patientUser = c.ClinicPatient?.Patient;
       const patientName = patientUser
         ? `${patientUser.lastName}, ${patientUser.firstName}`
         : "Unknown Patient";
@@ -162,21 +162,21 @@ export const createDraftInvoiceFromEncounterAction = async (
         },
         LaboratoryRequests: {
           include: {
-            ClinicLaboratoryRequestProcedures: {
+            LaboratoryRequestProcedures: {
               include: { LaboratoryProcedure: true },
             },
           },
         },
         ImagingRequests: {
           include: {
-            ClinicImagingRequestProcedures: {
+            ImagingRequestProcedures: {
               include: { ImagingProcedure: true },
             },
           },
         },
         HeartStationRequests: {
           include: {
-            ClinicHeartStationRequestProcedures: {
+            HeartStationRequestProcedures: {
               include: { HeartStationProcedure: true },
             },
           },
@@ -233,7 +233,7 @@ export const createDraftInvoiceFromEncounterAction = async (
 
     // 2. Laboratory Procedures
     for (const labReq of consultation.LaboratoryRequests) {
-      for (const proc of labReq.ClinicLaboratoryRequestProcedures) {
+      for (const proc of labReq.LaboratoryRequestProcedures) {
         const procName = proc.LaboratoryProcedure.name;
         const matchingPrice = clinic.ClinicPriceItems.find(
           (p) =>
@@ -254,7 +254,7 @@ export const createDraftInvoiceFromEncounterAction = async (
 
     // 3. Imaging Procedures
     for (const imgReq of consultation.ImagingRequests) {
-      for (const proc of imgReq.ClinicImagingRequestProcedures) {
+      for (const proc of imgReq.ImagingRequestProcedures) {
         const procName = proc.ImagingProcedure.name;
         const matchingPrice = clinic.ClinicPriceItems.find(
           (p) =>
@@ -275,7 +275,7 @@ export const createDraftInvoiceFromEncounterAction = async (
 
     // 4. Heart Station Procedures (ECG)
     for (const hsReq of consultation.HeartStationRequests) {
-      for (const proc of hsReq.ClinicHeartStationRequestProcedures) {
+      for (const proc of hsReq.HeartStationRequestProcedures) {
         const procName = proc.HeartStationProcedure.name;
         const matchingPrice = clinic.ClinicPriceItems.find(
           (p) =>
@@ -588,7 +588,7 @@ export const getInvoiceDetailAction = cache(async (invoiceId: number) => {
         },
         ClinicPatient: {
           include: {
-            User: {
+            Patient: {
               select: {
                 id: true,
                 firstName: true,
@@ -686,7 +686,7 @@ export const getInvoicesAction = async (clinicUid: string, filters?: InvoiceFilt
       include: {
         ClinicPatient: {
           include: {
-            User: {
+            Patient: {
               select: { firstName: true, lastName: true },
             },
           },

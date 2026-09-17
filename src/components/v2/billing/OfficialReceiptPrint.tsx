@@ -18,7 +18,7 @@ export function OfficialReceiptPrint({ receipt, onBack }: OfficialReceiptPrintPr
 
   const clinic = receipt.Clinic;
   const billingSetting = clinic?.ClinicBillingSetting;
-  const patientUser = receipt.ClinicPatient?.User;
+  const patientUser = receipt.ClinicPatient?.Patient || receipt.ClinicPatient?.User;
   const invoice = receipt.Invoice;
   const items = invoice?.Items || [];
   const cashier = receipt.Cashier;

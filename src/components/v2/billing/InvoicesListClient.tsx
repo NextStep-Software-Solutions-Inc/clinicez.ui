@@ -17,6 +17,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
@@ -97,12 +98,13 @@ export function InvoicesListClient({ clinicUid, initialInvoices }: InvoicesListC
     }
     startTransition(async () => {
       const fullRes = await getInvoiceDetailAction(invoice.id);
-      if (fullRes.status && fullRes.data && fullRes.data.Payments?.length > 0) {
+      const fullData = fullRes.data as any;
+      if (fullRes.status && fullData && fullData.Payments?.length > 0) {
         setSelectedReceipt({
-          ...fullRes.data.Payments[0],
-          Clinic: fullRes.data.Clinic,
-          Invoice: fullRes.data,
-          ClinicPatient: fullRes.data.ClinicPatient,
+          ...fullData.Payments[0],
+          Clinic: fullData.Clinic,
+          Invoice: fullData,
+          ClinicPatient: fullData.ClinicPatient,
         });
         setViewMode("RECEIPT");
       }

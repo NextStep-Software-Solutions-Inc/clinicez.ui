@@ -1187,6 +1187,13 @@ export const getAppointmentAction = withErrorHandling(cache(async (id: number, c
             }
           },
           status: true,
+          systemId: true,
+          System: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
           Service: {
             select: {
               id: true,

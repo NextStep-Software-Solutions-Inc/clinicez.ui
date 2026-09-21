@@ -799,10 +799,32 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
           : { clinicPatientId: bp.ClinicPatient.id },
         orderBy: { createdAt: "asc" },
       });
+      // Compute normalized 5-digit case number & transmittal numbers early
+      let resolvedCaseNo = enlistment?.hciCaseNo || "";
+      if (/^(T[A-Z0-9]{9}\d{6})(\d{4})$/.test(resolvedCaseNo)) {
+        resolvedCaseNo = resolvedCaseNo.replace(/^(T[A-Z0-9]{9}\d{6})(\d{4})$/, '$10$2');
+      }
+
+      let resolvedEnlistmentTransNo = enlistment?.enlistmentTransNo || "";
+      if (/^(E[A-Z0-9]{9}\d{6})(\d{4})$/.test(resolvedEnlistmentTransNo)) {
+        resolvedEnlistmentTransNo = resolvedEnlistmentTransNo.replace(/^(E[A-Z0-9]{9}\d{6})(\d{4})$/, '$10$2');
+      }
+
+      let resolvedProfilingTransNo = enlistment?.profilingTransNo || (
+        resolvedCaseNo ? resolvedCaseNo.replace(/^T/, 'P') : ""
+      );
+      if (/^(P[A-Z0-9]{9}\d{6})(\d{4})$/.test(resolvedProfilingTransNo)) {
+        resolvedProfilingTransNo = resolvedProfilingTransNo.replace(/^(P[A-Z0-9]{9}\d{6})(\d{4})$/, '$10$2');
+      }
+
       const diagnosticResults = diagRecords.length > 0
         ? diagRecords.map(dr => ({
-          hciCaseNo: dr.hciCaseNo || enlistment?.hciCaseNo || "",
-          hciTransNo: dr.hciTransNo || enlistment?.profilingTransNo || "",
+          hciCaseNo: resolvedCaseNo,
+          hciTransNo: dr.hciTransNo ? (
+            /^(P[A-Z0-9]{9}\d{6})(\d{4})$/.test(dr.hciTransNo)
+              ? dr.hciTransNo.replace(/^(P[A-Z0-9]{9}\d{6})(\d{4})$/, '$10$2')
+              : dr.hciTransNo
+          ) : resolvedProfilingTransNo,
           patientPin: patientPin,
           patientType: patientType,
           memPin: memberPin,
@@ -847,7 +869,7 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
                 const isCustom = ph?.drugCode?.startsWith("NOMED") || false;
 
                 medicines.push({
-                  hciCaseNo: enlistment?.hciCaseNo || "",
+                  hciCaseNo: resolvedCaseNo,
                   hciTransNo: t.soapTransNo || "",
                   category: ph?.category || "",
                   drugCode: ph?.drugCode || "NOMED00000000000000000000000",
@@ -890,7 +912,7 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
             }
 
             return {
-              hciCaseNo: enlistment?.hciCaseNo || "",
+              hciCaseNo: resolvedCaseNo,
               hciTransNo: t.soapTransNo || "",
               soapDate: formatDate(t.createdAt),
               atc: t.konsultaAtcCode || profileAtc,
@@ -961,23 +983,6 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
         }
       }
 
-      let resolvedCaseNo = enlistment?.hciCaseNo || "";
-      if (/^(T[A-Z0-9]{9}\d{6})(\d{4})$/.test(resolvedCaseNo)) {
-        resolvedCaseNo = resolvedCaseNo.replace(/^(T[A-Z0-9]{9}\d{6})(\d{4})$/, '$10$2');
-      }
-
-      let resolvedEnlistmentTransNo = enlistment?.enlistmentTransNo || "";
-      if (/^(E[A-Z0-9]{9}\d{6})(\d{4})$/.test(resolvedEnlistmentTransNo)) {
-        resolvedEnlistmentTransNo = resolvedEnlistmentTransNo.replace(/^(E[A-Z0-9]{9}\d{6})(\d{4})$/, '$10$2');
-      }
-
-      let resolvedProfilingTransNo = enlistment?.profilingTransNo || (
-        resolvedCaseNo ? resolvedCaseNo.replace(/^T/, 'P') : ""
-      );
-      if (/^(P[A-Z0-9]{9}\d{6})(\d{4})$/.test(resolvedProfilingTransNo)) {
-        resolvedProfilingTransNo = resolvedProfilingTransNo.replace(/^(P[A-Z0-9]{9}\d{6})(\d{4})$/, '$10$2');
-      }
-
       const isPediatric = ageYears < 15;
 
       return {
@@ -1014,7 +1019,7 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
         },
         profile: {
           hciTransNo: resolvedProfilingTransNo,
-          profDate: enlistment?.createdAt ? formatDate(enlistment.createdAt) : today,
+          profDate: today,
           atc: profileAtc,
           isWalkedIn: profileIsWalkedIn ? "Y" as const : "N" as const,
           transDate: today,
@@ -1058,41 +1063,7 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
               });
             }
 
-            // 2. Allergies from UI (mapped to PhilHealth lib_mdisease code 001 - Allergy)
-            for (const ua of patient.UserAllergies || []) {
-              const allergenName = (ua.Allergen?.name || '').toUpperCase().trim();
-              const reaction = (ua.reaction || '').toUpperCase().trim();
-              const notes = (ua.notes || '').toUpperCase().trim();
-              const parts: string[] = [];
-              if (allergenName) parts.push(`ALLERGEN: ${allergenName}`);
-              if (reaction) parts.push(`REACTION: ${reaction}`);
-              if (notes) parts.push(`NOTES: ${notes}`);
-
-              list.push({
-                code: '001',
-                isRelevant: 'Y' as const,
-                mhsOthers: parts.join(', ') || 'ALLERGY',
-              });
-            }
-
-            // 3. Disabilities & Chronic Illnesses from UI (mapped to PhilHealth lib_mdisease code 998 - Others)
-            for (const ud of patient.UserDisabilities || []) {
-              const disName = (ud.Disability?.name || '').toUpperCase().trim();
-              const severity = (ud.severity || '').toUpperCase().trim();
-              const status = ud.isManaged ? 'UNDER MANAGEMENT' : (ud.reason || '').toUpperCase().trim();
-              const dateDiag = ud.dateDiagnosed ? formatDate(ud.dateDiagnosed) : '';
-              const parts: string[] = [];
-              if (disName) parts.push(disName);
-              if (severity) parts.push(`SEVERITY: ${severity}`);
-              if (dateDiag) parts.push(`DIAGNOSED: ${dateDiag}`);
-              if (status) parts.push(status);
-
-              list.push({
-                code: '998',
-                isRelevant: 'Y' as const,
-                mhsOthers: parts.join(', ') || 'DISABILITY',
-              });
-            }
+            // Note: UserAllergies and UserDisabilities are unlinked from medical condition / MEDHISTS per requirement.
 
             return list;
           })(),

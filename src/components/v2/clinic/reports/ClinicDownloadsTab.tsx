@@ -55,13 +55,12 @@ import { getClinicExportDataAction, type GetClinicExportData } from "@/actions/c
 
 type Maybe<T> = T | null | undefined;
 
-type ConsultationRecord = NonNullable<
-  NonNullable<GetClinicExportData["data"]>["consultations"]
->[number];
-
-type ConsultationHPRecord = NonNullable<
-  ConsultationRecord["ConsultationTicketHPs"][number]["HealthCareProvider"]
->;
+type ExportData = NonNullable<GetClinicExportData["data"]>;
+type ConsultationRecord = ExportData["consultations"][number];
+type AppointmentRecord = ExportData["appointments"][number];
+type ConsultationTicketHPEntry = ConsultationRecord["ConsultationTicketHPs"][number];
+type ConsultationHPRecord = NonNullable<ConsultationTicketHPEntry["HealthCareProvider"]>;
+type HPRecord = ConsultationHPRecord;
 
 type HPProfileRecord = NonNullable<ConsultationHPRecord["HPProfile"]>;
 
@@ -108,7 +107,7 @@ type BulkEKASFormValues = z.infer<typeof bulkEKASSchema>;
 /* ─────────────────────────────────────────────────────── */
 
 const REPORT_TYPE_OPTIONS = [
-  { value: "ALL", label: "All (Consultations & Appointments)" },
+  { value: "ALL", label: "Consolidated Census (All Encounters - No Duplicates)" },
   { value: "CONSULTATIONS", label: "Consultations Only" },
   { value: "APPOINTMENTS", label: "Appointments Only" },
 ] as const;
@@ -268,8 +267,177 @@ function normalizeStatus(raw: Maybe<string>): string {
 /* ─────────────────────────────────────────────────────── */
 /*  Export helpers                                          */
 /* ─────────────────────────────────────────────────────── */
+function getPatientUser(
+  user?: Maybe<
+    BasicUserRecord & {
+      dob?: Maybe<Date | string>;
+      gender?: Maybe<string>;
+      StudentRecords?: Maybe<
+        Array<{
+          Program?: Maybe<{ name?: Maybe<string> }>;
+          OrganizationYearLevel?: Maybe<{ name?: Maybe<string> }>;
+        }>
+      >;
+      OrganizationMembers?: Maybe<
+        Array<{
+          OrganizationRole?: Maybe<{ name?: Maybe<string> }>;
+          Organization?: Maybe<{ name?: Maybe<string> }>;
+        }>
+      >;
+    }
+  >
+) {
+  const programName = user?.StudentRecords?.[0]?.Program?.name;
+  const yearLevel = user?.StudentRecords?.[0]?.OrganizationYearLevel?.name;
+  const deptYearLevel =
+    [programName, yearLevel].filter(Boolean).join(" / ") || "-";
 
-type ExportData = NonNullable<GetClinicExportData["data"]>;
+  return {
+    name: formatUserName(user),
+    age: calculateAge(user?.dob) ?? "-",
+    gender: user?.gender ?? "-",
+    client: user?.OrganizationMembers?.[0]?.OrganizationRole?.name ?? "-",
+    campus: user?.OrganizationMembers?.[0]?.Organization?.name ?? "-",
+    deptYearLevel,
+  };
+}
+
+function getDoctorFromHPs(hpList: ConsultationTicketHPEntry[]) {
+  const providers = hpList
+    .map((h) => h.HealthCareProvider)
+    .filter((h): h is HPRecord => h !== null && h !== undefined);
+
+  const nurseProvider = providers.find(isNurseHP);
+  const doctorProviders = providers.filter(isDoctorHP);
+  const fallback = providers.filter((p) => p && p !== nurseProvider);
+  const primaryDoctor =
+    doctorProviders[0] ??
+    fallback.find((p) =>
+      matchesKeyword(p.User?.suffix ?? null, DOCTOR_SUFFIX_KEYWORDS)
+    ) ??
+    (fallback.length === 1 ? fallback[0] : undefined);
+
+  return {
+    primaryDoctorName: primaryDoctor ? formatHPName(primaryDoctor) : "-",
+    nurseProvider,
+  };
+}
+
+function getNursePreAssessment(
+  preNotes?: Maybe<
+    Array<{
+      assessment?: Maybe<string>;
+      CreatedBy?: Maybe<BasicUserRecord>;
+    }>
+  >,
+  receivedBy?: Maybe<BasicUserRecord>,
+  nurseProvider?: Maybe<ConsultationHPRecord>
+) {
+  const latestNurseNote =
+    preNotes?.find((n) =>
+      hasRoleMatch(n.CreatedBy?.OrganizationMembers ?? null, NURSE_ROLE_KEYWORDS)
+    ) ?? preNotes?.[0];
+
+  const nurseFromNote = latestNurseNote?.CreatedBy
+    ? formatUserName(latestNurseNote.CreatedBy as BasicUserRecord)
+    : "-";
+
+  const receivedIsNurse = hasRoleMatch(
+    receivedBy?.OrganizationMembers ?? null,
+    NURSE_ROLE_KEYWORDS
+  );
+
+  const nurseIncharge =
+    nurseFromNote !== "-"
+      ? nurseFromNote
+      : receivedIsNurse
+        ? formatUserName(receivedBy as BasicUserRecord)
+        : nurseProvider
+          ? formatHPName(nurseProvider)
+          : "-";
+
+  return {
+    nurseIncharge,
+    nursingImpression: latestNurseNote?.assessment?.trim() || "-",
+  };
+}
+
+function getAppointmentDoctor(
+  appt?: Maybe<{
+    AppointmentTag?: Maybe<
+      Array<{
+        HealthcareProvider?: Maybe<{
+          HPProfile?: Maybe<{
+            title?: Maybe<string>;
+            name?: Maybe<string>;
+            suffix?: Maybe<string>;
+          }>;
+          User?: Maybe<BasicUserRecord>;
+        }>;
+      }>
+    >;
+    AppointmentRouting?: Maybe<
+      Array<{
+        status?: Maybe<string>;
+        RoutedTo?: Maybe<{
+          HPProfile?: Maybe<{
+            title?: Maybe<string>;
+            name?: Maybe<string>;
+            suffix?: Maybe<string>;
+          }>;
+          User?: Maybe<BasicUserRecord>;
+        }>;
+      }>
+    >;
+  }>
+): string {
+  if (!appt) return "-";
+
+  // 1. Tagged Doctor from AppointmentTag
+  const taggedHPs = (appt.AppointmentTag ?? [])
+    .map((t) => t.HealthcareProvider)
+    .filter(Boolean);
+
+  if (taggedHPs.length > 0) {
+    const formatted = taggedHPs
+      .map((hp) => {
+        const parts = [
+          hp?.HPProfile?.title,
+          hp?.HPProfile?.name,
+          hp?.HPProfile?.suffix,
+        ]
+          .map((p) => p?.trim())
+          .filter((v): v is string => Boolean(v?.length));
+        if (parts.length) return parts.join(" ");
+        if (hp?.User) return formatUserName(hp.User as BasicUserRecord);
+        return "-";
+      })
+      .filter((name) => name !== "-");
+
+    if (formatted.length > 0) return formatted.join(", ");
+  }
+
+  // 2. Assigned / Routed Doctor from AppointmentRouting (ACCEPTED, PENDING, or any active)
+  const routings = appt.AppointmentRouting ?? [];
+  const acceptedRouting = routings.find((r) => r.status === "ACCEPTED");
+  const pendingRouting = routings.find((r) => r.status === "PENDING");
+  const activeRouting = acceptedRouting ?? pendingRouting ?? routings[0];
+
+  const routedHP = activeRouting?.RoutedTo;
+  if (routedHP) {
+    const profileParts = [
+      routedHP.HPProfile?.title,
+      routedHP.HPProfile?.name,
+      routedHP.HPProfile?.suffix,
+    ]
+      .map((p) => p?.trim())
+      .filter((v): v is string => Boolean(v?.length));
+    if (profileParts.length) return profileParts.join(" ");
+    if (routedHP.User) return formatUserName(routedHP.User as BasicUserRecord);
+  }
+
+  return "-";
+}
 
 function buildConsultationRows(
   consultations: ExportData["consultations"],
@@ -283,11 +451,9 @@ function buildConsultationRows(
       const date = new Date(ticket.createdAt);
       if (date < startBoundary || date > endBoundary) return false;
 
-      const patient = ticket.Appointment?.Requesters[0]?.User;
-      if (
-        filters.gender !== "ALL" &&
-        patient?.gender !== filters.gender
-      )
+      const rawUser =
+        ticket.Appointment?.Requesters[0]?.User ?? ticket.ClinicPatient?.Patient;
+      if (filters.gender !== "ALL" && rawUser?.gender !== filters.gender)
         return false;
 
       const statusRaw =
@@ -298,16 +464,19 @@ function buildConsultationRows(
         const isResolved = RESOLVED_KEYWORDS.has(normalized);
         const isProcessing = ROUTED_KEYWORDS.has(normalized);
         if (
-          filters.status === "RESOLVED" && !isResolved ||
-          filters.status === "PROCESSING" && !isProcessing ||
-          filters.status === "PENDING" && (isResolved || isProcessing)
+          (filters.status === "RESOLVED" && !isResolved) ||
+          (filters.status === "PROCESSING" && !isProcessing) ||
+          (filters.status === "PENDING" && (isResolved || isProcessing))
         )
           return false;
       }
       return true;
     })
     .map((ticket) => {
-      const patient = ticket.Appointment?.Requesters[0]?.User;
+      const rawUser =
+        ticket.Appointment?.Requesters[0]?.User ?? ticket.ClinicPatient?.Patient;
+      const patient = getPatientUser(rawUser);
+
       const attr = ticket.Appointment?.AppointmentAttribute;
       const dateSource = attr?.date ?? ticket.createdAt;
       const date = dateSource ? format(new Date(dateSource), "yyyy-MM-dd") : "-";
@@ -317,79 +486,52 @@ function buildConsultationRows(
       const status = normalizeStatus(statusRaw);
       const isResolved = RESOLVED_KEYWORDS.has(statusRaw?.toUpperCase?.() ?? "");
 
-      const programName = patient?.StudentRecords?.[0]?.Program?.name;
-      const yearLevel =
-        patient?.StudentRecords?.[0]?.OrganizationYearLevel?.name;
-      const deptYearLevel =
-        [programName, yearLevel].filter(Boolean).join(" / ") || "-";
-
-      const providers = ticket.ConsultationTicketHPs.map(
-        (h) => h.HealthCareProvider
-      ).filter((h): h is ConsultationHPRecord => h !== null && h !== undefined);
-
-      const nurseProvider = providers.find(isNurseHP);
-      const doctorProviders = providers.filter(isDoctorHP);
-      const fallback = providers.filter((p) => p && p !== nurseProvider);
-      const primaryDoctor =
-        doctorProviders[0] ??
-        fallback.find((p) =>
-          matchesKeyword(p.User?.suffix ?? null, DOCTOR_SUFFIX_KEYWORDS)
-        ) ??
-        (fallback.length === 1 ? fallback[0] : undefined);
-      const primaryDoctorName = primaryDoctor
-        ? formatHPName(primaryDoctor)
-        : "-";
-
-      const latestNurseNote = ticket.Appointment?.PreAssessmentNotes?.find((n) =>
-        hasRoleMatch(n.CreatedBy?.OrganizationMembers ?? null, NURSE_ROLE_KEYWORDS)
+      const { primaryDoctorName: hpDoctorName, nurseProvider } = getDoctorFromHPs(
+        ticket.ConsultationTicketHPs
       );
-      const nurseFromNote = latestNurseNote?.CreatedBy
-        ? formatUserName(latestNurseNote.CreatedBy as BasicUserRecord)
-        : "-";
-      const receivedBy = attr?.ReceivedBy;
-      const receivedIsNurse = hasRoleMatch(
-        receivedBy?.OrganizationMembers ?? null,
-        NURSE_ROLE_KEYWORDS
+      const apptDoctorName = getAppointmentDoctor(ticket.Appointment);
+      const primaryDoctorName =
+        hpDoctorName !== "-" ? hpDoctorName : apptDoctorName;
+      const { nurseIncharge, nursingImpression } = getNursePreAssessment(
+        ticket.Appointment?.PreAssessmentNotes,
+        attr?.ReceivedBy,
+        nurseProvider
       );
-      const nurseIncharge =
-        nurseFromNote !== "-"
-          ? nurseFromNote
-          : receivedIsNurse
-          ? formatUserName(receivedBy as BasicUserRecord)
-          : formatHPName(nurseProvider);
 
       const diagnosisNote = ticket.ConsultationNotes?.find(
         (n) => n.section?.toLowerCase() === "assessment"
       );
 
+      const systemName =
+        ticket.System?.name ?? attr?.System?.name ?? "-";
+
       return {
-        Type: "Consultation",
-        "ID": ticket.id,
+        Type: ticket.Appointment ? "Appointment -> Consultation" : "Direct Consultation",
+        ID: ticket.id,
         "Pair ID": ticket.Appointment?.id ?? "-",
-        "Date": date,
-        "Patient Name": formatUserName(patient as BasicUserRecord),
-        "Age": calculateAge(patient?.dob) ?? "-",
-        "Gender": patient?.gender ?? "-",
-        "Client":
-          patient?.OrganizationMembers?.[0]?.OrganizationRole?.name ?? "-",
+        Date: date,
+        "Patient Name": patient.name,
+        Age: patient.age,
+        Gender: patient.gender,
+        Client: patient.client,
         "Service Category": attr?.Service?.ServiceCategory?.name ?? "-",
-        "Campus": patient?.OrganizationMembers?.[0]?.Organization?.name ?? "-",
-        "Dept/Year Level": deptYearLevel,
-        "Status": status,
+        Campus: patient.campus,
+        "Dept/Year Level": patient.deptYearLevel,
+        Status: status,
         "Appointment Type": attr?.AppointmentMode?.name ?? "-",
         "Consultation Type": attr?.AppointmentType?.name ?? "-",
         "Purpose/Chief Complaint":
           ticket.Appointment?.complaint ?? ticket.subject ?? "-",
         "Service Offered": attr?.Service?.name ?? "-",
-        "Resolved By": isResolved ? primaryDoctorName : "-",
-        "Doctor DX": diagnosisNote?.content?.trim() ?? "-",
+        System: systemName,
         "Nurse In-charge": nurseIncharge,
+        "Nursing Impression": nursingImpression,
         "Tagged Doctor": primaryDoctorName,
-        "Nursing Impression": latestNurseNote?.assessment ?? "-",
-        "System": ticket.System?.name ?? "-",
-        "Subject": ticket.subject ?? "-",
-        "Assigned To": "-",
-        "Has Consultation": "-",
+        "Doctor DX": diagnosisNote?.content?.trim() ?? "-",
+        "Resolved By": isResolved ? primaryDoctorName : "-",
+        Subject: ticket.subject ?? "-",
+        "Assigned To": primaryDoctorName,
+        "Has Consultation": "Yes",
         "Has Appointment": ticket.Appointment != null ? "Yes" : "No",
       };
     });
@@ -407,8 +549,8 @@ function buildAppointmentRows(
       const date = new Date(appt.createdAt);
       if (date < startBoundary || date > endBoundary) return false;
 
-      const patient = appt.Requesters[0]?.User;
-      if (filters.gender !== "ALL" && patient?.gender !== filters.gender)
+      const rawUser = appt.Requesters[0]?.User;
+      if (filters.gender !== "ALL" && rawUser?.gender !== filters.gender)
         return false;
 
       const statusRaw = appt.AppointmentAttribute?.status;
@@ -417,83 +559,290 @@ function buildAppointmentRows(
         const isResolved = RESOLVED_KEYWORDS.has(normalized);
         const isProcessing = ROUTED_KEYWORDS.has(normalized);
         if (
-          filters.status === "RESOLVED" && !isResolved ||
-          filters.status === "PROCESSING" && !isProcessing ||
-          filters.status === "PENDING" && (isResolved || isProcessing)
+          (filters.status === "RESOLVED" && !isResolved) ||
+          (filters.status === "PROCESSING" && !isProcessing) ||
+          (filters.status === "PENDING" && (isResolved || isProcessing))
         )
           return false;
       }
       return true;
     })
     .map((appt) => {
-      const patient = appt.Requesters[0]?.User;
+      const rawUser = appt.Requesters[0]?.User;
+      const patient = getPatientUser(rawUser);
+
       const attr = appt.AppointmentAttribute;
       const dateSource = attr?.date ?? appt.createdAt;
       const date = dateSource ? format(new Date(dateSource), "yyyy-MM-dd") : "-";
 
-      const statusRaw = attr?.status;
+      const linkedConsult = appt.ConsultationTickets?.[0];
+      const consultDoctorInfo = linkedConsult
+        ? getDoctorFromHPs(linkedConsult.ConsultationTicketHPs)
+        : null;
+
+      const statusRaw = linkedConsult?.ConsultationTicketAttribute?.status ?? attr?.status;
       const status = normalizeStatus(statusRaw);
+      const isResolved = RESOLVED_KEYWORDS.has(statusRaw?.toUpperCase?.() ?? "");
 
-      const programName = patient?.StudentRecords?.[0]?.Program?.name;
-      const yearLevel =
-        patient?.StudentRecords?.[0]?.OrganizationYearLevel?.name;
-      const deptYearLevel =
-        [programName, yearLevel].filter(Boolean).join(" / ") || "-";
+      const routedDoctor = getAppointmentDoctor(appt);
+      const primaryDoctorName =
+        consultDoctorInfo?.primaryDoctorName !== "-"
+          ? consultDoctorInfo?.primaryDoctorName ?? "-"
+          : routedDoctor;
 
-      const acceptedRouting = appt.AppointmentRouting?.find(
-        (r) => r.status === "ACCEPTED"
+      const { nurseIncharge, nursingImpression } = getNursePreAssessment(
+        appt.PreAssessmentNotes,
+        attr?.ReceivedBy,
+        consultDoctorInfo?.nurseProvider
       );
-      const routedHP = acceptedRouting?.RoutedTo;
-      let assignedTo = "-";
-      if (routedHP) {
-        const profileParts = [
-          routedHP.HPProfile?.title,
-          routedHP.HPProfile?.name,
-          routedHP.HPProfile?.suffix,
-        ]
-          .map((p) => p?.trim())
-          .filter((v): v is string => Boolean(v?.length));
-        if (profileParts.length) {
-          assignedTo = profileParts.join(" ");
-        } else if (routedHP.User) {
-          assignedTo = formatUserName(routedHP.User as BasicUserRecord);
-        }
-      }
+
+      const diagnosisNote = linkedConsult?.ConsultationNotes?.find(
+        (n) => n.section?.toLowerCase() === "assessment"
+      );
+
+      const systemName = attr?.System?.name ?? linkedConsult?.System?.name ?? "-";
 
       return {
-        Type: "Appointment",
-        "ID": appt.id,
+        Type: linkedConsult ? "Appointment -> Consultation" : "Appointment Only",
+        ID: appt.id,
         "Pair ID":
           appt.ConsultationTickets.length > 0
             ? appt.ConsultationTickets.map((t) => t.id).join(", ")
             : "-",
-        "Date": date,
-        "Patient Name": formatUserName(patient as BasicUserRecord),
-        "Age": calculateAge(patient?.dob) ?? "-",
-        "Gender": patient?.gender ?? "-",
-        "Client":
-          patient?.OrganizationMembers?.[0]?.OrganizationRole?.name ?? "-",
+        Date: date,
+        "Patient Name": patient.name,
+        Age: patient.age,
+        Gender: patient.gender,
+        Client: patient.client,
         "Service Category": attr?.Service?.ServiceCategory?.name ?? "-",
-        "Campus": patient?.OrganizationMembers?.[0]?.Organization?.name ?? "-",
-        "Dept/Year Level": deptYearLevel,
-        "Status": status,
+        Campus: patient.campus,
+        "Dept/Year Level": patient.deptYearLevel,
+        Status: status,
         "Appointment Type": attr?.AppointmentMode?.name ?? "-",
         "Consultation Type": attr?.AppointmentType?.name ?? "-",
         "Purpose/Chief Complaint": appt.complaint ?? appt.subject ?? "-",
         "Service Offered": attr?.Service?.name ?? "-",
-        "Resolved By": "-",
-        "Doctor DX": "-",
-        "Nurse In-charge": "-",
-        "Tagged Doctor": "-",
-        "Nursing Impression": "-",
-        "System": "-",
-        "Subject": appt.subject ?? "-",
-        "Assigned To": assignedTo,
+        System: systemName,
+        "Nurse In-charge": nurseIncharge,
+        "Nursing Impression": nursingImpression,
+        "Tagged Doctor": primaryDoctorName,
+        "Doctor DX": diagnosisNote?.content?.trim() ?? "-",
+        "Resolved By": isResolved ? primaryDoctorName : "-",
+        Subject: appt.subject ?? "-",
+        "Assigned To": primaryDoctorName,
         "Has Consultation":
           appt.ConsultationTickets.length > 0 ? "Yes" : "No",
-        "Has Appointment": "-",
+        "Has Appointment": "Yes",
       };
     });
+}
+
+function buildConsolidatedRows(
+  consultations: ExportData["consultations"],
+  appointments: ExportData["appointments"],
+  filters: ReportFilterValues
+): XLSXExportData[] {
+  const startBoundary = startOfDay(filters.startDate);
+  const endBoundary = endOfDay(filters.endDate);
+
+  const filteredConsultations = consultations.filter((ticket) => {
+    const attr = ticket.Appointment?.AppointmentAttribute;
+    const date = new Date(attr?.date ?? ticket.createdAt);
+    if (date < startBoundary || date > endBoundary) return false;
+
+    const rawUser = ticket.Appointment?.Requesters[0]?.User ?? ticket.ClinicPatient?.Patient;
+    if (filters.gender !== "ALL" && rawUser?.gender !== filters.gender) return false;
+
+    const statusRaw = ticket.ConsultationTicketAttribute?.status ?? attr?.status;
+    if (filters.status !== "ALL") {
+      const normalized = statusRaw?.toUpperCase?.() ?? "";
+      const isResolved = RESOLVED_KEYWORDS.has(normalized);
+      const isProcessing = ROUTED_KEYWORDS.has(normalized);
+      if (
+        (filters.status === "RESOLVED" && !isResolved) ||
+        (filters.status === "PROCESSING" && !isProcessing) ||
+        (filters.status === "PENDING" && (isResolved || isProcessing))
+      )
+        return false;
+    }
+    return true;
+  });
+
+  const filteredAppointments = appointments.filter((appt) => {
+    const attr = appt.AppointmentAttribute;
+    const date = new Date(attr?.date ?? appt.createdAt);
+    if (date < startBoundary || date > endBoundary) return false;
+
+    const rawUser = appt.Requesters[0]?.User;
+    if (filters.gender !== "ALL" && rawUser?.gender !== filters.gender) return false;
+
+    const statusRaw = attr?.status;
+    if (filters.status !== "ALL") {
+      const normalized = statusRaw?.toUpperCase?.() ?? "";
+      const isResolved = RESOLVED_KEYWORDS.has(normalized);
+      const isProcessing = ROUTED_KEYWORDS.has(normalized);
+      if (
+        (filters.status === "RESOLVED" && !isResolved) ||
+        (filters.status === "PROCESSING" && !isProcessing) ||
+        (filters.status === "PENDING" && (isResolved || isProcessing))
+      )
+        return false;
+    }
+    return true;
+  });
+
+  const pairedApptIds = new Set<number>();
+  const rows: { row: XLSXExportData; sortTime: number }[] = [];
+
+  // 1. Process consultations (merges with appointment if paired, or stands alone as direct consult)
+  for (const ticket of filteredConsultations) {
+    const appt = ticket.Appointment;
+    if (appt?.id) {
+      pairedApptIds.add(appt.id);
+    }
+
+    const rawUser = appt?.Requesters[0]?.User ?? ticket.ClinicPatient?.Patient;
+    const patient = getPatientUser(rawUser);
+
+    const attr = appt?.AppointmentAttribute;
+    const dateSource = attr?.date ?? ticket.createdAt;
+    const dateObj = new Date(dateSource);
+    const dateStr = dateSource ? format(dateObj, "yyyy-MM-dd") : "-";
+
+    const statusRaw = ticket.ConsultationTicketAttribute?.status ?? attr?.status;
+    const status = normalizeStatus(statusRaw);
+    const isResolved = RESOLVED_KEYWORDS.has(statusRaw?.toUpperCase?.() ?? "");
+
+    const { primaryDoctorName: hpDoctorName, nurseProvider } = getDoctorFromHPs(
+      ticket.ConsultationTicketHPs
+    );
+    const apptDoctorName = getAppointmentDoctor(appt);
+    const primaryDoctorName =
+      hpDoctorName !== "-" ? hpDoctorName : apptDoctorName;
+    const { nurseIncharge, nursingImpression } = getNursePreAssessment(
+      appt?.PreAssessmentNotes,
+      attr?.ReceivedBy,
+      nurseProvider
+    );
+
+    const diagnosisNote = ticket.ConsultationNotes?.find(
+      (n) => n.section?.toLowerCase() === "assessment"
+    );
+
+    const systemName = ticket.System?.name ?? attr?.System?.name ?? "-";
+
+    rows.push({
+      row: {
+        Type: appt ? "Appointment -> Consultation" : "Direct Consultation",
+        ID: ticket.id,
+        "Pair ID": appt?.id ?? "-",
+        Date: dateStr,
+        "Patient Name": patient.name,
+        Age: patient.age,
+        Gender: patient.gender,
+        Client: patient.client,
+        "Service Category": attr?.Service?.ServiceCategory?.name ?? "-",
+        Campus: patient.campus,
+        "Dept/Year Level": patient.deptYearLevel,
+        Status: status,
+        "Appointment Type": attr?.AppointmentMode?.name ?? "-",
+        "Consultation Type": attr?.AppointmentType?.name ?? "-",
+        "Purpose/Chief Complaint": appt?.complaint ?? ticket.subject ?? "-",
+        "Service Offered": attr?.Service?.name ?? "-",
+        System: systemName,
+        "Nurse In-charge": nurseIncharge,
+        "Nursing Impression": nursingImpression,
+        "Tagged Doctor": primaryDoctorName,
+        "Doctor DX": diagnosisNote?.content?.trim() ?? "-",
+        "Resolved By": isResolved ? primaryDoctorName : "-",
+        Subject: ticket.subject ?? "-",
+        "Assigned To": primaryDoctorName,
+        "Has Consultation": "Yes",
+        "Has Appointment": appt != null ? "Yes" : "No",
+      },
+      sortTime: dateObj.getTime(),
+    });
+  }
+
+  // 2. Process appointments that were NOT paired with an already processed consultation
+  for (const appt of filteredAppointments) {
+    if (pairedApptIds.has(appt.id)) {
+      // Already included in the consolidated report! Skip to prevent duplication!
+      continue;
+    }
+
+    const rawUser = appt.Requesters[0]?.User;
+    const patient = getPatientUser(rawUser);
+
+    const attr = appt.AppointmentAttribute;
+    const dateSource = attr?.date ?? appt.createdAt;
+    const dateObj = new Date(dateSource);
+    const dateStr = dateSource ? format(dateObj, "yyyy-MM-dd") : "-";
+
+    const linkedConsult = appt.ConsultationTickets?.[0];
+    const consultDoctorInfo = linkedConsult
+      ? getDoctorFromHPs(linkedConsult.ConsultationTicketHPs)
+      : null;
+
+    const statusRaw = linkedConsult?.ConsultationTicketAttribute?.status ?? attr?.status;
+    const status = normalizeStatus(statusRaw);
+    const isResolved = RESOLVED_KEYWORDS.has(statusRaw?.toUpperCase?.() ?? "");
+
+    const routedDoctor = getAppointmentDoctor(appt);
+    const primaryDoctorName =
+      consultDoctorInfo?.primaryDoctorName !== "-"
+        ? consultDoctorInfo?.primaryDoctorName ?? "-"
+        : routedDoctor;
+
+    const { nurseIncharge, nursingImpression } = getNursePreAssessment(
+      appt.PreAssessmentNotes,
+      attr?.ReceivedBy,
+      consultDoctorInfo?.nurseProvider
+    );
+
+    const diagnosisNote = linkedConsult?.ConsultationNotes?.find(
+      (n) => n.section?.toLowerCase() === "assessment"
+    );
+
+    const systemName = attr?.System?.name ?? linkedConsult?.System?.name ?? "-";
+
+    rows.push({
+      row: {
+        Type: linkedConsult ? "Appointment -> Consultation" : "Appointment Only",
+        ID: appt.id,
+        "Pair ID": linkedConsult?.id ?? "-",
+        Date: dateStr,
+        "Patient Name": patient.name,
+        Age: patient.age,
+        Gender: patient.gender,
+        Client: patient.client,
+        "Service Category": attr?.Service?.ServiceCategory?.name ?? "-",
+        Campus: patient.campus,
+        "Dept/Year Level": patient.deptYearLevel,
+        Status: status,
+        "Appointment Type": attr?.AppointmentMode?.name ?? "-",
+        "Consultation Type": attr?.AppointmentType?.name ?? "-",
+        "Purpose/Chief Complaint": appt.complaint ?? appt.subject ?? "-",
+        "Service Offered": attr?.Service?.name ?? "-",
+        System: systemName,
+        "Nurse In-charge": nurseIncharge,
+        "Nursing Impression": nursingImpression,
+        "Tagged Doctor": primaryDoctorName,
+        "Doctor DX": diagnosisNote?.content?.trim() ?? "-",
+        "Resolved By": isResolved ? primaryDoctorName : "-",
+        Subject: appt.subject ?? "-",
+        "Assigned To": primaryDoctorName,
+        "Has Consultation": linkedConsult ? "Yes" : "No",
+        "Has Appointment": "Yes",
+      },
+      sortTime: dateObj.getTime(),
+    });
+  }
+
+  // Sort descending by date
+  rows.sort((a, b) => b.sortTime - a.sortTime);
+
+  return rows.map((item) => item.row);
 }
 
 const COMBINED_COLUMNS = [
@@ -513,12 +862,12 @@ const COMBINED_COLUMNS = [
   "Consultation Type",
   "Purpose/Chief Complaint",
   "Service Offered",
-  "Resolved By",
-  "Doctor DX",
-  "Nurse In-charge",
-  "Tagged Doctor",
-  "Nursing Impression",
   "System",
+  "Nurse In-charge",
+  "Nursing Impression",
+  "Tagged Doctor",
+  "Doctor DX",
+  "Resolved By",
   "Subject",
   "Assigned To",
   "Has Consultation",
@@ -540,12 +889,12 @@ const CONSULTATION_COLUMNS = [
   "Consultation Type",
   "Purpose/Chief Complaint",
   "Service Offered",
-  "Resolved By",
-  "Doctor DX",
-  "Nurse In-charge",
-  "Tagged Doctor",
-  "Nursing Impression",
   "System",
+  "Nurse In-charge",
+  "Nursing Impression",
+  "Tagged Doctor",
+  "Doctor DX",
+  "Resolved By",
 ];
 
 const APPOINTMENT_COLUMNS = [
@@ -563,6 +912,12 @@ const APPOINTMENT_COLUMNS = [
   "Consultation Type",
   "Purpose/Chief Complaint",
   "Service Offered",
+  "System",
+  "Nurse In-charge",
+  "Nursing Impression",
+  "Tagged Doctor",
+  "Doctor DX",
+  "Resolved By",
   "Assigned To",
 ];
 
@@ -616,12 +971,10 @@ function ConsultationAppointmentReportCard({ clinicUid }: { clinicUid: string })
         sheetName = "Appointments";
         filename = `appointment_report_${format(new Date(), "yyyy-MM-dd")}`;
       } else {
-        const consultationRows = buildConsultationRows(consultations, values);
-        const appointmentRows = buildAppointmentRows(appointments, values);
-        rows = [...consultationRows, ...appointmentRows];
+        rows = buildConsolidatedRows(consultations, appointments, values);
         columns = COMBINED_COLUMNS;
-        sheetName = "Report";
-        filename = `clinic_report_${format(new Date(), "yyyy-MM-dd")}`;
+        sheetName = "Consolidated Census";
+        filename = `clinic_census_${format(new Date(), "yyyy-MM-dd")}`;
       }
 
       if (rows.length === 0) {

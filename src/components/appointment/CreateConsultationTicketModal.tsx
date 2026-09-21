@@ -74,11 +74,13 @@ export default function CreateConsultationTicketModal({ disabled = false, subjec
     appointmentId
   })
 
+  const defaultSystemId = appointment.AppointmentAttribute?.systemId ?? undefined;
+
   const form = useForm<CreateConsultationTicketSchema>({
     resolver: zodResolver(createConsultationTicketSchema),
     defaultValues: {
       subject,
-      systemId: undefined,
+      systemId: defaultSystemId,
       openTicket: false
     }
   })
@@ -87,8 +89,10 @@ export default function CreateConsultationTicketModal({ disabled = false, subjec
     if (myHps?.length === 1) {
       form.setValue("hpId", myHps[0].id)
     }
-
-  }, [form, myHps])
+    if (appointment.AppointmentAttribute?.systemId) {
+      form.setValue("systemId", appointment.AppointmentAttribute.systemId);
+    }
+  }, [form, myHps, appointment.AppointmentAttribute?.systemId])
 
 
   const action = async () => {
@@ -184,7 +188,7 @@ export default function CreateConsultationTicketModal({ disabled = false, subjec
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>System Category</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value?.toString()}>
+                      <Select onValueChange={field.onChange} value={field.value ? field.value.toString() : undefined}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select system " />
@@ -318,7 +322,7 @@ export default function CreateConsultationTicketModal({ disabled = false, subjec
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>System Category</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value?.toString()}>
+                  <Select onValueChange={field.onChange} value={field.value ? field.value.toString() : undefined}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select system " />

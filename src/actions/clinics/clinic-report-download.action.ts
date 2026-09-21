@@ -84,6 +84,32 @@ export const getClinicExportDataAction = withErrorHandling(
               },
             },
           },
+          ClinicPatient: {
+            select: {
+              Patient: {
+                select: {
+                  firstName: true,
+                  middleName: true,
+                  lastName: true,
+                  suffix: true,
+                  gender: true,
+                  dob: true,
+                  StudentRecords: {
+                    select: {
+                      Program: { select: { name: true } },
+                      OrganizationYearLevel: { select: { name: true } },
+                    },
+                  },
+                  OrganizationMembers: {
+                    select: {
+                      OrganizationRole: { select: { name: true } },
+                      Organization: { select: { name: true } },
+                    },
+                  },
+                },
+              },
+            },
+          },
           Appointment: {
             select: {
               id: true,
@@ -139,6 +165,7 @@ export const getClinicExportDataAction = withErrorHandling(
                   date: true,
                   AppointmentMode: { select: { name: true } },
                   AppointmentType: { select: { name: true } },
+                  System: { select: { name: true } },
                   Service: {
                     select: {
                       name: true,
@@ -148,10 +175,48 @@ export const getClinicExportDataAction = withErrorHandling(
                   ReceivedBy: {
                     select: {
                       firstName: true,
+                      middleName: true,
                       lastName: true,
+                      suffix: true,
                       OrganizationMembers: {
                         select: {
                           OrganizationRole: { select: { name: true } },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+              AppointmentTag: {
+                select: {
+                  HealthcareProvider: {
+                    select: {
+                      id: true,
+                      HPProfile: { select: { title: true, name: true, suffix: true } },
+                      User: {
+                        select: {
+                          firstName: true,
+                          middleName: true,
+                          lastName: true,
+                          suffix: true,
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+              AppointmentRouting: {
+                select: {
+                  status: true,
+                  RoutedTo: {
+                    select: {
+                      HPProfile: { select: { title: true, name: true, suffix: true } },
+                      User: {
+                        select: {
+                          firstName: true,
+                          middleName: true,
+                          lastName: true,
+                          suffix: true,
                         },
                       },
                     },
@@ -203,16 +268,67 @@ export const getClinicExportDataAction = withErrorHandling(
               },
             },
           },
+          PreAssessmentNotes: {
+            orderBy: { createdAt: "desc" },
+            select: {
+              assessment: true,
+              CreatedBy: {
+                select: {
+                  firstName: true,
+                  middleName: true,
+                  lastName: true,
+                  suffix: true,
+                  OrganizationMembers: {
+                    select: {
+                      OrganizationRole: { select: { name: true } },
+                    },
+                  },
+                },
+              },
+            },
+          },
           AppointmentAttribute: {
             select: {
               status: true,
               date: true,
               AppointmentMode: { select: { name: true } },
               AppointmentType: { select: { name: true } },
+              System: { select: { name: true } },
               Service: {
                 select: {
                   name: true,
                   ServiceCategory: { select: { name: true } },
+                },
+              },
+              ReceivedBy: {
+                select: {
+                  firstName: true,
+                  middleName: true,
+                  lastName: true,
+                  suffix: true,
+                  OrganizationMembers: {
+                    select: {
+                      OrganizationRole: { select: { name: true } },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          AppointmentTag: {
+            select: {
+              HealthcareProvider: {
+                select: {
+                  id: true,
+                  HPProfile: { select: { title: true, name: true, suffix: true } },
+                  User: {
+                    select: {
+                      firstName: true,
+                      middleName: true,
+                      lastName: true,
+                      suffix: true,
+                    },
+                  },
                 },
               },
             },
@@ -236,7 +352,46 @@ export const getClinicExportDataAction = withErrorHandling(
             },
           },
           ConsultationTickets: {
-            select: { id: true },
+            select: {
+              id: true,
+              subject: true,
+              createdAt: true,
+              System: { select: { name: true } },
+              ConsultationTicketAttribute: { select: { status: true } },
+              ConsultationNotes: {
+                select: { section: true, content: true },
+              },
+              ConsultationTicketHPs: {
+                select: {
+                  HealthCareProvider: {
+                    select: {
+                      id: true,
+                      User: {
+                        select: {
+                          firstName: true,
+                          middleName: true,
+                          lastName: true,
+                          suffix: true,
+                          OrganizationMembers: {
+                            select: {
+                              OrganizationRole: { select: { name: true } },
+                            },
+                          },
+                        },
+                      },
+                      HPProfile: {
+                        select: {
+                          name: true,
+                          title: true,
+                          suffix: true,
+                          specialties: true,
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
           },
         },
       }),

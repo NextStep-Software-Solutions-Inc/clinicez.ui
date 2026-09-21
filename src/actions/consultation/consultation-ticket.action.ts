@@ -86,11 +86,22 @@ export const createConsultationTicketAction = withErrorHandling(async ({ systemI
       });
     }
 
+    let effectiveSystemId = systemId;
+    if (!effectiveSystemId && appointmentId) {
+      const appt = await prismaClient.appointment.findUnique({
+        where: { id: appointmentId },
+        select: { AppointmentAttribute: { select: { systemId: true } } },
+      });
+      if (appt?.AppointmentAttribute?.systemId) {
+        effectiveSystemId = appt.AppointmentAttribute.systemId;
+      }
+    }
+
     return await prismaClient.consultationTicket.create({
       data: {
-        ...(systemId ? {
+        ...(effectiveSystemId ? {
           System: {
-            connect: { id: systemId }
+            connect: { id: effectiveSystemId }
           }
         } : {}),
         ...(appointmentId ? {

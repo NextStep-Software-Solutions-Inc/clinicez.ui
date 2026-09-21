@@ -107,7 +107,7 @@ type BulkEKASFormValues = z.infer<typeof bulkEKASSchema>;
 /* ─────────────────────────────────────────────────────── */
 
 const REPORT_TYPE_OPTIONS = [
-  { value: "ALL", label: "Consolidated Census (All Encounters - No Duplicates)" },
+  { value: "ALL", label: "Consolidated Census (All Encounters)" },
   { value: "CONSULTATIONS", label: "Consultations Only" },
   { value: "APPOINTMENTS", label: "Appointments Only" },
 ] as const;

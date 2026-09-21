@@ -64,7 +64,50 @@ export const upsertClinicDocumentDefaultTemplatesAction = withErrorHandling(
       })
     );
 
+    // If prescription template is configured, keep legacy ClinicPrescriptionSetting aligned
+    const rxDocType = await prismaClient.documentTemplateType.findFirst({
+      where: { name: { equals: "prescription", mode: "insensitive" } },
+      select: { id: true },
+    });
+    if (rxDocType) {
+      const rxEntry = entries.find((e) => e.documentTypeId === rxDocType.id);
+      if (rxEntry) {
+        if (rxEntry.templateId == null) {
+          await prismaClient.clinicPrescriptionSetting.deleteMany({
+            where: { clinicId: clinic.id },
+          });
+        } else {
+          const existingRx = await prismaClient.clinicPrescriptionSetting.findFirst({
+            where: { clinicId: clinic.id },
+            select: { id: true },
+          });
+          if (existingRx) {
+            await prismaClient.clinicPrescriptionSetting.update({
+              where: { id: existingRx.id },
+              data: { prescriptionTemplateId: rxEntry.templateId },
+            });
+          } else {
+            await prismaClient.clinicPrescriptionSetting.create({
+              data: { clinicId: clinic.id, prescriptionTemplateId: rxEntry.templateId },
+            });
+          }
+        }
+      }
+    }
+
     return { message: "Document defaults updated successfully.", data: null };
   },
   documentDefaultErrorHandler
 );
+
+export const syncClinicRecordsTemplatesAction = withErrorHandling(
+  async (_clinicUid: string) => {
+    const session = await getCachedSession();
+    if (!session) throw new Error("Unauthorized");
+
+    // Existing records preserve their issued templates; only new records adopt the selected template.
+    return { message: "Clinic records preserved.", data: null };
+  },
+  documentDefaultErrorHandler
+);
+

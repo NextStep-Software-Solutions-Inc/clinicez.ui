@@ -9,6 +9,7 @@ import { Prisma } from "@prisma/client";
 import { createNotification } from "@/actions/notifications/notification.action";
 import { getNextSequenceNumber } from "@/lib/sequence-generator";
 import { formatKonsultaHciNumber } from "@/lib/format-sequence";
+import { resolveClinicTemplateId } from "@/lib/resolve-clinic-template";
 
 export type GetPrescriptionFilters = {
   clinicUid: string;
@@ -215,6 +216,7 @@ export const getPrescriptionAction = withErrorHandling(async (id: number) => {
   });
 
   if (!prescription) throw new Error("Prescription not found");
+
   return { message: "Prescription fetched successfully", data: prescription };
 });
 
@@ -250,17 +252,6 @@ export const createPrescriptionAction = withErrorHandling(async (input: CreatePr
       "create prescriptions"
     );
 
-    const documentTemplate = await prisma.documentTemplate.findFirst({
-      where: {
-        isActive: true,
-        Clinic: { clinicUid },
-        DocumentTemplateType: {
-          name: "prescription"
-        }
-      }
-    });
-    if (!documentTemplate) throw new Error("Prescription template not found");
-
     const clinic = await prisma.clinic.findUniqueOrThrow({
       where: { clinicUid },
       select: {
@@ -268,6 +259,9 @@ export const createPrescriptionAction = withErrorHandling(async (input: CreatePr
         ClinicSetting: { select: { philhealthAccreditationNumber: true } },
       }
     });
+
+    const templateId = await resolveClinicTemplateId(prisma, clinic.id, "prescription");
+
     let serialNumber = generateSerialNumber();
     let existingSerial = await prisma.prescription.findFirst({
       where: { serialNumber },
@@ -318,7 +312,7 @@ export const createPrescriptionAction = withErrorHandling(async (input: CreatePr
         remarks: remarks || "",
         consultationTicketId,
         isArchived,
-        templateId: documentTemplate.id,
+        templateId,
         patientId,
         hpId: authorizedHpId,
         clinicId: clinic.id,

@@ -100,14 +100,7 @@ export const prepareMedicalCertificate = (payload: PrepareMedicalCertificatePayl
   } = certificate;
 
   const rawTemplate = (template || "").trim();
-  const hasPlaceholders = Boolean(
-    rawTemplate &&
-    (rawTemplate.includes("{{") || rawTemplate.includes("@{") || rawTemplate.toLowerCase().includes("name") || rawTemplate.toLowerCase().includes("finding"))
-  );
-
-  const effectiveTemplate = hasPlaceholders
-    ? rawTemplate
-    : DEFAULT_MEDICAL_CERTIFICATE_TEMPLATE;
+  const effectiveTemplate = rawTemplate || DEFAULT_MEDICAL_CERTIFICATE_TEMPLATE;
 
   const createdDate = dayjs(createdAt).format("MM/DD/YYYY");
   const createdDateTime = dayjs(createdAt).format("MM/DD/YYYY h:mm A");
@@ -119,6 +112,7 @@ export const prepareMedicalCertificate = (payload: PrepareMedicalCertificatePayl
     createdDate,
     createdDateTime,
     name: patientName,
+    patientName,
     age,
     gender,
     address,
@@ -127,9 +121,13 @@ export const prepareMedicalCertificate = (payload: PrepareMedicalCertificatePayl
     ptrNo,
     eSignatureUrl: eSignatureBase64 || "",
     classification: shouldShowClassification ? classification : "",
+    selectedClassification: shouldShowClassification ? classification : "",
     classificationDescription: shouldShowClassification ? classificationDescription : "",
+    selectedClassificationDescription: shouldShowClassification ? classificationDescription : "",
     reason: reason || "whatever legal purpose it may serve",
+    selectedReason: reason || "whatever legal purpose it may serve",
     finding: finding || "N/A",
+    selectedFinding: finding || "N/A",
     recommendations: recommendations || "N/A",
     impression: impression || "N/A",
   };

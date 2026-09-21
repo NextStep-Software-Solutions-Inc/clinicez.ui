@@ -1,7 +1,6 @@
 "use server";
 
-import "server-only";
-import prisma from "@lib/prisma";
+import prismaClient from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
 import { createNotification } from "@/actions/notifications/notification.action";
 import { getCachedSession } from "@/actions/session.action";
@@ -9,9 +8,10 @@ import {
   USER_WITH_HEALTHCARE_PROVIDERS_SELECT,
   validateHealthcareProviderAuth,
 } from "@/lib/healthcare-provider-auth";
-import prismaClient from "@/lib/prisma";
 import { generateSerialNumber } from "@/lib/utils";
 import { withErrorHandling } from "@/lib/with-error-handling";
+import { resolveClinicTemplateId } from "@/lib/resolve-clinic-template";
+import prisma from "@/lib/prisma";
 
 export type GetMedicalCertificateFilters = {
   clinicUid: string;
@@ -143,6 +143,7 @@ export const getMedicalCertificateAction = withErrorHandling(
       },
     });
     if (!certificate) throw new Error("Medical Certificate not found");
+
     return {
       message: "Medical Certificate fetched successfully",
       data: certificate,
@@ -197,12 +198,25 @@ export const createMedicalCertificateAction = withErrorHandling(
         "create medical certificates",
       );
 
+      const clinic = await prisma.clinic.findUnique({
+        where: { clinicUid },
+        select: { id: true },
+      });
+      if (!clinic) throw new Error("Clinic not found");
+
+      let effectiveTemplateId = documentTemplateId;
+      try {
+        effectiveTemplateId = await resolveClinicTemplateId(prisma, clinic.id, "medical_certificate");
+      } catch {
+        // Fallback to provided documentTemplateId
+      }
+
       const certificate = await prisma.clinicMedicalCertificate.create({
         data: {
           serialNumber: serialNumber,
           Clinic: { connect: { clinicUid } },
           ClinicPatient: { connect: { id: patientId } },
-          DocumentTemplate: { connect: { id: documentTemplateId } },
+          DocumentTemplate: { connect: { id: effectiveTemplateId } },
           HealthCareProvider: { connect: { id: authorizedHpId } },
           Reason: { connect: { id: reasonId } },
           Finding: { connect: { id: findingId } },

@@ -11,6 +11,7 @@ import { getPermissionsAction } from "@/actions/permission.action";
 import { PERMISSIONS } from "@/lib/permissions";
 import { getHPsAction, GetHPsType } from "@/actions/hp.actions";
 import { createNotification } from "@/actions/notifications/notification.action";
+import { resolveClinicTemplateId } from "@/lib/resolve-clinic-template";
 
 export type GetLaboratoryRequestsFilters = {
   clinicUid?: string;
@@ -295,16 +296,7 @@ export const createLaboratoryRequestAction = withErrorHandling(async (input: Cre
     });
     if (!clinic) throw new Error("Clinic not found");
 
-    const laboratoryTemplate = await prisma.documentTemplate.findFirst({
-      where: {
-        isActive: true,
-        DocumentTemplateType: {
-          name: "laboratory"
-        }
-      },
-      select: { id: true }
-    });
-    if (!laboratoryTemplate) throw new Error("Laboratory document template not found");
+    const templateId = await resolveClinicTemplateId(prisma, clinic.id, "laboratory");
 
     const request = await prisma.clinicLaboratoryRequest.create({
       data: {
@@ -314,7 +306,7 @@ export const createLaboratoryRequestAction = withErrorHandling(async (input: Cre
         ClinicPatient: { connect: { id: patientId } },
         HealthCareProvider: { connect: { id: authorizedHpId } },
         ConsultationTicket: { connect: { id: consultationTicketId } },
-        DocumentTemplate: { connect: { id: laboratoryTemplate.id } },
+        DocumentTemplate: { connect: { id: templateId } },
         CreatedBy: { connect: { id: createdBy } },
         LaboratoryRequestProcedures: {
           create: diagnosticIds.map(diagnosticId => ({

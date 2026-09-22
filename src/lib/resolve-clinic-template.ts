@@ -6,7 +6,136 @@ export type DocumentCategory =
   | "imaging"
   | "heart_station"
   | "medical_certificate"
+  | "medcert"
   | "referral";
+
+export const DOCUMENT_TYPE_ALIASES: Record<string, string[]> = {
+  prescription: ["prescription", "rx", "prescriptions"],
+  laboratory: [
+    "laboratory",
+    "lab",
+    "diagnostic_request",
+    "diagnostic request",
+    "diagnostic-request",
+    "laboratory_request",
+    "laboratory request",
+    "laboratory-request",
+    "lab_request",
+    "lab request",
+    "lab-request",
+  ],
+  imaging: [
+    "imaging",
+    "imaging_study",
+    "imaging study",
+    "imaging-study",
+    "imaging_request",
+    "imaging request",
+    "imaging-request",
+    "radiology",
+  ],
+  heart_station: [
+    "heart_station",
+    "heart-station",
+    "heart station",
+    "heartstation",
+    "ecg",
+    "ekg",
+  ],
+  medcert: [
+    "medcert",
+    "med_cert",
+    "med-cert",
+    "med cert",
+    "medical_certificate",
+    "medical-certificate",
+    "medical certificate",
+    "medical cert",
+    "medical_cert",
+    "medical-cert",
+    "certificate",
+  ],
+  referral: [
+    "referral",
+    "referral_slip",
+    "referral-slip",
+    "referral slip",
+    "referrals",
+  ],
+};
+
+/**
+ * Returns all possible variations and alias names for a document category or key.
+ */
+export function getDocumentTypeNamesForDocumentKey(
+  documentKey: DocumentCategory | string
+): string[] {
+  const trimmed = documentKey.trim();
+  const normalized = trimmed.toLowerCase().replace(/[\s-]+/g, "_");
+
+  for (const [canonicalKey, aliases] of Object.entries(DOCUMENT_TYPE_ALIASES)) {
+    if (
+      canonicalKey === normalized ||
+      aliases.some((a) => a.toLowerCase().replace(/[\s-]+/g, "_") === normalized)
+    ) {
+      return aliases;
+    }
+  }
+
+  return [
+    trimmed,
+    trimmed.replace(/_/g, " "),
+    trimmed.replace(/\s+/g, "_"),
+    trimmed.replace(/[\s_]+/g, "-"),
+  ];
+}
+
+/**
+ * Checks specifically whether the clinic has configured a default template in settings.
+ * Returns the template ID if configured, or null if no default is set.
+ */
+export async function resolveClinicDefaultTemplateId(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  prisma: any = defaultPrisma,
+  clinicId: number,
+  documentKey: DocumentCategory | string
+): Promise<number | null> {
+  const matchingNames = getDocumentTypeNamesForDocumentKey(documentKey);
+  const nameOrFilter = matchingNames.map((n) => ({
+    name: { equals: n, mode: "insensitive" as const },
+  }));
+
+  const defaultEntry = await prisma.clinicDocumentDefaultTemplate.findFirst({
+    where: {
+      clinicId,
+      DocumentType: {
+        OR: nameOrFilter,
+      },
+    },
+    orderBy: { id: "desc" },
+    select: { templateId: true },
+  });
+
+  if (defaultEntry?.templateId) {
+    return defaultEntry.templateId;
+  }
+
+  const isPrescription = matchingNames.some(
+    (n) => n.toLowerCase().includes("prescription") || n.toLowerCase() === "rx"
+  );
+  if (isPrescription) {
+    const rxSetting = await prisma.clinicPrescriptionSetting.findFirst({
+      where: { clinicId },
+      orderBy: { id: "desc" },
+      select: { prescriptionTemplateId: true },
+    });
+    if (rxSetting?.prescriptionTemplateId) {
+      return rxSetting.prescriptionTemplateId;
+    }
+  }
+
+  return null;
+}
 
 /**
  * Resolves the configured default template ID for a clinic using its document key.
@@ -23,38 +152,20 @@ export async function resolveClinicTemplateId(
   clinicId: number,
   documentKey: DocumentCategory | string
 ): Promise<number> {
-  const key = documentKey.trim();
-
-  // 1. Check ClinicDocumentDefaultTemplate (configured default template stored in settings)
-  const defaultEntry = await prisma.clinicDocumentDefaultTemplate.findFirst({
-    where: {
-      clinicId,
-      DocumentType: {
-        OR: [
-          { name: { equals: key, mode: "insensitive" } },
-          { name: { equals: key.replace(/_/g, " "), mode: "insensitive" } },
-          { name: { equals: key.replace(/\s+/g, "_"), mode: "insensitive" } },
-        ],
-      },
-    },
-    orderBy: { id: "desc" },
-    select: { templateId: true },
-  });
-  if (defaultEntry?.templateId) {
-    return defaultEntry.templateId;
+  // 1 & 2. Check settings default
+  const defaultTemplateId = await resolveClinicDefaultTemplateId(
+    prisma,
+    clinicId,
+    documentKey
+  );
+  if (defaultTemplateId) {
+    return defaultTemplateId;
   }
 
-  // 2. Fallback for prescription: ClinicPrescriptionSetting
-  if (key.toLowerCase().replace(/[\s-]+/g, "_") === "prescription") {
-    const rxSetting = await prisma.clinicPrescriptionSetting.findFirst({
-      where: { clinicId },
-      orderBy: { id: "desc" },
-      select: { prescriptionTemplateId: true },
-    });
-    if (rxSetting?.prescriptionTemplateId) {
-      return rxSetting.prescriptionTemplateId;
-    }
-  }
+  const matchingNames = getDocumentTypeNamesForDocumentKey(documentKey);
+  const nameOrFilter = matchingNames.map((n) => ({
+    name: { equals: n, mode: "insensitive" as const },
+  }));
 
   // 3. Fallback: Clinic-scoped active template matching the document key
   const clinicTemplate = await prisma.documentTemplate.findFirst({
@@ -63,13 +174,10 @@ export async function resolveClinicTemplateId(
       deletedAt: null,
       clinicId,
       DocumentTemplateType: {
-        OR: [
-          { name: { equals: key, mode: "insensitive" } },
-          { name: { equals: key.replace(/_/g, " "), mode: "insensitive" } },
-          { name: { equals: key.replace(/\s+/g, "_"), mode: "insensitive" } },
-        ],
+        OR: nameOrFilter,
       },
     },
+    orderBy: { id: "desc" },
     select: { id: true },
   });
   if (clinicTemplate?.id) {
@@ -82,13 +190,10 @@ export async function resolveClinicTemplateId(
       isActive: true,
       deletedAt: null,
       DocumentTemplateType: {
-        OR: [
-          { name: { equals: key, mode: "insensitive" } },
-          { name: { equals: key.replace(/_/g, " "), mode: "insensitive" } },
-          { name: { equals: key.replace(/\s+/g, "_"), mode: "insensitive" } },
-        ],
+        OR: nameOrFilter,
       },
     },
+    orderBy: { id: "desc" },
     select: { id: true },
   });
   if (globalTemplate?.id) {
@@ -97,4 +202,5 @@ export async function resolveClinicTemplateId(
 
   throw new Error(`No document template found for document key: ${documentKey}`);
 }
+
 

@@ -13,6 +13,7 @@ import { withErrorHandling } from "@/lib/with-error-handling";
 import {
   resolveClinicTemplateId,
   resolveClinicDefaultTemplateId,
+  resolveClinicEffectiveTemplate,
 } from "@/lib/resolve-clinic-template";
 import prisma from "@/lib/prisma";
 
@@ -146,6 +147,18 @@ export const getMedicalCertificateAction = withErrorHandling(
       },
     });
     if (!certificate) throw new Error("Medical Certificate not found");
+
+    if (!certificate.DocumentTemplate) {
+      const fallbackTemplate = await resolveClinicEffectiveTemplate(
+        prismaClient,
+        certificate.clinicId,
+        "medcert",
+        null
+      );
+      if (fallbackTemplate) {
+        certificate.DocumentTemplate = fallbackTemplate;
+      }
+    }
 
     return {
       message: "Medical Certificate fetched successfully",

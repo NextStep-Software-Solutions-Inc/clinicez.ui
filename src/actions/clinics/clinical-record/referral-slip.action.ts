@@ -8,7 +8,7 @@ import { Prisma } from "@prisma/client";
 import { generateSerialNumber } from "@/lib/utils";
 import { validateHealthcareProviderAuth, USER_WITH_HEALTHCARE_PROVIDERS_SELECT } from "@/lib/healthcare-provider-auth";
 import { createNotification } from "@/actions/notifications/notification.action";
-import { resolveClinicTemplateId } from "@/lib/resolve-clinic-template";
+import { resolveClinicTemplateId, resolveClinicEffectiveTemplate } from "@/lib/resolve-clinic-template";
 
 export type GetReferralSlipFilters = {
   clinicUid: string;
@@ -142,6 +142,18 @@ export const getReferralSlipAction = withErrorHandling(async (id: number) => {
   });
 
   if (!referralSlip) throw new Error("Referral slip not found");
+
+  if (!referralSlip.DocumentTemplate) {
+    const fallbackTemplate = await resolveClinicEffectiveTemplate(
+      prisma,
+      referralSlip.clinicId,
+      "referral",
+      null
+    );
+    if (fallbackTemplate) {
+      referralSlip.DocumentTemplate = fallbackTemplate;
+    }
+  }
 
   return { message: "Referral slip fetched successfully", data: referralSlip };
 });

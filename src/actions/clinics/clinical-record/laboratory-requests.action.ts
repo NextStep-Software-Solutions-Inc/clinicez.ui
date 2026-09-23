@@ -11,7 +11,7 @@ import { getPermissionsAction } from "@/actions/permission.action";
 import { PERMISSIONS } from "@/lib/permissions";
 import { getHPsAction, GetHPsType } from "@/actions/hp.actions";
 import { createNotification } from "@/actions/notifications/notification.action";
-import { resolveClinicTemplateId } from "@/lib/resolve-clinic-template";
+import { resolveClinicTemplateId, resolveClinicEffectiveTemplate } from "@/lib/resolve-clinic-template";
 
 export type GetLaboratoryRequestsFilters = {
   clinicUid?: string;
@@ -253,6 +253,18 @@ export const getLaboratoryRequestAction = withErrorHandling(async (id: number) =
   });
 
   if (!request) throw new Error("Laboratory request not found");
+
+  if (!request.DocumentTemplate) {
+    const fallbackTemplate = await resolveClinicEffectiveTemplate(
+      prisma,
+      request.clinicId,
+      "laboratory",
+      null
+    );
+    if (fallbackTemplate) {
+      request.DocumentTemplate = fallbackTemplate;
+    }
+  }
 
   return { message: "Successfully fetched laboratory request", data: request };
 });

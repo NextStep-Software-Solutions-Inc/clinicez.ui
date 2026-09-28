@@ -3,6 +3,7 @@
 import prisma from "@lib/prisma";
 import { getCachedSession } from "@actions/session.action";
 import { withErrorHandling } from "@/lib/with-error-handling";
+import { getDocumentTypeNamesForDocumentKey } from "@/lib/resolve-clinic-template";
 
 export type GetPatientConsultations = Awaited<ReturnType<typeof getPatientConsultationsAction>>;
 export const getPatientConsultationsAction = withErrorHandling(
@@ -635,12 +636,17 @@ export const getMedCertTemplateOptionsAction = withErrorHandling(async (clinicUi
   const session = await getCachedSession();
   if (!session) throw new Error("Unauthorized");
 
+  const matchingNames = getDocumentTypeNamesForDocumentKey("medcert");
   const templates = await prisma.documentTemplate.findMany({
     where: {
       isActive: true,
       deletedAt: null,
       Clinic: { clinicUid },
-      DocumentTemplateType: { name: "medical_certificate" },
+      DocumentTemplateType: {
+        OR: matchingNames.map((n) => ({
+          name: { equals: n, mode: "insensitive" as const },
+        })),
+      },
     },
     select: {
       id: true,

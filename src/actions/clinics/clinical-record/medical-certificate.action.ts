@@ -10,7 +10,11 @@ import {
 } from "@/lib/healthcare-provider-auth";
 import { generateSerialNumber } from "@/lib/utils";
 import { withErrorHandling } from "@/lib/with-error-handling";
-import { resolveClinicTemplateId } from "@/lib/resolve-clinic-template";
+import {
+  resolveClinicTemplateId,
+  resolveClinicDefaultTemplateId,
+  resolveClinicEffectiveTemplate,
+} from "@/lib/resolve-clinic-template";
 import prisma from "@/lib/prisma";
 
 export type GetMedicalCertificateFilters = {
@@ -144,6 +148,18 @@ export const getMedicalCertificateAction = withErrorHandling(
     });
     if (!certificate) throw new Error("Medical Certificate not found");
 
+    if (!certificate.DocumentTemplate) {
+      const fallbackTemplate = await resolveClinicEffectiveTemplate(
+        prismaClient,
+        certificate.clinicId,
+        "medcert",
+        null
+      );
+      if (fallbackTemplate) {
+        certificate.DocumentTemplate = fallbackTemplate;
+      }
+    }
+
     return {
       message: "Medical Certificate fetched successfully",
       data: certificate,
@@ -154,7 +170,7 @@ export const getMedicalCertificateAction = withErrorHandling(
 type CreateMedicalCertificateInput = {
   clinicUid: string;
   patientId?: number;
-  documentTemplateId: number;
+  documentTemplateId?: number;
   hpIds: number[];
   reasonId: number;
   findingId: number;
@@ -206,9 +222,26 @@ export const createMedicalCertificateAction = withErrorHandling(
 
       let effectiveTemplateId = documentTemplateId;
       try {
-        effectiveTemplateId = await resolveClinicTemplateId(prisma, clinic.id, "medical_certificate");
+        const configuredDefaultId = await resolveClinicDefaultTemplateId(
+          prisma,
+          clinic.id,
+          "medcert"
+        );
+        if (configuredDefaultId) {
+          effectiveTemplateId = configuredDefaultId;
+        } else if (!effectiveTemplateId) {
+          effectiveTemplateId = await resolveClinicTemplateId(
+            prisma,
+            clinic.id,
+            "medcert"
+          );
+        }
       } catch {
         // Fallback to provided documentTemplateId
+      }
+
+      if (!effectiveTemplateId) {
+        throw new Error("Could not determine document template for medical certificate");
       }
 
       const certificate = await prisma.clinicMedicalCertificate.create({

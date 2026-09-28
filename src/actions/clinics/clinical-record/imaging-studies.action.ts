@@ -11,7 +11,7 @@ import { getPermissionsAction } from "@/actions/permission.action";
 import { PERMISSIONS } from "@/lib/permissions";
 import { getHPsAction, GetHPsType } from "@/actions/hp.actions";
 import { createNotification } from "@/actions/notifications/notification.action";
-import { resolveClinicTemplateId } from "@/lib/resolve-clinic-template";
+import { resolveClinicTemplateId, resolveClinicEffectiveTemplate } from "@/lib/resolve-clinic-template";
 
 export type GetImagingStudiesFilters = {
   clinicUid?: string;
@@ -252,6 +252,18 @@ export const getImagingStudyAction = withErrorHandling(async (id: number) => {
   });
 
   if (!study) throw new Error("Imaging study not found");
+
+  if (!study.DocumentTemplate) {
+    const fallbackTemplate = await resolveClinicEffectiveTemplate(
+      prisma,
+      study.clinicId,
+      "imaging",
+      null
+    );
+    if (fallbackTemplate) {
+      study.DocumentTemplate = fallbackTemplate;
+    }
+  }
 
   return { message: "Successfully fetched imaging study", data: study };
 });

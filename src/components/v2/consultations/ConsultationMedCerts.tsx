@@ -115,11 +115,6 @@ export default function ConsultationMedCerts({
       finding?.documentTemplateId ??
       classification?.documentTemplateId;
 
-    if (!documentTemplateId) {
-      toast.error("Could not determine document template. Please contact support.");
-      return;
-    }
-
     startTransition(async () => {
       // If replacing, void the old cert first
       if (replacingId !== null) {
@@ -132,7 +127,7 @@ export default function ConsultationMedCerts({
       const result = await createMedicalCertificateAction({
         clinicUid,
         patientId: patient.clinicPatientId,
-        documentTemplateId,
+        documentTemplateId: documentTemplateId || undefined,
         hpIds: [myActiveHp.id],
         reasonId,
         findingId,

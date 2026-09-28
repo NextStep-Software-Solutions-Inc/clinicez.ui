@@ -5,6 +5,7 @@ import { getCachedSession } from "@actions/session.action";
 import { withErrorHandling } from "@/lib/with-error-handling";
 import { hasCodeProperty } from "@/lib/utils";
 import { validateHealthcareProviderAuth, USER_WITH_HEALTHCARE_PROVIDERS_SELECT } from "@/lib/healthcare-provider-auth";
+import { resolveClinicTemplateId } from "@/lib/resolve-clinic-template";
 
 export type GetPrescriptionsFilter = {
   clinicUid?: string,
@@ -101,7 +102,13 @@ export const createPrescriptionAction = withErrorHandling(async (payload: Create
       "create prescriptions"
     );
 
-    const template = templateId ? templateId : (await getClinicPrescriptionSetting(clinicUid))?.prescriptionTemplateId
+    const clinic = await prisma.clinic.findUnique({ where: { clinicUid }, select: { id: true } });
+    if (!clinic) throw new Error("Clinic not found");
+
+    let template = templateId;
+    if (!template) {
+      template = await resolveClinicTemplateId(prisma, clinic.id, "prescription");
+    }
 
     if (!template) throw new Error("No prescription template found")
 
@@ -112,7 +119,7 @@ export const createPrescriptionAction = withErrorHandling(async (payload: Create
         consultationTicketId,
         hpId: authorizedHpId,
         templateId: template,
-        clinicId: (await prisma.clinic.findUnique({ where: { clinicUid }, select: { id: true } }))!.id,
+        clinicId: clinic.id,
         createdById: appUser!.id
       }
     });

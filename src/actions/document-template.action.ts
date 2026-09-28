@@ -78,6 +78,8 @@ type CreateDocumentTemplatePayload = {
   htmlContent: string;
 };
 
+import { getDocumentTypeNamesForDocumentKey } from "@/lib/resolve-clinic-template";
+
 export const createDocumentTemplateAction = withErrorHandling(async (payload: CreateDocumentTemplatePayload) => {
   const session = await getCachedSession();
   if (!session) throw new Error("Unauthorized");
@@ -86,14 +88,12 @@ export const createDocumentTemplateAction = withErrorHandling(async (payload: Cr
 
   let resolvedTypeId = typeId;
   if (!resolvedTypeId && typeKey) {
-    const key = typeKey.trim();
+    const matchingNames = getDocumentTypeNamesForDocumentKey(typeKey);
     const docType = await prismaClient.documentTemplateType.findFirst({
       where: {
-        OR: [
-          { name: { equals: key, mode: "insensitive" } },
-          { name: { equals: key.replace(/_/g, " "), mode: "insensitive" } },
-          { name: { equals: key.replace(/\s+/g, "_"), mode: "insensitive" } },
-        ],
+        OR: matchingNames.map((n) => ({
+          name: { equals: n, mode: "insensitive" as const },
+        })),
       },
       select: { id: true },
     });

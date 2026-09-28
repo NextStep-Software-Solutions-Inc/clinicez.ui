@@ -2959,7 +2959,9 @@ function DocumentsTab({ clinicUid }: { clinicUid: string }) {
   const remoteDefaultTemplateIds = useMemo(() => {
     const map: Record<number, string> = {};
     for (const d of documentDefaults ?? []) {
-      map[d.documentTypeId] = d.templateId.toString();
+      if (d.templateId != null) {
+        map[d.documentTypeId] = d.templateId.toString();
+      }
     }
     return map;
   }, [documentDefaults]);
@@ -2971,8 +2973,12 @@ function DocumentsTab({ clinicUid }: { clinicUid: string }) {
     [remoteDefaultTemplateIds, defaultTemplateIdOverrides]
   );
 
-  const prescriptionType = documentTypes.find((t) => t.name === "prescription");
-  const nonPrescriptionTypes = documentTypes.filter((t) => t.name !== "prescription");
+  const prescriptionType = documentTypes.find(
+    (t) => t.name.toLowerCase() === "prescription"
+  );
+  const nonPrescriptionTypes = documentTypes.filter(
+    (t) => t.name.toLowerCase() !== "prescription"
+  );
 
   const handleSave = () => {
     startTransition(async () => {

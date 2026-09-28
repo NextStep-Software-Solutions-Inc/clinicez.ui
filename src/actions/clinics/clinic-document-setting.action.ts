@@ -5,6 +5,7 @@ import prismaClient from "@/lib/prisma";
 import { getCachedSession } from "@/actions/session.action";
 import { withErrorHandling } from "@/lib/with-error-handling";
 import { hasCodeProperty } from "@/lib/utils";
+import { syncClinicRecordsTemplates } from "@/lib/resolve-clinic-template";
 
 export type GetClinicDocumentDefaultTemplates = Awaited<ReturnType<typeof getClinicDocumentDefaultTemplatesAction>>;
 
@@ -95,19 +96,22 @@ export const upsertClinicDocumentDefaultTemplatesAction = withErrorHandling(
       }
     }
 
+    // NOTE: Existing records are NOT updated. Only newly added records created after this change will receive this template.
+
     return { message: "Document defaults updated successfully.", data: null };
   },
   documentDefaultErrorHandler
 );
 
 export const syncClinicRecordsTemplatesAction = withErrorHandling(
-  async (_clinicUid: string) => {
+  async (clinicUid: string) => {
     const session = await getCachedSession();
     if (!session) throw new Error("Unauthorized");
 
-    // Existing records preserve their issued templates; only new records adopt the selected template.
-    return { message: "Clinic records preserved.", data: null };
+    // No-op: Existing records must stay as they were originally issued
+    return { message: "Existing clinic records retained without modification.", data: null };
   },
   documentDefaultErrorHandler
 );
+
 

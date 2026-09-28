@@ -225,7 +225,7 @@ export default function CreateMedicalCertificateModal({
     const remarks = values.remarks;
     const impression = values.impression;
 
-    if (!reason || !finding || !classification || !documentTemplateId) {
+    if (!reason || !finding || !classification) {
       toast.error("Please select valid reason, finding, and classification.");
       return;
     }
@@ -234,7 +234,7 @@ export default function CreateMedicalCertificateModal({
     toast.promise(promiseWrapper(createMedicalCertificateAction)({
       clinicUid,
       patientId,
-      documentTemplateId,
+      documentTemplateId: documentTemplateId || undefined,
       hpIds,
       reasonId: reason.id,
       findingId: finding.id,

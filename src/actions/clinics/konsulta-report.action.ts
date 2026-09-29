@@ -2624,6 +2624,7 @@ export const deleteKonsultaBatchAction = withErrorHandling(
 
 /** Map Prisma BloodType enum to PhilHealth display string (e.g. "B+"). */
 function mapBloodType(bloodType: string | null | undefined): string {
+    if (!bloodType) return "";
     const map: Record<string, string> = {
         A_POSITIVE: "A+",
         A_NEGATIVE: "A-",
@@ -2633,10 +2634,16 @@ function mapBloodType(bloodType: string | null | undefined): string {
         AB_NEGATIVE: "AB-",
         O_POSITIVE: "O+",
         O_NEGATIVE: "O-",
-        RH_POSITIVE: "Rh+",
-        RH_NEGATIVE: "Rh-",
+        "A+": "A+",
+        "A-": "A-",
+        "B+": "B+",
+        "B-": "B-",
+        "AB+": "AB+",
+        "AB-": "AB-",
+        "O+": "O+",
+        "O-": "O-",
     };
-    return bloodType ? (map[bloodType] ?? "") : "";
+    return map[bloodType.trim().toUpperCase()] ?? "";
 }
 
 function mapSmokerStatus(status: string | null | undefined): KonsultaYN {
@@ -3489,13 +3496,13 @@ export const generateBatchXmlAction = withErrorHandling(
 
                     // PREGHIST (only applicable for female patients)
                     isPreghApplicable:
-                        isFemale && ob != null && (ob.gravidity != null || ob.parity != null)
+                        isFemale && ob != null && ((ob.gravidity != null && ob.gravidity > 0) || (ob.parity != null && ob.parity > 0))
                             ? "Y"
                             : "N",
-                    pregCnt: ob?.gravidity != null ? String(ob.gravidity) : "",
-                    deliveryCnt: ob?.parity != null ? String(ob.parity) : "",
-                    deliveryTyp: !isFemale
-                        ? "X"
+                    pregCnt: isFemale && ob?.gravidity != null && ob.gravidity > 0 ? String(ob.gravidity) : "",
+                    deliveryCnt: isFemale && ob?.parity != null && ob.parity > 0 ? String(ob.parity) : "",
+                    deliveryTyp: !isFemale || (ob?.gravidity == null || ob.gravidity === 0)
+                        ? ""
                         : ob?.typeOfDelivery === "VAGINAL"
                             ? "N"
                             : ob?.typeOfDelivery === "CESAREAN"
@@ -3503,14 +3510,14 @@ export const generateBatchXmlAction = withErrorHandling(
                                 : ob?.typeOfDelivery === "MIXED"
                                     ? "B"
                                     : "X",
-                    fullTermCnt: ob?.fullTerm != null ? String(ob.fullTerm) : "",
-                    prematureCnt: ob?.premature != null ? String(ob.premature) : "",
-                    abortionCnt: ob?.abortion != null ? String(ob.abortion) : "",
+                    fullTermCnt: isFemale && ob?.fullTerm != null && ob.fullTerm > 0 ? String(ob.fullTerm) : "",
+                    prematureCnt: isFemale && ob?.premature != null && ob.premature > 0 ? String(ob.premature) : "",
+                    abortionCnt: isFemale && ob?.abortion != null && ob.abortion > 0 ? String(ob.abortion) : "",
                     livChildrenCnt:
-                        ob?.livingChildren != null ? String(ob.livingChildren) : "",
+                        isFemale && ob?.livingChildren != null && ob.livingChildren > 0 ? String(ob.livingChildren) : "",
                     wPregIndhyp:
-                        ob?.hasPreEclampsia != null ? (ob.hasPreEclampsia ? "Y" : "N") : "",
-                    wFamPlan: "N",
+                        isFemale && ob?.hasPreEclampsia != null && ((ob.gravidity != null && ob.gravidity > 0) || (ob.parity != null && ob.parity > 0)) ? (ob.hasPreEclampsia ? "Y" : "N") : "",
+                    wFamPlan: isFemale && ((ob?.gravidity != null && ob.gravidity > 0) || (ob?.parity != null && ob.parity > 0)) ? "N" : "",
 
                     // MEDHISTS + MHSPECIFICS: use resolved code if mapped, otherwise use ""
                     medHistItems:

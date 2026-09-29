@@ -66,7 +66,7 @@ function addPepert(parent: XMLNode, v?: VitalsInput): void {
         pHeight: v?.height ?? "",
         pWeight: v?.weight ?? "",
         pBMI: v?.bmi ?? "",
-        pZScore: v?.zScore ?? "",
+        pZScore: "",
         pLeftVision: v?.leftVision ?? "",
         pRightVision: v?.rightVision ?? "",
         pLength: v?.length ?? "",
@@ -322,35 +322,69 @@ function addProfileSubElements(profile: XMLNode, profileData: KonsultaProfileDat
 
     // ── PREGHIST ────────────────────────────────────────────────────────────────────
     const isPreghApp = data?.isPreghApplicable ?? "N";
-    const mappedDeliveryTyp = isPreghApp === "N" ? "X" : (() => {
-        const d = (data?.deliveryTyp ?? "").trim().toUpperCase();
-        if (d === "N" || d === "VAGINAL" || d === "NORMAL" || d === "NSD") return "N";
-        if (d === "O" || d === "CESAREAN" || d === "OPERATIVE" || d === "CSD") return "O";
-        if (d === "B" || d === "MIXED" || d === "BOTH") return "B";
-        return "X";
-    })();
+    if (isPreghApp === "N") {
+        profile.ele("PREGHIST", {
+            pPregCnt: "",
+            pDeliveryCnt: "",
+            pDeliveryTyp: "",
+            pFullTermCnt: "",
+            pPrematureCnt: "",
+            pAbortionCnt: "",
+            pLivChildrenCnt: "",
+            pWPregIndhyp: "",
+            pWFamPlan: "",
+            pIsApplicable: "N",
+            pReportStatus: "U",
+            pDeficiencyRemarks: "",
+        });
+    } else {
+        const mappedDeliveryTyp = (() => {
+            const d = (data?.deliveryTyp ?? "").trim().toUpperCase();
+            if (d === "N" || d === "VAGINAL" || d === "NORMAL" || d === "NSD") return "N";
+            if (d === "O" || d === "CESAREAN" || d === "OPERATIVE" || d === "CSD") return "O";
+            if (d === "B" || d === "MIXED" || d === "BOTH") return "B";
+            return "X";
+        })();
 
-    profile.ele("PREGHIST", {
-        pPregCnt: data?.pregCnt ?? "",
-        pDeliveryCnt: data?.deliveryCnt ?? "",
-        pDeliveryTyp: mappedDeliveryTyp,
-        pFullTermCnt: data?.fullTermCnt ?? "",
-        pPrematureCnt: data?.prematureCnt ?? "",
-        pAbortionCnt: data?.abortionCnt ?? "",
-        pLivChildrenCnt: data?.livChildrenCnt ?? "",
-        pWPregIndhyp: data?.wPregIndhyp ?? "",
-        pWFamPlan: data?.wFamPlan ?? "",
-        pIsApplicable: isPreghApp,
-        pReportStatus: "U",
-        pDeficiencyRemarks: "",
-    });
+        profile.ele("PREGHIST", {
+            pPregCnt: data?.pregCnt ?? "",
+            pDeliveryCnt: data?.deliveryCnt ?? "",
+            pDeliveryTyp: mappedDeliveryTyp,
+            pFullTermCnt: data?.fullTermCnt ?? "",
+            pPrematureCnt: data?.prematureCnt ?? "",
+            pAbortionCnt: data?.abortionCnt ?? "",
+            pLivChildrenCnt: data?.livChildrenCnt ?? "",
+            pWPregIndhyp: data?.wPregIndhyp ?? "",
+            pWFamPlan: data?.wFamPlan ?? "",
+            pIsApplicable: "Y",
+            pReportStatus: "U",
+            pDeficiencyRemarks: "",
+        });
+    }
 
     // ── PEPERT ──────────────────────────────────────────────────────────────────────
     addPepert(profile, data);
 
     // ── BLOODTYPE ───────────────────────────────────────────────────────────────────
+    const sanitizedBloodType = (() => {
+        const bt = (data?.bloodType ?? "").trim().toUpperCase();
+        const validTypes = new Set(["A+", "B+", "AB+", "O+", "A-", "B-", "AB-", "O-"]);
+        if (validTypes.has(bt)) return bt;
+        const mapped: Record<string, string> = {
+            A_POSITIVE: "A+",
+            A_NEGATIVE: "A-",
+            B_POSITIVE: "B+",
+            B_NEGATIVE: "B-",
+            AB_POSITIVE: "AB+",
+            AB_NEGATIVE: "AB-",
+            O_POSITIVE: "O+",
+            O_NEGATIVE: "O-",
+        };
+        return mapped[bt] ?? "";
+    })();
+
     profile.ele("BLOODTYPE", {
-        pBloodType: data?.bloodType ?? "",
+        pBloodType: sanitizedBloodType,
         pReportStatus: "U",
         pDeficiencyRemarks: "",
     });
@@ -2029,15 +2063,15 @@ export function buildStagingTestPcbXml(
     });
 
     profile.ele("PREGHIST", {
-        pPregCnt: "0",
-        pDeliveryCnt: "0",
-        pDeliveryTyp: "X",
-        pFullTermCnt: "0",
-        pPrematureCnt: "0",
-        pAbortionCnt: "0",
-        pLivChildrenCnt: "0",
-        pWPregIndhyp: "N",
-        pWFamPlan: "N",
+        pPregCnt: "",
+        pDeliveryCnt: "",
+        pDeliveryTyp: "",
+        pFullTermCnt: "",
+        pPrematureCnt: "",
+        pAbortionCnt: "",
+        pLivChildrenCnt: "",
+        pWPregIndhyp: "",
+        pWFamPlan: "",
         pIsApplicable: "N",
         pReportStatus: "U",
         pDeficiencyRemarks: "",
@@ -2052,7 +2086,7 @@ export function buildStagingTestPcbXml(
         pHeight: "0",
         pWeight: "8.9",
         pBMI: "0",
-        pZScore: "> +3SD",
+        pZScore: "",
         pLeftVision: "20",
         pRightVision: "20",
         pLength: "63",

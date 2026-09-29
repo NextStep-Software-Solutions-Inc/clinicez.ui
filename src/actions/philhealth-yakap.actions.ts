@@ -1068,6 +1068,10 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
                 patient.ObGyneHistory.typeOfDelivery === 'MIXED' ? 'B' : 'X',
             isPreEclampsia: patient.ObGyneHistory.hasPreEclampsia ? 'Y' : 'N',
             wFamPlan: patient.ObGyneHistory.isFamilyPlanning ? 'Y' : 'N',
+            isApplicable: (patient.gender === 'FEMALE' && (
+              (patient.ObGyneHistory.gravidity != null && patient.ObGyneHistory.gravidity > 0) ||
+              (patient.ObGyneHistory.parity != null && patient.ObGyneHistory.parity > 0)
+            )) ? 'Y' : 'N',
           } : undefined,
           immunizations: patient.UserVaccinations.map(uv => {
             const vName = (uv.Vaccine.name || '').toUpperCase().trim();

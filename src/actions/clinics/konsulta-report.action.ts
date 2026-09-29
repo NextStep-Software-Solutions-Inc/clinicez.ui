@@ -25,6 +25,7 @@ import {
     type StructuredKonsultaBatchDeficiency,
 } from "@/lib/konsulta-batch-deficiencies";
 import { withErrorHandling } from "@/lib/with-error-handling";
+import { resolvePhilHealthEnlistDate } from "@/lib/philhealth-yakap/date-utils";
 import {
     buildPcbXml,
     generateTransmittalNumber,
@@ -2788,7 +2789,11 @@ export const generateBatchXmlAction = withErrorHandling(
                 },
                 include: {
                     ClinicPatient: {
-                        select: { patientId: true },
+                        select: {
+                            patientId: true,
+                            konsultaRegisteredAt: true,
+                            konsultaRegistrationResult: true,
+                        },
                     },
                 },
             });
@@ -2813,6 +2818,12 @@ export const generateBatchXmlAction = withErrorHandling(
 
                     const principal = patientType === "DD" ? principalMap.get(memberPin.trim()) : null;
                     const snap = snapshotMapByPatientId.get(entry.patientUserId);
+
+                    const resolvedEnlistDate = resolvePhilHealthEnlistDate(
+                        snap?.ClinicPatient,
+                        { patientPin: entry.philHealthPin, memberPin: memberPin },
+                        transDate
+                    );
 
                     const isSnapSameAsPatient = snap && (
                         snap.memberFname?.trim().toUpperCase() === p.firstName?.trim().toUpperCase() &&
@@ -2875,7 +2886,7 @@ export const generateBatchXmlAction = withErrorHandling(
                             ),
                         pEffYear: effYear,
                         pEnlistStat: "1",
-                        pEnlistDate: transDate,
+                        pEnlistDate: resolvedEnlistDate,
                         pPackageType: "K",
                         pMemPin: pMemPinFinal,
                         pMemFname: pMemFname,

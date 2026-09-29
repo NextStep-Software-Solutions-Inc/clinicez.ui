@@ -442,18 +442,27 @@ function emitPeMiscFields(pemiscs: XmlNode, pe: Record<string, string | null | u
     { attr: 'pGuId', val: pe.guId },
   ];
 
+  const normalizePeCode = (attr: string, val: string | null | undefined): string => {
+    if (!val) return '';
+    const s = String(val).trim();
+    if (attr === 'pHeartId' && s === '2') return '5';
+    if (attr === 'pNeuroId' && s === '3') return '6';
+    return s;
+  };
+
   for (const cat of categories) {
-    if (cat.val != null && String(cat.val).trim().length > 0) {
+    const rawVal = normalizePeCode(cat.attr, cat.val);
+    if (rawVal.length > 0) {
       // 1. Emit the primary finding
       pemiscs.ele('PEMISC', withStatus({
-        pSkinId: cat.attr === 'pSkinId' ? String(cat.val) : '',
-        pHeentId: cat.attr === 'pHeentId' ? String(cat.val) : '',
-        pChestId: cat.attr === 'pChestId' ? String(cat.val) : '',
-        pHeartId: cat.attr === 'pHeartId' ? String(cat.val) : '',
-        pAbdomenId: cat.attr === 'pAbdomenId' ? String(cat.val) : '',
-        pNeuroId: cat.attr === 'pNeuroId' ? String(cat.val) : '',
-        pRectalId: cat.attr === 'pRectalId' ? String(cat.val) : '',
-        pGuId: cat.attr === 'pGuId' ? String(cat.val) : '',
+        pSkinId: cat.attr === 'pSkinId' ? rawVal : '',
+        pHeentId: cat.attr === 'pHeentId' ? rawVal : '',
+        pChestId: cat.attr === 'pChestId' ? rawVal : '',
+        pHeartId: cat.attr === 'pHeartId' ? rawVal : '',
+        pAbdomenId: cat.attr === 'pAbdomenId' ? rawVal : '',
+        pNeuroId: cat.attr === 'pNeuroId' ? rawVal : '',
+        pRectalId: cat.attr === 'pRectalId' ? rawVal : '',
+        pGuId: cat.attr === 'pGuId' ? rawVal : '',
       })).up();
 
       // 2. To ensure multiple findings per body system and support the "Others" (99) code requirements for Case 3,

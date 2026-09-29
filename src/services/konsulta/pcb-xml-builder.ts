@@ -100,20 +100,28 @@ function addPemiscs(
         { attr: "pRectalId", key: "pRectalId" },
     ];
 
+    const normalizePeCode = (attr: string, val: any): string => {
+        if (val == null) return "";
+        const s = String(val).trim();
+        if (attr === "pHeartId" && s === "2") return "5";
+        if (attr === "pNeuroId" && s === "3") return "6";
+        return s;
+    };
+
     if (findings && findings.length > 0) {
         for (const finding of findings) {
             for (const cat of categories) {
-                const val = finding[cat.key];
-                if (val != null && String(val).trim().length > 0) {
+                const rawVal = normalizePeCode(cat.attr, finding[cat.key]);
+                if (rawVal.length > 0) {
                     pemiscsEle.ele("PEMISC", {
-                        pSkinId: cat.attr === "pSkinId" ? String(val) : "",
-                        pHeentId: cat.attr === "pHeentId" ? String(val) : "",
-                        pChestId: cat.attr === "pChestId" ? String(val) : "",
-                        pHeartId: cat.attr === "pHeartId" ? String(val) : "",
-                        pAbdomenId: cat.attr === "pAbdomenId" ? String(val) : "",
-                        pNeuroId: cat.attr === "pNeuroId" ? String(val) : "",
-                        pGuId: cat.attr === "pGuId" ? String(val) : "",
-                        pRectalId: cat.attr === "pRectalId" ? String(val) : "",
+                        pSkinId: cat.attr === "pSkinId" ? rawVal : "",
+                        pHeentId: cat.attr === "pHeentId" ? rawVal : "",
+                        pChestId: cat.attr === "pChestId" ? rawVal : "",
+                        pHeartId: cat.attr === "pHeartId" ? rawVal : "",
+                        pAbdomenId: cat.attr === "pAbdomenId" ? rawVal : "",
+                        pNeuroId: cat.attr === "pNeuroId" ? rawVal : "",
+                        pGuId: cat.attr === "pGuId" ? rawVal : "",
+                        pRectalId: cat.attr === "pRectalId" ? rawVal : "",
                         pReportStatus: finding.pReportStatus ?? "U",
                         pDeficiencyRemarks: finding.pDeficiencyRemarks ?? "",
                     });
@@ -124,17 +132,17 @@ function addPemiscs(
     } else if (items && items.length > 0) {
         for (const item of items) {
             for (const cat of categories) {
-                const val = item[cat.key];
-                if (val != null && String(val).trim().length > 0) {
+                const rawVal = normalizePeCode(cat.attr, item[cat.key]);
+                if (rawVal.length > 0) {
                     pemiscsEle.ele("PEMISC", {
-                        pSkinId: cat.attr === "pSkinId" ? String(val) : "",
-                        pHeentId: cat.attr === "pHeentId" ? String(val) : "",
-                        pChestId: cat.attr === "pChestId" ? String(val) : "",
-                        pHeartId: cat.attr === "pHeartId" ? String(val) : "",
-                        pAbdomenId: cat.attr === "pAbdomenId" ? String(val) : "",
-                        pNeuroId: cat.attr === "pNeuroId" ? String(val) : "",
-                        pGuId: cat.attr === "pGuId" ? String(val) : "",
-                        pRectalId: cat.attr === "pRectalId" ? String(val) : "",
+                        pSkinId: cat.attr === "pSkinId" ? rawVal : "",
+                        pHeentId: cat.attr === "pHeentId" ? rawVal : "",
+                        pChestId: cat.attr === "pChestId" ? rawVal : "",
+                        pHeartId: cat.attr === "pHeartId" ? rawVal : "",
+                        pAbdomenId: cat.attr === "pAbdomenId" ? rawVal : "",
+                        pNeuroId: cat.attr === "pNeuroId" ? rawVal : "",
+                        pGuId: cat.attr === "pGuId" ? rawVal : "",
+                        pRectalId: cat.attr === "pRectalId" ? rawVal : "",
                         pReportStatus: "U",
                         pDeficiencyRemarks: "",
                     });

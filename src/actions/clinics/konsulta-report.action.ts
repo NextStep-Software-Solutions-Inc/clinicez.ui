@@ -2948,15 +2948,19 @@ export const generateBatchXmlAction = withErrorHandling(
                 }
                 const key = domainKey.toLowerCase().replace(/\.xlsx$/, "").trim();
 
+                const finalCode =
+                    key === "lib_heart" && mappedCode === "2" ? "5" :
+                    key === "lib_neuro" && mappedCode === "3" ? "6" : mappedCode;
+
                 return {
-                    pSkinId: key === "lib_skin_extremities" ? mappedCode : "",
-                    pHeentId: key === "lib_heent" ? mappedCode : "",
-                    pChestId: key === "lib_chest" ? mappedCode : "",
-                    pHeartId: key === "lib_heart" ? mappedCode : "",
-                    pAbdomenId: key === "lib_abdomen" ? mappedCode : "",
-                    pNeuroId: key === "lib_neuro" ? mappedCode : "",
-                    pGuId: key === "lib_genitourinary" ? mappedCode : "",
-                    pRectalId: key === "lib_digital_rectal" ? mappedCode : "",
+                    pSkinId: key === "lib_skin_extremities" ? finalCode : "",
+                    pHeentId: key === "lib_heent" ? finalCode : "",
+                    pChestId: key === "lib_chest" ? finalCode : "",
+                    pHeartId: key === "lib_heart" ? finalCode : "",
+                    pAbdomenId: key === "lib_abdomen" ? finalCode : "",
+                    pNeuroId: key === "lib_neuro" ? finalCode : "",
+                    pGuId: key === "lib_genitourinary" ? finalCode : "",
+                    pRectalId: key === "lib_digital_rectal" ? finalCode : "",
                     pReportStatus: "U" as const,
                     pDeficiencyRemarks: "",
                 };

@@ -8,7 +8,7 @@ import { PERMISSIONS } from '@lib/permissions';
 import { hasCodeProperty } from '@lib/utils';
 import { withErrorHandling } from '@/lib/with-error-handling';
 import { getHPsAction, GetHPsType } from '@actions/hp.actions';
-import { getNextSequenceNumber } from '@/lib/sequence-generator';
+import { getNextSequenceNumber, getUniqueKonsultaCaseAndTransNo } from '@/lib/sequence-generator';
 import { formatKonsultaHciNumber } from '@/lib/format-sequence';
 
 type CreateConsultationTicketPayload = {
@@ -44,16 +44,23 @@ export const createConsultationTicketAction = withErrorHandling(async ({ systemI
   });
   const hciAccreNo = clinicForKonsulta?.ClinicSetting?.philhealthAccreditationNumber ?? null;
   const clinicIdForKonsulta = clinicForKonsulta?.id ?? null;
-  const caseSequence = hciAccreNo && clinicIdForKonsulta
-    ? await getNextSequenceNumber("KONSULTA_HCI_CASE", clinicIdForKonsulta)
-    : null;
-  const soapSequence = hciAccreNo && clinicIdForKonsulta
-    ? await getNextSequenceNumber("KONSULTA_SOAP_TRANSACTION", clinicIdForKonsulta)
-    : null;
   const now = new Date();
 
+  let konsultaHciCaseNo: string | undefined = undefined;
+  let konsultaHciTransNo: string | undefined = undefined;
+
+  if (hciAccreNo && clinicIdForKonsulta) {
+    const uniqueHciNos = await getUniqueKonsultaCaseAndTransNo(
+      hciAccreNo,
+      clinicIdForKonsulta,
+      now
+    );
+    konsultaHciCaseNo = uniqueHciNos.konsultaHciCaseNo;
+    konsultaHciTransNo = uniqueHciNos.konsultaHciTransNo;
+  }
+
   const consultationTicket = await prismaClient.$transaction(async (prisma) => {
-    let consultationConfig = await prismaClient.consultationConfig.findFirst({
+    let consultationConfig = await prisma.consultationConfig.findFirst({
       where: {
         Clinic: {
           clinicUid
@@ -62,7 +69,7 @@ export const createConsultationTicketAction = withErrorHandling(async ({ systemI
     })
 
     if (!consultationConfig) {
-      const defaultNoteTemplate = await prismaClient.noteTemplate.findFirst({
+      const defaultNoteTemplate = await prisma.noteTemplate.findFirst({
         where: { isActive: true }
       });
 
@@ -70,7 +77,7 @@ export const createConsultationTicketAction = withErrorHandling(async ({ systemI
         throw new Error("No active Note Templates found in the system. Please contact an administrator.");
       }
 
-      const clinic = await prismaClient.clinic.findUnique({
+      const clinic = await prisma.clinic.findUnique({
         where: { clinicUid }
       });
 
@@ -78,7 +85,7 @@ export const createConsultationTicketAction = withErrorHandling(async ({ systemI
         throw new Error("Clinic not found");
       }
 
-      consultationConfig = await prismaClient.consultationConfig.create({
+      consultationConfig = await prisma.consultationConfig.create({
         data: {
           clinicId: clinic.id,
           noteTemplateId: defaultNoteTemplate.id
@@ -88,7 +95,7 @@ export const createConsultationTicketAction = withErrorHandling(async ({ systemI
 
     let effectiveSystemId = systemId;
     if (!effectiveSystemId && appointmentId) {
-      const appt = await prismaClient.appointment.findUnique({
+      const appt = await prisma.appointment.findUnique({
         where: { id: appointmentId },
         select: { AppointmentAttribute: { select: { systemId: true } } },
       });
@@ -97,7 +104,7 @@ export const createConsultationTicketAction = withErrorHandling(async ({ systemI
       }
     }
 
-    return await prismaClient.consultationTicket.create({
+    return await prisma.consultationTicket.create({
       data: {
         ...(effectiveSystemId ? {
           System: {
@@ -117,9 +124,9 @@ export const createConsultationTicketAction = withErrorHandling(async ({ systemI
         Clinic: {
           connect: { clinicUid }
         },
-        ...(hciAccreNo && caseSequence && soapSequence ? {
-          konsultaHciCaseNo: formatKonsultaHciNumber("T", hciAccreNo, caseSequence, now),
-          konsultaHciTransNo: formatKonsultaHciNumber("S", hciAccreNo, soapSequence, now),
+        ...(konsultaHciCaseNo && konsultaHciTransNo ? {
+          konsultaHciCaseNo,
+          konsultaHciTransNo,
         } : {}),
         ConsultationTicketHPs: {
           createMany: {

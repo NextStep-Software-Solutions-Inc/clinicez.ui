@@ -6,7 +6,7 @@ import { getUserAction } from "@/actions/users/user.action"
 import prisma from "@/lib/prisma"
 import { logger } from "@/lib/logger"
 import { calculateAge } from "@/lib/utils"
-import { getNextSequenceNumber } from "@/lib/sequence-generator"
+import { getNextSequenceNumber, getUniqueKonsultaCaseAndTransNo } from "@/lib/sequence-generator"
 import { formatTransactionNumber, formatAuthorizationCode, formatKonsultaHciNumber } from "@/lib/format-sequence"
 import { formatPhilHealthAge } from "@/lib/philhealth-yakap/date-utils"
 
@@ -67,13 +67,18 @@ export const downloadEKASAction = withErrorHandling(async (
     if (consultationTicket) {
       const hciAccreNo = consultationTicket.Clinic?.ClinicSetting?.philhealthAccreditationNumber ?? null
       if (hciAccreNo && (!consultationTicket.konsultaHciCaseNo || !consultationTicket.konsultaHciTransNo)) {
-        const hciCaseSeq = await getNextSequenceNumber('KONSULTA_HCI_CASE', consultationTicket.clinicId)
-        const hciTransSeq = await getNextSequenceNumber('KONSULTA_SCREENING_TRANSACTION', consultationTicket.clinicId)
+        let finalCaseNo = consultationTicket.konsultaHciCaseNo;
+        let finalTransNo = consultationTicket.konsultaHciTransNo;
+        if (!finalCaseNo || !finalTransNo) {
+          const uniqueNos = await getUniqueKonsultaCaseAndTransNo(hciAccreNo, consultationTicket.clinicId);
+          if (!finalCaseNo) finalCaseNo = uniqueNos.konsultaHciCaseNo;
+          if (!finalTransNo) finalTransNo = uniqueNos.konsultaHciTransNo;
+        }
         await prisma.consultationTicket.update({
           where: { id: consultationTicketId },
           data: {
-            konsultaHciCaseNo: consultationTicket.konsultaHciCaseNo ?? formatKonsultaHciNumber("T", hciAccreNo, hciCaseSeq),
-            konsultaHciTransNo: consultationTicket.konsultaHciTransNo ?? formatKonsultaHciNumber("P", hciAccreNo, hciTransSeq),
+            konsultaHciCaseNo: finalCaseNo,
+            konsultaHciTransNo: finalTransNo,
           }
         })
       }

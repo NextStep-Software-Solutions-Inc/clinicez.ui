@@ -275,11 +275,12 @@ function addProfileSubElements(profile: XMLNode, profileData: KonsultaProfileDat
     const immunizationsEle = profile.ele("IMMUNIZATIONS");
     if (data?.immunizations && data.immunizations.length > 0) {
         for (const item of data.immunizations) {
+            const hasOther = !!item.pOtherImm?.trim();
             immunizationsEle.ele("IMMUNIZATION", {
-                pChildImmcode: item.pChildImmcode ?? "",
-                pYoungwImmcode: item.pYoungwImmcode ?? "",
-                pPregwImmcode: item.pPregwImmcode ?? "",
-                pElderlyImmcode: item.pElderlyImmcode ?? "",
+                pChildImmcode: hasOther ? "" : (item.pChildImmcode ?? ""),
+                pYoungwImmcode: hasOther ? "" : (item.pYoungwImmcode ?? ""),
+                pPregwImmcode: hasOther ? "" : (item.pPregwImmcode ?? ""),
+                pElderlyImmcode: hasOther ? "" : (item.pElderlyImmcode ?? ""),
                 pOtherImm: item.pOtherImm ?? "",
                 pReportStatus: "U",
                 pDeficiencyRemarks: "",
@@ -287,11 +288,12 @@ function addProfileSubElements(profile: XMLNode, profileData: KonsultaProfileDat
         }
     } else if (profileData.immunizations && profileData.immunizations.length > 0) {
         for (const item of profileData.immunizations) {
+            const hasOther = !!item.pOtherImm?.trim();
             immunizationsEle.ele("IMMUNIZATION", {
-                pChildImmcode: item.pChildImmcode ?? "",
-                pYoungwImmcode: item.pYoungwImmcode ?? "",
-                pPregwImmcode: item.pPregwImmcode ?? "",
-                pElderlyImmcode: item.pElderlyImmcode ?? "",
+                pChildImmcode: hasOther ? "" : (item.pChildImmcode ?? ""),
+                pYoungwImmcode: hasOther ? "" : (item.pYoungwImmcode ?? ""),
+                pPregwImmcode: hasOther ? "" : (item.pPregwImmcode ?? ""),
+                pElderlyImmcode: hasOther ? "" : (item.pElderlyImmcode ?? ""),
                 pOtherImm: item.pOtherImm ?? "",
                 pReportStatus: item.pReportStatus ?? "U",
                 pDeficiencyRemarks: item.pDeficiencyRemarks ?? "",

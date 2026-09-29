@@ -123,6 +123,7 @@ export interface KonsultaPatientData {
       typeLasDelivery: string;
       isPreEclampsia: string;
       wFamPlan: string;
+      isApplicable?: string;
     };
     immunizations: Array<{
       childImmcode: string;
@@ -499,17 +500,30 @@ function buildProfilePeMiscs(parent: XmlNode, patient: KonsultaPatientData): Xml
   return parent;
 }
 
+const VALID_DTD_BLOOD_TYPES: Record<string, string> = {
+  'A+': 'A+',
+  'A-': 'A-',
+  'B+': 'B+',
+  'B-': 'B-',
+  'AB+': 'AB+',
+  'AB-': 'AB-',
+  'O+': 'O+',
+  'O-': 'O-',
+  'A_POSITIVE': 'A+',
+  'A_NEGATIVE': 'A-',
+  'B_POSITIVE': 'B+',
+  'B_NEGATIVE': 'B-',
+  'AB_POSITIVE': 'AB+',
+  'AB_NEGATIVE': 'AB-',
+  'O_POSITIVE': 'O+',
+  'O_NEGATIVE': 'O-',
+};
+
 function mapBloodType(val?: string | null): string {
-  if (!val || val === 'UNKNOWN' || val === 'N/A' || val === 'NOT APPLICABLE' || val === 'NOT_APPLICABLE') return 'N/A';
-  if (val === 'A_POSITIVE' || val === 'A+') return 'A+';
-  if (val === 'A_NEGATIVE' || val === 'A-') return 'A-';
-  if (val === 'B_POSITIVE' || val === 'B+') return 'B+';
-  if (val === 'B_NEGATIVE' || val === 'B-') return 'B-';
-  if (val === 'AB_POSITIVE' || val === 'AB+') return 'AB+';
-  if (val === 'AB_NEGATIVE' || val === 'AB-') return 'AB-';
-  if (val === 'O_POSITIVE' || val === 'O+') return 'O+';
-  if (val === 'O_NEGATIVE' || val === 'O-') return 'O-';
-  return val;
+  if (!val) return '';
+  const trimmed = val.trim().toUpperCase();
+  if (trimmed === 'UNKNOWN' || trimmed === 'N/A' || trimmed === 'NOT APPLICABLE' || trimmed === 'NOT_APPLICABLE') return '';
+  return VALID_DTD_BLOOD_TYPES[trimmed] ?? '';
 }
 
 function mapSocValue(val?: string | null): string {
@@ -586,18 +600,39 @@ function buildMensHist(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
 function buildPregHist(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
   const og = patient.profile.obGyneHistory;
   const isFemale = patient.patient.sex === 'F';
-  parent.ele('PREGHIST', withStatus({
-    pPregCnt: isFemale ? (og?.gravida || '0') : '0',
-    pDeliveryCnt: isFemale ? (og?.para || '0') : '0',
-    pDeliveryTyp: isFemale ? mapDeliveryType(og?.typeLasDelivery) : 'X',
-    pFullTermCnt: isFemale ? (og?.fullTerms || '0') : '0',
-    pPrematureCnt: isFemale ? (og?.premature || '0') : '0',
-    pAbortionCnt: isFemale ? (og?.abortion || '0') : '0',
-    pLivChildrenCnt: isFemale ? (og?.livingChildren || '0') : '0',
-    pWPregIndhyp: isFemale ? (og?.isPreEclampsia === 'Y' || og?.isPreEclampsia === 'true' ? 'Y' : 'N') : 'X',
-    pWFamPlan: isFemale ? (og?.wFamPlan === 'Y' || og?.wFamPlan === 'true' ? 'Y' : 'N') : 'X',
-    pIsApplicable: isFemale ? 'Y' : 'N',
-  })).up();
+  const hasPregnancyHistory = isFemale && !!og && (
+    (og.gravida !== undefined && og.gravida !== null && og.gravida !== '' && og.gravida !== '0') ||
+    (og.para !== undefined && og.para !== null && og.para !== '' && og.para !== '0')
+  );
+  const isApplicable = !isFemale ? 'N' : (og?.isApplicable === 'Y' || og?.isApplicable === 'N' ? og.isApplicable : (hasPregnancyHistory ? 'Y' : 'N'));
+
+  if (isApplicable === 'N') {
+    parent.ele('PREGHIST', withStatus({
+      pPregCnt: '',
+      pDeliveryCnt: '',
+      pDeliveryTyp: '',
+      pFullTermCnt: '',
+      pPrematureCnt: '',
+      pAbortionCnt: '',
+      pLivChildrenCnt: '',
+      pWPregIndhyp: '',
+      pWFamPlan: '',
+      pIsApplicable: 'N',
+    })).up();
+  } else {
+    parent.ele('PREGHIST', withStatus({
+      pPregCnt: og?.gravida || '0',
+      pDeliveryCnt: og?.para || '0',
+      pDeliveryTyp: mapDeliveryType(og?.typeLasDelivery),
+      pFullTermCnt: og?.fullTerms || '0',
+      pPrematureCnt: og?.premature || '0',
+      pAbortionCnt: og?.abortion || '0',
+      pLivChildrenCnt: og?.livingChildren || '0',
+      pWPregIndhyp: og?.isPreEclampsia === 'Y' || og?.isPreEclampsia === 'true' ? 'Y' : 'N',
+      pWFamPlan: og?.wFamPlan === 'Y' || og?.wFamPlan === 'true' ? 'Y' : 'N',
+      pIsApplicable: 'Y',
+    })).up();
+  }
   return parent;
 }
 
@@ -612,7 +647,7 @@ function buildProfilePepert(parent: XmlNode, patient: KonsultaPatientData, isOve
     pHeight: v.height,
     pWeight: v.weight,
     pBMI: v.bmi,
-    pZScore: isOver5Years ? '' : v.zScore,
+    pZScore: '',
     pLeftVision: v.leftVision,
     pRightVision: v.rightVision,
     pLength: v.length,
@@ -805,7 +840,7 @@ function buildSoapPepert(parent: XmlNode, consultation: KonsultaConsultationData
     pHeight: v.height,
     pWeight: v.weight,
     pBMI: v.bmi,
-    pZScore: isOver5Years ? '' : v.zScore,
+    pZScore: '',
     pLeftVision: v.leftVision,
     pRightVision: v.rightVision,
     pLength: v.length,

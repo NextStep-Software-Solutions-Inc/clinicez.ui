@@ -8,6 +8,7 @@ import { logger } from "@/lib/logger"
 import { calculateAge } from "@/lib/utils"
 import { getNextSequenceNumber } from "@/lib/sequence-generator"
 import { formatTransactionNumber, formatAuthorizationCode, formatKonsultaHciNumber } from "@/lib/format-sequence"
+import { formatPhilHealthAge } from "@/lib/philhealth-yakap/date-utils"
 
 const upper = (v?: string | null) => v ? v.toUpperCase() : ""
 
@@ -42,6 +43,7 @@ export const downloadEKASAction = withErrorHandling(async (
       select: {
         clinicId: true,
         caseNumber: true,
+        soapTransNo: true,
         konsultaHciCaseNo: true,
         konsultaHciTransNo: true,
         ekasTransactionNumber: true,
@@ -105,17 +107,36 @@ export const downloadEKASAction = withErrorHandling(async (
   let finalAuthCode: string | null = null
 
   if (consultationTicketId && consultationTicket) {
-    // Check if already generated and stored
-    finalTransactionNumber = consultationTicket.ekasTransactionNumber || null
-    finalAuthCode = consultationTicket.ekasAuthorizationCode || null
+    const enlistment = await prisma.philHealthKonsultaEnlistment.findFirst({
+      where: {
+        ClinicPatient: {
+          patientId: user.id,
+          ...(clinicId ? { clinicId } : {}),
+        },
+      },
+      orderBy: { year: "desc" },
+    });
+
+    // Check if already generated or available from XML/Profiling/SOAP
+    finalTransactionNumber =
+      consultationTicket.soapTransNo ||
+      enlistment?.profilingTransNo ||
+      consultationTicket.konsultaHciTransNo ||
+      consultationTicket.ekasTransactionNumber ||
+      null;
+    finalAuthCode = consultationTicket.ekasAuthorizationCode || null;
 
     // If not, generate once and store
     if (!finalTransactionNumber || !finalAuthCode) {
-      const transactionSeq = await getNextSequenceNumber('EKAS_TRANSACTION', clinicId || null)
-      const authSeq = await getNextSequenceNumber('EKAS_AUTH_CODE', clinicId || null)
+      const transactionSeq = await getNextSequenceNumber('EKAS_TRANSACTION', clinicId || null);
+      const authSeq = await getNextSequenceNumber('EKAS_AUTH_CODE', clinicId || null);
 
-      finalTransactionNumber = formatTransactionNumber(clinicId || null, transactionSeq)
-      finalAuthCode = formatAuthorizationCode(clinicId || null, authSeq)
+      if (!finalTransactionNumber) {
+        finalTransactionNumber = formatTransactionNumber(clinicId || null, transactionSeq);
+      }
+      if (!finalAuthCode) {
+        finalAuthCode = formatAuthorizationCode(clinicId || null, authSeq);
+      }
 
       // Store in database for future use
       try {
@@ -124,9 +145,9 @@ export const downloadEKASAction = withErrorHandling(async (
           data: {
             ekasTransactionNumber: finalTransactionNumber,
             ekasAuthorizationCode: finalAuthCode,
-            ekasTransactionGeneratedAt: new Date()
-          }
-        })
+            ekasTransactionGeneratedAt: new Date(),
+          },
+        });
       } catch (error) {
         console.warn("Failed to store EKAS transaction number, but continuing:", error)
       }
@@ -173,7 +194,9 @@ export const downloadEKASAction = withErrorHandling(async (
   }
 
   // Calculate age
+  const detailedAge = formatPhilHealthAge(user.dob)
   const age = user.dob ? calculateAge(user.dob) : undefined
+  const resolvedAge = detailedAge || age?.toString() || ''
 
   // Get user's mobile number
   const mobileNumber = user.mobile
@@ -190,7 +213,7 @@ export const downloadEKASAction = withErrorHandling(async (
     { field: 'memberPin', value: phr?.pin || '' },
     { field: 'memberType', value: upper(memberType?.name) },
     { field: 'memberFullName', value: `${upper(user.firstName)} ${upper(user.middleName)} ${upper(user.lastName)}`.trim() },
-    { field: 'memberAge', value: age?.toString() || '' },
+    { field: 'memberAge', value: resolvedAge },
     { field: 'mobileNumber', value: mobileNumber || '' },
     { field: 'authorizationTransactionCode', value: finalAuthCode },
   ]

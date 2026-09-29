@@ -537,9 +537,14 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
                     SurgicalHistories: true,
                     PersonalHistory: true,
                     ObGyneHistory: true,
-                    UserVaccinations: { include: { Vaccine: { include: { PhilHealthData: true } } } },
+                    UserVaccinations: {
+                      include: {
+                        Vaccine: { include: { PhilHealthData: true } },
+                        Dose: true,
+                        Route: true,
+                      },
+                    },
                     VitalSigns: {
-                      where: { isActive: true, deletedAt: null },
                       orderBy: { createdAt: "desc" },
                       take: 10,
                       select: {
@@ -1073,34 +1078,81 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
               (patient.ObGyneHistory.parity != null && patient.ObGyneHistory.parity > 0)
             )) ? 'Y' : 'N',
           } : undefined,
-          immunizations: patient.UserVaccinations.map(uv => {
-            const vName = (uv.Vaccine.name || '').toUpperCase().trim();
-            const phData = uv.Vaccine.PhilHealthData;
+          immunizations: patient.UserVaccinations.flatMap(uv => {
+            const vName = (uv.Vaccine?.name || '').toUpperCase().trim();
+            const phData = uv.Vaccine?.PhilHealthData;
 
-            let childCode = phData?.childImmcode || '';
-            let youngwCode = phData?.youngwImmcode || '';
-            let pregwCode = phData?.pregwImmcode || '';
-            let elderlyCode = phData?.elderlyImmcode || '';
-            let otherImm = phData?.otherImm || '';
+            const childCode = phData?.childImmcode?.trim() || '';
+            const youngwCode = phData?.youngwImmcode?.trim() || '';
+            const pregwCode = phData?.pregwImmcode?.trim() || '';
+            const elderlyCode = phData?.elderlyImmcode?.trim() || '';
 
-            // If the vaccine has NO mapping at all, fallback to "999" and put name in otherImm
-            if (!phData) {
-              childCode = '999';
-              youngwCode = '999';
-              pregwCode = '999';
-              elderlyCode = '999';
-              otherImm = vName;
+            // Construct detailed label if administered info exists
+            let detailedOther = (phData?.otherImm || '').trim();
+            if (!detailedOther && uv.dateGiven) {
+              const d = new Date(uv.dateGiven);
+              const dateStr = !isNaN(d.getTime()) ? `${d.getMonth() + 1}/${d.getDate()}/${d.getFullYear()}` : '';
+              const doseStr = uv.Dose?.dose ? uv.Dose.dose.toUpperCase() : '';
+              const routeStr = uv.Route?.route ? ` (${uv.Route.route.toUpperCase()})` : '';
+              const adminStr = uv.administeredBy ? uv.administeredBy.toUpperCase() : 'NOT SPECIFIED';
+              if (doseStr || dateStr) {
+                detailedOther = `${vName} (DOSE: ${doseStr}${routeStr}, DATE ADMINISTERED: ${dateStr}, GIVEN BY: ${adminStr})`;
+              }
+            }
+            if (!detailedOther && !childCode && !youngwCode && !pregwCode && !elderlyCode) {
+              detailedOther = vName;
             }
 
-            return {
-              childImmcode: childCode || '999',
-              youngwImmcode: youngwCode || '999',
-              pregwImmcode: pregwCode || '999',
-              elderlyImmcode: elderlyCode || '999',
-              otherImm: otherImm,
-              reportStatus: 'U', // U = Updated
-              deficiencyRemarks: uv.notes || '',
-            };
+            const entries: Array<{
+              childImmcode: string;
+              youngwImmcode: string;
+              pregwImmcode: string;
+              elderlyImmcode: string;
+              otherImm: string;
+              reportStatus: string;
+              deficiencyRemarks: string;
+            }> = [];
+
+            const hasCode = !!(childCode || youngwCode || pregwCode || elderlyCode);
+
+            if (hasCode) {
+              // 1-to-1 rule: Standard code entry has otherImm="" and unused category codes ""
+              entries.push({
+                childImmcode: childCode,
+                youngwImmcode: youngwCode,
+                pregwImmcode: pregwCode,
+                elderlyImmcode: elderlyCode,
+                otherImm: '',
+                reportStatus: 'U',
+                deficiencyRemarks: uv.notes || '',
+              });
+
+              // If detailed / other specified vaccine info exists, emit in a standalone entry
+              if (detailedOther) {
+                entries.push({
+                  childImmcode: '',
+                  youngwImmcode: '',
+                  pregwImmcode: '',
+                  elderlyImmcode: '',
+                  otherImm: detailedOther,
+                  reportStatus: 'U',
+                  deficiencyRemarks: uv.notes || '',
+                });
+              }
+            } else {
+              // No standard category code: standalone entry with otherImm, all code attributes blank ("")
+              entries.push({
+                childImmcode: '',
+                youngwImmcode: '',
+                pregwImmcode: '',
+                elderlyImmcode: '',
+                otherImm: detailedOther || vName,
+                reportStatus: 'U',
+                deficiencyRemarks: uv.notes || '',
+              });
+            }
+
+            return entries;
           }),
           ncdqans: patient.NcdQuestionnaire ? {
             q1: patient.NcdQuestionnaire.q1 || '',

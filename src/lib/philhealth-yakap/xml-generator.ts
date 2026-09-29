@@ -513,10 +513,11 @@ function mapBloodType(val?: string | null): string {
 }
 
 function mapSocValue(val?: string | null): string {
-  if (!val || val === 'N/A' || val === 'NOT_APPLICABLE' || val === 'X') return 'X';
+  if (!val || val === 'N/A' || val === 'NOT_APPLICABLE') return 'N';
   if (val === 'Y' || val === 'YES' || val === 'CURRENT' || val === 'REGULAR' || val === 'OCCASIONAL' || val === 'HEAVY') return 'Y';
-  if (val === 'N' || val === 'NO' || val === 'NEVER' || val === 'FORMER') return 'N';
-  return 'X';
+  if (val === 'X' || val === 'FORMER' || val === 'QUIT') return 'X';
+  if (val === 'N' || val === 'NO' || val === 'NEVER' || val === 'INACTIVE') return 'N';
+  return val.toUpperCase();
 }
 
 function buildSocHist(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
@@ -525,9 +526,9 @@ function buildSocHist(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
 
   parent.ele('SOCHIST', withStatus({
     pIsSmoker: mapSocValue(soc?.isSmoker),
-    pNoCigpk: soc?.noCigpk || '0',
+    pNoCigpk: soc?.noCigpk && soc.noCigpk !== '0' ? String(soc.noCigpk) : '',
     pIsAdrinker: mapSocValue(soc?.isAdrinker),
-    pNoBottles: soc?.noBottles || '0',
+    pNoBottles: soc?.noBottles && soc.noBottles !== '0' ? String(soc.noBottles) : '',
     pIllDrugUser: mapSocValue(soc?.illDrugUser) === 'Y' ? 'Y' : 'N',
     pIsSexuallyActive: isSexuallyActiveVal,
   })).up();

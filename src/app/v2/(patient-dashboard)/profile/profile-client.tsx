@@ -764,11 +764,14 @@ export default function ProfileClient({ patient }: ProfileClientProps) {
                               <ViewCell label="SpO₂ (O2 Saturation)" value={patientData.latestVitals.spo2 ? `${patientData.latestVitals.spo2}%` : null} />
                               <ViewCell label="Resp Rate" value={patientData.latestVitals.respRate ? `${patientData.latestVitals.respRate} br/min` : null} />
                               <ViewCell label="BMI" value={patientData.latestVitals.bmi} />
-                              <ViewCell label="Z-Score" value={patientData.latestVitals.zScore} />
+                              <ViewCell label="Z-Score" value="" />
                               <ViewCell label="Length/Height" value={patientData.latestVitals.length ? `${patientData.latestVitals.length} cm` : null} />
                               <ViewCell label="Head Circ." value={patientData.latestVitals.headCircumference ? `${patientData.latestVitals.headCircumference} cm` : null} />
                               <ViewCell label="Waist Circ." value={patientData.latestVitals.waistCircumference ? `${patientData.latestVitals.waistCircumference} cm` : null} />
                               <ViewCell label="Hip Circ." value={patientData.latestVitals.hipCircumference ? `${patientData.latestVitals.hipCircumference} cm` : null} />
+                              <ViewCell label="Skinfold Thickness" value={patientData.latestVitals.skinfoldThickness ? `${patientData.latestVitals.skinfoldThickness} mm` : null} />
+                              <ViewCell label="Limb Circ." value={patientData.latestVitals.limbCircumference ? `${patientData.latestVitals.limbCircumference} cm` : null} />
+                              <ViewCell label="Mid-Upper Arm Circ. (MUAC)" value={patientData.latestVitals.midUpperArmCircumference ? `${patientData.latestVitals.midUpperArmCircumference} cm` : null} />
                             </div>
                           </div>
 

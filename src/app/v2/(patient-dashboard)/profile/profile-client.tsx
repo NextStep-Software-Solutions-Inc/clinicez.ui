@@ -935,7 +935,14 @@ export default function ProfileClient({ patient }: ProfileClientProps) {
                             : null
                         }
                       />
-                      <ViewCell label="Packs per Year" value={patientData.personalHistory?.numberOfPacksPerYear} />
+                      <ViewCell
+                        label="Packs per Year"
+                        value={
+                          patientData.personalHistory?.numberOfPacksPerYear && patientData.personalHistory.numberOfPacksPerYear > 0
+                            ? String(patientData.personalHistory.numberOfPacksPerYear)
+                            : null
+                        }
+                      />
                       <ViewCell
                         label="Alcohol Intake"
                         value={
@@ -944,7 +951,14 @@ export default function ProfileClient({ patient }: ProfileClientProps) {
                             : null
                         }
                       />
-                      <ViewCell label="Bottles per Day" value={patientData.personalHistory?.numberOfBottlesPerDay ? String(patientData.personalHistory.numberOfBottlesPerDay) : null} />
+                      <ViewCell
+                        label="Bottles per Day"
+                        value={
+                          patientData.personalHistory?.numberOfBottlesPerDay && patientData.personalHistory.numberOfBottlesPerDay > 0
+                            ? String(patientData.personalHistory.numberOfBottlesPerDay)
+                            : null
+                        }
+                      />
                       <ViewCell
                         label="Drug Use Status"
                         value={

@@ -258,3 +258,233 @@ export async function setOrgMemberPermissionsForAdminAction({
     return { success: false, error: "Failed to update permissions" };
   }
 }
+
+export async function addOrgMemberForAdminAction({
+  orgId,
+  userEmail,
+  roleId,
+}: {
+  orgId: number;
+  userEmail: string;
+  roleId: number;
+}) {
+  try {
+    const isSuperAdmin = await isSuperAdminAction();
+    if (!isSuperAdmin) {
+      return { success: false, error: "Unauthorized: Only super admins can perform this action" };
+    }
+
+    const session = await prisma.user.findFirst(); // will resolve admin user below
+    if (!userEmail?.trim()) {
+      return { success: false, error: "User email is required" };
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email: userEmail.trim().toLowerCase() },
+    });
+    if (!user) {
+      return { success: false, error: `User with email "${userEmail}" not found` };
+    }
+
+    const organization = await prisma.organization.findUnique({
+      where: { id: orgId },
+      select: { id: true, orgUid: true },
+    });
+    if (!organization) {
+      return { success: false, error: "Organization not found" };
+    }
+
+    const role = await prisma.organizationRole.findUnique({
+      where: { id: roleId },
+      select: { id: true, name: true, orgId: true },
+    });
+    if (!role || role.orgId !== orgId) {
+      return { success: false, error: "Role not found in this organization" };
+    }
+
+    const existingMember = await prisma.organizationMember.findFirst({
+      where: { organizationId: orgId, userId: user.id },
+    });
+    if (existingMember) {
+      return { success: false, error: "User is already a member of this organization" };
+    }
+
+    const isOwnerRole = role.name.toLowerCase() === "owner";
+
+    await prisma.$transaction(async (tx) => {
+      // If setting as owner, demote any existing owner to Admin
+      if (isOwnerRole) {
+        let adminRole = await tx.organizationRole.findFirst({
+          where: {
+            orgId,
+            name: { equals: "Admin", mode: "insensitive" },
+          },
+        });
+        if (!adminRole) {
+          adminRole = await tx.organizationRole.create({
+            data: { orgId, name: "Admin", description: "Organization Administrator", canAccessDashboard: true, isActive: true },
+          });
+        }
+
+        const currentOwners = await tx.organizationMember.findMany({
+          where: {
+            organizationId: orgId,
+            OrganizationRole: { name: { equals: "owner", mode: "insensitive" } },
+          },
+        });
+
+        for (const currentOwner of currentOwners) {
+          await tx.organizationMember.update({
+            where: { id: currentOwner.id },
+            data: { role: adminRole.id },
+          });
+        }
+      }
+
+      await tx.organizationMember.create({
+        data: {
+          organizationId: orgId,
+          userId: user.id,
+          role: role.id,
+          status: "ACCEPTED",
+          acceptedAt: new Date(),
+        },
+      });
+    });
+
+    return { success: true, message: `Member added successfully as ${role.name}` };
+  } catch (error: any) {
+    console.error("[ADD_ORG_MEMBER_ERROR]", error);
+    return { success: false, error: error.message || "Failed to add organization member" };
+  }
+}
+
+export async function updateOrgMemberRoleForAdminAction({
+  orgMemberId,
+  roleId,
+}: {
+  orgMemberId: number;
+  roleId: number;
+}) {
+  try {
+    const isSuperAdmin = await isSuperAdminAction();
+    if (!isSuperAdmin) {
+      return { success: false, error: "Unauthorized: Only super admins can update roles" };
+    }
+
+    const member = await prisma.organizationMember.findUnique({
+      where: { id: orgMemberId },
+      include: {
+        OrganizationRole: { select: { id: true, name: true } },
+      },
+    });
+    if (!member) {
+      return { success: false, error: "Organization member not found" };
+    }
+
+    const newRole = await prisma.organizationRole.findUnique({
+      where: { id: roleId },
+      select: { id: true, name: true, orgId: true },
+    });
+    if (!newRole || newRole.orgId !== member.organizationId) {
+      return { success: false, error: "Selected role not found in this organization" };
+    }
+
+    const isNewRoleOwner = newRole.name.toLowerCase() === "owner";
+
+    await prisma.$transaction(async (tx) => {
+      if (isNewRoleOwner) {
+        let adminRole = await tx.organizationRole.findFirst({
+          where: {
+            orgId: member.organizationId,
+            name: { equals: "Admin", mode: "insensitive" },
+          },
+        });
+        if (!adminRole) {
+          adminRole = await tx.organizationRole.create({
+            data: {
+              orgId: member.organizationId,
+              name: "Admin",
+              description: "Organization Administrator",
+              canAccessDashboard: true,
+              isActive: true,
+            },
+          });
+        }
+
+        const otherOwners = await tx.organizationMember.findMany({
+          where: {
+            organizationId: member.organizationId,
+            id: { not: orgMemberId },
+            OrganizationRole: { name: { equals: "owner", mode: "insensitive" } },
+          },
+        });
+
+        for (const currentOwner of otherOwners) {
+          await tx.organizationMember.update({
+            where: { id: currentOwner.id },
+            data: { role: adminRole.id },
+          });
+        }
+      }
+
+      await tx.organizationMember.update({
+        where: { id: orgMemberId },
+        data: {
+          role: newRole.id,
+          status: "ACCEPTED",
+        },
+      });
+    });
+
+    return { success: true, message: `Member role updated to ${newRole.name}` };
+  } catch (error: any) {
+    console.error("[UPDATE_ORG_MEMBER_ROLE_ERROR]", error);
+    return { success: false, error: error.message || "Failed to update member role" };
+  }
+}
+
+export async function removeOrgMemberForAdminAction({
+  orgMemberId,
+}: {
+  orgMemberId: number;
+}) {
+  try {
+    const isSuperAdmin = await isSuperAdminAction();
+    if (!isSuperAdmin) {
+      return { success: false, error: "Unauthorized: Only super admins can remove members" };
+    }
+
+    const member = await prisma.organizationMember.findUnique({
+      where: { id: orgMemberId },
+      include: {
+        OrganizationRole: { select: { name: true } },
+      },
+    });
+    if (!member) {
+      return { success: false, error: "Organization member not found" };
+    }
+
+    if (member.OrganizationRole.name.toLowerCase() === "owner") {
+      const otherMembers = await prisma.organizationMember.count({
+        where: { organizationId: member.organizationId, id: { not: orgMemberId } },
+      });
+      if (otherMembers > 0) {
+        return {
+          success: false,
+          error: "Cannot remove the organization owner while other members exist. Please transfer ownership to another member first.",
+        };
+      }
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.orgMemberPermission.deleteMany({ where: { orgMemberId } });
+      await tx.organizationMember.delete({ where: { id: orgMemberId } });
+    });
+
+    return { success: true, message: "Organization member removed successfully" };
+  } catch (error: any) {
+    console.error("[REMOVE_ORG_MEMBER_ERROR]", error);
+    return { success: false, error: error.message || "Failed to remove organization member" };
+  }
+}

@@ -20,24 +20,61 @@ type CreateOrganizationPayload = {
   email: string;
 }
 export const createOrganizationAction = async (data: CreateOrganizationPayload) => {
-
+  const session = await getCachedSession();
   const { orgUid, tenantUid, name, description, logo, customUrl, email } = data;
-  const newOrganization = await prisma.organization.create({
-    data: {
-      Tenant: {
-        connect: {
-          tenantUid
-        }
-      },
-      orgUid,
-      name,
-      description,
-      logo,
-      customUrl,
-      email,
 
+  const newOrganization = await prisma.$transaction(async (tx) => {
+    const org = await tx.organization.create({
+      data: {
+        Tenant: {
+          connect: {
+            tenantUid,
+          },
+        },
+        orgUid,
+        name,
+        description,
+        logo,
+        customUrl,
+        email,
+      },
+    });
+
+    if (session?.user?.sub) {
+      const currentUser = await tx.user.findUnique({
+        where: { userId: session.user.sub },
+      });
+
+      if (currentUser) {
+        let ownerRole = await tx.organizationRole.findFirst({
+          where: { orgId: org.id, name: { equals: "Owner", mode: "insensitive" } },
+        });
+        if (!ownerRole) {
+          ownerRole = await tx.organizationRole.create({
+            data: {
+              orgId: org.id,
+              name: "Owner",
+              description: "Organization Owner",
+              canAccessDashboard: true,
+            },
+          });
+        }
+
+        await tx.organizationMember.create({
+          data: {
+            userId: currentUser.id,
+            organizationId: org.id,
+            role: ownerRole.id,
+            status: "ACCEPTED",
+            acceptedAt: new Date(),
+          },
+        });
+      }
     }
+
+    return org;
   });
+
   return newOrganization;
 };
 

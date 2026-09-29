@@ -14,24 +14,58 @@ type CreateClinicPayload = {
   logo?: string;
 }
 export const createClinicAction = withErrorHandling(async (data: CreateClinicPayload) => {
-
-  await sessionCheck();
+  const session = await sessionCheck();
 
   const { clinicUid, tenantUid, name, logo } = data;
-  const newOrganization = await prisma.clinic.create({
-    data: {
-      Tenant: {
-        connect: {
-          tenantUid
-        }
+  const newClinic = await prisma.$transaction(async (tx) => {
+    const clinic = await tx.clinic.create({
+      data: {
+        Tenant: {
+          connect: {
+            tenantUid,
+          },
+        },
+        clinicUid,
+        name,
+        logo,
       },
-      clinicUid,
-      name,
-      logo
+    });
+
+    if (session?.user?.sub) {
+      const currentUser = await tx.user.findUnique({
+        where: { userId: session.user.sub },
+      });
+
+      if (currentUser) {
+        let ownerRole = await tx.clinicRole.findFirst({
+          where: { name: { equals: "Owner", mode: "insensitive" } },
+        });
+        if (!ownerRole) {
+          ownerRole = await tx.clinicRole.create({
+            data: {
+              name: "Owner",
+              canAccessDashboard: true,
+              isActive: true,
+            },
+          });
+        }
+
+        await tx.clinicMember.create({
+          data: {
+            userId: currentUser.id,
+            clinicId: clinic.id,
+            roleId: ownerRole.id,
+            status: "ACTIVE",
+            isActive: true,
+          },
+        });
+      }
     }
+
+    return clinic;
   });
 
-  return { message: "Clinic created successfully", data: newOrganization };
+  return { message: "Clinic created successfully", data: newClinic };
 });
 
 

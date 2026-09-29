@@ -1,5 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@components/ui/card";
-import { getClinicByIdAction, getClinicRolesAction, getClinicAppointmentTabsAction, getClinicMembersForAdminAction, getClinicPatientsForAdminAction } from "@actions/super-admin/clinics.action";
+import { getClinicByIdAction, getClinicRolesAction, getAllClinicRolesAction, getClinicAppointmentTabsAction, getClinicMembersForAdminAction, getClinicPatientsForAdminAction } from "@actions/super-admin/clinics.action";
 import { notFound } from "next/navigation";
 import { Badge } from "@components/ui/badge";
 import { Hospital, Users, Calendar } from "lucide-react";
@@ -28,9 +28,10 @@ export default async function ClinicDetailPage({ params }: ClinicDetailPageProps
     notFound();
   }
 
-  const [clinic, initialRoles, appointmentTabsData, initialMembers, initialPatients] = await Promise.all([
+  const [clinic, initialRoles, allRoles, appointmentTabsData, initialMembers, initialPatients] = await Promise.all([
     getClinicByIdAction({ clinicId }),
     getClinicRolesAction({ pageSize: 10, pageNumber: 1 }),
+    getAllClinicRolesAction(),
     getClinicAppointmentTabsAction({ clinicId }),
     getClinicMembersForAdminAction({ clinicId }),
     getClinicPatientsForAdminAction({ clinicId }),
@@ -177,7 +178,7 @@ export default async function ClinicDetailPage({ params }: ClinicDetailPageProps
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <ClinicMembersTable initialData={initialMembers} clinicId={clinicId} />
+              <ClinicMembersTable initialData={initialMembers} clinicId={clinicId} availableRoles={allRoles} />
             </CardContent>
           </Card>
         </TabsContent>

@@ -409,3 +409,283 @@ export async function setClinicPatientPermissionsForAdminAction({
     return { success: false, error: "Failed to update patient permissions" };
   }
 }
+
+export async function getAllClinicRolesAction() {
+  const isSuperAdmin = await isSuperAdminAction();
+  if (!isSuperAdmin) {
+    throw new Error("Unauthorized: Only super admins can access this resource");
+  }
+  const roles = await prisma.clinicRole.findMany({
+    where: { isActive: true },
+    select: {
+      id: true,
+      name: true,
+      canAccessDashboard: true,
+    },
+    orderBy: { name: "asc" },
+  });
+  return roles;
+}
+
+export async function addClinicMemberForAdminAction({
+  clinicId,
+  userEmail,
+  roleId,
+}: {
+  clinicId: number;
+  userEmail: string;
+  roleId: number;
+}) {
+  try {
+    const isSuperAdmin = await isSuperAdminAction();
+    if (!isSuperAdmin) {
+      return { success: false, error: "Unauthorized: Only super admins can perform this action" };
+    }
+
+    if (!userEmail?.trim()) {
+      return { success: false, error: "User email is required" };
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email: userEmail.trim().toLowerCase() },
+    });
+    if (!user) {
+      return { success: false, error: `User with email "${userEmail}" not found` };
+    }
+
+    const clinic = await prisma.clinic.findUnique({
+      where: { id: clinicId },
+      select: { id: true, clinicUid: true },
+    });
+    if (!clinic) {
+      return { success: false, error: "Clinic not found" };
+    }
+
+    const role = await prisma.clinicRole.findUnique({
+      where: { id: roleId },
+      select: { id: true, name: true },
+    });
+    if (!role) {
+      return { success: false, error: "Role not found" };
+    }
+
+    const existingMember = await prisma.clinicMember.findFirst({
+      where: { clinicId, userId: user.id, deletedAt: null },
+    });
+    if (existingMember) {
+      return { success: false, error: "User is already a member of this clinic" };
+    }
+
+    const isOwnerRole = role.name.toLowerCase() === "owner";
+
+    await prisma.$transaction(async (tx) => {
+      // If setting as owner, demote existing owner to Admin
+      if (isOwnerRole) {
+        let adminRole = await tx.clinicRole.findFirst({
+          where: { name: { equals: "Admin", mode: "insensitive" } },
+        });
+        if (!adminRole) {
+          adminRole = await tx.clinicRole.create({
+            data: { name: "Admin", canAccessDashboard: true, isActive: true },
+          });
+        }
+
+        const currentOwners = await tx.clinicMember.findMany({
+          where: {
+            clinicId,
+            deletedAt: null,
+            Role: { name: { equals: "owner", mode: "insensitive" } },
+          },
+        });
+
+        for (const currentOwner of currentOwners) {
+          await tx.clinicMember.update({
+            where: { id: currentOwner.id },
+            data: { roleId: adminRole.id },
+          });
+        }
+      }
+
+      // Create new clinic member
+      const newMember = await tx.clinicMember.create({
+        data: {
+          clinicId,
+          userId: user.id,
+          roleId: role.id,
+          status: "ACTIVE",
+          isActive: true,
+        },
+      });
+
+      // Copy initial permissions from ClinicRoleInitialPermission if configured
+      const initialPermissions = await tx.clinicRoleInitialPermission.findMany({
+        where: {
+          clinicId,
+          clinicRoleId: role.id,
+          Permission: { isActive: true },
+        },
+        select: { permissionId: true },
+      });
+
+      if (initialPermissions.length > 0) {
+        await tx.clinicMemberPermission.createMany({
+          skipDuplicates: true,
+          data: initialPermissions.map((p) => ({
+            clinicMemberId: newMember.id,
+            permissionId: p.permissionId,
+          })),
+        });
+      }
+    });
+
+    return { success: true, message: `Member added successfully as ${role.name}` };
+  } catch (error: any) {
+    console.error("[ADD_CLINIC_MEMBER_ERROR]", error);
+    return { success: false, error: error.message || "Failed to add clinic member" };
+  }
+}
+
+export async function updateClinicMemberRoleForAdminAction({
+  clinicMemberId,
+  roleId,
+}: {
+  clinicMemberId: number;
+  roleId: number;
+}) {
+  try {
+    const isSuperAdmin = await isSuperAdminAction();
+    if (!isSuperAdmin) {
+      return { success: false, error: "Unauthorized: Only super admins can update roles" };
+    }
+
+    const member = await prisma.clinicMember.findUnique({
+      where: { id: clinicMemberId },
+      include: {
+        Role: { select: { id: true, name: true } },
+        Clinic: { select: { id: true, clinicUid: true } },
+      },
+    });
+    if (!member) {
+      return { success: false, error: "Clinic member not found" };
+    }
+
+    const newRole = await prisma.clinicRole.findUnique({
+      where: { id: roleId },
+      select: { id: true, name: true },
+    });
+    if (!newRole) {
+      return { success: false, error: "Selected role not found" };
+    }
+
+    const isNewRoleOwner = newRole.name.toLowerCase() === "owner";
+
+    await prisma.$transaction(async (tx) => {
+      // If promoting to owner, demote any other current active owner to Admin
+      if (isNewRoleOwner) {
+        let adminRole = await tx.clinicRole.findFirst({
+          where: { name: { equals: "Admin", mode: "insensitive" } },
+        });
+        if (!adminRole) {
+          adminRole = await tx.clinicRole.create({
+            data: { name: "Admin", canAccessDashboard: true, isActive: true },
+          });
+        }
+
+        const otherOwners = await tx.clinicMember.findMany({
+          where: {
+            clinicId: member.clinicId,
+            id: { not: clinicMemberId },
+            deletedAt: null,
+            Role: { name: { equals: "owner", mode: "insensitive" } },
+          },
+        });
+
+        for (const currentOwner of otherOwners) {
+          await tx.clinicMember.update({
+            where: { id: currentOwner.id },
+            data: { roleId: adminRole.id },
+          });
+        }
+      }
+
+      await tx.clinicMember.update({
+        where: { id: clinicMemberId },
+        data: {
+          roleId: newRole.id,
+          status: "ACTIVE",
+          isActive: true,
+        },
+      });
+
+      // Merge new role initial permissions
+      const initialPermissions = await tx.clinicRoleInitialPermission.findMany({
+        where: {
+          clinicId: member.clinicId,
+          clinicRoleId: newRole.id,
+          Permission: { isActive: true },
+        },
+        select: { permissionId: true },
+      });
+
+      if (initialPermissions.length > 0) {
+        await tx.clinicMemberPermission.createMany({
+          skipDuplicates: true,
+          data: initialPermissions.map((p) => ({
+            clinicMemberId,
+            permissionId: p.permissionId,
+          })),
+        });
+      }
+    });
+
+    return { success: true, message: `Member role updated to ${newRole.name}` };
+  } catch (error: any) {
+    console.error("[UPDATE_CLINIC_MEMBER_ROLE_ERROR]", error);
+    return { success: false, error: error.message || "Failed to update member role" };
+  }
+}
+
+export async function removeClinicMemberForAdminAction({
+  clinicMemberId,
+}: {
+  clinicMemberId: number;
+}) {
+  try {
+    const isSuperAdmin = await isSuperAdminAction();
+    if (!isSuperAdmin) {
+      return { success: false, error: "Unauthorized: Only super admins can remove members" };
+    }
+
+    const member = await prisma.clinicMember.findUnique({
+      where: { id: clinicMemberId },
+      include: {
+        Role: { select: { name: true } },
+      },
+    });
+    if (!member) {
+      return { success: false, error: "Clinic member not found" };
+    }
+
+    if (member.Role.name.toLowerCase() === "owner") {
+      const otherMembers = await prisma.clinicMember.count({
+        where: { clinicId: member.clinicId, id: { not: clinicMemberId }, deletedAt: null },
+      });
+      if (otherMembers > 0) {
+        return {
+          success: false,
+          error: "Cannot remove the clinic owner while other members exist. Please transfer ownership to another member first.",
+        };
+      }
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.clinicMemberPermission.deleteMany({ where: { clinicMemberId } });
+      await tx.clinicMember.delete({ where: { id: clinicMemberId } });
+    });
+
+    return { success: true, message: "Clinic member removed successfully" };
+  } catch (error: any) {
+    console.error("[REMOVE_CLINIC_MEMBER_ERROR]", error);
+    return { success: false, error: error.message || "Failed to remove clinic member" };
+  }
+}

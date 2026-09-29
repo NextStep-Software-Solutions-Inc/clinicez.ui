@@ -1277,53 +1277,55 @@ export default function ClinicPatientProfileClient({
             variants={tabContentVariants}
             className="space-y-8"
           >
-            {/* Allergies Card */}
-            <motion.div variants={cardVariants}>
-              <CardContainer
-                title="Allergies"
-                icon={AlertTriangle}
-                accentColor="bg-rose-500"
-                editing={editingSections['allergies']}
-                onEdit={() => toggleEdit('allergies', true)}
-                onCancel={() => toggleEdit('allergies', false)}
-                isAutoSaveForm
-              >
-                {editingSections['allergies'] ? (
-                  <AllergiesInlineForm
-                    userId={patientData.userId}
-                    allergies={patientData.userAllergies}
-                    onSuccess={handleRefresh}
-                  />
-                ) : (
-                  <div className="space-y-3">
-                    {patientData.userAllergies.length > 0 ? (
-                      patientData.userAllergies.map((all) => (
-                        <div key={all.id} className="p-3.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30 flex items-start gap-3">
-                          <AlertTriangle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
-                          <div>
-                            <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
-                              Allergen: {all.allergen}
-                            </p>
-                            <p className="text-xs text-slate-550 dark:text-slate-400 mt-0.5">
-                              Reaction: <span className="font-semibold text-slate-700 dark:text-slate-355">{all.reaction}</span>
-                            </p>
-                            {all.notes && (
-                              <p className="text-xs text-slate-550 dark:text-slate-400 mt-0.5">
-                                Notes: {all.notes}
+            {/* Allergies Card - Hidden in UI as documented under Medical Conditions */}
+            {false && (
+              <motion.div variants={cardVariants}>
+                <CardContainer
+                  title="Allergies"
+                  icon={AlertTriangle}
+                  accentColor="bg-rose-500"
+                  editing={editingSections['allergies']}
+                  onEdit={() => toggleEdit('allergies', true)}
+                  onCancel={() => toggleEdit('allergies', false)}
+                  isAutoSaveForm
+                >
+                  {editingSections['allergies'] ? (
+                    <AllergiesInlineForm
+                      userId={patientData.userId}
+                      allergies={patientData.userAllergies}
+                      onSuccess={handleRefresh}
+                    />
+                  ) : (
+                    <div className="space-y-3">
+                      {patientData.userAllergies.length > 0 ? (
+                        patientData.userAllergies.map((all) => (
+                          <div key={all.id} className="p-3.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30 flex items-start gap-3">
+                            <AlertTriangle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+                            <div>
+                              <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                                Allergen: {all.allergen}
                               </p>
-                            )}
+                              <p className="text-xs text-slate-550 dark:text-slate-400 mt-0.5">
+                                Reaction: <span className="font-semibold text-slate-700 dark:text-slate-355">{all.reaction}</span>
+                              </p>
+                              {all.notes && (
+                                <p className="text-xs text-slate-550 dark:text-slate-400 mt-0.5">
+                                  Notes: {all.notes}
+                                </p>
+                              )}
+                            </div>
                           </div>
+                        ))
+                      ) : (
+                        <div className="text-center py-6 text-slate-500 dark:text-slate-400 text-sm">
+                          No documented allergies. Click edit to add allergen.
                         </div>
-                      ))
-                    ) : (
-                      <div className="text-center py-6 text-slate-500 dark:text-slate-400 text-sm">
-                        No documented allergies. Click edit to add allergen.
-                      </div>
-                    )}
-                  </div>
-                )}
-              </CardContainer>
-            </motion.div>
+                      )}
+                    </div>
+                  )}
+                </CardContainer>
+              </motion.div>
+            )}
 
             {/* Vaccinations Card */}
             <motion.div variants={cardVariants}>
@@ -1373,54 +1375,56 @@ export default function ClinicPatientProfileClient({
               </CardContainer>
             </motion.div>
 
-            {/* Disabilities Card */}
-            <motion.div variants={cardVariants}>
-              <CardContainer
-                title="Disabilities & Chronic Illnesses"
-                icon={Accessibility}
-                accentColor="bg-purple-500"
-                editing={editingSections['disabilities']}
-                onEdit={() => toggleEdit('disabilities', true)}
-                onCancel={() => toggleEdit('disabilities', false)}
-                isAutoSaveForm
-              >
-                {editingSections['disabilities'] ? (
-                  <DisabilitiesInlineForm
-                    userId={patientData.userId}
-                    disabilities={patientData.userDisabilities}
-                    onSuccess={handleRefresh}
-                  />
-                ) : (
-                  <div className="space-y-4">
-                    {patientData.userDisabilities.length > 0 ? (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {patientData.userDisabilities.map((dis) => (
-                          <div key={dis.id} className="p-4 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30 flex items-start gap-3">
-                            <Accessibility className="w-5 h-5 text-purple-500 shrink-0 mt-0.5" />
-                            <div className="space-y-1">
-                              <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
-                                {dis.disability}
-                              </p>
-                              <div className="text-xs text-slate-550 dark:text-slate-400 space-y-0.5">
-                                <div>Severity: <span className="font-semibold text-slate-705 dark:text-slate-300 capitalize">{dis.severity.toLowerCase()}</span></div>
-                                <div>Diagnosed: {dis.dateDiagnosed ? new Date(dis.dateDiagnosed).toLocaleDateString() : '—'}</div>
-                                {dis.diagnosedBy && <div>By: {dis.diagnosedBy}</div>}
-                                <div>Status: <span className="font-semibold text-slate-700 dark:text-slate-300">{dis.isManaged ? 'Under Management' : 'Unmanaged'}</span></div>
-                                {dis.notes && <div>Notes: {dis.notes}</div>}
+            {/* Disabilities Card - Hidden in UI as documented under Medical Conditions */}
+            {false && (
+              <motion.div variants={cardVariants}>
+                <CardContainer
+                  title="Disabilities & Chronic Illnesses"
+                  icon={Accessibility}
+                  accentColor="bg-purple-500"
+                  editing={editingSections['disabilities']}
+                  onEdit={() => toggleEdit('disabilities', true)}
+                  onCancel={() => toggleEdit('disabilities', false)}
+                  isAutoSaveForm
+                >
+                  {editingSections['disabilities'] ? (
+                    <DisabilitiesInlineForm
+                      userId={patientData.userId}
+                      disabilities={patientData.userDisabilities}
+                      onSuccess={handleRefresh}
+                    />
+                  ) : (
+                    <div className="space-y-4">
+                      {patientData.userDisabilities.length > 0 ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {patientData.userDisabilities.map((dis) => (
+                            <div key={dis.id} className="p-4 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30 flex items-start gap-3">
+                              <Accessibility className="w-5 h-5 text-purple-500 shrink-0 mt-0.5" />
+                              <div className="space-y-1">
+                                <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                                  {dis.disability}
+                                </p>
+                                <div className="text-xs text-slate-550 dark:text-slate-400 space-y-0.5">
+                                  <div>Severity: <span className="font-semibold text-slate-705 dark:text-slate-300 capitalize">{dis.severity.toLowerCase()}</span></div>
+                                  <div>Diagnosed: {dis.dateDiagnosed ? new Date(dis.dateDiagnosed).toLocaleDateString() : '—'}</div>
+                                  {dis.diagnosedBy && <div>By: {dis.diagnosedBy}</div>}
+                                  <div>Status: <span className="font-semibold text-slate-700 dark:text-slate-300">{dis.isManaged ? 'Under Management' : 'Unmanaged'}</span></div>
+                                  {dis.notes && <div>Notes: {dis.notes}</div>}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-6 text-slate-500 dark:text-slate-400 text-sm">
-                        No disabilities recorded. Click edit to add records.
-                      </div>
-                    )}
-                  </div>
-                )}
-              </CardContainer>
-            </motion.div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-6 text-slate-500 dark:text-slate-400 text-sm">
+                          No disabilities recorded. Click edit to add records.
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </CardContainer>
+              </motion.div>
+            )}
 
             {/* NCD High Risk Assessment Card */}
             {isEligibleForNcd && (

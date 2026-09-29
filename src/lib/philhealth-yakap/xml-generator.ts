@@ -565,11 +565,12 @@ function buildImmunizations(parent: XmlNode, patient: KonsultaPatientData): XmlN
     })).up();
   } else {
     for (const imm of imms) {
+      const hasOther = !!imm.otherImm?.trim();
       immunizations.ele('IMMUNIZATION', withStatus({
-        pChildImmcode: imm.childImmcode || '',
-        pYoungwImmcode: imm.youngwImmcode || '',
-        pPregwImmcode: imm.pregwImmcode || '',
-        pElderlyImmcode: imm.elderlyImmcode || '',
+        pChildImmcode: hasOther ? '' : (imm.childImmcode || ''),
+        pYoungwImmcode: hasOther ? '' : (imm.youngwImmcode || ''),
+        pPregwImmcode: hasOther ? '' : (imm.pregwImmcode || ''),
+        pElderlyImmcode: hasOther ? '' : (imm.elderlyImmcode || ''),
         pOtherImm: imm.otherImm || '',
         pReportStatus: imm.reportStatus || 'U',
         pDeficiencyRemarks: imm.deficiencyRemarks || '',

@@ -8,6 +8,7 @@ import { generatePhilHealthKonsultaTransactionNumber } from "@/services/sequence
 import { generateKonsultaXml, type KonsultaPatientData, type KonsultaConsultationData, type KonsultaMedicineData, type KonsultaDiagnosticExamData } from "@/lib/philhealth-yakap/xml-generator";
 import { getKonsultaRecommendedService } from "./consultation/konsulta-recommended-services.action";
 import { resolvePrincipalMembersByPins } from "@/actions/clinics/konsulta-report.action";
+import { STAGING_TEST_MEMBERS } from "@/services/konsulta/pcb-xml-builder";
 
 export interface ProcessedXmlElement {
   type: string;
@@ -25,6 +26,7 @@ export interface ProcessedXmlPatient {
 }
 
 export interface RegistrationEntry {
+  [key: string]: any;
   pAssignedPin?: string;
   pAssignedLastName?: string;
   pAssignedFirstName?: string;
@@ -49,6 +51,8 @@ export interface RegistrationEntry {
   pAssignedStatus?: string;
   pEffYear?: string;
 }
+
+import { parsePhilHealthDate, resolvePhilHealthEnlistDate } from "@/lib/philhealth-yakap/date-utils";
 
 const getClinicCredentials = async (clinicUid: string) => {
   const session = await getCachedSession();
@@ -945,12 +949,18 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
         }
       }
 
+      const resolvedEnlistDate = resolvePhilHealthEnlistDate(
+        bp.ClinicPatient,
+        { patientPin, memberPin },
+        enlistment?.createdAt ? formatDate(enlistment.createdAt) : today
+      );
+
       return {
         enlistment: {
           hciCaseNo: enlistment?.hciCaseNo || "",
           hciTransNo: enlistment?.enlistmentTransNo || "",
           effYear: String(enlistment?.year || new Date().getFullYear()),
-          enlistDate: today,
+          enlistDate: resolvedEnlistDate,
           packageType: "K" as const,
           withConsent: "Y" as const,
           transDate: today,
@@ -978,7 +988,7 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
           age: ageStr,
         },
         profile: {
-          hciTransNo: enlistment?.hciCaseNo?.replace(/^T-/, 'P-') || "",
+          hciTransNo: enlistment?.profilingTransNo || (enlistment?.hciCaseNo ? enlistment.hciCaseNo.replace(/^T-?/, 'P') : ""),
           profDate: enlistment?.createdAt ? formatDate(enlistment.createdAt) : today,
           atc: profileAtc,
           isWalkedIn: profileIsWalkedIn ? "Y" as const : "N" as const,
@@ -1030,11 +1040,11 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
             date: sh.operationDate ? formatDate(sh.operationDate) : '',
           })),
           socialHistory: patient.PersonalHistory ? {
-            isSmoker: patient.PersonalHistory.smokingStatus === 'CURRENT' ? 'Y' : (patient.PersonalHistory.smokingStatus === 'NEVER' || patient.PersonalHistory.smokingStatus === 'FORMER' ? 'N' : ''),
-            noCigpk: patient.PersonalHistory.numberOfPacksPerYear ? String(patient.PersonalHistory.numberOfPacksPerYear) : '',
-            isAdrinker: (patient.PersonalHistory.alcoholStatus === 'OCCASIONAL' || patient.PersonalHistory.alcoholStatus === 'REGULAR' || patient.PersonalHistory.alcoholStatus === 'HEAVY') ? 'Y' : (patient.PersonalHistory.alcoholStatus === 'NEVER' ? 'N' : ''),
-            noBottles: patient.PersonalHistory.numberOfBottlesPerDay ? String(patient.PersonalHistory.numberOfBottlesPerDay) : '',
-            illDrugUser: patient.PersonalHistory.illicitDrugUse === 'CURRENT' ? 'Y' : (patient.PersonalHistory.illicitDrugUse === 'NEVER' || patient.PersonalHistory.illicitDrugUse === 'FORMER' ? 'N' : ''),
+            isSmoker: patient.PersonalHistory.smokingStatus === 'CURRENT' ? 'Y' : (patient.PersonalHistory.smokingStatus === 'FORMER' ? 'X' : (patient.PersonalHistory.smokingStatus === 'NEVER' ? 'N' : '')),
+            noCigpk: patient.PersonalHistory.numberOfPacksPerYear && patient.PersonalHistory.numberOfPacksPerYear > 0 ? String(patient.PersonalHistory.numberOfPacksPerYear) : '',
+            isAdrinker: (patient.PersonalHistory.alcoholStatus === 'OCCASIONAL' || patient.PersonalHistory.alcoholStatus === 'REGULAR' || patient.PersonalHistory.alcoholStatus === 'HEAVY') ? 'Y' : (patient.PersonalHistory.alcoholStatus === 'FORMER' ? 'X' : (patient.PersonalHistory.alcoholStatus === 'NEVER' ? 'N' : '')),
+            noBottles: patient.PersonalHistory.numberOfBottlesPerDay && patient.PersonalHistory.numberOfBottlesPerDay > 0 ? String(patient.PersonalHistory.numberOfBottlesPerDay) : '',
+            illDrugUser: patient.PersonalHistory.illicitDrugUse === 'CURRENT' ? 'Y' : (patient.PersonalHistory.illicitDrugUse === 'FORMER' ? 'X' : (patient.PersonalHistory.illicitDrugUse === 'NEVER' ? 'N' : '')),
             isSexuallyActive: patient.PersonalHistory.sexuallyActive === 'YES' ? 'Y' : (patient.PersonalHistory.sexuallyActive === 'NO' || patient.PersonalHistory.sexuallyActive === 'INACTIVE' ? 'N' : ''),
           } : undefined,
           obGyneHistory: patient.ObGyneHistory ? {
@@ -1803,6 +1813,22 @@ export async function importKonsultaDataAction(clinicUid: string, records: Proce
                 }
               });
             }
+
+            if (attrs.pEnlistDate) {
+              const enlistDateIso = parsePhilHealthDate(attrs.pEnlistDate);
+              const enlistDateObj = enlistDateIso ? new Date(enlistDateIso) : undefined;
+              await tx.clinicPatient.update({
+                where: { id: clinicPatientId },
+                data: {
+                  konsultaRegistrationStatus: "REGISTERED",
+                  konsultaRegisteredAt: enlistDateObj,
+                  konsultaRegistrationResult: {
+                    pAssignedDate: attrs.pEnlistDate,
+                    assignedDate: enlistDateIso,
+                  },
+                },
+              });
+            }
           }
 
           // 3. Import SOAPs
@@ -1920,6 +1946,9 @@ export async function importRegistrationListToDbAction(clinicUid: string, entrie
 
       if (!patientPin) continue;
 
+      const assignedDateIso = parsePhilHealthDate(entry.pAssignedDate);
+      const assignedDateObj = assignedDateIso ? new Date(assignedDateIso) : undefined;
+
       try {
         await prisma.$transaction(async (tx) => {
           // 1. Try to find existing patient by their actual PIN
@@ -1932,7 +1961,44 @@ export async function importRegistrationListToDbAction(clinicUid: string, entrie
             existingCount++;
             let userId = existingRecord.userId;
             if (existingRecord.User && existingRecord.User.ClinicPatients.length === 0) {
-              await tx.clinicPatient.create({ data: { clinicId: clinic.id, patientId: userId } });
+              await tx.clinicPatient.create({
+                data: {
+                  clinicId: clinic.id,
+                  patientId: userId,
+                  konsultaPatientPin: patientPin,
+                  konsultaMemberPin: principalMemberPin || patientPin,
+                  konsultaPatientType: entry.pAssignedType || (isDependent ? "DD" : "MM"),
+                  konsultaEffYear: entry.pEffYear || String(new Date().getFullYear()),
+                  konsultaRegistrationStatus: "REGISTERED",
+                  konsultaRegisteredAt: assignedDateObj,
+                  konsultaRegistrationCheckedAt: new Date(),
+                  konsultaRegistrationResult: {
+                    pAssignedDate: entry.pAssignedDate,
+                    assignedDate: assignedDateIso,
+                    raw: entry as any,
+                  },
+                },
+              });
+            } else if (existingRecord.User && existingRecord.User.ClinicPatients.length > 0) {
+              const cp = existingRecord.User.ClinicPatients[0];
+              await tx.clinicPatient.update({
+                where: { id: cp.id },
+                data: {
+                  konsultaPatientPin: patientPin,
+                  konsultaMemberPin: principalMemberPin || patientPin,
+                  konsultaPatientType: entry.pAssignedType || (isDependent ? "DD" : "MM"),
+                  konsultaEffYear: entry.pEffYear || cp.konsultaEffYear || String(new Date().getFullYear()),
+                  konsultaRegistrationStatus: "REGISTERED",
+                  konsultaRegisteredAt: assignedDateObj || cp.konsultaRegisteredAt,
+                  konsultaRegistrationCheckedAt: new Date(),
+                  konsultaRegistrationResult: {
+                    ...(typeof cp.konsultaRegistrationResult === "object" && cp.konsultaRegistrationResult !== null ? (cp.konsultaRegistrationResult as Record<string, any>) : {}),
+                    pAssignedDate: entry.pAssignedDate || (cp.konsultaRegistrationResult as any)?.pAssignedDate,
+                    assignedDate: assignedDateIso || (cp.konsultaRegistrationResult as any)?.assignedDate,
+                    raw: entry as any,
+                  },
+                },
+              });
             }
           } else {
             // Create new user (using synthetic email with .net domain)
@@ -1972,7 +2038,24 @@ export async function importRegistrationListToDbAction(clinicUid: string, entrie
               }
             });
 
-            await tx.clinicPatient.create({ data: { clinicId: clinic.id, patientId: userId } });
+            await tx.clinicPatient.create({
+              data: {
+                clinicId: clinic.id,
+                patientId: userId,
+                konsultaPatientPin: patientPin,
+                konsultaMemberPin: principalMemberPin || patientPin,
+                konsultaPatientType: entry.pAssignedType || (isDependent ? "DD" : "MM"),
+                konsultaEffYear: entry.pEffYear || String(new Date().getFullYear()),
+                konsultaRegistrationStatus: "REGISTERED",
+                konsultaRegisteredAt: assignedDateObj,
+                konsultaRegistrationCheckedAt: new Date(),
+                konsultaRegistrationResult: {
+                  pAssignedDate: entry.pAssignedDate,
+                  assignedDate: assignedDateIso,
+                  raw: entry as any,
+                },
+              },
+            });
             importedCount++;
           }
         });

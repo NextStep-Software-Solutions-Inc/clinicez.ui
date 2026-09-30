@@ -45,9 +45,11 @@ export const getClinicMembersAction = withErrorHandling(async (filters: GetClini
       Clinic: {
         clinicUid
       },
-      Role: {
-        name: roleName
-      },
+      Role: roleName
+        ? {
+            name: { equals: roleName, mode: "insensitive" },
+          }
+        : undefined,
       status,
       User: {
         userId

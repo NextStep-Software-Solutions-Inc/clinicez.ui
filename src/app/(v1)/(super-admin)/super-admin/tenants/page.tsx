@@ -3,7 +3,8 @@ import { getAllTenantsAction } from "@actions/super-admin/tenants.action";
 import TenantsTable from "@components/super-admin/TenantsTable";
 import { Button } from "@components/ui/button";
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Wand2 } from "lucide-react";
+import { CreateTenantDialog } from "@components/super-admin/CreateTenantDialog";
 
 export default async function TenantsPage() {
   const initialData = await getAllTenantsAction({
@@ -20,12 +21,15 @@ export default async function TenantsPage() {
             Manage all tenants in the system. Click on a tenant to view organizations and clinics.
           </CardDescription>
         </div>
-        <Link href="/super-admin/setup-wizard">
-          <Button>
-            <Plus className="w-4 h-4 mr-2" />
-            Setup Wizard
-          </Button>
-        </Link>
+        <div className="flex items-center gap-2">
+          <CreateTenantDialog />
+          <Link href="/super-admin/setup-wizard">
+            <Button variant="outline">
+              <Wand2 className="w-4 h-4 mr-2" />
+              Setup Wizard
+            </Button>
+          </Link>
+        </div>
       </CardHeader>
       <CardContent>
         <TenantsTable initialData={initialData} />

@@ -64,6 +64,9 @@ export default function TenantDetailTabs({ tenant }: TenantDetailTabsProps) {
   };
 
   const loadClinics = async () => {
+    if (organizations.length === 0) {
+      loadOrganizations();
+    }
     if (clinics.length > 0) return;
     
     setLoadingClinics(true);

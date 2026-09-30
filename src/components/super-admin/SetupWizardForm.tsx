@@ -82,6 +82,13 @@ export default function SetupWizardForm() {
     }
   };
 
+  const handleSkipToStep = (targetStep: number, fieldsToClear: (keyof WizardFormData)[]) => {
+    fieldsToClear.forEach((field) => {
+      reset((prev) => ({ ...prev, [field]: "" }));
+    });
+    setStep(targetStep);
+  };
+
   const handleBack = () => {
     setStep((prev) => Math.max(1, prev - 1));
   };
@@ -91,9 +98,17 @@ export default function SetupWizardForm() {
     try {
       const res = await setupTenantWizardAction(data);
       if (res.success) {
+        const hasOrg = Boolean(data.orgUid && data.orgName);
+        const hasClinic = Boolean(data.clinicUid && data.clinicName);
+        const createdItems = [
+          "Tenant",
+          hasOrg ? "Organization" : null,
+          hasClinic ? "Clinic" : null,
+        ].filter(Boolean).join(", ");
+
         toast({
           title: "Setup Complete",
-          description: "Tenant, Organization, and Clinic created successfully.",
+          description: `${createdItems} created successfully.`,
         });
         sessionStorage.removeItem(WIZARD_STORAGE_KEY);
         router.push("/super-admin/tenants");
@@ -117,6 +132,9 @@ export default function SetupWizardForm() {
   };
 
   if (!isMounted) return null; // Prevent hydration mismatch
+
+  const hasOrg = Boolean(formData.orgUid?.trim() && formData.orgName?.trim());
+  const hasClinic = Boolean(formData.clinicUid?.trim() && formData.clinicName?.trim());
 
   return (
     <div className="w-full max-w-3xl mx-auto space-y-6">
@@ -169,26 +187,36 @@ export default function SetupWizardForm() {
                 <Input id="tenantDescription" placeholder="Optional description" {...register("tenantDescription")} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="ownerEmail">Owner Email <span className="text-destructive">*</span></Label>
+                <Label htmlFor="ownerEmail">Owner Email (Optional)</Label>
                 <Controller
                   control={control}
                   name="ownerEmail"
-                  rules={{ required: "Owner Email is required" }}
                   render={({ field }) => (
                     <SuperAdminUserSearchCombobox
                       value={field.value}
                       onChange={field.onChange}
-                      placeholder="Search for an owner..."
+                      placeholder="Search for an owner (defaults to you)..."
                     />
                   )}
                 />
-                <p className="text-xs text-muted-foreground">This user must already exist in the system and will be assigned as the owner/admin.</p>
-                {errors.ownerEmail && <p className="text-sm text-destructive">{errors.ownerEmail.message}</p>}
+                <p className="text-xs text-muted-foreground">Defaults to you (the current user) as the owner if left empty.</p>
               </div>
             </CardContent>
-            <CardFooter className="flex justify-end">
-              <Button type="button" onClick={() => handleNext(["tenantUid", "tenantName", "ownerEmail"])}>
-                Next <ChevronRight className="w-4 h-4 ml-2" />
+            <CardFooter className="flex justify-between">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={async () => {
+                  const isStepValid = await trigger(["tenantUid", "tenantName"]);
+                  if (isStepValid) {
+                    handleSkipToStep(4, ["orgUid", "orgName", "orgDescription", "clinicUid", "clinicName", "clinicDescription"]);
+                  }
+                }}
+              >
+                Create Tenant Only
+              </Button>
+              <Button type="button" onClick={() => handleNext(["tenantUid", "tenantName"])}>
+                Next: Add Organization <ChevronRight className="w-4 h-4 ml-2" />
               </Button>
             </CardFooter>
           </Card>
@@ -198,18 +226,18 @@ export default function SetupWizardForm() {
         {step === 2 && (
           <Card>
             <CardHeader>
-              <CardTitle>Organization Details</CardTitle>
-              <CardDescription>Enter the details for the organization under this tenant.</CardDescription>
+              <CardTitle>Organization Details (Optional)</CardTitle>
+              <CardDescription>Enter details to create an organization under this tenant, or skip this step.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="orgUid">Organization UID <span className="text-destructive">*</span></Label>
-                <Input id="orgUid" placeholder="e.g. org_12345" {...register("orgUid", { required: "Organization UID is required" })} />
+                <Label htmlFor="orgUid">Organization UID</Label>
+                <Input id="orgUid" placeholder="e.g. org_12345" {...register("orgUid")} />
                 {errors.orgUid && <p className="text-sm text-destructive">{errors.orgUid.message}</p>}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="orgName">Organization Name <span className="text-destructive">*</span></Label>
-                <Input id="orgName" placeholder="e.g. Acme Main Branch" {...register("orgName", { required: "Organization Name is required" })} />
+                <Label htmlFor="orgName">Organization Name</Label>
+                <Input id="orgName" placeholder="e.g. Acme Main Branch" {...register("orgName")} />
                 {errors.orgName && <p className="text-sm text-destructive">{errors.orgName.message}</p>}
               </div>
               <div className="space-y-2">
@@ -219,9 +247,34 @@ export default function SetupWizardForm() {
             </CardContent>
             <CardFooter className="flex justify-between">
               <Button type="button" variant="outline" onClick={handleBack}>Back</Button>
-              <Button type="button" onClick={() => handleNext(["orgUid", "orgName"])}>
-                Next <ChevronRight className="w-4 h-4 ml-2" />
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => handleSkipToStep(3, ["orgUid", "orgName", "orgDescription"])}
+                >
+                  Skip Organization
+                </Button>
+                <Button
+                  type="button"
+                  onClick={async () => {
+                    const orgUid = formData.orgUid?.trim();
+                    const orgName = formData.orgName?.trim();
+                    if (!orgUid && !orgName) {
+                      // Neither entered, just skip to step 3
+                      setStep(3);
+                      return;
+                    }
+                    // If one was entered, both are required
+                    const isStepValid = await trigger(["orgUid", "orgName"]);
+                    if (isStepValid) {
+                      setStep(3);
+                    }
+                  }}
+                >
+                  Next: Add Clinic <ChevronRight className="w-4 h-4 ml-2" />
+                </Button>
+              </div>
             </CardFooter>
           </Card>
         )}
@@ -230,18 +283,18 @@ export default function SetupWizardForm() {
         {step === 3 && (
           <Card>
             <CardHeader>
-              <CardTitle>Clinic Details</CardTitle>
-              <CardDescription>Enter the details for the initial clinic.</CardDescription>
+              <CardTitle>Clinic Details (Optional)</CardTitle>
+              <CardDescription>Enter details to create an initial clinic, or skip this step.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="clinicUid">Clinic UID <span className="text-destructive">*</span></Label>
-                <Input id="clinicUid" placeholder="e.g. cln_12345" {...register("clinicUid", { required: "Clinic UID is required" })} />
+                <Label htmlFor="clinicUid">Clinic UID</Label>
+                <Input id="clinicUid" placeholder="e.g. cln_12345" {...register("clinicUid")} />
                 {errors.clinicUid && <p className="text-sm text-destructive">{errors.clinicUid.message}</p>}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="clinicName">Clinic Name <span className="text-destructive">*</span></Label>
-                <Input id="clinicName" placeholder="e.g. Acme Downtown Clinic" {...register("clinicName", { required: "Clinic Name is required" })} />
+                <Label htmlFor="clinicName">Clinic Name</Label>
+                <Input id="clinicName" placeholder="e.g. Acme Downtown Clinic" {...register("clinicName")} />
                 {errors.clinicName && <p className="text-sm text-destructive">{errors.clinicName.message}</p>}
               </div>
               <div className="space-y-2">
@@ -251,9 +304,32 @@ export default function SetupWizardForm() {
             </CardContent>
             <CardFooter className="flex justify-between">
               <Button type="button" variant="outline" onClick={handleBack}>Back</Button>
-              <Button type="button" onClick={() => handleNext(["clinicUid", "clinicName"])}>
-                Review <ChevronRight className="w-4 h-4 ml-2" />
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => handleSkipToStep(4, ["clinicUid", "clinicName", "clinicDescription"])}
+                >
+                  Skip Clinic
+                </Button>
+                <Button
+                  type="button"
+                  onClick={async () => {
+                    const clinicUid = formData.clinicUid?.trim();
+                    const clinicName = formData.clinicName?.trim();
+                    if (!clinicUid && !clinicName) {
+                      setStep(4);
+                      return;
+                    }
+                    const isStepValid = await trigger(["clinicUid", "clinicName"]);
+                    if (isStepValid) {
+                      setStep(4);
+                    }
+                  }}
+                >
+                  Review <ChevronRight className="w-4 h-4 ml-2" />
+                </Button>
+              </div>
             </CardFooter>
           </Card>
         )}
@@ -278,20 +354,28 @@ export default function SetupWizardForm() {
 
               <div className="space-y-2">
                 <h3 className="font-semibold text-lg border-b pb-1">Organization</h3>
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <span className="text-muted-foreground">UID:</span> <span className="font-medium">{formData.orgUid}</span>
-                  <span className="text-muted-foreground">Name:</span> <span className="font-medium">{formData.orgName}</span>
-                  <span className="text-muted-foreground">Description:</span> <span>{formData.orgDescription || "-"}</span>
-                </div>
+                {hasOrg ? (
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <span className="text-muted-foreground">UID:</span> <span className="font-medium">{formData.orgUid}</span>
+                    <span className="text-muted-foreground">Name:</span> <span className="font-medium">{formData.orgName}</span>
+                    <span className="text-muted-foreground">Description:</span> <span>{formData.orgDescription || "-"}</span>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground italic">Skipped — can be created later under this tenant.</p>
+                )}
               </div>
 
               <div className="space-y-2">
                 <h3 className="font-semibold text-lg border-b pb-1">Clinic</h3>
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <span className="text-muted-foreground">UID:</span> <span className="font-medium">{formData.clinicUid}</span>
-                  <span className="text-muted-foreground">Name:</span> <span className="font-medium">{formData.clinicName}</span>
-                  <span className="text-muted-foreground">Description:</span> <span>{formData.clinicDescription || "-"}</span>
-                </div>
+                {hasClinic ? (
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <span className="text-muted-foreground">UID:</span> <span className="font-medium">{formData.clinicUid}</span>
+                    <span className="text-muted-foreground">Name:</span> <span className="font-medium">{formData.clinicName}</span>
+                    <span className="text-muted-foreground">Description:</span> <span>{formData.clinicDescription || "-"}</span>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground italic">Skipped — can be created later under this tenant.</p>
+                )}
               </div>
             </CardContent>
             <CardFooter className="flex justify-between">

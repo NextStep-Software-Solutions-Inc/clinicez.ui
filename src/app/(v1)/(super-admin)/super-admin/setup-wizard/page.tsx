@@ -19,7 +19,7 @@ export default function SetupWizardPage() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Tenant Setup Wizard</h1>
         <p className="text-muted-foreground mt-2">
-          Create a new tenant, an initial organization, and a clinic in one simple flow.
+          Create a new tenant with optional organization and clinic setup.
         </p>
       </div>
       

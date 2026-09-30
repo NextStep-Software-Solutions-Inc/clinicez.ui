@@ -2,6 +2,8 @@
 
 import "server-only";
 import prisma from "@lib/prisma";
+import { isSuperAdminAction } from "./admin-check.action";
+import { getCachedSession } from "@actions/session.action";
 
 export type GetAllTenants = Awaited<ReturnType<typeof getAllTenantsAction>>;
 export async function getAllTenantsAction({
@@ -240,4 +242,78 @@ export async function getTenantByIdAction({
   });
 
   return tenant;
+}
+
+export async function createTenantAction(payload: {
+  tenantUid: string;
+  name: string;
+  description?: string;
+  ownerEmail?: string;
+}) {
+  try {
+    const isSuperAdmin = await isSuperAdminAction();
+    if (!isSuperAdmin) throw new Error("Unauthorized: Only super admins can perform this action");
+
+    const session = await getCachedSession();
+    if (!session?.user?.sub) throw new Error("Unauthorized: User not authenticated");
+
+    const creatorUser = await prisma.user.findUnique({
+      where: { userId: session.user.sub },
+    });
+    if (!creatorUser) throw new Error("Authenticated user not found in database.");
+
+    const { tenantUid, name, description, ownerEmail } = payload;
+    if (!tenantUid?.trim() || !name?.trim()) {
+      throw new Error("Tenant UID and Name are required.");
+    }
+
+    const trimmedUid = tenantUid.trim();
+    const trimmedName = name.trim();
+
+    // Check if tenant UID already exists
+    const existingTenant = await prisma.tenant.findUnique({
+      where: { tenantUid: trimmedUid },
+    });
+    if (existingTenant) {
+      throw new Error(`Tenant UID "${trimmedUid}" is already taken.`);
+    }
+
+    // Determine owner: specified user or creator user
+    let ownerUser = creatorUser;
+    if (ownerEmail?.trim()) {
+      const foundUser = await prisma.user.findFirst({
+        where: { email: ownerEmail.trim(), isActive: true },
+      });
+      if (!foundUser) {
+        throw new Error(`Owner user with email "${ownerEmail.trim()}" not found or is inactive.`);
+      }
+      ownerUser = foundUser;
+    }
+
+    const tenant = await prisma.tenant.create({
+      data: {
+        tenantUid: trimmedUid,
+        name: trimmedName,
+        description: description?.trim() || null,
+        ownerId: ownerUser.id,
+        isActive: true,
+      },
+      include: {
+        Owner: {
+          select: {
+            id: true,
+            userId: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    return { success: true, data: tenant };
+  } catch (error: any) {
+    console.error("Create Tenant Error:", error);
+    return { success: false, error: error.message || "Failed to create tenant" };
+  }
 }

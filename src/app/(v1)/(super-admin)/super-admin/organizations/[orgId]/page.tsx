@@ -128,7 +128,7 @@ export default async function OrganizationDetailPage({ params }: OrganizationDet
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <OrgMembersTable initialData={initialMembers} orgId={orgId} />
+              <OrgMembersTable initialData={initialMembers} orgId={orgId} availableRoles={initialRoles.data} />
             </CardContent>
           </Card>
         </TabsContent>

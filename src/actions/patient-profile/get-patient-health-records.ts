@@ -435,6 +435,9 @@ export async function getPatientHealthRecords(): Promise<SerializedPatientHealth
         dateGiven: vac.dateGiven.toISOString(),
         notes: vac.notes,
         administeredBy: vac.administeredBy,
+        category: vac.category,
+        code: vac.code,
+        facilityName: vac.facilityName,
       })),
 
       // Disabilities & Illnesses

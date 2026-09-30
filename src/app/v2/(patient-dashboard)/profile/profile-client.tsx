@@ -39,7 +39,7 @@ import {
   mapVitalSignToFormInput,
 } from '@/lib/mappers/health-records-mappers'
 
-import { calculateAge } from '@/lib/utils'
+import { calculateAge, cn } from '@/lib/utils'
 import { personalHistoryLabels } from '@/schemas'
 
 import { DemographicsInlineForm } from '@/components/v2/patients/forms/DemographicsInlineForm'
@@ -53,6 +53,7 @@ import { AllergiesInlineForm } from '@/components/v2/patients/forms/AllergiesInl
 import { EmergencyContactInlineForm } from '@/components/v2/patients/forms/EmergencyContactInlineForm'
 import { AddressInlineForm } from '@/components/v2/patients/forms/AddressInlineForm'
 import { VaccinationsInlineForm } from '@/components/v2/patients/forms/VaccinationsInlineForm'
+import { VaccinationsBookletView } from '@/components/v2/patients/VaccinationsBookletView'
 import { DisabilitiesInlineForm } from '@/components/v2/patients/forms/DisabilitiesInlineForm'
 import { SurgicalHistoryInlineForm } from '@/components/v2/patients/forms/SurgicalHistoryInlineForm'
 import { PhysicalExamInlineForm } from '@/components/v2/patients/forms/PhysicalExamInlineForm'
@@ -986,7 +987,7 @@ export default function ProfileClient({ patient }: ProfileClientProps) {
               </motion.div>
 
               {/* Medical Conditions */}
-              <motion.div variants={cardVariants}>
+              <motion.div variants={cardVariants} className={cn("relative focus-within:z-20", editingSections['medical-history'] && "z-20")}>
                 <CardContainer
                   title="Medical Conditions"
                   icon={Stethoscope}
@@ -1036,7 +1037,7 @@ export default function ProfileClient({ patient }: ProfileClientProps) {
               </motion.div>
 
               {/* Surgical History */}
-              <motion.div variants={cardVariants}>
+              <motion.div variants={cardVariants} className={cn("relative focus-within:z-20", editingSections['surgical-history'] && "z-20")}>
                 <CardContainer
                   title="Surgical History"
                   icon={Scissors}
@@ -1083,7 +1084,7 @@ export default function ProfileClient({ patient }: ProfileClientProps) {
               </motion.div>
 
               {/* Family Medical History */}
-              <motion.div variants={cardVariants}>
+              <motion.div variants={cardVariants} className={cn("relative focus-within:z-20", editingSections['family-history'] && "z-20")}>
                 <CardContainer
                   title="Family History"
                   icon={Users}
@@ -1145,7 +1146,7 @@ export default function ProfileClient({ patient }: ProfileClientProps) {
             >
               {/* Allergies Card - Hidden in UI as documented under Medical Conditions */}
               {false && (
-                <motion.div variants={cardVariants}>
+                <motion.div variants={cardVariants} className={cn("relative focus-within:z-20", editingSections['allergies'] && "z-20")}>
                   <CardContainer
                     title="Allergies"
                     icon={AlertTriangle}
@@ -1208,42 +1209,25 @@ export default function ProfileClient({ patient }: ProfileClientProps) {
                     <VaccinationsInlineForm
                       userId={patientData.userId}
                       vaccinations={patientData.userVaccinations}
+                      dob={patientData.dob}
+                      age={patientData.age}
+                      gender={patientData.gender}
                       onSuccess={handleRefresh}
                     />
                   ) : (
-                    <div className="space-y-4">
-                      {patientData.userVaccinations.length > 0 ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {patientData.userVaccinations.map((vac) => (
-                            <div key={vac.id} className="p-4 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30 flex items-start gap-3">
-                              <Syringe className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
-                              <div className="space-y-1">
-                                <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
-                                  {vac.vaccine}
-                                </p>
-                                <div className="text-xs text-slate-550 dark:text-slate-400 space-y-0.5">
-                                  <div>Dose: <span className="font-semibold text-slate-700 dark:text-slate-355">{vac.dose}</span> ({vac.route})</div>
-                                  <div>Date Administered: <span className="font-semibold text-slate-700 dark:text-slate-355">{new Date(vac.dateGiven).toLocaleDateString()}</span></div>
-                                  {vac.administeredBy && <div>Given By: {vac.administeredBy}</div>}
-                                  {vac.notes && <div>Notes: {vac.notes}</div>}
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="text-center py-6 text-slate-500 dark:text-slate-400 text-sm">
-                          No immunizations logged. Click Manage to record vaccination.
-                        </div>
-                      )}
-                    </div>
+                    <VaccinationsBookletView
+                      vaccinations={patientData.userVaccinations}
+                      dob={patientData.dob}
+                      age={patientData.age}
+                      gender={patientData.gender}
+                    />
                   )}
                 </CardContainer>
               </motion.div>
 
               {/* Disabilities Card - Hidden in UI as documented under Medical Conditions */}
               {false && (
-                <motion.div variants={cardVariants}>
+                <motion.div variants={cardVariants} className={cn("relative focus-within:z-20", editingSections['disabilities'] && "z-20")}>
                   <CardContainer
                     title="Disabilities & Chronic Illnesses"
                     icon={Accessibility}
@@ -1391,6 +1375,7 @@ interface CardContainerProps {
   onSave?: () => void
   saving?: boolean
   isAutoSaveForm?: boolean
+  className?: string
   children: React.ReactNode
 }
 
@@ -1404,12 +1389,19 @@ function CardContainer({
   onSave,
   saving = false,
   isAutoSaveForm = false,
+  className,
   children
 }: CardContainerProps) {
   return (
-    <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-950/90 shadow-sm p-3.5 sm:p-5 relative transition-all hover:shadow-md">
+    <div className={cn(
+      "rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-950/90 shadow-sm p-3.5 sm:p-5 relative transition-all hover:shadow-md",
+      editing && "z-20",
+      className
+    )}>
       {/* Accent strip */}
-      <div className={`absolute top-0 left-0 w-full h-[3px] rounded-t-2xl ${accentColor}`}></div>
+      <div className="absolute top-0 left-0 right-0 h-[3px] overflow-hidden rounded-t-2xl pointer-events-none">
+        <div className={`w-full h-full ${accentColor}`}></div>
+      </div>
 
       {/* Header */}
       <div className="flex items-center justify-between gap-2.5 pb-2.5 mb-3 border-b border-slate-100 dark:border-slate-800/80">

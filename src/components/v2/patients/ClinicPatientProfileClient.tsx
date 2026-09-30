@@ -45,7 +45,7 @@ import {
   mapPatientDataToDemographicsFormInput,
   mapVitalSignToFormInput,
 } from '@/lib/mappers/health-records-mappers'
-import { calculateAge } from '@/lib/utils'
+import { calculateAge, cn } from '@/lib/utils'
 import { personalHistoryLabels } from '@/schemas'
 import { DemographicsInlineForm } from './forms/DemographicsInlineForm'
 import { VitalSignsInlineForm } from './forms/VitalSignsInlineForm'
@@ -58,6 +58,7 @@ import { AllergiesInlineForm } from './forms/AllergiesInlineForm'
 import { EmergencyContactInlineForm } from './forms/EmergencyContactInlineForm'
 import { AddressInlineForm } from './forms/AddressInlineForm'
 import { VaccinationsInlineForm } from './forms/VaccinationsInlineForm'
+import { VaccinationsBookletView } from './VaccinationsBookletView'
 import { DisabilitiesInlineForm } from './forms/DisabilitiesInlineForm'
 import { SurgicalHistoryInlineForm } from './forms/SurgicalHistoryInlineForm'
 import { PhysicalExamInlineForm } from './forms/PhysicalExamInlineForm'
@@ -444,7 +445,7 @@ export default function ClinicPatientProfileClient({
             className="space-y-4 sm:space-y-6"
           >
             {/* Primary PhilHealth Insurance Card */}
-            <motion.div variants={cardVariants}>
+            <motion.div variants={cardVariants} className={cn("relative focus-within:z-20", editingSections['philhealth'] && "z-20")}>
               <CardContainer
                 title="PhilHealth & Insurance"
                 icon={Building}
@@ -588,7 +589,7 @@ export default function ClinicPatientProfileClient({
             className="space-y-8"
           >
             {/* Demographics Card */}
-            <motion.div variants={cardVariants}>
+            <motion.div variants={cardVariants} className={cn("relative focus-within:z-20", editingSections['demographics'] && "z-20")}>
               <CardContainer
                 title="Personal Information"
                 icon={User}
@@ -708,7 +709,7 @@ export default function ClinicPatientProfileClient({
             ) : null}
 
             {/* Addresses Card */}
-            <motion.div variants={cardVariants}>
+            <motion.div variants={cardVariants} className={cn("relative focus-within:z-20", editingSections['addresses'] && "z-20")}>
               <CardContainer
                 title="Addresses"
                 icon={MapPin}
@@ -764,7 +765,7 @@ export default function ClinicPatientProfileClient({
             </motion.div>
 
             {/* Emergency Contacts Card */}
-            <motion.div variants={cardVariants}>
+            <motion.div variants={cardVariants} className={cn("relative focus-within:z-20", editingSections['contacts'] && "z-20")}>
               <CardContainer
                 title="Emergency Contacts"
                 icon={Phone}
@@ -832,7 +833,7 @@ export default function ClinicPatientProfileClient({
             className="space-y-8"
           >
             {/* Vitals Card */}
-            <motion.div variants={cardVariants}>
+            <motion.div variants={cardVariants} className={cn("relative focus-within:z-20", editingSections['vital-signs'] && "z-20")}>
               <CardContainer
                 title="Vital Signs"
                 icon={Activity}
@@ -955,7 +956,7 @@ export default function ClinicPatientProfileClient({
             </motion.div>
 
             {/* Physical Examinations Card */}
-            <motion.div variants={cardVariants}>
+            <motion.div variants={cardVariants} className={cn("relative focus-within:z-20", editingSections['physical-exam'] && "z-20")}>
               <CardContainer
                 title="Physical Examinations"
                 icon={Activity}
@@ -1043,7 +1044,7 @@ export default function ClinicPatientProfileClient({
             className="space-y-8"
           >
             {/* Lifestyle & Social Habits */}
-            <motion.div variants={cardVariants}>
+            <motion.div variants={cardVariants} className={cn("relative focus-within:z-20", editingSections['personal-history'] && "z-20")}>
               <CardContainer
                 title="Personal History & Lifestyle"
                 icon={ClipboardList}
@@ -1120,7 +1121,7 @@ export default function ClinicPatientProfileClient({
             </motion.div>
 
             {/* Medical Conditions */}
-            <motion.div variants={cardVariants}>
+            <motion.div variants={cardVariants} className={cn("relative focus-within:z-20", editingSections['medical-history'] && "z-20")}>
               <CardContainer
                 title="Medical Conditions"
                 icon={Stethoscope}
@@ -1170,7 +1171,7 @@ export default function ClinicPatientProfileClient({
             </motion.div>
 
             {/* Surgical History */}
-            <motion.div variants={cardVariants}>
+            <motion.div variants={cardVariants} className={cn("relative focus-within:z-20", editingSections['surgical-history'] && "z-20")}>
               <CardContainer
                 title="Surgical History"
                 icon={Scissors}
@@ -1217,7 +1218,7 @@ export default function ClinicPatientProfileClient({
             </motion.div>
 
             {/* Family Medical History */}
-            <motion.div variants={cardVariants}>
+            <motion.div variants={cardVariants} className={cn("relative focus-within:z-20", editingSections['family-history'] && "z-20")}>
               <CardContainer
                 title="Family History"
                 icon={Users}
@@ -1279,7 +1280,7 @@ export default function ClinicPatientProfileClient({
           >
             {/* Allergies Card - Hidden in UI as documented under Medical Conditions */}
             {false && (
-              <motion.div variants={cardVariants}>
+              <motion.div variants={cardVariants} className={cn("relative focus-within:z-20", editingSections['allergies'] && "z-20")}>
                 <CardContainer
                   title="Allergies"
                   icon={AlertTriangle}
@@ -1328,7 +1329,7 @@ export default function ClinicPatientProfileClient({
             )}
 
             {/* Vaccinations Card */}
-            <motion.div variants={cardVariants}>
+            <motion.div variants={cardVariants} className={cn("relative focus-within:z-20", editingSections['vaccinations'] && "z-20")}>
               <CardContainer
                 title="Vaccination & Immunization"
                 icon={Syringe}
@@ -1342,55 +1343,25 @@ export default function ClinicPatientProfileClient({
                   <VaccinationsInlineForm
                     userId={patientData.userId}
                     vaccinations={patientData.userVaccinations}
+                    dob={patientData.dob}
+                    age={patientData.age}
+                    gender={patientData.gender}
                     onSuccess={handleRefresh}
                   />
                 ) : (
-                  <div className="space-y-4">
-                    {patientData.userVaccinations.length > 0 ? (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {patientData.userVaccinations.map((vac) => (
-                          <div key={vac.id} className="p-4 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30 flex items-start gap-3">
-                            <Syringe className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
-                                  {vac.vaccine}
-                                </p>
-                                {(vac as any).code && (
-                                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300">
-                                    {(vac as any).code}
-                                  </span>
-                                )}
-                                {(vac as any).category && (
-                                  <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
-                                    {String((vac as any).category).replace('_', ' ')}
-                                  </span>
-                                )}
-                              </div>
-                              <div className="text-xs text-slate-550 dark:text-slate-400 space-y-0.5">
-                                <div>Dose: <span className="font-semibold text-slate-700 dark:text-slate-350">{vac.dose}</span> ({vac.route})</div>
-                                <div>Date Administered: <span className="font-semibold text-slate-700 dark:text-slate-350">{new Date(vac.dateGiven).toLocaleDateString()}</span></div>
-                                {vac.administeredBy && <div>Given By: {vac.administeredBy}</div>}
-                                {(vac as any).facilityName && <div>Facility: {(vac as any).facilityName}</div>}
-                                {vac.notes && <div>Notes: {vac.notes}</div>}
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-6 text-slate-500 dark:text-slate-400 text-sm">
-                        No immunizations logged. Click edit to record vaccination.
-                      </div>
-                    )}
-                  </div>
+                  <VaccinationsBookletView
+                    vaccinations={patientData.userVaccinations}
+                    dob={patientData.dob}
+                    age={patientData.age}
+                    gender={patientData.gender}
+                  />
                 )}
               </CardContainer>
             </motion.div>
 
             {/* Disabilities Card - Hidden in UI as documented under Medical Conditions */}
             {false && (
-              <motion.div variants={cardVariants}>
+              <motion.div variants={cardVariants} className={cn("relative focus-within:z-20", editingSections['disabilities'] && "z-20")}>
                 <CardContainer
                   title="Disabilities & Chronic Illnesses"
                   icon={Accessibility}
@@ -1441,7 +1412,7 @@ export default function ClinicPatientProfileClient({
 
             {/* NCD High Risk Assessment Card */}
             {isEligibleForNcd && (
-              <motion.div variants={cardVariants}>
+              <motion.div variants={cardVariants} className={cn("relative focus-within:z-20", editingSections['ncd'] && "z-20")}>
                 <CardContainer
                   title="NCD High Risk Assessment"
                   icon={ClipboardList}
@@ -1555,7 +1526,7 @@ export default function ClinicPatientProfileClient({
             className="space-y-8"
           >
             {/* OB/GYN Card */}
-            <motion.div variants={cardVariants}>
+            <motion.div variants={cardVariants} className={cn("relative focus-within:z-20", editingSections['ob-gyne'] && "z-20")}>
               <CardContainer
                 title="OB/GYN History"
                 icon={Baby}
@@ -1647,6 +1618,7 @@ interface CardContainerProps {
   onSave?: () => void
   saving?: boolean
   isAutoSaveForm?: boolean
+  className?: string
   children: React.ReactNode
 }
 
@@ -1660,12 +1632,19 @@ function CardContainer({
   onSave,
   saving = false,
   isAutoSaveForm = false,
+  className,
   children
 }: CardContainerProps) {
   return (
-    <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-950/90 shadow-sm p-3.5 sm:p-5 relative overflow-hidden transition-all hover:shadow-md">
+    <div className={cn(
+      "rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-950/90 shadow-sm p-3.5 sm:p-5 relative transition-all hover:shadow-md",
+      editing && "z-20",
+      className
+    )}>
       {/* Accent strip */}
-      <div className={`absolute top-0 left-0 right-0 h-[3px] ${accentColor}`}></div>
+      <div className="absolute top-0 left-0 right-0 h-[3px] overflow-hidden rounded-t-2xl pointer-events-none">
+        <div className={`w-full h-full ${accentColor}`}></div>
+      </div>
 
       {/* Header */}
       <div className="flex items-center justify-between gap-2.5 pb-2.5 mb-3 border-b border-slate-100 dark:border-slate-800/80">

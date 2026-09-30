@@ -161,7 +161,7 @@ export function HealthConditionsV2Combobox({
       )}
 
       {/* Dropdown Selector */}
-      <div className="relative">
+      <div className={cn("relative", open && "z-50")}>
         <button
           type="button"
           role="combobox"

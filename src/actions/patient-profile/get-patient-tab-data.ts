@@ -470,6 +470,9 @@ export async function getPatientVaccinationsData(userId?: string): Promise<Vacci
                 dateGiven: v.dateGiven.toISOString(),
                 notes: v.notes,
                 administeredBy: v.administeredBy,
+                category: v.category,
+                code: v.code,
+                facilityName: v.facilityName,
             })),
         }
     } catch (error) {

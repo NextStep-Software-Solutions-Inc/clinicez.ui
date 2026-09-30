@@ -374,9 +374,6 @@ export function VaccinationsInlineForm({
               <Syringe className="w-4 h-4 text-teal-600 dark:text-teal-400" />
               Vaccination & Immunization Record
             </h4>
-            <Badge variant="outline" className="text-[10px] border-teal-300 text-teal-700 dark:text-teal-400 font-semibold py-0 h-4">
-              PhilHealth Konsulta DTD v1.14
-            </Badge>
           </div>
           <p className="text-xs text-muted-foreground mt-0.5">
             Track multi-dose primary series, patient immunizations, and official PhilHealth compliance.
@@ -390,11 +387,10 @@ export function VaccinationsInlineForm({
             <button
               type="button"
               onClick={() => setViewMode('BOOKLET')}
-              className={`flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-md transition-all ${
-                viewMode === 'BOOKLET'
-                  ? 'bg-white dark:bg-slate-800 text-teal-700 dark:text-teal-300 shadow-sm'
-                  : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-              }`}
+              className={`flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-md transition-all ${viewMode === 'BOOKLET'
+                ? 'bg-white dark:bg-slate-800 text-teal-700 dark:text-teal-300 shadow-sm'
+                : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                }`}
               title="Series & Baby Book Tracking View"
             >
               <BookOpen className="w-3.5 h-3.5" />
@@ -403,11 +399,10 @@ export function VaccinationsInlineForm({
             <button
               type="button"
               onClick={() => setViewMode('TIMELINE')}
-              className={`flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-md transition-all ${
-                viewMode === 'TIMELINE'
-                  ? 'bg-white dark:bg-slate-800 text-teal-700 dark:text-teal-300 shadow-sm'
-                  : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-              }`}
+              className={`flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-md transition-all ${viewMode === 'TIMELINE'
+                ? 'bg-white dark:bg-slate-800 text-teal-700 dark:text-teal-300 shadow-sm'
+                : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                }`}
               title="Chronological List of Administered Vaccines"
             >
               <ListFilter className="w-3.5 h-3.5" />
@@ -427,7 +422,7 @@ export function VaccinationsInlineForm({
               title={`Instantly record PhilHealth Code 999 for ${CATEGORY_METADATA[selectedCategory].shortLabel}`}
             >
               <Ban className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-              Mark None Given (999)
+              Mark None Given
             </Button>
           )}
 
@@ -474,11 +469,10 @@ export function VaccinationsInlineForm({
                 key={catKey}
                 type="button"
                 onClick={() => handleCategoryChange(catKey)}
-                className={`relative p-2.5 rounded-xl border text-left transition-all ${
-                  isSelected
-                    ? 'border-teal-500 bg-teal-50/70 dark:bg-teal-950/40 shadow-sm ring-1 ring-teal-400/50'
-                    : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:border-teal-200 hover:bg-slate-50/80 dark:hover:bg-slate-800/50'
-                }`}
+                className={`relative p-2.5 rounded-xl border text-left transition-all ${isSelected
+                  ? 'border-teal-500 bg-teal-50/70 dark:bg-teal-950/40 shadow-sm ring-1 ring-teal-400/50'
+                  : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:border-teal-200 hover:bg-slate-50/80 dark:hover:bg-slate-800/50'
+                  }`}
               >
                 {/* Recommended Badge */}
                 {isRecommended && (
@@ -492,9 +486,8 @@ export function VaccinationsInlineForm({
                   <span className="text-lg shrink-0 leading-none">{meta.emoji}</span>
                   <div className="min-w-0">
                     <div
-                      className={`text-xs font-bold truncate ${
-                        isSelected ? 'text-teal-900 dark:text-teal-200' : 'text-slate-800 dark:text-slate-200'
-                      }`}
+                      className={`text-xs font-bold truncate ${isSelected ? 'text-teal-900 dark:text-teal-200' : 'text-slate-800 dark:text-slate-200'
+                        }`}
                     >
                       {meta.shortLabel}
                     </div>
@@ -577,11 +570,10 @@ export function VaccinationsInlineForm({
                       key={family.id}
                       type="button"
                       onClick={() => handleSelectFamily(family)}
-                      className={`p-2 rounded-lg border text-left transition-all ${
-                        isSelected
-                          ? 'border-teal-500 bg-white dark:bg-slate-800 text-teal-900 dark:text-teal-200 shadow-xs ring-1 ring-teal-400'
-                          : 'border-slate-200 dark:border-slate-800 bg-white/60 dark:bg-slate-900/40 hover:bg-white text-slate-700 dark:text-slate-300'
-                      }`}
+                      className={`p-2 rounded-lg border text-left transition-all ${isSelected
+                        ? 'border-teal-500 bg-white dark:bg-slate-800 text-teal-900 dark:text-teal-200 shadow-xs ring-1 ring-teal-400'
+                        : 'border-slate-200 dark:border-slate-800 bg-white/60 dark:bg-slate-900/40 hover:bg-white text-slate-700 dark:text-slate-300'
+                        }`}
                     >
                       <div className="flex items-center justify-between">
                         <span className="font-bold text-xs">{family.name}</span>
@@ -628,13 +620,12 @@ export function VaccinationsInlineForm({
                           key={dose.code}
                           type="button"
                           onClick={() => handleSelectDose(dose)}
-                          className={`px-3 py-1.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-all ${
-                            isDoseSelected
-                              ? 'border-teal-600 bg-teal-600 text-white shadow-xs'
-                              : alreadyGiven
+                          className={`px-3 py-1.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-all ${isDoseSelected
+                            ? 'border-teal-600 bg-teal-600 text-white shadow-xs'
+                            : alreadyGiven
                               ? 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300'
                               : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-300'
-                          }`}
+                            }`}
                         >
                           {alreadyGiven ? (
                             <CheckCircle2 className="w-3.5 h-3.5" />
@@ -815,13 +806,12 @@ export function VaccinationsInlineForm({
                 return (
                   <div
                     key={series.family.id}
-                    className={`rounded-xl border p-4 transition-all ${
-                      isComplete
-                        ? 'border-emerald-200 dark:border-emerald-950/40 bg-emerald-50/20 dark:bg-emerald-950/10'
-                        : series.completedCount > 0
+                    className={`rounded-xl border p-4 transition-all ${isComplete
+                      ? 'border-emerald-200 dark:border-emerald-950/40 bg-emerald-50/20 dark:bg-emerald-950/10'
+                      : series.completedCount > 0
                         ? 'border-teal-200 dark:border-teal-950/40 bg-teal-50/15 dark:bg-teal-950/10'
                         : 'border-slate-200 dark:border-slate-800 bg-white/60 dark:bg-slate-900/30'
-                    }`}
+                      }`}
                   >
                     {/* Series Header */}
                     <div className="flex items-start justify-between gap-2">
@@ -860,9 +850,8 @@ export function VaccinationsInlineForm({
                     {/* Completion Meter Bar */}
                     <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 mt-2.5 overflow-hidden">
                       <div
-                        className={`h-full transition-all duration-500 ${
-                          isComplete ? 'bg-emerald-500' : 'bg-teal-500'
-                        }`}
+                        className={`h-full transition-all duration-500 ${isComplete ? 'bg-emerald-500' : 'bg-teal-500'
+                          }`}
                         style={{ width: `${series.progressPercent}%` }}
                       />
                     </div>
@@ -891,8 +880,8 @@ export function VaccinationsInlineForm({
                                   <Calendar className="w-3 h-3" />
                                   {doseRec.dateGiven
                                     ? new Date(doseRec.dateGiven).toLocaleDateString(undefined, {
-                                        dateStyle: 'medium',
-                                      })
+                                      dateStyle: 'medium',
+                                    })
                                     : '—'}
                                 </span>
                                 {doseRec.route && doseRec.route !== 'N/A' && (
@@ -973,8 +962,8 @@ export function VaccinationsInlineForm({
                           <strong>
                             {vac.dateGiven
                               ? new Date(vac.dateGiven).toLocaleDateString(undefined, {
-                                  dateStyle: 'medium',
-                                })
+                                dateStyle: 'medium',
+                              })
                               : '—'}
                           </strong>
                         </div>
@@ -1043,8 +1032,8 @@ export function VaccinationsInlineForm({
                       <span className="text-slate-900 dark:text-white font-bold">
                         {vac.dateGiven
                           ? new Date(vac.dateGiven).toLocaleDateString(undefined, {
-                              dateStyle: 'medium',
-                            })
+                            dateStyle: 'medium',
+                          })
                           : '—'}
                       </span>
                     </p>

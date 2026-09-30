@@ -1461,7 +1461,7 @@ export async function resolveMappedImmunizationsForPatients(
     return { mappedImmunizations: [], deficiencies: [] };
   }
 
-  const vaccinations = await prisma.userVaccination.findMany({
+  const vaccinations = await prisma.patientImmunization.findMany({
     where: {
       userId: { in: patientUserIds },
       isActive: true,
@@ -1469,19 +1469,16 @@ export async function resolveMappedImmunizationsForPatients(
     },
     select: {
       userId: true,
-      Vaccine: {
-        select: {
-          name: true,
-        },
-      },
+      vaccineName: true,
+      code: true,
     },
   });
 
   const inputs = vaccinations.map((vaccination) => ({
     patientUserId: vaccination.userId,
     domainKeys: KONSULTA_OPTIONAL_DOMAIN_GROUPS.immunizations,
-    value: vaccination.Vaccine.name,
-    contextLabel: `Patient ${vaccination.userId}: immunization ${vaccination.Vaccine.name}`,
+    value: vaccination.vaccineName,
+    contextLabel: `Patient ${vaccination.userId}: immunization ${vaccination.vaccineName}`,
     reportMissingTerm: true,
   }));
   const result = await resolveMappedTerms(clinicId, inputs);

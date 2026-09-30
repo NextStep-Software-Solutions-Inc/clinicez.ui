@@ -241,45 +241,40 @@ export async function seedProceduresAction(): Promise<SeedResult> {
 }
 
 // ──────────────────────────────────────────────────────────────
-// 4. Seed Vaccines, Routes, and Doses
+// 4. Seed PhilHealth Immunization Library
 // ──────────────────────────────────────────────────────────────
-const vaccineRoutes = [
-  { route: "Intramuscular", description: "Injection into muscle tissue" },
-  { route: "Subcutaneous", description: "Injection under the skin" },
-  { route: "Oral", description: "By mouth" },
-  { route: "Intranasal", description: "Into the nose" },
-  { route: "Intradermal", description: "Into the skin" },
-];
+import { ImmunizationCategory } from "@prisma/client";
 
-const vaccineDoses = [
-  { dose: "1st dose", description: "First dose of vaccine series" },
-  { dose: "2nd dose", description: "Second dose of vaccine series" },
-  { dose: "3rd dose", description: "Third dose of vaccine series" },
-  { dose: "Booster", description: "Booster dose" },
-  { dose: "Single dose", description: "Single dose vaccine" },
-];
+const PHILHEALTH_IMMUNIZATIONS = [
+  // CHILD (0 - 59 months)
+  { category: ImmunizationCategory.CHILD, code: 'C01', name: 'BCG', description: 'Bacillus Calmette-Guérin Vaccine', doseNumber: 1, defaultDoseLabel: '1st Dose', minAgeMonths: 0, maxAgeMonths: 59, defaultRoute: 'Intradermal', sortOrder: 1 },
+  { category: ImmunizationCategory.CHILD, code: 'C02', name: 'OPV', description: 'Oral Polio Vaccine 1', doseNumber: 1, defaultDoseLabel: '1st Dose', minAgeMonths: 0, maxAgeMonths: 59, defaultRoute: 'Oral', sortOrder: 2 },
+  { category: ImmunizationCategory.CHILD, code: 'C03', name: 'OPV', description: 'Oral Polio Vaccine 2', doseNumber: 2, defaultDoseLabel: '2nd Dose', minAgeMonths: 0, maxAgeMonths: 59, defaultRoute: 'Oral', sortOrder: 3 },
+  { category: ImmunizationCategory.CHILD, code: 'C04', name: 'OPV', description: 'Oral Polio Vaccine 3', doseNumber: 3, defaultDoseLabel: '3rd Dose', minAgeMonths: 0, maxAgeMonths: 59, defaultRoute: 'Oral', sortOrder: 4 },
+  { category: ImmunizationCategory.CHILD, code: 'C05', name: 'DPT', description: 'Diphtheria, Pertussis, Tetanus Vaccine 1', doseNumber: 1, defaultDoseLabel: '1st Dose', minAgeMonths: 0, maxAgeMonths: 59, defaultRoute: 'Intramuscular', sortOrder: 5 },
+  { category: ImmunizationCategory.CHILD, code: 'C06', name: 'DPT', description: 'Diphtheria, Pertussis, Tetanus Vaccine 2', doseNumber: 2, defaultDoseLabel: '2nd Dose', minAgeMonths: 0, maxAgeMonths: 59, defaultRoute: 'Intramuscular', sortOrder: 6 },
+  { category: ImmunizationCategory.CHILD, code: 'C07', name: 'DPT', description: 'Diphtheria, Pertussis, Tetanus Vaccine 3', doseNumber: 3, defaultDoseLabel: '3rd Dose', minAgeMonths: 0, maxAgeMonths: 59, defaultRoute: 'Intramuscular', sortOrder: 7 },
+  { category: ImmunizationCategory.CHILD, code: 'C08', name: 'Measles', description: 'Measles Vaccine', doseNumber: 1, defaultDoseLabel: '1st Dose', minAgeMonths: 0, maxAgeMonths: 59, defaultRoute: 'Subcutaneous', sortOrder: 8 },
+  { category: ImmunizationCategory.CHILD, code: 'C09', name: 'Hepatitis B', description: 'Hepatitis B Vaccine 1', doseNumber: 1, defaultDoseLabel: '1st Dose', minAgeMonths: 0, maxAgeMonths: 59, defaultRoute: 'Intramuscular', sortOrder: 9 },
+  { category: ImmunizationCategory.CHILD, code: 'C10', name: 'Hepatitis B', description: 'Hepatitis B Vaccine 2', doseNumber: 2, defaultDoseLabel: '2nd Dose', minAgeMonths: 0, maxAgeMonths: 59, defaultRoute: 'Intramuscular', sortOrder: 10 },
+  { category: ImmunizationCategory.CHILD, code: 'C11', name: 'Hepatitis B', description: 'Hepatitis B Vaccine 3', doseNumber: 3, defaultDoseLabel: '3rd Dose', minAgeMonths: 0, maxAgeMonths: 59, defaultRoute: 'Intramuscular', sortOrder: 11 },
+  { category: ImmunizationCategory.CHILD, code: 'C12', name: 'Hepatitis A', description: 'Hepatitis A Vaccine', doseNumber: 1, defaultDoseLabel: '1st Dose', minAgeMonths: 0, maxAgeMonths: 59, defaultRoute: 'Intramuscular', sortOrder: 12 },
+  { category: ImmunizationCategory.CHILD, code: 'C13', name: 'Varicella', description: 'Varicella (Chicken Pox) Vaccine', doseNumber: 1, defaultDoseLabel: '1st Dose', minAgeMonths: 0, maxAgeMonths: 59, defaultRoute: 'Subcutaneous', sortOrder: 13 },
+  { category: ImmunizationCategory.CHILD, code: '999', name: 'None', description: 'No Child Immunizations Given', doseNumber: null, defaultDoseLabel: null, minAgeMonths: 0, maxAgeMonths: 59, defaultRoute: null, sortOrder: 99 },
 
-const vaccines = [
-  { name: "COVID-19 (Pfizer)", type: "mRNA", description: "Pfizer-BioNTech COVID-19 vaccine" },
-  { name: "COVID-19 (Moderna)", type: "mRNA", description: "Moderna COVID-19 vaccine" },
-  { name: "COVID-19 (AstraZeneca)", type: "Viral vector", description: "AstraZeneca COVID-19 vaccine" },
-  { name: "COVID-19 (Janssen)", type: "Viral vector", description: "Janssen COVID-19 vaccine" },
-  { name: "Influenza (Flu)", type: "Inactivated", description: "Seasonal influenza vaccine" },
-  { name: "MMR (Measles, Mumps, Rubella)", type: "Live attenuated", description: "Combined measles, mumps, and rubella vaccine" },
-  { name: "DPT (Diphtheria, Pertussis, Tetanus)", type: "Inactivated", description: "Diphtheria, pertussis, and tetanus vaccine" },
-  { name: "Hepatitis B", type: "Inactivated", description: "Hepatitis B vaccine" },
-  { name: "Hepatitis A", type: "Inactivated", description: "Hepatitis A vaccine" },
-  { name: "Polio", type: "Inactivated", description: "Poliomyelitis vaccine" },
-  { name: "Tetanus", type: "Inactivated", description: "Tetanus toxoid vaccine" },
-  { name: "Varicella (Chickenpox)", type: "Live attenuated", description: "Varicella-zoster vaccine" },
-  { name: "Pneumococcal", type: "Inactivated", description: "Pneumococcal polysaccharide vaccine" },
-  { name: "Meningococcal", type: "Conjugate", description: "Meningococcal vaccine" },
-  { name: "HPV (Human Papillomavirus)", type: "Recombinant", description: "Human papillomavirus vaccine" },
-  { name: "Shingles (Zoster)", type: "Recombinant", description: "Herpes zoster vaccine" },
-  { name: "Yellow Fever", type: "Live attenuated", description: "Yellow fever vaccine" },
-  { name: "Typhoid", type: "Inactivated", description: "Typhoid fever vaccine" },
-  { name: "Rabies", type: "Inactivated", description: "Rabies vaccine" },
-  { name: "Tuberculosis (BCG)", type: "Live attenuated", description: "Bacille Calmette-Guérin vaccine" },
+  // YOUNG_WOMAN (10 - 49 years)
+  { category: ImmunizationCategory.YOUNG_WOMAN, code: 'Y01', name: 'HPV', description: 'Human Papillomavirus Vaccine', doseNumber: null, defaultDoseLabel: '1st Dose', targetGender: 'F', minAgeMonths: 120, maxAgeMonths: 588, defaultRoute: 'Intramuscular', sortOrder: 1 },
+  { category: ImmunizationCategory.YOUNG_WOMAN, code: 'Y02', name: 'MMR', description: 'Measles, Mumps, Rubella Vaccine', doseNumber: null, defaultDoseLabel: '1st Dose', targetGender: 'F', minAgeMonths: 120, maxAgeMonths: 588, defaultRoute: 'Subcutaneous', sortOrder: 2 },
+  { category: ImmunizationCategory.YOUNG_WOMAN, code: '999', name: 'None', description: 'No Young Woman Immunizations Given', doseNumber: null, defaultDoseLabel: null, targetGender: 'F', minAgeMonths: 120, maxAgeMonths: 588, defaultRoute: null, sortOrder: 99 },
+
+  // PREGNANT
+  { category: ImmunizationCategory.PREGNANT, code: 'P01', name: 'Tetanus Toxoid', description: 'Tetanus Toxoid Vaccine', doseNumber: null, defaultDoseLabel: '1st Dose', targetGender: 'F', minAgeMonths: null, maxAgeMonths: null, defaultRoute: 'Intramuscular', sortOrder: 1 },
+  { category: ImmunizationCategory.PREGNANT, code: '999', name: 'None', description: 'No Pregnant Woman Immunizations Given', doseNumber: null, defaultDoseLabel: null, targetGender: 'F', minAgeMonths: null, maxAgeMonths: null, defaultRoute: null, sortOrder: 99 },
+
+  // ELDERLY (>= 60 years)
+  { category: ImmunizationCategory.ELDERLY, code: 'E01', name: 'Pneumococcal Vaccine', description: 'Pneumococcal Polysaccharide Vaccine', doseNumber: null, defaultDoseLabel: '1st Dose', targetGender: null, minAgeMonths: 720, maxAgeMonths: null, defaultRoute: 'Intramuscular', sortOrder: 1 },
+  { category: ImmunizationCategory.ELDERLY, code: 'E02', name: 'Flu Vaccine', description: 'Influenza Vaccine', doseNumber: null, defaultDoseLabel: 'Annual Dose', targetGender: null, minAgeMonths: 720, maxAgeMonths: null, defaultRoute: 'Intramuscular', sortOrder: 2 },
+  { category: ImmunizationCategory.ELDERLY, code: '999', name: 'None', description: 'No Elderly Immunizations Given', doseNumber: null, defaultDoseLabel: null, targetGender: null, minAgeMonths: 720, maxAgeMonths: null, defaultRoute: null, sortOrder: 99 },
 ];
 
 export async function seedVaccinesAction(): Promise<SeedResult> {
@@ -289,55 +284,38 @@ export async function seedVaccinesAction(): Promise<SeedResult> {
     let created = 0;
     let skipped = 0;
 
-    // Routes
-    for (const routeData of vaccineRoutes) {
-      const existing = await prisma.route.findFirst({
-        where: { route: { equals: routeData.route, mode: "insensitive" } },
+    for (const item of PHILHEALTH_IMMUNIZATIONS) {
+      const existing = await prisma.philHealthImmunizationLibrary.findUnique({
+        where: {
+          unique_category_code: {
+            category: item.category,
+            code: item.code,
+          },
+        },
       });
+
       if (!existing) {
-        await prisma.route.create({ data: routeData });
+        await prisma.philHealthImmunizationLibrary.create({
+          data: item,
+        });
         created++;
       } else {
+        await prisma.philHealthImmunizationLibrary.update({
+          where: { id: existing.id },
+          data: item,
+        });
         skipped++;
       }
     }
-
-    // Doses
-    for (const doseData of vaccineDoses) {
-      const existing = await prisma.dose.findFirst({
-        where: { dose: { equals: doseData.dose, mode: "insensitive" } },
-      });
-      if (!existing) {
-        await prisma.dose.create({ data: doseData });
-        created++;
-      } else {
-        skipped++;
-      }
-    }
-
-    // Vaccines
-    for (const vaccineData of vaccines) {
-      const existing = await prisma.vaccine.findFirst({
-        where: { name: { equals: vaccineData.name, mode: "insensitive" } },
-      });
-      if (!existing) {
-        await prisma.vaccine.create({ data: vaccineData });
-        created++;
-      } else {
-        skipped++;
-      }
-    }
-
-    const total = vaccineRoutes.length + vaccineDoses.length + vaccines.length;
 
     return {
       status: true,
-      message: `Vaccines seeded. Created: ${created}, Skipped: ${skipped}`,
-      data: { created, skipped, total },
+      message: `PhilHealth Immunizations seeded. Created: ${created}, Updated: ${skipped}`,
+      data: { created, skipped, total: PHILHEALTH_IMMUNIZATIONS.length },
     };
   } catch (error) {
     console.error("seedVaccinesAction error:", error);
-    const message = error instanceof Error ? error.message : "Failed to seed vaccines";
+    const message = error instanceof Error ? error.message : "Failed to seed immunizations";
     return { status: false, message, data: null };
   }
 }

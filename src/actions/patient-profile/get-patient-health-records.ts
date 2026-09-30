@@ -166,17 +166,11 @@ export async function getPatientHealthRecords(): Promise<SerializedPatientHealth
         orderBy: { createdAt: 'desc' },
       }),
       // Vaccinations
-      prisma.userVaccination.findMany({
+      prisma.patientImmunization.findMany({
         where: { userId: patient.id, isActive: true, deletedAt: null },
         include: {
-          Vaccine: {
-            select: { name: true },
-          },
-          Dose: {
-            select: { dose: true },
-          },
-          Route: {
-            select: { route: true },
+          PhilHealthImmunization: {
+            select: { name: true, code: true },
           },
         },
         orderBy: { dateGiven: 'desc' },
@@ -435,9 +429,9 @@ export async function getPatientHealthRecords(): Promise<SerializedPatientHealth
       // Vaccinations
       userVaccinations: vaccinations.map((vac) => ({
         id: vac.id,
-        vaccine: vac.Vaccine.name,
-        dose: vac.Dose.dose,
-        route: vac.Route.route,
+        vaccine: vac.vaccineName,
+        dose: vac.doseNumber,
+        route: vac.route || 'N/A',
         dateGiven: vac.dateGiven.toISOString(),
         notes: vac.notes,
         administeredBy: vac.administeredBy,

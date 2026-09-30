@@ -220,9 +220,9 @@ export async function generatePhilHealthKonsultaTransactionNumber(
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const dateKey = `${year}${month}`;
 
-  // T uses 4 digits, E/P/S use 5 digits
-  const MAX_SEQUENCE_VALUE = isCaseNo ? 9999 : 99999;
-  const padding = isCaseNo ? 4 : 5;
+  // All PhilHealth transaction types (T, E, P, S, R) use 5-digit sequences (21 characters total)
+  const MAX_SEQUENCE_VALUE = 99999;
+  const padding = 5;
 
   return withRetry(async () => {
     // Use transaction to ensure atomicity

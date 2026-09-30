@@ -362,15 +362,17 @@ async function prepareFilledPdf(ticket: ConsultationData, templateFileName: stri
     ticket.xmlTransactionNo ||
     ticket.soapTransNo ||
     enlistment?.profilingTransNo ||
+    (enlistment?.hciCaseNo ? enlistment.hciCaseNo.replace(/^T-?/, 'P') : "") ||
     ticket.konsultaHciTransNo ||
     enlistment?.enlistmentTransNo ||
     ticket.ekasTransactionNumber ||
     "";
 
+  const formattedDobAge = formatPhilHealthAge(ticket.ClinicPatient.Patient.dob);
   const resolvedAge =
-    ticket.xmlPatientAge ||
-    formatPhilHealthAge(ticket.ClinicPatient.Patient.dob) ||
-    calculateAge(ticket.ClinicPatient.Patient.dob);
+    (ticket.xmlPatientAge && ticket.xmlPatientAge.includes("YR(S)"))
+      ? ticket.xmlPatientAge
+      : (formattedDobAge || ticket.xmlPatientAge || calculateAge(ticket.ClinicPatient.Patient.dob));
 
   const patientData = {
     hciName: clinic?.name || "",
@@ -532,7 +534,7 @@ async function prepareFilledPdf(ticket: ConsultationData, templateFileName: stri
     // ignore
   }
 
-  if (ecgDateToDraw) {
+  if (ecgDateToDraw && !isEpress) {
     try {
       const page0 = pdfDoc.getPages()[0];
       const font = await pdfDoc.embedFont(StandardFonts.Helvetica);

@@ -452,12 +452,10 @@ export async function getPatientVaccinationsData(userId?: string): Promise<Vacci
         const patientId = await resolvePatientId(userId)
         if (!patientId) return null
 
-        const vaccinations = await prisma.userVaccination.findMany({
+        const vaccinations = await prisma.patientImmunization.findMany({
             where: { userId: patientId, isActive: true, deletedAt: null },
             include: {
-                Vaccine: { select: { name: true } },
-                Dose: { select: { dose: true } },
-                Route: { select: { route: true } },
+                PhilHealthImmunization: { select: { name: true, code: true } },
             },
             orderBy: { dateGiven: 'desc' },
             take: 50,
@@ -466,9 +464,9 @@ export async function getPatientVaccinationsData(userId?: string): Promise<Vacci
         return {
             userVaccinations: vaccinations.map(v => ({
                 id: v.id,
-                vaccine: v.Vaccine.name,
-                dose: v.Dose.dose,
-                route: v.Route.route,
+                vaccine: v.vaccineName,
+                dose: v.doseNumber,
+                route: v.route || 'N/A',
                 dateGiven: v.dateGiven.toISOString(),
                 notes: v.notes,
                 administeredBy: v.administeredBy,

@@ -570,6 +570,11 @@ function PrescriptionCard({
               <Badge variant="outline" className="text-[10px] h-4 px-1.5">
                 {rx.Medicines?.length ?? 0} item{(rx.Medicines?.length ?? 0) !== 1 ? "s" : ""}
               </Badge>
+              {rx.Medicines?.some((m: any) => m.MedicineDispenseRecord?.isDispensed) && (
+                <Badge className="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] h-4 px-1.5">
+                  Dispensed
+                </Badge>
+              )}
             </div>
             <p className="text-xs text-muted-foreground mt-0.5">
               {hpName && <span>{hpName} · </span>}
@@ -605,31 +610,71 @@ function PrescriptionCard({
           {rx.remarks && (
             <p className="text-xs text-muted-foreground mb-3 italic">{rx.remarks}</p>
           )}
-          <div className="space-y-1">
-            {rx.Medicines?.map((med) => (
-              <Fragment key={med.id}>
-                <div className="flex items-start justify-between gap-2 rounded-md bg-muted/30 px-3 py-2 text-xs">
-                  <div className="min-w-0">
-                    <p className="font-medium text-foreground">{med.name}</p>
-                    <p className="text-muted-foreground">
-                      {formatMedicineDetails(med)}
-                    </p>
-                    {med.notes && <p className="text-muted-foreground/70 italic">{med.notes}</p>}
-                  </div>
-                  {!isResolved && (
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-6 w-6 text-destructive/60 hover:text-destructive shrink-0"
-                      onClick={() => onDeleteMedicine(med.id)}
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  )}
-                </div>
+          <div className="space-y-1.5">
+            {rx.Medicines?.map((med: any) => {
+              const dispenseRec = med.MedicineDispenseRecord;
+              const phData = med.PhilHealthData;
+              const isDispensed = dispenseRec?.isDispensed ?? false;
+              const unitPrice = phData?.actualUnitPrice ?? dispenseRec?.actualUnitPrice ?? null;
+              const totalAmt = phData?.totalAmtPrice ?? dispenseRec?.totalAmtPrice ?? (unitPrice && med.qty ? Number(unitPrice) * med.qty : null);
+              const dateDispensed = dispenseRec?.dateDispensed ? dayjs(dispenseRec.dateDispensed).format("MMM D, YYYY") : null;
+              const personnel = dispenseRec?.dispensingPersonnel || "Pharmacy Staff";
 
-              </Fragment>
-            ))}
+              return (
+                <Fragment key={med.id}>
+                  <div className="flex flex-col gap-1 rounded-md bg-muted/30 px-3 py-2 text-xs">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="font-medium text-foreground">{med.name}</p>
+                        <p className="text-muted-foreground">
+                          {formatMedicineDetails(med)}
+                        </p>
+                        {med.notes && <p className="text-muted-foreground/70 italic">{med.notes}</p>}
+                      </div>
+                      {!isResolved && (
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-6 w-6 text-destructive/60 hover:text-destructive shrink-0"
+                          onClick={() => onDeleteMedicine(med.id)}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
+
+                    {isDispensed ? (
+                      <div className="mt-1 flex flex-wrap items-center gap-2 rounded border border-emerald-200 dark:border-emerald-900 bg-emerald-50/60 dark:bg-emerald-950/30 px-2.5 py-1 text-[11px] text-emerald-900 dark:text-emerald-200">
+                        <Badge className="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] px-1.5 py-0 h-4">
+                          Dispensed
+                        </Badge>
+                        {unitPrice != null && (
+                          <span className="font-semibold">
+                            ₱{Number(unitPrice).toFixed(2)} / unit {totalAmt != null && `(Total: ₱${Number(totalAmt).toFixed(2)})`}
+                          </span>
+                        )}
+                        {dateDispensed && (
+                          <span className="text-emerald-700 dark:text-emerald-400">
+                            · Date: {dateDispensed}
+                          </span>
+                        )}
+                        {personnel && (
+                          <span className="text-emerald-700 dark:text-emerald-400">
+                            · Dispensed By: {personnel}
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="mt-0.5 flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                        <Badge variant="outline" className="text-[10px] h-3.5 px-1 text-slate-500 border-slate-300 dark:text-slate-400 dark:border-slate-700">
+                          Not Dispensed
+                        </Badge>
+                      </div>
+                    )}
+                  </div>
+                </Fragment>
+              );
+            })}
           </div>
         </div>
       )}

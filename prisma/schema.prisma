@@ -154,7 +154,7 @@ model User {
   UserPreference                   UserPreference?
   UserSchedules                    UserSchedule[]
   StudentRecords                   UserStudentRecord[]
-  UserVaccinations                 UserVaccination[]
+  PatientImmunizations             PatientImmunization[]
   VitalSigns                       VitalSign[]
   Notifications                    Notification[]
   PatientInsights                  PatientInsight[]
@@ -201,6 +201,7 @@ model PhilHealthKonsultaEnlistment {
   year              Int // e.g., 2024
   hciCaseNo         String // The T-prefix case number
   enlistmentTransNo String // The E-prefix transaction number
+  enlistmentDate    DateTime? // Date of enlistment from PHIC Masterlist / ERL
   profilingTransNo  String? // The P-prefix transaction number (generated during First Patient Encounter)
   memberPin         String? // Snapshot of the member PIN used at enlistment
   dependentPin      String? // Snapshot of the dependent PIN (if applicable)
@@ -539,7 +540,6 @@ model HealthcareProvider {
   ProfessionalDetails   ProfessionalDetails?
   ReservedTimeSlots     ReservedTimeSlot[]
   UserPreferences       UserPreference[]
-  UserVaccinations      UserVaccination[]
   diagnosticRequests    DiagnosticRequest[]
 }
 
@@ -855,105 +855,64 @@ model UserAddress {
   User          User      @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
-model Vaccine {
-  id               Int                    @id @default(autoincrement())
-  name             String
-  description      String?
-  createdAt        DateTime               @default(now())
-  updatedAt        DateTime               @updatedAt
-  deletedAt        DateTime?
-  isActive         Boolean                @default(true)
-  type             String
-  UserVaccinations UserVaccination[]
-  VaccineAttribute VaccineAttribute?
-  VaccineDoses     VaccineDose[]
-  VaccineRoutes    VaccineRoute[]
-  PhilHealthData   VaccinePhilHealthData?
+enum ImmunizationCategory {
+  CHILD
+  YOUNG_WOMAN
+  PREGNANT
+  ELDERLY
+  OTHER
 }
 
-/// PhilHealth Yakap coded vaccine data (1:1 extension of Vaccine)
-model VaccinePhilHealthData {
-  id             String  @id @default(uuid())
-  vaccineId      Int     @unique
-  childImmcode   String?
-  youngwImmcode  String?
-  pregwImmcode   String?
-  elderlyImmcode String?
-  otherImm       String?
+model PhilHealthImmunizationLibrary {
+  id               Int                   @id @default(autoincrement())
+  category         ImmunizationCategory
+  code             String                // "C01"-"C13", "Y01"-"Y02", "P01", "E01"-"E02", "999"
+  name             String                // "BCG", "OPV", "DPT", "Hepatitis B", "HPV", "MMR", "Tetanus Toxoid", "Flu Vaccine", "Pneumococcal Vaccine", "None"
+  description      String?               // Clinical description
+  doseNumber       Int?                  // 1, 2, 3 (null if single / generic)
+  defaultDoseLabel String?               // "1st Dose", "2nd Dose", "3rd Dose", "Standard Dose"
+  targetGender     String?               // "F", "M", or null (all)
+  minAgeMonths     Int?                  // e.g., 0
+  maxAgeMonths     Int?                  // e.g., 60 for child (<5y), 120-588 for young women (10-49y), >=720 for elderly (>=60y)
+  defaultRoute     String?               // "Oral", "Intramuscular", "Subcutaneous", "Intradermal"
+  isActive         Boolean               @default(true)
+  sortOrder        Int                   @default(0)
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
 
-  Vaccine Vaccine @relation(fields: [vaccineId], references: [id], onDelete: Cascade)
+  PatientImmunizations PatientImmunization[]
+
+  @@unique([category, code], name: "unique_category_code")
+  @@index([category, isActive])
 }
 
-model VaccineAttribute {
-  id          Int     @id @default(autoincrement())
-  vaccineId   Int     @unique
-  effectivity Int
-  Vaccine     Vaccine @relation(fields: [vaccineId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-}
-
-model Route {
-  id               Int               @id @default(autoincrement())
-  route            String
-  description      String?
-  isActive         Boolean           @default(true)
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-  deletedAt        DateTime?
-  UserVaccinations UserVaccination[]
-  VaccineRoutes    VaccineRoute[]
-}
-
-model Dose {
-  id               Int               @id @default(autoincrement())
-  dose             String
-  description      String?
-  isActive         Boolean           @default(true)
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-  deletedAt        DateTime?
-  UserVaccinations UserVaccination[]
-  VaccineDoses     VaccineDose[]
-}
-
-model VaccineRoute {
-  id        Int     @id @default(autoincrement())
-  vaccineId Int
-  routeId   Int
-  Route     Route   @relation(fields: [routeId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  Vaccine   Vaccine @relation(fields: [vaccineId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-
-  @@unique([vaccineId, routeId], name: "unique_vaccine_route")
-}
-
-model VaccineDose {
-  id        Int     @id @default(autoincrement())
-  vaccineId Int
-  doseId    Int
-  Dose      Dose    @relation(fields: [doseId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  Vaccine   Vaccine @relation(fields: [vaccineId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-
-  @@unique([vaccineId, doseId], name: "unique_vaccine_dose")
-}
-
-model UserVaccination {
-  id                 Int                 @id @default(autoincrement())
+model PatientImmunization {
+  id                 Int                            @id @default(autoincrement())
   userId             Int
-  vaccineId          Int
-  doseId             Int
-  routeId            Int
+  immunizationLibId  Int?                           // Reference to PhilHealthImmunizationLibrary (null if custom/OTHER)
+  category           ImmunizationCategory           // CHILD, YOUNG_WOMAN, PREGNANT, ELDERLY, OTHER
+  code               String?                        // "C01", "Y01", "P01", "E01", or null for custom
+  vaccineName        String                         // Clinical name: "BCG", "OPV", "COVID-19 Bivalent Pfizer"
+  doseNumber         String                         // "1st Dose", "2nd Dose", "3rd Dose", "Booster 1", "Booster 2"
+  route              String?                        // "Oral", "Intramuscular", "Subcutaneous", "Intradermal"
   dateGiven          DateTime
+  administeredBy     String?                        // "Nurse Joy", "Dr. Cruz", "RHU"
+  facilityName       String?                        // Administering health center / clinic
+  lotNumber          String?
+  expirationDate     DateTime?
   notes              String?
-  hpId               Int?
-  administeredBy     String?
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
+  reportStatus       String                         @default("U") // U = Unreported, V = Validated, F = Failed
+  deficiencyRemarks  String?
+  createdAt          DateTime                       @default(now())
+  updatedAt          DateTime                       @updatedAt
   deletedAt          DateTime?
-  isActive           Boolean             @default(true)
-  Dose               Dose                @relation(fields: [doseId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  HealthCareProvider HealthcareProvider? @relation(fields: [hpId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  Route              Route               @relation(fields: [routeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  User               User                @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  Vaccine            Vaccine             @relation(fields: [vaccineId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  isActive           Boolean                        @default(true)
+
+  User                   User                           @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  PhilHealthImmunization PhilHealthImmunizationLibrary? @relation(fields: [immunizationLibId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([userId, isActive])
+  @@index([category, code])
 }
 
 model Allergen {

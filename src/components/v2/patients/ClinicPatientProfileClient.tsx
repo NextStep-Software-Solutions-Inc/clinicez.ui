@@ -1352,13 +1352,26 @@ export default function ClinicPatientProfileClient({
                           <div key={vac.id} className="p-4 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30 flex items-start gap-3">
                             <Syringe className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
                             <div className="space-y-1">
-                              <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
-                                {vac.vaccine}
-                              </p>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                                  {vac.vaccine}
+                                </p>
+                                {(vac as any).code && (
+                                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300">
+                                    {(vac as any).code}
+                                  </span>
+                                )}
+                                {(vac as any).category && (
+                                  <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                                    {String((vac as any).category).replace('_', ' ')}
+                                  </span>
+                                )}
+                              </div>
                               <div className="text-xs text-slate-550 dark:text-slate-400 space-y-0.5">
                                 <div>Dose: <span className="font-semibold text-slate-700 dark:text-slate-350">{vac.dose}</span> ({vac.route})</div>
                                 <div>Date Administered: <span className="font-semibold text-slate-700 dark:text-slate-350">{new Date(vac.dateGiven).toLocaleDateString()}</span></div>
                                 {vac.administeredBy && <div>Given By: {vac.administeredBy}</div>}
+                                {(vac as any).facilityName && <div>Facility: {(vac as any).facilityName}</div>}
                                 {vac.notes && <div>Notes: {vac.notes}</div>}
                               </div>
                             </div>
@@ -1450,22 +1463,70 @@ export default function ClinicPatientProfileClient({
                   ) : (
                     <div className="space-y-4">
                       {patientData.ncdQuestionnaire ? (
-                        <div className="space-y-2">
-                          <div className="p-4 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30 flex flex-col gap-2">
+                        <div className="space-y-3">
+                          <div className="p-3.5 rounded-xl border border-teal-200/60 dark:border-teal-900/40 bg-teal-50/40 dark:bg-teal-950/20 flex flex-col gap-1.5">
                             <div className="flex items-center justify-between">
-                              <span className="text-xs font-bold text-teal-700 dark:text-teal-400 uppercase tracking-wider">
-                                Assessment Status
+                              <span className="text-xs font-bold text-teal-800 dark:text-teal-300 uppercase tracking-wider">
+                                NCD High Risk Assessment Evaluation
                               </span>
-                              <span className="text-[10px] bg-green-100 dark:bg-green-950 text-green-800 dark:text-green-300 font-semibold px-2 py-0.5 rounded border border-green-200 dark:border-green-800">
-                                Completed
+                              <span className="text-[10px] bg-green-100 dark:bg-green-950 text-green-800 dark:text-green-300 font-bold px-2 py-0.5 rounded border border-green-200 dark:border-green-800">
+                                COMPLETED
                               </span>
                             </div>
-                            <p className="text-sm text-slate-700 dark:text-slate-300">
-                              The NCD High Risk Assessment questionnaire has been recorded for this patient.
+                            <p className="text-xs text-slate-600 dark:text-slate-400">
+                              Questionnaire responses recorded and synchronized with PhilHealth Konsulta NCDQANS.
                             </p>
-                            <p className="text-xs text-slate-500 dark:text-slate-400">
-                              Click "Edit" above to view, modify, or update questionnaire responses.
-                            </p>
+                          </div>
+
+                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 text-xs">
+                            <div className="p-2.5 rounded-lg border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30">
+                              <span className="text-[10px] text-slate-400 uppercase font-semibold block">Risk Level (Q17)</span>
+                              <span className="font-bold text-slate-800 dark:text-slate-200">
+                                {patientData.ncdQuestionnaire.q17 ? `Level ${patientData.ncdQuestionnaire.q17}` : 'N/A'}
+                              </span>
+                            </div>
+                            <div className="p-2.5 rounded-lg border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30">
+                              <span className="text-[10px] text-slate-400 uppercase font-semibold block">Hypertension (Q1)</span>
+                              <span className="font-bold text-slate-800 dark:text-slate-200">
+                                {patientData.ncdQuestionnaire.q1 === 'Y' ? 'Yes' : patientData.ncdQuestionnaire.q1 === 'N' ? 'No' : patientData.ncdQuestionnaire.q1 || '—'}
+                              </span>
+                            </div>
+                            <div className="p-2.5 rounded-lg border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30">
+                              <span className="text-[10px] text-slate-400 uppercase font-semibold block">Diabetes (Q3)</span>
+                              <span className="font-bold text-slate-800 dark:text-slate-200">
+                                {patientData.ncdQuestionnaire.q3 === 'Y' ? 'Yes' : patientData.ncdQuestionnaire.q3 === 'N' ? 'No' : patientData.ncdQuestionnaire.q3 || '—'}
+                              </span>
+                            </div>
+                            <div className="p-2.5 rounded-lg border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30">
+                              <span className="text-[10px] text-slate-400 uppercase font-semibold block">Smoking History (Q6)</span>
+                              <span className="font-bold text-slate-800 dark:text-slate-200">
+                                {patientData.ncdQuestionnaire.q6 === 'Y' ? 'Yes' : patientData.ncdQuestionnaire.q6 === 'N' ? 'No' : patientData.ncdQuestionnaire.q6 || '—'}
+                              </span>
+                            </div>
+                            <div className="p-2.5 rounded-lg border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30">
+                              <span className="text-[10px] text-slate-400 uppercase font-semibold block">Alcohol Intake (Q9)</span>
+                              <span className="font-bold text-slate-800 dark:text-slate-200">
+                                {patientData.ncdQuestionnaire.q9 === 'Y' ? 'Yes' : patientData.ncdQuestionnaire.q9 === 'N' ? 'No' : patientData.ncdQuestionnaire.q9 || '—'}
+                              </span>
+                            </div>
+                            <div className="p-2.5 rounded-lg border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30">
+                              <span className="text-[10px] text-slate-400 uppercase font-semibold block">Physical Activity (Q10)</span>
+                              <span className="font-bold text-slate-800 dark:text-slate-200">
+                                {patientData.ncdQuestionnaire.q10 === 'Y' ? 'Yes' : patientData.ncdQuestionnaire.q10 === 'N' ? 'No' : patientData.ncdQuestionnaire.q10 || '—'}
+                              </span>
+                            </div>
+                            <div className="p-2.5 rounded-lg border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30">
+                              <span className="text-[10px] text-slate-400 uppercase font-semibold block">FBS Lab (Q19)</span>
+                              <span className="font-bold text-slate-800 dark:text-slate-200">
+                                {patientData.ncdQuestionnaire.q19_Fbsmg ? `${patientData.ncdQuestionnaire.q19_Fbsmg} mg/dL` : (patientData.ncdQuestionnaire.q19 === 'Y' ? 'Yes' : patientData.ncdQuestionnaire.q19 === 'N' ? 'No' : '—')}
+                              </span>
+                            </div>
+                            <div className="p-2.5 rounded-lg border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30">
+                              <span className="text-[10px] text-slate-400 uppercase font-semibold block">Cholesterol (Q20)</span>
+                              <span className="font-bold text-slate-800 dark:text-slate-200">
+                                {patientData.ncdQuestionnaire.q20_Choleval ? `${patientData.ncdQuestionnaire.q20_Choleval} mg/dL` : (patientData.ncdQuestionnaire.q20 === 'Y' ? 'Yes' : patientData.ncdQuestionnaire.q20 === 'N' ? 'No' : '—')}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       ) : (
@@ -1516,6 +1577,12 @@ export default function ClinicPatientProfileClient({
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-3 gap-y-2 py-1">
                     <ViewCell label="Menarche Age" value={patientData.obGyneHistory?.menarche ? `${patientData.obGyneHistory.menarche} years` : null} />
                     <ViewCell label="LMP (Last Menstrual Period)" value={patientData.obGyneHistory?.lastMenstrualPeriod ? new Date(patientData.obGyneHistory.lastMenstrualPeriod).toLocaleDateString() : null} />
+                    <ViewCell label="Cycle Interval" value={patientData.obGyneHistory?.menstrualCycleInterval ? `${patientData.obGyneHistory.menstrualCycleInterval} days` : null} />
+                    <ViewCell label="Period Duration" value={patientData.obGyneHistory?.menstrualPeriodDuration ? `${patientData.obGyneHistory.menstrualPeriodDuration} days` : null} />
+                    <ViewCell label="Pads Per Day" value={patientData.obGyneHistory?.numberOfPadsPerDay ? `${patientData.obGyneHistory.numberOfPadsPerDay} pads/day` : null} />
+                    <ViewCell label="Age at 1st Intercourse" value={patientData.obGyneHistory?.ageAtFirstSexualIntercourse ? `${patientData.obGyneHistory.ageAtFirstSexualIntercourse} years` : null} />
+                    <ViewCell label="Family Planning Practice" value={patientData.obGyneHistory?.isFamilyPlanning ? 'Yes' : 'No'} />
+                    <ViewCell label="Birth Control Method" value={patientData.obGyneHistory?.isFamilyPlanning ? (patientData.obGyneHistory.birthControlMethod || 'None') : null} />
                     <ViewCell label="Menopause Status" value={patientData.obGyneHistory?.menopauseStatus} className="uppercase" />
                     <ViewCell label="Menopause Age" value={patientData.obGyneHistory?.menopauseAge ? `${patientData.obGyneHistory.menopauseAge} years` : null} />
                     <ViewCell label="Gravidity (Total Pregnancies)" value={patientData.obGyneHistory?.gravidity} />

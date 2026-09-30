@@ -54,10 +54,22 @@ export function resolvePhilHealthEnlistDate(
   clinicPatient: {
     konsultaRegistrationResult?: unknown;
     konsultaRegisteredAt?: Date | null;
+    enlistmentDate?: Date | string | null;
+    PhilHealthKonsultaEnlistments?: Array<{ enlistmentDate?: Date | null }>;
   } | null | undefined,
   pins: { patientPin?: string | null; memberPin?: string | null },
   fallbackDate: string
 ): string {
+  // 0. Check explicit enlistmentDate if stored
+  if (clinicPatient?.enlistmentDate) {
+    const parsed = parsePhilHealthDate(clinicPatient.enlistmentDate instanceof Date ? clinicPatient.enlistmentDate.toISOString() : String(clinicPatient.enlistmentDate));
+    if (parsed) return parsed;
+  }
+  if (clinicPatient?.PhilHealthKonsultaEnlistments?.[0]?.enlistmentDate) {
+    const parsed = parsePhilHealthDate(clinicPatient.PhilHealthKonsultaEnlistments[0].enlistmentDate.toISOString());
+    if (parsed) return parsed;
+  }
+
   // 1. Check konsultaRegistrationResult for pAssignedDate / assignedDate
   const regResult = clinicPatient?.konsultaRegistrationResult as Record<string, any> | null;
   if (regResult) {
@@ -229,7 +241,8 @@ export function formatPhilHealthAge(dob: Date | string | null | undefined): stri
   let days = now.getDate() - d.getDate();
   if (days < 0) {
     m--;
-    days += 30;
+    const prevMonthDays = new Date(now.getFullYear(), now.getMonth(), 0).getDate();
+    days += prevMonthDays;
   }
   if (m < 0) {
     y--;

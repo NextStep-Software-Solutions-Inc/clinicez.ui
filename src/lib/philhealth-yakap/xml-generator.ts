@@ -453,7 +453,7 @@ function emitPeMiscFields(pemiscs: XmlNode, pe: Record<string, string | null | u
   for (const cat of categories) {
     const rawVal = normalizePeCode(cat.attr, cat.val);
     if (rawVal.length > 0) {
-      // 1. Emit the primary finding
+      // Emit the primary finding
       pemiscs.ele('PEMISC', withStatus({
         pSkinId: cat.attr === 'pSkinId' ? rawVal : '',
         pHeentId: cat.attr === 'pHeentId' ? rawVal : '',
@@ -464,21 +464,6 @@ function emitPeMiscFields(pemiscs: XmlNode, pe: Record<string, string | null | u
         pRectalId: cat.attr === 'pRectalId' ? rawVal : '',
         pGuId: cat.attr === 'pGuId' ? rawVal : '',
       })).up();
-
-      // 2. To ensure multiple findings per body system and support the "Others" (99) code requirements for Case 3,
-      // also emit a duplicate PEMISC element with code "99" (Others) if the primary code is not already "99".
-      if (String(cat.val) !== '99') {
-        pemiscs.ele('PEMISC', withStatus({
-          pSkinId: cat.attr === 'pSkinId' ? '99' : '',
-          pHeentId: cat.attr === 'pHeentId' ? '99' : '',
-          pChestId: cat.attr === 'pChestId' ? '99' : '',
-          pHeartId: cat.attr === 'pHeartId' ? '99' : '',
-          pAbdomenId: cat.attr === 'pAbdomenId' ? '99' : '',
-          pNeuroId: cat.attr === 'pNeuroId' ? '99' : '',
-          pRectalId: cat.attr === 'pRectalId' ? '99' : '',
-          pGuId: cat.attr === 'pGuId' ? '99' : '',
-        })).up();
-      }
 
       added = true;
     }
@@ -543,16 +528,49 @@ function mapSocValue(val?: string | null): string {
   return val.toUpperCase();
 }
 
+function parsePatientAgeYears(ageStr?: string, dobStr?: string): number {
+  if (ageStr) {
+    const m = ageStr.match(/(\d+)\s*YR/i);
+    if (m) return parseInt(m[1], 10);
+  }
+  if (dobStr) {
+    const d = new Date(dobStr);
+    if (!isNaN(d.getTime())) {
+      const now = new Date();
+      let age = now.getFullYear() - d.getFullYear();
+      const monthDiff = now.getMonth() - d.getMonth();
+      if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < d.getDate())) {
+        age--;
+      }
+      return age;
+    }
+  }
+  return 30;
+}
+
 function buildSocHist(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
   const soc = patient.profile.socialHistory;
-  const isSexuallyActiveVal = mapSocValue(soc?.isSexuallyActive) === 'Y' ? 'Y' : 'N';
+  const ageYears = parsePatientAgeYears(patient.patient.age, patient.patient.dob);
+  const isMinor = ageYears < 15;
+
+  const isSmokerVal = isMinor ? 'N' : mapSocValue(soc?.isSmoker);
+  const isDrinkerVal = isMinor ? 'N' : mapSocValue(soc?.isAdrinker);
+  const illDrugUserVal = isMinor ? 'N' : (mapSocValue(soc?.illDrugUser) === 'Y' ? 'Y' : 'N');
+  const isSexuallyActiveVal = isMinor ? 'N' : (mapSocValue(soc?.isSexuallyActive) === 'Y' ? 'Y' : 'N');
+
+  const noCigpkVal = isMinor || isSmokerVal === 'N' || !soc?.noCigpk || soc.noCigpk === '0'
+    ? ''
+    : String(soc.noCigpk);
+  const noBottlesVal = isMinor || isDrinkerVal === 'N' || !soc?.noBottles || soc.noBottles === '0'
+    ? ''
+    : String(soc.noBottles);
 
   parent.ele('SOCHIST', withStatus({
-    pIsSmoker: mapSocValue(soc?.isSmoker),
-    pNoCigpk: soc?.noCigpk && soc.noCigpk !== '0' ? String(soc.noCigpk) : '',
-    pIsAdrinker: mapSocValue(soc?.isAdrinker),
-    pNoBottles: soc?.noBottles && soc.noBottles !== '0' ? String(soc.noBottles) : '',
-    pIllDrugUser: mapSocValue(soc?.illDrugUser) === 'Y' ? 'Y' : 'N',
+    pIsSmoker: isSmokerVal,
+    pNoCigpk: noCigpkVal,
+    pIsAdrinker: isDrinkerVal,
+    pNoBottles: noBottlesVal,
+    pIllDrugUser: illDrugUserVal,
     pIsSexuallyActive: isSexuallyActiveVal,
   })).up();
   return parent;
@@ -561,13 +579,30 @@ function buildSocHist(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
 function buildImmunizations(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
   const immunizations = parent.ele('IMMUNIZATIONS');
   const imms = patient.profile.immunizations || [];
+  const ageYears = parsePatientAgeYears(patient.patient.age, patient.patient.dob);
+  const isFemale = patient.patient.sex === 'F';
 
   if (imms.length === 0) {
+    let childCode = '';
+    let youngwCode = '';
+    let pregwCode = '';
+    let elderlyCode = '';
+
+    if (ageYears < 5) {
+      childCode = '999';
+    } else if (isFemale && ageYears >= 10 && ageYears <= 49) {
+      youngwCode = '999';
+    } else if (ageYears >= 60) {
+      elderlyCode = '999';
+    } else {
+      childCode = '999';
+    }
+
     immunizations.ele('IMMUNIZATION', withStatus({
-      pChildImmcode: '',
-      pYoungwImmcode: '',
-      pPregwImmcode: '',
-      pElderlyImmcode: '',
+      pChildImmcode: childCode,
+      pYoungwImmcode: youngwCode,
+      pPregwImmcode: pregwCode,
+      pElderlyImmcode: elderlyCode,
       pOtherImm: '',
       pReportStatus: 'U',
       pDeficiencyRemarks: '',
@@ -580,7 +615,7 @@ function buildImmunizations(parent: XmlNode, patient: KonsultaPatientData): XmlN
         pYoungwImmcode: hasOther ? '' : (imm.youngwImmcode || ''),
         pPregwImmcode: hasOther ? '' : (imm.pregwImmcode || ''),
         pElderlyImmcode: hasOther ? '' : (imm.elderlyImmcode || ''),
-        pOtherImm: imm.otherImm || '',
+        pOtherImm: hasOther ? imm.otherImm!.trim() : '',
         pReportStatus: imm.reportStatus || 'U',
         pDeficiencyRemarks: imm.deficiencyRemarks || '',
       })).up();
@@ -932,6 +967,10 @@ const EXAM_TYPE_TO_DIAGNOSTIC_ID: Record<string, string> = {
   PAPSMEAR: '14',
   FECALYSIS: '15',
   FOBT: '18',
+  OTHERDIAGEXAM: '99',
+  OTHERDIAGEXAMS: '99',
+  OTHER: '99',
+  OTHERS: '99',
 };
 
 function buildSoapDiagnostics(
@@ -948,9 +987,12 @@ function buildSoapDiagnostics(
     const typeUpper = (dr.resultType || '').toUpperCase();
     const diagId = EXAM_TYPE_TO_DIAGNOSTIC_ID[typeUpper];
     if (diagId && !addedIds.has(diagId)) {
+      const othRemarks = diagId === '99'
+        ? (dr.resultData?.othDiagExam || dr.resultData?.pOthDiagExam || dr.resultData?.findings || 'Others')
+        : '';
       diagnostics.ele('DIAGNOSTIC', withStatus({
         pDiagnosticId: diagId,
-        pOthRemarks: '',
+        pOthRemarks: othRemarks,
         pIsPhysicianRecommendation: 'Y',
         pPatientRemarks: 'RQ',
       })).up();

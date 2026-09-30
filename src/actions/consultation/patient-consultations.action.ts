@@ -225,7 +225,12 @@ export const getPatientConsultationDetailAction = withErrorHandling(
             },
             Medicines: {
               where: { isActive: true },
-              select: { id: true, name: true, brandName: true, genericName: true, dosage: true, frequency: true, unit: true, duration: true, qty: true, notes: true },
+              select: {
+                id: true, name: true, brandName: true, genericName: true,
+                dosage: true, frequency: true, unit: true, duration: true, qty: true, notes: true,
+                PhilHealthData: true,
+                MedicineDispenseRecord: true,
+              },
             },
           },
         },
@@ -404,7 +409,12 @@ export const getConsultationPrescriptionsForTicketAction = withErrorHandling(
         },
         Medicines: {
           where: { isActive: true },
-          select: { id: true, name: true, brandName: true, genericName: true, dosage: true, frequency: true, unit: true, duration: true, qty: true, notes: true },
+          select: {
+            id: true, name: true, brandName: true, genericName: true,
+            dosage: true, frequency: true, unit: true, duration: true, qty: true, notes: true,
+            PhilHealthData: true,
+            MedicineDispenseRecord: true,
+          },
         },
       },
     });

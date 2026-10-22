@@ -18,12 +18,12 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ">=22.23.4"
       - uses: pnpm/action-setup@v4
         name: Install pnpm
         id: pnpm-install
         with:
-          version: 9
+          version: 10.12.4
           run_install: false
       - name: Install Vercel CLI
         run: npm install --global vercel@latest

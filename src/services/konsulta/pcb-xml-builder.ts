@@ -545,9 +545,9 @@ export function buildPcbXml(options: BuildPcbXmlOptions): string {
         pPassword: credentials.password,
         pHciAccreNo: credentials.hciAccreNo,
         pPMCCNo: credentials.pmccNumber,
-        pEnlistTotalCnt: String(enlistments.length > 0 ? enlistments.length : 1),
-        pProfileTotalCnt: String(profiles.length > 0 ? profiles.length : 1),
-        pSoapTotalCnt: String(soaps.length > 0 ? soaps.length : 1),
+        pEnlistTotalCnt: String(enlistments.length),
+        pProfileTotalCnt: String(profiles.length),
+        pSoapTotalCnt: String(soaps.length),
         pCertificationId: credentials.certificationId,
         pHciTransmittalNumber: transmittalNumber,
     });
@@ -586,36 +586,6 @@ export function buildPcbXml(options: BuildPcbXmlOptions): string {
                 pDeficiencyRemarks: e.pDeficiencyRemarks,
             });
         }
-    } else {
-        enlistmentsEle.ele("ENLISTMENT", {
-            pHciCaseNo: "",
-            pHciTransNo: "",
-            pEffYear: "",
-            pEnlistStat: "",
-            pEnlistDate: "",
-            pPackageType: "",
-            pMemPin: "",
-            pMemFname: "",
-            pMemMname: "",
-            pMemLname: "",
-            pMemExtname: "",
-            pMemDob: "",
-            pPatientPin: "",
-            pPatientFname: "",
-            pPatientMname: "",
-            pPatientLname: "",
-            pPatientExtname: "",
-            pPatientSex: "",
-            pPatientDob: "",
-            pPatientType: "",
-            pPatientMobileNo: "",
-            pPatientLandlineNo: "",
-            pWithConsent: "",
-            pTransDate: "",
-            pCreatedBy: "",
-            pReportStatus: "U",
-            pDeficiencyRemarks: "",
-        });
     }
 
     // ── PROFILING ────────────────────────────────────────────────────────────
@@ -679,23 +649,6 @@ export function buildPcbXml(options: BuildPcbXmlOptions): string {
             });
             addSoapSubElements(soap, s);
         }
-    } else {
-        const soap = soapsEle.ele("SOAP", {
-            pHciCaseNo: "",
-            pHciTransNo: "",
-            pSoapDate: "",
-            pPatientPin: "",
-            pPatientType: "",
-            pMemPin: "",
-            pEffYear: "",
-            pATC: "",
-            pIsWalkedIn: "",
-            pCoPay: "",
-            pTransDate: "",
-            pReportStatus: "U",
-            pDeficiencyRemarks: "",
-        });
-        addSoapSubElements(soap, {} as KonsultaSoapData);
     }
 
     // ── DIAGNOSTICEXAMRESULTS (omitted when empty — DTD requires DIAGNOSTICEXAMRESULT+ if present)

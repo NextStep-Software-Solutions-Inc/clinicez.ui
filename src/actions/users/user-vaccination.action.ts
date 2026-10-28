@@ -99,7 +99,10 @@ export const updateUserVaccinationAction = async (id: number, { vaccineId, route
 
 export const deleteUserVaccinationAction = async (id: number) => {
   return await prisma.userVaccination.update({
-    where: { id, isActive: true },
-    data: { isActive: false }
+    where: { id },
+    data: {
+      isActive: false,
+      deletedAt: new Date(),
+    }
   });
 }

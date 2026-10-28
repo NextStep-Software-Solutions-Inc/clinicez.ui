@@ -443,7 +443,7 @@ function emitPeMiscFields(pemiscs: XmlNode, pe: Record<string, string | null | u
 
   for (const cat of categories) {
     if (cat.val != null && String(cat.val).trim().length > 0) {
-      // 1. Emit the primary finding
+      // Emit the recorded physical exam finding
       pemiscs.ele('PEMISC', withStatus({
         pSkinId: cat.attr === 'pSkinId' ? String(cat.val) : '',
         pHeentId: cat.attr === 'pHeentId' ? String(cat.val) : '',
@@ -454,21 +454,6 @@ function emitPeMiscFields(pemiscs: XmlNode, pe: Record<string, string | null | u
         pRectalId: cat.attr === 'pRectalId' ? String(cat.val) : '',
         pGuId: cat.attr === 'pGuId' ? String(cat.val) : '',
       })).up();
-
-      // 2. To ensure multiple findings per body system and support the "Others" (99) code requirements for Case 3,
-      // also emit a duplicate PEMISC element with code "99" (Others) if the primary code is not already "99".
-      if (String(cat.val) !== '99') {
-        pemiscs.ele('PEMISC', withStatus({
-          pSkinId: cat.attr === 'pSkinId' ? '99' : '',
-          pHeentId: cat.attr === 'pHeentId' ? '99' : '',
-          pChestId: cat.attr === 'pChestId' ? '99' : '',
-          pHeartId: cat.attr === 'pHeartId' ? '99' : '',
-          pAbdomenId: cat.attr === 'pAbdomenId' ? '99' : '',
-          pNeuroId: cat.attr === 'pNeuroId' ? '99' : '',
-          pRectalId: cat.attr === 'pRectalId' ? '99' : '',
-          pGuId: cat.attr === 'pGuId' ? '99' : '',
-        })).up();
-      }
 
       added = true;
     }
@@ -1054,8 +1039,8 @@ function buildStubSoap(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
     pHeartId: '',
     pAbdomenId: '',
     pNeuroId: '',
-    pRectalId: '',
     pGuId: '',
+    pRectalId: '',
   })).up();
   pemiscs.up();
 
@@ -1084,7 +1069,7 @@ function buildStubSoap(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
   diagnostics.ele('DIAGNOSTIC', withStatus({
     pDiagnosticId: '',
     pOthRemarks: '',
-    pIsPhysicianRecommendation: 'N',
+    pIsPhysicianRecommendation: '',
     pPatientRemarks: '',
   })).up();
   diagnostics.up();
@@ -1092,7 +1077,7 @@ function buildStubSoap(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
   // MANAGEMENTS stub
   const managements = soap.ele('MANAGEMENTS');
   managements.ele('MANAGEMENT', withStatus({
-    pManagementId: '0',
+    pManagementId: '',
     pOthRemarks: '',
   })).up();
   managements.up();

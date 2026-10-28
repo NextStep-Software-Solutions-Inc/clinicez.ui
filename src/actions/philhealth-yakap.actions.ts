@@ -528,12 +528,28 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
                       include: { Condition: true },
                     },
                     FamilyMedicalHistories: {
+                      where: { deletedAt: null },
                       include: { Condition: true },
                     },
-                    SurgicalHistories: true,
+                    SurgicalHistories: {
+                      where: { deletedAt: null },
+                    },
                     PersonalHistory: true,
                     ObGyneHistory: true,
-                    UserVaccinations: { include: { Vaccine: { include: { PhilHealthData: true } } } },
+                    UserVaccinations: {
+                      where: { isActive: true, deletedAt: null },
+                      include: {
+                        Vaccine: { include: { PhilHealthData: true } },
+                        Dose: true,
+                        Route: true,
+                      }
+                    },
+                    UserAllergies: {
+                      include: { Allergen: true },
+                    },
+                    UserDisabilities: {
+                      include: { Disability: true },
+                    },
                     VitalSigns: {
                       where: { isActive: true, deletedAt: null },
                       orderBy: { createdAt: "desc" },
@@ -783,10 +799,32 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
           : { clinicPatientId: bp.ClinicPatient.id },
         orderBy: { createdAt: "asc" },
       });
+      // Compute normalized 5-digit case number & transmittal numbers early
+      let resolvedCaseNo = enlistment?.hciCaseNo || "";
+      if (/^(T[A-Z0-9]{9}\d{6})(\d{4})$/.test(resolvedCaseNo)) {
+        resolvedCaseNo = resolvedCaseNo.replace(/^(T[A-Z0-9]{9}\d{6})(\d{4})$/, '$10$2');
+      }
+
+      let resolvedEnlistmentTransNo = enlistment?.enlistmentTransNo || "";
+      if (/^(E[A-Z0-9]{9}\d{6})(\d{4})$/.test(resolvedEnlistmentTransNo)) {
+        resolvedEnlistmentTransNo = resolvedEnlistmentTransNo.replace(/^(E[A-Z0-9]{9}\d{6})(\d{4})$/, '$10$2');
+      }
+
+      let resolvedProfilingTransNo = enlistment?.profilingTransNo || (
+        resolvedCaseNo ? resolvedCaseNo.replace(/^T/, 'P') : ""
+      );
+      if (/^(P[A-Z0-9]{9}\d{6})(\d{4})$/.test(resolvedProfilingTransNo)) {
+        resolvedProfilingTransNo = resolvedProfilingTransNo.replace(/^(P[A-Z0-9]{9}\d{6})(\d{4})$/, '$10$2');
+      }
+
       const diagnosticResults = diagRecords.length > 0
         ? diagRecords.map(dr => ({
-          hciCaseNo: dr.hciCaseNo || enlistment?.hciCaseNo || "",
-          hciTransNo: dr.hciTransNo || enlistment?.profilingTransNo || "",
+          hciCaseNo: resolvedCaseNo,
+          hciTransNo: dr.hciTransNo ? (
+            /^(P[A-Z0-9]{9}\d{6})(\d{4})$/.test(dr.hciTransNo)
+              ? dr.hciTransNo.replace(/^(P[A-Z0-9]{9}\d{6})(\d{4})$/, '$10$2')
+              : dr.hciTransNo
+          ) : resolvedProfilingTransNo,
           patientPin: patientPin,
           patientType: patientType,
           memPin: memberPin,
@@ -831,7 +869,7 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
                 const isCustom = ph?.drugCode?.startsWith("NOMED") || false;
 
                 medicines.push({
-                  hciCaseNo: enlistment?.hciCaseNo || "",
+                  hciCaseNo: resolvedCaseNo,
                   hciTransNo: t.soapTransNo || "",
                   category: ph?.category || "",
                   drugCode: ph?.drugCode || "NOMED00000000000000000000000",
@@ -874,7 +912,7 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
             }
 
             return {
-              hciCaseNo: enlistment?.hciCaseNo || "",
+              hciCaseNo: resolvedCaseNo,
               hciTransNo: t.soapTransNo || "",
               soapDate: formatDate(t.createdAt),
               atc: t.konsultaAtcCode || profileAtc,
@@ -945,10 +983,12 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
         }
       }
 
+      const isPediatric = ageYears < 15;
+
       return {
         enlistment: {
-          hciCaseNo: enlistment?.hciCaseNo || "",
-          hciTransNo: enlistment?.enlistmentTransNo || "",
+          hciCaseNo: resolvedCaseNo,
+          hciTransNo: resolvedEnlistmentTransNo,
           effYear: String(enlistment?.year || new Date().getFullYear()),
           enlistDate: today,
           packageType: "K" as const,
@@ -978,8 +1018,8 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
           age: ageStr,
         },
         profile: {
-          hciTransNo: enlistment?.hciCaseNo?.replace(/^T-/, 'P-') || "",
-          profDate: enlistment?.createdAt ? formatDate(enlistment.createdAt) : today,
+          hciTransNo: resolvedProfilingTransNo,
+          profDate: today,
           atc: profileAtc,
           isWalkedIn: profileIsWalkedIn ? "Y" as const : "N" as const,
           transDate: today,
@@ -996,22 +1036,37 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
                     patient.bloodType === 'AB_NEGATIVE' ? 'AB-' :
                       patient.bloodType === 'O_POSITIVE' ? 'O+' :
                         patient.bloodType === 'O_NEGATIVE' ? 'O-' : '',
-          medicalHistories: patient.MedicalHistories.map(mh => {
-            const code = mh.Condition.code;
-            if (code) {
-              return {
+          medicalHistories: (() => {
+            const list: {
+              code: string;
+              isRelevant: 'Y' | 'N';
+              mhsCode?: string;
+              mhsOthers?: string;
+            }[] = [];
+
+            // 1. Past Medical Histories (e.g. Asthma is 002 in PhilHealth lib_mdisease)
+            for (const mh of patient.MedicalHistories || []) {
+              const condName = (mh.Condition?.name || '').toUpperCase();
+              let code = mh.Condition?.code || '';
+              if (!code) {
+                if (condName.includes('ASTHMA')) code = '002';
+                else if (condName.includes('ALLERG')) code = '001';
+                else if (condName.includes('CANCER')) code = '003';
+                else if (condName.includes('DIABETES')) code = '006';
+                else if (condName.includes('HYPERTENSION')) code = '011';
+                else code = '998';
+              }
+              list.push({
                 code,
                 isRelevant: 'Y' as const,
-                mhsOthers: mh.details || '',
-              };
+                mhsOthers: mh.details || (code === '002' ? 'ASTHMA' : mh.Condition?.name || ''),
+              });
             }
-            return {
-              code: '998',
-              isRelevant: 'Y' as const,
-              mhsCode: '998',
-              mhsOthers: mh.details || mh.Condition.name,
-            };
-          }),
+
+            // Note: UserAllergies and UserDisabilities are unlinked from medical condition / MEDHISTS per requirement.
+
+            return list;
+          })(),
           familyHistories: patient.FamilyMedicalHistories.map(fh => {
             const code = fh.Condition.code;
             if (code) {
@@ -1030,13 +1085,20 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
             date: sh.operationDate ? formatDate(sh.operationDate) : '',
           })),
           socialHistory: patient.PersonalHistory ? {
-            isSmoker: patient.PersonalHistory.smokingStatus === 'CURRENT' ? 'Y' : (patient.PersonalHistory.smokingStatus === 'NEVER' || patient.PersonalHistory.smokingStatus === 'FORMER' ? 'N' : ''),
-            noCigpk: patient.PersonalHistory.numberOfPacksPerYear ? String(patient.PersonalHistory.numberOfPacksPerYear) : '',
-            isAdrinker: (patient.PersonalHistory.alcoholStatus === 'OCCASIONAL' || patient.PersonalHistory.alcoholStatus === 'REGULAR' || patient.PersonalHistory.alcoholStatus === 'HEAVY') ? 'Y' : (patient.PersonalHistory.alcoholStatus === 'NEVER' ? 'N' : ''),
-            noBottles: patient.PersonalHistory.numberOfBottlesPerDay ? String(patient.PersonalHistory.numberOfBottlesPerDay) : '',
-            illDrugUser: patient.PersonalHistory.illicitDrugUse === 'CURRENT' ? 'Y' : (patient.PersonalHistory.illicitDrugUse === 'NEVER' || patient.PersonalHistory.illicitDrugUse === 'FORMER' ? 'N' : ''),
-            isSexuallyActive: patient.PersonalHistory.sexuallyActive === 'YES' ? 'Y' : (patient.PersonalHistory.sexuallyActive === 'NO' || patient.PersonalHistory.sexuallyActive === 'INACTIVE' ? 'N' : ''),
-          } : undefined,
+            isSmoker: isPediatric ? 'X' : (patient.PersonalHistory.smokingStatus === 'CURRENT' ? 'Y' : (patient.PersonalHistory.smokingStatus === 'NEVER' || patient.PersonalHistory.smokingStatus === 'FORMER' ? 'N' : 'X')),
+            noCigpk: isPediatric ? '0' : (patient.PersonalHistory.numberOfPacksPerYear ? String(patient.PersonalHistory.numberOfPacksPerYear) : '0'),
+            isAdrinker: isPediatric ? 'X' : ((patient.PersonalHistory.alcoholStatus === 'OCCASIONAL' || patient.PersonalHistory.alcoholStatus === 'REGULAR' || patient.PersonalHistory.alcoholStatus === 'HEAVY') ? 'Y' : (patient.PersonalHistory.alcoholStatus === 'NEVER' ? 'N' : 'X')),
+            noBottles: isPediatric ? '0' : (patient.PersonalHistory.numberOfBottlesPerDay ? String(patient.PersonalHistory.numberOfBottlesPerDay) : '0'),
+            illDrugUser: patient.PersonalHistory.illicitDrugUse === 'CURRENT' ? 'Y' : 'N',
+            isSexuallyActive: patient.PersonalHistory.sexuallyActive === 'YES' ? 'Y' : 'N',
+          } : (isPediatric ? {
+            isSmoker: 'X',
+            noCigpk: '0',
+            isAdrinker: 'X',
+            noBottles: '0',
+            illDrugUser: 'N',
+            isSexuallyActive: 'N',
+          } : undefined),
           obGyneHistory: patient.ObGyneHistory ? {
             menarche: patient.ObGyneHistory.menarche?.toString() || '',
             lastMensPeriod: patient.ObGyneHistory.lastMenstrualPeriod ? formatDate(patient.ObGyneHistory.lastMenstrualPeriod) : '',
@@ -1059,9 +1121,11 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
             isPreEclampsia: patient.ObGyneHistory.hasPreEclampsia ? 'Y' : 'N',
             wFamPlan: patient.ObGyneHistory.isFamilyPlanning ? 'Y' : 'N',
           } : undefined,
-          immunizations: patient.UserVaccinations.map(uv => {
-            const vName = (uv.Vaccine.name || '').toUpperCase().trim();
-            const phData = uv.Vaccine.PhilHealthData;
+          immunizations: (patient.UserVaccinations || [])
+            .filter(uv => uv.isActive !== false && !uv.deletedAt)
+            .map(uv => {
+            const vName = (uv.Vaccine?.name || '').toUpperCase().trim();
+            const phData = uv.Vaccine?.PhilHealthData;
 
             let childCode = phData?.childImmcode || '';
             let youngwCode = phData?.youngwImmcode || '';
@@ -1069,22 +1133,79 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
             let elderlyCode = phData?.elderlyImmcode || '';
             let otherImm = phData?.otherImm || '';
 
-            // If the vaccine has NO mapping at all, fallback to "999" and put name in otherImm
-            if (!phData) {
-              childCode = '999';
-              youngwCode = '999';
-              pregwCode = '999';
-              elderlyCode = '999';
-              otherImm = vName;
+            // Dose, route, date, given by from UI
+            const doseName = (uv.Dose?.dose || (uv.doseId ? `${uv.doseId}st dose` : '')).toUpperCase().trim();
+            const routeName = (uv.Route?.route || '').toUpperCase().trim();
+            const rawDate = uv.dateGiven ? new Date(uv.dateGiven) : null;
+            const dateAdministered = rawDate ? `${rawDate.getMonth() + 1}/${rawDate.getDate()}/${rawDate.getFullYear()}` : '';
+            const givenBy = (uv.administeredBy || 'NOT SPECIFIED').toUpperCase().trim();
+
+            const detailParts: string[] = [];
+            if (doseName && routeName) {
+              detailParts.push(`DOSE: ${doseName} (${routeName})`);
+            } else if (doseName) {
+              detailParts.push(`DOSE: ${doseName}`);
+            } else if (routeName) {
+              detailParts.push(`ROUTE: ${routeName}`);
             }
+            if (dateAdministered) detailParts.push(`DATE ADMINISTERED: ${dateAdministered}`);
+            if (givenBy) detailParts.push(`GIVEN BY: ${givenBy}`);
+            const detailsStr = detailParts.join(', ');
+
+            // Auto-resolve standard child immunization codes from PhilHealth lib_immchild.xlsx
+            if (!childCode || childCode === '999') {
+              const upperName = vName.toUpperCase();
+              const upperDose = doseName.toUpperCase();
+
+              if (upperName.includes('POLIO') || upperName.includes('OPV') || upperName.includes('BOPV') || upperName.includes('IPV')) {
+                if (upperDose.includes('3') || upperDose.includes('3RD')) {
+                  childCode = 'C04'; // OPV3
+                } else if (upperDose.includes('2') || upperDose.includes('2ND')) {
+                  childCode = 'C03'; // OPV2
+                } else {
+                  childCode = 'C02'; // OPV1
+                }
+              } else if (upperName.includes('BCG')) {
+                childCode = 'C01';
+              } else if (upperName.includes('DPT') || upperName.includes('PENTAVALENT') || upperName.includes('DTP')) {
+                if (upperDose.includes('3') || upperDose.includes('3RD')) {
+                  childCode = 'C07';
+                } else if (upperDose.includes('2') || upperDose.includes('2ND')) {
+                  childCode = 'C06';
+                } else {
+                  childCode = 'C05';
+                }
+              } else if (upperName.includes('MEASLES') || upperName.includes('MMR')) {
+                childCode = 'C08';
+              } else if (upperName.includes('HEPATITIS B') || upperName.includes('HEPA B')) {
+                if (upperDose.includes('3') || upperDose.includes('3RD')) {
+                  childCode = 'C11';
+                } else if (upperDose.includes('2') || upperDose.includes('2ND')) {
+                  childCode = 'C10';
+                } else {
+                  childCode = 'C09';
+                }
+              } else if (upperName.includes('HEPATITIS A') || upperName.includes('HEPA A')) {
+                childCode = 'C12';
+              } else if (upperName.includes('VARICELLA') || upperName.includes('CHICKEN POX')) {
+                childCode = 'C13';
+              }
+            }
+
+            const baseName = otherImm || vName;
+            otherImm = detailsStr ? `${baseName} (${detailsStr})` : baseName;
+
+            youngwCode = youngwCode === '999' ? '' : youngwCode;
+            pregwCode = pregwCode === '999' ? '' : pregwCode;
+            elderlyCode = elderlyCode === '999' ? '' : elderlyCode;
 
             return {
               childImmcode: childCode || '999',
-              youngwImmcode: youngwCode || '999',
-              pregwImmcode: pregwCode || '999',
-              elderlyImmcode: elderlyCode || '999',
+              youngwImmcode: youngwCode || '',
+              pregwImmcode: pregwCode || '',
+              elderlyImmcode: elderlyCode || '',
               otherImm: otherImm,
-              reportStatus: 'U', // U = Updated
+              reportStatus: 'U' as const,
               deficiencyRemarks: uv.notes || '',
             };
           }),

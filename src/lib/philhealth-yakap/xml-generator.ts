@@ -451,9 +451,13 @@ function emitPeMiscFields(pemiscs: XmlNode, pe: Record<string, string | null | u
   };
 
   for (const cat of categories) {
-    const rawVal = normalizePeCode(cat.attr, cat.val);
-    if (rawVal.length > 0) {
-      // Emit the primary finding
+    if (!cat.val) continue;
+    const codes = String(cat.val)
+      .split(/[;,]/)
+      .map((c) => normalizePeCode(cat.attr, c))
+      .filter(Boolean);
+
+    for (const rawVal of codes) {
       pemiscs.ele('PEMISC', withStatus({
         pSkinId: cat.attr === 'pSkinId' ? rawVal : '',
         pHeentId: cat.attr === 'pHeentId' ? rawVal : '',

@@ -108,45 +108,47 @@ function addPemiscs(
         return s;
     };
 
+    const emitPeElement = (catAttr: string, code: string, reportStatus = "U", deficiencyRemarks = "") => {
+        pemiscsEle.ele("PEMISC", {
+            pSkinId: catAttr === "pSkinId" ? code : "",
+            pHeentId: catAttr === "pHeentId" ? code : "",
+            pChestId: catAttr === "pChestId" ? code : "",
+            pHeartId: catAttr === "pHeartId" ? code : "",
+            pAbdomenId: catAttr === "pAbdomenId" ? code : "",
+            pNeuroId: catAttr === "pNeuroId" ? code : "",
+            pGuId: catAttr === "pGuId" ? code : "",
+            pRectalId: catAttr === "pRectalId" ? code : "",
+            pReportStatus: reportStatus,
+            pDeficiencyRemarks: deficiencyRemarks,
+        });
+        addedCount++;
+    };
+
     if (findings && findings.length > 0) {
         for (const finding of findings) {
             for (const cat of categories) {
-                const rawVal = normalizePeCode(cat.attr, finding[cat.key]);
-                if (rawVal.length > 0) {
-                    pemiscsEle.ele("PEMISC", {
-                        pSkinId: cat.attr === "pSkinId" ? rawVal : "",
-                        pHeentId: cat.attr === "pHeentId" ? rawVal : "",
-                        pChestId: cat.attr === "pChestId" ? rawVal : "",
-                        pHeartId: cat.attr === "pHeartId" ? rawVal : "",
-                        pAbdomenId: cat.attr === "pAbdomenId" ? rawVal : "",
-                        pNeuroId: cat.attr === "pNeuroId" ? rawVal : "",
-                        pGuId: cat.attr === "pGuId" ? rawVal : "",
-                        pRectalId: cat.attr === "pRectalId" ? rawVal : "",
-                        pReportStatus: finding.pReportStatus ?? "U",
-                        pDeficiencyRemarks: finding.pDeficiencyRemarks ?? "",
-                    });
-                    addedCount++;
+                const val = finding[cat.key];
+                if (val == null) continue;
+                const codes = String(val)
+                    .split(/[;,]/)
+                    .map((c) => normalizePeCode(cat.attr, c))
+                    .filter(Boolean);
+                for (const rawVal of codes) {
+                    emitPeElement(cat.attr, rawVal, finding.pReportStatus ?? "U", finding.pDeficiencyRemarks ?? "");
                 }
             }
         }
     } else if (items && items.length > 0) {
         for (const item of items) {
             for (const cat of categories) {
-                const rawVal = normalizePeCode(cat.attr, item[cat.key]);
-                if (rawVal.length > 0) {
-                    pemiscsEle.ele("PEMISC", {
-                        pSkinId: cat.attr === "pSkinId" ? rawVal : "",
-                        pHeentId: cat.attr === "pHeentId" ? rawVal : "",
-                        pChestId: cat.attr === "pChestId" ? rawVal : "",
-                        pHeartId: cat.attr === "pHeartId" ? rawVal : "",
-                        pAbdomenId: cat.attr === "pAbdomenId" ? rawVal : "",
-                        pNeuroId: cat.attr === "pNeuroId" ? rawVal : "",
-                        pGuId: cat.attr === "pGuId" ? rawVal : "",
-                        pRectalId: cat.attr === "pRectalId" ? rawVal : "",
-                        pReportStatus: "U",
-                        pDeficiencyRemarks: "",
-                    });
-                    addedCount++;
+                const val = item[cat.key];
+                if (val == null) continue;
+                const codes = String(val)
+                    .split(/[;,]/)
+                    .map((c) => normalizePeCode(cat.attr, c))
+                    .filter(Boolean);
+                for (const rawVal of codes) {
+                    emitPeElement(cat.attr, rawVal, "U", "");
                 }
             }
         }

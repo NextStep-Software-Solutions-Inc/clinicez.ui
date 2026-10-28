@@ -1567,12 +1567,18 @@ export async function resolveMappedPhysicalExamFindingsForConsultations(
     for (const item of peFieldDomainMap) {
       const val = pe[item.field];
       if (typeof val === "string" && val.trim().length > 0) {
-        mappedFindings.push({
-          consultationId: pe.consultationTicketId,
-          inputValue: val.trim(),
-          mappedCode: val.trim(),
-          domainKey: item.domainKey,
-        });
+        const codes = val
+          .split(/[;,]/)
+          .map((c) => c.trim())
+          .filter(Boolean);
+        for (const code of codes) {
+          mappedFindings.push({
+            consultationId: pe.consultationTicketId,
+            inputValue: code,
+            mappedCode: code,
+            domainKey: item.domainKey,
+          });
+        }
       }
     }
   }

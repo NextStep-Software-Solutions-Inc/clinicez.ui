@@ -1,5 +1,7 @@
 'use client'
 
+import { parsePeCodes } from '@/lib/physical-exam-utils'
+
 import React, { useState, useMemo, useRef, useCallback, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import Link from 'next/link'
@@ -991,7 +993,11 @@ export default function ClinicPatientProfileClient({
                             { label: 'Rectal', category: 'RECTAL', id: exam.rectalId, remarks: exam.rectalRemarks },
                           ]
                             .map((item) => {
-                              const statusDesc = item.id ? (peLibraryMap.get(`${item.category}:${item.id}`) || item.id) : null
+                              const codes = parsePeCodes(item.id)
+                              const descriptions = codes
+                                .map((c) => peLibraryMap.get(`${item.category}:${c}`) || c)
+                                .filter(Boolean)
+                              const statusDesc = descriptions.length > 0 ? descriptions.join(', ') : null
                               const value = [statusDesc, item.remarks].filter(Boolean).join(' — ')
                               return { label: item.label, value }
                             })

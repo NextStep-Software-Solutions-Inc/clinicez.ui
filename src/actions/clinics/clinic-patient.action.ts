@@ -11,6 +11,7 @@ import { Prisma, $Enums } from "@prisma/client";
 import { requireClinicPermission, requirePermissionOrOwnership } from "@/lib/permission-checker";
 import { PERMISSIONS } from "@/lib/permissions";
 import { clerkClient } from "@clerk/nextjs/server";
+import { buildUserPhilHealthPinOrFilters } from "@/lib/philhealth-pin-search";
 export const getClinicPatientAction = withErrorHandling(async ({ userId, clinicUid }: { userId: number, clinicUid: string }) => {
   const session = await getCachedSession();
   if (!session) throw new Error("Unauthorized");
@@ -89,6 +90,8 @@ export interface GetClinicPatientsResult {
     id: number;
     createdAt: Date;
     profileCompletionStatus: string;
+    konsultaPatientPin?: string | null;
+    konsultaPatientType?: string | null;
     Clinic: {
       id: number;
       name: string;
@@ -107,6 +110,10 @@ export interface GetClinicPatientsResult {
       bloodType: string | null;
       nickname: string | null;
       picture: string | null;
+      PhilHealthRecords?: Array<{
+        pin: string;
+        memberType?: string;
+      }>;
       StudentRecords?: Array<{
         id?: number;
         studentId: string;
@@ -128,7 +135,7 @@ export interface GetClinicPatientsResult {
         Organization?: { name: string } | null;
       }>;
     };
-    PhilHealthKonsultaEnlistments: Array<{ id: number; profilingTransNo: string | null; hciCaseNo: string | null; }>;
+    PhilHealthKonsultaEnlistments: Array<{ id: number; profilingTransNo: string | null; hciCaseNo: string | null; memberPin?: string | null; dependentPin?: string | null; patientType?: string | null; }>;
   }>;
   total: number;
   nextCursor: number | null;
@@ -138,7 +145,7 @@ export interface GetClinicPatientsResult {
 export type GetClinicPatients = GetClinicPatientsResult;
 
 /** Build a Prisma OR filter array for patient name/email/ID search, supporting multi-word full-name queries and student/employee IDs. */
-function buildPatientSearchFilter(search: string) {
+function buildPatientSearchFilter(search: string, clinicUid?: string) {
   const trimmed = search.trim();
   return {
     OR: [
@@ -165,6 +172,7 @@ function buildPatientSearchFilter(search: string) {
           },
         },
       },
+      ...buildUserPhilHealthPinOrFilters(trimmed, clinicUid ? { clinicUid } : undefined),
       // Multi-word full-name search: each word must match at least one name field
       ...(trimmed.includes(' ') ? [{
         AND: trimmed.split(/\s+/).filter(Boolean).map(part => ({
@@ -236,7 +244,7 @@ export const getClinicPatientsAction = async (filters: GetClinicPatientFilters):
             ]
           }] : [],
           // Search filter
-          ...(search ? [buildPatientSearchFilter(search)] : []),
+          ...(search ? [buildPatientSearchFilter(search, clinicUid)] : []),
         ],
       }
     },
@@ -244,6 +252,8 @@ export const getClinicPatientsAction = async (filters: GetClinicPatientFilters):
       id: true,
       createdAt: true,
       profileCompletionStatus: true,
+      konsultaPatientPin: true,
+      konsultaPatientType: true,
       Clinic: {
         select: {
           id: true,
@@ -265,6 +275,20 @@ export const getClinicPatientsAction = async (filters: GetClinicPatientFilters):
           bloodType: true,
           nickname: true,
           picture: true,
+          PhilHealthRecords: {
+            where: {
+              isActive: true,
+              deletedAt: null,
+            },
+            orderBy: {
+              id: "desc",
+            },
+            take: 1,
+            select: {
+              pin: true,
+              memberType: true,
+            },
+          },
           StudentRecords: {
             where: {
               isActive: true
@@ -350,6 +374,10 @@ export const getClinicPatientsAction = async (filters: GetClinicPatientFilters):
         select: {
           id: true,
           profilingTransNo: true,
+
+          memberPin: true,
+          dependentPin: true,
+          patientType: true,
           hciCaseNo: true
         }
       }
@@ -514,7 +542,7 @@ export const getClinicPatientsAction = async (filters: GetClinicPatientFilters):
             ]
           }] : [],
           // Search filter
-          ...(search ? [buildPatientSearchFilter(search)] : []),
+          ...(search ? [buildPatientSearchFilter(search, clinicUid)] : []),
         ],
       }
     }
@@ -611,6 +639,7 @@ export type SearchNonClinicPatientsResult = {
   warnings: string[];
   studentId?: string | null;
   employeeId?: string | null;
+  philHealthPin?: string | null;
 };
 
 export const searchNonClinicPatientsAction = withErrorHandling(async ({
@@ -688,6 +717,12 @@ export const searchNonClinicPatientsAction = withErrorHandling(async ({
       dob: true,
       mobile: true,
       verificationStatus: true,
+      PhilHealthRecords: {
+        where: { isActive: true, deletedAt: null },
+        orderBy: { id: "desc" },
+        select: { pin: true },
+        take: 1,
+      },
       StudentRecords: {
         where: { isActive: true },
         select: { studentId: true },
@@ -812,6 +847,7 @@ export const searchNonClinicPatientsAction = withErrorHandling(async ({
       warnings,
       studentId: user.StudentRecords?.[0]?.studentId ?? null,
       employeeId: user.UserEmployments?.[0]?.employeeId ?? null,
+      philHealthPin: user.PhilHealthRecords?.[0]?.pin ?? null,
     };
   });
 

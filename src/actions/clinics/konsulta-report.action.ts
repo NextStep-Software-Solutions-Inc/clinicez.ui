@@ -9,6 +9,7 @@ import { getCachedSession } from "@actions/session.action";
 import prisma from "@lib/prisma";
 import { Prisma } from "@prisma/client";
 import { formatKonsultaHciNumber } from "@/lib/format-sequence";
+import { buildUserPhilHealthPinOrFilters, extractPhilHealthPinSearchTerms } from "@/lib/philhealth-pin-search";
 import { getNextSequenceNumber } from "@/lib/sequence-generator";
 import {
     resolveMappedDiagnosticsForConsultations,
@@ -322,7 +323,7 @@ const KONSULTA_PATIENT_SELECT = {
     },
 } satisfies Prisma.ClinicPatientSelect;
 
-function buildPatientSearch(search: string): Prisma.UserWhereInput | undefined {
+function buildPatientSearch(search: string, clinicId?: number): Prisma.UserWhereInput | undefined {
     const q = search.trim();
     if (!q) return undefined;
     return {
@@ -330,6 +331,7 @@ function buildPatientSearch(search: string): Prisma.UserWhereInput | undefined {
             { firstName: { contains: q, mode: "insensitive" } },
             { lastName: { contains: q, mode: "insensitive" } },
             { middleName: { contains: q, mode: "insensitive" } },
+            ...buildUserPhilHealthPinOrFilters(q, clinicId !== undefined ? { clinicId } : undefined),
             {
                 PhilHealthRecords: {
                     some: { deletedAt: null, pin: { contains: q, mode: "insensitive" } },
@@ -385,7 +387,7 @@ export const getAllClinicPatientsWithPhilHealthStatusAction = withErrorHandling(
         const clinicId = await resolveClinicId(clinicUid);
         const effYear = currentEffYear();
         const page = normalizePage(skip, take);
-        const patientSearch = buildPatientSearch(search);
+        const patientSearch = buildPatientSearch(search, clinicId);
         const registrationFilter: Prisma.ClinicPatientWhereInput =
             kind === "ENROLLED"
                 ? { konsultaEffYear: effYear, konsultaRegistrationStatus: "REGISTERED" }
@@ -1891,6 +1893,7 @@ export const searchPrincipalMemberAction = withErrorHandling(
                 memberType: "MM",
                 OR: [
                     { pin: { contains: q, mode: "insensitive" } },
+                    ...extractPhilHealthPinSearchTerms(q).map((term) => ({ pin: { contains: term, mode: "insensitive" as const } })),
                     { User: { firstName: { contains: q, mode: "insensitive" } } },
                     { User: { lastName: { contains: q, mode: "insensitive" } } },
                     { User: { middleName: { contains: q, mode: "insensitive" } } },
@@ -1909,6 +1912,7 @@ export const searchPrincipalMemberAction = withErrorHandling(
                 konsultaPatientType: "MM",
                 OR: [
                     { konsultaPatientPin: { contains: q, mode: "insensitive" } },
+                    ...extractPhilHealthPinSearchTerms(q).map((term) => ({ konsultaPatientPin: { contains: term, mode: "insensitive" as const } })),
                     { Patient: { firstName: { contains: q, mode: "insensitive" } } },
                     { Patient: { lastName: { contains: q, mode: "insensitive" } } },
                 ],

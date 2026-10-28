@@ -585,10 +585,15 @@ export const getClinicConsultationQueueAction = withErrorHandling(
                       suffix: true,
                       dob: true,
                       gender: true,
+                      PhilHealthRecords: {
+                        where: { isActive: true, deletedAt: null },
+                        take: 1,
+                        select: { pin: true, principalMemberPin: true },
+                      },
                       ClinicPatients: {
                         where: { Clinic: { clinicUid }, isActive: true, deletedAt: null },
                         take: 1,
-                        select: { id: true },
+                        select: { id: true, konsultaPatientPin: true, konsultaMemberPin: true },
                       },
                     },
                   },
@@ -599,8 +604,15 @@ export const getClinicConsultationQueueAction = withErrorHandling(
           ClinicPatient: {
             select: {
               id: true,
+              konsultaPatientPin: true,
+              konsultaMemberPin: true,
               Patient: {
                 select: {
+                  PhilHealthRecords: {
+                    where: { isActive: true, deletedAt: null },
+                    take: 1,
+                    select: { pin: true, principalMemberPin: true },
+                  },
                   id: true,
                   userId: true,
                   firstName: true,

@@ -105,11 +105,11 @@ export const PatientsHeader = memo(function PatientsHeader({
           </div>
 
           {/* Search */}
-          <div className="relative flex-1 max-w-xs">
+          <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
             <Input
               className="pl-9 h-9 text-sm"
-              placeholder="Search name, email, student ID, employee ID…"
+              placeholder="Search name, PhilHealth PIN, email, ID…"
               value={localSearch}
               onChange={(e) => handleSearchChange(e.target.value)}
             />

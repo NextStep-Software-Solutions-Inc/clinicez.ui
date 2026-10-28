@@ -58,7 +58,7 @@ export async function getClinicPatientProfileAction({
         });
 
         if (!clinicPatientRecord) {
-            throw new Error("Patient is not a member of this clinic");
+            return null;
         }
 
         // Fetch core patient record
@@ -579,6 +579,6 @@ export async function getClinicPatientProfileAction({
         } as SerializedPatientHealthRecordsResponse;
     } catch (error) {
         console.error("[GET_CLINIC_PATIENT_PROFILE_ACTION]", error);
-        return null;
+        throw error;
     }
 }

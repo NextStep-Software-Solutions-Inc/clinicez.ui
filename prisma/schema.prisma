@@ -154,6 +154,7 @@ model User {
   UserPreference                   UserPreference?
   UserSchedules                    UserSchedule[]
   StudentRecords                   UserStudentRecord[]
+  UserVaccinations                 UserVaccination[]
   PatientImmunizations             PatientImmunization[]
   VitalSigns                       VitalSign[]
   Notifications                    Notification[]
@@ -540,6 +541,7 @@ model HealthcareProvider {
   ProfessionalDetails   ProfessionalDetails?
   ReservedTimeSlots     ReservedTimeSlot[]
   UserPreferences       UserPreference[]
+  UserVaccinations      UserVaccination[]
   diagnosticRequests    DiagnosticRequest[]
 }
 
@@ -913,6 +915,114 @@ model PatientImmunization {
 
   @@index([userId, isActive])
   @@index([category, code])
+}
+
+/// @deprecated Retained for historical data preservation and cross-branch compatibility; use PhilHealthImmunizationLibrary & PatientImmunization instead.
+model Vaccine {
+  id               Int                    @id @default(autoincrement())
+  name             String
+  description      String?
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+  deletedAt        DateTime?
+  isActive         Boolean                @default(true)
+  type             String
+  UserVaccinations UserVaccination[]
+  VaccineAttribute VaccineAttribute?
+  VaccineDoses     VaccineDose[]
+  VaccineRoutes    VaccineRoute[]
+  PhilHealthData   VaccinePhilHealthData?
+}
+
+/// @deprecated Legacy 1:1 extension of Vaccine; use PhilHealthImmunizationLibrary instead.
+model VaccinePhilHealthData {
+  id             String  @id @default(uuid())
+  vaccineId      Int     @unique
+  childImmcode   String?
+  youngwImmcode  String?
+  pregwImmcode   String?
+  elderlyImmcode String?
+  otherImm       String?
+
+  Vaccine Vaccine @relation(fields: [vaccineId], references: [id], onDelete: Cascade)
+}
+
+/// @deprecated Legacy vaccine attribute table.
+model VaccineAttribute {
+  id          Int     @id @default(autoincrement())
+  vaccineId   Int     @unique
+  effectivity Int
+  Vaccine     Vaccine @relation(fields: [vaccineId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// @deprecated Legacy vaccine route table.
+model Route {
+  id               Int               @id @default(autoincrement())
+  route            String
+  description      String?
+  isActive         Boolean           @default(true)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  deletedAt        DateTime?
+  UserVaccinations UserVaccination[]
+  VaccineRoutes    VaccineRoute[]
+}
+
+/// @deprecated Legacy vaccine dose table.
+model Dose {
+  id               Int               @id @default(autoincrement())
+  dose             String
+  description      String?
+  isActive         Boolean           @default(true)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  deletedAt        DateTime?
+  UserVaccinations UserVaccination[]
+  VaccineDoses     VaccineDose[]
+}
+
+/// @deprecated Legacy vaccine-route join table.
+model VaccineRoute {
+  id        Int     @id @default(autoincrement())
+  vaccineId Int
+  routeId   Int
+  Route     Route   @relation(fields: [routeId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  Vaccine   Vaccine @relation(fields: [vaccineId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([vaccineId, routeId], name: "unique_vaccine_route")
+}
+
+/// @deprecated Legacy vaccine-dose join table.
+model VaccineDose {
+  id        Int     @id @default(autoincrement())
+  vaccineId Int
+  doseId    Int
+  Dose      Dose    @relation(fields: [doseId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  Vaccine   Vaccine @relation(fields: [vaccineId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([vaccineId, doseId], name: "unique_vaccine_dose")
+}
+
+/// @deprecated Legacy user vaccination table retained to preserve historical records; use PatientImmunization instead.
+model UserVaccination {
+  id                 Int                 @id @default(autoincrement())
+  userId             Int
+  vaccineId          Int
+  doseId             Int
+  routeId            Int
+  dateGiven          DateTime
+  notes              String?
+  hpId               Int?
+  administeredBy     String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  deletedAt          DateTime?
+  isActive           Boolean             @default(true)
+  Dose               Dose                @relation(fields: [doseId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  HealthCareProvider HealthcareProvider? @relation(fields: [hpId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Route              Route               @relation(fields: [routeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  User               User                @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Vaccine            Vaccine             @relation(fields: [vaccineId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model Allergen {

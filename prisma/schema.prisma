@@ -138,6 +138,11 @@ model User {
   UserAllergies                    UserAllergy[]
   UserClinicAppointmentWhitelists  UserClinicAppointmentWhitelist[]
   UserDefaultClinicRoles           UserDefaultClinicRole[]
+  InvoicesCreated                  Invoice[]                        @relation("InvoiceCreatedBy")
+  DoctorInvoiceItems               InvoiceItem[]                    @relation("DoctorInvoiceItem")
+  ReceiptsProcessed                PaymentReceipt[]                 @relation("CashierReceipt")
+  CashierShifts                    CashierShift[]                   @relation("CashierShiftUser")
+  DoctorPayouts                    DoctorPayoutVoucher[]            @relation("DoctorPayout")
   UserDefaultOrganization          UserDefaultOrganization?
   UserDefaultOrganizationRoles     UserDefaultOrganizationRole[]
   UserDefaultTenant                UserDefaultTenant?
@@ -274,6 +279,8 @@ model ClinicPatient {
   PhilHealthKonsultaEnlistments PhilHealthKonsultaEnlistment[]
   KonsultaBatchPatients         KonsultaBatchPatient[]
   KonsultaDiagnosticResults     KonsultaDiagnosticResult[]
+  Invoices                      Invoice[]
+  PaymentReceipts               PaymentReceipt[]
 
   @@unique([clinicId, patientId], name: "unique_clinic_patient")
   @@index([clinicId, konsultaEffYear, konsultaRegistrationStatus])
@@ -1355,6 +1362,14 @@ model Clinic {
   KonsultaBatchReports            KonsultaBatchReport[]
   KonsultaDiagnosticResults       KonsultaDiagnosticResult[]
   diagnosticRequests              DiagnosticRequest[]
+  ClinicBillingSetting            ClinicBillingSetting?
+  ClinicPriceItems                ClinicPriceItem[]
+  Invoices                        Invoice[]
+  PaymentReceipts                 PaymentReceipt[]
+  CashierShifts                   CashierShift[]
+  DoctorPayoutVouchers            DoctorPayoutVoucher[]
+  HmoClaims                       HmoClaimRecord[]
+  ChartOfAccounts                 ClinicChartOfAccounts?
 
   @@index([tenantId, clinicUid], map: "clinic_index")
 }
@@ -1742,6 +1757,7 @@ model ConsultationTicket {
   Prescriptions                        Prescription[]
   KonsultaDiagnosticResults            KonsultaDiagnosticResult[]
   DiagnosticRequests                   DiagnosticRequest[]
+  Invoices                             Invoice[]
 
   @@index([caseNumber])
   @@index([ekasTransactionNumber])
@@ -3382,3 +3398,304 @@ model PatientNcdQuestionnaire {
   updatedAt DateTime @updatedAt
   Patient   User     @relation(fields: [patientId], references: [id], onDelete: Cascade)
 }
+
+// ==========================================
+// COMMERCIAL BILLING, POS & ACCOUNTING SUITE
+// ==========================================
+
+enum ClinicBillingMode {
+  DISABLED
+  COMMERCIAL
+  HYBRID
+}
+
+enum PriceCategory {
+  CONSULTATION
+  LABORATORY
+  IMAGING
+  HEART_STATION
+  PROCEDURE
+  MEDICATION
+  SUPPLIES
+  OTHER
+}
+
+enum InvoiceStatus {
+  DRAFT
+  UNPAID
+  PARTIALLY_PAID
+  PAID
+  CANCELLED
+  VOID
+}
+
+enum DiscountType {
+  NONE
+  SENIOR_CITIZEN
+  PWD
+  EMPLOYEE
+  CUSTOM
+}
+
+enum PaymentMethod {
+  CASH
+  GCASH
+  MAYA
+  CREDIT_CARD
+  DEBIT_CARD
+  BANK_TRANSFER
+  HMO_RECEIVABLE
+}
+
+enum ShiftStatus {
+  OPEN
+  CLOSED
+}
+
+enum DoctorPayoutStatus {
+  UNPAID
+  PAID
+}
+
+enum ArClaimStatus {
+  PENDING_SUBMISSION
+  SUBMITTED
+  APPROVED
+  PAID
+  DISPUTED
+}
+
+model ClinicBillingSetting {
+  id                     Int               @id @default(autoincrement())
+  clinicId               Int               @unique
+  billingMode            ClinicBillingMode @default(COMMERCIAL)
+  currency               String            @default("PHP")
+  isVatRegistered        Boolean           @default(false)
+  vatRate                Decimal           @default(12.00) @db.Decimal(5, 2)
+  tinNumber              String?
+  birPermitNumber        String?
+  registeredBusinessName String?
+  registeredAddress      String?
+  invoicePrefix          String            @default("INV-")
+  nextInvoiceNumber      Int               @default(1)
+  receiptPrefix          String            @default("OR-")
+  nextReceiptNumber      Int               @default(1)
+  receiptFooterNotes     String?
+  enableDoctorPfTracking Boolean           @default(true)
+  enableHmoBilling       Boolean           @default(true)
+  createdAt              DateTime          @default(now())
+  updatedAt              DateTime          @updatedAt
+  Clinic                 Clinic            @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+}
+
+model ClinicPriceItem {
+  id                        Int           @id @default(autoincrement())
+  clinicId                  Int
+  code                      String?
+  name                      String
+  description               String?
+  category                  PriceCategory
+  unitPrice                 Decimal       @db.Decimal(10, 2)
+  isVatable                 Boolean       @default(true)
+  defaultDoctorSharePercent Decimal?      @db.Decimal(5, 2)
+  isActive                  Boolean       @default(true)
+  createdAt                 DateTime      @default(now())
+  updatedAt                 DateTime      @updatedAt
+  Clinic                    Clinic        @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  InvoiceItems              InvoiceItem[]
+
+  @@unique([clinicId, code])
+  @@index([clinicId, category])
+}
+
+model Invoice {
+  id                   Int                 @id @default(autoincrement())
+  clinicId             Int
+  patientId            Int
+  consultationTicketId Int?
+  appointmentId        Int?
+  invoiceNumber        String              @unique
+  status               InvoiceStatus       @default(UNPAID)
+  
+  subtotal             Decimal             @db.Decimal(10, 2)
+  discountType         DiscountType        @default(NONE)
+  discountIdNumber     String?
+  discountRatePercent  Decimal             @default(0) @db.Decimal(5, 2)
+  discountAmount       Decimal             @default(0) @db.Decimal(10, 2)
+  
+  vatableSales         Decimal             @default(0) @db.Decimal(10, 2)
+  vatExemptSales       Decimal             @default(0) @db.Decimal(10, 2)
+  vatAmount            Decimal             @default(0) @db.Decimal(10, 2)
+  
+  totalAmount          Decimal             @db.Decimal(10, 2)
+  amountPaid           Decimal             @default(0) @db.Decimal(10, 2)
+  balanceDue           Decimal             @db.Decimal(10, 2)
+  
+  hmoProviderName      String?
+  hmoApprovalCode      String?
+  hmoClaimAmount       Decimal?            @db.Decimal(10, 2)
+
+  dueDate              DateTime?
+  issuedAt             DateTime            @default(now())
+  voidedAt             DateTime?
+  voidReason           String?
+  notes                String?
+  createdByUserId      Int
+
+  Clinic               Clinic              @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  ClinicPatient        ClinicPatient       @relation(fields: [patientId], references: [id], onDelete: NoAction)
+  ConsultationTicket   ConsultationTicket? @relation(fields: [consultationTicketId], references: [id])
+  CreatedBy            User                @relation("InvoiceCreatedBy", fields: [createdByUserId], references: [id])
+  Items                InvoiceItem[]
+  Payments             PaymentReceipt[]
+  HmoClaim             HmoClaimRecord?
+
+  @@index([clinicId, status])
+  @@index([clinicId, issuedAt])
+}
+
+model InvoiceItem {
+  id                 Int                 @id @default(autoincrement())
+  invoiceId          Int
+  priceItemId        Int?
+  description        String
+  category           PriceCategory       @default(OTHER)
+  quantity           Int                 @default(1)
+  unitPrice          Decimal             @db.Decimal(10, 2)
+  totalPrice         Decimal             @db.Decimal(10, 2)
+  isVatable          Boolean             @default(true)
+  
+  doctorId           Int?
+  doctorSharePercent Decimal?            @db.Decimal(5, 2)
+  doctorShareAmount  Decimal?            @db.Decimal(10, 2)
+  
+  Invoice            Invoice             @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  PriceItem          ClinicPriceItem?    @relation(fields: [priceItemId], references: [id])
+  Doctor             User?               @relation("DoctorInvoiceItem", fields: [doctorId], references: [id])
+  DoctorPayoutItem   DoctorPayoutItem?
+}
+
+model PaymentReceipt {
+  id              Int            @id @default(autoincrement())
+  clinicId        Int
+  invoiceId       Int
+  patientId       Int
+  cashierUserId   Int
+  receiptNumber   String         @unique
+  paymentMethod   PaymentMethod
+  amount          Decimal        @db.Decimal(10, 2)
+  tenderedAmount  Decimal?       @db.Decimal(10, 2)
+  changeAmount    Decimal?       @db.Decimal(10, 2)
+  referenceNumber String?
+  paidAt          DateTime       @default(now())
+  shiftId         Int?
+  isVoided        Boolean        @default(false)
+  voidReason      String?
+
+  Clinic          Clinic         @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  Invoice         Invoice        @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  Cashier         User           @relation("CashierReceipt", fields: [cashierUserId], references: [id])
+  ClinicPatient   ClinicPatient  @relation(fields: [patientId], references: [id], onDelete: NoAction)
+  Shift           CashierShift?  @relation(fields: [shiftId], references: [id])
+
+  @@index([clinicId, paidAt])
+}
+
+model CashierShift {
+  id            Int              @id @default(autoincrement())
+  clinicId      Int
+  cashierUserId Int
+  openedAt      DateTime         @default(now())
+  closedAt      DateTime?
+  openingFloat  Decimal          @db.Decimal(10, 2)
+  expectedCash  Decimal?         @db.Decimal(10, 2)
+  actualCash    Decimal?         @db.Decimal(10, 2)
+  cashVariance  Decimal?         @db.Decimal(10, 2)
+  notes         String?
+  status        ShiftStatus      @default(OPEN)
+
+  Clinic        Clinic           @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  Cashier       User             @relation("CashierShiftUser", fields: [cashierUserId], references: [id])
+  Payments      PaymentReceipt[]
+
+  @@index([clinicId, status])
+}
+
+model DoctorPayoutVoucher {
+  id                   Int                @id @default(autoincrement())
+  clinicId             Int
+  doctorId             Int
+  voucherNumber        String             @unique
+  periodStart          DateTime
+  periodEnd            DateTime
+  grossPfAmount        Decimal            @db.Decimal(10, 2)
+  facilityFeeDeduction Decimal            @default(0) @db.Decimal(10, 2)
+  withholdingTaxRate   Decimal            @default(10.0) @db.Decimal(5, 2)
+  withholdingTaxAmount Decimal            @db.Decimal(10, 2)
+  netPayoutAmount      Decimal            @db.Decimal(10, 2)
+  status               DoctorPayoutStatus @default(UNPAID)
+  paidAt               DateTime?
+  paymentReference     String?
+  generatedAt          DateTime           @default(now())
+
+  Clinic               Clinic             @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  Doctor               User               @relation("DoctorPayout", fields: [doctorId], references: [id])
+  LineItems            DoctorPayoutItem[]
+
+  @@index([clinicId, doctorId, status])
+}
+
+model DoctorPayoutItem {
+  id              Int                 @id @default(autoincrement())
+  voucherId       Int
+  invoiceItemId   Int                 @unique
+  consultationFee Decimal             @db.Decimal(10, 2)
+  doctorShare     Decimal             @db.Decimal(10, 2)
+  
+  Voucher         DoctorPayoutVoucher @relation(fields: [voucherId], references: [id], onDelete: Cascade)
+  InvoiceItem     InvoiceItem         @relation(fields: [invoiceItemId], references: [id])
+}
+
+model HmoClaimRecord {
+  id              Int           @id @default(autoincrement())
+  clinicId        Int
+  invoiceId       Int           @unique
+  hmoProvider     String
+  memberId        String?
+  approvalCode    String
+  claimAmount     Decimal       @db.Decimal(10, 2)
+  status          ArClaimStatus @default(PENDING_SUBMISSION)
+  submittedAt     DateTime?
+  settledAt       DateTime?
+  settledAmount   Decimal?      @db.Decimal(10, 2)
+  deductionAmount Decimal?      @db.Decimal(10, 2)
+  checkNumber     String?
+  
+  Clinic          Clinic        @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  Invoice         Invoice       @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([clinicId, status])
+}
+
+model ClinicChartOfAccounts {
+  id                       Int     @id @default(autoincrement())
+  clinicId                 Int     @unique
+  cashAccountCode          String  @default("1010")
+  eWalletAccountCode       String  @default("1020")
+  bankAccountCode          String  @default("1030")
+  hmoReceivableAccountCode String  @default("1100")
+  consultationRevenueCode  String  @default("4010")
+  labRevenueCode           String  @default("4020")
+  imagingRevenueCode       String  @default("4030")
+  pharmacyRevenueCode      String  @default("4040")
+  vatPayableAccountCode    String  @default("2100")
+  doctorPfPayableCode      String  @default("2200")
+  withholdingTaxCode       String  @default("2300")
+
+  accountingPlatform       String?
+  webhookUrl               String?
+  apiKeyEncrypted          String?
+
+  Clinic                   Clinic  @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+}
+

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { getClinicAction } from "@/actions/clinics/clinic.action";
 import { getClinicSettingAction } from "@/actions/clinics/clinic-setting.action";
+import { getClinicBillingSettingAction } from "@/actions/clinics/clinic-billing-setting.action";
 import { getClinicAppointmentConfigAction } from "@/actions/appointments/appointment-config.action";
 import { getClinicMembersAction } from "@/actions/clinics/clinic-member.action";
 import { getClinicRolesAction, getClinicRolesWithPermissionsAction } from "@/actions/clinics/clinic-role.action";
@@ -50,6 +51,7 @@ export default async function ClinicSettingsPage({ params }: ClinicSettingsPageP
     googleAccess,
     initialSystems,
     myPermissions,
+    billingSettingResult,
   ] = await Promise.all([
     getClinicAction(clinicUid),
     getClinicSettingAction(clinicUid),
@@ -66,6 +68,7 @@ export default async function ClinicSettingsPage({ params }: ClinicSettingsPageP
     checkGoogleCalendarAccess(),
     getSystemsAction(clinicUid),
     session ? getPermissionsAction({ userId: session.user.sub, type: "CLINIC" }) : Promise.resolve([]),
+    getClinicBillingSettingAction(clinicUid),
   ]);
 
   if (!clinicResult.status || !clinicResult.data) {
@@ -100,6 +103,7 @@ export default async function ClinicSettingsPage({ params }: ClinicSettingsPageP
         googleCalendarEvents={googleCalendarEvents}
         initialSystems={initialSystems}
         canUpdateSettings={canUpdateSettings}
+        billingSetting={billingSettingResult.data ?? null}
       />
     </Suspense>
   );

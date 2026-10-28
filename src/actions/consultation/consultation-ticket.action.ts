@@ -8,8 +8,7 @@ import { PERMISSIONS } from '@lib/permissions';
 import { hasCodeProperty } from '@lib/utils';
 import { withErrorHandling } from '@/lib/with-error-handling';
 import { getHPsAction, GetHPsType } from '@actions/hp.actions';
-import { getNextSequenceNumber, getUniqueKonsultaCaseAndTransNo } from '@/lib/sequence-generator';
-import { formatKonsultaHciNumber } from '@/lib/format-sequence';
+import { getUniqueKonsultaCaseAndTransNo } from '@/lib/sequence-generator';
 
 type CreateConsultationTicketPayload = {
   systemId?: number;
@@ -45,7 +44,6 @@ export const createConsultationTicketAction = withErrorHandling(async ({ systemI
   const hciAccreNo = clinicForKonsulta?.ClinicSetting?.philhealthAccreditationNumber ?? null;
   const clinicIdForKonsulta = clinicForKonsulta?.id ?? null;
   const now = new Date();
-
   let konsultaHciCaseNo: string | undefined = undefined;
   let konsultaHciTransNo: string | undefined = undefined;
 

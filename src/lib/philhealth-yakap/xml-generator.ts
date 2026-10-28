@@ -1142,8 +1142,8 @@ function buildStubSoap(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
     pHeartId: '',
     pAbdomenId: '',
     pNeuroId: '',
-    pRectalId: '',
     pGuId: '',
+    pRectalId: '',
   })).up();
   pemiscs.up();
 
@@ -1172,7 +1172,7 @@ function buildStubSoap(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
   diagnostics.ele('DIAGNOSTIC', withStatus({
     pDiagnosticId: '',
     pOthRemarks: '',
-    pIsPhysicianRecommendation: 'N',
+    pIsPhysicianRecommendation: '',
     pPatientRemarks: '',
   })).up();
   diagnostics.up();
@@ -1180,7 +1180,7 @@ function buildStubSoap(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
   // MANAGEMENTS stub
   const managements = soap.ele('MANAGEMENTS');
   managements.ele('MANAGEMENT', withStatus({
-    pManagementId: '0',
+    pManagementId: '',
     pOthRemarks: '',
   })).up();
   managements.up();

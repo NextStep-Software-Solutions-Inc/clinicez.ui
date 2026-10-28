@@ -505,7 +505,7 @@ export default function PhilHealthBatchReports({ clinicUid }: PhilHealthBatchRep
         try { parsed = JSON.parse(selectedBatch.validationResult); } catch { /* noop */ }
 
         const isSuccess = parsed?.success === true || parsed?.success === "true";
-        const message = (parsed?.message as string) || "";
+        const message = (parsed?.message as string) || (parsed?.result as string) || (parsed?.error as string) || (parsed?.errors as string) || "";
 
         // Extract decrypted errors
         let errorList: string[] = [];

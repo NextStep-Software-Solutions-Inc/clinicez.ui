@@ -215,6 +215,8 @@ export const getClinicPatientsAction = async (filters: GetClinicPatientFilters):
       Clinic: {
         clinicUid
       },
+      isActive: true,
+      deletedAt: null,
       Patient: {
         ...userId ? { userId } : {},
         ...(gender && gender !== 'all') ? { gender: gender as 'MALE' | 'FEMALE' } : {},

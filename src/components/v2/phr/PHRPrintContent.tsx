@@ -956,8 +956,10 @@ export function PHRPrintContent({ patient, sections, generatedAt, theme = 'color
                       <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Date</th>
                       <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Length (cm)</th>
                       <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Head Circ. (cm)</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Skinfold (mm)</th>
                       <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Waist Circ. (cm)</th>
                       <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Hip Circ. (cm)</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Limbs (cm)</th>
                       <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>MUAC (cm)</th>
                       <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Remarks</th>
                     </tr>
@@ -968,8 +970,10 @@ export function PHRPrintContent({ patient, sections, generatedAt, theme = 'color
                         <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{formatDate(p.dateTaken)}</td>
                         <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{val(p.length)}</td>
                         <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{val(p.headCircumference)}</td>
+                        <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{val(p.skinfoldThickness)}</td>
                         <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{val(p.waistCircumference)}</td>
                         <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{val(p.hipCircumference)}</td>
+                        <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{val(p.limbCircumference)}</td>
                         <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{val(p.midUpperArmCircumference)}</td>
                         <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{val(p.notes)}</td>
                       </tr>

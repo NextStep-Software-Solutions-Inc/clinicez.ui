@@ -21,6 +21,7 @@ export { SurgicalHistoryEditForm, type SurgicalHistoryEditFormProps } from './su
 export { PhilHealthRecordEditForm, type PhilHealthRecordEditFormProps } from './philhealth-record-edit-form'
 
 export { PhysicalExamEditForm, type PhysicalExamEditFormProps } from './physical-exam-edit-form'
+export { PhysicalExamSystemField, type PhysicalExamSystemFieldProps } from './physical-exam-system-field'
 export { AllergyEditForm, type AllergyEditFormProps } from './allergy-edit-form'
 export { EmergencyContactEditForm, type EmergencyContactEditFormProps } from './emergency-contact-edit-form'
 export { AddressEditForm, type AddressEditFormProps } from './address-edit-form'

@@ -19,13 +19,18 @@ import type { PersonalHistoryFormInput, DemographicsFormInput, VitalSignFormInpu
  * These represent what the database CAN return
  */
 
+const preprocessLegacyNotApplicable = (val: unknown) => {
+    if (val === 'NOT_APPLICABLE' || val === '' || val === undefined) return null;
+    return val;
+};
+
 export const PersonalHistoryDbSchema = z.object({
-    smokingStatus: z.enum(['NEVER', 'FORMER', 'CURRENT', 'NOT_APPLICABLE'] as const).nullable(),
+    smokingStatus: z.preprocess(preprocessLegacyNotApplicable, z.enum(['NEVER', 'FORMER', 'CURRENT'] as const).nullable()),
     numberOfPacksPerYear: z.number().nullable(),
-    alcoholStatus: z.enum(['NEVER', 'OCCASIONAL', 'REGULAR', 'HEAVY', 'NOT_APPLICABLE'] as const).nullable(),
+    alcoholStatus: z.preprocess(preprocessLegacyNotApplicable, z.enum(['NEVER', 'OCCASIONAL', 'REGULAR', 'HEAVY'] as const).nullable()),
     numberOfBottlesPerDay: z.number().nullable(),
-    illicitDrugUse: z.enum(['NEVER', 'FORMER', 'CURRENT', 'NOT_APPLICABLE'] as const).nullable(),
-    sexuallyActive: z.enum(['YES', 'NO', 'INACTIVE', 'NOT_APPLICABLE'] as const).nullable(),
+    illicitDrugUse: z.preprocess(preprocessLegacyNotApplicable, z.enum(['NEVER', 'FORMER', 'CURRENT'] as const).nullable()),
+    sexuallyActive: z.preprocess(preprocessLegacyNotApplicable, z.enum(['YES', 'NO', 'INACTIVE'] as const).nullable()),
 })
 
 export const DemographicsDbSchema = z.object({

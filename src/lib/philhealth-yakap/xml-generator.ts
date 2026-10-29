@@ -123,6 +123,7 @@ export interface KonsultaPatientData {
       typeLasDelivery: string;
       isPreEclampsia: string;
       wFamPlan: string;
+      isApplicable?: string;
     };
     immunizations: Array<{
       childImmcode: string;
@@ -441,18 +442,31 @@ function emitPeMiscFields(pemiscs: XmlNode, pe: Record<string, string | null | u
     { attr: 'pGuId', val: pe.guId },
   ];
 
+  const normalizePeCode = (attr: string, val: string | null | undefined): string => {
+    if (!val) return '';
+    const s = String(val).trim();
+    if (attr === 'pHeartId' && s === '2') return '5';
+    if (attr === 'pNeuroId' && s === '3') return '6';
+    return s;
+  };
+
   for (const cat of categories) {
-    if (cat.val != null && String(cat.val).trim().length > 0) {
-      // Emit the recorded physical exam finding
+    if (!cat.val) continue;
+    const codes = String(cat.val)
+      .split(/[;,]/)
+      .map((c) => normalizePeCode(cat.attr, c))
+      .filter(Boolean);
+
+    for (const rawVal of codes) {
       pemiscs.ele('PEMISC', withStatus({
-        pSkinId: cat.attr === 'pSkinId' ? String(cat.val) : '',
-        pHeentId: cat.attr === 'pHeentId' ? String(cat.val) : '',
-        pChestId: cat.attr === 'pChestId' ? String(cat.val) : '',
-        pHeartId: cat.attr === 'pHeartId' ? String(cat.val) : '',
-        pAbdomenId: cat.attr === 'pAbdomenId' ? String(cat.val) : '',
-        pNeuroId: cat.attr === 'pNeuroId' ? String(cat.val) : '',
-        pRectalId: cat.attr === 'pRectalId' ? String(cat.val) : '',
-        pGuId: cat.attr === 'pGuId' ? String(cat.val) : '',
+        pSkinId: cat.attr === 'pSkinId' ? rawVal : '',
+        pHeentId: cat.attr === 'pHeentId' ? rawVal : '',
+        pChestId: cat.attr === 'pChestId' ? rawVal : '',
+        pHeartId: cat.attr === 'pHeartId' ? rawVal : '',
+        pAbdomenId: cat.attr === 'pAbdomenId' ? rawVal : '',
+        pNeuroId: cat.attr === 'pNeuroId' ? rawVal : '',
+        pRectalId: cat.attr === 'pRectalId' ? rawVal : '',
+        pGuId: cat.attr === 'pGuId' ? rawVal : '',
       })).up();
 
       added = true;
@@ -484,36 +498,83 @@ function buildProfilePeMiscs(parent: XmlNode, patient: KonsultaPatientData): Xml
   return parent;
 }
 
+const VALID_DTD_BLOOD_TYPES: Record<string, string> = {
+  'A+': 'A+',
+  'A-': 'A-',
+  'B+': 'B+',
+  'B-': 'B-',
+  'AB+': 'AB+',
+  'AB-': 'AB-',
+  'O+': 'O+',
+  'O-': 'O-',
+  'A_POSITIVE': 'A+',
+  'A_NEGATIVE': 'A-',
+  'B_POSITIVE': 'B+',
+  'B_NEGATIVE': 'B-',
+  'AB_POSITIVE': 'AB+',
+  'AB_NEGATIVE': 'AB-',
+  'O_POSITIVE': 'O+',
+  'O_NEGATIVE': 'O-',
+};
+
 function mapBloodType(val?: string | null): string {
-  if (!val || val === 'UNKNOWN' || val === 'N/A' || val === 'NOT APPLICABLE' || val === 'NOT_APPLICABLE') return 'N/A';
-  if (val === 'A_POSITIVE' || val === 'A+') return 'A+';
-  if (val === 'A_NEGATIVE' || val === 'A-') return 'A-';
-  if (val === 'B_POSITIVE' || val === 'B+') return 'B+';
-  if (val === 'B_NEGATIVE' || val === 'B-') return 'B-';
-  if (val === 'AB_POSITIVE' || val === 'AB+') return 'AB+';
-  if (val === 'AB_NEGATIVE' || val === 'AB-') return 'AB-';
-  if (val === 'O_POSITIVE' || val === 'O+') return 'O+';
-  if (val === 'O_NEGATIVE' || val === 'O-') return 'O-';
-  return val;
+  if (!val) return '';
+  const trimmed = val.trim().toUpperCase();
+  if (trimmed === 'UNKNOWN' || trimmed === 'N/A' || trimmed === 'NOT APPLICABLE' || trimmed === 'NOT_APPLICABLE') return '';
+  return VALID_DTD_BLOOD_TYPES[trimmed] ?? '';
 }
 
 function mapSocValue(val?: string | null): string {
-  if (!val || val === 'N/A' || val === 'NOT_APPLICABLE' || val === 'X') return 'X';
+  if (!val || val === 'N/A' || val === 'NOT_APPLICABLE') return 'N';
   if (val === 'Y' || val === 'YES' || val === 'CURRENT' || val === 'REGULAR' || val === 'OCCASIONAL' || val === 'HEAVY') return 'Y';
-  if (val === 'N' || val === 'NO' || val === 'NEVER' || val === 'FORMER') return 'N';
-  return 'X';
+  if (val === 'X' || val === 'FORMER' || val === 'QUIT') return 'X';
+  if (val === 'N' || val === 'NO' || val === 'NEVER' || val === 'INACTIVE') return 'N';
+  return val.toUpperCase();
+}
+
+function parsePatientAgeYears(ageStr?: string, dobStr?: string): number {
+  if (ageStr) {
+    const m = ageStr.match(/(\d+)\s*YR/i);
+    if (m) return parseInt(m[1], 10);
+  }
+  if (dobStr) {
+    const d = new Date(dobStr);
+    if (!isNaN(d.getTime())) {
+      const now = new Date();
+      let age = now.getFullYear() - d.getFullYear();
+      const monthDiff = now.getMonth() - d.getMonth();
+      if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < d.getDate())) {
+        age--;
+      }
+      return age;
+    }
+  }
+  return 30;
 }
 
 function buildSocHist(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
   const soc = patient.profile.socialHistory;
-  const isSexuallyActiveVal = mapSocValue(soc?.isSexuallyActive) === 'Y' ? 'Y' : 'N';
+  const ageYears = parsePatientAgeYears(patient.patient.age, patient.patient.dob);
+  const isMinor = ageYears < 15;
+
+  const isSmokerVal = isMinor ? 'N' : mapSocValue(soc?.isSmoker);
+  const isDrinkerVal = isMinor ? 'N' : mapSocValue(soc?.isAdrinker);
+  const illDrugUserVal = isMinor ? 'N' : (mapSocValue(soc?.illDrugUser) === 'Y' ? 'Y' : 'N');
+  const isSexuallyActiveVal = isMinor ? 'N' : (mapSocValue(soc?.isSexuallyActive) === 'Y' ? 'Y' : 'N');
+
+  const noCigpkVal = isMinor || isSmokerVal === 'N' || !soc?.noCigpk || soc.noCigpk === '0'
+    ? ''
+    : String(soc.noCigpk);
+  const noBottlesVal = isMinor || isDrinkerVal === 'N' || !soc?.noBottles || soc.noBottles === '0'
+    ? ''
+    : String(soc.noBottles);
 
   parent.ele('SOCHIST', withStatus({
-    pIsSmoker: mapSocValue(soc?.isSmoker),
-    pNoCigpk: soc?.noCigpk || '0',
-    pIsAdrinker: mapSocValue(soc?.isAdrinker),
-    pNoBottles: soc?.noBottles || '0',
-    pIllDrugUser: mapSocValue(soc?.illDrugUser) === 'Y' ? 'Y' : 'N',
+    pIsSmoker: isSmokerVal,
+    pNoCigpk: noCigpkVal,
+    pIsAdrinker: isDrinkerVal,
+    pNoBottles: noBottlesVal,
+    pIllDrugUser: illDrugUserVal,
     pIsSexuallyActive: isSexuallyActiveVal,
   })).up();
   return parent;
@@ -522,25 +583,43 @@ function buildSocHist(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
 function buildImmunizations(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
   const immunizations = parent.ele('IMMUNIZATIONS');
   const imms = patient.profile.immunizations || [];
+  const ageYears = parsePatientAgeYears(patient.patient.age, patient.patient.dob);
+  const isFemale = patient.patient.sex === 'F';
 
   if (imms.length === 0) {
+    let childCode = '';
+    let youngwCode = '';
+    let pregwCode = '';
+    let elderlyCode = '';
+
+    if (ageYears < 5) {
+      childCode = '999';
+    } else if (isFemale && ageYears >= 10 && ageYears <= 49) {
+      youngwCode = '999';
+    } else if (ageYears >= 60) {
+      elderlyCode = '999';
+    } else {
+      childCode = '999';
+    }
+
     immunizations.ele('IMMUNIZATION', withStatus({
-      pChildImmcode: '',
-      pYoungwImmcode: '',
-      pPregwImmcode: '',
-      pElderlyImmcode: '',
+      pChildImmcode: childCode,
+      pYoungwImmcode: youngwCode,
+      pPregwImmcode: pregwCode,
+      pElderlyImmcode: elderlyCode,
       pOtherImm: '',
       pReportStatus: 'U',
       pDeficiencyRemarks: '',
     })).up();
   } else {
     for (const imm of imms) {
+      const hasOther = !!imm.otherImm?.trim();
       immunizations.ele('IMMUNIZATION', withStatus({
-        pChildImmcode: imm.childImmcode || '',
-        pYoungwImmcode: imm.youngwImmcode || '',
-        pPregwImmcode: imm.pregwImmcode || '',
-        pElderlyImmcode: imm.elderlyImmcode || '',
-        pOtherImm: imm.otherImm || '',
+        pChildImmcode: hasOther ? '' : (imm.childImmcode || ''),
+        pYoungwImmcode: hasOther ? '' : (imm.youngwImmcode || ''),
+        pPregwImmcode: hasOther ? '' : (imm.pregwImmcode || ''),
+        pElderlyImmcode: hasOther ? '' : (imm.elderlyImmcode || ''),
+        pOtherImm: hasOther ? imm.otherImm!.trim() : '',
         pReportStatus: imm.reportStatus || 'U',
         pDeficiencyRemarks: imm.deficiencyRemarks || '',
       })).up();
@@ -570,18 +649,39 @@ function buildMensHist(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
 function buildPregHist(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
   const og = patient.profile.obGyneHistory;
   const isFemale = patient.patient.sex === 'F';
-  parent.ele('PREGHIST', withStatus({
-    pPregCnt: isFemale ? (og?.gravida || '0') : '0',
-    pDeliveryCnt: isFemale ? (og?.para || '0') : '0',
-    pDeliveryTyp: isFemale ? mapDeliveryType(og?.typeLasDelivery) : 'X',
-    pFullTermCnt: isFemale ? (og?.fullTerms || '0') : '0',
-    pPrematureCnt: isFemale ? (og?.premature || '0') : '0',
-    pAbortionCnt: isFemale ? (og?.abortion || '0') : '0',
-    pLivChildrenCnt: isFemale ? (og?.livingChildren || '0') : '0',
-    pWPregIndhyp: isFemale ? (og?.isPreEclampsia === 'Y' || og?.isPreEclampsia === 'true' ? 'Y' : 'N') : 'X',
-    pWFamPlan: isFemale ? (og?.wFamPlan === 'Y' || og?.wFamPlan === 'true' ? 'Y' : 'N') : 'X',
-    pIsApplicable: isFemale ? 'Y' : 'N',
-  })).up();
+  const hasPregnancyHistory = isFemale && !!og && (
+    (og.gravida !== undefined && og.gravida !== null && og.gravida !== '' && og.gravida !== '0') ||
+    (og.para !== undefined && og.para !== null && og.para !== '' && og.para !== '0')
+  );
+  const isApplicable = !isFemale ? 'N' : (og?.isApplicable === 'Y' || og?.isApplicable === 'N' ? og.isApplicable : (hasPregnancyHistory ? 'Y' : 'N'));
+
+  if (isApplicable === 'N') {
+    parent.ele('PREGHIST', withStatus({
+      pPregCnt: '',
+      pDeliveryCnt: '',
+      pDeliveryTyp: '',
+      pFullTermCnt: '',
+      pPrematureCnt: '',
+      pAbortionCnt: '',
+      pLivChildrenCnt: '',
+      pWPregIndhyp: '',
+      pWFamPlan: '',
+      pIsApplicable: 'N',
+    })).up();
+  } else {
+    parent.ele('PREGHIST', withStatus({
+      pPregCnt: og?.gravida || '0',
+      pDeliveryCnt: og?.para || '0',
+      pDeliveryTyp: mapDeliveryType(og?.typeLasDelivery),
+      pFullTermCnt: og?.fullTerms || '0',
+      pPrematureCnt: og?.premature || '0',
+      pAbortionCnt: og?.abortion || '0',
+      pLivChildrenCnt: og?.livingChildren || '0',
+      pWPregIndhyp: og?.isPreEclampsia === 'Y' || og?.isPreEclampsia === 'true' ? 'Y' : 'N',
+      pWFamPlan: og?.wFamPlan === 'Y' || og?.wFamPlan === 'true' ? 'Y' : 'N',
+      pIsApplicable: 'Y',
+    })).up();
+  }
   return parent;
 }
 
@@ -596,7 +696,7 @@ function buildProfilePepert(parent: XmlNode, patient: KonsultaPatientData, isOve
     pHeight: v.height,
     pWeight: v.weight,
     pBMI: v.bmi,
-    pZScore: isOver5Years ? '' : v.zScore,
+    pZScore: '',
     pLeftVision: v.leftVision,
     pRightVision: v.rightVision,
     pLength: v.length,
@@ -789,7 +889,7 @@ function buildSoapPepert(parent: XmlNode, consultation: KonsultaConsultationData
     pHeight: v.height,
     pWeight: v.weight,
     pBMI: v.bmi,
-    pZScore: isOver5Years ? '' : v.zScore,
+    pZScore: '',
     pLeftVision: v.leftVision,
     pRightVision: v.rightVision,
     pLength: v.length,
@@ -871,6 +971,10 @@ const EXAM_TYPE_TO_DIAGNOSTIC_ID: Record<string, string> = {
   PAPSMEAR: '14',
   FECALYSIS: '15',
   FOBT: '18',
+  OTHERDIAGEXAM: '99',
+  OTHERDIAGEXAMS: '99',
+  OTHER: '99',
+  OTHERS: '99',
 };
 
 function buildSoapDiagnostics(
@@ -887,9 +991,12 @@ function buildSoapDiagnostics(
     const typeUpper = (dr.resultType || '').toUpperCase();
     const diagId = EXAM_TYPE_TO_DIAGNOSTIC_ID[typeUpper];
     if (diagId && !addedIds.has(diagId)) {
+      const othRemarks = diagId === '99'
+        ? (dr.resultData?.othDiagExam || dr.resultData?.pOthDiagExam || dr.resultData?.findings || 'Others')
+        : '';
       diagnostics.ele('DIAGNOSTIC', withStatus({
         pDiagnosticId: diagId,
-        pOthRemarks: '',
+        pOthRemarks: othRemarks,
         pIsPhysicianRecommendation: 'Y',
         pPatientRemarks: 'RQ',
       })).up();

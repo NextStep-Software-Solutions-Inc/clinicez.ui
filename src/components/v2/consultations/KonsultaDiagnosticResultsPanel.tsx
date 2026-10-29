@@ -256,8 +256,6 @@ const EXAM_TYPES: { value: ExamType; label: string }[] = [
   { value: "LIPIDPROFILE", label: "Lipid Profile" },
   { value: "OGTT",         label: "Oral Glucose Tolerance Test (OGTT)" },
   { value: "PAPSMEAR",     label: "Pap Smear" },
-  { value: "PPDTest",      label: "PPD Test" },
-  { value: "RBS",          label: "Random Blood Sugar (RBS)" },
   { value: "SPUTUM",       label: "Sputum Exam" },
   { value: "URINALYSIS",   label: "Urinalysis" },
   { value: "OTHERDIAGEXAM",label: "Other Diagnostic Exam" },

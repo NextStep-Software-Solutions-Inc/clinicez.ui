@@ -15,6 +15,7 @@ import fs from "fs/promises";
 import { sendMail } from "@actions/email.action";
 import { withErrorHandling } from "@/lib/with-error-handling";
 import { createNotification, createNotifications } from "@/actions/notifications/notification.action";
+import { buildUserPhilHealthPinOrFilters } from "@/lib/philhealth-pin-search";
 
 type CreateAppointmentPayload = {
   clinicUid: string;
@@ -549,6 +550,7 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
                             },
                           },
                         },
+                        ...buildUserPhilHealthPinOrFilters(searchTerm, { clinicUid }),
                         // Multi-word full-name search: each word must match at least one name field
                         ...(searchTerm.includes(' ') ? [{
                           AND: searchTerm.split(/\s+/).filter(Boolean).map(part => ({
@@ -592,6 +594,12 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
               picture: true,
               gender: true,
               dob: true,
+              PhilHealthRecords: {
+                where: { isActive: true, deletedAt: null },
+                orderBy: { id: "desc" },
+                take: 1,
+                select: { pin: true },
+              },
               StudentRecords: {
                 where: { isActive: true },
                 select: {
@@ -1084,6 +1092,12 @@ export const getAppointmentAction = withErrorHandling(cache(async (id: number, c
               picture: true,
               nickname: true,
               dob: true,
+              PhilHealthRecords: {
+                where: { isActive: true, deletedAt: null },
+                orderBy: { id: "desc" },
+                take: 1,
+                select: { pin: true },
+              },
               ClinicPatients: {
                 select: {
                   id: true,

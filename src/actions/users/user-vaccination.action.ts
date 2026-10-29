@@ -2,107 +2,170 @@
 
 import prisma from "@lib/prisma";
 import { cache } from "react";
+import { ImmunizationCategory } from "@prisma/client";
 
-type UserVaccinationPayloadType = {
-  userId: string,
-  vaccineId: number,
-  routeId: number,
-  doseId: number,
-  dateGiven: Date,
-  administeredBy: string
-}
+export type CreatePatientImmunizationInput = {
+  userId: string;
+  category: ImmunizationCategory;
+  immunizationLibId?: number | null;
+  code?: string | null;
+  vaccineName: string;
+  doseNumber: string;
+  route?: string | null;
+  dateGiven: Date;
+  administeredBy?: string | null;
+  facilityName?: string | null;
+  lotNumber?: string | null;
+  expirationDate?: Date | null;
+  notes?: string | null;
+};
 
-export const createUserVaccinationAction = async ({ userId, vaccineId, routeId, doseId, dateGiven, administeredBy }: UserVaccinationPayloadType) => {
-  // Find the user by userId string first
+export type UserVaccinationPayloadType = {
+  userId: string;
+  category?: ImmunizationCategory;
+  immunizationLibId?: number | null;
+  code?: string | null;
+  vaccineName?: string;
+  doseNumber?: string;
+  route?: string | null;
+  dateGiven: Date;
+  administeredBy?: string | null;
+  facilityName?: string | null;
+  lotNumber?: string | null;
+  expirationDate?: Date | null;
+  notes?: string | null;
+  // Legacy compat
+  vaccineId?: number;
+  routeId?: number;
+  doseId?: number;
+};
+
+export const createUserVaccinationAction = async (payload: UserVaccinationPayloadType) => {
   const currentUser = await prisma.user.findUniqueOrThrow({
-    where: { userId, isActive: true },
+    where: { userId: payload.userId, isActive: true },
     select: { id: true },
   });
 
-  return await prisma.userVaccination.create({
-    data: {
-      User: {
-        connect: { id: currentUser.id }
+  let libItem = null;
+  if (payload.immunizationLibId) {
+    libItem = await prisma.philHealthImmunizationLibrary.findUnique({
+      where: { id: payload.immunizationLibId },
+    });
+  } else if (payload.code && payload.category) {
+    libItem = await prisma.philHealthImmunizationLibrary.findUnique({
+      where: {
+        unique_category_code: {
+          category: payload.category,
+          code: payload.code,
+        },
       },
-      Vaccine: {
-        connect: { id: vaccineId }
-      },
-      Route: {
-        connect: { id: routeId }
-      },
-      Dose: {
-        connect: { id: doseId }
-      },
-      dateGiven,
-      administeredBy,
-    }
-  });
-}
+    });
+  }
 
-export type GetUserVaccinations = Awaited<ReturnType<typeof getUserVaccinationsAction>>
+  const category = payload.category || libItem?.category || ImmunizationCategory.OTHER;
+  const code = payload.code || libItem?.code || null;
+  const vaccineName = payload.vaccineName || libItem?.name || 'Unspecified Vaccine';
+  const doseNumber = payload.doseNumber || libItem?.defaultDoseLabel || '1st Dose';
+  const route = payload.route || libItem?.defaultRoute || null;
+
+  return await prisma.patientImmunization.create({
+    data: {
+      userId: currentUser.id,
+      immunizationLibId: libItem?.id || null,
+      category,
+      code,
+      vaccineName,
+      doseNumber,
+      route,
+      dateGiven: payload.dateGiven,
+      administeredBy: payload.administeredBy || null,
+      facilityName: payload.facilityName || null,
+      lotNumber: payload.lotNumber || null,
+      expirationDate: payload.expirationDate || null,
+      notes: payload.notes || null,
+    },
+  });
+};
+
+export type GetUserVaccinations = Awaited<ReturnType<typeof getUserVaccinationsAction>>;
 export const getUserVaccinationsAction = cache(async (userId: string) => {
-  return await prisma.userVaccination.findMany({
+  const records = await prisma.patientImmunization.findMany({
     orderBy: {
-      dateGiven: 'desc'
+      dateGiven: 'desc',
     },
     where: {
       isActive: true,
+      deletedAt: null,
       User: {
-        userId
+        userId,
       },
     },
-    select: {
-      id: true,
-      Vaccine: {
-        select: {
-          id: true,
-          type: true,
-          name: true
-        }
-      },
-      Route: {
-        select: {
-          id: true,
-          route: true
-        }
-      },
-      Dose: {
-        select: {
-          id: true,
-          dose: true
-        }
-      },
-      dateGiven: true,
-      administeredBy: true
-    }
+    include: {
+      PhilHealthImmunization: true,
+    },
   });
-})
 
-export const updateUserVaccinationAction = async (id: number, { vaccineId, routeId, doseId, dateGiven, administeredBy }: UserVaccinationPayloadType) => {
-  return await prisma.userVaccination.update({
+  return records.map((r) => ({
+    id: r.id,
+    vaccine: r.vaccineName,
+    dose: r.doseNumber,
+    route: r.route || 'N/A',
+    dateGiven: r.dateGiven,
+    administeredBy: r.administeredBy,
+    facilityName: r.facilityName,
+    lotNumber: r.lotNumber,
+    notes: r.notes,
+    category: r.category,
+    code: r.code,
+    reportStatus: r.reportStatus,
+    deficiencyRemarks: r.deficiencyRemarks,
+    // Emulate nested objects for legacy callers
+    Vaccine: {
+      id: r.PhilHealthImmunization?.id || 0,
+      type: r.category,
+      name: r.vaccineName,
+    },
+    Route: {
+      id: 0,
+      route: r.route || 'N/A',
+    },
+    Dose: {
+      id: 0,
+      dose: r.doseNumber,
+    },
+  }));
+});
+
+export const updateUserVaccinationAction = async (id: number, payload: UserVaccinationPayloadType) => {
+  let libItem = null;
+  if (payload.immunizationLibId) {
+    libItem = await prisma.philHealthImmunizationLibrary.findUnique({
+      where: { id: payload.immunizationLibId },
+    });
+  }
+
+  return await prisma.patientImmunization.update({
     where: { id, isActive: true },
     data: {
-      Vaccine: {
-        connect: { id: vaccineId }
-      },
-      Route: {
-        connect: { id: routeId }
-      },
-      Dose: {
-        connect: { id: doseId }
-      },
-      dateGiven,
-      administeredBy,
-    }
+      immunizationLibId: libItem?.id || undefined,
+      category: payload.category || libItem?.category || undefined,
+      code: payload.code || libItem?.code || undefined,
+      vaccineName: payload.vaccineName || libItem?.name || undefined,
+      doseNumber: payload.doseNumber || libItem?.defaultDoseLabel || undefined,
+      route: payload.route || libItem?.defaultRoute || undefined,
+      dateGiven: payload.dateGiven,
+      administeredBy: payload.administeredBy || undefined,
+      facilityName: payload.facilityName || undefined,
+      lotNumber: payload.lotNumber || undefined,
+      expirationDate: payload.expirationDate || undefined,
+      notes: payload.notes || undefined,
+    },
   });
-}
+};
 
 export const deleteUserVaccinationAction = async (id: number) => {
-  return await prisma.userVaccination.update({
-    where: { id },
-    data: {
-      isActive: false,
-      deletedAt: new Date(),
-    }
+  return await prisma.patientImmunization.update({
+    where: { id, isActive: true },
+    data: { isActive: false, deletedAt: new Date() },
   });
-}
+};

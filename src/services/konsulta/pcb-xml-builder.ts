@@ -66,7 +66,7 @@ function addPepert(parent: XMLNode, v?: VitalsInput): void {
         pHeight: v?.height ?? "",
         pWeight: v?.weight ?? "",
         pBMI: v?.bmi ?? "",
-        pZScore: v?.zScore ?? "",
+        pZScore: "",
         pLeftVision: v?.leftVision ?? "",
         pRightVision: v?.rightVision ?? "",
         pLength: v?.length ?? "",
@@ -100,24 +100,41 @@ function addPemiscs(
         { attr: "pRectalId", key: "pRectalId" },
     ];
 
+    const normalizePeCode = (attr: string, val: any): string => {
+        if (val == null) return "";
+        const s = String(val).trim();
+        if (attr === "pHeartId" && s === "2") return "5";
+        if (attr === "pNeuroId" && s === "3") return "6";
+        return s;
+    };
+
+    const emitPeElement = (catAttr: string, code: string, reportStatus = "U", deficiencyRemarks = "") => {
+        pemiscsEle.ele("PEMISC", {
+            pSkinId: catAttr === "pSkinId" ? code : "",
+            pHeentId: catAttr === "pHeentId" ? code : "",
+            pChestId: catAttr === "pChestId" ? code : "",
+            pHeartId: catAttr === "pHeartId" ? code : "",
+            pAbdomenId: catAttr === "pAbdomenId" ? code : "",
+            pNeuroId: catAttr === "pNeuroId" ? code : "",
+            pGuId: catAttr === "pGuId" ? code : "",
+            pRectalId: catAttr === "pRectalId" ? code : "",
+            pReportStatus: reportStatus,
+            pDeficiencyRemarks: deficiencyRemarks,
+        });
+        addedCount++;
+    };
+
     if (findings && findings.length > 0) {
         for (const finding of findings) {
             for (const cat of categories) {
                 const val = finding[cat.key];
-                if (val != null && String(val).trim().length > 0) {
-                    pemiscsEle.ele("PEMISC", {
-                        pSkinId: cat.attr === "pSkinId" ? String(val) : "",
-                        pHeentId: cat.attr === "pHeentId" ? String(val) : "",
-                        pChestId: cat.attr === "pChestId" ? String(val) : "",
-                        pHeartId: cat.attr === "pHeartId" ? String(val) : "",
-                        pAbdomenId: cat.attr === "pAbdomenId" ? String(val) : "",
-                        pNeuroId: cat.attr === "pNeuroId" ? String(val) : "",
-                        pGuId: cat.attr === "pGuId" ? String(val) : "",
-                        pRectalId: cat.attr === "pRectalId" ? String(val) : "",
-                        pReportStatus: finding.pReportStatus ?? "U",
-                        pDeficiencyRemarks: finding.pDeficiencyRemarks ?? "",
-                    });
-                    addedCount++;
+                if (val == null) continue;
+                const codes = String(val)
+                    .split(/[;,]/)
+                    .map((c) => normalizePeCode(cat.attr, c))
+                    .filter(Boolean);
+                for (const rawVal of codes) {
+                    emitPeElement(cat.attr, rawVal, finding.pReportStatus ?? "U", finding.pDeficiencyRemarks ?? "");
                 }
             }
         }
@@ -125,20 +142,13 @@ function addPemiscs(
         for (const item of items) {
             for (const cat of categories) {
                 const val = item[cat.key];
-                if (val != null && String(val).trim().length > 0) {
-                    pemiscsEle.ele("PEMISC", {
-                        pSkinId: cat.attr === "pSkinId" ? String(val) : "",
-                        pHeentId: cat.attr === "pHeentId" ? String(val) : "",
-                        pChestId: cat.attr === "pChestId" ? String(val) : "",
-                        pHeartId: cat.attr === "pHeartId" ? String(val) : "",
-                        pAbdomenId: cat.attr === "pAbdomenId" ? String(val) : "",
-                        pNeuroId: cat.attr === "pNeuroId" ? String(val) : "",
-                        pGuId: cat.attr === "pGuId" ? String(val) : "",
-                        pRectalId: cat.attr === "pRectalId" ? String(val) : "",
-                        pReportStatus: "U",
-                        pDeficiencyRemarks: "",
-                    });
-                    addedCount++;
+                if (val == null) continue;
+                const codes = String(val)
+                    .split(/[;,]/)
+                    .map((c) => normalizePeCode(cat.attr, c))
+                    .filter(Boolean);
+                for (const rawVal of codes) {
+                    emitPeElement(cat.attr, rawVal, "U", "");
                 }
             }
         }
@@ -275,11 +285,12 @@ function addProfileSubElements(profile: XMLNode, profileData: KonsultaProfileDat
     const immunizationsEle = profile.ele("IMMUNIZATIONS");
     if (data?.immunizations && data.immunizations.length > 0) {
         for (const item of data.immunizations) {
+            const hasOther = !!item.pOtherImm?.trim();
             immunizationsEle.ele("IMMUNIZATION", {
-                pChildImmcode: item.pChildImmcode ?? "",
-                pYoungwImmcode: item.pYoungwImmcode ?? "",
-                pPregwImmcode: item.pPregwImmcode ?? "",
-                pElderlyImmcode: item.pElderlyImmcode ?? "",
+                pChildImmcode: hasOther ? "" : (item.pChildImmcode ?? ""),
+                pYoungwImmcode: hasOther ? "" : (item.pYoungwImmcode ?? ""),
+                pPregwImmcode: hasOther ? "" : (item.pPregwImmcode ?? ""),
+                pElderlyImmcode: hasOther ? "" : (item.pElderlyImmcode ?? ""),
                 pOtherImm: item.pOtherImm ?? "",
                 pReportStatus: "U",
                 pDeficiencyRemarks: "",
@@ -287,11 +298,12 @@ function addProfileSubElements(profile: XMLNode, profileData: KonsultaProfileDat
         }
     } else if (profileData.immunizations && profileData.immunizations.length > 0) {
         for (const item of profileData.immunizations) {
+            const hasOther = !!item.pOtherImm?.trim();
             immunizationsEle.ele("IMMUNIZATION", {
-                pChildImmcode: item.pChildImmcode ?? "",
-                pYoungwImmcode: item.pYoungwImmcode ?? "",
-                pPregwImmcode: item.pPregwImmcode ?? "",
-                pElderlyImmcode: item.pElderlyImmcode ?? "",
+                pChildImmcode: hasOther ? "" : (item.pChildImmcode ?? ""),
+                pYoungwImmcode: hasOther ? "" : (item.pYoungwImmcode ?? ""),
+                pPregwImmcode: hasOther ? "" : (item.pPregwImmcode ?? ""),
+                pElderlyImmcode: hasOther ? "" : (item.pElderlyImmcode ?? ""),
                 pOtherImm: item.pOtherImm ?? "",
                 pReportStatus: item.pReportStatus ?? "U",
                 pDeficiencyRemarks: item.pDeficiencyRemarks ?? "",
@@ -322,35 +334,69 @@ function addProfileSubElements(profile: XMLNode, profileData: KonsultaProfileDat
 
     // ── PREGHIST ────────────────────────────────────────────────────────────────────
     const isPreghApp = data?.isPreghApplicable ?? "N";
-    const mappedDeliveryTyp = isPreghApp === "N" ? "X" : (() => {
-        const d = (data?.deliveryTyp ?? "").trim().toUpperCase();
-        if (d === "N" || d === "VAGINAL" || d === "NORMAL" || d === "NSD") return "N";
-        if (d === "O" || d === "CESAREAN" || d === "OPERATIVE" || d === "CSD") return "O";
-        if (d === "B" || d === "MIXED" || d === "BOTH") return "B";
-        return "X";
-    })();
+    if (isPreghApp === "N") {
+        profile.ele("PREGHIST", {
+            pPregCnt: "",
+            pDeliveryCnt: "",
+            pDeliveryTyp: "",
+            pFullTermCnt: "",
+            pPrematureCnt: "",
+            pAbortionCnt: "",
+            pLivChildrenCnt: "",
+            pWPregIndhyp: "",
+            pWFamPlan: "",
+            pIsApplicable: "N",
+            pReportStatus: "U",
+            pDeficiencyRemarks: "",
+        });
+    } else {
+        const mappedDeliveryTyp = (() => {
+            const d = (data?.deliveryTyp ?? "").trim().toUpperCase();
+            if (d === "N" || d === "VAGINAL" || d === "NORMAL" || d === "NSD") return "N";
+            if (d === "O" || d === "CESAREAN" || d === "OPERATIVE" || d === "CSD") return "O";
+            if (d === "B" || d === "MIXED" || d === "BOTH") return "B";
+            return "X";
+        })();
 
-    profile.ele("PREGHIST", {
-        pPregCnt: data?.pregCnt ?? "",
-        pDeliveryCnt: data?.deliveryCnt ?? "",
-        pDeliveryTyp: mappedDeliveryTyp,
-        pFullTermCnt: data?.fullTermCnt ?? "",
-        pPrematureCnt: data?.prematureCnt ?? "",
-        pAbortionCnt: data?.abortionCnt ?? "",
-        pLivChildrenCnt: data?.livChildrenCnt ?? "",
-        pWPregIndhyp: data?.wPregIndhyp ?? "",
-        pWFamPlan: data?.wFamPlan ?? "",
-        pIsApplicable: isPreghApp,
-        pReportStatus: "U",
-        pDeficiencyRemarks: "",
-    });
+        profile.ele("PREGHIST", {
+            pPregCnt: data?.pregCnt ?? "",
+            pDeliveryCnt: data?.deliveryCnt ?? "",
+            pDeliveryTyp: mappedDeliveryTyp,
+            pFullTermCnt: data?.fullTermCnt ?? "",
+            pPrematureCnt: data?.prematureCnt ?? "",
+            pAbortionCnt: data?.abortionCnt ?? "",
+            pLivChildrenCnt: data?.livChildrenCnt ?? "",
+            pWPregIndhyp: data?.wPregIndhyp ?? "",
+            pWFamPlan: data?.wFamPlan ?? "",
+            pIsApplicable: "Y",
+            pReportStatus: "U",
+            pDeficiencyRemarks: "",
+        });
+    }
 
     // ── PEPERT ──────────────────────────────────────────────────────────────────────
     addPepert(profile, data);
 
     // ── BLOODTYPE ───────────────────────────────────────────────────────────────────
+    const sanitizedBloodType = (() => {
+        const bt = (data?.bloodType ?? "").trim().toUpperCase();
+        const validTypes = new Set(["A+", "B+", "AB+", "O+", "A-", "B-", "AB-", "O-"]);
+        if (validTypes.has(bt)) return bt;
+        const mapped: Record<string, string> = {
+            A_POSITIVE: "A+",
+            A_NEGATIVE: "A-",
+            B_POSITIVE: "B+",
+            B_NEGATIVE: "B-",
+            AB_POSITIVE: "AB+",
+            AB_NEGATIVE: "AB-",
+            O_POSITIVE: "O+",
+            O_NEGATIVE: "O-",
+        };
+        return mapped[bt] ?? "";
+    })();
+
     profile.ele("BLOODTYPE", {
-        pBloodType: data?.bloodType ?? "",
+        pBloodType: sanitizedBloodType,
         pReportStatus: "U",
         pDeficiencyRemarks: "",
     });
@@ -1982,15 +2028,15 @@ export function buildStagingTestPcbXml(
     });
 
     profile.ele("PREGHIST", {
-        pPregCnt: "0",
-        pDeliveryCnt: "0",
-        pDeliveryTyp: "X",
-        pFullTermCnt: "0",
-        pPrematureCnt: "0",
-        pAbortionCnt: "0",
-        pLivChildrenCnt: "0",
-        pWPregIndhyp: "N",
-        pWFamPlan: "N",
+        pPregCnt: "",
+        pDeliveryCnt: "",
+        pDeliveryTyp: "",
+        pFullTermCnt: "",
+        pPrematureCnt: "",
+        pAbortionCnt: "",
+        pLivChildrenCnt: "",
+        pWPregIndhyp: "",
+        pWFamPlan: "",
         pIsApplicable: "N",
         pReportStatus: "U",
         pDeficiencyRemarks: "",
@@ -2005,7 +2051,7 @@ export function buildStagingTestPcbXml(
         pHeight: "0",
         pWeight: "8.9",
         pBMI: "0",
-        pZScore: "> +3SD",
+        pZScore: "",
         pLeftVision: "20",
         pRightVision: "20",
         pLength: "63",

@@ -24,6 +24,7 @@ import {
   getClinicConsultationQueueAction,
 } from "@/actions/consultation/patient-consultations.action";
 import ConsultationWorkspace from "./ConsultationWorkspace";
+import { matchesPhilHealthPinClient } from "@/lib/philhealth-pin-search";
 
 /** Must match PAGE_SIZE in patient-consultations.action.ts */
 const PAGE_SIZE = 20;
@@ -317,7 +318,22 @@ export default function ClinicConsultationsClient({
       : "";
     const subject = (item.subject ?? item.Appointment?.subject ?? "").toLowerCase();
     const caseNum = (item.caseNumber ?? "").toLowerCase();
-    return patientName.includes(q) || subject.includes(q) || caseNum.includes(q);
+    const patientPins = [
+      u?.PhilHealthRecords?.[0]?.pin,
+      u?.PhilHealthRecords?.[0]?.principalMemberPin,
+      u?.ClinicPatients?.[0]?.konsultaPatientPin,
+      u?.ClinicPatients?.[0]?.konsultaMemberPin,
+      cp?.PhilHealthRecords?.[0]?.pin,
+      cp?.PhilHealthRecords?.[0]?.principalMemberPin,
+      item.ClinicPatient?.konsultaPatientPin,
+      item.ClinicPatient?.konsultaMemberPin,
+    ];
+    return (
+      patientName.includes(q) ||
+      subject.includes(q) ||
+      caseNum.includes(q) ||
+      matchesPhilHealthPinClient(patientPins, search)
+    );
   });
 
   const shownCount = filteredItems.length;
@@ -351,7 +367,7 @@ export default function ClinicConsultationsClient({
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
               <Input
-                placeholder="Search patient, subject…"
+                placeholder="Search patient, PhilHealth PIN, subject…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="h-8 pl-8 text-xs"
@@ -586,11 +602,21 @@ function QueueListItem({
             )}
             {status === "RESOLVED" ? "Done" : status === "DROPPED" ? "Dropped" : "Active"}
           </div>
-          {item.soapTransNo && (
-            <span className="rounded px-1.5 py-0.5 bg-teal-50 text-teal-700 border border-teal-200 dark:bg-teal-950/40 dark:text-teal-400 dark:border-teal-800 text-[9px] font-medium truncate max-w-[80px]" title={`SOAP: ${item.soapTransNo}`}>
+          {item.isKonsultaTransmitted ? (
+            <span
+              className="rounded px-1.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800 text-[9px] font-medium truncate max-w-[110px]"
+              title={`Transmitted to PhilHealth in ${item.konsultaTransmittalNo ?? "Batch"}${item.konsultaTransmittedAt ? ` on ${dayjs(item.konsultaTransmittedAt).format("MMM D, YYYY")}` : ""}`}
+            >
+              Transmitted (SOAP)
+            </span>
+          ) : item.soapTransNo ? (
+            <span
+              className="rounded px-1.5 py-0.5 bg-teal-50 text-teal-700 border border-teal-200 dark:bg-teal-950/40 dark:text-teal-400 dark:border-teal-800 text-[9px] font-medium truncate max-w-[80px]"
+              title={`SOAP: ${item.soapTransNo}`}
+            >
               Yakap Ready
             </span>
-          )}
+          ) : null}
           {item.isArchived && <Archive className="h-3 w-3 text-muted-foreground/50" />}
         </div>
       </div>

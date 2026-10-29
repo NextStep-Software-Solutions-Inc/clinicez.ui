@@ -41,7 +41,7 @@ export async function getPatientBaseData(): Promise<PatientBaseData | null> {
                         FamilyMedicalHistories: true,
                         VitalSigns: { where: { isActive: true, deletedAt: null } },
 
-                        UserVaccinations: { where: { isActive: true, deletedAt: null } },
+                        PatientImmunizations: { where: { isActive: true, deletedAt: null } },
                         UserAddresses: { where: { isActive: true } },
                         UserEmergencyContacts: { where: { isActive: true } },
                         PhilHealthRecords: { where: { isActive: true } },
@@ -126,7 +126,7 @@ export async function getPatientBaseData(): Promise<PatientBaseData | null> {
                 hasPersonalHistory: patient.PersonalHistory !== null,
                 hasObGyneHistory: patient.ObGyneHistory !== null,
                 hasNcdQuestionnaire: patient.NcdQuestionnaire !== null,
-                userVaccinationsCount: patient._count.UserVaccinations,
+                userVaccinationsCount: patient._count.PatientImmunizations,
                 userAddressesCount: patient._count.UserAddresses,
                 userEmergencyContactsCount: patient._count.UserEmergencyContacts,
                 philHealthRecordsCount: patient._count.PhilHealthRecords,

@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef } from "react";
 import { UserPlus, Search, X, User, Mail, AlertCircle, AlertTriangle, CheckCircle2, ShieldAlert, ShieldCheck, Building2 } from "lucide-react";
 import dayjs from "@/lib/day-utils";
+import { formatPhilHealthPinDisplay } from "@/lib/philhealth-pin-search";
 import {
   Sheet,
   SheetContent,
@@ -241,7 +242,7 @@ export function AddPatientSheet({
           <TabsContent value="search" className="space-y-4">
             <div className="space-y-1.5">
               <Label className="text-xs font-medium">
-                Search by name or email
+                Search by name, PhilHealth PIN, email, or ID
               </Label>
               <div className="relative">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
@@ -250,7 +251,7 @@ export function AddPatientSheet({
                   onChange={handleSearchChange}
                   onFocus={() => searchResults.length > 0 && setShowDropdown(true)}
                   onBlur={() => setTimeout(() => setShowDropdown(false), DROPDOWN_CLOSE_DELAY)}
-                  placeholder="Search by name, email, student ID, employee ID…"
+                  placeholder="Search by name, PhilHealth PIN, email, ID…"
                   className="pl-8 pr-8"
                   disabled={!!selectedUser}
                 />
@@ -331,6 +332,11 @@ export function AddPatientSheet({
                                     EMP: {u.employeeId}
                                   </span>
                                 )}
+                                {u.philHealthPin && (
+                                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800">
+                                    PIN: {formatPhilHealthPinDisplay(u.philHealthPin)}
+                                  </span>
+                                )}
                               </div>
                             </div>
                           </button>
@@ -406,6 +412,11 @@ export function AddPatientSheet({
                         {selectedUser.employeeId && (
                           <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 text-[10px] px-1.5 py-0 font-medium dark:bg-purple-950/40 dark:text-purple-400 dark:border-purple-800">
                             EMP: {selectedUser.employeeId}
+                          </Badge>
+                        )}
+                        {selectedUser.philHealthPin && (
+                          <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px] px-1.5 py-0 font-medium dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800">
+                            PIN: {formatPhilHealthPinDisplay(selectedUser.philHealthPin)}
                           </Badge>
                         )}
                       </div>

@@ -1,4 +1,5 @@
 import prisma from "@/lib/prisma"
+import { formatKonsultaHciNumber } from "@/lib/format-sequence"
 
 /**
  * Custom error for sequence generation failures
@@ -25,6 +26,16 @@ function getDateKey(date?: Date): string {
   const month = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
   return `${year}${month}${day}`;
+}
+
+/**
+ * Get month key in YYYYMM format (PhilHealth standard)
+ */
+function getMonthKey(date?: Date): string {
+  const d = date || new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  return `${year}${month}`;
 }
 
 /**
@@ -158,7 +169,7 @@ export async function generateTimestampTransactionNumber(
  * Get or create the next sequence number for a given entity type, clinic, and date
  * (Legacy compatibility function)
  * 
- * @param entityType - Type of entity (e.g., "EKAS_TRANSACTION", "EKAS_AUTH_CODE")
+ * @param entityType - Type of entity (e.g., "EKAS_TRANSACTION", "EKAS_AUTH_CODE", "KONSULTA_HCI_CASE")
  * @param clinicId - Clinic ID (null for personal records)
  * @param date - Date for the sequence (optional, defaults to today)
  * @returns The next sequence number
@@ -168,7 +179,10 @@ export async function getNextSequenceNumber(
   clinicId: number | null,
   date?: Date
 ): Promise<number> {
-  const dateKey = getDateKey(date);
+  const isMonthly =
+    entityType.startsWith("KONSULTA_") ||
+    entityType.startsWith("PHILHEALTH_");
+  const dateKey = isMonthly ? getMonthKey(date) : getDateKey(date);
 
   const result = await prisma.$transaction(async (tx) => {
     // Build the where clause
@@ -184,16 +198,32 @@ export async function getNextSequenceNumber(
     })
 
     if (!sequence) {
-      // Create new sequence starting at 1
+      let initialValue = 1;
+      if (isMonthly && clinicId) {
+        // Find existing max sequence in sequenceGenerator from earlier daily entries this month if any
+        const existingMonthlySeqs = await tx.sequenceGenerator.findMany({
+          where: {
+            entityType,
+            clinicId,
+            date: { startsWith: dateKey }
+          },
+          select: { currentValue: true }
+        });
+        if (existingMonthlySeqs.length > 0) {
+          initialValue = Math.max(...existingMonthlySeqs.map(s => s.currentValue));
+        }
+      }
+
+      // Create new sequence starting at initialValue
       sequence = await tx.sequenceGenerator.create({
         data: {
           entityType,
           clinicId: clinicId,
           date: dateKey,
-          currentValue: 1
+          currentValue: initialValue
         }
       })
-      return 1
+      return initialValue
     }
 
     // Increment and return
@@ -207,4 +237,55 @@ export async function getNextSequenceNumber(
   })
 
   return result
+}
+
+/**
+ * Generate guaranteed unique Konsulta Case Number (T) and SOAP Transaction Number (S)
+ * checking against ConsultationTicket table to prevent duplicate key errors.
+ */
+export async function getUniqueKonsultaCaseAndTransNo(
+  hciAccreNo: string,
+  clinicId: number,
+  date: Date = new Date()
+): Promise<{ caseSequence: number; soapSequence: number; konsultaHciCaseNo: string; konsultaHciTransNo: string }> {
+  let caseSeq = await getNextSequenceNumber("KONSULTA_HCI_CASE", clinicId, date);
+  let candidateCaseNo = formatKonsultaHciNumber("T", hciAccreNo, caseSeq, date);
+
+  let existingCase = await prisma.consultationTicket.findFirst({
+    where: { konsultaHciCaseNo: candidateCaseNo },
+    select: { id: true },
+  });
+
+  while (existingCase) {
+    caseSeq = await getNextSequenceNumber("KONSULTA_HCI_CASE", clinicId, date);
+    candidateCaseNo = formatKonsultaHciNumber("T", hciAccreNo, caseSeq, date);
+    existingCase = await prisma.consultationTicket.findFirst({
+      where: { konsultaHciCaseNo: candidateCaseNo },
+      select: { id: true },
+    });
+  }
+
+  let soapSeq = await getNextSequenceNumber("KONSULTA_SOAP_TRANSACTION", clinicId, date);
+  let candidateTransNo = formatKonsultaHciNumber("S", hciAccreNo, soapSeq, date);
+
+  let existingTrans = await prisma.consultationTicket.findFirst({
+    where: { konsultaHciTransNo: candidateTransNo },
+    select: { id: true },
+  });
+
+  while (existingTrans) {
+    soapSeq = await getNextSequenceNumber("KONSULTA_SOAP_TRANSACTION", clinicId, date);
+    candidateTransNo = formatKonsultaHciNumber("S", hciAccreNo, soapSeq, date);
+    existingTrans = await prisma.consultationTicket.findFirst({
+      where: { konsultaHciTransNo: candidateTransNo },
+      select: { id: true },
+    });
+  }
+
+  return {
+    caseSequence: caseSeq,
+    soapSequence: soapSeq,
+    konsultaHciCaseNo: candidateCaseNo,
+    konsultaHciTransNo: candidateTransNo,
+  };
 }

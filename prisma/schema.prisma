@@ -214,13 +214,20 @@ model PhilHealthKonsultaEnlistment {
   patientType       String? // Snapshot of patient type ("MM" | "DD")
   status            String   @default("ACTIVE") // ACTIVE, CANCELLED, TRANSFERRED
   atcCode           String? // ATC code for profiling; auto-set to "WALKEDIN" when isWalkedIn
-  isWalkedIn        Boolean  @default(false)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  isWalkedIn           Boolean              @default(false)
+  isProfileTransmitted Boolean              @default(false)
+  profileTransmittedAt DateTime?
+  profileTransmittalNo String?
+  profileBatchId       String?
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
 
-  ClinicPatient ClinicPatient @relation(fields: [clinicPatientId], references: [id], onDelete: Cascade)
+  ClinicPatient      ClinicPatient        @relation(fields: [clinicPatientId], references: [id], onDelete: Cascade)
+  ProfileBatchReport KonsultaBatchReport? @relation("EnlistmentProfileBatch", fields: [profileBatchId], references: [id], onDelete: SetNull)
 
   @@unique([clinicPatientId, year], name: "unique_enlistment_year")
+  @@index([isProfileTransmitted])
+  @@index([profileTransmittalNo])
 }
 
 model PhilHealthDependent {
@@ -1785,6 +1792,10 @@ model ConsultationTicket {
   konsultaAtcValidationResult          Json?
   soapTransNo                          String?                      @unique
   isPhilHealthKonsulta                 Boolean                      @default(false)
+  isKonsultaTransmitted                Boolean                      @default(false)
+  konsultaTransmittedAt                DateTime?
+  konsultaTransmittalNo                String?
+  konsultaBatchId                      String?
   konsultaAtcCode                      String?
   konsultaIsWalkedIn                   Boolean?
   konsultaCoPay                        Decimal?                     @db.Decimal(10, 2)
@@ -1811,12 +1822,15 @@ model ConsultationTicket {
   Prescriptions                        Prescription[]
   KonsultaDiagnosticResults            KonsultaDiagnosticResult[]
   DiagnosticRequests                   DiagnosticRequest[]
+  KonsultaBatchReport                  KonsultaBatchReport?         @relation("ConsultationBatchReport", fields: [konsultaBatchId], references: [id], onDelete: SetNull)
 
   @@index([caseNumber])
   @@index([ekasTransactionNumber])
   @@index([konsultaHciCaseNo])
   @@index([konsultaHciTransNo])
   @@index([clinicPatientId])
+  @@index([isKonsultaTransmitted])
+  @@index([konsultaTransmittalNo])
 }
 
 model ConsultationTicketHP {
@@ -3241,9 +3255,11 @@ model KonsultaBatchReport {
   updatedAt        DateTime  @updatedAt
   createdBy        Int
 
-  Clinic        Clinic                 @relation(fields: [clinicId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  Creator       User                   @relation("KonsultaBatchReportCreator", fields: [createdBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  BatchPatients KonsultaBatchPatient[]
+  Clinic                 Clinic                         @relation(fields: [clinicId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Creator                User                           @relation("KonsultaBatchReportCreator", fields: [createdBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  BatchPatients          KonsultaBatchPatient[]
+  TransmittedEnlistments PhilHealthKonsultaEnlistment[] @relation("EnlistmentProfileBatch")
+  TransmittedTickets     ConsultationTicket[]           @relation("ConsultationBatchReport")
 }
 
 /// Patient entry within a PhilHealth Yakap batch report

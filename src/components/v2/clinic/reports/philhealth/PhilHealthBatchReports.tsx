@@ -103,12 +103,20 @@ type BatchDetail = BatchReport & {
         hciCaseNo: string;
         enlistmentTransNo: string;
         profilingTransNo: string | null;
+        isProfileTransmitted?: boolean;
+        profileTransmittedAt?: Date | string | null;
+        profileTransmittalNo?: string | null;
+        profileBatchId?: string | null;
       }[];
       ConsultationTickets: {
         id: number;
         subject: string | null;
         soapTransNo: string | null;
         createdAt: Date;
+        isKonsultaTransmitted?: boolean;
+        konsultaTransmittedAt?: Date | string | null;
+        konsultaTransmittalNo?: string | null;
+        konsultaBatchId?: string | null;
         ConsultationTicketAttribute: { status: string } | null;
       }[];
     };
@@ -123,6 +131,7 @@ export default function PhilHealthBatchReports({ clinicUid }: PhilHealthBatchRep
   const [newTagging, setNewTagging] = useState<string>("1");
   const [isPending, startTransition] = useTransition();
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
+  const [forceResubmitIds, setForceResubmitIds] = useState<Set<number>>(new Set());
 
   const loadBatches = useCallback(() => {
     startTransition(async () => {
@@ -189,6 +198,34 @@ export default function PhilHealthBatchReports({ clinicUid }: PhilHealthBatchRep
       }]);
       loadBatchDetail(selectedBatch.id);
     });
+  };
+
+  const toggleForceResubmit = (ticketId: number, batchPatientId: string, currentSelectedIds: number[]) => {
+    setForceResubmitIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(ticketId)) {
+        next.delete(ticketId);
+        if (currentSelectedIds.includes(ticketId)) {
+          handleToggleConsultation(batchPatientId, ticketId, currentSelectedIds);
+        }
+      } else {
+        next.add(ticketId);
+      }
+      return next;
+    });
+  };
+
+  const handlePatientCheckboxClick = (bp: BatchDetail["BatchPatients"][number], checked: boolean) => {
+    const enlistment = bp.ClinicPatient?.PhilHealthKonsultaEnlistments?.[0];
+    if (checked && enlistment?.isProfileTransmitted && selectedBatch?.tagging === "1") {
+      const patient = bp.ClinicPatient?.Patient;
+      const patientName = [patient?.firstName, patient?.lastName].filter(Boolean).join(" ") || "this patient";
+      const confirmReinclude = window.confirm(
+        `Warning: FPE has already been transmitted for ${patientName} under Transmittal ${enlistment.profileTransmittalNo || "reference"}.\n\nDo you want to re-include this patient in this batch?`
+      );
+      if (!confirmReinclude) return;
+    }
+    handleTogglePatient(bp.id, checked);
   };
 
   const handleGenerateXml = () => {
@@ -296,6 +333,25 @@ export default function PhilHealthBatchReports({ clinicUid }: PhilHealthBatchRep
 
   const selectedCount = selectedBatch?.BatchPatients?.filter(bp => bp.isSelected).length ?? 0;
   const isReadOnly = selectedBatch?.status === "SUBMITTED";
+
+  // Tagging 1 metrics
+  const totalPatients = selectedBatch?.BatchPatients?.length ?? 0;
+  const transmittedFpeCount = selectedBatch?.BatchPatients?.filter(
+    bp => bp.ClinicPatient?.PhilHealthKonsultaEnlistments?.[0]?.isProfileTransmitted
+  ).length ?? 0;
+  const untransmittedFpeCount = totalPatients - transmittedFpeCount;
+
+  // Tagging 2 metrics
+  const allConsultations = selectedBatch?.BatchPatients?.flatMap(
+    bp => bp.ClinicPatient?.ConsultationTickets?.filter(t => t.soapTransNo) ?? []
+  ) ?? [];
+  const totalConsultationsCount = allConsultations.length;
+  const transmittedTicketsCount = allConsultations.filter(t => t.isKonsultaTransmitted).length;
+  const untransmittedTicketsCount = totalConsultationsCount - transmittedTicketsCount;
+
+  const totalSelectedTickets = selectedBatch?.BatchPatients
+    ?.filter(bp => bp.isSelected)
+    ?.reduce((acc, bp) => acc + (bp.selectedTicketIds?.length || 0), 0) ?? 0;
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -452,10 +508,17 @@ export default function PhilHealthBatchReports({ clinicUid }: PhilHealthBatchRep
         {/* Action Buttons */}
         <div className="flex items-center gap-2">
           {!isReadOnly && selectedBatch.status === "DRAFT" && !selectedBatch.xmlPayload && (
-            <Button onClick={handleGenerateXml} disabled={selectedCount === 0 || !!loadingAction} className="gap-2 bg-gradient-to-r from-teal-600 to-emerald-600">
-              {loadingAction === "generate" ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
-              Generate XML for {selectedCount} Selected
-            </Button>
+            selectedBatch.tagging === "1" ? (
+              <Button onClick={handleGenerateXml} disabled={selectedCount === 0 || !!loadingAction} className="gap-2 bg-gradient-to-r from-teal-600 to-emerald-600">
+                {loadingAction === "generate" ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
+                Generate XML for {selectedCount} Selected Patient{selectedCount !== 1 ? "s" : ""}
+              </Button>
+            ) : (
+              <Button onClick={handleGenerateXml} disabled={totalSelectedTickets === 0 || !!loadingAction} className="gap-2 bg-gradient-to-r from-teal-600 to-emerald-600">
+                {loadingAction === "generate" ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
+                Generate XML for {totalSelectedTickets} Selected Consultation{totalSelectedTickets !== 1 ? "s" : ""}
+              </Button>
+            )
           )}
 
           {!isReadOnly && selectedBatch.status === "DRAFT" && selectedBatch.xmlPayload && (
@@ -789,10 +852,28 @@ export default function PhilHealthBatchReports({ clinicUid }: PhilHealthBatchRep
       {/* Patient List */}
       <Card>
         <CardHeader className="py-3 px-4">
-          <CardTitle className="text-sm">Patients ({selectedBatch.BatchPatients?.length ?? 0})</CardTitle>
-          <CardDescription className="text-xs">
-            {selectedCount} of {selectedBatch.BatchPatients?.length ?? 0} selected
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-sm">
+                {selectedBatch.tagging === "1" ? "Patients (FPE Batch)" : "Patients & Consultations"} ({totalPatients})
+              </CardTitle>
+              <CardDescription className="text-xs">
+                {selectedBatch.tagging === "1" ? (
+                  <>
+                    <span className="font-semibold text-foreground/80">{selectedCount}</span> of {totalPatients} selected
+                    {" • "}{untransmittedFpeCount} unsubmitted available
+                    {transmittedFpeCount > 0 && ` (${transmittedFpeCount} transmitted)`}
+                  </>
+                ) : (
+                  <>
+                    <span className="font-semibold text-foreground/80">{totalSelectedTickets}</span> consultations selected across {selectedCount} patients
+                    {" • "}{untransmittedTicketsCount} unsubmitted available
+                    {transmittedTicketsCount > 0 && ` (${transmittedTicketsCount} transmitted)`}
+                  </>
+                )}
+              </CardDescription>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="px-4 pb-3">
           <div className="space-y-1">
@@ -807,11 +888,24 @@ export default function PhilHealthBatchReports({ clinicUid }: PhilHealthBatchRep
                   <div className="flex items-center gap-3">
                     <Checkbox
                       checked={bp.isSelected}
-                      onCheckedChange={(checked) => handleTogglePatient(bp.id, !!checked)}
+                      onCheckedChange={(checked) => handlePatientCheckboxClick(bp, !!checked)}
                       disabled={isReadOnly}
                     />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{name}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium truncate">{name}</p>
+                        {enlistment?.isProfileTransmitted && (
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800 flex items-center gap-1 font-normal"
+                            title={`Transmitted in ${enlistment.profileTransmittalNo ?? "Batch"}${enlistment.profileTransmittedAt ? ` on ${new Date(enlistment.profileTransmittedAt).toLocaleDateString()}` : ""}`}
+                          >
+                            <Check className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
+                            FPE Transmitted {enlistment.profileTransmittalNo ? `(Ref: ${enlistment.profileTransmittalNo})` : ""}
+                            {enlistment.profileTransmittedAt && ` • ${new Date(enlistment.profileTransmittedAt).toLocaleDateString()}`}
+                          </Badge>
+                        )}
+                      </div>
                       <div className="flex items-center gap-2 mt-0.5">
                         {enlistment && (
                           <span className="text-[10px] font-mono text-muted-foreground">
@@ -833,26 +927,71 @@ export default function PhilHealthBatchReports({ clinicUid }: PhilHealthBatchRep
                       <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1">
                         Consultations with SOAP Trans No.
                       </p>
-                      {consultations.map((consultation) => (
-                        <div key={consultation.id} className="flex items-center gap-2 py-1">
-                          <Checkbox
-                            checked={bp.selectedTicketIds.includes(consultation.id)}
-                            onCheckedChange={() => handleToggleConsultation(bp.id, consultation.id, bp.selectedTicketIds)}
-                            disabled={isReadOnly}
-                          />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs truncate">{consultation.subject || "Consultation"}</p>
-                            <div className="flex items-center gap-2">
-                              <span className="text-[10px] font-mono text-teal-600 dark:text-teal-400">
-                                {consultation.soapTransNo}
-                              </span>
-                              <span className="text-[10px] text-muted-foreground">
-                                {new Date(consultation.createdAt).toLocaleDateString()}
-                              </span>
+                      {consultations.map((consultation) => {
+                        const isTransmitted = Boolean(consultation.isKonsultaTransmitted);
+                        const isForceResubmitted = forceResubmitIds.has(consultation.id);
+                        const isChecked = bp.selectedTicketIds.includes(consultation.id);
+                        const isCheckboxDisabled = isReadOnly || (isTransmitted && !isForceResubmitted);
+
+                        return (
+                          <div key={consultation.id} className="flex items-center gap-2 py-1.5 border-b border-border/20 last:border-b-0">
+                            <Checkbox
+                              checked={isChecked}
+                              onCheckedChange={() => handleToggleConsultation(bp.id, consultation.id, bp.selectedTicketIds)}
+                              disabled={isCheckboxDisabled}
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <p className="text-xs truncate font-medium">{consultation.subject || "Consultation"}</p>
+                                {isTransmitted ? (
+                                  <Badge
+                                    variant="outline"
+                                    className="text-[10px] bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800"
+                                  >
+                                    Transmitted {consultation.konsultaTransmittedAt ? `on ${new Date(consultation.konsultaTransmittedAt).toLocaleDateString()}` : ""} (Ref: {consultation.konsultaTransmittalNo || "Submitted"})
+                                  </Badge>
+                                ) : (
+                                  <Badge
+                                    variant="outline"
+                                    className="text-[10px] bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950/40 dark:text-teal-400 dark:border-teal-800"
+                                  >
+                                    Unsubmitted
+                                  </Badge>
+                                )}
+                                {isForceResubmitted && (
+                                  <Badge
+                                    variant="outline"
+                                    className="text-[10px] bg-amber-50 text-amber-700 border-amber-300 dark:bg-amber-950/40 dark:text-amber-300"
+                                  >
+                                    Correction Mode Enabled
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                <span className="text-[10px] font-mono text-teal-600 dark:text-teal-400">
+                                  {consultation.soapTransNo}
+                                </span>
+                                <span className="text-[10px] text-muted-foreground">
+                                  {new Date(consultation.createdAt).toLocaleDateString()}
+                                </span>
+                              </div>
                             </div>
+
+                            {/* Force Resubmit Override for Transmitted Tickets */}
+                            {!isReadOnly && isTransmitted && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 px-2 text-[10px] text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/20 shrink-0"
+                                onClick={() => toggleForceResubmit(consultation.id, bp.id, bp.selectedTicketIds)}
+                              >
+                                {isForceResubmitted ? "Cancel Override" : "Force Resubmit (Correction)"}
+                              </Button>
+                            )}
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
 

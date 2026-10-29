@@ -602,11 +602,21 @@ function QueueListItem({
             )}
             {status === "RESOLVED" ? "Done" : status === "DROPPED" ? "Dropped" : "Active"}
           </div>
-          {item.soapTransNo && (
-            <span className="rounded px-1.5 py-0.5 bg-teal-50 text-teal-700 border border-teal-200 dark:bg-teal-950/40 dark:text-teal-400 dark:border-teal-800 text-[9px] font-medium truncate max-w-[80px]" title={`SOAP: ${item.soapTransNo}`}>
+          {item.isKonsultaTransmitted ? (
+            <span
+              className="rounded px-1.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800 text-[9px] font-medium truncate max-w-[110px]"
+              title={`Transmitted to PhilHealth in ${item.konsultaTransmittalNo ?? "Batch"}${item.konsultaTransmittedAt ? ` on ${dayjs(item.konsultaTransmittedAt).format("MMM D, YYYY")}` : ""}`}
+            >
+              Transmitted (SOAP)
+            </span>
+          ) : item.soapTransNo ? (
+            <span
+              className="rounded px-1.5 py-0.5 bg-teal-50 text-teal-700 border border-teal-200 dark:bg-teal-950/40 dark:text-teal-400 dark:border-teal-800 text-[9px] font-medium truncate max-w-[80px]"
+              title={`SOAP: ${item.soapTransNo}`}
+            >
               Yakap Ready
             </span>
-          )}
+          ) : null}
           {item.isArchived && <Archive className="h-3 w-3 text-muted-foreground/50" />}
         </div>
       </div>

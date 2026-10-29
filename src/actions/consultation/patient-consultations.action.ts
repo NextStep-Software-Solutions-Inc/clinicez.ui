@@ -135,6 +135,9 @@ export const getPatientConsultationDetailAction = withErrorHandling(
         caseNumber: true,
         soapTransNo: true,
         isPhilHealthKonsulta: true,
+        isKonsultaTransmitted: true,
+        konsultaTransmittedAt: true,
+        konsultaTransmittalNo: true,
         konsultaAtcCode: true,
         konsultaIsWalkedIn: true,
         konsultaCoPay: true,
@@ -474,6 +477,7 @@ export const getConsultationDiagnosticsForTicketAction = withErrorHandling(
  */
 const PAGE_SIZE = 20;
 export type GetClinicConsultationQueue = Awaited<ReturnType<typeof getClinicConsultationQueueAction>>;
+export type GetClinicConsultations = GetClinicConsultationQueue;
 export const getClinicConsultationQueueAction = withErrorHandling(
   async ({
     clinicUid,
@@ -523,6 +527,9 @@ export const getClinicConsultationQueueAction = withErrorHandling(
           caseNumber: true,
           soapTransNo: true,
           isPhilHealthKonsulta: true,
+          isKonsultaTransmitted: true,
+          konsultaTransmittedAt: true,
+          konsultaTransmittalNo: true,
           konsultaAtcCode: true,
           konsultaIsWalkedIn: true,
           konsultaCoPay: true,
@@ -640,6 +647,7 @@ export const getClinicConsultationQueueAction = withErrorHandling(
     };
   }
 );
+export const getClinicConsultationsAction = getClinicConsultationQueueAction;
 
 export type GetClinicSystemsForPatient = Awaited<ReturnType<typeof getClinicSystemsAction>>;
 export const getClinicSystemsAction = withErrorHandling(async (clinicUid: string) => {

@@ -412,7 +412,14 @@ export async function getBatchReportDetailAction(clinicUid: string, batchId: str
                   where: { soapTransNo: { not: null }, isActive: true },
                   orderBy: { createdAt: "desc" },
                   select: {
-                    id: true, subject: true, soapTransNo: true, createdAt: true,
+                    id: true,
+                    subject: true,
+                    soapTransNo: true,
+                    createdAt: true,
+                    isKonsultaTransmitted: true,
+                    konsultaTransmittedAt: true,
+                    konsultaTransmittalNo: true,
+                    konsultaBatchId: true,
                     ConsultationTicketAttribute: { select: { status: true } },
                   },
                 },
@@ -448,7 +455,18 @@ export async function createBatchReportAction(clinicUid: string, title: string, 
         isActive: true,
         PhilHealthKonsultaEnlistments: { some: { status: "ACTIVE" } },
       },
-      select: { id: true },
+      select: {
+        id: true,
+        PhilHealthKonsultaEnlistments: {
+          where: { status: "ACTIVE" },
+          orderBy: { year: "desc" },
+          take: 1,
+          select: {
+            id: true,
+            isProfileTransmitted: true,
+          },
+        },
+      },
     });
 
     const batch = await prisma.konsultaBatchReport.create({
@@ -459,11 +477,14 @@ export async function createBatchReportAction(clinicUid: string, title: string, 
         createdBy: user.id,
         ...(clinicPatients.length > 0 ? {
           BatchPatients: {
-            create: clinicPatients.map(cp => ({
-              clinicPatientId: cp.id,
-              tagging,
-              isSelected: true,
-            })),
+            create: clinicPatients.map(cp => {
+              const isFpeTransmitted = cp.PhilHealthKonsultaEnlistments[0]?.isProfileTransmitted ?? false;
+              return {
+                clinicPatientId: cp.id,
+                tagging,
+                isSelected: tagging === "1" ? !isFpeTransmitted : true,
+              };
+            }),
           },
         } : {}),
       },
@@ -485,6 +506,14 @@ export async function updateBatchPatientsAction(
   try {
     const session = await getCachedSession();
     if (!session?.user) return { status: false, message: "Unauthorized" };
+
+    const batch = await prisma.konsultaBatchReport.findUnique({
+      where: { id: batchId },
+      select: { status: true },
+    });
+    if (batch?.status === "SUBMITTED") {
+      return { status: false, message: "Cannot modify patient selection on a submitted batch." };
+    }
 
     for (const update of updates) {
       const data: Record<string, unknown> = {};
@@ -1431,7 +1460,20 @@ export async function submitBatchReportAction(clinicUid: string, batchId: string
     const session = await getCachedSession();
     if (!session?.user) return { status: false, message: "Unauthorized" };
 
-    const batch = await prisma.konsultaBatchReport.findUnique({ where: { id: batchId } });
+    const batch = await prisma.konsultaBatchReport.findUnique({
+      where: { id: batchId },
+      include: {
+        BatchPatients: {
+          where: { isSelected: true },
+          select: {
+            id: true,
+            clinicPatientId: true,
+            selectedTicketIds: true,
+          },
+        },
+      },
+    });
+
     if (!batch || !batch.xmlPayload || !batch.transmittalNo) {
       return { status: false, message: "Batch not ready for submission" };
     }
@@ -1463,16 +1505,71 @@ export async function submitBatchReportAction(clinicUid: string, batchId: string
     const isAlreadyUploaded = resStr.includes("FILE ALREADY UPLOADED") || resStr.includes("ALREADY UPLOADED");
     const isSuccess = submissionResult?.success === true || submissionResult?.success === "true" || submissionResult?.success === "True" || isAlreadyUploaded;
 
-    await prisma.konsultaBatchReport.update({
-      where: { id: batchId },
-      data: {
-        status: isSuccess ? "SUBMITTED" : "VALIDATED",
-        submissionResult: JSON.stringify(submissionResult, null, 2),
-        submittedAt: isSuccess ? (batch.submittedAt || new Date()) : null,
-      },
-    });
+    const now = new Date();
+
+    if (isSuccess) {
+      await prisma.$transaction(async (tx) => {
+        // 1. Mark batch as SUBMITTED
+        await tx.konsultaBatchReport.update({
+          where: { id: batchId },
+          data: {
+            status: "SUBMITTED",
+            submissionResult: JSON.stringify(submissionResult, null, 2),
+            submittedAt: batch.submittedAt || now,
+          },
+        });
+
+        // 2. Tagging 1: Update FPE Profiling on Enlistments
+        if (batch.tagging === "1") {
+          const selectedClinicPatientIds = batch.BatchPatients.map(bp => bp.clinicPatientId);
+          if (selectedClinicPatientIds.length > 0) {
+            await tx.philHealthKonsultaEnlistment.updateMany({
+              where: {
+                clinicPatientId: { in: selectedClinicPatientIds },
+                status: "ACTIVE",
+              },
+              data: {
+                isProfileTransmitted: true,
+                profileTransmittedAt: now,
+                profileTransmittalNo: batch.transmittalNo,
+                profileBatchId: batch.id,
+              },
+            });
+          }
+        }
+
+        // 3. Tagging 2: Update Consultation Tickets
+        if (batch.tagging === "2") {
+          const allSelectedTicketIds = batch.BatchPatients.flatMap(bp => bp.selectedTicketIds || []);
+          if (allSelectedTicketIds.length > 0) {
+            await tx.consultationTicket.updateMany({
+              where: {
+                id: { in: allSelectedTicketIds },
+              },
+              data: {
+                isKonsultaTransmitted: true,
+                konsultaTransmittedAt: now,
+                konsultaTransmittalNo: batch.transmittalNo,
+                konsultaBatchId: batch.id,
+              },
+            });
+          }
+        }
+      });
+    } else {
+      // Submission rejected: keep VALIDATED status and store error result
+      await prisma.konsultaBatchReport.update({
+        where: { id: batchId },
+        data: {
+          status: "VALIDATED",
+          submissionResult: JSON.stringify(submissionResult, null, 2),
+        },
+      });
+    }
 
     revalidatePath(`/v2/clinic/${clinicUid}/philhealth`);
+    revalidatePath(`/v2/clinic/${clinicUid}/consultations`);
+    revalidatePath(`/v2/clinic/${clinicUid}/patients`);
     return { status: true, data: submissionResult };
   } catch (error) {
     console.error("[submitBatchReportAction]", error);
@@ -1487,6 +1584,10 @@ export async function regenerateBatchXmlAction(clinicUid: string, batchId: strin
 
     const batch = await prisma.konsultaBatchReport.findUnique({ where: { id: batchId } });
     if (!batch) return { status: false, message: "Batch not found" };
+
+    if (batch.status === "SUBMITTED") {
+      return { status: false, message: "Cannot regenerate XML for a submitted batch. Unsubmit first." };
+    }
 
     // Clear validation and transmittalNo so a fresh transmittal number is generated
     await prisma.konsultaBatchReport.update({
@@ -1517,20 +1618,47 @@ export async function unsubmitBatchReportAction(clinicUid: string, batchId: stri
     const batch = await prisma.konsultaBatchReport.findUnique({ where: { id: batchId } });
     if (!batch) return { status: false, message: "Batch not found" };
 
-    await prisma.konsultaBatchReport.update({
-      where: { id: batchId },
-      data: {
-        status: "DRAFT",
-        transmittalNo: null,
-        xmlPayload: null,
-        validationResult: null,
-        validatedAt: null,
-        submissionResult: null,
-        submittedAt: null,
-      },
+    await prisma.$transaction(async (tx) => {
+      // 1. Reset batch to DRAFT
+      await tx.konsultaBatchReport.update({
+        where: { id: batchId },
+        data: {
+          status: "DRAFT",
+          transmittalNo: null,
+          xmlPayload: null,
+          validationResult: null,
+          validatedAt: null,
+          submissionResult: null,
+          submittedAt: null,
+        },
+      });
+
+      // 2. Roll back enlistments stamped by this batch
+      await tx.philHealthKonsultaEnlistment.updateMany({
+        where: { profileBatchId: batch.id },
+        data: {
+          isProfileTransmitted: false,
+          profileTransmittedAt: null,
+          profileTransmittalNo: null,
+          profileBatchId: null,
+        },
+      });
+
+      // 3. Roll back consultation tickets stamped by this batch
+      await tx.consultationTicket.updateMany({
+        where: { konsultaBatchId: batch.id },
+        data: {
+          isKonsultaTransmitted: false,
+          konsultaTransmittedAt: null,
+          konsultaTransmittalNo: null,
+          konsultaBatchId: null,
+        },
+      });
     });
 
     revalidatePath(`/v2/clinic/${clinicUid}/philhealth`);
+    revalidatePath(`/v2/clinic/${clinicUid}/consultations`);
+    revalidatePath(`/v2/clinic/${clinicUid}/patients`);
     return { status: true, message: "Batch status reset to DRAFT for testing" };
   } catch (error) {
     return { status: false, message: (error as Error)?.message || "Failed to unsubmit batch" };

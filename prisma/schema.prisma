@@ -155,6 +155,7 @@ model User {
   UserSchedules                    UserSchedule[]
   StudentRecords                   UserStudentRecord[]
   UserVaccinations                 UserVaccination[]
+  PatientImmunizations             PatientImmunization[]
   VitalSigns                       VitalSign[]
   Notifications                    Notification[]
   PatientInsights                  PatientInsight[]
@@ -201,6 +202,7 @@ model PhilHealthKonsultaEnlistment {
   year              Int // e.g., 2024
   hciCaseNo         String // The T-prefix case number
   enlistmentTransNo String // The E-prefix transaction number
+  enlistmentDate    DateTime? // Date of enlistment from PHIC Masterlist / ERL
   profilingTransNo  String? // The P-prefix transaction number (generated during First Patient Encounter)
   memberPin         String? // Snapshot of the member PIN used at enlistment
   dependentPin      String? // Snapshot of the dependent PIN (if applicable)
@@ -212,13 +214,20 @@ model PhilHealthKonsultaEnlistment {
   patientType       String? // Snapshot of patient type ("MM" | "DD")
   status            String   @default("ACTIVE") // ACTIVE, CANCELLED, TRANSFERRED
   atcCode           String? // ATC code for profiling; auto-set to "WALKEDIN" when isWalkedIn
-  isWalkedIn        Boolean  @default(false)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  isWalkedIn           Boolean              @default(false)
+  isProfileTransmitted Boolean              @default(false)
+  profileTransmittedAt DateTime?
+  profileTransmittalNo String?
+  profileBatchId       String?
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
 
-  ClinicPatient ClinicPatient @relation(fields: [clinicPatientId], references: [id], onDelete: Cascade)
+  ClinicPatient      ClinicPatient        @relation(fields: [clinicPatientId], references: [id], onDelete: Cascade)
+  ProfileBatchReport KonsultaBatchReport? @relation("EnlistmentProfileBatch", fields: [profileBatchId], references: [id], onDelete: SetNull)
 
   @@unique([clinicPatientId, year], name: "unique_enlistment_year")
+  @@index([isProfileTransmitted])
+  @@index([profileTransmittalNo])
 }
 
 model PhilHealthDependent {
@@ -855,6 +864,67 @@ model UserAddress {
   User          User      @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
+enum ImmunizationCategory {
+  CHILD
+  YOUNG_WOMAN
+  PREGNANT
+  ELDERLY
+  OTHER
+}
+
+model PhilHealthImmunizationLibrary {
+  id               Int                   @id @default(autoincrement())
+  category         ImmunizationCategory
+  code             String                // "C01"-"C13", "Y01"-"Y02", "P01", "E01"-"E02", "999"
+  name             String                // "BCG", "OPV", "DPT", "Hepatitis B", "HPV", "MMR", "Tetanus Toxoid", "Flu Vaccine", "Pneumococcal Vaccine", "None"
+  description      String?               // Clinical description
+  doseNumber       Int?                  // 1, 2, 3 (null if single / generic)
+  defaultDoseLabel String?               // "1st Dose", "2nd Dose", "3rd Dose", "Standard Dose"
+  targetGender     String?               // "F", "M", or null (all)
+  minAgeMonths     Int?                  // e.g., 0
+  maxAgeMonths     Int?                  // e.g., 60 for child (<5y), 120-588 for young women (10-49y), >=720 for elderly (>=60y)
+  defaultRoute     String?               // "Oral", "Intramuscular", "Subcutaneous", "Intradermal"
+  isActive         Boolean               @default(true)
+  sortOrder        Int                   @default(0)
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+
+  PatientImmunizations PatientImmunization[]
+
+  @@unique([category, code], name: "unique_category_code")
+  @@index([category, isActive])
+}
+
+model PatientImmunization {
+  id                 Int                            @id @default(autoincrement())
+  userId             Int
+  immunizationLibId  Int?                           // Reference to PhilHealthImmunizationLibrary (null if custom/OTHER)
+  category           ImmunizationCategory           // CHILD, YOUNG_WOMAN, PREGNANT, ELDERLY, OTHER
+  code               String?                        // "C01", "Y01", "P01", "E01", or null for custom
+  vaccineName        String                         // Clinical name: "BCG", "OPV", "COVID-19 Bivalent Pfizer"
+  doseNumber         String                         // "1st Dose", "2nd Dose", "3rd Dose", "Booster 1", "Booster 2"
+  route              String?                        // "Oral", "Intramuscular", "Subcutaneous", "Intradermal"
+  dateGiven          DateTime
+  administeredBy     String?                        // "Nurse Joy", "Dr. Cruz", "RHU"
+  facilityName       String?                        // Administering health center / clinic
+  lotNumber          String?
+  expirationDate     DateTime?
+  notes              String?
+  reportStatus       String                         @default("U") // U = Unreported, V = Validated, F = Failed
+  deficiencyRemarks  String?
+  createdAt          DateTime                       @default(now())
+  updatedAt          DateTime                       @updatedAt
+  deletedAt          DateTime?
+  isActive           Boolean                        @default(true)
+
+  User                   User                           @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  PhilHealthImmunization PhilHealthImmunizationLibrary? @relation(fields: [immunizationLibId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([userId, isActive])
+  @@index([category, code])
+}
+
+/// @deprecated Retained for historical data preservation and cross-branch compatibility; use PhilHealthImmunizationLibrary & PatientImmunization instead.
 model Vaccine {
   id               Int                    @id @default(autoincrement())
   name             String
@@ -871,7 +941,7 @@ model Vaccine {
   PhilHealthData   VaccinePhilHealthData?
 }
 
-/// PhilHealth Yakap coded vaccine data (1:1 extension of Vaccine)
+/// @deprecated Legacy 1:1 extension of Vaccine; use PhilHealthImmunizationLibrary instead.
 model VaccinePhilHealthData {
   id             String  @id @default(uuid())
   vaccineId      Int     @unique
@@ -884,6 +954,7 @@ model VaccinePhilHealthData {
   Vaccine Vaccine @relation(fields: [vaccineId], references: [id], onDelete: Cascade)
 }
 
+/// @deprecated Legacy vaccine attribute table.
 model VaccineAttribute {
   id          Int     @id @default(autoincrement())
   vaccineId   Int     @unique
@@ -891,6 +962,7 @@ model VaccineAttribute {
   Vaccine     Vaccine @relation(fields: [vaccineId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
+/// @deprecated Legacy vaccine route table.
 model Route {
   id               Int               @id @default(autoincrement())
   route            String
@@ -903,6 +975,7 @@ model Route {
   VaccineRoutes    VaccineRoute[]
 }
 
+/// @deprecated Legacy vaccine dose table.
 model Dose {
   id               Int               @id @default(autoincrement())
   dose             String
@@ -915,6 +988,7 @@ model Dose {
   VaccineDoses     VaccineDose[]
 }
 
+/// @deprecated Legacy vaccine-route join table.
 model VaccineRoute {
   id        Int     @id @default(autoincrement())
   vaccineId Int
@@ -925,6 +999,7 @@ model VaccineRoute {
   @@unique([vaccineId, routeId], name: "unique_vaccine_route")
 }
 
+/// @deprecated Legacy vaccine-dose join table.
 model VaccineDose {
   id        Int     @id @default(autoincrement())
   vaccineId Int
@@ -935,6 +1010,7 @@ model VaccineDose {
   @@unique([vaccineId, doseId], name: "unique_vaccine_dose")
 }
 
+/// @deprecated Legacy user vaccination table retained to preserve historical records; use PatientImmunization instead.
 model UserVaccination {
   id                 Int                 @id @default(autoincrement())
   userId             Int
@@ -1716,6 +1792,10 @@ model ConsultationTicket {
   konsultaAtcValidationResult          Json?
   soapTransNo                          String?                      @unique
   isPhilHealthKonsulta                 Boolean                      @default(false)
+  isKonsultaTransmitted                Boolean                      @default(false)
+  konsultaTransmittedAt                DateTime?
+  konsultaTransmittalNo                String?
+  konsultaBatchId                      String?
   konsultaAtcCode                      String?
   konsultaIsWalkedIn                   Boolean?
   konsultaCoPay                        Decimal?                     @db.Decimal(10, 2)
@@ -1742,12 +1822,15 @@ model ConsultationTicket {
   Prescriptions                        Prescription[]
   KonsultaDiagnosticResults            KonsultaDiagnosticResult[]
   DiagnosticRequests                   DiagnosticRequest[]
+  KonsultaBatchReport                  KonsultaBatchReport?         @relation("ConsultationBatchReport", fields: [konsultaBatchId], references: [id], onDelete: SetNull)
 
   @@index([caseNumber])
   @@index([ekasTransactionNumber])
   @@index([konsultaHciCaseNo])
   @@index([konsultaHciTransNo])
   @@index([clinicPatientId])
+  @@index([isKonsultaTransmitted])
+  @@index([konsultaTransmittalNo])
 }
 
 model ConsultationTicketHP {
@@ -3172,9 +3255,11 @@ model KonsultaBatchReport {
   updatedAt        DateTime  @updatedAt
   createdBy        Int
 
-  Clinic        Clinic                 @relation(fields: [clinicId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  Creator       User                   @relation("KonsultaBatchReportCreator", fields: [createdBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  BatchPatients KonsultaBatchPatient[]
+  Clinic                 Clinic                         @relation(fields: [clinicId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Creator                User                           @relation("KonsultaBatchReportCreator", fields: [createdBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  BatchPatients          KonsultaBatchPatient[]
+  TransmittedEnlistments PhilHealthKonsultaEnlistment[] @relation("EnlistmentProfileBatch")
+  TransmittedTickets     ConsultationTicket[]           @relation("ConsultationBatchReport")
 }
 
 /// Patient entry within a PhilHealth Yakap batch report

@@ -28,6 +28,7 @@ import {
   rejectAppointmentAction,
 } from "@/actions/appointments/appointment-attribute.action";
 import { isWalkInAppointment, getAppointmentPatientName, getAppointmentInitials } from "./appointment-utils";
+import { formatPhilHealthPinDisplay } from "@/lib/philhealth-pin-search";
 
 type Appointment = NonNullable<GetAppointments["data"]>[number];
 
@@ -89,6 +90,8 @@ export function AppointmentCard({
   const employmentRecord = appointment.Requesters?.[0]?.User?.UserEmployments?.[0];
   const studentId = studentRecord?.studentId;
   const employeeId = employmentRecord?.employeeId;
+  const rawPhilHealthPin = appointment.Requesters?.[0]?.User?.PhilHealthRecords?.[0]?.pin;
+  const philHealthPin = rawPhilHealthPin ? formatPhilHealthPinDisplay(rawPhilHealthPin) : null;
 
   const studentAffiliation = [
     studentRecord?.Program?.name,
@@ -244,6 +247,15 @@ export function AppointmentCard({
                 </AvatarFallback>
               </Avatar>
               <span className="text-xs text-muted-foreground font-bold">{fullName}</span>
+              {philHealthPin && (
+                <Badge
+                  variant="outline"
+                  className="text-[10px] px-1 py-0 font-normal bg-emerald-50/80 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800"
+                  title="PhilHealth Identification Number (PIN)"
+                >
+                  PIN: {philHealthPin}
+                </Badge>
+              )}
               {studentId && (
                 <Badge
                   variant="outline"

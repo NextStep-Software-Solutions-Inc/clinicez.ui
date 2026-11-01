@@ -166,6 +166,9 @@ export interface SerializedPatientHealthRecordsResponse {
     dateGiven: string
     notes: string | null
     administeredBy: string | null
+    category?: string | null
+    code?: string | null
+    facilityName?: string | null
   }>
 
   // Disabilities & Illnesses

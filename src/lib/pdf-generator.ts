@@ -145,7 +145,7 @@ export async function htmlToPdf(htmlContent: string, options: PdfOptions = {}): 
         await page.setViewport({ width: Math.round(210 * 3.78), height: Math.round(297 * 3.78) })
 
         // Set content
-        await page.setContent(processedHtml, { waitUntil: 'networkidle0' })
+        await page.setContent(processedHtml, { waitUntil: 'networkidle0' as any })
 
         const hasFooter = !!options.footerTemplate
 

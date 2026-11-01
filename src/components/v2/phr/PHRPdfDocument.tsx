@@ -675,14 +675,16 @@ export function PHRPdfDocument({ patient, sections, generatedAt, theme = 'colorf
             <View style={[s.sectionBody, { borderColor: tc.sectionBodyBorder }]}>
               {patient.pediatricMeasurements.length === 0 ? <Empty msg="No pediatric measurements recorded." /> : (
                 <View style={s.table}>
-                  <View style={[s.tableHead, { backgroundColor: tc.tableHeadBg }]}><Th flex={1} tc={tc}>Date</Th><Th flex={0.8} tc={tc}>Length</Th><Th flex={0.8} tc={tc}>Head Circ.</Th><Th flex={0.8} tc={tc}>Waist</Th><Th flex={0.8} tc={tc}>Hip</Th><Th flex={0.8} tc={tc}>MUAC</Th><Th flex={1.5} tc={tc}>Remarks</Th></View>
+                  <View style={[s.tableHead, { backgroundColor: tc.tableHeadBg }]}><Th flex={1} tc={tc}>Date</Th><Th flex={0.8} tc={tc}>Length</Th><Th flex={0.8} tc={tc}>Head Circ.</Th><Th flex={0.8} tc={tc}>Skinfold</Th><Th flex={0.8} tc={tc}>Waist</Th><Th flex={0.8} tc={tc}>Hip</Th><Th flex={0.8} tc={tc}>Limbs</Th><Th flex={0.8} tc={tc}>MUAC</Th><Th flex={1.5} tc={tc}>Remarks</Th></View>
                   {patient.pediatricMeasurements.map((pm, i) => (
                     <View key={pm.id} style={i % 2 === 0 ? s.tableRow : s.tableRowAlt}>
                       <Td flex={1} alt={i % 2 !== 0}>{fmtDate(pm.dateTaken)}</Td>
                       <Td flex={0.8} alt={i % 2 !== 0}>{v(pm.length)}</Td>
                       <Td flex={0.8} alt={i % 2 !== 0}>{v(pm.headCircumference)}</Td>
+                      <Td flex={0.8} alt={i % 2 !== 0}>{v(pm.skinfoldThickness)}</Td>
                       <Td flex={0.8} alt={i % 2 !== 0}>{v(pm.waistCircumference)}</Td>
                       <Td flex={0.8} alt={i % 2 !== 0}>{v(pm.hipCircumference)}</Td>
+                      <Td flex={0.8} alt={i % 2 !== 0}>{v(pm.limbCircumference)}</Td>
                       <Td flex={0.8} alt={i % 2 !== 0}>{v(pm.midUpperArmCircumference)}</Td>
                       <Td flex={1.5} alt={i % 2 !== 0}>{v(pm.notes)}</Td>
                     </View>

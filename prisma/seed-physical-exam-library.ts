@@ -9,8 +9,8 @@ const prisma = new PrismaClient({ adapter });
 
 export const PHYSICAL_EXAM_LIBRARY_DATA = [
   // GENSURVEY
-  { category: "GENSURVEY", code: "1", description: "Essentially normal", libraryStatus: 1, isActive: true },
-  { category: "GENSURVEY", code: "2", description: "Abnormal", libraryStatus: 1, isActive: true },
+  { category: "GENSURVEY", code: "1", description: "Awake and Alert", libraryStatus: 1, isActive: true },
+  { category: "GENSURVEY", code: "2", description: "Altered Sensorium", libraryStatus: 1, isActive: true },
   { category: "GENSURVEY", code: "99", description: "Others", libraryStatus: 1, isActive: true },
 
   // SKIN

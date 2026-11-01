@@ -189,21 +189,15 @@ export async function GET(
             }),
 
             // 9. Get vaccinations
-            prisma.userVaccination.findMany({
+            prisma.patientImmunization.findMany({
                 where: {
                     userId,
                 },
-                include: {
-                    Vaccine: {
-                        select: {
-                            name: true,
-                        },
-                    },
-                    Dose: {
-                        select: {
-                            dose: true,
-                        },
-                    },
+                select: {
+                    vaccineName: true,
+                    doseNumber: true,
+                    dateGiven: true,
+                    notes: true,
                 },
                 orderBy: {
                     dateGiven: 'desc',
@@ -451,8 +445,8 @@ export async function GET(
             })),
 
             vaccinations: vaccinations.map((v: any) => ({
-                vaccine: v.Vaccine.name,
-                dose: v.Dose?.dose || 'Unknown',
+                vaccine: v.vaccineName,
+                dose: v.doseNumber || 'Unknown',
                 dateGiven: v.dateGiven.toISOString(),
                 notes: v.notes,
             })),

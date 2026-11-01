@@ -4,20 +4,13 @@ import { useEffect, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { physicalExaminationSchema, type PhysicalExaminationFormInput } from "@/schemas";
 import { getPhysicalExamLibrariesAction } from "@/actions/super-admin/physical-exam-library.action";
 import { savePhysicalExaminationAction, deletePhysicalExaminationAction } from "@/actions/physical-exam.action";
+import { PhysicalExamSystemField } from "./physical-exam-system-field";
+import { formatPeCodes } from "@/lib/physical-exam-utils";
 
 type LibraryItem = {
   id: string;
@@ -55,26 +48,47 @@ export function PhysicalExamEditForm({
 
   const form = useForm<PhysicalExaminationFormInput>({
     resolver: zodResolver(physicalExaminationSchema),
-    defaultValues: initialData || {
-      generalSurveyId: "",
-      generalSurveyRemarks: "",
-      heentId: "",
-      heentRemarks: "",
-      chestId: "",
-      chestRemarks: "",
-      heartId: "",
-      heartRemarks: "",
-      abdomenId: "",
-      abdomenRemarks: "",
-      guId: "",
-      guRemarks: "",
-      skinId: "",
-      skinRemarks: "",
-      neuroId: "",
-      neuroRemarks: "",
-      rectalId: "",
-      rectalRemarks: "",
-    },
+    defaultValues: initialData
+      ? {
+          generalSurveyId: formatPeCodes(initialData.generalSurveyId),
+          generalSurveyRemarks: initialData.generalSurveyRemarks || "",
+          heentId: formatPeCodes(initialData.heentId),
+          heentRemarks: initialData.heentRemarks || "",
+          chestId: formatPeCodes(initialData.chestId),
+          chestRemarks: initialData.chestRemarks || "",
+          heartId: formatPeCodes(initialData.heartId),
+          heartRemarks: initialData.heartRemarks || "",
+          abdomenId: formatPeCodes(initialData.abdomenId),
+          abdomenRemarks: initialData.abdomenRemarks || "",
+          guId: formatPeCodes(initialData.guId),
+          guRemarks: initialData.guRemarks || "",
+          skinId: formatPeCodes(initialData.skinId),
+          skinRemarks: initialData.skinRemarks || "",
+          neuroId: formatPeCodes(initialData.neuroId),
+          neuroRemarks: initialData.neuroRemarks || "",
+          rectalId: formatPeCodes(initialData.rectalId),
+          rectalRemarks: initialData.rectalRemarks || "",
+        }
+      : {
+          generalSurveyId: "",
+          generalSurveyRemarks: "",
+          heentId: "",
+          heentRemarks: "",
+          chestId: "",
+          chestRemarks: "",
+          heartId: "",
+          heartRemarks: "",
+          abdomenId: "",
+          abdomenRemarks: "",
+          guId: "",
+          guRemarks: "",
+          skinId: "",
+          skinRemarks: "",
+          neuroId: "",
+          neuroRemarks: "",
+          rectalId: "",
+          rectalRemarks: "",
+        },
   });
 
   const isDirty = form.formState.isDirty;
@@ -128,15 +142,24 @@ export function PhysicalExamEditForm({
         throw new Error(result.error);
       }
       form.reset({
-        generalSurveyId: "", generalSurveyRemarks: "",
-        heentId: "", heentRemarks: "",
-        chestId: "", chestRemarks: "",
-        heartId: "", heartRemarks: "",
-        abdomenId: "", abdomenRemarks: "",
-        guId: "", guRemarks: "",
-        skinId: "", skinRemarks: "",
-        neuroId: "", neuroRemarks: "",
-        rectalId: "", rectalRemarks: "",
+        generalSurveyId: "",
+        generalSurveyRemarks: "",
+        heentId: "",
+        heentRemarks: "",
+        chestId: "",
+        chestRemarks: "",
+        heartId: "",
+        heartRemarks: "",
+        abdomenId: "",
+        abdomenRemarks: "",
+        guId: "",
+        guRemarks: "",
+        skinId: "",
+        skinRemarks: "",
+        neuroId: "",
+        neuroRemarks: "",
+        rectalId: "",
+        rectalRemarks: "",
       });
       toast.success("Physical examination deleted successfully");
       if (onSuccess) onSuccess();
@@ -158,7 +181,7 @@ export function PhysicalExamEditForm({
   }, [saveRef, isDirty, form.handleSubmit]);
 
   const systems = [
-    { key: "generalSurvey", label: "General Survey", category: "GENSURVEY" },
+    { key: "generalSurvey", label: "General Survey", category: "GENSURVEY", isSingleSelect: true },
     { key: "heent", label: "Head, Eyes, Ears, Nose, Throat", category: "HEENT" },
     { key: "chest", label: "Chest/Lungs", category: "CHEST" },
     { key: "heart", label: "Cardiovascular System", category: "HEART" },
@@ -186,43 +209,30 @@ export function PhysicalExamEditForm({
             .sort((a, b) => a.description.localeCompare(b.description));
 
           return (
-            <div key={sys.key} className="space-y-3 rounded-lg border p-4">
-              <h4 className="font-semibold text-sm">{sys.label}</h4>
-              
-              <div className="grid gap-2">
-                <Label htmlFor={`${sys.key}Id`}>Status</Label>
+            <Controller
+              key={sys.key}
+              name={`${sys.key}Id` as keyof PhysicalExaminationFormInput}
+              control={form.control}
+              render={({ field }) => (
                 <Controller
-                  name={`${sys.key}Id` as keyof PhysicalExaminationFormInput}
+                  name={`${sys.key}Remarks` as keyof PhysicalExaminationFormInput}
                   control={form.control}
-                  render={({ field }) => (
-                    <Select
-                      onValueChange={field.onChange}
-                      value={field.value || ""}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select status..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {categoryOptions.map((opt) => (
-                          <SelectItem key={opt.id} value={opt.code}>
-                            {opt.description}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                  render={({ field: remarksField }) => (
+                    <PhysicalExamSystemField
+                      category={sys.category}
+                      label={sys.label}
+                      value={(field.value as string) || ""}
+                      onChange={(val) => field.onChange(val)}
+                      remarks={(remarksField.value as string) || ""}
+                      onRemarksChange={(val) => remarksField.onChange(val)}
+                      options={categoryOptions}
+                      isSingleSelect={sys.isSingleSelect}
+                      compact={false}
+                    />
                   )}
                 />
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor={`${sys.key}Remarks`}>Remarks (Optional)</Label>
-                <Input
-                  id={`${sys.key}Remarks`}
-                  {...form.register(`${sys.key}Remarks` as any)}
-                  placeholder="Additional details..."
-                />
-              </div>
-            </div>
+              )}
+            />
           );
         })}
       </div>
@@ -230,11 +240,18 @@ export function PhysicalExamEditForm({
       {!saveRef && (
         <div className="flex justify-between items-center">
           {examId ? (
-            <Button type="button" variant="destructive" onClick={handleDelete} disabled={isDeleting || form.formState.isSubmitting}>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={isDeleting || form.formState.isSubmitting}
+            >
               {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Delete Record
             </Button>
-          ) : <div></div>}
+          ) : (
+            <div />
+          )}
           <Button type="submit" disabled={form.formState.isSubmitting || !isDirty}>
             {form.formState.isSubmitting ? (
               <>
@@ -253,13 +270,18 @@ export function PhysicalExamEditForm({
       {/* Expose delete button even when saveRef is used if they need to delete from a parent component that only handles saves */}
       {saveRef && examId && (
         <div className="flex justify-start pt-4 border-t border-slate-100 dark:border-slate-800">
-          <Button type="button" variant="destructive" size="sm" onClick={handleDelete} disabled={isDeleting || form.formState.isSubmitting}>
+          <Button
+            type="button"
+            variant="destructive"
+            size="sm"
+            onClick={handleDelete}
+            disabled={isDeleting || form.formState.isSubmitting}
+          >
             {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             Delete This Record
           </Button>
         </div>
       )}
-
     </form>
   );
 }

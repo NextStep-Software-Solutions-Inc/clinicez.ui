@@ -10,6 +10,7 @@ import { calculateDetailedAge, formatBloodType } from "@/lib/utils";
 import type { ClinicPatientListItem } from "@/types/clinic-patients-v2.types";
 import { PatientAIInsightButton } from "./PatientAIInsightButton";
 import { formatDistanceToNow } from "date-fns";
+import { formatPhilHealthPinDisplay, resolvePatientPhilHealthPin } from "@/lib/philhealth-pin-search";
 
 interface PatientCardProps {
   patient: ClinicPatientListItem;
@@ -99,6 +100,8 @@ export const PatientCard = memo(function PatientCard({
   const employmentRecord = patient.Patient.UserEmployments?.[0];
   const studentId = studentRecord?.studentId;
   const employeeId = employmentRecord?.employeeId;
+  const rawPhilHealthPin = resolvePatientPhilHealthPin(patient);
+  const philHealthPin = rawPhilHealthPin ? formatPhilHealthPinDisplay(rawPhilHealthPin) : null;
 
   // Student affiliation: Program / Major, College, Department, Year Level
   const studentAffiliation = [
@@ -158,8 +161,19 @@ export const PatientCard = memo(function PatientCard({
                   </Badge>
                 )}
               </div>
-              {(studentId || employeeId) && (
+              {(philHealthPin || studentId || employeeId) && (
                 <div className="flex flex-col gap-1 mt-1.5">
+                  {philHealthPin && (
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <Badge
+                        variant="outline"
+                        className="text-[10px] px-1.5 py-0 font-medium bg-emerald-50/80 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800 shrink-0"
+                        title="PhilHealth Identification Number (PIN)"
+                      >
+                        PIN: {philHealthPin}
+                      </Badge>
+                    </div>
+                  )}
                   {studentId && (
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <Badge
@@ -299,8 +313,17 @@ export const PatientCard = memo(function PatientCard({
               </Badge>
             )}
           </div>
-          {(studentId || employeeId) && (
+          {(philHealthPin || studentId || employeeId) && (
             <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+              {philHealthPin && (
+                <Badge
+                  variant="outline"
+                  className="text-[10px] px-1.5 py-0 font-medium bg-emerald-50/80 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800 shrink-0"
+                  title="PhilHealth Identification Number (PIN)"
+                >
+                  PIN: {philHealthPin}
+                </Badge>
+              )}
               {studentId && (
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <Badge

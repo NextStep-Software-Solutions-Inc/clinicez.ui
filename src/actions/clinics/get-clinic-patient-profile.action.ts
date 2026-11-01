@@ -58,7 +58,7 @@ export async function getClinicPatientProfileAction({
         });
 
         if (!clinicPatientRecord) {
-            throw new Error("Patient is not a member of this clinic");
+            return null;
         }
 
         // Fetch core patient record
@@ -186,12 +186,10 @@ export async function getClinicPatientProfileAction({
                 where: { userId: patient.id, isActive: true },
                 orderBy: { createdAt: "desc" },
             }),
-            prisma.userVaccination.findMany({
+            prisma.patientImmunization.findMany({
                 where: { userId: patient.id, isActive: true, deletedAt: null },
                 include: {
-                    Vaccine: { select: { name: true } },
-                    Dose: { select: { dose: true } },
-                    Route: { select: { route: true } },
+                    PhilHealthImmunization: { select: { name: true, code: true } },
                 },
                 orderBy: { dateGiven: "desc" },
                 take: 20,
@@ -470,12 +468,14 @@ export async function getClinicPatientProfileAction({
             // Vaccinations
             userVaccinations: vaccinations.map((v) => ({
                 id: v.id,
-                vaccine: v.Vaccine.name,
-                dose: v.Dose.dose,
-                route: v.Route.route,
+                vaccine: v.vaccineName,
+                dose: v.doseNumber,
+                route: v.route || 'N/A',
                 dateGiven: v.dateGiven.toISOString(),
                 notes: v.notes,
                 administeredBy: v.administeredBy,
+                category: v.category,
+                code: v.code,
             })),
 
             // Disabilities
@@ -579,6 +579,6 @@ export async function getClinicPatientProfileAction({
         } as SerializedPatientHealthRecordsResponse;
     } catch (error) {
         console.error("[GET_CLINIC_PATIENT_PROFILE_ACTION]", error);
-        return null;
+        throw error;
     }
 }

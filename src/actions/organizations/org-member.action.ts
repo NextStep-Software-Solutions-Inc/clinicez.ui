@@ -15,6 +15,7 @@ import { withErrorHandling } from "@/lib/with-error-handling";
 import { isSuperAdminAction } from "@actions/super-admin/admin-check.action";
 import { hasOrgPermissionAction } from "@actions/permission.action";
 import { createNotification } from "@/actions/notifications/notification.action";
+import { buildUserPhilHealthPinOrFilters } from "@/lib/philhealth-pin-search";
 
 export const isOrgHealthcareProviderAction = async (userId: string, orgUid: string) => {
   const orgMember = await prisma.organizationMember.findFirst({
@@ -104,6 +105,7 @@ export const getOrgMembersAction = withErrorHandling(
               ...(userId ? { userId } : {}),
               ...(searchKey ? {
                 OR: [
+                  ...buildUserPhilHealthPinOrFilters(searchKey, clinicUid ? { clinicUid } : undefined),
                   {
                     firstName: {
                       contains: searchKey,
@@ -352,6 +354,7 @@ export const getOrgMembersAction = withErrorHandling(
               ...(userId ? { userId } : {}),
               ...(searchKey ? {
                 OR: [
+                  ...buildUserPhilHealthPinOrFilters(searchKey, clinicUid ? { clinicUid } : undefined),
                   {
                     firstName: {
                       contains: searchKey,

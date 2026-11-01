@@ -1,3 +1,5 @@
+process.env.BABEL_7_TO_8_DANGEROUSLY_DISABLE_VERSION_CHECK = "true";
+
 import withPWA from "@ducanh2912/next-pwa";
 
 const withPWAConfig = withPWA({

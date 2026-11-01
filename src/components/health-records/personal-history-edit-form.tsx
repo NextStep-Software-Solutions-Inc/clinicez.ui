@@ -106,7 +106,6 @@ export function PersonalHistoryEditForm({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="_empty">Prefer not to answer</SelectItem>
-              <SelectItem value="NOT_APPLICABLE">{personalHistoryLabels.smokingStatus.NOT_APPLICABLE}</SelectItem>
               <SelectItem value="NEVER">{personalHistoryLabels.smokingStatus.NEVER}</SelectItem>
               <SelectItem value="FORMER">{personalHistoryLabels.smokingStatus.FORMER}</SelectItem>
               <SelectItem value="CURRENT">{personalHistoryLabels.smokingStatus.CURRENT}</SelectItem>
@@ -126,7 +125,7 @@ export function PersonalHistoryEditForm({
               type="number"
               min="0"
               max="100"
-              value={formData.numberOfPacksPerYear || ''}
+              value={formData.numberOfPacksPerYear ?? ''}
               onChange={(e) => handleFieldChange('numberOfPacksPerYear', e.target.value ? parseInt(e.target.value, 10) : null)}
               placeholder="e.g., 10"
             />
@@ -148,7 +147,6 @@ export function PersonalHistoryEditForm({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="_empty">Prefer not to answer</SelectItem>
-              <SelectItem value="NOT_APPLICABLE">{personalHistoryLabels.alcoholStatus.NOT_APPLICABLE}</SelectItem>
               <SelectItem value="NEVER">{personalHistoryLabels.alcoholStatus.NEVER}</SelectItem>
               <SelectItem value="OCCASIONAL">{personalHistoryLabels.alcoholStatus.OCCASIONAL}</SelectItem>
               <SelectItem value="REGULAR">{personalHistoryLabels.alcoholStatus.REGULAR}</SelectItem>
@@ -158,7 +156,7 @@ export function PersonalHistoryEditForm({
         </FormField>
 
         {/* Conditional: Show bottle count for active drinkers */}
-        {formData.alcoholStatus && formData.alcoholStatus !== 'NEVER' && formData.alcoholStatus !== 'NOT_APPLICABLE' && (
+        {formData.alcoholStatus && formData.alcoholStatus !== 'NEVER' && (
           <FormField
             label="Bottles per Day"
             htmlFor="numberOfBottlesPerDay"
@@ -170,7 +168,7 @@ export function PersonalHistoryEditForm({
               step="0.1"
               min="0"
               max="10"
-              value={formData.numberOfBottlesPerDay || ''}
+              value={formData.numberOfBottlesPerDay ?? ''}
               onChange={(e) => handleFieldChange('numberOfBottlesPerDay', e.target.value ? parseFloat(e.target.value) : null)}
               placeholder="e.g., 2"
             />
@@ -192,7 +190,6 @@ export function PersonalHistoryEditForm({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="_empty">Prefer not to answer</SelectItem>
-              <SelectItem value="NOT_APPLICABLE">{personalHistoryLabels.illicitDrugUse.NOT_APPLICABLE}</SelectItem>
               <SelectItem value="NEVER">{personalHistoryLabels.illicitDrugUse.NEVER}</SelectItem>
               <SelectItem value="FORMER">{personalHistoryLabels.illicitDrugUse.FORMER}</SelectItem>
               <SelectItem value="CURRENT">{personalHistoryLabels.illicitDrugUse.CURRENT}</SelectItem>
@@ -215,7 +212,6 @@ export function PersonalHistoryEditForm({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="_empty">Prefer not to answer</SelectItem>
-              <SelectItem value="NOT_APPLICABLE">{personalHistoryLabels.sexuallyActive.NOT_APPLICABLE}</SelectItem>
               <SelectItem value="YES">{personalHistoryLabels.sexuallyActive.YES}</SelectItem>
               <SelectItem value="NO">{personalHistoryLabels.sexuallyActive.NO}</SelectItem>
               <SelectItem value="INACTIVE">{personalHistoryLabels.sexuallyActive.INACTIVE}</SelectItem>

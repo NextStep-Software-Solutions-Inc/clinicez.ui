@@ -4,13 +4,13 @@ import React, { useState, useEffect, useMemo } from 'react'
 import { savePhysicalExaminationAction, deletePhysicalExaminationAction } from '@/actions/physical-exam.action'
 import { getPhysicalExamLibrariesAction } from '@/actions/super-admin/physical-exam-library.action'
 import { getActionErrorMessage } from '@/lib/action-error'
-import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import { Loader2, Trash2, Save } from 'lucide-react'
 import type { PhysicalExamLibrary } from '@prisma/client'
 import type { PhysicalExaminationFormInput } from '@/schemas/physical-examination-schema'
+import { PhysicalExamSystemField } from '@/components/health-records/physical-exam-system-field'
+import { formatPeCodes } from '@/lib/physical-exam-utils'
 
 export interface PhysicalExamInlineFormProps {
   patientId: number
@@ -36,23 +36,23 @@ export function PhysicalExamInlineForm({
   const initialFormValues = useMemo(() => {
     const data = currentData || {}
     return {
-      generalSurveyId: data.generalSurveyId || '',
+      generalSurveyId: formatPeCodes(data.generalSurveyId),
       generalSurveyRemarks: data.generalSurveyRemarks || '',
-      heentId: data.heentId || '',
+      heentId: formatPeCodes(data.heentId),
       heentRemarks: data.heentRemarks || '',
-      chestId: data.chestId || '',
+      chestId: formatPeCodes(data.chestId),
       chestRemarks: data.chestRemarks || '',
-      heartId: data.heartId || '',
+      heartId: formatPeCodes(data.heartId),
       heartRemarks: data.heartRemarks || '',
-      abdomenId: data.abdomenId || '',
+      abdomenId: formatPeCodes(data.abdomenId),
       abdomenRemarks: data.abdomenRemarks || '',
-      guId: data.guId || '',
+      guId: formatPeCodes(data.guId),
       guRemarks: data.guRemarks || '',
-      skinId: data.skinId || '',
+      skinId: formatPeCodes(data.skinId),
       skinRemarks: data.skinRemarks || '',
-      neuroId: data.neuroId || '',
+      neuroId: formatPeCodes(data.neuroId),
       neuroRemarks: data.neuroRemarks || '',
-      rectalId: data.rectalId || '',
+      rectalId: formatPeCodes(data.rectalId),
       rectalRemarks: data.rectalRemarks || '',
     }
   }, [currentData])
@@ -144,7 +144,7 @@ export function PhysicalExamInlineForm({
   }, [saveRef, formData, hasChanges])
 
   const systems = [
-    { key: 'generalSurvey', label: 'General Survey', category: 'GENSURVEY' },
+    { key: 'generalSurvey', label: 'General Survey', category: 'GENSURVEY', isSingleSelect: true },
     { key: 'heent', label: 'Head, Eyes, Ears, Nose, Throat', category: 'HEENT' },
     { key: 'chest', label: 'Chest/Lungs', category: 'CHEST' },
     { key: 'heart', label: 'Cardiovascular System', category: 'HEART' },
@@ -172,40 +172,18 @@ export function PhysicalExamInlineForm({
             .sort((a, b) => a.description.localeCompare(b.description))
 
           return (
-            <div key={sys.key} className="space-y-3 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 bg-white/40 dark:bg-slate-900/10 shadow-sm">
-              <h4 className="font-bold text-xs text-slate-500 uppercase tracking-wider">{sys.label}</h4>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Status</label>
-                  <Select
-                    value={formData[`${sys.key}Id` as keyof PhysicalExaminationFormInput] || ''}
-                    onValueChange={(val) => handleFieldChange(`${sys.key}Id` as keyof PhysicalExaminationFormInput, val)}
-                  >
-                    <SelectTrigger className="h-8 text-xs focus:ring-teal-500">
-                      <SelectValue placeholder="Select status..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categoryOptions.map((opt) => (
-                        <SelectItem key={opt.id} value={opt.code}>
-                          {opt.description}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Remarks</label>
-                  <Input
-                    value={formData[`${sys.key}Remarks` as keyof PhysicalExaminationFormInput] || ''}
-                    onChange={(e) => handleFieldChange(`${sys.key}Remarks` as keyof PhysicalExaminationFormInput, e.target.value)}
-                    className="h-8 text-xs focus-visible:ring-teal-500"
-                    placeholder="Additional details..."
-                  />
-                </div>
-              </div>
-            </div>
+            <PhysicalExamSystemField
+              key={sys.key}
+              category={sys.category}
+              label={sys.label}
+              value={(formData[`${sys.key}Id` as keyof PhysicalExaminationFormInput] as string) || ''}
+              onChange={(val) => handleFieldChange(`${sys.key}Id` as keyof PhysicalExaminationFormInput, val)}
+              remarks={(formData[`${sys.key}Remarks` as keyof PhysicalExaminationFormInput] as string) || ''}
+              onRemarksChange={(val) => handleFieldChange(`${sys.key}Remarks` as keyof PhysicalExaminationFormInput, val)}
+              options={categoryOptions}
+              isSingleSelect={sys.isSingleSelect}
+              compact={true}
+            />
           )
         })}
       </div>

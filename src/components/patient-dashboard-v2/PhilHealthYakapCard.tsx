@@ -178,15 +178,32 @@ export function PhilHealthYakapCard({ clinicPatientId, isClinicMode, philHealthR
           </div>
         </div>
 
-        <div>
+        <div className="flex items-center gap-2">
           {isLoading ? (
             <Badge variant="outline" className="text-xs font-medium py-1 px-2.5">
               <Loader2 className="w-3 h-3 animate-spin mr-1" /> Checking...
             </Badge>
           ) : enlistment ? (
-            <Badge className="bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800 text-xs font-semibold py-1 px-2.5 flex items-center gap-1.5">
-              <CheckCircle2 className="w-3.5 h-3.5" /> ENLISTED ({enlistment.year})
-            </Badge>
+            <>
+              <Badge className="bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800 text-xs font-semibold py-1 px-2.5 flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5" /> ENLISTED ({enlistment.year})
+              </Badge>
+              {enlistment.isProfileTransmitted ? (
+                <Badge
+                  className="bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800 text-xs font-semibold py-1 px-2.5 flex items-center gap-1.5"
+                  title={`Transmittal No: ${enlistment.profileTransmittalNo || "N/A"}`}
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5" /> FPE TRANSMITTED
+                </Badge>
+              ) : enlistment.profilingTransNo ? (
+                <Badge
+                  variant="outline"
+                  className="text-amber-700 bg-amber-50 dark:bg-amber-950/50 dark:text-amber-300 border-amber-200 dark:border-amber-800 text-xs font-semibold py-1 px-2.5"
+                >
+                  FPE PENDING TRANSMITTAL
+                </Badge>
+              ) : null}
+            </>
           ) : (
             <Badge variant="secondary" className="text-amber-700 bg-amber-50 dark:bg-amber-950/50 dark:text-amber-300 border-amber-200 dark:border-amber-800 text-xs font-semibold py-1 px-2.5">
               PENDING ENLISTMENT
@@ -196,7 +213,7 @@ export function PhilHealthYakapCard({ clinicPatientId, isClinicMode, philHealthR
       </div>
 
       {/* Details Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
         <div className="space-y-1">
           <label className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
             Member Type
@@ -250,6 +267,30 @@ export function PhilHealthYakapCard({ clinicPatientId, isClinicMode, philHealthR
           </label>
           <div className="text-xs font-semibold font-mono text-indigo-600 dark:text-indigo-400 truncate">
             {enlistment?.profilingTransNo || '—'}
+          </div>
+        </div>
+
+        <div className="space-y-1">
+          <label className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
+            FPE Transmittal Status
+          </label>
+          <div className="text-xs font-semibold truncate">
+            {enlistment?.isProfileTransmitted ? (
+              <span
+                className="text-emerald-600 dark:text-emerald-400 font-mono"
+                title={enlistment?.profileTransmittedAt ? `Transmitted at ${new Date(enlistment.profileTransmittedAt).toLocaleString()}` : ""}
+              >
+                Transmitted: {enlistment.profileTransmittalNo || "Yes"}
+              </span>
+            ) : enlistment?.profilingTransNo ? (
+              <span className="text-amber-600 dark:text-amber-400 font-medium">
+                Pending Transmittal
+              </span>
+            ) : (
+              <span className="text-slate-400 dark:text-slate-500 italic">
+                Not Profiled
+              </span>
+            )}
           </div>
         </div>
       </div>

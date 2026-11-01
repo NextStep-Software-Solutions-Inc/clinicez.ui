@@ -9,6 +9,7 @@ import { getCachedSession } from "@actions/session.action";
 import prisma from "@lib/prisma";
 import { Prisma } from "@prisma/client";
 import { formatKonsultaHciNumber } from "@/lib/format-sequence";
+import { buildUserPhilHealthPinOrFilters, extractPhilHealthPinSearchTerms } from "@/lib/philhealth-pin-search";
 import { getNextSequenceNumber } from "@/lib/sequence-generator";
 import {
     resolveMappedDiagnosticsForConsultations,
@@ -25,6 +26,7 @@ import {
     type StructuredKonsultaBatchDeficiency,
 } from "@/lib/konsulta-batch-deficiencies";
 import { withErrorHandling } from "@/lib/with-error-handling";
+import { resolvePhilHealthEnlistDate } from "@/lib/philhealth-yakap/date-utils";
 import {
     buildPcbXml,
     generateTransmittalNumber,
@@ -321,7 +323,7 @@ const KONSULTA_PATIENT_SELECT = {
     },
 } satisfies Prisma.ClinicPatientSelect;
 
-function buildPatientSearch(search: string): Prisma.UserWhereInput | undefined {
+function buildPatientSearch(search: string, clinicId?: number): Prisma.UserWhereInput | undefined {
     const q = search.trim();
     if (!q) return undefined;
     return {
@@ -329,6 +331,7 @@ function buildPatientSearch(search: string): Prisma.UserWhereInput | undefined {
             { firstName: { contains: q, mode: "insensitive" } },
             { lastName: { contains: q, mode: "insensitive" } },
             { middleName: { contains: q, mode: "insensitive" } },
+            ...buildUserPhilHealthPinOrFilters(q, clinicId !== undefined ? { clinicId } : undefined),
             {
                 PhilHealthRecords: {
                     some: { deletedAt: null, pin: { contains: q, mode: "insensitive" } },
@@ -384,7 +387,7 @@ export const getAllClinicPatientsWithPhilHealthStatusAction = withErrorHandling(
         const clinicId = await resolveClinicId(clinicUid);
         const effYear = currentEffYear();
         const page = normalizePage(skip, take);
-        const patientSearch = buildPatientSearch(search);
+        const patientSearch = buildPatientSearch(search, clinicId);
         const registrationFilter: Prisma.ClinicPatientWhereInput =
             kind === "ENROLLED"
                 ? { konsultaEffYear: effYear, konsultaRegistrationStatus: "REGISTERED" }
@@ -1890,6 +1893,7 @@ export const searchPrincipalMemberAction = withErrorHandling(
                 memberType: "MM",
                 OR: [
                     { pin: { contains: q, mode: "insensitive" } },
+                    ...extractPhilHealthPinSearchTerms(q).map((term) => ({ pin: { contains: term, mode: "insensitive" as const } })),
                     { User: { firstName: { contains: q, mode: "insensitive" } } },
                     { User: { lastName: { contains: q, mode: "insensitive" } } },
                     { User: { middleName: { contains: q, mode: "insensitive" } } },
@@ -1908,6 +1912,7 @@ export const searchPrincipalMemberAction = withErrorHandling(
                 konsultaPatientType: "MM",
                 OR: [
                     { konsultaPatientPin: { contains: q, mode: "insensitive" } },
+                    ...extractPhilHealthPinSearchTerms(q).map((term) => ({ konsultaPatientPin: { contains: term, mode: "insensitive" as const } })),
                     { Patient: { firstName: { contains: q, mode: "insensitive" } } },
                     { Patient: { lastName: { contains: q, mode: "insensitive" } } },
                 ],
@@ -2623,6 +2628,7 @@ export const deleteKonsultaBatchAction = withErrorHandling(
 
 /** Map Prisma BloodType enum to PhilHealth display string (e.g. "B+"). */
 function mapBloodType(bloodType: string | null | undefined): string {
+    if (!bloodType) return "";
     const map: Record<string, string> = {
         A_POSITIVE: "A+",
         A_NEGATIVE: "A-",
@@ -2632,10 +2638,16 @@ function mapBloodType(bloodType: string | null | undefined): string {
         AB_NEGATIVE: "AB-",
         O_POSITIVE: "O+",
         O_NEGATIVE: "O-",
-        RH_POSITIVE: "Rh+",
-        RH_NEGATIVE: "Rh-",
+        "A+": "A+",
+        "A-": "A-",
+        "B+": "B+",
+        "B-": "B-",
+        "AB+": "AB+",
+        "AB-": "AB-",
+        "O+": "O+",
+        "O-": "O-",
     };
-    return bloodType ? (map[bloodType] ?? "") : "";
+    return map[bloodType.trim().toUpperCase()] ?? "";
 }
 
 function mapSmokerStatus(status: string | null | undefined): KonsultaYN {
@@ -2788,7 +2800,11 @@ export const generateBatchXmlAction = withErrorHandling(
                 },
                 include: {
                     ClinicPatient: {
-                        select: { patientId: true },
+                        select: {
+                            patientId: true,
+                            konsultaRegisteredAt: true,
+                            konsultaRegistrationResult: true,
+                        },
                     },
                 },
             });
@@ -2813,6 +2829,12 @@ export const generateBatchXmlAction = withErrorHandling(
 
                     const principal = patientType === "DD" ? principalMap.get(memberPin.trim()) : null;
                     const snap = snapshotMapByPatientId.get(entry.patientUserId);
+
+                    const resolvedEnlistDate = resolvePhilHealthEnlistDate(
+                        snap?.ClinicPatient,
+                        { patientPin: entry.philHealthPin, memberPin: memberPin },
+                        transDate
+                    );
 
                     const isSnapSameAsPatient = snap && (
                         snap.memberFname?.trim().toUpperCase() === p.firstName?.trim().toUpperCase() &&
@@ -2875,7 +2897,7 @@ export const generateBatchXmlAction = withErrorHandling(
                             ),
                         pEffYear: effYear,
                         pEnlistStat: "1",
-                        pEnlistDate: transDate,
+                        pEnlistDate: resolvedEnlistDate,
                         pPackageType: "K",
                         pMemPin: pMemPinFinal,
                         pMemFname: pMemFname,
@@ -2930,15 +2952,19 @@ export const generateBatchXmlAction = withErrorHandling(
                 }
                 const key = domainKey.toLowerCase().replace(/\.xlsx$/, "").trim();
 
+                const finalCode =
+                    key === "lib_heart" && mappedCode === "2" ? "5" :
+                    key === "lib_neuro" && mappedCode === "3" ? "6" : mappedCode;
+
                 return {
-                    pSkinId: key === "lib_skin_extremities" ? mappedCode : "",
-                    pHeentId: key === "lib_heent" ? mappedCode : "",
-                    pChestId: key === "lib_chest" ? mappedCode : "",
-                    pHeartId: key === "lib_heart" ? mappedCode : "",
-                    pAbdomenId: key === "lib_abdomen" ? mappedCode : "",
-                    pNeuroId: key === "lib_neuro" ? mappedCode : "",
-                    pGuId: key === "lib_genitourinary" ? mappedCode : "",
-                    pRectalId: key === "lib_digital_rectal" ? mappedCode : "",
+                    pSkinId: key === "lib_skin_extremities" ? finalCode : "",
+                    pHeentId: key === "lib_heent" ? finalCode : "",
+                    pChestId: key === "lib_chest" ? finalCode : "",
+                    pHeartId: key === "lib_heart" ? finalCode : "",
+                    pAbdomenId: key === "lib_abdomen" ? finalCode : "",
+                    pNeuroId: key === "lib_neuro" ? finalCode : "",
+                    pGuId: key === "lib_genitourinary" ? finalCode : "",
+                    pRectalId: key === "lib_digital_rectal" ? finalCode : "",
                     pReportStatus: "U" as const,
                     pDeficiencyRemarks: "",
                 };
@@ -3478,13 +3504,13 @@ export const generateBatchXmlAction = withErrorHandling(
 
                     // PREGHIST (only applicable for female patients)
                     isPreghApplicable:
-                        isFemale && ob != null && (ob.gravidity != null || ob.parity != null)
+                        isFemale && ob != null && ((ob.gravidity != null && ob.gravidity > 0) || (ob.parity != null && ob.parity > 0))
                             ? "Y"
                             : "N",
-                    pregCnt: ob?.gravidity != null ? String(ob.gravidity) : "",
-                    deliveryCnt: ob?.parity != null ? String(ob.parity) : "",
-                    deliveryTyp: !isFemale
-                        ? "X"
+                    pregCnt: isFemale && ob?.gravidity != null && ob.gravidity > 0 ? String(ob.gravidity) : "",
+                    deliveryCnt: isFemale && ob?.parity != null && ob.parity > 0 ? String(ob.parity) : "",
+                    deliveryTyp: !isFemale || (ob?.gravidity == null || ob.gravidity === 0)
+                        ? ""
                         : ob?.typeOfDelivery === "VAGINAL"
                             ? "N"
                             : ob?.typeOfDelivery === "CESAREAN"
@@ -3492,14 +3518,14 @@ export const generateBatchXmlAction = withErrorHandling(
                                 : ob?.typeOfDelivery === "MIXED"
                                     ? "B"
                                     : "X",
-                    fullTermCnt: ob?.fullTerm != null ? String(ob.fullTerm) : "",
-                    prematureCnt: ob?.premature != null ? String(ob.premature) : "",
-                    abortionCnt: ob?.abortion != null ? String(ob.abortion) : "",
+                    fullTermCnt: isFemale && ob?.fullTerm != null && ob.fullTerm > 0 ? String(ob.fullTerm) : "",
+                    prematureCnt: isFemale && ob?.premature != null && ob.premature > 0 ? String(ob.premature) : "",
+                    abortionCnt: isFemale && ob?.abortion != null && ob.abortion > 0 ? String(ob.abortion) : "",
                     livChildrenCnt:
-                        ob?.livingChildren != null ? String(ob.livingChildren) : "",
+                        isFemale && ob?.livingChildren != null && ob.livingChildren > 0 ? String(ob.livingChildren) : "",
                     wPregIndhyp:
-                        ob?.hasPreEclampsia != null ? (ob.hasPreEclampsia ? "Y" : "N") : "",
-                    wFamPlan: "N",
+                        isFemale && ob?.hasPreEclampsia != null && ((ob.gravidity != null && ob.gravidity > 0) || (ob.parity != null && ob.parity > 0)) ? (ob.hasPreEclampsia ? "Y" : "N") : "",
+                    wFamPlan: isFemale && ((ob?.gravidity != null && ob.gravidity > 0) || (ob?.parity != null && ob.parity > 0)) ? "N" : "",
 
                     // MEDHISTS + MHSPECIFICS: use resolved code if mapped, otherwise use ""
                     medHistItems:

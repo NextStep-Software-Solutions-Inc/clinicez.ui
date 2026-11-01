@@ -135,6 +135,9 @@ export const getPatientConsultationDetailAction = withErrorHandling(
         caseNumber: true,
         soapTransNo: true,
         isPhilHealthKonsulta: true,
+        isKonsultaTransmitted: true,
+        konsultaTransmittedAt: true,
+        konsultaTransmittalNo: true,
         konsultaAtcCode: true,
         konsultaIsWalkedIn: true,
         konsultaCoPay: true,
@@ -225,7 +228,12 @@ export const getPatientConsultationDetailAction = withErrorHandling(
             },
             Medicines: {
               where: { isActive: true },
-              select: { id: true, name: true, brandName: true, genericName: true, dosage: true, frequency: true, unit: true, duration: true, qty: true, notes: true },
+              select: {
+                id: true, name: true, brandName: true, genericName: true,
+                dosage: true, frequency: true, unit: true, duration: true, qty: true, notes: true,
+                PhilHealthData: true,
+                MedicineDispenseRecord: true,
+              },
             },
           },
         },
@@ -404,7 +412,12 @@ export const getConsultationPrescriptionsForTicketAction = withErrorHandling(
         },
         Medicines: {
           where: { isActive: true },
-          select: { id: true, name: true, brandName: true, genericName: true, dosage: true, frequency: true, unit: true, duration: true, qty: true, notes: true },
+          select: {
+            id: true, name: true, brandName: true, genericName: true,
+            dosage: true, frequency: true, unit: true, duration: true, qty: true, notes: true,
+            PhilHealthData: true,
+            MedicineDispenseRecord: true,
+          },
         },
       },
     });
@@ -464,6 +477,7 @@ export const getConsultationDiagnosticsForTicketAction = withErrorHandling(
  */
 const PAGE_SIZE = 20;
 export type GetClinicConsultationQueue = Awaited<ReturnType<typeof getClinicConsultationQueueAction>>;
+export type GetClinicConsultations = GetClinicConsultationQueue;
 export const getClinicConsultationQueueAction = withErrorHandling(
   async ({
     clinicUid,
@@ -513,6 +527,9 @@ export const getClinicConsultationQueueAction = withErrorHandling(
           caseNumber: true,
           soapTransNo: true,
           isPhilHealthKonsulta: true,
+          isKonsultaTransmitted: true,
+          konsultaTransmittedAt: true,
+          konsultaTransmittalNo: true,
           konsultaAtcCode: true,
           konsultaIsWalkedIn: true,
           konsultaCoPay: true,
@@ -575,10 +592,15 @@ export const getClinicConsultationQueueAction = withErrorHandling(
                       suffix: true,
                       dob: true,
                       gender: true,
+                      PhilHealthRecords: {
+                        where: { isActive: true, deletedAt: null },
+                        take: 1,
+                        select: { pin: true, principalMemberPin: true },
+                      },
                       ClinicPatients: {
                         where: { Clinic: { clinicUid }, isActive: true, deletedAt: null },
                         take: 1,
-                        select: { id: true },
+                        select: { id: true, konsultaPatientPin: true, konsultaMemberPin: true },
                       },
                     },
                   },
@@ -589,8 +611,15 @@ export const getClinicConsultationQueueAction = withErrorHandling(
           ClinicPatient: {
             select: {
               id: true,
+              konsultaPatientPin: true,
+              konsultaMemberPin: true,
               Patient: {
                 select: {
+                  PhilHealthRecords: {
+                    where: { isActive: true, deletedAt: null },
+                    take: 1,
+                    select: { pin: true, principalMemberPin: true },
+                  },
                   id: true,
                   userId: true,
                   firstName: true,
@@ -618,6 +647,7 @@ export const getClinicConsultationQueueAction = withErrorHandling(
     };
   }
 );
+export const getClinicConsultationsAction = getClinicConsultationQueueAction;
 
 export type GetClinicSystemsForPatient = Awaited<ReturnType<typeof getClinicSystemsAction>>;
 export const getClinicSystemsAction = withErrorHandling(async (clinicUid: string) => {

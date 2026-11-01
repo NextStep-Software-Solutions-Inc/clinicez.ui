@@ -253,14 +253,28 @@ export default function ConsultationWorkspace({
                 </span>
               )}
             </div>
-            {canBeResolved && myHPs.length > 0 && (
-              <div className="flex items-center gap-1.5 shrink-0">
-                {consultation.isPhilHealthKonsulta && (
-                  consultation.soapTransNo ? (
-                    <Badge variant="outline" className="h-8 text-[10px] sm:text-xs font-mono bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950/40 dark:text-teal-400 dark:border-teal-800">
-                      SOAP: {consultation.soapTransNo}
+            <div className="flex items-center gap-1.5 shrink-0">
+              {consultation.isPhilHealthKonsulta && (
+                consultation.soapTransNo ? (
+                  consultation.isKonsultaTransmitted ? (
+                    <Badge
+                      variant="outline"
+                      className="h-8 text-[10px] sm:text-xs font-mono bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800 flex items-center gap-1.5"
+                      title={`Transmitted in ${consultation.konsultaTransmittalNo ?? "Batch"}${consultation.konsultaTransmittedAt ? ` on ${new Date(consultation.konsultaTransmittedAt).toLocaleDateString()}` : ""}`}
+                    >
+                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                      SOAP Transmitted: {consultation.konsultaTransmittalNo || consultation.soapTransNo}
                     </Badge>
                   ) : (
+                    <Badge
+                      variant="outline"
+                      className="h-8 text-[10px] sm:text-xs font-mono bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950/40 dark:text-teal-400 dark:border-teal-800"
+                    >
+                      SOAP: {consultation.soapTransNo}
+                    </Badge>
+                  )
+                ) : (
+                  canBeResolved && myHPs.length > 0 && (
                     <Button
                       size="sm"
                       variant="outline"
@@ -272,39 +286,43 @@ export default function ConsultationWorkspace({
                       {generatingYakap ? "Generating..." : "Generate Yakap No."}
                     </Button>
                   )
-                )}
-                {(() => {
-                  const isKonsultaBlocked =
-                    (consultation.isPhilHealthKonsulta) &&
-                    konsultaProfilingComplete === false;
-                  return (
+                )
+              )}
+              {canBeResolved && myHPs.length > 0 && (
+                <>
+                  {(() => {
+                    const isKonsultaBlocked =
+                      (consultation.isPhilHealthKonsulta) &&
+                      konsultaProfilingComplete === false;
+                    return (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-1.5 h-8 text-xs border-emerald-300 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 dark:border-emerald-700 dark:text-emerald-400 dark:hover:bg-emerald-950/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled={resolving || dropping || generatingYakap || isKonsultaBlocked}
+                        title={isKonsultaBlocked ? "PhilHealth profiling is incomplete — complete all required fields first" : undefined}
+                        onClick={handleResolve}
+                      >
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        {resolving ? "Resolving…" : "Resolve"}
+                      </Button>
+                    );
+                  })()}
+                  {!showDropForm && (
                     <Button
                       size="sm"
                       variant="outline"
-                      className="gap-1.5 h-8 text-xs border-emerald-300 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 dark:border-emerald-700 dark:text-emerald-400 dark:hover:bg-emerald-950/30 disabled:opacity-50 disabled:cursor-not-allowed"
-                      disabled={resolving || dropping || generatingYakap || isKonsultaBlocked}
-                      title={isKonsultaBlocked ? "PhilHealth profiling is incomplete — complete all required fields first" : undefined}
-                      onClick={handleResolve}
+                      className="gap-1.5 h-8 text-xs border-gray-300 text-gray-600 hover:bg-gray-100 hover:text-gray-800 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-800/30"
+                      disabled={resolving || dropping || generatingYakap}
+                      onClick={() => setShowDropForm(true)}
                     >
-                      <CheckCircle2 className="h-3.5 w-3.5" />
-                      {resolving ? "Resolving…" : "Resolve"}
+                      <Ban className="h-3.5 w-3.5" />
+                      Drop
                     </Button>
-                  );
-                })()}
-                {!showDropForm && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="gap-1.5 h-8 text-xs border-gray-300 text-gray-600 hover:bg-gray-100 hover:text-gray-800 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-800/30"
-                    disabled={resolving || dropping || generatingYakap}
-                    onClick={() => setShowDropForm(true)}
-                  >
-                    <Ban className="h-3.5 w-3.5" />
-                    Drop
-                  </Button>
-                )}
-              </div>
-            )}
+                  )}
+                </>
+              )}
+            </div>
           </div>
 
           {/* ── Details: patient info, date, type, service, healthcare providers ── */}

@@ -2404,7 +2404,7 @@ function ProfileDetailPanel({ profile }: { profile: ParsedProfileData }) {
 					<div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
 						<InfoField label="Height (cm)" value={profile.height} />
 						<InfoField label="Weight (kg)" value={profile.weight} />
-						<InfoField label="Z-Score" value={profile.zScore} />
+						<InfoField label="Z-Score" value="" />
 						<InfoField label="Vision L" value={profile.leftVision} />
 						<InfoField label="Vision R" value={profile.rightVision} />
 						<InfoField label="Blood Type" value={profile.bloodType} />

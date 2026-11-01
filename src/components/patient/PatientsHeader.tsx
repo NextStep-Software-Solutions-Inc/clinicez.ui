@@ -53,7 +53,7 @@ export default function PatientsHeader({ clinicUid, patientCount = 0, totalPatie
           <div className="flex-1 min-w-0">
             <SearchBar 
                 className="lg:w-1/2"
-                placeholder="Search patient name or email"
+                placeholder="Search patient name, PhilHealth PIN, or email"
                 value={search}
                 onSearch={(value) => updateUrlParam("search", value)}
                 debounceDelay={500}

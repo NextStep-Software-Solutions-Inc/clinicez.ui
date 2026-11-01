@@ -34,11 +34,10 @@ type HealthHistoryResult = Prisma.UserGetPayload<{
     PersonalHistory: true;
     ObGyneHistory: true;
     VitalSigns: true;
-    UserVaccinations: {
+    PatientImmunizations: {
       include: {
-        Vaccine: true;
-        Dose: true;
-      }
+        PhilHealthImmunization: true;
+      };
     };
   }
 }>;
@@ -83,11 +82,10 @@ export const getHealthHistoryAction = withErrorHandling(async (userId: string) =
         orderBy: { dateTaken: 'desc' },
         take: 5,
       },
-      UserVaccinations: {
+      PatientImmunizations: {
         where: { isActive: true, deletedAt: null },
         include: {
-          Vaccine: true,
-          Dose: true,
+          PhilHealthImmunization: true,
         },
         orderBy: { dateGiven: 'desc' },
       },

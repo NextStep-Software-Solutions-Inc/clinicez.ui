@@ -30,10 +30,7 @@ interface Props {
  * Styling comes from root layout + globals.css.
  */
 export default async function V1Layout({ children }: Props) {
-  const [session, dbUser] = await Promise.all([
-    getCachedSession(),
-    getCurrentUserAction()
-  ]);
+  const session = await getCachedSession();
 
   let onboardingStatus = "COMPLETED";
   let firstName: string | null = null;
@@ -43,6 +40,7 @@ export default async function V1Layout({ children }: Props) {
   let mobile: string | null = null;
 
   if (session) {
+    const dbUser = await getCurrentUserAction();
     if (!dbUser.data) {
       // User not found in database - redirect to error page
       // This should not happen if Clerk webhook is properly configured

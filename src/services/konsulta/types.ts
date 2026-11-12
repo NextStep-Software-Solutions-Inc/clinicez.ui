@@ -565,6 +565,7 @@ export interface KonsultaMedicineData {
     pUnitCode: string;
     pPackageCode: string;
     pOtherMedicine: string;
+    pOthMedDrugGrouping?: string;
     pRoute: string;
     pQuantity: string;
     pActualUnitPrice: string;

@@ -3,7 +3,7 @@
 import prisma from "@lib/prisma";
 import { getCachedSession } from "@actions/session.action";
 import { withErrorHandling } from "@/lib/with-error-handling";
-import { PDFDocument, PDFName, PDFArray, rgb, StandardFonts } from "pdf-lib";
+import { PDFDocument, PDFName, PDFArray, PDFString, rgb, StandardFonts } from "pdf-lib";
 import fs from "fs/promises";
 import path from "path";
 import { format } from "date-fns";
@@ -16,8 +16,12 @@ async function fetchConsultationData(ticketId: number, clinicUid: string) {
     where: { id: ticketId, Clinic: { clinicUid } },
     select: {
       id: true,
+      createdAt: true,
       caseNumber: true,
       soapTransNo: true,
+      konsultaHciCaseNo: true,
+      konsultaHciTransNo: true,
+      ekasTransactionNumber: true,
       konsultaAtcCode: true,
       Clinic: {
         select: {
@@ -48,6 +52,8 @@ async function fetchConsultationData(ticketId: number, clinicUid: string) {
               memberPin: true,
               dependentPin: true,
               hciCaseNo: true,
+              enlistmentTransNo: true,
+              profilingTransNo: true,
               atcCode: true,
             }
           }
@@ -158,9 +164,9 @@ const EXAM_TYPE_TO_SERVICE_CODE: Record<string, number> = {
   FOBT: 18,
 };
 
-type ConsultationData = Awaited<ReturnType<typeof fetchConsultationData>>;
+export type ConsultationData = Awaited<ReturnType<typeof fetchConsultationData>>;
 
-async function prepareFilledPdf(ticket: ConsultationData, templateFileName: string) {
+export async function prepareFilledPdf(ticket: ConsultationData, templateFileName: string) {
   const clinic = ticket.Clinic;
   const patientUser = ticket.ClinicPatient.Patient;
   const enlistment = ticket.ClinicPatient.PhilHealthKonsultaEnlistments?.[0];
@@ -183,9 +189,14 @@ async function prepareFilledPdf(ticket: ConsultationData, templateFileName: stri
   });
 
   const prescriptionText = actualMedicines
-    .map(
-      (m) => `${m.genericName || m.name} ${m.dosage || ""} - ${m.qty} ${m.unit || "tabs"}\nSig: ${m.frequency || ""} ${m.duration ? `for ${m.duration}` : ""}`
-    )
+    .map((m) => {
+      const medName = m.genericName || m.name || "Medicine";
+      const dosageStr = m.dosage ? ` ${m.dosage}` : "";
+      const qtyStr = `${m.qty ?? 1} ${m.unit || "tabs"}`;
+      const sigStr = m.frequency || "";
+      const durationStr = m.duration ? ` for ${m.duration}` : "";
+      return `${medName}${dosageStr} - ${qtyStr}\nSig: ${sigStr}${durationStr}`.trim();
+    })
     .join("\n\n");
 
   const patientName = `${patientUser.firstName || ""} ${patientUser.lastName || ""}`.trim();
@@ -210,12 +221,29 @@ async function prepareFilledPdf(ticket: ConsultationData, templateFileName: stri
 
   const shouldBlankPhysician = isEpress && !hasActualMedicines;
 
+  let nextDispenseDateStr = "";
+  if (hasActualMedicines) {
+    const baseDate = ticket.createdAt ? new Date(ticket.createdAt) : new Date();
+    const nextDate = new Date(baseDate.getTime() + 30 * 24 * 60 * 60 * 1000);
+    nextDispenseDateStr = format(nextDate, "MM/dd/yyyy");
+  }
+
+  const resolvedCaseNo =
+    enlistment?.hciCaseNo ||
+    ticket.konsultaHciCaseNo ||
+    ticket.caseNumber ||
+    "";
+
+  const resolvedTransactionNo = isEpress
+    ? (ticket.soapTransNo || ticket.konsultaHciTransNo || "")
+    : (enlistment?.profilingTransNo || (enlistment?.hciCaseNo ? enlistment.hciCaseNo.replace(/^T-?/, 'P') : "") || ticket.soapTransNo || ticket.konsultaHciTransNo || ticket.ekasTransactionNumber || "");
+
   const patientData = {
     hciName: clinic?.name || "",
-    caseNo: ticket.caseNumber || enlistment?.hciCaseNo || "",
+    caseNo: resolvedCaseNo,
     hciAccrNo: clinic?.ClinicSetting?.philhealthAccreditationNumber || "",
-    transactionNo: ticket.soapTransNo || "",
-    atcCode: ticket.konsultaAtcCode || "",
+    transactionNo: resolvedTransactionNo,
+    atcCode: ticket.konsultaAtcCode || enlistment?.atcCode || "",
     patientName: patientName,
     age: calculateAge(ticket.ClinicPatient.Patient.dob),
     mobileNo: patientUser.mobile || "",
@@ -223,23 +251,28 @@ async function prepareFilledPdf(ticket: ConsultationData, templateFileName: stri
     membershipCategory: "",
     membershipType: memberType,
     physicianName: shouldBlankPhysician ? "" : physicianName,
-    prcLicense: shouldBlankPhysician ? "" : (profDetails?.licenseNumber || ""),
-    ptr: shouldBlankPhysician ? "" : (profDetails?.ptrNumber || ""),
+    prcLicense: shouldBlankPhysician ? "" : (profDetails?.licenseNumber?.trim() || (hp ? "0000000" : "")),
+    ptr: shouldBlankPhysician ? "" : (profDetails?.ptrNumber?.trim() || (hp ? "0000000" : "")),
     s2No: "",
     prescriptionText: prescriptionText,
-    nextDispenseDate: "",
+    nextDispenseDate: nextDispenseDateStr,
   };
 
   const templatePath = path.join(process.cwd(), "public", "pdfs", "phr", templateFileName);
   const existingPdfBytes = await fs.readFile(templatePath);
-  const pdfDoc = await PDFDocument.load(existingPdfBytes);
+  const pdfDoc = await PDFDocument.load(new Uint8Array(existingPdfBytes));
 
   const form = pdfDoc.getForm();
 
   const setTextField = (fieldName: string, value: string) => {
     try {
       const field = form.getTextField(fieldName);
-      if (field) field.setText(value || "");
+      if (field) {
+        field.setText(value || "");
+        if (!value) {
+          field.acroField.setValue(PDFString.of(""));
+        }
+      }
     } catch (e) {
       // ignore
     }
@@ -352,6 +385,7 @@ async function prepareFilledPdf(ticket: ConsultationData, templateFileName: stri
   }
 
   setTextField("textarea_rx", patientData.prescriptionText);
+  setTextField("text_nextDespensDate", patientData.nextDispenseDate);
   setTextField("text_nextDispenseDate", patientData.nextDispenseDate);
   setTextField("text_physicianName", patientData.physicianName);
   setTextField("text_prcLicense", patientData.prcLicense);
@@ -381,7 +415,7 @@ async function prepareFilledPdf(ticket: ConsultationData, templateFileName: stri
   }
 
   const filledBytes = await pdfDoc.save();
-  return { filledBytes, patientName, caseNumber: ticket.caseNumber };
+  return { filledBytes, patientName, caseNumber: resolvedCaseNo };
 }
 
 export const generateEkasPdfAction = withErrorHandling(

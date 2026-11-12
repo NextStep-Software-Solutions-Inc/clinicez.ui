@@ -3352,6 +3352,16 @@ export const generateBatchXmlAction = withErrorHandling(
                                     details: true,
                                 },
                             },
+                            ConsultationTicketHPs: {
+                                select: {
+                                    HealthCareProvider: {
+                                        select: {
+                                            HPProfile: { select: { title: true, suffix: true } },
+                                            User: { select: { firstName: true, lastName: true } },
+                                        },
+                                    },
+                                },
+                            },
                             ClinicPatient: {
                                 select: { patientId: true },
                             },
@@ -3855,12 +3865,37 @@ export const generateBatchXmlAction = withErrorHandling(
                     })
                     : [];
 
+            // Build doctor lookup by consultation ID
+            const doctorNameByConsultationId = new Map<number, string>();
+            for (const row of consultationRows) {
+                const hp = row.ConsultationTicketHPs?.[0]?.HealthCareProvider;
+                const user = hp?.User;
+                const title = hp?.HPProfile?.title || "DR.";
+                const cleanTitle = title.toUpperCase().startsWith("DR") ? title : `DR. ${title}`;
+                if (user?.firstName || user?.lastName) {
+                    doctorNameByConsultationId.set(
+                        row.id,
+                        `${cleanTitle} ${user.firstName || ""} ${user.lastName || ""}`.replace(/\s+/g, " ").trim(),
+                    );
+                }
+            }
+
+            const defaultDoctor = session?.user?.given_name || session?.user?.family_name
+                ? `DR. ${session.user.given_name || ""} ${session.user.family_name || ""}`.replace(/\s+/g, " ").trim()
+                : "DR. ATTENDING PHYSICIAN";
+
             const medicines = medicineMappingResult.mappedMedicines
                 .map((medicine) => {
                     const entry = entryByConsultationId.get(medicine.consultationId);
                     if (!entry) {
                         return null;
                     }
+
+                    const isCustom = !medicine.mappedDrugCode || medicine.mappedDrugCode.startsWith("NOMED");
+                    const qty = medicine.quantity && medicine.quantity > 0 ? medicine.quantity : 1;
+                    const unitPrice = "15.00";
+                    const totalAmt = (qty * 15.00).toFixed(2);
+                    const physician = doctorNameByConsultationId.get(medicine.consultationId) || defaultDoctor;
 
                     return {
                         pHciCaseNo:
@@ -3879,23 +3914,24 @@ export const generateBatchXmlAction = withErrorHandling(
                                 medicine.consultationId,
                                 periodDate,
                             ),
-                        pCategory: "",
-                        pDrugCode: medicine.mappedDrugCode ?? "",
-                        pGenericCode: medicine.mappedGenericCode ?? "",
+                        pCategory: isCustom ? "ANTI-INFECTIVES" : "",
+                        pDrugCode: isCustom ? "" : (medicine.mappedDrugCode ?? ""),
+                        pGenericCode: isCustom ? "" : (medicine.mappedGenericCode ?? ""),
                         pSaltCode: "",
                         pStrengthCode: "",
                         pFormCode: "",
                         pUnitCode: "",
                         pPackageCode: "",
-                        pOtherMedicine: "",
-                        pRoute: "",
-                        pQuantity: medicine.quantity ? String(medicine.quantity) : "",
-                        pActualUnitPrice: "",
-                        pTotalAmtPrice: "",
-                        pInstructionQuantity: medicine.quantity ? String(medicine.quantity) : "",
+                        pOtherMedicine: isCustom ? (medicine.sourceName || "") : "",
+                        pOthMedDrugGrouping: isCustom ? "ANTIBIOTICS" : "",
+                        pRoute: "ORAL",
+                        pQuantity: String(qty),
+                        pActualUnitPrice: unitPrice,
+                        pTotalAmtPrice: totalAmt,
+                        pInstructionQuantity: String(qty),
                         pInstructionStrength: medicine.dosage ?? "",
                         pInstructionFrequency: medicine.frequency ?? "",
-                        pPrescribingPhysician: "",
+                        pPrescribingPhysician: physician,
                         pIsDispensed: "N",
                         pDateDispensed: "",
                         pDispensingPersonnel: "",

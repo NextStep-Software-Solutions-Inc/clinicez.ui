@@ -441,18 +441,31 @@ function emitPeMiscFields(pemiscs: XmlNode, pe: Record<string, string | null | u
     { attr: 'pGuId', val: pe.guId },
   ];
 
+  const normalizePeCode = (attr: string, val: string | null | undefined): string => {
+    if (!val) return '';
+    const s = String(val).trim();
+    if (attr === 'pHeartId' && s === '2') return '5';
+    if (attr === 'pNeuroId' && s === '3') return '6';
+    return s;
+  };
+
   for (const cat of categories) {
-    if (cat.val != null && String(cat.val).trim().length > 0) {
-      // Emit the recorded physical exam finding
+    if (!cat.val) continue;
+    const codes = String(cat.val)
+      .split(/[;,]/)
+      .map((c) => normalizePeCode(cat.attr, c))
+      .filter(Boolean);
+
+    for (const rawVal of codes) {
       pemiscs.ele('PEMISC', withStatus({
-        pSkinId: cat.attr === 'pSkinId' ? String(cat.val) : '',
-        pHeentId: cat.attr === 'pHeentId' ? String(cat.val) : '',
-        pChestId: cat.attr === 'pChestId' ? String(cat.val) : '',
-        pHeartId: cat.attr === 'pHeartId' ? String(cat.val) : '',
-        pAbdomenId: cat.attr === 'pAbdomenId' ? String(cat.val) : '',
-        pNeuroId: cat.attr === 'pNeuroId' ? String(cat.val) : '',
-        pRectalId: cat.attr === 'pRectalId' ? String(cat.val) : '',
-        pGuId: cat.attr === 'pGuId' ? String(cat.val) : '',
+        pSkinId: cat.attr === 'pSkinId' ? rawVal : '',
+        pHeentId: cat.attr === 'pHeentId' ? rawVal : '',
+        pChestId: cat.attr === 'pChestId' ? rawVal : '',
+        pHeartId: cat.attr === 'pHeartId' ? rawVal : '',
+        pAbdomenId: cat.attr === 'pAbdomenId' ? rawVal : '',
+        pNeuroId: cat.attr === 'pNeuroId' ? rawVal : '',
+        pRectalId: cat.attr === 'pRectalId' ? rawVal : '',
+        pGuId: cat.attr === 'pGuId' ? rawVal : '',
       })).up();
 
       added = true;
@@ -1595,7 +1608,7 @@ export function generateKonsultaXml(options: KonsultaXmlOptions): string {
           pHciCaseNo: med.hciCaseNo,
           pHciTransNo: med.hciTransNo,
           pCategory: med.category,
-          pDrugCode: med.drugCode || DEFAULT_DRUG_CODE,
+          pDrugCode: med.otherMedicine ? (med.drugCode || "") : (med.drugCode || DEFAULT_DRUG_CODE),
           pGenericCode: med.genericCode,
           pSaltCode: med.saltCode,
           pStrengthCode: med.strengthCode,

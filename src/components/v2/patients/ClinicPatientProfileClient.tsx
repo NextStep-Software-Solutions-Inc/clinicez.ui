@@ -63,6 +63,7 @@ import { SurgicalHistoryInlineForm } from './forms/SurgicalHistoryInlineForm'
 import { PhysicalExamInlineForm } from './forms/PhysicalExamInlineForm'
 import { NcdQuestionnaireEditForm } from '@/components/health-records/ncd-questionnaire-edit-form'
 import { getPhysicalExamLibrariesAction } from '@/actions/super-admin/physical-exam-library.action'
+import { parsePeCodes } from '@/components/health-records/physical-exam-system-field'
 import type { PatientHealthRecordsResponse } from '@/types/patient-profile'
 import type { PhysicalExamLibrary } from '@prisma/client'
 import { formatBloodType, calculateDetailedAge } from '@/lib/utils'
@@ -987,7 +988,13 @@ export default function ClinicPatientProfileClient({
                             { label: 'Rectal', category: 'RECTAL', id: exam.rectalId, remarks: exam.rectalRemarks },
                           ]
                             .map((item) => {
-                              const statusDesc = item.id ? (peLibraryMap.get(`${item.category}:${item.id}`) || item.id) : null
+                              const codes = parsePeCodes(item.id)
+                              const statusDesc =
+                                codes.length > 0
+                                  ? codes
+                                      .map((code) => peLibraryMap.get(`${item.category}:${code}`) || code)
+                                      .join(', ')
+                                  : null
                               const value = [statusDesc, item.remarks].filter(Boolean).join(' — ')
                               return { label: item.label, value }
                             })
@@ -1362,7 +1369,7 @@ export default function ClinicPatientProfileClient({
             {false && (
               <motion.div variants={cardVariants}>
                 <CardContainer
-                  title="Disabilities & Chronic Illnesses"
+                  title="Disabilities"
                   icon={Accessibility}
                   accentColor="bg-purple-500"
                   editing={editingSections['disabilities']}

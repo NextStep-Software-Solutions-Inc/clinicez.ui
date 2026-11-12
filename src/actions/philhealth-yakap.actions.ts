@@ -583,6 +583,20 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
                     isPhilHealthKonsulta: true,
                     konsultaAtcCode: true, konsultaIsWalkedIn: true, konsultaCoPay: true,
                     konsultaRecommendedDiagnosticOptions: true,
+                    ConsultationTicketHPs: {
+                      select: {
+                        HealthCareProvider: {
+                          select: {
+                            HPProfile: {
+                              select: { title: true, suffix: true },
+                            },
+                            User: {
+                              select: { firstName: true, lastName: true },
+                            },
+                          },
+                        },
+                      },
+                    },
                     DiagnosticRequests: {
                       where: { isArchived: false },
                       select: { diagnosticProcedures: true },
@@ -653,10 +667,10 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
       diastolic: vs?.bpDiastolic?.toString() ?? "",
       hr: vs?.pulseRate?.toString() ?? "",
       rr: vs?.respRate?.toString() ?? "",
-      temp: vs?.temp?.toString() ?? "",
+      temp: vs?.temp != null ? vs.temp.toFixed(1) : "",
       height: vs?.height?.toString() ?? "",
       weight: vs?.weight?.toString() ?? "",
-      bmi: vs?.bmi?.toString() ?? "",
+      bmi: vs?.bmi != null ? vs.bmi.toFixed(2) : "",
       zScore: vs?.zScore?.toString() ?? "",
       leftVision: vs?.visualAcuityLeft ?? "",
       rightVision: vs?.visualAcuityRight ?? "",
@@ -679,14 +693,14 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
       const adjustedDiastolic = vs.bpDiastolic ? vs.bpDiastolic + 5 : null;
       const adjustedHr = vs.pulseRate ? vs.pulseRate + 5 : null;
       const adjustedRr = vs.respRate ? vs.respRate + 2 : null;
-      const adjustedTemp = vs.temp ? vs.temp + 0.2 : null;
-      const adjustedWeight = vs.weight ? vs.weight + 0.5 : null;
+      const adjustedTemp = vs.temp ? Number((vs.temp + 0.2).toFixed(1)) : null;
+      const adjustedWeight = vs.weight ? Number((vs.weight + 0.5).toFixed(1)) : null;
 
       // Re-calculate BMI if height and weight exist
-      let adjustedBmi = vs.bmi;
+      let adjustedBmi = vs.bmi ? Number(vs.bmi.toFixed(2)) : null;
       if (vs.height && vs.weight) {
         const hMeter = vs.height / 100;
-        adjustedBmi = (vs.weight + 0.5) / (hMeter * hMeter);
+        adjustedBmi = Number(((vs.weight + 0.5) / (hMeter * hMeter)).toFixed(2));
       }
 
       return mapVitals({
@@ -817,8 +831,15 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
         resolvedProfilingTransNo = resolvedProfilingTransNo.replace(/^(P[A-Z0-9]{9}\d{6})(\d{4})$/, '$10$2');
       }
 
-      const diagnosticResults = diagRecords.length > 0
-        ? diagRecords.map(dr => ({
+      const relevantDiagRecords = batch.tagging === "1"
+        ? diagRecords.filter(dr =>
+            !dr.consultationTicketId &&
+            (!dr.hciTransNo || dr.hciTransNo.startsWith("P") || dr.hciTransNo === resolvedProfilingTransNo)
+          )
+        : diagRecords;
+
+      const diagnosticResults = relevantDiagRecords.length > 0
+        ? relevantDiagRecords.map(dr => ({
           hciCaseNo: resolvedCaseNo,
           hciTransNo: dr.hciTransNo ? (
             /^(P[A-Z0-9]{9}\d{6})(\d{4})$/.test(dr.hciTransNo)
@@ -860,35 +881,63 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
               .map(d => d.icd10Code)
               .filter((c): c is string => !!c);
 
+            // Resolve attending physician
+            const hp = t.ConsultationTicketHPs?.[0]?.HealthCareProvider;
+            const hpUser = hp?.User;
+            const hpProfile = hp?.HPProfile;
+            let physicianName = "";
+            if (hpUser?.firstName || hpUser?.lastName) {
+              const title = hpProfile?.title || "DR.";
+              const cleanTitle = title.toUpperCase().startsWith("DR") ? title : `DR. ${title}`;
+              physicianName = `${cleanTitle} ${hpUser.firstName || ""} ${hpUser.lastName || ""}`.replace(/\s+/g, " ").trim();
+            } else if (session?.user?.given_name || session?.user?.family_name) {
+              physicianName = `DR. ${session.user.given_name || ""} ${session.user.family_name || ""}`.replace(/\s+/g, " ").trim();
+            } else {
+              physicianName = "DR. ATTENDING PHYSICIAN";
+            }
+
             // Medicines from prescriptions
             const medicines: KonsultaMedicineData[] = [];
             for (const rx of t.Prescriptions ?? []) {
               for (const med of rx.Medicines ?? []) {
                 const ph = med.PhilHealthData;
 
-                const isCustom = ph?.drugCode?.startsWith("NOMED") || false;
+                const isCustom = Boolean(
+                  ph?.otherMedicine ||
+                  ph?.othMedDrugGrouping ||
+                  !ph?.drugCode ||
+                  ph.drugCode.startsWith("NOMED")
+                );
+
+                const qtyNum = med.qty ? Number(med.qty) : 1;
+                const unitPriceNum = (ph?.actualUnitPrice && Number(ph.actualUnitPrice) > 0)
+                  ? Number(ph.actualUnitPrice)
+                  : 15.00;
+                const totalAmtNum = (ph?.totalAmtPrice && Number(ph.totalAmtPrice) > 0)
+                  ? Number(ph.totalAmtPrice)
+                  : (qtyNum * unitPriceNum);
 
                 medicines.push({
                   hciCaseNo: resolvedCaseNo,
                   hciTransNo: t.soapTransNo || "",
-                  category: ph?.category || "",
-                  drugCode: ph?.drugCode || "NOMED00000000000000000000000",
-                  genericCode: ph?.genericCode || "",
-                  saltCode: ph?.saltCode || "",
-                  strengthCode: ph?.strengthCode || "",
-                  formCode: ph?.formCode || "",
-                  unitCode: ph?.unitCode || "",
-                  packageCode: ph?.packageCode || "",
+                  category: isCustom ? (ph?.category || "ANTI-INFECTIVES") : (ph?.category || ""),
+                  drugCode: isCustom ? "" : (ph?.drugCode || ""),
+                  genericCode: isCustom ? "" : (ph?.genericCode || ""),
+                  saltCode: isCustom ? "" : (ph?.saltCode || ""),
+                  strengthCode: isCustom ? "" : (ph?.strengthCode || ""),
+                  formCode: isCustom ? "" : (ph?.formCode || ""),
+                  unitCode: isCustom ? "" : (ph?.unitCode || ""),
+                  packageCode: isCustom ? "" : (ph?.packageCode || ""),
                   otherMedicine: isCustom ? (ph?.otherMedicine || med.name || "") : "",
-                  othMedDrugGrouping: ph?.othMedDrugGrouping || "",
-                  route: ph?.route || "",
-                  quantity: med.qty?.toString() || "0",
-                  actualUnitPrice: ph?.actualUnitPrice?.toString() || "0",
-                  totalAmtPrice: ph?.totalAmtPrice?.toString() || "0",
+                  othMedDrugGrouping: isCustom ? (ph?.othMedDrugGrouping || "ANTIBIOTICS") : "",
+                  route: ph?.route || "ORAL",
+                  quantity: med.qty?.toString() || "1",
+                  actualUnitPrice: unitPriceNum.toFixed(2),
+                  totalAmtPrice: totalAmtNum.toFixed(2),
                   instructionQuantity: ph?.instructionQuantity || "1",
                   instructionStrength: ph?.instructionStrength || med.dosage || "",
                   instructionFrequency: ph?.instructionFrequency || med.frequency || "",
-                  prescribingPhysician: "",
+                  prescribingPhysician: physicianName,
                   isDispensed: med.MedicineDispenseRecord?.isDispensed ? "Y" : "N",
                   dateDispensed: med.MedicineDispenseRecord?.dateDispensed ? formatDate(med.MedicineDispenseRecord.dateDispensed) : "",
                   dispensingPersonnel: med.MedicineDispenseRecord?.dispensingPersonnel || "",

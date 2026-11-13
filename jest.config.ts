@@ -6,6 +6,9 @@
 import type {Config} from 'jest';
 import nextJest from 'next/jest.js'
 
+process.env.PHILHEALTH_KONSULTA_CERT_ID = process.env.PHILHEALTH_KONSULTA_CERT_ID || "CERT-TEST-12345";
+process.env.PHILHEALTH_KONSULTA_CIPHER_KEY = process.env.PHILHEALTH_KONSULTA_CIPHER_KEY || "CIPHERKEY12345678";
+
 const createJestConfig = nextJest({
   // Provide the path to your Next.js app to load next.config.js and .env files in your test environment
   dir: './',
@@ -96,10 +99,15 @@ const config: Config = {
   // ],
 
   // A map from regular expressions to module names or to arrays of module names that allow to stub out resources with a single module
-  // moduleNameMapper: {},
+  moduleNameMapper: {
+    "^@/(.*)$": "<rootDir>/src/$1",
+    "^@actions/(.*)$": "<rootDir>/src/actions/$1",
+    "^@lib/(.*)$": "<rootDir>/src/lib/$1",
+    "^@components/(.*)$": "<rootDir>/src/components/$1",
+  },
 
   // An array of regexp pattern strings, matched against all module paths before considered 'visible' to the module loader
-  // modulePathIgnorePatterns: [],
+  modulePathIgnorePatterns: ["<rootDir>/.agents/"],
 
   // Activates notifications for test results
   // notify: false,
@@ -167,9 +175,10 @@ const config: Config = {
   // ],
 
   // An array of regexp pattern strings that are matched against all test paths, matched tests are skipped
-  // testPathIgnorePatterns: [
-  //   "\\\\node_modules\\\\"
-  // ],
+  testPathIgnorePatterns: [
+    "\\\\node_modules\\\\",
+    process.cwd().includes(".agents") ? "<rootDir>/.agents/" : "\\\\.agents\\\\"
+  ],
 
   // The regexp pattern or array of patterns that Jest uses to detect test files
   // testRegex: [],

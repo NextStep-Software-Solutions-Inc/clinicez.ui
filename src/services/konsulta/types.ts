@@ -11,6 +11,7 @@ export interface KonsultaHciCredentials {
     password: string;
     hciAccreNo: string;
     pmccNumber: string;
+    pmccNo?: string;
     certificationId: string;
     cipherKey: string;
 }
@@ -565,6 +566,7 @@ export interface KonsultaMedicineData {
     pUnitCode: string;
     pPackageCode: string;
     pOtherMedicine: string;
+    pOthMedDrugGrouping?: string;
     pRoute: string;
     pQuantity: string;
     pActualUnitPrice: string;

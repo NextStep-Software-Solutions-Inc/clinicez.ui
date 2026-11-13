@@ -135,4 +135,151 @@ describe("xml-generator physical exam multi-select findings", () => {
     expect(xml).toContain('pHeartRem="IRREGULAR HEART SOUNDS AND MURMURS"');
     expect(xml).toContain('pRectalRem="FISSURE PRESENT"');
   });
+
+  it("should normalize legacy codes for heart (2 -> 5) and neuro (3 -> 6)", () => {
+    const options: KonsultaXmlOptions = {
+      ...baseOptions,
+      patients: [
+        {
+          ...baseOptions.patients[0],
+          profile: {
+            ...baseOptions.patients[0].profile,
+            physicalExaminations: [
+              {
+                generalSurveyId: "1",
+                heartId: "2",
+                neuroId: "3",
+              },
+            ],
+          },
+        },
+      ],
+    };
+
+    const xml = generateKonsultaXml(options);
+    expect(xml).toContain('pHeartId="5"');
+    expect(xml).toContain('pNeuroId="6"');
+  });
+
+  it("should correctly serialize unlisted medicines with pDrugCode empty string and grouping", () => {
+    const tagging2Options: KonsultaXmlOptions = {
+      ...baseOptions,
+      tagging: "2",
+      patients: [
+        {
+          ...baseOptions.patients[0],
+          consultations: [
+            {
+              hciCaseNo: "TH9000000120260000001",
+              hciTransNo: "SH9000000120260000001",
+              soapDate: "2026-07-08",
+              atc: "WALKEDIN",
+              isWalkedIn: "Y",
+              coPay: "0",
+              subjective: { signsSymptoms: "01", otherComplaint: "" },
+              vitals: baseOptions.patients[0].profile.vitals,
+              consultationNotes: {},
+              diagnoses: ["J06.9"],
+              medicines: [
+                {
+                  hciCaseNo: "TH9000000120260000001",
+                  hciTransNo: "SH9000000120260000001",
+                  category: "ANTI-INFECTIVES",
+                  drugCode: "",
+                  genericCode: "",
+                  saltCode: "",
+                  strengthCode: "",
+                  formCode: "",
+                  unitCode: "",
+                  packageCode: "",
+                  otherMedicine: "AMOXICILLIN 500MG CAPSULE",
+                  othMedDrugGrouping: "ANTIBIOTICS",
+                  route: "ORAL",
+                  quantity: "21",
+                  actualUnitPrice: "15.00",
+                  totalAmtPrice: "315.00",
+                  instructionQuantity: "21",
+                  instructionStrength: "500MG",
+                  instructionFrequency: "TID",
+                  prescribingPhysician: "DR. JUAN DELA CRUZ",
+                  isDispensed: "N",
+                  dateDispensed: "",
+                  dispensingPersonnel: "",
+                  isApplicable: "Y",
+                  dateAdded: "2026-07-08",
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+
+    const xml = generateKonsultaXml(tagging2Options);
+    expect(xml).toContain('pDrugCode=""');
+    expect(xml).toContain('pOtherMedicine="AMOXICILLIN 500MG CAPSULE"');
+    expect(xml).toContain('pOthMedDrugGrouping="ANTIBIOTICS"');
+    expect(xml).toContain('pCategory="ANTI-INFECTIVES"');
+    expect(xml).toContain('pRoute="ORAL"');
+    expect(xml).toContain('pPrescribingPhysician="DR. JUAN DELA CRUZ"');
+    expect(xml).toContain('pActualUnitPrice="15.00"');
+    expect(xml).toContain('pTotalAmtPrice="315.00"');
+  });
+
+  it("should keep DEFAULT_DRUG_CODE when medicine is listed without drugCode and not otherMedicine", () => {
+    const tagging2Options: KonsultaXmlOptions = {
+      ...baseOptions,
+      tagging: "2",
+      patients: [
+        {
+          ...baseOptions.patients[0],
+          consultations: [
+            {
+              hciCaseNo: "TH9000000120260000001",
+              hciTransNo: "SH9000000120260000001",
+              soapDate: "2026-07-08",
+              atc: "WALKEDIN",
+              isWalkedIn: "Y",
+              coPay: "0",
+              subjective: { signsSymptoms: "01", otherComplaint: "" },
+              vitals: baseOptions.patients[0].profile.vitals,
+              consultationNotes: {},
+              diagnoses: ["J06.9"],
+              medicines: [
+                {
+                  hciCaseNo: "TH9000000120260000001",
+                  hciTransNo: "SH9000000120260000001",
+                  category: "ANTI-INFECTIVES",
+                  drugCode: "DRUG123",
+                  genericCode: "GEN456",
+                  saltCode: "",
+                  strengthCode: "",
+                  formCode: "",
+                  unitCode: "",
+                  packageCode: "",
+                  otherMedicine: "",
+                  route: "ORAL",
+                  quantity: "10",
+                  actualUnitPrice: "15.00",
+                  totalAmtPrice: "150.00",
+                  instructionQuantity: "10",
+                  instructionStrength: "500MG",
+                  instructionFrequency: "BID",
+                  prescribingPhysician: "DR. JUAN DELA CRUZ",
+                  isDispensed: "N",
+                  dateDispensed: "",
+                  dispensingPersonnel: "",
+                  isApplicable: "Y",
+                  dateAdded: "2026-07-08",
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+
+    const xml = generateKonsultaXml(tagging2Options);
+    expect(xml).toContain('pDrugCode="DRUG123"');
+  });
 });

@@ -134,25 +134,25 @@ export interface KonsultaPatientData {
       reportStatus: string;
       deficiencyRemarks: string;
     }>;
-    physicalExaminations: Array<{
-      generalSurveyId: string;
-      generalSurveyRemarks: string;
-      heentId: string;
-      heentRemarks: string;
-      chestId: string;
-      chestRemarks: string;
-      heartId: string;
-      heartRemarks: string;
-      abdomenId: string;
-      abdomenRemarks: string;
-      guId: string;
-      guRemarks: string;
-      skinId: string;
-      skinRemarks: string;
-      neuroId: string;
-      neuroRemarks: string;
-      rectalId: string;
-      rectalRemarks: string;
+    physicalExaminations?: Array<{
+      generalSurveyId?: string | null;
+      generalSurveyRemarks?: string | null;
+      heentId?: string | null;
+      heentRemarks?: string | null;
+      chestId?: string | null;
+      chestRemarks?: string | null;
+      heartId?: string | null;
+      heartRemarks?: string | null;
+      abdomenId?: string | null;
+      abdomenRemarks?: string | null;
+      guId?: string | null;
+      guRemarks?: string | null;
+      skinId?: string | null;
+      skinRemarks?: string | null;
+      neuroId?: string | null;
+      neuroRemarks?: string | null;
+      rectalId?: string | null;
+      rectalRemarks?: string | null;
     }>;
     ncdqans?: Record<string, string>;
   };
@@ -169,13 +169,13 @@ export interface KonsultaConsultationData {
   atc: string;
   isWalkedIn: 'Y' | 'N';
   coPay: string;
-  transDate: string;
+  transDate?: string;
   // Subjective
   subjective: {
-    illnessHistory: string;
+    illnessHistory?: string;
     signsSymptoms: string;
-    otherComplaint: string;
-    painSite: string;
+    otherComplaint?: string;
+    painSite?: string;
   };
   // Vitals
   vitals: {
@@ -199,29 +199,31 @@ export interface KonsultaConsultationData {
     midUpperArmCirc: string;
   };
   physicalExam?: {
-    generalSurveyId: string;
-    generalSurveyRemarks: string;
-    heentId: string;
-    heentRemarks: string;
-    chestId: string;
-    chestRemarks: string;
-    heartId: string;
-    heartRemarks: string;
-    abdomenId: string;
-    abdomenRemarks: string;
-    guId: string;
-    guRemarks: string;
-    skinId: string;
-    skinRemarks: string;
-    neuroId: string;
-    neuroRemarks: string;
-    rectalId: string;
-    rectalRemarks: string;
+    generalSurveyId?: string | null;
+    generalSurveyRemarks?: string | null;
+    heentId?: string | null;
+    heentRemarks?: string | null;
+    chestId?: string | null;
+    chestRemarks?: string | null;
+    heartId?: string | null;
+    heartRemarks?: string | null;
+    abdomenId?: string | null;
+    abdomenRemarks?: string | null;
+    guId?: string | null;
+    guRemarks?: string | null;
+    skinId?: string | null;
+    skinRemarks?: string | null;
+    neuroId?: string | null;
+    neuroRemarks?: string | null;
+    rectalId?: string | null;
+    rectalRemarks?: string | null;
   };
-  // ICD codes
-  icdCodes: string[];
+  // ICD codes / diagnoses
+  icdCodes?: string[];
+  diagnoses?: string[];
+  consultationNotes?: Record<string, unknown>;
   // Managements
-  managements: KonsultaManagementData[];
+  managements?: KonsultaManagementData[];
   // Advice
   advice?: {
     advice: string;
@@ -231,7 +233,7 @@ export interface KonsultaConsultationData {
     referredToOther: string;
   };
   // Medicines
-  medicines: KonsultaMedicineData[];
+  medicines?: KonsultaMedicineData[];
   // Diagnostic Options & Requests
   konsultaRecommendedDiagnosticOptions?: { philhealthDiagnosticId: string; status: 'RQ' | 'RF' | 'XX' }[];
   diagnosticRequests?: { philhealthDiagnosticId: string | null }[];
@@ -244,26 +246,26 @@ export interface KonsultaMedicineData {
   hciTransNo: string;
   category: string;
   drugCode: string;
-  genericCode: string;
-  saltCode: string;
-  strengthCode: string;
-  formCode: string;
-  unitCode: string;
-  packageCode: string;
-  otherMedicine: string;
-  othMedDrugGrouping: string;
+  genericCode?: string;
+  saltCode?: string;
+  strengthCode?: string;
+  formCode?: string;
+  unitCode?: string;
+  packageCode?: string;
+  otherMedicine?: string;
+  othMedDrugGrouping?: string;
   route: string;
   quantity: string;
   actualUnitPrice: string;
   totalAmtPrice: string;
   instructionQuantity: string;
-  instructionStrength: string;
-  instructionFrequency: string;
+  instructionStrength?: string;
+  instructionFrequency?: string;
   prescribingPhysician: string;
   isDispensed: string;
-  dateDispensed: string;
-  dispensingPersonnel: string;
-  isApplicable: string;
+  dateDispensed?: string;
+  dispensingPersonnel?: string;
+  isApplicable?: string;
   dateAdded: string;
 }
 
@@ -941,8 +943,11 @@ function buildSoapPeSpecific(parent: XmlNode, consultation: KonsultaConsultation
 
 function buildSoapIcds(parent: XmlNode, consultation: KonsultaConsultationData): XmlNode {
   const icds = parent.ele('ICDS');
-  if (consultation.icdCodes && consultation.icdCodes.length > 0) {
-    for (const code of consultation.icdCodes) {
+  const rawCodes = (consultation.icdCodes && consultation.icdCodes.length > 0)
+    ? consultation.icdCodes
+    : (consultation.diagnoses && consultation.diagnoses.length > 0 ? consultation.diagnoses : []);
+  if (rawCodes.length > 0) {
+    for (const code of rawCodes) {
       icds.ele('ICD', withStatus({
         pIcdCode: code,
       })).up();
@@ -1286,7 +1291,9 @@ export function generateKonsultaXml(options: KonsultaXmlOptions): string {
   if (tagging === '2') {
     for (const p of patients) {
       for (const c of p.consultations ?? []) {
-        allMedicines.push(...c.medicines);
+        if (c.medicines) {
+          allMedicines.push(...c.medicines);
+        }
       }
     }
   }
@@ -1702,7 +1709,7 @@ export function generateKonsultaXml(options: KonsultaXmlOptions): string {
           pHciCaseNo: med.hciCaseNo,
           pHciTransNo: med.hciTransNo,
           pCategory: med.category,
-          pDrugCode: med.drugCode || DEFAULT_DRUG_CODE,
+          pDrugCode: med.otherMedicine ? (med.drugCode || "") : (med.drugCode || DEFAULT_DRUG_CODE),
           pGenericCode: med.genericCode,
           pSaltCode: med.saltCode,
           pStrengthCode: med.strengthCode,

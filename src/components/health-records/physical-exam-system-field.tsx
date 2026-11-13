@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { Check, ChevronsUpDown, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -27,12 +27,95 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import {
-  parsePeCodes,
-  formatPeCodes,
-  togglePeFindingCode,
-  isOthersCode,
-} from '@/lib/physical-exam-utils'
+
+// =========================================================================
+// Physical Exam Utilities & Constants (Embedded for Self-Contained Scope)
+// =========================================================================
+
+export const ESSENTIALLY_NORMAL_CODES: Record<string, string[]> = {
+  SKIN: ['1'],
+  HEENT: ['11'],
+  CHEST: ['6'],
+  HEART: ['5', '2'], // 5 is current, 2 is legacy normal
+  ABDOMEN: ['7'],
+  NEURO: ['6', '3'], // 6 is current, 3 is legacy normal
+  RECTAL: ['1', '0'], // 1 is Essentially normal, 0 is Not Applicable
+  GU: ['1'],
+}
+
+export function isOthersCode(code: string | null | undefined): boolean {
+  if (!code) return false
+  const normalized = String(code).trim()
+  return normalized === '99'
+}
+
+export function isEssentiallyNormal(category: string, code: string, description?: string): boolean {
+  const normCat = category.toUpperCase().trim()
+  const normalList = ESSENTIALLY_NORMAL_CODES[normCat] || []
+  if (normalList.includes(String(code).trim())) return true
+  if (description && /essentially\s+normal/i.test(description)) return true
+  return false
+}
+
+export function parsePeCodes(value: string | string[] | null | undefined): string[] {
+  if (!value) return []
+  if (Array.isArray(value)) {
+    return Array.from(
+      new Set(
+        value
+          .flatMap((v) => (typeof v === 'string' ? v.split(/[;,]/) : String(v)))
+          .map((s) => s.trim())
+          .filter(Boolean)
+      )
+    )
+  }
+  return Array.from(
+    new Set(
+      String(value)
+        .split(/[;,]/)
+        .map((s) => s.trim())
+        .filter(Boolean)
+    )
+  )
+}
+
+export function formatPeCodes(
+  codes: string[] | string | null | undefined,
+  delimiter: string = ','
+): string {
+  const parsed = parsePeCodes(codes)
+  return parsed.join(delimiter)
+}
+
+export function togglePeFindingCode(
+  category: string,
+  currentCodes: string[],
+  toggledCode: string,
+  description?: string
+): string[] {
+  const isNormal = isEssentiallyNormal(category, toggledCode, description)
+  const exists = currentCodes.includes(toggledCode)
+
+  if (exists) {
+    return currentCodes.filter((c) => c !== toggledCode)
+  }
+
+  if (isNormal) {
+    // Selecting normal clears all abnormal options
+    return [toggledCode]
+  }
+
+  // Selecting any abnormal option clears normal options
+  const normalCodes = ESSENTIALLY_NORMAL_CODES[category.toUpperCase()] || []
+  const cleaned = currentCodes.filter(
+    (c) => !normalCodes.includes(c) && !isEssentiallyNormal(category, c)
+  )
+  return [...cleaned, toggledCode]
+}
+
+// =========================================================================
+// Component Interfaces
+// =========================================================================
 
 export interface PhysicalExamLibraryOption {
   id: string
@@ -54,6 +137,10 @@ export interface PhysicalExamSystemFieldProps {
   compact?: boolean
 }
 
+// =========================================================================
+// Component Implementation
+// =========================================================================
+
 export function PhysicalExamSystemField({
   category,
   label,
@@ -67,12 +154,36 @@ export function PhysicalExamSystemField({
   compact = false,
 }: PhysicalExamSystemFieldProps) {
   const [open, setOpen] = useState(false)
+  const remarksInputRef = useRef<HTMLInputElement>(null)
+  const justSelectedOthersRef = useRef(false)
+
   const selectedCodes = parsePeCodes(value)
   const hasOthers = selectedCodes.some(isOthersCode)
+  const prevHasOthersRef = useRef(hasOthers)
+
+  // Focus remarks when 'Others' transitions from false to true (user interaction only, not mount)
+  useEffect(() => {
+    if (!prevHasOthersRef.current && hasOthers) {
+      setTimeout(() => {
+        remarksInputRef.current?.focus()
+      }, 50)
+    }
+    prevHasOthersRef.current = hasOthers
+  }, [hasOthers])
 
   const handleToggleCode = (code: string, description?: string) => {
+    const isEnablingOthers = isOthersCode(code) && !selectedCodes.includes(code)
+    if (isEnablingOthers) {
+      justSelectedOthersRef.current = true
+    }
     const updated = togglePeFindingCode(category, selectedCodes, code, description)
     onChange(formatPeCodes(updated))
+    if (isEnablingOthers) {
+      setOpen(false)
+      setTimeout(() => {
+        remarksInputRef.current?.focus()
+      }, 50)
+    }
   }
 
   const handleRemoveCode = (code: string, e: React.MouseEvent | React.PointerEvent) => {
@@ -98,7 +209,7 @@ export function PhysicalExamSystemField({
         )}
       </div>
 
-      <div className="grid grid-cols-1 gap-3.5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
         {/* Finding Selector */}
         <div className="space-y-1">
           <Label className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
@@ -109,7 +220,12 @@ export function PhysicalExamSystemField({
             <Select
               disabled={disabled}
               value={selectedCodes[0] || ''}
-              onValueChange={(val) => onChange(val)}
+              onValueChange={(val) => {
+                onChange(val)
+                if (isOthersCode(val)) {
+                  setTimeout(() => remarksInputRef.current?.focus(), 50)
+                }
+              }}
             >
               <SelectTrigger className={cn('w-full text-xs focus:ring-teal-500', compact ? 'h-8' : 'h-9')}>
                 <SelectValue placeholder="Select status..." />
@@ -132,7 +248,7 @@ export function PhysicalExamSystemField({
                   aria-expanded={open}
                   disabled={disabled}
                   className={cn(
-                    'w-full justify-between h-auto min-h-8 py-1.5 px-3 text-xs bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-850',
+                    'w-full justify-between h-auto min-h-8 py-1.5 px-3 text-xs bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-850 text-left font-normal',
                     compact ? 'min-h-8 py-1' : 'min-h-9 py-1.5'
                   )}
                 >
@@ -179,7 +295,17 @@ export function PhysicalExamSystemField({
                   <ChevronsUpDown className="ml-2 h-3.5 w-3.5 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-[320px] sm:w-[380px] p-0" align="start">
+              <PopoverContent
+                className="w-[320px] sm:w-[380px] p-0"
+                align="start"
+                onCloseAutoFocus={(e) => {
+                  if (justSelectedOthersRef.current) {
+                    e.preventDefault()
+                    remarksInputRef.current?.focus()
+                    justSelectedOthersRef.current = false
+                  }
+                }}
+              >
                 <Command>
                   <CommandInput placeholder="Search findings..." className="h-8 text-xs" />
                   <CommandList>
@@ -235,6 +361,7 @@ export function PhysicalExamSystemField({
             )}
           </div>
           <Input
+            ref={remarksInputRef}
             id={`${category}-remarks`}
             disabled={disabled}
             value={remarks || ''}

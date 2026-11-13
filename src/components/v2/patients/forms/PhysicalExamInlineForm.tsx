@@ -4,17 +4,19 @@ import React, { useState, useEffect, useMemo } from 'react'
 import { savePhysicalExaminationAction, deletePhysicalExaminationAction } from '@/actions/physical-exam.action'
 import { getPhysicalExamLibrariesAction } from '@/actions/super-admin/physical-exam-library.action'
 import { getActionErrorMessage } from '@/lib/action-error'
+import {
+  PhysicalExamSystemField,
+  formatPeCodes,
+} from '@/components/health-records/physical-exam-system-field'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import { Loader2, Trash2, Save } from 'lucide-react'
 import type { PhysicalExamLibrary } from '@prisma/client'
 import type { PhysicalExaminationFormInput } from '@/schemas/physical-examination-schema'
-import { PhysicalExamSystemField } from '@/components/health-records/physical-exam-system-field'
-import { formatPeCodes } from '@/lib/physical-exam-utils'
 
 export interface PhysicalExamInlineFormProps {
   patientId: number
-  currentData?: Partial<PhysicalExaminationFormInput> & { id?: string | number }
+  currentData?: Omit<Partial<PhysicalExaminationFormInput>, 'id'> & { id?: string | number }
   onSuccess?: () => void
   saveRef?: React.MutableRefObject<{ submit: () => Promise<void>; hasChanges: boolean } | null>
   onDirtyChange?: (isDirty: boolean) => void

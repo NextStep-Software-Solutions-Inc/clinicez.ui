@@ -3,12 +3,10 @@
 import prisma from "@lib/prisma";
 import { getCachedSession } from "@actions/session.action";
 import { withErrorHandling } from "@/lib/with-error-handling";
-import { PDFDocument, PDFName, PDFArray, rgb, StandardFonts } from "pdf-lib";
+import { PDFDocument, PDFName, PDFArray, PDFString, rgb, StandardFonts } from "pdf-lib";
 import fs from "fs/promises";
 import path from "path";
 import { format } from "date-fns";
-
-import { extractTransactionNoFromXml, extractAgeFromXml, formatPhilHealthAge } from "@/lib/philhealth-yakap/date-utils";
 
 async function fetchConsultationData(ticketId: number, clinicUid: string) {
   const session = await getCachedSession();
@@ -19,6 +17,7 @@ async function fetchConsultationData(ticketId: number, clinicUid: string) {
     select: {
       id: true,
       clinicId: true,
+      createdAt: true,
       caseNumber: true,
       soapTransNo: true,
       konsultaHciCaseNo: true,
@@ -147,134 +146,8 @@ async function fetchConsultationData(ticketId: number, clinicUid: string) {
     },
   });
 
-  // Find associated XML record from KonsultaBatchPatient / KonsultaBatchReport / KonsultaBatch
-  const enlistment = ticket.ClinicPatient.PhilHealthKonsultaEnlistments?.[0];
-  const patientPin = enlistment?.dependentPin || enlistment?.memberPin || ticket.ClinicPatient.Patient?.PhilHealthRecords?.[0]?.pin || "";
-  const caseNo = ticket.caseNumber || ticket.konsultaHciCaseNo || enlistment?.hciCaseNo || "";
-
-  let xmlTransactionNo: string | null = null;
-  let xmlPatientAge: string | null = null;
-
-  // 1. Search KonsultaBatchPatient records linked to this ticket or patient
-  const batchPatients = await prisma.konsultaBatchPatient.findMany({
-    where: {
-      OR: [
-        { selectedTicketIds: { has: ticket.id } },
-        { clinicPatientId: ticket.ClinicPatient.id },
-      ],
-      Batch: {
-        xmlPayload: { not: null },
-      },
-    },
-    orderBy: {
-      Batch: { createdAt: "desc" },
-    },
-    include: {
-      Batch: {
-        select: { xmlPayload: true },
-      },
-    },
-    take: 10,
-  });
-
-  for (const bp of batchPatients) {
-    if (bp.Batch?.xmlPayload) {
-      if (!xmlTransactionNo) {
-        xmlTransactionNo = extractTransactionNoFromXml(bp.Batch.xmlPayload, {
-          patientPin,
-          caseNo,
-          ticketId: ticket.id,
-        });
-      }
-      if (!xmlPatientAge) {
-        xmlPatientAge = extractAgeFromXml(bp.Batch.xmlPayload, {
-          patientPin,
-          caseNo,
-          ticketId: ticket.id,
-        });
-      }
-      if (xmlTransactionNo && xmlPatientAge) break;
-    }
-  }
-
-  // 2. If not found in linked batch patient, search recent KonsultaBatchReport for this clinic containing PIN or Case No
-  if ((!xmlTransactionNo || !xmlPatientAge) && ticket.clinicId && (patientPin || caseNo)) {
-    const reports = await prisma.konsultaBatchReport.findMany({
-      where: {
-        clinicId: ticket.clinicId,
-        xmlPayload: { not: null },
-        OR: [
-          ...(patientPin ? [{ xmlPayload: { contains: patientPin } }] : []),
-          ...(caseNo ? [{ xmlPayload: { contains: caseNo } }] : []),
-        ],
-      },
-      orderBy: { createdAt: "desc" },
-      select: { xmlPayload: true },
-      take: 5,
-    });
-
-    for (const report of reports) {
-      if (report.xmlPayload) {
-        if (!xmlTransactionNo) {
-          xmlTransactionNo = extractTransactionNoFromXml(report.xmlPayload, {
-            patientPin,
-            caseNo,
-            ticketId: ticket.id,
-          });
-        }
-        if (!xmlPatientAge) {
-          xmlPatientAge = extractAgeFromXml(report.xmlPayload, {
-            patientPin,
-            caseNo,
-            ticketId: ticket.id,
-          });
-        }
-        if (xmlTransactionNo && xmlPatientAge) break;
-      }
-    }
-  }
-
-  // 3. Fallback to v1 KonsultaBatch if available
-  if ((!xmlTransactionNo || !xmlPatientAge) && ticket.clinicId && (patientPin || caseNo)) {
-    const v1Batches = await prisma.konsultaBatch.findMany({
-      where: {
-        clinicId: ticket.clinicId,
-        xmlPayload: { not: null },
-        OR: [
-          ...(patientPin ? [{ xmlPayload: { contains: patientPin } }] : []),
-          ...(caseNo ? [{ xmlPayload: { contains: caseNo } }] : []),
-        ],
-      },
-      orderBy: { createdAt: "desc" },
-      select: { xmlPayload: true },
-      take: 5,
-    });
-
-    for (const b of v1Batches) {
-      if (b.xmlPayload) {
-        if (!xmlTransactionNo) {
-          xmlTransactionNo = extractTransactionNoFromXml(b.xmlPayload, {
-            patientPin,
-            caseNo,
-            ticketId: ticket.id,
-          });
-        }
-        if (!xmlPatientAge) {
-          xmlPatientAge = extractAgeFromXml(b.xmlPayload, {
-            patientPin,
-            caseNo,
-            ticketId: ticket.id,
-          });
-        }
-        if (xmlTransactionNo && xmlPatientAge) break;
-      }
-    }
-  }
-
   return {
     ...ticket,
-    xmlTransactionNo,
-    xmlPatientAge,
     ClinicPatient: ticket.ClinicPatient!,
     KonsultaDiagnosticResults: diagnosticResults,
   };
@@ -300,9 +173,9 @@ const EXAM_TYPE_TO_SERVICE_CODE: Record<string, number> = {
   FOBT: 18,
 };
 
-type ConsultationData = Awaited<ReturnType<typeof fetchConsultationData>>;
+export type ConsultationData = Awaited<ReturnType<typeof fetchConsultationData>>;
 
-async function prepareFilledPdf(ticket: ConsultationData, templateFileName: string) {
+export async function prepareFilledPdf(ticket: ConsultationData, templateFileName: string) {
   const clinic = ticket.Clinic;
   const patientUser = ticket.ClinicPatient.Patient;
   const enlistment = ticket.ClinicPatient.PhilHealthKonsultaEnlistments?.[0];
@@ -325,9 +198,14 @@ async function prepareFilledPdf(ticket: ConsultationData, templateFileName: stri
   });
 
   const prescriptionText = actualMedicines
-    .map(
-      (m) => `${m.genericName || m.name} ${m.dosage || ""} - ${m.qty} ${m.unit || "tabs"}\nSig: ${m.frequency || ""} ${m.duration ? `for ${m.duration}` : ""}`
-    )
+    .map((m) => {
+      const medName = m.genericName || m.name || "Medicine";
+      const dosageStr = m.dosage ? ` ${m.dosage}` : "";
+      const qtyStr = `${m.qty ?? 1} ${m.unit || "tabs"}`;
+      const sigStr = m.frequency || "";
+      const durationStr = m.duration ? ` for ${m.duration}` : "";
+      return `${medName}${dosageStr} - ${qtyStr}\nSig: ${sigStr}${durationStr}`.trim();
+    })
     .join("\n\n");
 
   const patientName = `${patientUser.firstName || ""} ${patientUser.lastName || ""}`.trim();
@@ -352,27 +230,24 @@ async function prepareFilledPdf(ticket: ConsultationData, templateFileName: stri
 
   const shouldBlankPhysician = isEpress && !hasActualMedicines;
 
+  let nextDispenseDateStr = "";
+  if (hasActualMedicines) {
+    const baseDate = ticket.createdAt ? new Date(ticket.createdAt) : new Date();
+    const nextDate = new Date(baseDate.getTime() + 30 * 24 * 60 * 60 * 1000);
+    nextDispenseDateStr = format(nextDate, "MM/dd/yyyy");
+  }
+
   const resolvedCaseNo =
-    ticket.caseNumber ||
-    ticket.konsultaHciCaseNo ||
     enlistment?.hciCaseNo ||
+    ticket.konsultaHciCaseNo ||
+    ticket.caseNumber ||
     "";
 
-  const resolvedTransactionNo =
-    ticket.xmlTransactionNo ||
-    ticket.soapTransNo ||
-    enlistment?.profilingTransNo ||
-    (enlistment?.hciCaseNo ? enlistment.hciCaseNo.replace(/^T-?/, 'P') : "") ||
-    ticket.konsultaHciTransNo ||
-    enlistment?.enlistmentTransNo ||
-    ticket.ekasTransactionNumber ||
-    "";
+  const resolvedTransactionNo = isEpress
+    ? (ticket.soapTransNo || ticket.konsultaHciTransNo || "")
+    : (enlistment?.profilingTransNo || (enlistment?.hciCaseNo ? enlistment.hciCaseNo.replace(/^T-?/, 'P') : "") || ticket.soapTransNo || ticket.konsultaHciTransNo || ticket.ekasTransactionNumber || "");
 
-  const formattedDobAge = formatPhilHealthAge(ticket.ClinicPatient.Patient.dob);
-  const resolvedAge =
-    (ticket.xmlPatientAge && ticket.xmlPatientAge.includes("YR(S)"))
-      ? ticket.xmlPatientAge
-      : (formattedDobAge || ticket.xmlPatientAge || calculateAge(ticket.ClinicPatient.Patient.dob));
+  const resolvedAge = calculateAge(ticket.ClinicPatient.Patient.dob);
 
   const patientData = {
     hciName: clinic?.name || "",
@@ -387,16 +262,16 @@ async function prepareFilledPdf(ticket: ConsultationData, templateFileName: stri
     membershipCategory: "",
     membershipType: memberType,
     physicianName: shouldBlankPhysician ? "" : physicianName,
-    prcLicense: shouldBlankPhysician ? "" : (profDetails?.licenseNumber || ""),
-    ptr: shouldBlankPhysician ? "" : (profDetails?.ptrNumber || ""),
+    prcLicense: shouldBlankPhysician ? "" : (profDetails?.licenseNumber?.trim() || (hp ? "0000000" : "")),
+    ptr: shouldBlankPhysician ? "" : (profDetails?.ptrNumber?.trim() || (hp ? "0000000" : "")),
     s2No: "",
     prescriptionText: prescriptionText,
-    nextDispenseDate: "",
+    nextDispenseDate: nextDispenseDateStr,
   };
 
   const templatePath = path.join(process.cwd(), "public", "pdfs", "phr", templateFileName);
   const existingPdfBytes = await fs.readFile(templatePath);
-  const pdfDoc = await PDFDocument.load(existingPdfBytes);
+  const pdfDoc = await PDFDocument.load(new Uint8Array(existingPdfBytes));
 
   const form = pdfDoc.getForm();
 
@@ -407,6 +282,9 @@ async function prepareFilledPdf(ticket: ConsultationData, templateFileName: stri
         field.setText(value || "");
         if (fontSize) {
           field.setFontSize(fontSize);
+        }
+        if (!value) {
+          field.acroField.setValue(PDFString.of(""));
         }
       }
     } catch (e) {
@@ -522,6 +400,7 @@ async function prepareFilledPdf(ticket: ConsultationData, templateFileName: stri
   }
 
   setTextField("textarea_rx", patientData.prescriptionText);
+  setTextField("text_nextDespensDate", patientData.nextDispenseDate);
   setTextField("text_nextDispenseDate", patientData.nextDispenseDate);
   setTextField("text_physicianName", patientData.physicianName);
   setTextField("text_prcLicense", patientData.prcLicense);
@@ -551,7 +430,7 @@ async function prepareFilledPdf(ticket: ConsultationData, templateFileName: stri
   }
 
   const filledBytes = await pdfDoc.save();
-  return { filledBytes, patientName, caseNumber: ticket.caseNumber };
+  return { filledBytes, patientName, caseNumber: resolvedCaseNo };
 }
 
 export const generateEkasPdfAction = withErrorHandling(

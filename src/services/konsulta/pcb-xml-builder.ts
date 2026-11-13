@@ -561,7 +561,7 @@ function addSoapSubElements(soap: XMLNode, soapData: KonsultaSoapData): void {
 // ─── Public API ───────────────────────────────────────────────────────────────
 
 export interface BuildPcbXmlOptions {
-    credentials: KonsultaHciCredentials;
+    credentials: Partial<KonsultaHciCredentials> & { hciAccreNo: string; cipherKey: string; pmccNo?: string; pmccNumber?: string };
     transmittalNumber: string;
     enlistments?: KonsultaEnlistmentData[];
     profiles?: KonsultaProfileData[];

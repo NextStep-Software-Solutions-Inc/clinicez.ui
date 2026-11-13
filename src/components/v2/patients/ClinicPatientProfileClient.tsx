@@ -1,7 +1,5 @@
 'use client'
 
-import { parsePeCodes } from '@/lib/physical-exam-utils'
-
 import React, { useState, useMemo, useRef, useCallback, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import Link from 'next/link'
@@ -66,6 +64,7 @@ import { SurgicalHistoryInlineForm } from './forms/SurgicalHistoryInlineForm'
 import { PhysicalExamInlineForm } from './forms/PhysicalExamInlineForm'
 import { NcdQuestionnaireEditForm } from '@/components/health-records/ncd-questionnaire-edit-form'
 import { getPhysicalExamLibrariesAction } from '@/actions/super-admin/physical-exam-library.action'
+import { parsePeCodes } from '@/components/health-records/physical-exam-system-field'
 import type { PatientHealthRecordsResponse } from '@/types/patient-profile'
 import type { PhysicalExamLibrary } from '@prisma/client'
 import { formatBloodType, calculateDetailedAge } from '@/lib/utils'
@@ -1369,7 +1368,7 @@ export default function ClinicPatientProfileClient({
             {false && (
               <motion.div variants={cardVariants} className={cn("relative focus-within:z-20", editingSections['disabilities'] && "z-20")}>
                 <CardContainer
-                  title="Disabilities & Chronic Illnesses"
+                  title="Disabilities"
                   icon={Accessibility}
                   accentColor="bg-purple-500"
                   editing={editingSections['disabilities']}

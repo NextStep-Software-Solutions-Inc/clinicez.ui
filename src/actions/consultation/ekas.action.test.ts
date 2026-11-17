@@ -33,6 +33,15 @@ jest.mock("@/lib/prisma", () => ({
     konsultaDiagnosticResult: {
       findMany: jest.fn(),
     },
+    konsultaBatchPatient: {
+      findMany: jest.fn(),
+    },
+    konsultaBatchReport: {
+      findMany: jest.fn(),
+    },
+    konsultaBatch: {
+      findMany: jest.fn(),
+    },
   },
 }));
 jest.mock("@lib/prisma", () => ({
@@ -44,13 +53,23 @@ jest.mock("@lib/prisma", () => ({
     konsultaDiagnosticResult: {
       findMany: jest.fn(),
     },
+    konsultaBatchPatient: {
+      findMany: jest.fn(),
+    },
+    konsultaBatchReport: {
+      findMany: jest.fn(),
+    },
+    konsultaBatch: {
+      findMany: jest.fn(),
+    },
   },
 }));
 
 import prisma from "@/lib/prisma";
 import { getCachedSession } from "@/actions/session.action";
 import { generateEkasPdfAction, generateEpressPdfAction } from "./ekas.action";
-import { PDFDocument } from "pdf-lib";
+import { formatPhilHealthAge } from "@/lib/philhealth-yakap/date-utils";
+import { PDFDocument, PDFDict, PDFName, PDFRawStream, StandardFonts, decodePDFRawStream } from "pdf-lib";
 import { format } from "date-fns";
 
 const mockPrisma = prisma as unknown as {
@@ -58,6 +77,15 @@ const mockPrisma = prisma as unknown as {
     findUnique: jest.Mock;
   };
   konsultaDiagnosticResult: {
+    findMany: jest.Mock;
+  };
+  konsultaBatchPatient: {
+    findMany: jest.Mock;
+  };
+  konsultaBatchReport: {
+    findMany: jest.Mock;
+  };
+  konsultaBatch: {
     findMany: jest.Mock;
   };
 };
@@ -79,6 +107,9 @@ describe("ekas.action: PDF Generation (eKAS & ePresS)", () => {
     });
 
     mockPrisma.konsultaDiagnosticResult.findMany.mockResolvedValue([]);
+    mockPrisma.konsultaBatchPatient.findMany.mockResolvedValue([]);
+    mockPrisma.konsultaBatchReport.findMany.mockResolvedValue([]);
+    mockPrisma.konsultaBatch.findMany.mockResolvedValue([]);
   });
 
   type BuildTicketOptions = {
@@ -110,10 +141,12 @@ describe("ekas.action: PDF Generation (eKAS & ePresS)", () => {
     soapTransNo?: string;
     profilingTransNo?: string | null;
     createdAt?: Date;
+    dob?: Date | null;
   };
 
   const createMockTicket = (options: BuildTicketOptions = {}) => {
     const createdAt = options.createdAt ?? baseTicketDate;
+    const dob = options.dob !== undefined ? options.dob : new Date("1990-01-01");
     const caseNumber = options.caseNumber ?? "INT-CASE-101";
     const hciCaseNo = options.hciCaseNo !== undefined ? options.hciCaseNo : "TP1003883120261100001";
     const soapTransNo = options.soapTransNo ?? "SP1003883120261100001";
@@ -181,6 +214,7 @@ describe("ekas.action: PDF Generation (eKAS & ePresS)", () => {
 
     return {
       id: 101,
+      clinicId: 1,
       caseNumber,
       konsultaHciCaseNo: hciCaseNo,
       soapTransNo,
@@ -196,7 +230,7 @@ describe("ekas.action: PDF Generation (eKAS & ePresS)", () => {
       ClinicPatient: {
         id: 501,
         Patient: {
-          dob: new Date("1990-01-01"),
+          dob,
           firstName: "JUAN",
           lastName: "DELA CRUZ",
           mobile: "09171234567",
@@ -595,5 +629,161 @@ describe("ekas.action: PDF Generation (eKAS & ePresS)", () => {
       expect(form.getTextField("text_transNo").getText()).toBe("PP1003883120261100001");
       expect(form.getTextField("text_physicianName").getText()).toMatch(/DR\.\s+ALICE\s+SMITH/i);
     });
+  });
+
+  // =========================================================================
+  // Issue #518: Full XML Format Patient Age (YR(S), MO(S), DAY(S))
+  // =========================================================================
+  describe("Issue #518: Patient Age Full Format on eKAS & ePresS PDFs", () => {
+    const assertPatientAgeAppearanceFit = async (pdf: PDFDocument, expectedAge: string) => {
+      const form = pdf.getForm();
+      const ageField = form.getTextField("text_patientAge");
+      expect(ageField.getText()).toBe(expectedAge);
+
+      // Verify /DA sets fontSize 7 via ageFontSize when age.length > 5
+      expect(ageField.acroField.getDefaultAppearance()).toContain("/Helv 7 Tf");
+
+      // Inspect the visible widget (eKAS uses widgets[0], ePresS uses widgets[1])
+      const widgets = ageField.acroField.getWidgets();
+      const visibleWidget = widgets.find((w) => w.getRectangle().width > 0);
+      expect(visibleWidget).toBeDefined();
+
+      const rect = visibleWidget!.getRectangle();
+      expect(rect.width).toBeCloseTo(78.66, 1);
+
+      const apDict = visibleWidget!.dict.lookup(PDFName.of("AP"), PDFDict);
+      const normalAp = apDict.lookup(PDFName.of("N"));
+      expect(normalAp).toBeInstanceOf(PDFRawStream);
+
+      const streamText = Buffer.from(
+        decodePDFRawStream(normalAp as PDFRawStream).decode()
+      ).toString("latin1");
+
+      // Confirm pdf-lib auto-scaled single-line appearance stream fits inside 78.66pt width
+      const fontMatch = streamText.match(/\/Helvetica\s+(\d+(?:\.\d+)?)\s+Tf/);
+      expect(fontMatch).not.toBeNull();
+      const renderedFontSize = parseFloat(fontMatch![1]);
+      expect(renderedFontSize).toBeLessThanOrEqual(7);
+      expect(renderedFontSize).toBeGreaterThan(0);
+
+      const helvetica = await pdf.embedFont(StandardFonts.Helvetica);
+      const renderedWidth = helvetica.widthOfTextAtSize(expectedAge, renderedFontSize);
+      expect(renderedWidth).toBeLessThanOrEqual(rect.width);
+    };
+
+    it.each([
+      { label: "eKAS", action: generateEkasPdfAction, expectedTransNo: "PP1003883120261100001" },
+      { label: "ePresS", action: generateEpressPdfAction, expectedTransNo: "SP1003883120261100001" },
+    ])(
+      "$label falls back to full formatPhilHealthAge(dob) when no XML batch payload exists",
+      async ({ action, expectedTransNo }) => {
+        const dob = new Date("1990-01-01");
+        const expectedAge = formatPhilHealthAge(dob)!;
+        expect(expectedAge).toMatch(/^\d+ YR\(S\), \d+ MO\(S\), \d+ DAY\(S\)$/);
+
+        mockPrisma.consultationTicket.findUnique.mockResolvedValue(createMockTicket({ dob }));
+
+        const res = await action({ ticketId: 101, clinicUid: "clinic-1" });
+        expect(res.data).toBeDefined();
+
+        const pdf = await loadPdfFromBase64(res.data!.base64);
+        const form = pdf.getForm();
+        expect(form.getTextField("text_transNo").getText()).toBe(expectedTransNo);
+        expect(form.getTextField("text_caseNo").getText()).toBe("TP1003883120261100001");
+
+        await assertPatientAgeAppearanceFit(pdf, expectedAge);
+      }
+    );
+
+    it.each([
+      { label: "eKAS", action: generateEkasPdfAction, expectedTransNo: "PP1003883120261100001" },
+      { label: "ePresS", action: generateEpressPdfAction, expectedTransNo: "SP1003883120261100001" },
+    ])(
+      "$label prefers XML pPatientAge from KonsultaBatchPatient while preserving text_transNo and text_caseNo",
+      async ({ action, expectedTransNo }) => {
+        const xmlAge = "42 YR(S), 11 MO(S), 29 DAY(S)";
+        mockPrisma.consultationTicket.findUnique.mockResolvedValue(createMockTicket());
+        mockPrisma.konsultaBatchPatient.findMany.mockResolvedValue([
+          {
+            Batch: {
+              xmlPayload: `<PCB><PROFILING><PROFILE pHciCaseNo="TP1003883120261100001" pHciTransNo="PP999999" pPatientPin="123456789012" pPatientAge="${xmlAge}" /></PROFILING></PCB>`,
+            },
+          },
+        ]);
+
+        const res = await action({ ticketId: 101, clinicUid: "clinic-1" });
+        expect(res.data).toBeDefined();
+
+        const pdf = await loadPdfFromBase64(res.data!.base64);
+        const form = pdf.getForm();
+        expect(form.getTextField("text_transNo").getText()).toBe(expectedTransNo);
+        expect(form.getTextField("text_caseNo").getText()).toBe("TP1003883120261100001");
+
+        await assertPatientAgeAppearanceFit(pdf, xmlAge);
+      }
+    );
+
+    it.each([
+      {
+        label: "eKAS via KonsultaBatchReport",
+        action: generateEkasPdfAction,
+        source: "report" as const,
+        expectedTransNo: "PP1003883120261100001",
+      },
+      {
+        label: "ePresS via KonsultaBatch",
+        action: generateEpressPdfAction,
+        source: "batch" as const,
+        expectedTransNo: "SP1003883120261100001",
+      },
+    ])(
+      "$label extracts XML pPatientAge from fallback batch tables ($source)",
+      async ({ action, source, expectedTransNo }) => {
+        const xmlAge = "35 YR(S), 7 MO(S), 14 DAY(S)";
+        const payload = `<PCB><SOAPS><SOAP pHciCaseNo="TP1003883120261100001" pHciTransNo="SP999999" pPatientPin="123456789012" pPatientAge="${xmlAge}" /></SOAPS></PCB>`;
+
+        mockPrisma.consultationTicket.findUnique.mockResolvedValue(createMockTicket());
+        if (source === "report") {
+          mockPrisma.konsultaBatchReport.findMany.mockResolvedValue([{ xmlPayload: payload }]);
+        } else {
+          mockPrisma.konsultaBatch.findMany.mockResolvedValue([{ xmlPayload: payload }]);
+        }
+
+        const res = await action({ ticketId: 101, clinicUid: "clinic-1" });
+        expect(res.data).toBeDefined();
+
+        const pdf = await loadPdfFromBase64(res.data!.base64);
+        const form = pdf.getForm();
+        expect(form.getTextField("text_transNo").getText()).toBe(expectedTransNo);
+        await assertPatientAgeAppearanceFit(pdf, xmlAge);
+      }
+    );
+
+    it.each([
+      { label: "eKAS", action: generateEkasPdfAction },
+      { label: "ePresS", action: generateEpressPdfAction },
+    ])(
+      "$label falls back to formatPhilHealthAge(dob) when XML pPatientAge lacks 'YR(S)'",
+      async ({ action }) => {
+        const dob = new Date("1990-01-01");
+        const expectedAge = formatPhilHealthAge(dob)!;
+
+        mockPrisma.consultationTicket.findUnique.mockResolvedValue(createMockTicket({ dob }));
+        mockPrisma.konsultaBatchPatient.findMany.mockResolvedValue([
+          {
+            Batch: {
+              xmlPayload: `<PCB><PROFILING><PROFILE pPatientPin="123456789012" pPatientAge="42" /></PROFILING></PCB>`,
+            },
+          },
+        ]);
+
+        const res = await action({ ticketId: 101, clinicUid: "clinic-1" });
+        expect(res.data).toBeDefined();
+
+        const pdf = await loadPdfFromBase64(res.data!.base64);
+        const form = pdf.getForm();
+        expect(form.getTextField("text_patientAge").getText()).toBe(expectedAge);
+      }
+    );
   });
 });

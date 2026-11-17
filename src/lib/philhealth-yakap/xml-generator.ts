@@ -1622,7 +1622,7 @@ export function generateKonsultaXml(options: KonsultaXmlOptions): string {
       fh => fh.code === '006' || fh.code === '6' || fh.specificDesc?.toUpperCase() === 'DIABETES MELLITUS'
     );
 
-    if (hasDiabetesFamHist && !hasDiagResults) {
+    if (tagging !== '1' && hasDiabetesFamHist && !hasDiagResults) {
       throw new Error(`PhilHealth Validation Error: A Diagnostic Exam Result is strictly required because the patient has a Family History of Diabetes Mellitus.`);
     }
 

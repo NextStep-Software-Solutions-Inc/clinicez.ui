@@ -182,6 +182,13 @@ describe("philhealth-yakap.actions: generateBatchXmlAction", () => {
       resultType: string;
       resultData?: Record<string, unknown>;
     }>;
+    familyMedicalHistories?: Array<{
+      details?: string | null;
+      Condition: {
+        code?: string | null;
+        name: string;
+      };
+    }>;
   };
 
   const createMockBatch = (options: BuildBatchOptions = {}) => {
@@ -274,7 +281,7 @@ describe("philhealth-yakap.actions: generateBatchXmlAction", () => {
                 },
               ],
               MedicalHistories: [],
-              FamilyMedicalHistories: [],
+              FamilyMedicalHistories: options.familyMedicalHistories ?? [],
               SurgicalHistories: [],
               PersonalHistory: null,
               ObGyneHistory: null,
@@ -820,6 +827,66 @@ describe("philhealth-yakap.actions: generateBatchXmlAction", () => {
       // Rounded vitals without precision leakage
       expect(xml).toMatch(/pTemp="37\.4"/);
       expect(xml).not.toContain("37.400000000000006");
+    });
+
+    it("Issue #519 (Case 2/3 Tranche 1): allows Tranche 1 XML generation with Diabetes Mellitus family history when only consultation-linked labs exist", async () => {
+      mockPrisma.konsultaDiagnosticResult.findMany.mockResolvedValue([
+        {
+          id: 11,
+          consultationTicketId: 101,
+          hciTransNo: "SP1003883120261100001",
+          resultType: "FBS",
+          resultData: { glucoseMg: "95" },
+        },
+      ]);
+
+      mockPrisma.konsultaBatchReport.findUnique.mockResolvedValue(
+        createMockBatch({
+          tagging: "1",
+          familyMedicalHistories: [
+            {
+              details: null,
+              Condition: {
+                code: "006",
+                name: "Diabetes Mellitus",
+              },
+            },
+          ],
+        })
+      );
+
+      const result = await generateBatchXmlAction("clinic-test-123", "batch-test-1");
+      expect(result.status).toBe(true);
+
+      const xml = getGeneratedXml();
+      expect(xml).toContain('<FAMHIST pMdiseaseCode="006"');
+      expect(xml).toContain('<DIAGNOSTICEXAMRESULT pHciCaseNo=""');
+      expect(xml).not.toContain("SP1003883120261100001");
+    });
+
+    it("Issue #519 (Tranche 2 negative): fails with PhilHealth Validation Error when DM family history is present and diagnostic results are empty", async () => {
+      mockPrisma.konsultaDiagnosticResult.findMany.mockResolvedValue([]);
+
+      mockPrisma.konsultaBatchReport.findUnique.mockResolvedValue(
+        createMockBatch({
+          tagging: "2",
+          familyMedicalHistories: [
+            {
+              details: null,
+              Condition: {
+                code: "006",
+                name: "Diabetes Mellitus",
+              },
+            },
+          ],
+        })
+      );
+
+      const result = await generateBatchXmlAction("clinic-test-123", "batch-test-1");
+      expect(result).toEqual({
+        success: false,
+        error: expect.stringMatching(/PhilHealth Validation Error.*Diabetes Mellitus/),
+      });
     });
   });
 });

@@ -168,6 +168,10 @@ export function extractTransactionNoFromXml(
   return null;
 }
 
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 /**
  * Dynamically extract the patient age string associated with a patient/ticket
  * from a PhilHealth Konsulta / Yakap XML payload.
@@ -185,10 +189,14 @@ export function extractAgeFromXml(
   if (!xml || typeof xml !== "string") return null;
 
   const { patientPin, caseNo } = options || {};
+  const pinClean = patientPin?.trim();
+  const caseClean = caseNo?.trim();
+  const escapedPin = pinClean ? escapeRegExp(pinClean) : null;
+  const escapedCase = caseClean ? escapeRegExp(caseClean) : null;
 
   // 1. Check <PROFILE ...> by patientPin
-  if (patientPin) {
-    const profileRegex = new RegExp(`<PROFILE\\b[^>]*?pPatientPin=["']${patientPin}["'][^>]*?>`, "i");
+  if (escapedPin) {
+    const profileRegex = new RegExp(`<PROFILE\\b[^>]*?pPatientPin=["']${escapedPin}["'][^>]*?>`, "i");
     const profileMatch = xml.match(profileRegex);
     if (profileMatch) {
       const ageMatch = profileMatch[0].match(/pPatientAge=["']([^"']+)["']/i);
@@ -197,16 +205,15 @@ export function extractAgeFromXml(
   }
 
   // 2. Check <PROFILE ...> or <SOAP ...> by caseNo
-  if (caseNo) {
-    const caseClean = caseNo.trim();
-    const profileRegex = new RegExp(`<PROFILE\\b[^>]*?pHciCaseNo=["']${caseClean}["'][^>]*?>`, "i");
+  if (escapedCase) {
+    const profileRegex = new RegExp(`<PROFILE\\b[^>]*?pHciCaseNo=["']${escapedCase}["'][^>]*?>`, "i");
     const profileMatch = xml.match(profileRegex);
     if (profileMatch) {
       const ageMatch = profileMatch[0].match(/pPatientAge=["']([^"']+)["']/i);
       if (ageMatch && ageMatch[1]?.trim()) return ageMatch[1].trim();
     }
 
-    const soapRegex = new RegExp(`<SOAP\\b[^>]*?pHciCaseNo=["']${caseClean}["'][^>]*?>`, "i");
+    const soapRegex = new RegExp(`<SOAP\\b[^>]*?pHciCaseNo=["']${escapedCase}["'][^>]*?>`, "i");
     const soapMatch = xml.match(soapRegex);
     if (soapMatch) {
       const ageMatch = soapMatch[0].match(/pPatientAge=["']([^"']+)["']/i);
@@ -215,8 +222,8 @@ export function extractAgeFromXml(
   }
 
   // 3. Check <SOAP ...> by patientPin
-  if (patientPin) {
-    const soapRegex = new RegExp(`<SOAP\\b[^>]*?pPatientPin=["']${patientPin}["'][^>]*?>`, "i");
+  if (escapedPin) {
+    const soapRegex = new RegExp(`<SOAP\\b[^>]*?pPatientPin=["']${escapedPin}["'][^>]*?>`, "i");
     const soapMatch = xml.match(soapRegex);
     if (soapMatch) {
       const ageMatch = soapMatch[0].match(/pPatientAge=["']([^"']+)["']/i);
@@ -248,5 +255,6 @@ export function formatPhilHealthAge(dob: Date | string | null | undefined): stri
     y--;
     m += 12;
   }
+  if (y < 0) return null;
   return `${y} YR(S), ${m} MO(S), ${days} DAY(S)`;
 }

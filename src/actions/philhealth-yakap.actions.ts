@@ -53,6 +53,7 @@ export interface RegistrationEntry {
 }
 
 import { parsePhilHealthDate, resolvePhilHealthEnlistDate } from "@/lib/philhealth-yakap/date-utils";
+import { resolveSoapSubjectiveForXml } from "@/lib/philhealth-yakap/subjective-utils";
 
 const getClinicCredentials = async (clinicUid: string) => {
   const session = await getCachedSession();
@@ -875,13 +876,32 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
             const recommended = await getKonsultaRecommendedService(ageTotalMonths, patient.gender);
             const allRecommendedDiagnosticIds = recommended?.philhealthDiagnosticIds || [];
 
-            // Subjective structured data from notes
-            const subjectiveNote = t.ConsultationNotes?.find(n =>
+            // Subjective structured data & clinical narrative from notes
+            const subjectiveNotes = (t.ConsultationNotes ?? []).filter((n) =>
               n.section.toLowerCase().includes("subjective")
             );
-            const sd = (subjectiveNote?.structuredData && typeof subjectiveNote.structuredData === 'object' && !Array.isArray(subjectiveNote.structuredData))
-              ? subjectiveNote.structuredData as Record<string, string>
-              : {};
+            const subjectiveNoteWithSd = subjectiveNotes.find(
+              (n) =>
+                n.structuredData &&
+                typeof n.structuredData === "object" &&
+                !Array.isArray(n.structuredData)
+            );
+            const sd = subjectiveNoteWithSd?.structuredData as Record<string, unknown> | undefined;
+            const subjectiveContents = Array.from(
+              new Set(
+                [
+                  subjectiveNoteWithSd?.content,
+                  ...subjectiveNotes.map((n) => n.content),
+                ]
+                  .map((c) => c?.trim())
+                  .filter((c): c is string => Boolean(c))
+              )
+            );
+            const resolvedSubjective = resolveSoapSubjectiveForXml(
+              sd,
+              subjectiveContents.join("\n"),
+              t.subject
+            );
 
             // ICD codes from diagnoses
             const icdCodes = (t.ConsultationDiagnoses ?? [])
@@ -976,10 +996,10 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
               coPay: t.konsultaCoPay?.toString() || "0",
               transDate: today,
               subjective: {
-                illnessHistory: sd.illnessHistory || t.subject || "",
-                signsSymptoms: sd.signsSymptoms || "",
-                otherComplaint: sd.otherComplaint || "",
-                painSite: sd.painSite || "",
+                illnessHistory: resolvedSubjective.illnessHistory,
+                signsSymptoms: resolvedSubjective.signsSymptoms,
+                otherComplaint: resolvedSubjective.otherComplaint,
+                painSite: resolvedSubjective.painSite,
               },
               vitals: mapSoapVitals(soapVitals as unknown as VitalSignInput),
               physicalExam: mapPhysicalExam(t.PhysicalExaminations?.[0]),

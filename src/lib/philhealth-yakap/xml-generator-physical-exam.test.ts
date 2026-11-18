@@ -374,4 +374,88 @@ describe("xml-generator physical exam multi-select findings", () => {
       expect(xml).not.toContain('<DIAGNOSTICEXAMRESULT pHciCaseNo=""');
     });
   });
+
+  describe("Issue #520: <SUBJECTIVE> code normalization, uppercase output, and Data Dictionary limits", () => {
+    it("deduplicates signsSymptoms, zero-pads single digits, normalizes lowercase x->X, and enforces 2000/2000/500 caps", () => {
+      const options: KonsultaXmlOptions = {
+        ...baseOptions,
+        tagging: "2",
+        patients: [
+          {
+            ...baseOptions.patients[0],
+            consultations: [
+              {
+                hciCaseNo: "TH9000000120260000001",
+                hciTransNo: "SH9000000120260000001",
+                soapDate: "2026-07-08",
+                atc: "WALKEDIN",
+                isWalkedIn: "Y",
+                coPay: "0",
+                subjective: {
+                  illnessHistory: `persistent fever ${"a".repeat(2100)}`,
+                  signsSymptoms: "2; 38; x; 02; X; 9",
+                  painSite: `epigastric region ${"b".repeat(550)}`,
+                  otherComplaint: `loss of appetite ${"c".repeat(2100)}`,
+                },
+                vitals: baseOptions.patients[0].profile.vitals,
+                diagnoses: ["J00"],
+              },
+            ],
+          },
+        ],
+      };
+
+      const xml = generateKonsultaXml(options);
+      const subjMatch = xml.match(/<SUBJECTIVE\s+([^>]+)\/>/);
+      expect(subjMatch).not.toBeNull();
+      const attrs = subjMatch![1];
+
+      const hpiVal = attrs.match(/pIllnessHistory="([^"]*)"/)?.[1] ?? "";
+      const signsVal = attrs.match(/pSignsSymptoms="([^"]*)"/)?.[1] ?? "";
+      const otherVal = attrs.match(/pOtherComplaint="([^"]*)"/)?.[1] ?? "";
+      const painVal = attrs.match(/pPainSite="([^"]*)"/)?.[1] ?? "";
+
+      expect(signsVal).toBe("02;38;X;09");
+      expect(hpiVal).toHaveLength(2000);
+      expect(hpiVal.startsWith("PERSISTENT FEVER ")).toBe(true);
+      expect(otherVal).toHaveLength(2000);
+      expect(otherVal.startsWith("LOSS OF APPETITE ")).toBe(true);
+      expect(painVal).toHaveLength(500);
+      expect(painVal.startsWith("EPIGASTRIC REGION ")).toBe(true);
+    });
+
+    it("handles legacy non-code free text in signsSymptoms by routing to X and uppercasing pOtherComplaint", () => {
+      const options: KonsultaXmlOptions = {
+        ...baseOptions,
+        tagging: "2",
+        patients: [
+          {
+            ...baseOptions.patients[0],
+            consultations: [
+              {
+                hciCaseNo: "TH9000000120260000001",
+                hciTransNo: "SH9000000120260000001",
+                soapDate: "2026-07-08",
+                atc: "WALKEDIN",
+                isWalkedIn: "Y",
+                coPay: "0",
+                subjective: {
+                  illnessHistory: "Onset 2 days ago",
+                  signsSymptoms: "Persistent dizziness",
+                  otherComplaint: "Mild fatigue",
+                },
+                vitals: baseOptions.patients[0].profile.vitals,
+                diagnoses: ["R42"],
+              },
+            ],
+          },
+        ],
+      };
+
+      const xml = generateKonsultaXml(options);
+      expect(xml).toContain('pSignsSymptoms="X"');
+      expect(xml).toContain('pOtherComplaint="PERSISTENT DIZZINESS | MILD FATIGUE"');
+      expect(xml).toContain('pIllnessHistory="ONSET 2 DAYS AGO"');
+    });
+  });
 });

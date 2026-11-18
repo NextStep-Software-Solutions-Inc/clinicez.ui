@@ -1,5 +1,6 @@
 import { create, builder } from 'xmlbuilder2';
 import type { XMLBuilder } from 'xmlbuilder2/lib/interfaces';
+import { normalizeSubjectiveForXml } from './subjective-utils';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Interfaces
@@ -834,49 +835,7 @@ function buildNcdQAns(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function buildSoapSubjective(parent: XmlNode, consultation: KonsultaConsultationData): XmlNode {
-  let pSignsSymptoms = consultation.subjective.signsSymptoms;
-  let pOtherComplaint = consultation.subjective.otherComplaint;
-
-  // Ensure pSignsSymptoms is semicolon separated and numeric codes are padded to 2 digits
-  let signsArray: string[] = [];
-
-  if (pSignsSymptoms) {
-    if (!/^[\dX\s,;]+$/.test(pSignsSymptoms)) {
-      pOtherComplaint = [pSignsSymptoms, pOtherComplaint].filter(Boolean).join(" | ");
-      signsArray.push("X");
-    } else {
-      signsArray = pSignsSymptoms
-        .split(/[,;]+/)
-        .map(s => s.trim())
-        .filter(Boolean)
-        .map(s => {
-          if (/^\d+$/.test(s)) {
-            return s.padStart(2, '0');
-          }
-          return s; // keep "X" as is
-        });
-    }
-  }
-
-  // PhilHealth strict validation: 
-  // If pOtherComplaint has value, 'X' must be in pSignsSymptoms
-  if (pOtherComplaint && !signsArray.includes("X")) {
-    signsArray.push("X");
-  }
-
-  // If pPainSite has value, '38' must be in pSignsSymptoms
-  if (consultation.subjective.painSite && !signsArray.includes("38")) {
-    signsArray.push("38");
-  }
-
-  pSignsSymptoms = signsArray.join(';');
-
-  parent.ele('SUBJECTIVE', withStatus({
-    pIllnessHistory: consultation.subjective.illnessHistory,
-    pSignsSymptoms: pSignsSymptoms,
-    pOtherComplaint: pOtherComplaint,
-    pPainSite: consultation.subjective.painSite,
-  })).up();
+  parent.ele('SUBJECTIVE', withStatus(normalizeSubjectiveForXml(consultation.subjective))).up();
   return parent;
 }
 

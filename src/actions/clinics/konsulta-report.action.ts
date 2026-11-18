@@ -27,6 +27,7 @@ import {
 } from "@/lib/konsulta-batch-deficiencies";
 import { withErrorHandling } from "@/lib/with-error-handling";
 import { resolvePhilHealthEnlistDate } from "@/lib/philhealth-yakap/date-utils";
+import { resolveSoapSubjectiveForXml } from "@/lib/philhealth-yakap/subjective-utils";
 import {
     buildPcbXml,
     generateTransmittalNumber,
@@ -3366,7 +3367,7 @@ export const generateBatchXmlAction = withErrorHandling(
                                 },
                             },
                             ConsultationNotes: {
-                                select: { section: true, content: true },
+                                select: { section: true, content: true, structuredData: true },
                             },
                             ConsultationDiagnoses: {
                                 select: { icd10Code: true, type: true },
@@ -3725,8 +3726,30 @@ export const generateBatchXmlAction = withErrorHandling(
                                 : entry.memberPin || entry.philHealthPin;
 
                         // Build SOAP subData from consultation clinical data
-                        const subjNote = consultation.ConsultationNotes?.find(
-                            (n) => n.section === "subjective",
+                        const subjectiveNotes = (consultation.ConsultationNotes ?? []).filter((n) =>
+                            n.section.toLowerCase().includes("subjective"),
+                        );
+                        const subjectiveNoteWithSd = subjectiveNotes.find(
+                            (n) =>
+                                n.structuredData &&
+                                typeof n.structuredData === "object" &&
+                                !Array.isArray(n.structuredData),
+                        );
+                        const subjSd = subjectiveNoteWithSd?.structuredData as Record<string, unknown> | undefined;
+                        const subjContents = Array.from(
+                            new Set(
+                                [
+                                    subjectiveNoteWithSd?.content,
+                                    ...subjectiveNotes.map((n) => n.content),
+                                ]
+                                    .map((c) => c?.trim())
+                                    .filter((c): c is string => Boolean(c)),
+                            ),
+                        );
+                        const resolvedSubjective = resolveSoapSubjectiveForXml(
+                            subjSd,
+                            subjContents.join("\n"),
+                            consultation.subject,
                         );
                         const planNote = consultation.ConsultationNotes?.find(
                             (n) => n.section === "plan",
@@ -3748,8 +3771,10 @@ export const generateBatchXmlAction = withErrorHandling(
 
                         const soapSubData: KonsultaSoapSubData = {
                             // SUBJECTIVE
-                            illnessHistory: subjNote?.content ?? "",
-                            otherComplaint: consultation.subject ?? "",
+                            illnessHistory: resolvedSubjective.illnessHistory,
+                            signsSymptoms: resolvedSubjective.signsSymptoms,
+                            otherComplaint: resolvedSubjective.otherComplaint,
+                            painSite: resolvedSubjective.painSite,
 
                             // PEPERT from vitals
                             systolic:

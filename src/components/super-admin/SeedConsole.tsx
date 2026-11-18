@@ -11,6 +11,7 @@ import {
   seedPermissionsAction,
   seedProceduresAction,
   seedVaccinesAction,
+  seedSignsAndSymptomsAction,
   seedLocationsAction,
   seedAllAction,
   type SeedResult,
@@ -45,6 +46,13 @@ const seedConfigs: Array<{
     description: "Seed vaccine catalog, administration routes, and dose types.",
     icon: <Syringe className="h-5 w-5" />,
     action: seedVaccinesAction,
+  },
+  {
+    key: "philhealth",
+    title: "PhilHealth Signs & Symptoms",
+    description: "Seed all 39 PhilHealth Konsulta lib_signs_symptoms codes (36 active, 3 inactive) into KonsultaSignAndSymptom.",
+    icon: <Heart className="h-5 w-5" />,
+    action: seedSignsAndSymptomsAction,
   },
   {
     key: "locations",
@@ -126,7 +134,7 @@ export default function SeedConsole() {
               </div>
               <div>
                 <CardTitle>Seed All</CardTitle>
-                <CardDescription>Run all seed operations at once (permissions, procedures, PhilHealth, vaccines).</CardDescription>
+                <CardDescription>Run all seed operations at once (permissions, procedures, vaccines, PhilHealth Signs &amp; Symptoms).</CardDescription>
               </div>
             </div>
             <Button

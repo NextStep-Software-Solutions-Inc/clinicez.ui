@@ -189,6 +189,12 @@ describe("philhealth-yakap.actions: generateBatchXmlAction", () => {
         name: string;
       };
     }>;
+    subject?: string;
+    consultationNotes?: Array<{
+      section: string;
+      content: string;
+      structuredData?: Record<string, unknown> | null;
+    }>;
   };
 
   const createMockBatch = (options: BuildBatchOptions = {}) => {
@@ -310,7 +316,7 @@ describe("philhealth-yakap.actions: generateBatchXmlAction", () => {
             ConsultationTickets: [
               {
                 id: 101,
-                subject: "Consultation 101",
+                subject: options.subject ?? "Consultation 101",
                 soapTransNo: "SP1003883120261100001",
                 caseNumber: "CASE-101",
                 createdAt: new Date("2026-11-12T00:00:00Z"),
@@ -320,7 +326,7 @@ describe("philhealth-yakap.actions: generateBatchXmlAction", () => {
                 konsultaCoPay: 0,
                 konsultaRecommendedDiagnosticOptions: null,
                 DiagnosticRequests: [],
-                ConsultationNotes: [],
+                ConsultationNotes: options.consultationNotes ?? [],
                 ConsultationDiagnoses: [{ icd10Code: "J00" }],
                 ConsultationTicketHPs: physician
                   ? [
@@ -887,6 +893,111 @@ describe("philhealth-yakap.actions: generateBatchXmlAction", () => {
         success: false,
         error: expect.stringMatching(/PhilHealth Validation Error.*Diabetes Mellitus/),
       });
+    });
+
+    it("Issue #520 (HPI Fallback): falls back to stripped Markdown subjectiveNote.content before t.subject when sd.illnessHistory is blank", async () => {
+      mockPrisma.konsultaBatchReport.findUnique.mockResolvedValue(
+        createMockBatch({
+          tagging: "2",
+          subject: "Walk-in Follow Up",
+          consultationNotes: [
+            {
+              section: "Subjective History",
+              content: "### History of Present Illness\n- **Fever** and _dry cough_ for 3 days",
+              structuredData: {
+                illnessHistory: "",
+                signsSymptoms: "37;09",
+                painSite: "",
+                otherComplaint: "",
+              },
+            },
+          ],
+        })
+      );
+
+      const result = await generateBatchXmlAction("clinic-test-123", "batch-test-1");
+      expect(result.status).toBe(true);
+
+      const xml = getGeneratedXml();
+      expect(xml).toContain('pIllnessHistory="HISTORY OF PRESENT ILLNESS\nFEVER AND DRY COUGH FOR 3 DAYS"');
+      expect(xml).not.toContain('pIllnessHistory="WALK-IN FOLLOW UP"');
+      expect(xml).toContain('pSignsSymptoms="37;09"');
+    });
+
+    it("Issue #520 (Stale Gating): does NOT re-inject '38' or 'X' when stale painSite/otherComplaint remain in DB after deselection", async () => {
+      mockPrisma.konsultaBatchReport.findUnique.mockResolvedValue(
+        createMockBatch({
+          tagging: "2",
+          consultationNotes: [
+            {
+              section: "subjective",
+              content: "",
+              structuredData: {
+                illnessHistory: "Cough and fever",
+                signsSymptoms: "09;37",
+                painSite: "Abdomen",
+                otherComplaint: "Stale other symptom",
+              },
+            },
+          ],
+        })
+      );
+
+      const result = await generateBatchXmlAction("clinic-test-123", "batch-test-1");
+      expect(result.status).toBe(true);
+
+      const xml = getGeneratedXml();
+      expect(xml).toContain('pIllnessHistory="COUGH AND FEVER"');
+      expect(xml).toContain('pSignsSymptoms="09;37"');
+      expect(xml).toContain('pPainSite=""');
+      expect(xml).toContain('pOtherComplaint=""');
+      expect(xml).not.toContain('ABDOMEN');
+      expect(xml).not.toContain('STALE OTHER SYMPTOM');
+    });
+
+    it("Issue #520 (SSVTF Case 3): exports full Case 3 <SUBJECTIVE> payload in uppercase within Data Dictionary limits", async () => {
+      const longHpi = `History of illness: ${"A".repeat(2050)}`;
+      const longOther = `Other complaint: ${"B".repeat(2050)}`;
+      const longPainSite = `Pain site: ${"C".repeat(550)}`;
+
+      mockPrisma.konsultaBatchReport.findUnique.mockResolvedValue(
+        createMockBatch({
+          tagging: "2",
+          consultationNotes: [
+            {
+              section: "subjective",
+              content: "",
+              structuredData: {
+                illnessHistory: longHpi,
+                signsSymptoms: "37;38;x;37",
+                painSite: longPainSite,
+                otherComplaint: longOther,
+              },
+            },
+          ],
+        })
+      );
+
+      const result = await generateBatchXmlAction("clinic-test-123", "batch-test-1");
+      expect(result.status).toBe(true);
+
+      const xml = getGeneratedXml();
+      const subjMatch = xml.match(/<SUBJECTIVE\s+([^>]+)\/>/);
+      expect(subjMatch).not.toBeNull();
+      const attrs = subjMatch![1];
+
+      const hpiVal = attrs.match(/pIllnessHistory="([^"]*)"/)?.[1] ?? "";
+      const signsVal = attrs.match(/pSignsSymptoms="([^"]*)"/)?.[1] ?? "";
+      const otherVal = attrs.match(/pOtherComplaint="([^"]*)"/)?.[1] ?? "";
+      const painVal = attrs.match(/pPainSite="([^"]*)"/)?.[1] ?? "";
+
+      expect(hpiVal).toHaveLength(2000);
+      expect(hpiVal).toBe(hpiVal.toUpperCase());
+      expect(signsVal).toBe("37;38;X");
+      expect(otherVal).toHaveLength(2000);
+      expect(otherVal).toBe(otherVal.toUpperCase());
+      expect(painVal).toHaveLength(500);
+      expect(painVal).toBe(painVal.toUpperCase());
     });
   });
 });

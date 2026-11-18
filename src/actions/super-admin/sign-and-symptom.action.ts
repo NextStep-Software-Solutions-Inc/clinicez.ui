@@ -2,6 +2,7 @@
 
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { seedSignsAndSymptomsAction } from "./seed.action";
 
 export async function getSignsAndSymptomsAction() {
   try {
@@ -77,5 +78,26 @@ export async function deleteSignAndSymptomAction(id: string) {
   } catch (error: any) {
     console.error("Error deleting sign and symptom:", error);
     return { success: false, error: error.message };
+  }
+}
+
+export async function seedPhilHealthSignsAndSymptomsAction() {
+  try {
+    const result = await seedSignsAndSymptomsAction();
+    if (!result.status) {
+      return { success: false, error: result.message };
+    }
+    revalidatePath("/super-admin/signs-and-symptoms");
+    revalidatePath("/(v2)/(main)/clinics/[clinicId]/workspace", "layout");
+    revalidatePath("/v2/clinic/[clinicUid]/consultations", "layout");
+    return {
+      success: true,
+      message: result.message,
+      data: result.data,
+    };
+  } catch (error: unknown) {
+    console.error("Error seeding PhilHealth signs and symptoms:", error);
+    const message = error instanceof Error ? error.message : "Failed to seed signs and symptoms";
+    return { success: false, error: message };
   }
 }

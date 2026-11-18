@@ -4,6 +4,7 @@ import "server-only";
 import prisma from "@lib/prisma";
 import { isSuperAdminAction } from "./admin-check.action";
 import { PERMISSIONS } from "@lib/permissions";
+import { PHILHEALTH_SIGNS_AND_SYMPTOMS } from "@lib/philhealth-yakap/signs-and-symptoms-library";
 
 // ──────────────────────────────────────────────────────────────
 // Shared types
@@ -321,7 +322,58 @@ export async function seedVaccinesAction(): Promise<SeedResult> {
 }
 
 // ──────────────────────────────────────────────────────────────
-// 5. Seed Philippine Locations (Regions, Provinces, Municipalities, Barangays)
+// 5. Seed PhilHealth Signs & Symptoms (lib_signs_symptoms.xlsx)
+// ──────────────────────────────────────────────────────────────
+export async function seedSignsAndSymptomsAction(): Promise<SeedResult> {
+  try {
+    await requireSuperAdmin();
+
+    const existingRecords = await prisma.konsultaSignAndSymptom.findMany({
+      select: { code: true },
+    });
+    const existingCodes = new Set(existingRecords.map((r) => r.code));
+
+    let created = 0;
+    let skipped = 0;
+
+    for (const item of PHILHEALTH_SIGNS_AND_SYMPTOMS) {
+      await prisma.konsultaSignAndSymptom.upsert({
+        where: { code: item.code },
+        update: {
+          description: item.description,
+          isActive: item.isActive,
+          sortOrder: item.sortOrder,
+        },
+        create: {
+          code: item.code,
+          description: item.description,
+          isActive: item.isActive,
+          sortOrder: item.sortOrder,
+        },
+      });
+
+      if (existingCodes.has(item.code)) {
+        skipped++;
+      } else {
+        created++;
+      }
+    }
+
+    return {
+      status: true,
+      message: `PhilHealth Signs & Symptoms seeded. Created: ${created}, Updated: ${skipped}`,
+      data: { created, skipped, total: PHILHEALTH_SIGNS_AND_SYMPTOMS.length },
+    };
+  } catch (error) {
+    console.error("seedSignsAndSymptomsAction error:", error);
+    const message =
+      error instanceof Error ? error.message : "Failed to seed PhilHealth signs and symptoms";
+    return { status: false, message, data: null };
+  }
+}
+
+// ──────────────────────────────────────────────────────────────
+// 6. Seed Philippine Locations (Regions, Provinces, Municipalities, Barangays)
 // ──────────────────────────────────────────────────────────────
 export async function seedLocationsAction(): Promise<SeedResult> {
   try {
@@ -345,19 +397,20 @@ export async function seedLocationsAction(): Promise<SeedResult> {
 }
 
 // ──────────────────────────────────────────────────────────────
-// 6. Seed All
+// 7. Seed All
 // ──────────────────────────────────────────────────────────────
 export async function seedAllAction(): Promise<SeedResult> {
   try {
     await requireSuperAdmin();
 
-    const [permissions, procedures, vaccinesResult] = await Promise.all([
+    const [permissions, procedures, vaccinesResult, signsAndSymptomsResult] = await Promise.all([
       seedPermissionsAction(),
       seedProceduresAction(),
       seedVaccinesAction(),
+      seedSignsAndSymptomsAction(),
     ]);
 
-    const results = [permissions, procedures, vaccinesResult];
+    const results = [permissions, procedures, vaccinesResult, signsAndSymptomsResult];
     const failed = results.filter((r) => !r.status);
 
     if (failed.length > 0) {

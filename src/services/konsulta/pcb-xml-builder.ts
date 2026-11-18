@@ -7,6 +7,7 @@
  */
 
 import { create } from "xmlbuilder2";
+import { normalizeSubjectiveForXml } from "@/lib/philhealth-yakap/subjective-utils";
 
 type XMLNode = ReturnType<typeof create>;
 import type {
@@ -459,10 +460,12 @@ function addSoapSubElements(soap: XMLNode, soapData: KonsultaSoapData): void {
 
     // ── SUBJECTIVE ──────────────────────────────────────────────────────────────────
     soap.ele("SUBJECTIVE", {
-        pIllnessHistory: data?.illnessHistory ?? "",
-        pSignsSymptoms: data?.signsSymptoms ?? "",
-        pOtherComplaint: data?.otherComplaint ?? "",
-        pPainSite: data?.painSite ?? "",
+        ...normalizeSubjectiveForXml({
+            illnessHistory: data?.illnessHistory,
+            signsSymptoms: data?.signsSymptoms,
+            otherComplaint: data?.otherComplaint,
+            painSite: data?.painSite,
+        }),
         pReportStatus: "U",
         pDeficiencyRemarks: "",
     });

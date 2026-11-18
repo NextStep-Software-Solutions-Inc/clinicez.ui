@@ -4,11 +4,8 @@ import { toast } from "sonner";
 import SeedConsole from "./SeedConsole";
 import {
   seedAllAction,
-  seedLocationsAction,
-  seedPermissionsAction,
-  seedProceduresAction,
   seedSignsAndSymptomsAction,
-  seedVaccinesAction,
+  type SeedResult,
 } from "@actions/super-admin/seed.action";
 
 jest.mock("@actions/super-admin/seed.action", () => ({
@@ -33,11 +30,12 @@ describe("SeedConsole", () => {
   });
 
   it("renders PhilHealth Signs & Symptoms seed card and invokes seedSignsAndSymptomsAction", async () => {
-    (seedSignsAndSymptomsAction as jest.Mock).mockResolvedValue({
+    const result: SeedResult = {
       status: true,
       message: "Seeded 39 signs & symptoms",
       data: { created: 39, skipped: 0, total: 39 },
-    });
+    };
+    jest.mocked(seedSignsAndSymptomsAction).mockResolvedValue(result);
 
     render(<SeedConsole />);
 
@@ -60,17 +58,12 @@ describe("SeedConsole", () => {
   });
 
   it("runs all seeds including PhilHealth Signs & Symptoms when clicking Run All Seeds", async () => {
-    (seedAllAction as jest.Mock).mockResolvedValue({
+    const result: SeedResult = {
       status: true,
-      message: "All seeds completed",
-      data: {
-        permissions: { created: 1, skipped: 2, total: 3 },
-        procedures: { created: 0, skipped: 10, total: 10 },
-        vaccines: { created: 0, skipped: 5, total: 5 },
-        signsAndSymptoms: { created: 12, skipped: 27, total: 39 },
-        locations: { created: 0, skipped: 100, total: 100 },
-      },
-    });
+      message: "All seeds completed. Created: 13, Skipped: 144",
+      data: { created: 13, skipped: 144, total: 157 },
+    };
+    jest.mocked(seedAllAction).mockResolvedValue(result);
 
     render(<SeedConsole />);
 
@@ -83,17 +76,73 @@ describe("SeedConsole", () => {
 
     const seedAllTitle = screen.getByText("Seed All");
     const seedAllCard = seedAllTitle.closest(".shadow-sm");
-    expect(await within(seedAllCard as HTMLElement).findByText("All seeds completed")).toBeInTheDocument();
+    expect(seedAllCard).toBeTruthy();
+    expect(
+      await within(seedAllCard as HTMLElement).findByText(
+        "All seeds completed. Created: 13, Skipped: 144"
+      )
+    ).toBeInTheDocument();
     expect(within(seedAllCard as HTMLElement).getByText("Success")).toBeInTheDocument();
-    expect(toast.success).toHaveBeenCalledWith("All seeds completed");
+    expect(within(seedAllCard as HTMLElement).getByText("Created: 13")).toBeInTheDocument();
+    expect(within(seedAllCard as HTMLElement).getByText("Skipped: 144")).toBeInTheDocument();
+    expect(within(seedAllCard as HTMLElement).queryByText("Failed")).not.toBeInTheDocument();
+    expect(toast.success).toHaveBeenCalledWith("All seeds completed. Created: 13, Skipped: 144");
+  });
+
+  it("shows error toast and omits count badges when seedAllAction fails", async () => {
+    const failureResult: SeedResult = {
+      status: false,
+      message: "Some seeds failed: Unauthorized",
+      data: null,
+    };
+    jest.mocked(seedAllAction).mockResolvedValue(failureResult);
+
+    render(<SeedConsole />);
+
+    const runAllBtn = screen.getByRole("button", { name: /Run All Seeds/i });
+    fireEvent.click(runAllBtn);
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith("Some seeds failed: Unauthorized");
+    });
+
+    const seedAllTitle = screen.getByText("Seed All");
+    const seedAllCard = seedAllTitle.closest(".shadow-sm");
+    expect(seedAllCard).toBeTruthy();
+    expect(await within(seedAllCard as HTMLElement).findByText("Failed")).toBeInTheDocument();
+    expect(
+      within(seedAllCard as HTMLElement).getByText("Some seeds failed: Unauthorized")
+    ).toBeInTheDocument();
+    expect(within(seedAllCard as HTMLElement).queryByText(/^Created:/)).not.toBeInTheDocument();
+    expect(within(seedAllCard as HTMLElement).queryByText(/^Skipped:/)).not.toBeInTheDocument();
+  });
+
+  it("shows error toast when seedAllAction throws an unexpected error", async () => {
+    const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+    jest.mocked(seedAllAction).mockRejectedValue(new Error("Network timeout"));
+
+    try {
+      render(<SeedConsole />);
+
+      const runAllBtn = screen.getByRole("button", { name: /Run All Seeds/i });
+      fireEvent.click(runAllBtn);
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith("Network timeout");
+      });
+      expect(runAllBtn).toBeEnabled();
+    } finally {
+      consoleErrorSpy.mockRestore();
+    }
   });
 
   it("shows error toast when seedSignsAndSymptomsAction fails", async () => {
-    (seedSignsAndSymptomsAction as jest.Mock).mockResolvedValue({
+    const failureResult: SeedResult = {
       status: false,
       message: "Unauthorized",
       data: null,
-    });
+    };
+    jest.mocked(seedSignsAndSymptomsAction).mockResolvedValue(failureResult);
 
     render(<SeedConsole />);
 
@@ -106,5 +155,7 @@ describe("SeedConsole", () => {
       expect(toast.error).toHaveBeenCalled();
     });
     expect(await within(card as HTMLElement).findByText("Failed")).toBeInTheDocument();
+    expect(within(card as HTMLElement).queryByText(/^Created:/)).not.toBeInTheDocument();
+    expect(within(card as HTMLElement).queryByText(/^Skipped:/)).not.toBeInTheDocument();
   });
 });

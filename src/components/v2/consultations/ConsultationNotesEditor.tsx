@@ -16,8 +16,8 @@ import { sortNoteSectionsSOAP } from "@/utils/soap-ordering";
 import KonsultaSubjectiveFields, { type SubjectiveStructuredData } from "./KonsultaSubjectiveFields";
 import DownloadEkasButton from "./DownloadEkasButton";
 import {
+  isSignsSymptomsCodeList,
   normalizeSubjectiveText,
-  parseSignsSymptomsCodes,
   sanitizeStructuredDataForStorage,
   stripMarkdownToPlainText,
   SUBJECTIVE_MAX_LENGTH,
@@ -39,6 +39,55 @@ function createEmptyStructuredData(): SubjectiveStructuredData {
     signsSymptoms: "",
     painSite: "",
     otherComplaint: "",
+  };
+}
+
+function normalizeYakapSubjectiveState(
+  rawSd: Partial<SubjectiveStructuredData> | undefined,
+  rawContent: string
+): {
+  structuredData: SubjectiveStructuredData;
+  hasDistinct: boolean;
+  showNarrative: boolean;
+} {
+  const rawSigns = rawSd?.signsSymptoms?.trim() ?? "";
+  let preNormalizedSd = rawSd;
+
+  // Preserve legacy non-code free-text signsSymptoms together with any otherComplaint
+  if (rawSigns && !isSignsSymptomsCodeList(rawSigns)) {
+    preNormalizedSd = {
+      ...rawSd,
+      signsSymptoms: "X",
+      otherComplaint: [rawSigns, rawSd?.otherComplaint?.trim()].filter(Boolean).join(" | "),
+    };
+  }
+
+  const normalizedSd = sanitizeStructuredDataForStorage(preNormalizedSd);
+  const strippedPlain = stripMarkdownToPlainText(rawContent);
+  const unboundedNote = normalizeSubjectiveText(strippedPlain);
+  const normalizedNote = normalizeSubjectiveText(
+    strippedPlain,
+    SUBJECTIVE_MAX_LENGTH.illnessHistory
+  );
+  const exceedsLimit = Boolean(normalizedNote) && normalizedNote !== unboundedNote;
+
+  if (!normalizedSd.illnessHistory && normalizedNote) {
+    normalizedSd.illnessHistory = normalizedNote;
+    return {
+      structuredData: normalizedSd,
+      hasDistinct: exceedsLimit,
+      showNarrative: exceedsLimit,
+    };
+  }
+
+  const differs =
+    Boolean(rawContent.trim()) &&
+    (normalizedNote !== normalizedSd.illnessHistory || exceedsLimit);
+
+  return {
+    structuredData: normalizedSd,
+    hasDistinct: differs,
+    showNarrative: differs,
   };
 }
 
@@ -109,39 +158,12 @@ export default function ConsultationNotesEditor({
   for (const section of sections) {
     const rawSd = initialRawStructuredData[section.name];
     const rawContent = initialNoteMap[section.name] ?? "";
-    const strippedPlain = stripMarkdownToPlainText(rawContent);
-    const normalizedNote = normalizeSubjectiveText(
-      strippedPlain,
-      SUBJECTIVE_MAX_LENGTH.illnessHistory
-    );
 
     if (isKonsulta && isSubjectiveSection(section.name)) {
-      const normalizedSd = sanitizeStructuredDataForStorage(rawSd);
-      if (!normalizedSd.illnessHistory && normalizedNote) {
-        normalizedSd.illnessHistory = normalizedNote;
-        const exceedsLimit = strippedPlain.length > SUBJECTIVE_MAX_LENGTH.illnessHistory;
-        initialDistinctNarrative[section.name] = exceedsLimit;
-        initialShowNarrative[section.name] = exceedsLimit;
-      } else {
-        const differs =
-          Boolean(rawContent.trim()) &&
-          (normalizedNote !== normalizedSd.illnessHistory ||
-            strippedPlain.length > SUBJECTIVE_MAX_LENGTH.illnessHistory);
-        initialDistinctNarrative[section.name] = differs;
-        initialShowNarrative[section.name] = differs;
-      }
-      // Preserve raw non-code signsSymptoms if any existed previously so user isn't surprised
-      if (rawSd?.signsSymptoms && !normalizedSd.signsSymptoms && rawSd.signsSymptoms.trim()) {
-        const parsed = parseSignsSymptomsCodes(rawSd.signsSymptoms);
-        if (parsed.length === 0 && !normalizedSd.otherComplaint) {
-          normalizedSd.signsSymptoms = "X";
-          normalizedSd.otherComplaint = normalizeSubjectiveText(
-            rawSd.signsSymptoms,
-            SUBJECTIVE_MAX_LENGTH.otherComplaint
-          );
-        }
-      }
-      initialStructuredData[section.name] = normalizedSd;
+      const normalized = normalizeYakapSubjectiveState(rawSd, rawContent);
+      initialStructuredData[section.name] = normalized.structuredData;
+      initialDistinctNarrative[section.name] = normalized.hasDistinct;
+      initialShowNarrative[section.name] = normalized.showNarrative;
     } else if (rawSd) {
       initialStructuredData[section.name] = {
         illnessHistory: rawSd.illnessHistory ?? "",
@@ -191,36 +213,47 @@ export default function ConsultationNotesEditor({
   const isKonsultaRef = useRef(isKonsulta);
   isKonsultaRef.current = isKonsulta;
 
-  // Hydrate HPI from existing Subjective note content if PhilHealth Yakap is toggled ON after mount
+  // Hydrate HPI & narrative sync from existing Subjective note content when PhilHealth Yakap is toggled ON
   useEffect(() => {
     if (!isKonsulta) return;
 
-    setStructuredDataMap((prev) => {
-      let changed = false;
-      const next = { ...prev };
-      for (const section of sections) {
-        if (!isSubjectiveSection(section.name)) continue;
-        const currentSd = next[section.name] ?? createEmptyStructuredData();
-        const rawNote = noteValuesRef.current[section.name] ?? "";
-        const strippedPlain = stripMarkdownToPlainText(rawNote);
-        const normalizedNote = normalizeSubjectiveText(
-          strippedPlain,
-          SUBJECTIVE_MAX_LENGTH.illnessHistory
-        );
+    const sdUpdates: Record<string, SubjectiveStructuredData> = {};
+    const distinctUpdates: Record<string, boolean> = {};
+    const showUpdates: Record<string, boolean> = {};
 
-        if (!currentSd.illnessHistory.trim() && normalizedNote) {
-          next[section.name] = {
-            ...currentSd,
-            illnessHistory: normalizedNote,
-          };
-          changed = true;
-          const exceedsLimit = strippedPlain.length > SUBJECTIVE_MAX_LENGTH.illnessHistory;
-          setHasDistinctNarrative((dPrev) => ({ ...dPrev, [section.name]: exceedsLimit }));
-          setShowAdditionalNarrative((sPrev) => ({ ...sPrev, [section.name]: exceedsLimit }));
-        }
+    for (const section of sections) {
+      if (!isSubjectiveSection(section.name)) continue;
+      const currentRawSd = structuredDataMapRef.current[section.name];
+      const rawNote = noteValuesRef.current[section.name] ?? "";
+      const normalized = normalizeYakapSubjectiveState(currentRawSd, rawNote);
+
+      const prevSd = currentRawSd ?? createEmptyStructuredData();
+      if (
+        normalized.structuredData.illnessHistory !== prevSd.illnessHistory ||
+        normalized.structuredData.signsSymptoms !== prevSd.signsSymptoms ||
+        normalized.structuredData.painSite !== prevSd.painSite ||
+        normalized.structuredData.otherComplaint !== prevSd.otherComplaint
+      ) {
+        sdUpdates[section.name] = normalized.structuredData;
       }
-      return changed ? next : prev;
-    });
+
+      if (normalized.hasDistinct !== (hasDistinctNarrativeRef.current[section.name] ?? false)) {
+        distinctUpdates[section.name] = normalized.hasDistinct;
+        showUpdates[section.name] = normalized.showNarrative;
+      }
+    }
+
+    if (Object.keys(sdUpdates).length > 0) {
+      structuredDataMapRef.current = { ...structuredDataMapRef.current, ...sdUpdates };
+      setStructuredDataMap((prev) => ({ ...prev, ...sdUpdates }));
+    }
+    if (Object.keys(distinctUpdates).length > 0) {
+      hasDistinctNarrativeRef.current = { ...hasDistinctNarrativeRef.current, ...distinctUpdates };
+      setHasDistinctNarrative((prev) => ({ ...prev, ...distinctUpdates }));
+    }
+    if (Object.keys(showUpdates).length > 0) {
+      setShowAdditionalNarrative((prev) => ({ ...prev, ...showUpdates }));
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isKonsulta, consultation.id]);
 
@@ -266,6 +299,10 @@ export default function ConsultationNotesEditor({
       });
 
       if (result.status && result.data) {
+        if (isYakapSubjective && !hasDistinct && noteValuesRef.current[sectionName] !== contentToSave) {
+          noteValuesRef.current = { ...noteValuesRef.current, [sectionName]: contentToSave };
+          setNoteValues((prev) => ({ ...prev, [sectionName]: contentToSave }));
+        }
         setSectionSaveStatus((prev) => ({ ...prev, [sectionName]: "saved" }));
         toast.success(result.message ?? "Note saved");
         // Patch only the notes array — no full reload needed

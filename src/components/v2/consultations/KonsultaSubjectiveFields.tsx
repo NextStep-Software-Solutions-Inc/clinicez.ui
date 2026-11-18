@@ -11,6 +11,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { PHILHEALTH_SIGNS_AND_SYMPTOMS } from "@/lib/philhealth-yakap/signs-and-symptoms-library";
 import {
   formatSubjectiveInput,
   OTHERS_SYMPTOM_CODE,
@@ -84,14 +85,18 @@ export default function KonsultaSubjectiveFields({
   const hasPainSelected = selectedCodes.includes(PAIN_SYMPTOM_CODE);
   const hasOthersSelected = selectedCodes.includes(OTHERS_SYMPTOM_CODE);
 
-  const illnessHistoryValue = (data.illnessHistory ?? "")
-    .toUpperCase()
-    .slice(0, SUBJECTIVE_MAX_LENGTH.illnessHistory);
+  const illnessHistoryValue = formatSubjectiveInput(
+    data.illnessHistory ?? "",
+    SUBJECTIVE_MAX_LENGTH.illnessHistory
+  );
   const painSiteValue = hasPainSelected
-    ? (data.painSite ?? "").toUpperCase().slice(0, SUBJECTIVE_MAX_LENGTH.painSite)
+    ? formatSubjectiveInput(data.painSite ?? "", SUBJECTIVE_MAX_LENGTH.painSite)
     : "";
   const otherComplaintValue = hasOthersSelected
-    ? (data.otherComplaint ?? "").toUpperCase().slice(0, SUBJECTIVE_MAX_LENGTH.otherComplaint)
+    ? formatSubjectiveInput(
+        data.otherComplaint ?? "",
+        SUBJECTIVE_MAX_LENGTH.otherComplaint
+      )
     : "";
 
   const handleFieldChange = (
@@ -202,7 +207,11 @@ export default function KonsultaSubjectiveFields({
                   {selectedCodes.length > 0 ? (
                     selectedCodes.map((code) => {
                       const item = signsSymptomsLibrary.find((s) => s.code === code);
-                      const labelText = item ? `${item.code} - ${item.description}` : code;
+                      const fallbackItem =
+                        item ?? PHILHEALTH_SIGNS_AND_SYMPTOMS.find((s) => s.code === code);
+                      const labelText = fallbackItem
+                        ? `${fallbackItem.code} - ${fallbackItem.description}${!item && !isLoading && !fallbackItem.isActive ? " (INACTIVE)" : ""}`
+                        : code;
                       const isConditionalTrigger =
                         code === PAIN_SYMPTOM_CODE || code === OTHERS_SYMPTOM_CODE;
 
@@ -295,6 +304,11 @@ export default function KonsultaSubjectiveFields({
               </Command>
             </PopoverContent>
           </Popover>
+          {!isLoading && (loadError || signsSymptomsLibrary.length === 0) && (
+            <p className="text-[11px] text-destructive">
+              {loadError || "No active signs & symptoms found. Seed the library in Super Admin."}
+            </p>
+          )}
           {missingSignsSymptoms && (
             <p className="text-[11px] text-amber-700 dark:text-amber-400">
               Select at least one code from the PhilHealth Signs &amp; Symptoms library.

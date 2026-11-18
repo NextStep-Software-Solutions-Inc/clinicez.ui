@@ -53,7 +53,7 @@ export interface RegistrationEntry {
 }
 
 import { parsePhilHealthDate, resolvePhilHealthEnlistDate } from "@/lib/philhealth-yakap/date-utils";
-import { resolveSoapSubjectiveForXml } from "@/lib/philhealth-yakap/subjective-utils";
+import { resolveConsultationSubjectiveForXml } from "@/lib/philhealth-yakap/subjective-utils";
 
 const getClinicCredentials = async (clinicUid: string) => {
   const session = await getCachedSession();
@@ -877,29 +877,8 @@ export async function generateBatchXmlAction(clinicUid: string, batchId: string)
             const allRecommendedDiagnosticIds = recommended?.philhealthDiagnosticIds || [];
 
             // Subjective structured data & clinical narrative from notes
-            const subjectiveNotes = (t.ConsultationNotes ?? []).filter((n) =>
-              n.section.toLowerCase().includes("subjective")
-            );
-            const subjectiveNoteWithSd = subjectiveNotes.find(
-              (n) =>
-                n.structuredData &&
-                typeof n.structuredData === "object" &&
-                !Array.isArray(n.structuredData)
-            );
-            const sd = subjectiveNoteWithSd?.structuredData as Record<string, unknown> | undefined;
-            const subjectiveContents = Array.from(
-              new Set(
-                [
-                  subjectiveNoteWithSd?.content,
-                  ...subjectiveNotes.map((n) => n.content),
-                ]
-                  .map((c) => c?.trim())
-                  .filter((c): c is string => Boolean(c))
-              )
-            );
-            const resolvedSubjective = resolveSoapSubjectiveForXml(
-              sd,
-              subjectiveContents.join("\n"),
+            const resolvedSubjective = resolveConsultationSubjectiveForXml(
+              t.ConsultationNotes,
               t.subject
             );
 

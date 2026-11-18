@@ -999,5 +999,43 @@ describe("philhealth-yakap.actions: generateBatchXmlAction", () => {
       expect(painVal).toHaveLength(500);
       expect(painVal).toBe(painVal.toUpperCase());
     });
+
+    it("Issue #520: selects populated structuredData note over an empty {} shell note across HPs", async () => {
+      mockPrisma.konsultaBatchReport.findUnique.mockResolvedValue(
+        createMockBatch({
+          tagging: "2",
+          consultationNotes: [
+            {
+              section: "subjective",
+              content: "",
+              structuredData: {},
+            },
+            {
+              section: "subjective",
+              content: "fallback content",
+              structuredData: {
+                illnessHistory: "productive cough for 3 days",
+                signsSymptoms: "09;38;X",
+                painSite: "chest",
+                otherComplaint: "night sweats",
+              },
+            },
+          ],
+        })
+      );
+
+      const result = await generateBatchXmlAction("clinic-test-123", "batch-test-1");
+      expect(result.status).toBe(true);
+
+      const xml = getGeneratedXml();
+      const subjMatch = xml.match(/<SUBJECTIVE\s+([^>]+)\/>/);
+      expect(subjMatch).not.toBeNull();
+      const attrs = subjMatch![1];
+
+      expect(attrs).toContain('pIllnessHistory="PRODUCTIVE COUGH FOR 3 DAYS"');
+      expect(attrs).toContain('pSignsSymptoms="09;38;X"');
+      expect(attrs).toContain('pPainSite="CHEST"');
+      expect(attrs).toContain('pOtherComplaint="NIGHT SWEATS"');
+    });
   });
 });

@@ -27,7 +27,7 @@ import {
 } from "@/lib/konsulta-batch-deficiencies";
 import { withErrorHandling } from "@/lib/with-error-handling";
 import { resolvePhilHealthEnlistDate } from "@/lib/philhealth-yakap/date-utils";
-import { resolveSoapSubjectiveForXml } from "@/lib/philhealth-yakap/subjective-utils";
+import { resolveConsultationSubjectiveForXml } from "@/lib/philhealth-yakap/subjective-utils";
 import {
     buildPcbXml,
     generateTransmittalNumber,
@@ -3726,29 +3726,8 @@ export const generateBatchXmlAction = withErrorHandling(
                                 : entry.memberPin || entry.philHealthPin;
 
                         // Build SOAP subData from consultation clinical data
-                        const subjectiveNotes = (consultation.ConsultationNotes ?? []).filter((n) =>
-                            n.section.toLowerCase().includes("subjective"),
-                        );
-                        const subjectiveNoteWithSd = subjectiveNotes.find(
-                            (n) =>
-                                n.structuredData &&
-                                typeof n.structuredData === "object" &&
-                                !Array.isArray(n.structuredData),
-                        );
-                        const subjSd = subjectiveNoteWithSd?.structuredData as Record<string, unknown> | undefined;
-                        const subjContents = Array.from(
-                            new Set(
-                                [
-                                    subjectiveNoteWithSd?.content,
-                                    ...subjectiveNotes.map((n) => n.content),
-                                ]
-                                    .map((c) => c?.trim())
-                                    .filter((c): c is string => Boolean(c)),
-                            ),
-                        );
-                        const resolvedSubjective = resolveSoapSubjectiveForXml(
-                            subjSd,
-                            subjContents.join("\n"),
+                        const resolvedSubjective = resolveConsultationSubjectiveForXml(
+                            consultation.ConsultationNotes,
                             consultation.subject,
                         );
                         const planNote = consultation.ConsultationNotes?.find(

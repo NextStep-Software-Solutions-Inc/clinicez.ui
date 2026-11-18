@@ -457,5 +457,44 @@ describe("xml-generator physical exam multi-select findings", () => {
       expect(xml).toContain('pOtherComplaint="PERSISTENT DIZZINESS | MILD FATIGUE"');
       expect(xml).toContain('pIllnessHistory="ONSET 2 DAYS AGO"');
     });
+
+    it("does not re-inject 38 or X from stale painSite or otherComplaint in generateKonsultaXml", () => {
+      const options: KonsultaXmlOptions = {
+        ...baseOptions,
+        tagging: "2",
+        patients: [
+          {
+            ...baseOptions.patients[0],
+            consultations: [
+              {
+                hciCaseNo: "TH9000000120260000002",
+                hciTransNo: "SH9000000120260000002",
+                soapDate: "2026-07-08",
+                atc: "WALKEDIN",
+                isWalkedIn: "Y",
+                coPay: "0",
+                subjective: {
+                  illnessHistory: "dry cough",
+                  signsSymptoms: "09",
+                  painSite: "STALE CHEST PAIN",
+                  otherComplaint: "STALE OTHER COMPLAINT",
+                },
+                vitals: baseOptions.patients[0].profile.vitals,
+                diagnoses: ["J00"],
+              },
+            ],
+          },
+        ],
+      };
+
+      const xml = generateKonsultaXml(options);
+      expect(xml).toContain('pSignsSymptoms="09"');
+      expect(xml).not.toContain("38");
+      expect(xml).toContain('pPainSite=""');
+      expect(xml).toContain('pOtherComplaint=""');
+      expect(xml).toContain('pIllnessHistory="DRY COUGH"');
+      expect(xml).not.toContain("STALE CHEST PAIN");
+      expect(xml).not.toContain("STALE OTHER COMPLAINT");
+    });
   });
 });

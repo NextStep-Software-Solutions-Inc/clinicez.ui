@@ -119,17 +119,23 @@ describe("KonsultaSubjectiveFields (Issue #520)", () => {
     expect(screen.getByText(/38/)).toBeInTheDocument();
     expect(screen.getByText(/OTHERS/)).toBeInTheDocument();
 
-    // Search by numeric code "38"
+    // Search by numeric code "38" — non-matching items should be filtered out
     fireEvent.change(searchInput, { target: { value: "38" } });
     expect(screen.getByText("PAIN")).toBeInTheDocument();
+    expect(screen.queryByText("HEADACHE")).not.toBeInTheDocument();
+    expect(screen.queryByText("OTHERS")).not.toBeInTheDocument();
 
-    // Search by description "HEADACHE"
+    // Search by description "HEADACHE" — non-matching items should be filtered out
     fireEvent.change(searchInput, { target: { value: "HEADACHE" } });
     expect(screen.getByText("HEADACHE")).toBeInTheDocument();
+    expect(screen.queryByText("PAIN")).not.toBeInTheDocument();
+    expect(screen.queryByText("OTHERS")).not.toBeInTheDocument();
 
-    // Search by code "X"
+    // Search by code "X" — non-matching items should be filtered out
     fireEvent.change(searchInput, { target: { value: "X" } });
     expect(screen.getByText("OTHERS")).toBeInTheDocument();
+    expect(screen.queryByText("PAIN")).not.toBeInTheDocument();
+    expect(screen.queryByText("HEADACHE")).not.toBeInTheDocument();
   });
 
   it("gates Pain Site on 38 - PAIN and Other Complaint on X - OTHERS, requiring when active and clearing on deselect", async () => {
@@ -233,5 +239,72 @@ describe("KonsultaSubjectiveFields (Issue #520)", () => {
     const otherComplaintInput = screen.getByLabelText(/Other Complaint/i) as HTMLInputElement;
     expect(otherComplaintInput).toBeDisabled();
     expect(otherComplaintInput.value).toBe("");
+  });
+
+  it("displays inactive legacy code badge label via canonical fallback without allowing selection in dropdown", async () => {
+    render(
+      <StatefulWrapper
+        initialData={{
+          illnessHistory: "back pain",
+          signsSymptoms: "16",
+          painSite: "",
+          otherComplaint: "",
+        }}
+      />
+    );
+
+    await waitFor(() => expect(getActiveSignsAndSymptomsAction).toHaveBeenCalled());
+
+    expect(screen.getByText("16 - FLANK OR LOWER BACK (INACTIVE)")).toBeInTheDocument();
+
+    const trigger = screen.getByRole("combobox");
+    fireEvent.click(trigger);
+
+    const searchInput = await screen.findByPlaceholderText(/Search by code/i);
+    fireEvent.change(searchInput, { target: { value: "FLANK" } });
+
+    expect(screen.queryByText("FLANK OR LOWER BACK")).not.toBeInTheDocument();
+  });
+
+  it("renders inline error notice when signs & symptoms library fails to load", async () => {
+    (getActiveSignsAndSymptomsAction as jest.Mock).mockResolvedValueOnce({
+      success: false,
+      error: "Database unavailable",
+    });
+
+    render(
+      <StatefulWrapper
+        initialData={{
+          illnessHistory: "",
+          signsSymptoms: "",
+          painSite: "",
+          otherComplaint: "",
+        }}
+      />
+    );
+
+    expect(await screen.findByText(/Database unavailable/i)).toBeInTheDocument();
+  });
+
+  it("renders inline notice when signs & symptoms library returns empty", async () => {
+    (getActiveSignsAndSymptomsAction as jest.Mock).mockResolvedValueOnce({
+      success: true,
+      data: [],
+    });
+
+    render(
+      <StatefulWrapper
+        initialData={{
+          illnessHistory: "",
+          signsSymptoms: "",
+          painSite: "",
+          otherComplaint: "",
+        }}
+      />
+    );
+
+    expect(
+      await screen.findByText(/No active signs & symptoms found\. Seed the library in Super Admin\./i)
+    ).toBeInTheDocument();
   });
 });

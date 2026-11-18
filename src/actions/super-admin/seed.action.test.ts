@@ -46,7 +46,11 @@ import {
   seedAllAction,
   seedSignsAndSymptomsAction,
 } from "./seed.action";
-import { seedPhilHealthSignsAndSymptomsAction } from "./sign-and-symptom.action";
+import {
+  deleteSignAndSymptomAction,
+  seedPhilHealthSignsAndSymptomsAction,
+  upsertSignAndSymptomAction,
+} from "./sign-and-symptom.action";
 import { PHILHEALTH_SIGNS_AND_SYMPTOMS } from "@lib/philhealth-yakap/signs-and-symptoms-library";
 
 const mockIsSuperAdmin = isSuperAdminAction as jest.Mock;
@@ -149,5 +153,62 @@ describe("Super Admin Signs & Symptoms Seeding", () => {
     expect(res.success).toBe(true);
     expect(res.data).toEqual({ created: 39, skipped: 0, total: 39 });
     expect(revalidatePath).toHaveBeenCalledWith("/super-admin/signs-and-symptoms");
+  });
+
+  it("upsertSignAndSymptomAction and deleteSignAndSymptomAction reject non-super-admin callers", async () => {
+    const { isSuperAdminAction } = require("./admin-check.action");
+    (isSuperAdminAction as jest.Mock).mockResolvedValueOnce(false);
+
+    const upsertDenied = await upsertSignAndSymptomAction({
+      code: "01",
+      description: "ABDOMINAL PAIN",
+      sortOrder: 1,
+      isActive: true,
+    });
+    expect(upsertDenied).toEqual({
+      success: false,
+      error: "Super admin privileges required.",
+    });
+
+    (isSuperAdminAction as jest.Mock).mockResolvedValueOnce(false);
+    const deleteDenied = await deleteSignAndSymptomAction("sym-1");
+    expect(deleteDenied).toEqual({
+      success: false,
+      error: "Super admin privileges required.",
+    });
+  });
+
+  it("upsertSignAndSymptomAction and deleteSignAndSymptomAction succeed for super-admin callers", async () => {
+    const { isSuperAdminAction } = require("./admin-check.action");
+    (isSuperAdminAction as jest.Mock).mockResolvedValue(true);
+
+    const createdRecord = {
+      id: "sym-101",
+      code: "99",
+      description: "TEST SYMPTOM",
+      sortOrder: 99,
+      isActive: true,
+    };
+    const signSymptomMock = mockPrisma.konsultaSignAndSymptom as unknown as Record<
+      string,
+      jest.Mock
+    >;
+    signSymptomMock.create = jest.fn().mockResolvedValue(createdRecord);
+    signSymptomMock.delete = jest.fn().mockResolvedValue(createdRecord);
+
+    const upsertRes = await upsertSignAndSymptomAction({
+      code: "99",
+      description: "TEST SYMPTOM",
+      sortOrder: 99,
+      isActive: true,
+    });
+    expect(upsertRes.success).toBe(true);
+    expect(signSymptomMock.create).toHaveBeenCalledTimes(1);
+
+    const deleteRes = await deleteSignAndSymptomAction("sym-101");
+    expect(deleteRes.success).toBe(true);
+    expect(signSymptomMock.delete).toHaveBeenCalledWith({
+      where: { id: "sym-101" },
+    });
   });
 });

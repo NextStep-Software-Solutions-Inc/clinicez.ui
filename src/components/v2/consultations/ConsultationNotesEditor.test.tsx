@@ -288,4 +288,115 @@ describe("ConsultationNotesEditor (Issue #520)", () => {
     const hpiTextarea = (await screen.findByLabelText(/History of Illness/i)) as HTMLTextAreaElement;
     expect(hpiTextarea.value).toBe("PERSISTENT HEADACHE SINCE YESTERDAY");
   });
+
+  it("combines legacy non-code signsSymptoms and otherComplaint under X", async () => {
+    const legacyConsultation = baseConsultation({
+      isPhilHealthKonsulta: true,
+      ConsultationNotes: [
+        {
+          id: 1,
+          section: "subjective",
+          content: "",
+          hpId: 10,
+          showOnPatient: false,
+          structuredData: {
+            illnessHistory: "dizziness",
+            signsSymptoms: "Persistent vertigo",
+            otherComplaint: "Mild fatigue",
+          },
+        },
+      ],
+    });
+
+    render(
+      <ConsultationNotesEditor
+        clinicUid="clinic-1"
+        consultation={legacyConsultation}
+        myHPs={myHPs}
+        onPatchDetail={jest.fn()}
+      />
+    );
+
+    await waitFor(() => {
+      const otherInput = screen.getByLabelText(/Other Complaint/i) as HTMLInputElement;
+      expect(otherInput.value).toBe("PERSISTENT VERTIGO | MILD FATIGUE");
+    });
+    expect(screen.getByText(/X - OTHERS/i)).toBeInTheDocument();
+  });
+
+  it("syncs History of Illness across PhilHealth Konsulta toggles and saves", async () => {
+    jest.useFakeTimers();
+    try {
+      const konsultaConsultation = baseConsultation({
+        isPhilHealthKonsulta: true,
+        ConsultationNotes: [
+          {
+            id: 1,
+            section: "subjective",
+            content: "INITIAL CONTENT",
+            hpId: 10,
+            showOnPatient: false,
+            structuredData: {
+              illnessHistory: "INITIAL CONTENT",
+              signsSymptoms: "01",
+            },
+          },
+        ],
+      });
+
+      const { rerender } = render(
+        <ConsultationNotesEditor
+          clinicUid="clinic-1"
+          consultation={konsultaConsultation}
+          myHPs={myHPs}
+          onPatchDetail={jest.fn()}
+        />
+      );
+
+      const hpiTextarea = (await screen.findByLabelText(/History of Illness/i)) as HTMLTextAreaElement;
+      expect(hpiTextarea.value).toBe("INITIAL CONTENT");
+
+      fireEvent.change(hpiTextarea, { target: { value: "UPDATED HPI VIA KONSULTA" } });
+      await waitFor(() => {
+        expect(hpiTextarea.value).toBe("UPDATED HPI VIA KONSULTA");
+      });
+
+      // Trigger debounced save
+      jest.advanceTimersByTime(2500);
+      await Promise.resolve();
+
+      // Toggle isPhilHealthKonsulta false -> MarkdownEditor should show UPDATED HPI VIA KONSULTA
+      rerender(
+        <ConsultationNotesEditor
+          clinicUid="clinic-1"
+          consultation={{ ...konsultaConsultation, isPhilHealthKonsulta: false }}
+          myHPs={myHPs}
+          onPatchDetail={jest.fn()}
+        />
+      );
+
+      const markdownTextarea = (await screen.findByDisplayValue("UPDATED HPI VIA KONSULTA")) as HTMLTextAreaElement;
+      expect(markdownTextarea.tagName).toBe("TEXTAREA");
+
+      // Edit in non-Konsulta mode
+      fireEvent.change(markdownTextarea, { target: { value: "EDITED IN MARKDOWN MODE" } });
+
+      // Toggle back to true -> Additional Clinical Narrative should auto-expand with edited Markdown
+      rerender(
+        <ConsultationNotesEditor
+          clinicUid="clinic-1"
+          consultation={{ ...konsultaConsultation, isPhilHealthKonsulta: true }}
+          myHPs={myHPs}
+          onPatchDetail={jest.fn()}
+        />
+      );
+
+      await waitFor(() => {
+        const expandedNarrative = screen.getByDisplayValue("EDITED IN MARKDOWN MODE") as HTMLTextAreaElement;
+        expect(expandedNarrative.tagName).toBe("TEXTAREA");
+      });
+    } finally {
+      jest.useRealTimers();
+    }
+  });
 });

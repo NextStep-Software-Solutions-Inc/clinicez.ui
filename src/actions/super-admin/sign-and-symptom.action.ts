@@ -2,6 +2,7 @@
 
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { isSuperAdminAction } from "./admin-check.action";
 import { seedSignsAndSymptomsAction } from "./seed.action";
 
 export async function getSignsAndSymptomsAction() {
@@ -43,6 +44,11 @@ export async function upsertSignAndSymptomAction(data: {
   isActive: boolean;
 }) {
   try {
+    const isSuperAdmin = await isSuperAdminAction();
+    if (!isSuperAdmin) {
+      return { success: false, error: "Super admin privileges required." };
+    }
+
     const { id, code, description, sortOrder, isActive } = data;
 
     if (id) {
@@ -69,6 +75,11 @@ export async function upsertSignAndSymptomAction(data: {
 
 export async function deleteSignAndSymptomAction(id: string) {
   try {
+    const isSuperAdmin = await isSuperAdminAction();
+    if (!isSuperAdmin) {
+      return { success: false, error: "Super admin privileges required." };
+    }
+
     await prisma.konsultaSignAndSymptom.delete({
       where: { id },
     });

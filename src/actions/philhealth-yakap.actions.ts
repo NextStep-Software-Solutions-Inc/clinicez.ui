@@ -88,6 +88,59 @@ const getClinicCredentials = async (clinicUid: string) => {
   };
 };
 
+function extractPhilHealthToken(tokenResult: unknown): {
+  token: string;
+  errorMessage?: string;
+} {
+  if (typeof tokenResult === "string") {
+    const trimmed = tokenResult.trim();
+    if (!trimmed) {
+      return { token: "", errorMessage: "Empty API token returned" };
+    }
+    if (
+      /\s/.test(trimmed) ||
+      /error|failed|invalid|not found|unauthorized/i.test(trimmed)
+    ) {
+      return { token: "", errorMessage: trimmed };
+    }
+    return { token: trimmed };
+  }
+
+  if (tokenResult && typeof tokenResult === "object") {
+    const obj = tokenResult as {
+      success?: boolean | string;
+      result?: unknown;
+      token?: unknown;
+      message?: unknown;
+      error?: unknown;
+    };
+    const isExplicitFailure =
+      obj.success === false ||
+      (typeof obj.success === "string" &&
+        obj.success.toLowerCase() === "false");
+    const candidate =
+      typeof obj.result === "string"
+        ? obj.result.trim()
+        : typeof obj.token === "string"
+          ? obj.token.trim()
+          : "";
+
+    if (!isExplicitFailure && candidate) {
+      return { token: candidate };
+    }
+
+    const msg =
+      typeof obj.message === "string" && obj.message.trim()
+        ? obj.message.trim()
+        : typeof obj.error === "string" && obj.error.trim()
+          ? obj.error.trim()
+          : JSON.stringify(tokenResult);
+    return { token: "", errorMessage: msg };
+  }
+
+  return { token: "", errorMessage: "Invalid API token returned" };
+}
+
 export async function getYakapTokenAction(clinicUid: string) {
   try {
     const creds = await getClinicCredentials(clinicUid);
@@ -146,14 +199,12 @@ export async function verifyKonsultaPinAction(
 ) {
   try {
     const tokenResponse = await getYakapTokenAction(clinicUid);
-    const token = typeof tokenResponse === 'string'
-      ? tokenResponse
-      : ((tokenResponse as { result?: string, token?: string })?.result || (tokenResponse as { result?: string, token?: string })?.token);
-    if (!token) throw new Error("Failed to acquire Yakap Token");
+    const { token, errorMessage } = extractPhilHealthToken(tokenResponse);
+    if (!token) throw new Error(errorMessage || "Failed to acquire Yakap Token");
 
     // The Yakap API expects "M" or "D", but our schema uses "MM" or "DD".
     const yakapType = type === 'DD' ? 'D' : 'M';
-    const result = await isMemberDependentRegisteredAction(clinicUid, token as string, pin, yakapType);
+    const result = await isMemberDependentRegisteredAction(clinicUid, token, pin, yakapType);
 
     return { success: true, data: result };
   } catch (err) {
@@ -1393,10 +1444,9 @@ export async function validateBatchReportAction(clinicUid: string, batchId: stri
       credentials.pSoftwareCertificationId, credentials.pHospitalCode
     );
 
-    const token = typeof tokenResult === "string" ? tokenResult : (tokenResult?.result || tokenResult?.token || "");
+    const { token, errorMessage } = extractPhilHealthToken(tokenResult);
     if (!token) {
-      const apiMsg = typeof tokenResult === "object" && tokenResult ? (tokenResult.message || tokenResult.error || JSON.stringify(tokenResult)) : "Invalid API token returned";
-      return { status: false, message: `Failed to acquire PhilHealth API token: ${apiMsg}` };
+      return { status: false, message: `Failed to acquire PhilHealth API token: ${errorMessage || "Invalid API token returned"}` };
     }
 
     const validationResult = await apiClient.validateReport(
@@ -1494,10 +1544,9 @@ export async function submitBatchReportAction(clinicUid: string, batchId: string
       credentials.pSoftwareCertificationId, credentials.pHospitalCode
     );
 
-    const token = typeof tokenResult === "string" ? tokenResult : (tokenResult?.result || tokenResult?.token || "");
+    const { token, errorMessage } = extractPhilHealthToken(tokenResult);
     if (!token) {
-      const apiMsg = typeof tokenResult === "object" && tokenResult ? (tokenResult.message || tokenResult.error || JSON.stringify(tokenResult)) : "Invalid API token returned";
-      return { status: false, message: `Failed to acquire PhilHealth API token: ${apiMsg}` };
+      return { status: false, message: `Failed to acquire PhilHealth API token: ${errorMessage || "Invalid API token returned"}` };
     }
 
     const submissionResult = await apiClient.submitReport(
@@ -1653,8 +1702,13 @@ export async function verifyAtcAction(clinicUid: string, pin: string, atc: strin
       credentials.pSoftwareCertificationId, credentials.pHospitalCode
     );
 
-    const token = tokenResult?.result || tokenResult?.token || "";
-    if (!token) return { status: false, message: "Failed to get API token" };
+    const { token, errorMessage } = extractPhilHealthToken(tokenResult);
+    if (!token) {
+      return {
+        status: false,
+        message: errorMessage ? `Failed to get API token: ${errorMessage}` : "Failed to get API token",
+      };
+    }
 
     // Convert date from YYYY-MM-DD to mm/dd/yyyy for the API
     const [year, month, day] = effectivityDate.split("-");
@@ -1679,8 +1733,13 @@ export async function extractRegistrationListAction(clinicUid: string, startDate
       credentials.pSoftwareCertificationId, credentials.pHospitalCode
     );
 
-    const token = tokenResult?.result || tokenResult?.token || "";
-    if (!token) return { status: false, message: "Failed to get API token" };
+    const { token, errorMessage } = extractPhilHealthToken(tokenResult);
+    if (!token) {
+      return {
+        status: false,
+        message: errorMessage ? `Failed to get API token: ${errorMessage}` : "Failed to get API token",
+      };
+    }
 
     // Convert dates from YYYY-MM-DD to mm/dd/yyyy for the API
     const formatApiDate = (d: string) => {
@@ -1752,12 +1811,9 @@ export async function validateTransferredXmlAction(clinicUid: string, xmlString:
       credentials.pHospitalCode
     );
 
-    const tokenResponse = tokenRes as { result?: string; token?: string; message?: string } | null;
-    const token = tokenResponse?.result || tokenResponse?.token || "";
-
-    if (!token || typeof token !== 'string') {
-      const errMsg = tokenResponse?.message || "Failed to authenticate with PhilHealth";
-      return { status: false, message: errMsg };
+    const { token, errorMessage } = extractPhilHealthToken(tokenRes);
+    if (!token) {
+      return { status: false, message: errorMessage || "Failed to authenticate with PhilHealth" };
     }
 
     // validateReport takes the raw XML, encrypts it internally using the cipherKey, and calls SOAP

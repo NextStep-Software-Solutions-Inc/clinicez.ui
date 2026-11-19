@@ -333,8 +333,8 @@ export function PhilHealthTab({
               <span>
                 Stored Yakap credentials cannot be viewed after saving. Leave
                 either field blank to keep its current value, or click{" "}
-                <strong>Clear</strong> and save to replace it with an empty/null
-                value per PhilHealth guidelines.
+                <strong>Clear</strong> and save to replace it with an empty
+                string (&quot;&quot;) per PhilHealth guidelines.
               </span>
             </div>
 

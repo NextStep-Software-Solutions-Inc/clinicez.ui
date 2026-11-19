@@ -161,9 +161,9 @@ export const updatePhilHealthSettingsAction = async (clinicUid: string, data: Up
         philhealthAccreditationNumber: data.philhealthAccreditationNumber,
         facilityName: data.facilityName,
         philhealthYakapUsername:
-          usernameResolution.action === "set" ? usernameResolution.value : null,
+          usernameResolution.action === "set" ? usernameResolution.value : "",
         philhealthYakapPassword:
-          passwordResolution.action === "set" ? passwordResolution.value : null,
+          passwordResolution.action === "set" ? passwordResolution.value : "",
         philhealthYakapPmccNumber: data.philhealthYakapPmccNumber,
       },
       update: {

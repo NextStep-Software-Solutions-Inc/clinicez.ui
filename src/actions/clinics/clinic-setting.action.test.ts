@@ -201,8 +201,8 @@ describe("clinic-setting.action", () => {
         create: expect.objectContaining({
           clinicId: 42,
           facilityName: "Updated Facility",
-          philhealthYakapUsername: null,
-          philhealthYakapPassword: null,
+          philhealthYakapUsername: "",
+          philhealthYakapPassword: "",
         }),
         update: {
           philhealthAccreditationNumber: undefined,
@@ -222,14 +222,14 @@ describe("clinic-setting.action", () => {
       );
     });
 
-    it("writes null to DB when username and password are explicitly cleared with null", async () => {
+    it("writes empty strings to DB when username and password are explicitly cleared with null", async () => {
       mockPrisma.clinicSetting.upsert.mockResolvedValue({
         id: 1,
         clinicId: 42,
         facilityName: "City Clinic",
         philhealthAccreditationNumber: "P10038831",
-        philhealthYakapUsername: null,
-        philhealthYakapPassword: null,
+        philhealthYakapUsername: "",
+        philhealthYakapPassword: "",
         philhealthYakapPmccNumber: "Z15445",
       });
 
@@ -242,12 +242,12 @@ describe("clinic-setting.action", () => {
       expect(mockPrisma.clinicSetting.upsert).toHaveBeenCalledWith({
         where: { clinicId: 42 },
         create: expect.objectContaining({
-          philhealthYakapUsername: null,
-          philhealthYakapPassword: null,
+          philhealthYakapUsername: "",
+          philhealthYakapPassword: "",
         }),
         update: expect.objectContaining({
-          philhealthYakapUsername: null,
-          philhealthYakapPassword: null,
+          philhealthYakapUsername: "",
+          philhealthYakapPassword: "",
         }),
       });
       expect(res.data?.hasPhilhealthYakapUsername).toBe(false);
@@ -258,7 +258,7 @@ describe("clinic-setting.action", () => {
       mockPrisma.clinicSetting.upsert.mockResolvedValue({
         id: 1,
         clinicId: 42,
-        philhealthYakapUsername: null,
+        philhealthYakapUsername: "",
         philhealthYakapPassword: "  test_padded_password  ",
       });
 
@@ -271,11 +271,11 @@ describe("clinic-setting.action", () => {
       expect(mockPrisma.clinicSetting.upsert).toHaveBeenCalledWith({
         where: { clinicId: 42 },
         create: expect.objectContaining({
-          philhealthYakapUsername: null,
+          philhealthYakapUsername: "",
           philhealthYakapPassword: "  test_padded_password  ",
         }),
         update: expect.objectContaining({
-          philhealthYakapUsername: null,
+          philhealthYakapUsername: "",
           philhealthYakapPassword: "  test_padded_password  ",
         }),
       });

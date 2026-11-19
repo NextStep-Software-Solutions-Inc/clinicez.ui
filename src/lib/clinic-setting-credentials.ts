@@ -28,7 +28,7 @@ export type SanitizedClinicSetting<T extends ClinicSettingSecretFields> = Omit<
 
 export type CredentialUpdateResolution =
   | { action: "keep" }
-  | { action: "clear"; value: null }
+  | { action: "clear"; value: "" }
   | { action: "set"; value: string };
 
 /**
@@ -74,7 +74,7 @@ export function sanitizeClinicSetting<T extends ClinicSettingSecretFields>(
 
 /**
  * Resolves tri-state credential input:
- * - `null`: explicit clear -> writes `null` to DB
+ * - `null`: explicit clear -> writes `""` (empty string) to DB
  * - `undefined` or empty/whitespace-only string: untouched -> leaves DB unchanged
  * - non-empty string: replaces stored credential with the new value
  */
@@ -83,7 +83,7 @@ export function resolveCredentialUpdate(
   options?: { trim?: boolean },
 ): CredentialUpdateResolution {
   if (input === null) {
-    return { action: "clear", value: null };
+    return { action: "clear", value: "" };
   }
   if (typeof input !== "string" || input.trim().length === 0) {
     return { action: "keep" };

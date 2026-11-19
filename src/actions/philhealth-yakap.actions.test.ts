@@ -80,11 +80,16 @@ jest.mock("@lib/prisma", () => ({
 
 import prisma from "@/lib/prisma";
 import { getCachedSession } from "@/actions/session.action";
-import { YakapApiClient } from "@/lib/philhealth-yakap/api";
 import {
+  normalizeEmptyCredentialTags,
+  YakapApiClient,
+} from "@/lib/philhealth-yakap/api";
+import {
+  extractRegistrationListAction,
   generateBatchXmlAction,
   submitBatchReportAction,
   validateBatchReportAction,
+  verifyAtcAction,
 } from "./philhealth-yakap.actions";
 
 const mockPrisma = prisma as unknown as {
@@ -1164,5 +1169,56 @@ describe("philhealth-yakap.actions: validateBatchReportAction & submitBatchRepor
     expect(res.status).toBe(false);
     expect(res.message).toMatch(/Accreditation Number/i);
     expect(getTokenSpy).not.toHaveBeenCalled();
+  });
+
+  it("expands self-closing empty credential tags to explicit empty elements", () => {
+    const soapXml = `<ns1:getToken xmlns:ns1="http://philhealth.gov.ph/"><pUsername/><pUserPassword /><pSoftwareCertificationId>CERT-1</pSoftwareCertificationId><pHospitalCode>P10038831</pHospitalCode></ns1:getToken>`;
+
+    expect(normalizeEmptyCredentialTags(soapXml)).toBe(
+      `<ns1:getToken xmlns:ns1="http://philhealth.gov.ph/"><pUsername></pUsername><pUserPassword></pUserPassword><pSoftwareCertificationId>CERT-1</pSoftwareCertificationId><pHospitalCode>P10038831</pHospitalCode></ns1:getToken>`,
+    );
+  });
+
+  it("treats plain-string PhilHealth error responses as token failure in validateBatchReportAction", async () => {
+    mockPrisma.konsultaBatchReport.findUnique.mockResolvedValue({
+      id: "batch-1",
+      status: "DRAFT",
+      tagging: "1",
+      xmlPayload: "<PCB />",
+    });
+
+    jest
+      .spyOn(YakapApiClient.prototype, "getToken")
+      .mockResolvedValue("GetToken error : Request failed.");
+    const validateSpy = jest.spyOn(YakapApiClient.prototype, "validateReport");
+
+    const res = await validateBatchReportAction("clinic-test-123", "batch-1");
+
+    expect(res.status).toBe(false);
+    expect(res.message).toContain("GetToken error : Request failed.");
+    expect(validateSpy).not.toHaveBeenCalled();
+  });
+
+  it("surfaces PhilHealth token failure messages in verifyAtcAction and extractRegistrationListAction", async () => {
+    jest
+      .spyOn(YakapApiClient.prototype, "getToken")
+      .mockResolvedValue({ success: false, message: "Invalid credentials", result: "" });
+
+    const atcRes = await verifyAtcAction(
+      "clinic-test-123",
+      "123456789012",
+      "ATC123",
+      "2026-11-19",
+    );
+    expect(atcRes.status).toBe(false);
+    expect(atcRes.message).toContain("Invalid credentials");
+
+    const erlRes = await extractRegistrationListAction(
+      "clinic-test-123",
+      "2026-01-01",
+      "2026-11-19",
+    );
+    expect(erlRes.status).toBe(false);
+    expect(erlRes.message).toContain("Invalid credentials");
   });
 });

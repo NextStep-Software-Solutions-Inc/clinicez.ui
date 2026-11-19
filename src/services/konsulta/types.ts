@@ -11,6 +11,7 @@ export interface KonsultaHciCredentials {
     password: string;
     hciAccreNo: string;
     pmccNumber: string;
+    pmccNo?: string;
     certificationId: string;
     cipherKey: string;
 }

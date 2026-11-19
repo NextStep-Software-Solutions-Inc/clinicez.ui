@@ -15,12 +15,81 @@ import { MedicalNoteSummarizer } from "@/components/ai";
 import { sortNoteSectionsSOAP } from "@/utils/soap-ordering";
 import KonsultaSubjectiveFields, { type SubjectiveStructuredData } from "./KonsultaSubjectiveFields";
 import DownloadEkasButton from "./DownloadEkasButton";
+import {
+  isSignsSymptomsCodeList,
+  normalizeSubjectiveText,
+  sanitizeStructuredDataForStorage,
+  stripMarkdownToPlainText,
+  SUBJECTIVE_MAX_LENGTH,
+} from "@/lib/philhealth-yakap/subjective-utils";
 
 type Detail = NonNullable<GetPatientConsultationDetail["data"]>;
 
 type SectionSaveStatus = "idle" | "saving" | "saved" | "error";
 
 const AUTOSAVE_DELAY_MS = 400;
+
+function isSubjectiveSection(sectionName: string): boolean {
+  return sectionName.toLowerCase().includes("subjective");
+}
+
+function createEmptyStructuredData(): SubjectiveStructuredData {
+  return {
+    illnessHistory: "",
+    signsSymptoms: "",
+    painSite: "",
+    otherComplaint: "",
+  };
+}
+
+function normalizeYakapSubjectiveState(
+  rawSd: Partial<SubjectiveStructuredData> | undefined,
+  rawContent: string
+): {
+  structuredData: SubjectiveStructuredData;
+  hasDistinct: boolean;
+  showNarrative: boolean;
+} {
+  const rawSigns = rawSd?.signsSymptoms?.trim() ?? "";
+  let preNormalizedSd = rawSd;
+
+  // Preserve legacy non-code free-text signsSymptoms together with any otherComplaint
+  if (rawSigns && !isSignsSymptomsCodeList(rawSigns)) {
+    preNormalizedSd = {
+      ...rawSd,
+      signsSymptoms: "X",
+      otherComplaint: [rawSigns, rawSd?.otherComplaint?.trim()].filter(Boolean).join(" | "),
+    };
+  }
+
+  const normalizedSd = sanitizeStructuredDataForStorage(preNormalizedSd);
+  const strippedPlain = stripMarkdownToPlainText(rawContent);
+  const unboundedNote = normalizeSubjectiveText(strippedPlain);
+  const normalizedNote = normalizeSubjectiveText(
+    strippedPlain,
+    SUBJECTIVE_MAX_LENGTH.illnessHistory
+  );
+  const exceedsLimit = Boolean(normalizedNote) && normalizedNote !== unboundedNote;
+
+  if (!normalizedSd.illnessHistory && normalizedNote) {
+    normalizedSd.illnessHistory = normalizedNote;
+    return {
+      structuredData: normalizedSd,
+      hasDistinct: exceedsLimit,
+      showNarrative: exceedsLimit,
+    };
+  }
+
+  const differs =
+    Boolean(rawContent.trim()) &&
+    (normalizedNote !== normalizedSd.illnessHistory || exceedsLimit);
+
+  return {
+    structuredData: normalizedSd,
+    hasDistinct: differs,
+    showNarrative: differs,
+  };
+}
 
 interface ConsultationNotesEditorProps {
   clinicUid: string;
@@ -54,17 +123,54 @@ export default function ConsultationNotesEditor({
   const myHpIsOnTicket = myActiveHp !== null && ticketHpIds.includes(myActiveHp.id);
   const initialNoteMap: Record<string, string> = {};
   const initialShowMap: Record<string, boolean> = {};
+  const initialRawStructuredData: Record<string, Partial<SubjectiveStructuredData>> = {};
+
   for (const note of consultation.ConsultationNotes) {
-    if (myHpIsOnTicket) {
-      // Only pre-fill with the current HP's own notes
-      if (note.hpId === myActiveHp!.id) {
-        initialNoteMap[note.section] = note.content;
-        initialShowMap[note.section] = note.showOnPatient;
-      }
-    } else if (!(note.section in initialNoteMap)) {
-      // Current HP is not on this ticket — show the first available note per section
+    const matchesHp = myHpIsOnTicket
+      ? note.hpId === myActiveHp!.id
+      : !(note.section in initialNoteMap);
+
+    if (matchesHp) {
       initialNoteMap[note.section] = note.content;
       initialShowMap[note.section] = note.showOnPatient;
+      if (
+        note.structuredData &&
+        typeof note.structuredData === "object" &&
+        !Array.isArray(note.structuredData)
+      ) {
+        const sd = note.structuredData as Record<string, unknown>;
+        initialRawStructuredData[note.section] = {
+          illnessHistory: typeof sd.illnessHistory === "string" ? sd.illnessHistory : "",
+          signsSymptoms: typeof sd.signsSymptoms === "string" ? sd.signsSymptoms : "",
+          painSite: typeof sd.painSite === "string" ? sd.painSite : "",
+          otherComplaint: typeof sd.otherComplaint === "string" ? sd.otherComplaint : "",
+        };
+      }
+    }
+  }
+
+  // PhilHealth Yakap: structured subjective data & supplemental narrative state
+  const isKonsulta = consultation.isPhilHealthKonsulta ?? false;
+  const initialStructuredData: Record<string, SubjectiveStructuredData> = {};
+  const initialDistinctNarrative: Record<string, boolean> = {};
+  const initialShowNarrative: Record<string, boolean> = {};
+
+  for (const section of sections) {
+    const rawSd = initialRawStructuredData[section.name];
+    const rawContent = initialNoteMap[section.name] ?? "";
+
+    if (isKonsulta && isSubjectiveSection(section.name)) {
+      const normalized = normalizeYakapSubjectiveState(rawSd, rawContent);
+      initialStructuredData[section.name] = normalized.structuredData;
+      initialDistinctNarrative[section.name] = normalized.hasDistinct;
+      initialShowNarrative[section.name] = normalized.showNarrative;
+    } else if (rawSd) {
+      initialStructuredData[section.name] = {
+        illnessHistory: rawSd.illnessHistory ?? "",
+        signsSymptoms: rawSd.signsSymptoms ?? "",
+        painSite: rawSd.painSite ?? "",
+        otherComplaint: rawSd.otherComplaint ?? "",
+      };
     }
   }
 
@@ -75,28 +181,18 @@ export default function ConsultationNotesEditor({
   const [expanded, setExpanded] = useState<Record<string, boolean>>(
     Object.fromEntries(sections.map((s) => [s.name, true]))
   );
-
-  // PhilHealth Yakap: structured subjective data
-  const isKonsulta = consultation.isPhilHealthKonsulta ?? false;
-  const initialStructuredData: Record<string, SubjectiveStructuredData> = {};
-  for (const note of consultation.ConsultationNotes) {
-    if (note.structuredData && typeof note.structuredData === 'object' && !Array.isArray(note.structuredData)) {
-      const sd = note.structuredData as Record<string, string>;
-      initialStructuredData[note.section] = {
-        illnessHistory: sd.illnessHistory ?? "",
-        signsSymptoms: sd.signsSymptoms ?? "",
-        painSite: sd.painSite ?? "",
-        otherComplaint: sd.otherComplaint ?? "",
-      };
-    }
-  }
   const [structuredDataMap, setStructuredDataMap] = useState<Record<string, SubjectiveStructuredData>>(initialStructuredData);
+  const [hasDistinctNarrative, setHasDistinctNarrative] = useState<Record<string, boolean>>(initialDistinctNarrative);
+  const [showAdditionalNarrative, setShowAdditionalNarrative] = useState<Record<string, boolean>>(initialShowNarrative);
 
   // Debounce timers per section — cleared on unmount
   const debounceTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
   // Stable refs so debounce callbacks always read the latest values
-  const showOnPatientRef = useRef<Record<string, boolean>>(initialShowMap);
+  const noteValuesRef = useRef<Record<string, string>>(noteValues);
+  noteValuesRef.current = noteValues;
+
+  const showOnPatientRef = useRef<Record<string, boolean>>(showOnPatient);
   showOnPatientRef.current = showOnPatient;
 
   const myActiveHpRef = useRef(myActiveHp);
@@ -111,6 +207,56 @@ export default function ConsultationNotesEditor({
   const structuredDataMapRef = useRef(structuredDataMap);
   structuredDataMapRef.current = structuredDataMap;
 
+  const hasDistinctNarrativeRef = useRef(hasDistinctNarrative);
+  hasDistinctNarrativeRef.current = hasDistinctNarrative;
+
+  const isKonsultaRef = useRef(isKonsulta);
+  isKonsultaRef.current = isKonsulta;
+
+  // Hydrate HPI & narrative sync from existing Subjective note content when PhilHealth Yakap is toggled ON
+  useEffect(() => {
+    if (!isKonsulta) return;
+
+    const sdUpdates: Record<string, SubjectiveStructuredData> = {};
+    const distinctUpdates: Record<string, boolean> = {};
+    const showUpdates: Record<string, boolean> = {};
+
+    for (const section of sections) {
+      if (!isSubjectiveSection(section.name)) continue;
+      const currentRawSd = structuredDataMapRef.current[section.name];
+      const rawNote = noteValuesRef.current[section.name] ?? "";
+      const normalized = normalizeYakapSubjectiveState(currentRawSd, rawNote);
+
+      const prevSd = currentRawSd ?? createEmptyStructuredData();
+      if (
+        normalized.structuredData.illnessHistory !== prevSd.illnessHistory ||
+        normalized.structuredData.signsSymptoms !== prevSd.signsSymptoms ||
+        normalized.structuredData.painSite !== prevSd.painSite ||
+        normalized.structuredData.otherComplaint !== prevSd.otherComplaint
+      ) {
+        sdUpdates[section.name] = normalized.structuredData;
+      }
+
+      if (normalized.hasDistinct !== (hasDistinctNarrativeRef.current[section.name] ?? false)) {
+        distinctUpdates[section.name] = normalized.hasDistinct;
+        showUpdates[section.name] = normalized.showNarrative;
+      }
+    }
+
+    if (Object.keys(sdUpdates).length > 0) {
+      structuredDataMapRef.current = { ...structuredDataMapRef.current, ...sdUpdates };
+      setStructuredDataMap((prev) => ({ ...prev, ...sdUpdates }));
+    }
+    if (Object.keys(distinctUpdates).length > 0) {
+      hasDistinctNarrativeRef.current = { ...hasDistinctNarrativeRef.current, ...distinctUpdates };
+      setHasDistinctNarrative((prev) => ({ ...prev, ...distinctUpdates }));
+    }
+    if (Object.keys(showUpdates).length > 0) {
+      setShowAdditionalNarrative((prev) => ({ ...prev, ...showUpdates }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isKonsulta, consultation.id]);
+
   // Cleanup all pending timers when the component unmounts
   useEffect(() => {
     return () => {
@@ -119,23 +265,44 @@ export default function ConsultationNotesEditor({
   }, []);
 
   // Core save — used by both auto-save and the manual Save button
-  const doSave = async (sectionName: string, content: string) => {
+  const doSave = async (sectionName: string, contentOverride?: string) => {
     const hp = myActiveHpRef.current;
     if (!hp) return;
 
     setSectionSaveStatus((prev) => ({ ...prev, [sectionName]: "saving" }));
 
+    const rawContent =
+      contentOverride !== undefined ? contentOverride : (noteValuesRef.current[sectionName] ?? "");
+    const rawStructured = structuredDataMapRef.current[sectionName] ?? null;
+
+    const isYakapSubjective = isKonsultaRef.current && isSubjectiveSection(sectionName);
+    const structuredToSave =
+      isYakapSubjective && rawStructured
+        ? sanitizeStructuredDataForStorage(rawStructured)
+        : rawStructured;
+
+    const hasDistinct = hasDistinctNarrativeRef.current[sectionName] ?? false;
+    const contentToSave = isYakapSubjective
+      ? hasDistinct && rawContent.trim()
+        ? rawContent
+        : (structuredToSave?.illnessHistory ?? "")
+      : rawContent;
+
     try {
       const result = await upsertConsultationNotesAction({
         consultationTicketId: consultationRef.current.id,
         section: sectionName,
-        content,
+        content: contentToSave,
         hpId: hp.id,
         showOnPatient: showOnPatientRef.current[sectionName] ?? false,
-        structuredData: structuredDataMapRef.current[sectionName] ?? null,
+        structuredData: structuredToSave,
       });
 
       if (result.status && result.data) {
+        if (isYakapSubjective && !hasDistinct && noteValuesRef.current[sectionName] !== contentToSave) {
+          noteValuesRef.current = { ...noteValuesRef.current, [sectionName]: contentToSave };
+          setNoteValues((prev) => ({ ...prev, [sectionName]: contentToSave }));
+        }
         setSectionSaveStatus((prev) => ({ ...prev, [sectionName]: "saved" }));
         toast.success(result.message ?? "Note saved");
         // Patch only the notes array — no full reload needed
@@ -165,21 +332,33 @@ export default function ConsultationNotesEditor({
     }
   };
 
-  // Called by MarkdownEditor's onChange — updates state then schedules auto-save
-  const handleNoteChange = (sectionName: string, value: string) => {
-    setNoteValues((prev) => ({ ...prev, [sectionName]: value }));
-
+  const scheduleAutoSave = (sectionName: string, contentOverride?: string) => {
     if (isResolved || !myActiveHpRef.current) return;
 
-    // Clear any previously scheduled save for this section
     if (debounceTimers.current[sectionName]) {
       clearTimeout(debounceTimers.current[sectionName]);
     }
 
-    // Schedule auto-save after the user pauses typing
     debounceTimers.current[sectionName] = setTimeout(() => {
-      void doSave(sectionName, value);
+      void doSave(sectionName, contentOverride);
     }, AUTOSAVE_DELAY_MS);
+  };
+
+  // Called by MarkdownEditor's onChange for standard (non-Yakap-Subjective) sections
+  const handleNoteChange = (sectionName: string, value: string) => {
+    noteValuesRef.current = { ...noteValuesRef.current, [sectionName]: value };
+    setNoteValues((prev) => ({ ...prev, [sectionName]: value }));
+    scheduleAutoSave(sectionName, value);
+  };
+
+  // Called by the collapsible supplemental narrative MarkdownEditor on Yakap Subjective sections
+  const handleYakapNarrativeChange = (sectionName: string, value: string) => {
+    const distinct = Boolean(value.trim());
+    noteValuesRef.current = { ...noteValuesRef.current, [sectionName]: value };
+    hasDistinctNarrativeRef.current = { ...hasDistinctNarrativeRef.current, [sectionName]: distinct };
+    setNoteValues((prev) => ({ ...prev, [sectionName]: value }));
+    setHasDistinctNarrative((prev) => ({ ...prev, [sectionName]: distinct }));
+    scheduleAutoSave(sectionName);
   };
 
   // Manual save — cancels any pending auto-save and saves immediately
@@ -195,7 +374,7 @@ export default function ConsultationNotesEditor({
     if (debounceTimers.current[sectionName]) {
       clearTimeout(debounceTimers.current[sectionName]);
     }
-    await doSave(sectionName, noteValues[sectionName] ?? "");
+    await doSave(sectionName);
   };
 
   const toggleShowOnPatient = (sectionName: string) => {
@@ -270,124 +449,182 @@ export default function ConsultationNotesEditor({
         {!isResolved && (
           <MedicalNoteSummarizer
             consultationNotes={sections
-              .map((section) => `${section.label || section.name}: ${noteValues[section.name] ?? ""}`)
+              .map((section) => {
+                const rawNote = noteValues[section.name] ?? "";
+                const sdIllness =
+                  isKonsulta && isSubjectiveSection(section.name)
+                    ? (structuredDataMap[section.name]?.illnessHistory ?? "")
+                    : "";
+                const effectiveText =
+                  isKonsulta && isSubjectiveSection(section.name)
+                    ? hasDistinctNarrative[section.name] && rawNote.trim()
+                      ? sdIllness
+                        ? `${sdIllness}\n${rawNote}`
+                        : rawNote
+                      : sdIllness
+                    : rawNote;
+                return `${section.label || section.name}: ${effectiveText}`;
+              })
               .join("\n\n")}
             noteSections={sections.map((s) => s.label || s.name)}
             outputFormat="markdown"
           />
         )}
       </div>
-      {sections.map((section) => (
-        <div
-          key={section.name}
-          className="rounded-lg border border-border/50 bg-background overflow-hidden"
-        >
-          <button
-            type="button"
-            onClick={() =>
-              setExpanded((prev) => ({ ...prev, [section.name]: !prev[section.name] }))
-            }
-            className="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition-colors text-left"
-          >
-            <div>
-              <span className="text-sm font-semibold text-foreground">{section.label || section.name}</span>
-              {section.description && (
-                <span className="block text-xs text-muted-foreground mt-0.5">{section.description}</span>
-              )}
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <span className={`flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${showOnPatient[section.name]
-                  ? "border-emerald-300 text-emerald-700 bg-emerald-50 dark:border-emerald-700 dark:text-emerald-400 dark:bg-emerald-950/30"
-                  : "border-border/50 text-muted-foreground bg-muted/30"
-                }`}>
-                {showOnPatient[section.name] ? (
-                  <Eye className="h-3 w-3" />
-                ) : (
-                  <EyeOff className="h-3 w-3" />
-                )}
-                {showOnPatient[section.name] ? "Patient visible" : "Private"}
-              </span>
-              {expanded[section.name] ? (
-                <ChevronUp className="h-4 w-4 text-muted-foreground" />
-              ) : (
-                <ChevronDown className="h-4 w-4 text-muted-foreground" />
-              )}
-            </div>
-          </button>
+      {sections.map((section) => {
+        const isYakapSubjective = isKonsulta && isSubjectiveSection(section.name);
+        const isNarrativeExpanded = Boolean(showAdditionalNarrative[section.name]);
 
-          {expanded[section.name] && (
-            <div className="px-4 pb-4 space-y-2">
-              {/* PhilHealth Yakap structured fields for subjective section */}
-              {isKonsulta && section.name.toLowerCase().includes("subjective") && (
-                <KonsultaSubjectiveFields
-                  data={structuredDataMap[section.name] ?? { illnessHistory: "", signsSymptoms: "", painSite: "", otherComplaint: "" }}
-                  onChange={(data) => {
-                    setStructuredDataMap((prev) => ({ ...prev, [section.name]: data }));
-                    // Trigger auto-save with debounce
-                    if (!isResolved && myActiveHpRef.current) {
-                      if (debounceTimers.current[section.name]) {
-                        clearTimeout(debounceTimers.current[section.name]);
-                      }
-                      debounceTimers.current[section.name] = setTimeout(() => {
-                        void doSave(section.name, noteValues[section.name] ?? "");
-                      }, AUTOSAVE_DELAY_MS);
-                    }
-                  }}
-                  disabled={isResolved}
-                />
-              )}
-              <MarkdownEditor
-                value={noteValues[section.name] ?? ""}
-                onChange={(v) => handleNoteChange(section.name, v)}
-                placeholder={`Enter ${section.label || section.name} notes… (supports **bold**, _italic_, ### headings, - lists)`}
-                disabled={isResolved}
-              />
-              <div className="flex items-center justify-between">
-                <button
-                  type="button"
-                  onClick={() => toggleShowOnPatient(section.name)}
-                  disabled={isTogglingPrivacy}
-                  title={showOnPatient[section.name] ? "Hide from patient" : "Show to patient"}
-                  className={`flex items-center gap-1.5 text-xs rounded-md px-2 py-1 border transition-colors ${showOnPatient[section.name]
-                      ? "border-emerald-300 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:border-emerald-700 dark:text-emerald-400 dark:bg-emerald-950/30"
-                      : "border-border/50 text-muted-foreground hover:border-border hover:text-foreground"
-                    }`}
-                >
-                  {showOnPatient[section.name] ? (
-                    <Eye className="h-3.5 w-3.5" />
-                  ) : (
-                    <EyeOff className="h-3.5 w-3.5" />
-                  )}
-                  {showOnPatient[section.name] ? "Visible to patient" : "Hidden from patient"}
-                </button>
-                {!isResolved && (
-                  <div className="flex items-center gap-1.5">
-                    {sectionSaveStatus[section.name] === "saving" && (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
-                    )}
-                    {sectionSaveStatus[section.name] === "saved" && (
-                      <Check className="h-3.5 w-3.5 text-emerald-500" />
-                    )}
-                    {sectionSaveStatus[section.name] === "error" && (
-                      <X className="h-3.5 w-3.5 text-destructive" />
-                    )}
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="gap-1.5 h-7 text-xs"
-                      disabled={sectionSaveStatus[section.name] === "saving"}
-                      onClick={() => saveSection(section.name)}
-                    >
-                      <Save className="h-3.5 w-3.5" />
-                      Save
-                    </Button>
-                  </div>
+        return (
+          <div
+            key={section.name}
+            className="rounded-lg border border-border/50 bg-background overflow-hidden"
+          >
+            <button
+              type="button"
+              onClick={() =>
+                setExpanded((prev) => ({ ...prev, [section.name]: !prev[section.name] }))
+              }
+              className="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition-colors text-left"
+            >
+              <div>
+                <span className="text-sm font-semibold text-foreground">{section.label || section.name}</span>
+                {section.description && (
+                  <span className="block text-xs text-muted-foreground mt-0.5">{section.description}</span>
                 )}
               </div>
-            </div>
-          )}
-        </div>
-      ))}
+              <div className="flex items-center gap-2 shrink-0">
+                <span className={`flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${showOnPatient[section.name]
+                    ? "border-emerald-300 text-emerald-700 bg-emerald-50 dark:border-emerald-700 dark:text-emerald-400 dark:bg-emerald-950/30"
+                    : "border-border/50 text-muted-foreground bg-muted/30"
+                  }`}>
+                  {showOnPatient[section.name] ? (
+                    <Eye className="h-3 w-3" />
+                  ) : (
+                    <EyeOff className="h-3 w-3" />
+                  )}
+                  {showOnPatient[section.name] ? "Patient visible" : "Private"}
+                </span>
+                {expanded[section.name] ? (
+                  <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                )}
+              </div>
+            </button>
+
+            {expanded[section.name] && (
+              <div className="px-4 pb-4 space-y-2">
+                {/* PhilHealth Yakap structured fields for subjective section */}
+                {isYakapSubjective && (
+                  <KonsultaSubjectiveFields
+                    data={structuredDataMap[section.name] ?? createEmptyStructuredData()}
+                    onChange={(data) => {
+                      structuredDataMapRef.current = {
+                        ...structuredDataMapRef.current,
+                        [section.name]: data,
+                      };
+                      setStructuredDataMap((prev) => ({ ...prev, [section.name]: data }));
+                      scheduleAutoSave(section.name);
+                    }}
+                    disabled={isResolved}
+                  />
+                )}
+
+                {isYakapSubjective ? (
+                  <div className="rounded-lg border border-border/40 bg-muted/10 overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setShowAdditionalNarrative((prev) => ({
+                          ...prev,
+                          [section.name]: !prev[section.name],
+                        }))
+                      }
+                      aria-expanded={isNarrativeExpanded}
+                      className="w-full flex items-center justify-between px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/20 transition-colors"
+                    >
+                      <span>Additional Clinical Narrative (Optional)</span>
+                      {isNarrativeExpanded ? (
+                        <ChevronUp className="h-3.5 w-3.5" />
+                      ) : (
+                        <ChevronDown className="h-3.5 w-3.5" />
+                      )}
+                    </button>
+                    {isNarrativeExpanded && (
+                      <div className="p-2 pt-0 space-y-1.5">
+                        <p className="text-[11px] text-muted-foreground">
+                          Optional internal notes. PhilHealth Yakap exports use History of Illness above.
+                        </p>
+                        <MarkdownEditor
+                          value={
+                            hasDistinctNarrative[section.name]
+                              ? (noteValues[section.name] ?? "")
+                              : ""
+                          }
+                          onChange={(v) => handleYakapNarrativeChange(section.name, v)}
+                          placeholder="Optional supplemental clinical narrative (not required for Yakap XML)…"
+                          disabled={isResolved}
+                        />
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <MarkdownEditor
+                    value={noteValues[section.name] ?? ""}
+                    onChange={(v) => handleNoteChange(section.name, v)}
+                    placeholder={`Enter ${section.label || section.name} notes… (supports **bold**, _italic_, ### headings, - lists)`}
+                    disabled={isResolved}
+                  />
+                )}
+
+                <div className="flex items-center justify-between">
+                  <button
+                    type="button"
+                    onClick={() => toggleShowOnPatient(section.name)}
+                    disabled={isTogglingPrivacy}
+                    title={showOnPatient[section.name] ? "Hide from patient" : "Show to patient"}
+                    className={`flex items-center gap-1.5 text-xs rounded-md px-2 py-1 border transition-colors ${showOnPatient[section.name]
+                        ? "border-emerald-300 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:border-emerald-700 dark:text-emerald-400 dark:bg-emerald-950/30"
+                        : "border-border/50 text-muted-foreground hover:border-border hover:text-foreground"
+                      }`}
+                  >
+                    {showOnPatient[section.name] ? (
+                      <Eye className="h-3.5 w-3.5" />
+                    ) : (
+                      <EyeOff className="h-3.5 w-3.5" />
+                    )}
+                    {showOnPatient[section.name] ? "Visible to patient" : "Hidden from patient"}
+                  </button>
+                  {!isResolved && (
+                    <div className="flex items-center gap-1.5">
+                      {sectionSaveStatus[section.name] === "saving" && (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                      )}
+                      {sectionSaveStatus[section.name] === "saved" && (
+                        <Check className="h-3.5 w-3.5 text-emerald-500" />
+                      )}
+                      {sectionSaveStatus[section.name] === "error" && (
+                        <X className="h-3.5 w-3.5 text-destructive" />
+                      )}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-1.5 h-7 text-xs"
+                        disabled={sectionSaveStatus[section.name] === "saving"}
+                        onClick={() => saveSection(section.name)}
+                      >
+                        <Save className="h-3.5 w-3.5" />
+                        Save
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }

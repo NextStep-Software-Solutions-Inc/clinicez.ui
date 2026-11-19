@@ -1,5 +1,6 @@
 import { create, builder } from 'xmlbuilder2';
 import type { XMLBuilder } from 'xmlbuilder2/lib/interfaces';
+import { normalizeSubjectiveForXml } from './subjective-utils';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Interfaces
@@ -123,6 +124,7 @@ export interface KonsultaPatientData {
       typeLasDelivery: string;
       isPreEclampsia: string;
       wFamPlan: string;
+      isApplicable?: string;
     };
     immunizations: Array<{
       childImmcode: string;
@@ -133,25 +135,25 @@ export interface KonsultaPatientData {
       reportStatus: string;
       deficiencyRemarks: string;
     }>;
-    physicalExaminations: Array<{
-      generalSurveyId: string;
-      generalSurveyRemarks: string;
-      heentId: string;
-      heentRemarks: string;
-      chestId: string;
-      chestRemarks: string;
-      heartId: string;
-      heartRemarks: string;
-      abdomenId: string;
-      abdomenRemarks: string;
-      guId: string;
-      guRemarks: string;
-      skinId: string;
-      skinRemarks: string;
-      neuroId: string;
-      neuroRemarks: string;
-      rectalId: string;
-      rectalRemarks: string;
+    physicalExaminations?: Array<{
+      generalSurveyId?: string | null;
+      generalSurveyRemarks?: string | null;
+      heentId?: string | null;
+      heentRemarks?: string | null;
+      chestId?: string | null;
+      chestRemarks?: string | null;
+      heartId?: string | null;
+      heartRemarks?: string | null;
+      abdomenId?: string | null;
+      abdomenRemarks?: string | null;
+      guId?: string | null;
+      guRemarks?: string | null;
+      skinId?: string | null;
+      skinRemarks?: string | null;
+      neuroId?: string | null;
+      neuroRemarks?: string | null;
+      rectalId?: string | null;
+      rectalRemarks?: string | null;
     }>;
     ncdqans?: Record<string, string>;
   };
@@ -168,13 +170,13 @@ export interface KonsultaConsultationData {
   atc: string;
   isWalkedIn: 'Y' | 'N';
   coPay: string;
-  transDate: string;
+  transDate?: string;
   // Subjective
   subjective: {
-    illnessHistory: string;
+    illnessHistory?: string;
     signsSymptoms: string;
-    otherComplaint: string;
-    painSite: string;
+    otherComplaint?: string;
+    painSite?: string;
   };
   // Vitals
   vitals: {
@@ -198,29 +200,31 @@ export interface KonsultaConsultationData {
     midUpperArmCirc: string;
   };
   physicalExam?: {
-    generalSurveyId: string;
-    generalSurveyRemarks: string;
-    heentId: string;
-    heentRemarks: string;
-    chestId: string;
-    chestRemarks: string;
-    heartId: string;
-    heartRemarks: string;
-    abdomenId: string;
-    abdomenRemarks: string;
-    guId: string;
-    guRemarks: string;
-    skinId: string;
-    skinRemarks: string;
-    neuroId: string;
-    neuroRemarks: string;
-    rectalId: string;
-    rectalRemarks: string;
+    generalSurveyId?: string | null;
+    generalSurveyRemarks?: string | null;
+    heentId?: string | null;
+    heentRemarks?: string | null;
+    chestId?: string | null;
+    chestRemarks?: string | null;
+    heartId?: string | null;
+    heartRemarks?: string | null;
+    abdomenId?: string | null;
+    abdomenRemarks?: string | null;
+    guId?: string | null;
+    guRemarks?: string | null;
+    skinId?: string | null;
+    skinRemarks?: string | null;
+    neuroId?: string | null;
+    neuroRemarks?: string | null;
+    rectalId?: string | null;
+    rectalRemarks?: string | null;
   };
-  // ICD codes
-  icdCodes: string[];
+  // ICD codes / diagnoses
+  icdCodes?: string[];
+  diagnoses?: string[];
+  consultationNotes?: Record<string, unknown>;
   // Managements
-  managements: KonsultaManagementData[];
+  managements?: KonsultaManagementData[];
   // Advice
   advice?: {
     advice: string;
@@ -230,7 +234,7 @@ export interface KonsultaConsultationData {
     referredToOther: string;
   };
   // Medicines
-  medicines: KonsultaMedicineData[];
+  medicines?: KonsultaMedicineData[];
   // Diagnostic Options & Requests
   konsultaRecommendedDiagnosticOptions?: { philhealthDiagnosticId: string; status: 'RQ' | 'RF' | 'XX' }[];
   diagnosticRequests?: { philhealthDiagnosticId: string | null }[];
@@ -243,26 +247,26 @@ export interface KonsultaMedicineData {
   hciTransNo: string;
   category: string;
   drugCode: string;
-  genericCode: string;
-  saltCode: string;
-  strengthCode: string;
-  formCode: string;
-  unitCode: string;
-  packageCode: string;
-  otherMedicine: string;
-  othMedDrugGrouping: string;
+  genericCode?: string;
+  saltCode?: string;
+  strengthCode?: string;
+  formCode?: string;
+  unitCode?: string;
+  packageCode?: string;
+  otherMedicine?: string;
+  othMedDrugGrouping?: string;
   route: string;
   quantity: string;
   actualUnitPrice: string;
   totalAmtPrice: string;
   instructionQuantity: string;
-  instructionStrength: string;
-  instructionFrequency: string;
+  instructionStrength?: string;
+  instructionFrequency?: string;
   prescribingPhysician: string;
   isDispensed: string;
-  dateDispensed: string;
-  dispensingPersonnel: string;
-  isApplicable: string;
+  dateDispensed?: string;
+  dispensingPersonnel?: string;
+  isApplicable?: string;
   dateAdded: string;
 }
 
@@ -497,36 +501,83 @@ function buildProfilePeMiscs(parent: XmlNode, patient: KonsultaPatientData): Xml
   return parent;
 }
 
+const VALID_DTD_BLOOD_TYPES: Record<string, string> = {
+  'A+': 'A+',
+  'A-': 'A-',
+  'B+': 'B+',
+  'B-': 'B-',
+  'AB+': 'AB+',
+  'AB-': 'AB-',
+  'O+': 'O+',
+  'O-': 'O-',
+  'A_POSITIVE': 'A+',
+  'A_NEGATIVE': 'A-',
+  'B_POSITIVE': 'B+',
+  'B_NEGATIVE': 'B-',
+  'AB_POSITIVE': 'AB+',
+  'AB_NEGATIVE': 'AB-',
+  'O_POSITIVE': 'O+',
+  'O_NEGATIVE': 'O-',
+};
+
 function mapBloodType(val?: string | null): string {
-  if (!val || val === 'UNKNOWN' || val === 'N/A' || val === 'NOT APPLICABLE' || val === 'NOT_APPLICABLE') return 'N/A';
-  if (val === 'A_POSITIVE' || val === 'A+') return 'A+';
-  if (val === 'A_NEGATIVE' || val === 'A-') return 'A-';
-  if (val === 'B_POSITIVE' || val === 'B+') return 'B+';
-  if (val === 'B_NEGATIVE' || val === 'B-') return 'B-';
-  if (val === 'AB_POSITIVE' || val === 'AB+') return 'AB+';
-  if (val === 'AB_NEGATIVE' || val === 'AB-') return 'AB-';
-  if (val === 'O_POSITIVE' || val === 'O+') return 'O+';
-  if (val === 'O_NEGATIVE' || val === 'O-') return 'O-';
-  return val;
+  if (!val) return '';
+  const trimmed = val.trim().toUpperCase();
+  if (trimmed === 'UNKNOWN' || trimmed === 'N/A' || trimmed === 'NOT APPLICABLE' || trimmed === 'NOT_APPLICABLE') return '';
+  return VALID_DTD_BLOOD_TYPES[trimmed] ?? '';
 }
 
 function mapSocValue(val?: string | null): string {
-  if (!val || val === 'N/A' || val === 'NOT_APPLICABLE' || val === 'X') return 'X';
+  if (!val || val === 'N/A' || val === 'NOT_APPLICABLE') return 'N';
   if (val === 'Y' || val === 'YES' || val === 'CURRENT' || val === 'REGULAR' || val === 'OCCASIONAL' || val === 'HEAVY') return 'Y';
-  if (val === 'N' || val === 'NO' || val === 'NEVER' || val === 'FORMER') return 'N';
-  return 'X';
+  if (val === 'X' || val === 'FORMER' || val === 'QUIT') return 'X';
+  if (val === 'N' || val === 'NO' || val === 'NEVER' || val === 'INACTIVE') return 'N';
+  return val.toUpperCase();
+}
+
+function parsePatientAgeYears(ageStr?: string, dobStr?: string): number {
+  if (ageStr) {
+    const m = ageStr.match(/(\d+)\s*YR/i);
+    if (m) return parseInt(m[1], 10);
+  }
+  if (dobStr) {
+    const d = new Date(dobStr);
+    if (!isNaN(d.getTime())) {
+      const now = new Date();
+      let age = now.getFullYear() - d.getFullYear();
+      const monthDiff = now.getMonth() - d.getMonth();
+      if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < d.getDate())) {
+        age--;
+      }
+      return age;
+    }
+  }
+  return 30;
 }
 
 function buildSocHist(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
   const soc = patient.profile.socialHistory;
-  const isSexuallyActiveVal = mapSocValue(soc?.isSexuallyActive) === 'Y' ? 'Y' : 'N';
+  const ageYears = parsePatientAgeYears(patient.patient.age, patient.patient.dob);
+  const isMinor = ageYears < 15;
+
+  const isSmokerVal = isMinor ? 'N' : mapSocValue(soc?.isSmoker);
+  const isDrinkerVal = isMinor ? 'N' : mapSocValue(soc?.isAdrinker);
+  const illDrugUserVal = isMinor ? 'N' : (mapSocValue(soc?.illDrugUser) === 'Y' ? 'Y' : 'N');
+  const isSexuallyActiveVal = isMinor ? 'N' : (mapSocValue(soc?.isSexuallyActive) === 'Y' ? 'Y' : 'N');
+
+  const noCigpkVal = isMinor || isSmokerVal === 'N' || !soc?.noCigpk || soc.noCigpk === '0'
+    ? ''
+    : String(soc.noCigpk);
+  const noBottlesVal = isMinor || isDrinkerVal === 'N' || !soc?.noBottles || soc.noBottles === '0'
+    ? ''
+    : String(soc.noBottles);
 
   parent.ele('SOCHIST', withStatus({
-    pIsSmoker: mapSocValue(soc?.isSmoker),
-    pNoCigpk: soc?.noCigpk || '0',
-    pIsAdrinker: mapSocValue(soc?.isAdrinker),
-    pNoBottles: soc?.noBottles || '0',
-    pIllDrugUser: mapSocValue(soc?.illDrugUser) === 'Y' ? 'Y' : 'N',
+    pIsSmoker: isSmokerVal,
+    pNoCigpk: noCigpkVal,
+    pIsAdrinker: isDrinkerVal,
+    pNoBottles: noBottlesVal,
+    pIllDrugUser: illDrugUserVal,
     pIsSexuallyActive: isSexuallyActiveVal,
   })).up();
   return parent;
@@ -535,25 +586,43 @@ function buildSocHist(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
 function buildImmunizations(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
   const immunizations = parent.ele('IMMUNIZATIONS');
   const imms = patient.profile.immunizations || [];
+  const ageYears = parsePatientAgeYears(patient.patient.age, patient.patient.dob);
+  const isFemale = patient.patient.sex === 'F';
 
   if (imms.length === 0) {
+    let childCode = '';
+    let youngwCode = '';
+    let pregwCode = '';
+    let elderlyCode = '';
+
+    if (ageYears < 5) {
+      childCode = '999';
+    } else if (isFemale && ageYears >= 10 && ageYears <= 49) {
+      youngwCode = '999';
+    } else if (ageYears >= 60) {
+      elderlyCode = '999';
+    } else {
+      childCode = '999';
+    }
+
     immunizations.ele('IMMUNIZATION', withStatus({
-      pChildImmcode: '',
-      pYoungwImmcode: '',
-      pPregwImmcode: '',
-      pElderlyImmcode: '',
+      pChildImmcode: childCode,
+      pYoungwImmcode: youngwCode,
+      pPregwImmcode: pregwCode,
+      pElderlyImmcode: elderlyCode,
       pOtherImm: '',
       pReportStatus: 'U',
       pDeficiencyRemarks: '',
     })).up();
   } else {
     for (const imm of imms) {
+      const hasOther = !!imm.otherImm?.trim();
       immunizations.ele('IMMUNIZATION', withStatus({
-        pChildImmcode: imm.childImmcode || '',
-        pYoungwImmcode: imm.youngwImmcode || '',
-        pPregwImmcode: imm.pregwImmcode || '',
-        pElderlyImmcode: imm.elderlyImmcode || '',
-        pOtherImm: imm.otherImm || '',
+        pChildImmcode: hasOther ? '' : (imm.childImmcode || ''),
+        pYoungwImmcode: hasOther ? '' : (imm.youngwImmcode || ''),
+        pPregwImmcode: hasOther ? '' : (imm.pregwImmcode || ''),
+        pElderlyImmcode: hasOther ? '' : (imm.elderlyImmcode || ''),
+        pOtherImm: hasOther ? imm.otherImm!.trim() : '',
         pReportStatus: imm.reportStatus || 'U',
         pDeficiencyRemarks: imm.deficiencyRemarks || '',
       })).up();
@@ -583,18 +652,39 @@ function buildMensHist(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
 function buildPregHist(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
   const og = patient.profile.obGyneHistory;
   const isFemale = patient.patient.sex === 'F';
-  parent.ele('PREGHIST', withStatus({
-    pPregCnt: isFemale ? (og?.gravida || '0') : '0',
-    pDeliveryCnt: isFemale ? (og?.para || '0') : '0',
-    pDeliveryTyp: isFemale ? mapDeliveryType(og?.typeLasDelivery) : 'X',
-    pFullTermCnt: isFemale ? (og?.fullTerms || '0') : '0',
-    pPrematureCnt: isFemale ? (og?.premature || '0') : '0',
-    pAbortionCnt: isFemale ? (og?.abortion || '0') : '0',
-    pLivChildrenCnt: isFemale ? (og?.livingChildren || '0') : '0',
-    pWPregIndhyp: isFemale ? (og?.isPreEclampsia === 'Y' || og?.isPreEclampsia === 'true' ? 'Y' : 'N') : 'X',
-    pWFamPlan: isFemale ? (og?.wFamPlan === 'Y' || og?.wFamPlan === 'true' ? 'Y' : 'N') : 'X',
-    pIsApplicable: isFemale ? 'Y' : 'N',
-  })).up();
+  const hasPregnancyHistory = isFemale && !!og && (
+    (og.gravida !== undefined && og.gravida !== null && og.gravida !== '' && og.gravida !== '0') ||
+    (og.para !== undefined && og.para !== null && og.para !== '' && og.para !== '0')
+  );
+  const isApplicable = !isFemale ? 'N' : (og?.isApplicable === 'Y' || og?.isApplicable === 'N' ? og.isApplicable : (hasPregnancyHistory ? 'Y' : 'N'));
+
+  if (isApplicable === 'N') {
+    parent.ele('PREGHIST', withStatus({
+      pPregCnt: '',
+      pDeliveryCnt: '',
+      pDeliveryTyp: '',
+      pFullTermCnt: '',
+      pPrematureCnt: '',
+      pAbortionCnt: '',
+      pLivChildrenCnt: '',
+      pWPregIndhyp: '',
+      pWFamPlan: '',
+      pIsApplicable: 'N',
+    })).up();
+  } else {
+    parent.ele('PREGHIST', withStatus({
+      pPregCnt: og?.gravida || '0',
+      pDeliveryCnt: og?.para || '0',
+      pDeliveryTyp: mapDeliveryType(og?.typeLasDelivery),
+      pFullTermCnt: og?.fullTerms || '0',
+      pPrematureCnt: og?.premature || '0',
+      pAbortionCnt: og?.abortion || '0',
+      pLivChildrenCnt: og?.livingChildren || '0',
+      pWPregIndhyp: og?.isPreEclampsia === 'Y' || og?.isPreEclampsia === 'true' ? 'Y' : 'N',
+      pWFamPlan: og?.wFamPlan === 'Y' || og?.wFamPlan === 'true' ? 'Y' : 'N',
+      pIsApplicable: 'Y',
+    })).up();
+  }
   return parent;
 }
 
@@ -609,7 +699,7 @@ function buildProfilePepert(parent: XmlNode, patient: KonsultaPatientData, isOve
     pHeight: v.height,
     pWeight: v.weight,
     pBMI: v.bmi,
-    pZScore: isOver5Years ? '' : v.zScore,
+    pZScore: '',
     pLeftVision: v.leftVision,
     pRightVision: v.rightVision,
     pLength: v.length,
@@ -745,49 +835,7 @@ function buildNcdQAns(parent: XmlNode, patient: KonsultaPatientData): XmlNode {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function buildSoapSubjective(parent: XmlNode, consultation: KonsultaConsultationData): XmlNode {
-  let pSignsSymptoms = consultation.subjective.signsSymptoms;
-  let pOtherComplaint = consultation.subjective.otherComplaint;
-
-  // Ensure pSignsSymptoms is semicolon separated and numeric codes are padded to 2 digits
-  let signsArray: string[] = [];
-
-  if (pSignsSymptoms) {
-    if (!/^[\dX\s,;]+$/.test(pSignsSymptoms)) {
-      pOtherComplaint = [pSignsSymptoms, pOtherComplaint].filter(Boolean).join(" | ");
-      signsArray.push("X");
-    } else {
-      signsArray = pSignsSymptoms
-        .split(/[,;]+/)
-        .map(s => s.trim())
-        .filter(Boolean)
-        .map(s => {
-          if (/^\d+$/.test(s)) {
-            return s.padStart(2, '0');
-          }
-          return s; // keep "X" as is
-        });
-    }
-  }
-
-  // PhilHealth strict validation: 
-  // If pOtherComplaint has value, 'X' must be in pSignsSymptoms
-  if (pOtherComplaint && !signsArray.includes("X")) {
-    signsArray.push("X");
-  }
-
-  // If pPainSite has value, '38' must be in pSignsSymptoms
-  if (consultation.subjective.painSite && !signsArray.includes("38")) {
-    signsArray.push("38");
-  }
-
-  pSignsSymptoms = signsArray.join(';');
-
-  parent.ele('SUBJECTIVE', withStatus({
-    pIllnessHistory: consultation.subjective.illnessHistory,
-    pSignsSymptoms: pSignsSymptoms,
-    pOtherComplaint: pOtherComplaint,
-    pPainSite: consultation.subjective.painSite,
-  })).up();
+  parent.ele('SUBJECTIVE', withStatus(normalizeSubjectiveForXml(consultation.subjective))).up();
   return parent;
 }
 
@@ -802,7 +850,7 @@ function buildSoapPepert(parent: XmlNode, consultation: KonsultaConsultationData
     pHeight: v.height,
     pWeight: v.weight,
     pBMI: v.bmi,
-    pZScore: isOver5Years ? '' : v.zScore,
+    pZScore: '',
     pLeftVision: v.leftVision,
     pRightVision: v.rightVision,
     pLength: v.length,
@@ -854,8 +902,11 @@ function buildSoapPeSpecific(parent: XmlNode, consultation: KonsultaConsultation
 
 function buildSoapIcds(parent: XmlNode, consultation: KonsultaConsultationData): XmlNode {
   const icds = parent.ele('ICDS');
-  if (consultation.icdCodes && consultation.icdCodes.length > 0) {
-    for (const code of consultation.icdCodes) {
+  const rawCodes = (consultation.icdCodes && consultation.icdCodes.length > 0)
+    ? consultation.icdCodes
+    : (consultation.diagnoses && consultation.diagnoses.length > 0 ? consultation.diagnoses : []);
+  if (rawCodes.length > 0) {
+    for (const code of rawCodes) {
       icds.ele('ICD', withStatus({
         pIcdCode: code,
       })).up();
@@ -884,6 +935,10 @@ const EXAM_TYPE_TO_DIAGNOSTIC_ID: Record<string, string> = {
   PAPSMEAR: '14',
   FECALYSIS: '15',
   FOBT: '18',
+  OTHERDIAGEXAM: '99',
+  OTHERDIAGEXAMS: '99',
+  OTHER: '99',
+  OTHERS: '99',
 };
 
 function buildSoapDiagnostics(
@@ -900,9 +955,12 @@ function buildSoapDiagnostics(
     const typeUpper = (dr.resultType || '').toUpperCase();
     const diagId = EXAM_TYPE_TO_DIAGNOSTIC_ID[typeUpper];
     if (diagId && !addedIds.has(diagId)) {
+      const othRemarks = diagId === '99'
+        ? (dr.resultData?.othDiagExam || dr.resultData?.pOthDiagExam || dr.resultData?.findings || 'Others')
+        : '';
       diagnostics.ele('DIAGNOSTIC', withStatus({
         pDiagnosticId: diagId,
-        pOthRemarks: '',
+        pOthRemarks: othRemarks,
         pIsPhysicianRecommendation: 'Y',
         pPatientRemarks: 'RQ',
       })).up();
@@ -1192,7 +1250,9 @@ export function generateKonsultaXml(options: KonsultaXmlOptions): string {
   if (tagging === '2') {
     for (const p of patients) {
       for (const c of p.consultations ?? []) {
-        allMedicines.push(...c.medicines);
+        if (c.medicines) {
+          allMedicines.push(...c.medicines);
+        }
       }
     }
   }
@@ -1521,7 +1581,7 @@ export function generateKonsultaXml(options: KonsultaXmlOptions): string {
       fh => fh.code === '006' || fh.code === '6' || fh.specificDesc?.toUpperCase() === 'DIABETES MELLITUS'
     );
 
-    if (hasDiabetesFamHist && !hasDiagResults) {
+    if (tagging !== '1' && hasDiabetesFamHist && !hasDiagResults) {
       throw new Error(`PhilHealth Validation Error: A Diagnostic Exam Result is strictly required because the patient has a Family History of Diabetes Mellitus.`);
     }
 

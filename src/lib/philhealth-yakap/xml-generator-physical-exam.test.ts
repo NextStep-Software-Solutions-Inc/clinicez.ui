@@ -282,4 +282,219 @@ describe("xml-generator physical exam multi-select findings", () => {
     const xml = generateKonsultaXml(tagging2Options);
     expect(xml).toContain('pDrugCode="DRUG123"');
   });
+
+  describe("Issue #519: Diabetes Mellitus family history validation by tagging", () => {
+    it.each([
+      { code: "006", specificDesc: "DIABETES MELLITUS" },
+      { code: "6", specificDesc: "Diabetes" },
+      { code: "998", specificDesc: "DIABETES MELLITUS" },
+    ])(
+      "allows Tranche 1 (tagging: '1') XML generation with DM family history (%o) and no diagnosticResults, emitting stub <DIAGNOSTICEXAMRESULT>",
+      (famHist) => {
+        const options: KonsultaXmlOptions = {
+          ...baseOptions,
+          tagging: "1",
+          patients: [
+            {
+              ...baseOptions.patients[0],
+              profile: {
+                ...baseOptions.patients[0].profile,
+                familyHistories: [famHist],
+              },
+              diagnosticResults: undefined,
+            },
+          ],
+        };
+
+        const xml = generateKonsultaXml(options);
+        expect(xml).toContain("<DIAGNOSTICEXAMRESULTS>");
+        expect(xml).toContain('<DIAGNOSTICEXAMRESULT pHciCaseNo="" pHciTransNo="" pPatientPin="" pPatientType="" pMemPin="" pEffYear=""');
+      }
+    );
+
+    it.each([
+      { code: "006", specificDesc: "DIABETES MELLITUS" },
+      { code: "6", specificDesc: "Diabetes" },
+      { code: "998", specificDesc: "DIABETES MELLITUS" },
+    ])(
+      "throws PhilHealth Validation Error for Tranche 2 (tagging: '2') when DM family history (%o) is present and diagnosticResults are missing",
+      (famHist) => {
+        const options: KonsultaXmlOptions = {
+          ...baseOptions,
+          tagging: "2",
+          patients: [
+            {
+              ...baseOptions.patients[0],
+              profile: {
+                ...baseOptions.patients[0].profile,
+                familyHistories: [famHist],
+              },
+              diagnosticResults: [],
+            },
+          ],
+        };
+
+        expect(() => generateKonsultaXml(options)).toThrow(
+          /PhilHealth Validation Error: A Diagnostic Exam Result is strictly required because the patient has a Family History of Diabetes Mellitus\./
+        );
+      }
+    );
+
+    it("allows Tranche 2 (tagging: '2') XML generation when DM family history AND diagnosticResults are provided", () => {
+      const options: KonsultaXmlOptions = {
+        ...baseOptions,
+        tagging: "2",
+        patients: [
+          {
+            ...baseOptions.patients[0],
+            profile: {
+              ...baseOptions.patients[0].profile,
+              familyHistories: [{ code: "006", specificDesc: "DIABETES MELLITUS" }],
+            },
+            diagnosticResults: [
+              {
+                hciCaseNo: "TH9000000120260000001",
+                hciTransNo: "SH9000000120260000001",
+                patientPin: "030263078507",
+                patientType: "MM",
+                memPin: "030263078507",
+                effYear: "2026",
+                resultType: "FBS",
+                resultData: { glucoseMg: "95" },
+              },
+            ],
+          },
+        ],
+      };
+
+      const xml = generateKonsultaXml(options);
+      expect(xml).toContain('<FAMHIST pMdiseaseCode="006"');
+      expect(xml).toContain("<DIAGNOSTICEXAMRESULTS>");
+      expect(xml).toContain("<FBS ");
+      expect(xml).not.toContain('<DIAGNOSTICEXAMRESULT pHciCaseNo=""');
+    });
+  });
+
+  describe("Issue #520: <SUBJECTIVE> code normalization, uppercase output, and Data Dictionary limits", () => {
+    it("deduplicates signsSymptoms, zero-pads single digits, normalizes lowercase x->X, and enforces 2000/2000/500 caps", () => {
+      const options: KonsultaXmlOptions = {
+        ...baseOptions,
+        tagging: "2",
+        patients: [
+          {
+            ...baseOptions.patients[0],
+            consultations: [
+              {
+                hciCaseNo: "TH9000000120260000001",
+                hciTransNo: "SH9000000120260000001",
+                soapDate: "2026-07-08",
+                atc: "WALKEDIN",
+                isWalkedIn: "Y",
+                coPay: "0",
+                subjective: {
+                  illnessHistory: `persistent fever ${"a".repeat(2100)}`,
+                  signsSymptoms: "2; 38; x; 02; X; 9",
+                  painSite: `epigastric region ${"b".repeat(550)}`,
+                  otherComplaint: `loss of appetite ${"c".repeat(2100)}`,
+                },
+                vitals: baseOptions.patients[0].profile.vitals,
+                diagnoses: ["J00"],
+              },
+            ],
+          },
+        ],
+      };
+
+      const xml = generateKonsultaXml(options);
+      const subjMatch = xml.match(/<SUBJECTIVE\s+([^>]+)\/>/);
+      expect(subjMatch).not.toBeNull();
+      const attrs = subjMatch![1];
+
+      const hpiVal = attrs.match(/pIllnessHistory="([^"]*)"/)?.[1] ?? "";
+      const signsVal = attrs.match(/pSignsSymptoms="([^"]*)"/)?.[1] ?? "";
+      const otherVal = attrs.match(/pOtherComplaint="([^"]*)"/)?.[1] ?? "";
+      const painVal = attrs.match(/pPainSite="([^"]*)"/)?.[1] ?? "";
+
+      expect(signsVal).toBe("02;38;X;09");
+      expect(hpiVal).toHaveLength(2000);
+      expect(hpiVal.startsWith("PERSISTENT FEVER ")).toBe(true);
+      expect(otherVal).toHaveLength(2000);
+      expect(otherVal.startsWith("LOSS OF APPETITE ")).toBe(true);
+      expect(painVal).toHaveLength(500);
+      expect(painVal.startsWith("EPIGASTRIC REGION ")).toBe(true);
+    });
+
+    it("handles legacy non-code free text in signsSymptoms by routing to X and uppercasing pOtherComplaint", () => {
+      const options: KonsultaXmlOptions = {
+        ...baseOptions,
+        tagging: "2",
+        patients: [
+          {
+            ...baseOptions.patients[0],
+            consultations: [
+              {
+                hciCaseNo: "TH9000000120260000001",
+                hciTransNo: "SH9000000120260000001",
+                soapDate: "2026-07-08",
+                atc: "WALKEDIN",
+                isWalkedIn: "Y",
+                coPay: "0",
+                subjective: {
+                  illnessHistory: "Onset 2 days ago",
+                  signsSymptoms: "Persistent dizziness",
+                  otherComplaint: "Mild fatigue",
+                },
+                vitals: baseOptions.patients[0].profile.vitals,
+                diagnoses: ["R42"],
+              },
+            ],
+          },
+        ],
+      };
+
+      const xml = generateKonsultaXml(options);
+      expect(xml).toContain('pSignsSymptoms="X"');
+      expect(xml).toContain('pOtherComplaint="PERSISTENT DIZZINESS | MILD FATIGUE"');
+      expect(xml).toContain('pIllnessHistory="ONSET 2 DAYS AGO"');
+    });
+
+    it("does not re-inject 38 or X from stale painSite or otherComplaint in generateKonsultaXml", () => {
+      const options: KonsultaXmlOptions = {
+        ...baseOptions,
+        tagging: "2",
+        patients: [
+          {
+            ...baseOptions.patients[0],
+            consultations: [
+              {
+                hciCaseNo: "TH9000000120260000002",
+                hciTransNo: "SH9000000120260000002",
+                soapDate: "2026-07-08",
+                atc: "WALKEDIN",
+                isWalkedIn: "Y",
+                coPay: "0",
+                subjective: {
+                  illnessHistory: "dry cough",
+                  signsSymptoms: "09",
+                  painSite: "STALE CHEST PAIN",
+                  otherComplaint: "STALE OTHER COMPLAINT",
+                },
+                vitals: baseOptions.patients[0].profile.vitals,
+                diagnoses: ["J00"],
+              },
+            ],
+          },
+        ],
+      };
+
+      const xml = generateKonsultaXml(options);
+      expect(xml).toContain('pSignsSymptoms="09"');
+      expect(xml).not.toContain("38");
+      expect(xml).toContain('pPainSite=""');
+      expect(xml).toContain('pOtherComplaint=""');
+      expect(xml).toContain('pIllnessHistory="DRY COUGH"');
+      expect(xml).not.toContain("STALE CHEST PAIN");
+      expect(xml).not.toContain("STALE OTHER COMPLAINT");
+    });
+  });
 });

@@ -7,6 +7,13 @@ import { getCachedSession } from "@/actions/session.action";
 // import { PERMISSIONS } from "@/lib/permissions";
 import { physicalExaminationSchema } from "@/schemas";
 import type { PhysicalExaminationFormInput } from "@/schemas";
+import { formatPeCodes } from "@/lib/physical-exam-utils";
+
+const normalizePeId = (val: string | string[] | null | undefined): string | null => {
+  if (!val) return null;
+  const formatted = formatPeCodes(val);
+  return formatted.length > 0 ? formatted : null;
+};
 
 export async function savePhysicalExaminationAction(
   patientId: number,
@@ -35,23 +42,23 @@ export async function savePhysicalExaminationAction(
     const dataPayload = {
       userId: patientId,
       consultationTicketId: consultationTicketId || null,
-      generalSurveyId: validatedData.generalSurveyId || null,
+      generalSurveyId: normalizePeId(validatedData.generalSurveyId),
       generalSurveyRemarks: validatedData.generalSurveyRemarks || null,
-      heentId: validatedData.heentId || null,
+      heentId: normalizePeId(validatedData.heentId),
       heentRemarks: validatedData.heentRemarks || null,
-      chestId: validatedData.chestId || null,
+      chestId: normalizePeId(validatedData.chestId),
       chestRemarks: validatedData.chestRemarks || null,
-      heartId: validatedData.heartId || null,
+      heartId: normalizePeId(validatedData.heartId),
       heartRemarks: validatedData.heartRemarks || null,
-      abdomenId: validatedData.abdomenId || null,
+      abdomenId: normalizePeId(validatedData.abdomenId),
       abdomenRemarks: validatedData.abdomenRemarks || null,
-      guId: validatedData.guId || null,
+      guId: normalizePeId(validatedData.guId),
       guRemarks: validatedData.guRemarks || null,
-      skinId: validatedData.skinId || null,
+      skinId: normalizePeId(validatedData.skinId),
       skinRemarks: validatedData.skinRemarks || null,
-      neuroId: validatedData.neuroId || null,
+      neuroId: normalizePeId(validatedData.neuroId),
       neuroRemarks: validatedData.neuroRemarks || null,
-      rectalId: validatedData.rectalId || null,
+      rectalId: normalizePeId(validatedData.rectalId),
       rectalRemarks: validatedData.rectalRemarks || null,
     };
 

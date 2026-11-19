@@ -356,7 +356,7 @@ export default function FilterForm({ onContinue }: FilterFormProps) {
                                   className="p-2"
                                 >
                                   <CommandInput
-                                    placeholder="Type at least 2 characters to search by name or student ID..."
+                                    placeholder="Type at least 2 characters to search by name, student ID, or PhilHealth PIN..."
                                     value={memberSearch}
                                     onValueChange={(value) => {
                                       setMemberSearch(value)
@@ -409,7 +409,7 @@ export default function FilterForm({ onContinue }: FilterFormProps) {
                             </Popover>
                           </div>
                           <FormDescription>
-                            Search and select a member to book an appointment for. Start typing their name or student ID.
+                            Search and select a member to book an appointment for. Start typing their name, student ID, or PhilHealth PIN.
                           </FormDescription>
                           <FormMessage />
                         </FormItem>

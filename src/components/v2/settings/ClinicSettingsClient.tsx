@@ -105,7 +105,7 @@ import {
 } from "@/components/ui/tooltip";
 
 import { updateClinicAction } from "@/actions/clinics/clinic.action";
-import { updatePhilHealthSettingsAction } from "@/actions/clinics/clinic-setting.action";
+import { PhilHealthTab } from "./PhilHealthTab";
 import { upsertClinicAppointmentConfigAction } from "@/actions/appointments/appointment-config.action";
 import {
   addClinicMemberAction,
@@ -242,15 +242,6 @@ const appointmentSchema = z.object({
   termsAndConditionsUrl: z.string().url("Enter a valid URL").or(z.literal("")).optional(),
 });
 type AppointmentFormValues = z.infer<typeof appointmentSchema>;
-
-const philhealthSchema = z.object({
-  philhealthAccreditationNumber: z.string().optional(),
-  facilityName: z.string().optional(),
-  philhealthYakapUsername: z.string().optional(),
-  philhealthYakapPassword: z.string().optional(),
-  philhealthYakapPmccNumber: z.string().optional(),
-});
-type PhilHealthFormValues = z.infer<typeof philhealthSchema>;
 
 /* ─────────────────────────────────────────────────────────────────── */
 /*  Helper: SettingRow                                                 */
@@ -697,159 +688,6 @@ function AppointmentsTab({
                   <FormControl>
                     <Input placeholder="https://example.com/terms" {...field} />
                   </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </CardContent>
-        </Card>
-
-        <div className="flex justify-end">
-          <Button type="submit" disabled={isPending} className="min-w-[120px]">
-            {isPending ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                Saving…
-              </>
-            ) : (
-              <>
-                <Save className="h-4 w-4 mr-2" />
-                Save Changes
-              </>
-            )}
-          </Button>
-        </div>
-      </form>
-    </Form>
-  );
-}
-
-/* ─────────────────────────────────────────────────────────────────── */
-/*  Tab: PhilHealth / Facility                                         */
-/* ─────────────────────────────────────────────────────────────────── */
-
-function PhilHealthTab({
-  clinicUid,
-  clinicSetting,
-}: {
-  clinicUid: string;
-  clinicSetting: ClinicSettingData | null;
-}) {
-  const [isPending, startTransition] = useTransition();
-
-  const form = useForm<PhilHealthFormValues>({
-    resolver: zodResolver(philhealthSchema),
-    defaultValues: {
-      philhealthAccreditationNumber: clinicSetting?.philhealthAccreditationNumber ?? "",
-      facilityName: clinicSetting?.facilityName ?? "",
-      philhealthYakapUsername: clinicSetting?.philhealthYakapUsername ?? "",
-      philhealthYakapPassword: clinicSetting?.philhealthYakapPassword ?? "",
-      philhealthYakapPmccNumber: clinicSetting?.philhealthYakapPmccNumber ?? "",
-    },
-  });
-
-  const onSubmit = (values: PhilHealthFormValues) => {
-    startTransition(async () => {
-      const result = await updatePhilHealthSettingsAction(clinicUid, {
-        philhealthAccreditationNumber: values.philhealthAccreditationNumber || undefined,
-        facilityName: values.facilityName || undefined,
-        philhealthYakapUsername: values.philhealthYakapUsername || undefined,
-        philhealthYakapPassword: values.philhealthYakapPassword || undefined,
-        philhealthYakapPmccNumber: values.philhealthYakapPmccNumber || undefined,
-      });
-
-      if (result.status) {
-        toast.success("PhilHealth settings saved.");
-      } else {
-        toast.error(result.message ?? "Failed to save PhilHealth settings.");
-      }
-    });
-  };
-
-  return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <Heart className="h-4 w-4 text-primary" />
-              PhilHealth &amp; Facility Details
-            </CardTitle>
-            <CardDescription>
-              Required for generating PhilHealth EKAS authorizations and official documents.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-5">
-            <FormField
-              control={form.control}
-              name="facilityName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Facility Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g. City Medical Center" {...field} />
-                  </FormControl>
-                  <FormDescription>
-                    Official facility name as registered with PhilHealth.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="philhealthAccreditationNumber"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>PhilHealth Accreditation Number</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g. PHA-000000" {...field} />
-                  </FormControl>
-                  <FormDescription>
-                    Printed on all PhilHealth-related documents issued by this clinic.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="philhealthYakapUsername"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>PhilHealth Yakap Username</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Username for PhilHealth SOAP API" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="philhealthYakapPassword"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>PhilHealth Yakap Password</FormLabel>
-                  <FormControl>
-                    <Input type="password" placeholder="Password for PhilHealth SOAP API" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="philhealthYakapPmccNumber"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>PhilHealth PMCC Number</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g. Z15445" {...field} />
-                  </FormControl>
-                  <FormDescription>
-                    PMCC Number required for Yakap Integration
-                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

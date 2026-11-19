@@ -470,5 +470,54 @@ describe("konsulta-report.action: generateBatchXmlAction (PCB XML)", () => {
       expect(xml).toContain('pRoute="ORAL"');
       expect(xml).toContain('pActualUnitPrice="15.00"');
     });
+
+    it("Issue #520: maps Case 3 <SUBJECTIVE> structuredData, stripped HPI fallback, and 38/X gating in PCB XML", async () => {
+      mockPrisma.consultationTicket.findMany.mockResolvedValue([
+        {
+          id: 501,
+          createdAt: new Date("2026-11-12T00:00:00Z"),
+          subject: "Walk-in Consultation",
+          konsultaHciCaseNo: "TP1003883120261100001",
+          konsultaHciTransNo: "SP1003883120261100001",
+          konsultaAtc: "ATC001",
+          konsultaIsWalkedIn: true,
+          Appointment: null,
+          ConsultationNotes: [
+            {
+              section: "Subjective History",
+              content: "### History of Illness\n- **Fever** and body aches",
+              structuredData: {
+                illnessHistory: "",
+                signsSymptoms: "37;38;x",
+                painSite: "Abdomen",
+                otherComplaint: "Chills",
+              },
+            },
+          ],
+          ConsultationDiagnoses: [{ icd10Code: "J00", type: "PRIMARY" }],
+          Interventions: [],
+          ClinicPatient: { patientId: 1001 },
+          ConsultationTicketHPs: [],
+        },
+      ]);
+
+      setupBatch([
+        {
+          name: "Paracetamol 500mg",
+          drugCode: "DRUG-PARA",
+          genericCode: "GEN-PARA",
+          qty: 10,
+        },
+      ]);
+
+      const res = await generateBatchXmlAction("batch-uid-123");
+      expect(res.status).toBe(true);
+
+      const xml = (res.data?.xmlPayload || mockPrisma.konsultaBatch.update.mock.calls[0][0].data.xmlPayload) as string;
+      expect(xml).toContain('pSignsSymptoms="37;38;X"');
+      expect(xml).toContain('pPainSite="ABDOMEN"');
+      expect(xml).toContain('pOtherComplaint="CHILLS"');
+      expect(xml).toContain("FEVER AND BODY ACHES");
+    });
   });
 });

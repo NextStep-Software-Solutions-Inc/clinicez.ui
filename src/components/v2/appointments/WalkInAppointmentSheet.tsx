@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { formatPhilHealthPinDisplay, resolvePatientPhilHealthPin } from "@/lib/philhealth-pin-search";
 import { UserPlus, Stethoscope, Search, X, ExternalLink } from "lucide-react";
 import {
   Sheet,
@@ -242,7 +243,7 @@ export function WalkInAppointmentSheet({
                     if (dropdownRef.current?.contains(e.relatedTarget as Node)) return;
                     setTimeout(() => setShowDropdown(false), DROPDOWN_CLOSE_DELAY);
                   }}
-                  placeholder="Search by name, email, student ID, employee ID..."
+                  placeholder="Search by name, PhilHealth PIN, email, ID..."
                   className="pl-8 pr-8"
                   autoFocus
                   disabled={!!selectedPatient}
@@ -278,6 +279,8 @@ export function WalkInAppointmentSheet({
                       {patientResults.map((p) => {
                         const sid = p.Patient.StudentRecords?.[0]?.studentId;
                         const eid = p.Patient.UserEmployments?.[0]?.employeeId;
+                        const rawPin = resolvePatientPhilHealthPin(p);
+                        const pin = rawPin ? formatPhilHealthPinDisplay(rawPin) : null;
                         return (
                           <li key={p.id}>
                             <button
@@ -289,6 +292,11 @@ export function WalkInAppointmentSheet({
                                 <p className="text-sm font-medium">
                                   {p.Patient.firstName} {p.Patient.lastName}
                                 </p>
+                                {pin && (
+                                  <span className="text-[10px] px-1.5 py-0.5 rounded font-medium bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                                    PIN: {pin}
+                                  </span>
+                                )}
                                 {sid && (
                                   <span className="text-[10px] px-1.5 py-0.5 rounded font-medium bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
                                     STU: {sid}

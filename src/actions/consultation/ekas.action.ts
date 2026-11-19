@@ -7,6 +7,102 @@ import { PDFDocument, PDFName, PDFArray, PDFString, rgb, StandardFonts } from "p
 import fs from "fs/promises";
 import path from "path";
 import { format } from "date-fns";
+import { extractAgeFromXml, formatPhilHealthAge } from "@/lib/philhealth-yakap/date-utils";
+
+async function findXmlPatientAge(
+  ticket: { id: number; clinicId?: number | null; ClinicPatient: { id: number } },
+  patientPin: string,
+  caseNo: string
+): Promise<string | null> {
+  const batchPatients =
+    (await prisma.konsultaBatchPatient?.findMany?.({
+      where: {
+        OR: [
+          { selectedTicketIds: { has: ticket.id } },
+          { clinicPatientId: ticket.ClinicPatient.id },
+        ],
+        Batch: {
+          xmlPayload: { not: null },
+        },
+      },
+      orderBy: {
+        Batch: { createdAt: "desc" },
+      },
+      include: {
+        Batch: {
+          select: { xmlPayload: true },
+        },
+      },
+      take: 10,
+    })) ?? [];
+
+  for (const bp of batchPatients) {
+    if (bp.Batch?.xmlPayload) {
+      const age = extractAgeFromXml(bp.Batch.xmlPayload, {
+        patientPin,
+        caseNo,
+        ticketId: ticket.id,
+      });
+      if (age) return age;
+    }
+  }
+
+  if (ticket.clinicId && (patientPin || caseNo)) {
+    const reports =
+      (await prisma.konsultaBatchReport?.findMany?.({
+        where: {
+          clinicId: ticket.clinicId,
+          xmlPayload: { not: null },
+          OR: [
+            ...(patientPin ? [{ xmlPayload: { contains: patientPin } }] : []),
+            ...(caseNo ? [{ xmlPayload: { contains: caseNo } }] : []),
+          ],
+        },
+        orderBy: { createdAt: "desc" },
+        select: { xmlPayload: true },
+        take: 5,
+      })) ?? [];
+
+    for (const report of reports) {
+      if (report.xmlPayload) {
+        const age = extractAgeFromXml(report.xmlPayload, {
+          patientPin,
+          caseNo,
+          ticketId: ticket.id,
+        });
+        if (age) return age;
+      }
+    }
+
+    const v1Batches =
+      (await prisma.konsultaBatch?.findMany?.({
+        where: {
+          clinicId: ticket.clinicId,
+          xmlPayload: { not: null },
+          OR: [
+            ...(patientPin ? [{ xmlPayload: { contains: patientPin } }] : []),
+            ...(caseNo ? [{ xmlPayload: { contains: caseNo } }] : []),
+          ],
+        },
+        orderBy: { createdAt: "desc" },
+        select: { xmlPayload: true },
+        take: 5,
+      })) ?? [];
+
+    for (const b of v1Batches) {
+      if (b.xmlPayload) {
+        const age = extractAgeFromXml(b.xmlPayload, {
+          patientPin,
+          caseNo,
+          ticketId: ticket.id,
+        });
+        if (age) return age;
+      }
+    }
+  }
+
+  return null;
+}
 
 async function fetchConsultationData(ticketId: number, clinicUid: string) {
   const session = await getCachedSession();
@@ -16,6 +112,7 @@ async function fetchConsultationData(ticketId: number, clinicUid: string) {
     where: { id: ticketId, Clinic: { clinicUid } },
     select: {
       id: true,
+      clinicId: true,
       createdAt: true,
       caseNumber: true,
       soapTransNo: true,
@@ -43,6 +140,14 @@ async function fetchConsultationData(ticketId: number, clinicUid: string) {
               firstName: true,
               lastName: true,
               mobile: true,
+              PhilHealthRecords: {
+                where: { isActive: true, deletedAt: null },
+                select: {
+                  pin: true,
+                  principalMemberPin: true,
+                  memberType: true,
+                }
+              }
             }
           },
           PhilHealthKonsultaEnlistments: {
@@ -137,8 +242,27 @@ async function fetchConsultationData(ticketId: number, clinicUid: string) {
     },
   });
 
+  const enlistment = ticket.ClinicPatient.PhilHealthKonsultaEnlistments?.[0];
+  const patientPin =
+    enlistment?.dependentPin ||
+    enlistment?.memberPin ||
+    ticket.ClinicPatient.Patient?.PhilHealthRecords?.[0]?.pin ||
+    "";
+  const caseNo =
+    enlistment?.hciCaseNo ||
+    ticket.konsultaHciCaseNo ||
+    ticket.caseNumber ||
+    "";
+
+  const xmlPatientAge = await findXmlPatientAge(
+    { id: ticket.id, clinicId: ticket.clinicId, ClinicPatient: { id: ticket.ClinicPatient.id } },
+    patientPin,
+    caseNo
+  );
+
   return {
     ...ticket,
+    xmlPatientAge,
     ClinicPatient: ticket.ClinicPatient!,
     KonsultaDiagnosticResults: diagnosticResults,
   };
@@ -201,19 +325,7 @@ export async function prepareFilledPdf(ticket: ConsultationData, templateFileNam
 
   const patientName = `${patientUser.firstName || ""} ${patientUser.lastName || ""}`.trim();
 
-  const calculateAge = (dob: Date | null) => {
-    if (!dob) return "";
-    const birthDate = new Date(dob);
-    const today = new Date();
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
-    return age >= 0 ? age.toString() : "";
-  };
-
-  const pin = enlistment?.dependentPin || enlistment?.memberPin || "";
+  const pin = enlistment?.dependentPin || enlistment?.memberPin || ticket.ClinicPatient.Patient?.PhilHealthRecords?.[0]?.pin || "";
   const memberType = enlistment?.dependentPin ? "DEPENDENT" : "MEMBER";
 
   const isEpress = templateFileName.toLowerCase().includes("epress");
@@ -238,6 +350,12 @@ export async function prepareFilledPdf(ticket: ConsultationData, templateFileNam
     ? (ticket.soapTransNo || ticket.konsultaHciTransNo || "")
     : (enlistment?.profilingTransNo || (enlistment?.hciCaseNo ? enlistment.hciCaseNo.replace(/^T-?/, 'P') : "") || ticket.soapTransNo || ticket.konsultaHciTransNo || ticket.ekasTransactionNumber || "");
 
+  const formattedDobAge = formatPhilHealthAge(ticket.ClinicPatient.Patient.dob);
+  const resolvedAge =
+    ticket.xmlPatientAge && ticket.xmlPatientAge.includes("YR(S)")
+      ? ticket.xmlPatientAge
+      : (formattedDobAge || "");
+
   const patientData = {
     hciName: clinic?.name || "",
     caseNo: resolvedCaseNo,
@@ -245,7 +363,7 @@ export async function prepareFilledPdf(ticket: ConsultationData, templateFileNam
     transactionNo: resolvedTransactionNo,
     atcCode: ticket.konsultaAtcCode || enlistment?.atcCode || "",
     patientName: patientName,
-    age: calculateAge(ticket.ClinicPatient.Patient.dob),
+    age: resolvedAge,
     mobileNo: patientUser.mobile || "",
     pin: pin,
     membershipCategory: "",
@@ -264,11 +382,14 @@ export async function prepareFilledPdf(ticket: ConsultationData, templateFileNam
 
   const form = pdfDoc.getForm();
 
-  const setTextField = (fieldName: string, value: string) => {
+  const setTextField = (fieldName: string, value: string, fontSize?: number) => {
     try {
       const field = form.getTextField(fieldName);
       if (field) {
         field.setText(value || "");
+        if (fontSize) {
+          field.setFontSize(fontSize);
+        }
         if (!value) {
           field.acroField.setValue(PDFString.of(""));
         }
@@ -284,7 +405,8 @@ export async function prepareFilledPdf(ticket: ConsultationData, templateFileNam
   setTextField("text_transNo", patientData.transactionNo);
   setTextField("text_atc", patientData.atcCode);
   setTextField("text_patientName", patientData.patientName);
-  setTextField("text_patientAge", patientData.age);
+  const ageFontSize = patientData.age && patientData.age.length > 5 ? 7 : undefined;
+  setTextField("text_patientAge", patientData.age, ageFontSize);
   setTextField("text_patientMobile", patientData.mobileNo);
   setTextField("text_memPin", patientData.pin);
   setTextField("text_memCat", patientData.membershipCategory);
@@ -398,7 +520,7 @@ export async function prepareFilledPdf(ticket: ConsultationData, templateFileNam
     // ignore
   }
 
-  if (ecgDateToDraw) {
+  if (ecgDateToDraw && !isEpress) {
     try {
       const page0 = pdfDoc.getPages()[0];
       const font = await pdfDoc.embedFont(StandardFonts.Helvetica);

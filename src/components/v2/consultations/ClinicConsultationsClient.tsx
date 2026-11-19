@@ -24,6 +24,7 @@ import {
   getClinicConsultationQueueAction,
 } from "@/actions/consultation/patient-consultations.action";
 import ConsultationWorkspace from "./ConsultationWorkspace";
+import { matchesPhilHealthPinClient } from "@/lib/philhealth-pin-search";
 
 /** Must match PAGE_SIZE in patient-consultations.action.ts */
 const PAGE_SIZE = 20;
@@ -317,7 +318,22 @@ export default function ClinicConsultationsClient({
       : "";
     const subject = (item.subject ?? item.Appointment?.subject ?? "").toLowerCase();
     const caseNum = (item.caseNumber ?? "").toLowerCase();
-    return patientName.includes(q) || subject.includes(q) || caseNum.includes(q);
+    const patientPins = [
+      u?.PhilHealthRecords?.[0]?.pin,
+      u?.PhilHealthRecords?.[0]?.principalMemberPin,
+      u?.ClinicPatients?.[0]?.konsultaPatientPin,
+      u?.ClinicPatients?.[0]?.konsultaMemberPin,
+      cp?.PhilHealthRecords?.[0]?.pin,
+      cp?.PhilHealthRecords?.[0]?.principalMemberPin,
+      item.ClinicPatient?.konsultaPatientPin,
+      item.ClinicPatient?.konsultaMemberPin,
+    ];
+    return (
+      patientName.includes(q) ||
+      subject.includes(q) ||
+      caseNum.includes(q) ||
+      matchesPhilHealthPinClient(patientPins, search)
+    );
   });
 
   const shownCount = filteredItems.length;
@@ -351,7 +367,7 @@ export default function ClinicConsultationsClient({
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
               <Input
-                placeholder="Search patient, subject…"
+                placeholder="Search patient, PhilHealth PIN, subject…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="h-8 pl-8 text-xs"

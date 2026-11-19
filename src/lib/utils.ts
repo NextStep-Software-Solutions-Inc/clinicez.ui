@@ -31,6 +31,8 @@ export const hasContextProperty = (context: unknown): context is { functionName:
 
 export const formatBloodType = (bloodType: string | null | undefined): string => {
   if (!bloodType) return '';
+  const upper = bloodType.trim().toUpperCase();
+  if (upper === 'UNKNOWN' || upper === 'N/A' || upper === 'NOT_APPLICABLE' || upper === 'NOT APPLICABLE') return '';
   return bloodType.replace('_POSITIVE', '+').replace('_NEGATIVE', '-');
 }
 

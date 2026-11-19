@@ -94,16 +94,13 @@ export async function updateVitalSign(
       return { success: false, error: `Validation failed: ${errorMessages}` }
     }
 
-    // Auto-compute BMI and Z-Score
+    // Auto-compute BMI; keep Z-Score blank per requirements
     let computedBmi = undefined;
-    let computedZScore = undefined;
     const effectiveHeight = validatedInput.height ?? (validatedInput.length ? Number(validatedInput.length) : undefined);
     
     if (validatedInput.weight && effectiveHeight) {
       const heightInMeters = effectiveHeight / 100;
       computedBmi = parseFloat((validatedInput.weight / (heightInMeters * heightInMeters)).toFixed(2));
-      // Simplified mock Z-Score (assuming mean BMI of 22 and SD of 3 for demonstration)
-      computedZScore = parseFloat(((computedBmi - 22) / 3).toFixed(2));
     }
 
     // Update the record
@@ -114,7 +111,7 @@ export async function updateVitalSign(
         height: validatedInput.height,
         weight: validatedInput.weight,
         bmi: computedBmi,
-        zScore: computedZScore,
+        zScore: null,
         bpSystolic: validatedInput.bpSystolic,
         bpDiastolic: validatedInput.bpDiastolic,
         pulseRate: validatedInput.pulseRate,

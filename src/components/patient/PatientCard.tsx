@@ -22,6 +22,7 @@ import { AIButton } from '@/components/ai/AIButton';
 import { usePatientInsights } from '@/hooks/ai/use-ai';
 import { usePatientComprehensiveData } from '@/hooks/usePatientComprehensiveData';
 import { AIInsightsDialog } from './AIInsightsDialog';
+import { formatPhilHealthPinDisplay, resolvePatientPhilHealthPin } from '@/lib/philhealth-pin-search';
 
 type ViewMode = 'list' | 'grid';
 
@@ -139,6 +140,8 @@ export function PatientCard({ patient, viewMode = 'grid' }: PatientCardProps) {
   const fullName = `${firstName || '-'} ${middleName ?? ''} ${lastName || '-'}`.trim();
   const displayName = `${lastName || '-'}, ${firstName || '-'} ${middleName ?? ''} ${suffix ?? ''}`.trim();
   const age = calculateAge(dob) ?? 0;
+  const rawPhilHealthPin = resolvePatientPhilHealthPin(patient);
+  const philHealthPin = rawPhilHealthPin ? formatPhilHealthPinDisplay(rawPhilHealthPin) : null;
 
   // List view - horizontal compact layout with improved design
   if (viewMode === 'list') {
@@ -172,6 +175,11 @@ export function PatientCard({ patient, viewMode = 'grid' }: PatientCardProps) {
                     {bloodType && (
                       <Badge className="text-xs font-semibold bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-200 border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900">
                         {formatBloodType(bloodType)}
+                      </Badge>
+                    )}
+                    {philHealthPin && (
+                      <Badge variant="outline" className="text-[11px] font-medium bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800">
+                        PIN: {philHealthPin}
                       </Badge>
                     )}
                   </div>
@@ -297,6 +305,11 @@ export function PatientCard({ patient, viewMode = 'grid' }: PatientCardProps) {
               {bloodType && (
                 <Badge variant="outline" className="text-xs font-semibold">
                   {formatBloodType(bloodType)}
+                </Badge>
+              )}
+              {philHealthPin && (
+                <Badge variant="outline" className="text-xs font-medium bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800">
+                  PIN: {philHealthPin}
                 </Badge>
               )}
             </div>

@@ -80,7 +80,12 @@ jest.mock("@lib/prisma", () => ({
 
 import prisma from "@/lib/prisma";
 import { getCachedSession } from "@/actions/session.action";
-import { generateBatchXmlAction } from "./philhealth-yakap.actions";
+import { YakapApiClient } from "@/lib/philhealth-yakap/api";
+import {
+  generateBatchXmlAction,
+  submitBatchReportAction,
+  validateBatchReportAction,
+} from "./philhealth-yakap.actions";
 
 const mockPrisma = prisma as unknown as {
   clinicSetting: {
@@ -1037,5 +1042,127 @@ describe("philhealth-yakap.actions: generateBatchXmlAction", () => {
       expect(attrs).toContain('pPainSite="CHEST"');
       expect(attrs).toContain('pOtherComplaint="NIGHT SWEATS"');
     });
+  });
+});
+
+describe("philhealth-yakap.actions: validateBatchReportAction & submitBatchReportAction with empty/null credentials", () => {
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    process.env = {
+      ...originalEnv,
+      PHILHEALTH_KONSULTA_CERT_ID: "CERT-TEST-12345",
+      PHILHEALTH_KONSULTA_CIPHER_KEY: "CIPHERKEY12345678",
+    };
+    mockGetCachedSession.mockResolvedValue({
+      user: { sub: "usr_doc_1" },
+    });
+    mockPrisma.clinicSetting.findFirst.mockResolvedValue({
+      philhealthAccreditationNumber: "P10038831",
+      philhealthYakapUsername: null,
+      philhealthYakapPassword: null,
+      philhealthYakapPmccNumber: "PMCC01",
+    });
+    mockPrisma.konsultaBatchReport.update.mockResolvedValue({ id: "batch-1" });
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  afterAll(() => {
+    process.env = originalEnv;
+  });
+
+  it("allows validateBatchReportAction when username and password are null", async () => {
+    mockPrisma.konsultaBatchReport.findUnique.mockResolvedValue({
+      id: "batch-1",
+      status: "DRAFT",
+      tagging: "1",
+      xmlPayload: "<PCB />",
+    });
+
+    const getTokenSpy = jest
+      .spyOn(YakapApiClient.prototype, "getToken")
+      .mockResolvedValue({ result: "jwt-token-123" });
+    const validateSpy = jest
+      .spyOn(YakapApiClient.prototype, "validateReport")
+      .mockResolvedValue({ success: true });
+
+    const res = await validateBatchReportAction("clinic-test-123", "batch-1");
+
+    expect(res.status).toBe(true);
+    expect(getTokenSpy).toHaveBeenCalledWith(
+      "",
+      "",
+      "CERT-TEST-12345",
+      "P10038831",
+    );
+    expect(validateSpy).toHaveBeenCalledWith(
+      "<PCB />",
+      "1",
+      "jwt-token-123",
+      "CIPHERKEY12345678",
+    );
+  });
+
+  it("allows submitBatchReportAction when username and password are null", async () => {
+    mockPrisma.konsultaBatchReport.findUnique.mockResolvedValue({
+      id: "batch-1",
+      status: "VALIDATED",
+      tagging: "1",
+      transmittalNo: "TR-0001",
+      xmlPayload: "<PCB />",
+      submittedAt: null,
+    });
+
+    const getTokenSpy = jest
+      .spyOn(YakapApiClient.prototype, "getToken")
+      .mockResolvedValue({ result: "jwt-token-456" });
+    const submitSpy = jest
+      .spyOn(YakapApiClient.prototype, "submitReport")
+      .mockResolvedValue({ success: true });
+
+    const res = await submitBatchReportAction("clinic-test-123", "batch-1");
+
+    expect(res.status).toBe(true);
+    expect(getTokenSpy).toHaveBeenCalledWith(
+      "",
+      "",
+      "CERT-TEST-12345",
+      "P10038831",
+    );
+    expect(submitSpy).toHaveBeenCalledWith(
+      "TR-0001",
+      "<PCB />",
+      "1",
+      "jwt-token-456",
+      "CIPHERKEY12345678",
+    );
+  });
+
+  it("still blocks submitBatchReportAction when philhealthAccreditationNumber is missing", async () => {
+    mockPrisma.konsultaBatchReport.findUnique.mockResolvedValue({
+      id: "batch-1",
+      status: "VALIDATED",
+      tagging: "1",
+      transmittalNo: "TR-0001",
+      xmlPayload: "<PCB />",
+    });
+    mockPrisma.clinicSetting.findFirst.mockResolvedValue({
+      philhealthAccreditationNumber: null,
+      philhealthYakapUsername: null,
+      philhealthYakapPassword: null,
+      philhealthYakapPmccNumber: "PMCC01",
+    });
+
+    const getTokenSpy = jest.spyOn(YakapApiClient.prototype, "getToken");
+
+    const res = await submitBatchReportAction("clinic-test-123", "batch-1");
+
+    expect(res.status).toBe(false);
+    expect(res.message).toMatch(/Accreditation Number/i);
+    expect(getTokenSpy).not.toHaveBeenCalled();
   });
 });

@@ -3,10 +3,15 @@ import "server-only";
 
 import prisma from "@lib/prisma";
 import { cache } from "react";
+import { revalidatePath } from "next/cache";
 import { hasCodeProperty } from "@lib/utils";
 import { getCachedSession } from "@actions/session.action";
 import { getPermissionsAction } from "@actions/permission.action";
 import { PERMISSIONS } from "@lib/permissions";
+import {
+  resolveCredentialUpdate,
+  sanitizeClinicSetting,
+} from "@/lib/clinic-setting-credentials";
 
 export type GetClinicSetting = Awaited<ReturnType<typeof getClinicSettingAction>>
 export const getClinicSettingAction = cache(async (clinicUid: string) => {
@@ -29,7 +34,11 @@ export const getClinicSettingAction = cache(async (clinicUid: string) => {
         }
       }
     });
-    return { status: true, message, data: clinicSetting }
+    return {
+      status: true,
+      message,
+      data: sanitizeClinicSetting(clinicSetting),
+    }
   } catch (error) {
     console.error(error);
     message = "Error while fetching clinic settings";
@@ -90,7 +99,11 @@ export const updateClinicSettingsAction = async (clinicSettingId: number, { enab
         }
       }
     });
-    return { status: true, message, data: clinicSetting }
+    return {
+      status: true,
+      message,
+      data: sanitizeClinicSetting(clinicSetting),
+    }
   } catch (error) {
     console.error(`Error updating clinic settings: ${error}`);
     message = "Failed to update clinic settings";
@@ -102,8 +115,8 @@ export const updateClinicSettingsAction = async (clinicSettingId: number, { enab
 export type UpdatePhilHealthSettings = {
   philhealthAccreditationNumber?: string;
   facilityName?: string;
-  philhealthYakapUsername?: string;
-  philhealthYakapPassword?: string;
+  philhealthYakapUsername?: string | null;
+  philhealthYakapPassword?: string | null;
   philhealthYakapPmccNumber?: string;
 };
 export const updatePhilHealthSettingsAction = async (clinicUid: string, data: UpdatePhilHealthSettings) => {
@@ -129,6 +142,15 @@ export const updatePhilHealthSettingsAction = async (clinicUid: string, data: Up
       throw new Error("Clinic not found or unauthorized.");
     }
 
+    const usernameResolution = resolveCredentialUpdate(
+      data.philhealthYakapUsername,
+      { trim: true },
+    );
+    const passwordResolution = resolveCredentialUpdate(
+      data.philhealthYakapPassword,
+      { trim: false },
+    );
+
     // Upsert clinic setting - create if doesn't exist, update if it does
     const clinicSetting = await prisma.clinicSetting.upsert({
       where: {
@@ -138,19 +160,32 @@ export const updatePhilHealthSettingsAction = async (clinicUid: string, data: Up
         clinicId: clinic.id,
         philhealthAccreditationNumber: data.philhealthAccreditationNumber,
         facilityName: data.facilityName,
-        philhealthYakapUsername: data.philhealthYakapUsername,
-        philhealthYakapPassword: data.philhealthYakapPassword,
+        philhealthYakapUsername:
+          usernameResolution.action === "set" ? usernameResolution.value : null,
+        philhealthYakapPassword:
+          passwordResolution.action === "set" ? passwordResolution.value : null,
         philhealthYakapPmccNumber: data.philhealthYakapPmccNumber,
       },
       update: {
         philhealthAccreditationNumber: data.philhealthAccreditationNumber,
         facilityName: data.facilityName,
-        philhealthYakapUsername: data.philhealthYakapUsername,
-        philhealthYakapPassword: data.philhealthYakapPassword,
+        ...(usernameResolution.action !== "keep"
+          ? { philhealthYakapUsername: usernameResolution.value }
+          : {}),
+        ...(passwordResolution.action !== "keep"
+          ? { philhealthYakapPassword: passwordResolution.value }
+          : {}),
         philhealthYakapPmccNumber: data.philhealthYakapPmccNumber,
       }
     });
-    return { status: true, message, data: clinicSetting }
+
+    revalidatePath(`/v2/clinic/${clinicUid}/settings`);
+
+    return {
+      status: true,
+      message,
+      data: sanitizeClinicSetting(clinicSetting),
+    }
   } catch (error) {
     console.error(`Error updating PhilHealth settings: ${error}`);
     message = "Failed to update PhilHealth settings";

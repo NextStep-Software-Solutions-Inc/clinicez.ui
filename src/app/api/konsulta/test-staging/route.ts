@@ -133,14 +133,12 @@ async function resolveCredentials(
         });
 
         if (
-            setting?.philhealthYakapUsername &&
-            setting.philhealthYakapPassword &&
-            setting.philhealthAccreditationNumber &&
+            setting?.philhealthAccreditationNumber &&
             setting.philhealthYakapPmccNumber
         ) {
             return {
-                username: setting.philhealthYakapUsername,
-                password: setting.philhealthYakapPassword,
+                username: setting.philhealthYakapUsername ?? "",
+                password: setting.philhealthYakapPassword ?? "",
                 hciAccreNo: setting.philhealthAccreditationNumber,
                 pmccNumber: setting.philhealthYakapPmccNumber,
                 certificationId: `KON-DUMMYCERTS-${setting.philhealthYakapPmccNumber}`,

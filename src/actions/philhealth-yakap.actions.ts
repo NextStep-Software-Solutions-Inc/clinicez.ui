@@ -1379,9 +1379,6 @@ export async function validateBatchReportAction(clinicUid: string, batchId: stri
     if (batch.status === "SUBMITTED") return { status: false, message: "Cannot validate a submitted batch" };
 
     const credentials = await getClinicCredentials(clinicUid);
-    if (!credentials.pUsername || !credentials.pUserPassword) {
-      return { status: false, message: "PhilHealth Yakap Username and Password must be configured in Clinic Settings -> PhilHealth & Insurance." };
-    }
     if (!credentials.pHospitalCode) {
       return { status: false, message: "PhilHealth Accreditation Number is missing in Clinic Settings." };
     }
@@ -1486,8 +1483,8 @@ export async function submitBatchReportAction(clinicUid: string, batchId: string
     if (batch.status !== "VALIDATED") return { status: false, message: "Batch must be validated first" };
 
     const credentials = await getClinicCredentials(clinicUid);
-    if (!credentials.pUsername || !credentials.pUserPassword) {
-      return { status: false, message: "PhilHealth Yakap Username and Password must be configured in Clinic Settings." };
+    if (!credentials.pHospitalCode) {
+      return { status: false, message: "PhilHealth Accreditation Number is missing in Clinic Settings." };
     }
 
     const apiClient = new YakapApiClient();

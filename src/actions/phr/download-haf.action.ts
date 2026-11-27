@@ -83,12 +83,8 @@ export const downloadHAFAction = withErrorHandling(async (userId: string) => {
       ObGyneHistory: {
         where: { deletedAt: null }
       },
-      UserVaccinations: {
+      PatientImmunizations: {
         where: { isActive: true, deletedAt: null },
-        include: {
-          Vaccine: true,
-          Dose: true
-        }
       },
 
     }
@@ -141,9 +137,9 @@ export const downloadHAFAction = withErrorHandling(async (userId: string) => {
     return history?.details || "";
   };
 
-  // Summarize immunization records from UserVaccinations
+  // Summarize immunization records from PatientImmunizations
   const immunizationSummary = summarizeImmunizations(
-    phr.UserVaccinations,
+    phr.PatientImmunizations,
     phr.dob || new Date(), // Fallback to current date if dob is null
     phr.ObGyneHistory?.hasPreEclampsia || false // Using pre-eclampsia as pregnancy indicator
   );

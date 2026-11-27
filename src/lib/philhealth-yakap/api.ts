@@ -92,6 +92,10 @@ function parseYakapResponse(responseObj: Record<string, unknown>) {
   return rawReturn;
 }
 
+export function normalizeEmptyCredentialTags(xml: string): string {
+  return xml.replace(/<(pUsername|pUserPassword)\s*\/>/g, '<$1></$1>');
+}
+
 export class YakapApiClient {
   private client: YakapSoapClient | null = null;
   private wsdlUrl: string;
@@ -114,10 +118,21 @@ export class YakapApiClient {
         wsdl.load((err: Error | null) => {
           if (err) return reject(err);
           const c = new soap.Client(wsdl, endpoint, {});
+          const baseBuildRequest = c.httpClient.buildRequest.bind(c.httpClient);
+          c.httpClient.buildRequest = (
+            rurl: string,
+            data: unknown,
+            exheaders?: Record<string, unknown>,
+            exoptions?: Record<string, unknown>,
+          ) => {
+            const normalizedData =
+              typeof data === 'string' ? normalizeEmptyCredentialTags(data) : data;
+            return baseBuildRequest(rurl, normalizedData, exheaders, exoptions);
+          };
 
           c.on('request', (xml: string) => {
             console.log("\n================ SOAP REQUEST ================\n");
-            console.log(xml);
+            console.log(normalizeEmptyCredentialTags(xml));
             console.log("\n==============================================\n");
           });
 
@@ -144,8 +159,8 @@ export class YakapApiClient {
     client.clearHttpHeaders();
     const result = await new Promise<Record<string, unknown>>((resolve, reject) => {
       client.getToken({
-        pUsername,
-        pUserPassword,
+        pUsername: pUsername ?? '',
+        pUserPassword: pUserPassword ?? '',
         pSoftwareCertificationId,
         pHospitalCode
       }, (err: Error | null, res: Record<string, unknown>) => {
@@ -329,7 +344,7 @@ export class YakapApiClient {
     }
 
     const result = await new Promise<Record<string, unknown>>((resolve, reject) => {
-      client.checkUploadStatus({ pUsername, pUserPassword, pHospitalCode, pStartDate, pEndDate, pTransmittalID, pReport }, (err: Error | null, res: Record<string, unknown>) => {
+      client.checkUploadStatus({ pUsername: pUsername ?? '', pUserPassword: pUserPassword ?? '', pHospitalCode, pStartDate, pEndDate, pTransmittalID, pReport }, (err: Error | null, res: Record<string, unknown>) => {
         if (err) return reject(err);
         resolve(res);
       });

@@ -6,19 +6,27 @@ import { z } from "zod"
  * User-centric: non-judgmental language, optional numeric details
  */
 
-const SMOKING_STATUS = ["NEVER", "FORMER", "CURRENT", "NOT_APPLICABLE"] as const
-const ALCOHOL_STATUS = ["NEVER", "OCCASIONAL", "REGULAR", "HEAVY", "NOT_APPLICABLE"] as const
-const DRUG_STATUS = ["NEVER", "FORMER", "CURRENT", "NOT_APPLICABLE"] as const
-const SEXUALLY_ACTIVE = ["YES", "NO", "INACTIVE", "NOT_APPLICABLE"] as const
+const SMOKING_STATUS = ["NEVER", "FORMER", "CURRENT"] as const
+const ALCOHOL_STATUS = ["NEVER", "OCCASIONAL", "REGULAR", "HEAVY"] as const
+const DRUG_STATUS = ["NEVER", "FORMER", "CURRENT"] as const
+const SEXUALLY_ACTIVE = ["YES", "NO", "INACTIVE"] as const
+
+const preprocessStatus = (val: unknown) => {
+  if (val === "NOT_APPLICABLE" || val === "" || val === undefined) return null;
+  return val;
+};
 
 export const personalHistorySchema = z
   .object({
-    smokingStatus: z
-      .enum(SMOKING_STATUS, {
-        errorMap: () => ({ message: "Please select a smoking status" }),
-      })
-      .optional()
-      .nullable(),
+    smokingStatus: z.preprocess(
+      preprocessStatus,
+      z
+        .enum(SMOKING_STATUS, {
+          errorMap: () => ({ message: "Please select a smoking status" }),
+        })
+        .optional()
+        .nullable()
+    ),
 
     numberOfPacksPerYear: z
       .number()
@@ -28,12 +36,15 @@ export const personalHistorySchema = z
       .optional()
       .nullable(),
 
-    alcoholStatus: z
-      .enum(ALCOHOL_STATUS, {
-        errorMap: () => ({ message: "Please select an alcohol consumption status" }),
-      })
-      .optional()
-      .nullable(),
+    alcoholStatus: z.preprocess(
+      preprocessStatus,
+      z
+        .enum(ALCOHOL_STATUS, {
+          errorMap: () => ({ message: "Please select an alcohol consumption status" }),
+        })
+        .optional()
+        .nullable()
+    ),
 
     numberOfBottlesPerDay: z
       .number()
@@ -42,19 +53,25 @@ export const personalHistorySchema = z
       .optional()
       .nullable(),
 
-    illicitDrugUse: z
-      .enum(DRUG_STATUS, {
-        errorMap: () => ({ message: "Please select a drug use status" }),
-      })
-      .optional()
-      .nullable(),
+    illicitDrugUse: z.preprocess(
+      preprocessStatus,
+      z
+        .enum(DRUG_STATUS, {
+          errorMap: () => ({ message: "Please select a drug use status" }),
+        })
+        .optional()
+        .nullable()
+    ),
 
-    sexuallyActive: z
-      .enum(SEXUALLY_ACTIVE, {
-        errorMap: () => ({ message: "Please select a status" }),
-      })
-      .optional()
-      .nullable(),
+    sexuallyActive: z.preprocess(
+      preprocessStatus,
+      z
+        .enum(SEXUALLY_ACTIVE, {
+          errorMap: () => ({ message: "Please select a status" }),
+        })
+        .optional()
+        .nullable()
+    ),
   })
   .refine(
     (data) => {
@@ -71,9 +88,9 @@ export const personalHistorySchema = z
   )
   .refine(
     (data) => {
-      // Only allow bottle count if alcohol use is not "NEVER" or "NOT_APPLICABLE"
+      // Only allow bottle count if alcohol use is not "NEVER"
       if (data.numberOfBottlesPerDay !== null && data.numberOfBottlesPerDay !== undefined) {
-        return data.alcoholStatus !== "NEVER" && data.alcoholStatus !== "NOT_APPLICABLE"
+        return data.alcoholStatus !== "NEVER"
       }
       return true
     },
@@ -93,25 +110,21 @@ export const personalHistoryLabels = {
     NEVER: "Never smoked",
     FORMER: "Former smoker",
     CURRENT: "Currently smoking",
-    NOT_APPLICABLE: "Not Applicable (N/A)",
   },
   alcoholStatus: {
     NEVER: "Never drink alcohol",
     OCCASIONAL: "Occasional (a few times per year)",
     REGULAR: "Regular (weekly)",
     HEAVY: "Heavy use (daily or near-daily)",
-    NOT_APPLICABLE: "Not Applicable (N/A)",
   },
   illicitDrugUse: {
     NEVER: "Never used",
     FORMER: "Former use",
     CURRENT: "Currently using",
-    NOT_APPLICABLE: "Not Applicable (N/A)",
   },
   sexuallyActive: {
     YES: "Yes, currently active",
     NO: "No, not active",
     INACTIVE: "Prefer not to answer",
-    NOT_APPLICABLE: "Not Applicable (N/A)",
   },
 }

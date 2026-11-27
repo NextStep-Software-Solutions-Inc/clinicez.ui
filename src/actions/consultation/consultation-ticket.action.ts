@@ -8,6 +8,7 @@ import { PERMISSIONS } from '@lib/permissions';
 import { hasCodeProperty } from '@lib/utils';
 import { withErrorHandling } from '@/lib/with-error-handling';
 import { getHPsAction, GetHPsType } from '@actions/hp.actions';
+import { getUniqueKonsultaCaseAndTransNo } from '@/lib/sequence-generator';
 
 type CreateConsultationTicketPayload = {
   systemId?: number;
@@ -43,61 +44,21 @@ export const createConsultationTicketAction = withErrorHandling(async ({ systemI
   const hciAccreNo = clinicForKonsulta?.ClinicSetting?.philhealthAccreditationNumber ?? null;
   const clinicIdForKonsulta = clinicForKonsulta?.id ?? null;
   const now = new Date();
-  let konsultaHciCaseNo: string | null = null;
-  let konsultaHciTransNo: string | null = null;
+  let konsultaHciCaseNo: string | undefined = undefined;
+  let konsultaHciTransNo: string | undefined = undefined;
 
   if (hciAccreNo && clinicIdForKonsulta) {
-    const accre = hciAccreNo.replace(/\D/g, "").padStart(9, "0").slice(-9);
-    const yearMonth = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}`;
-    const casePrefix = `T${accre}${yearMonth}`;
-    const transPrefix = `S${accre}${yearMonth}`;
-
-    // Find highest existing case number for this accreditation number and month
-    const lastCase = await prismaClient.consultationTicket.findFirst({
-      where: {
-        konsultaHciCaseNo: {
-          startsWith: casePrefix,
-        },
-      },
-      orderBy: { konsultaHciCaseNo: "desc" },
-      select: { konsultaHciCaseNo: true },
-    });
-
-    let nextCaseSeq = 1;
-    if (lastCase?.konsultaHciCaseNo) {
-      const seqStr = lastCase.konsultaHciCaseNo.slice(-5);
-      const parsed = parseInt(seqStr, 10);
-      if (!isNaN(parsed)) {
-        nextCaseSeq = parsed + 1;
-      }
-    }
-
-    // Find highest existing soap transaction number for this accreditation number and month
-    const lastTrans = await prismaClient.consultationTicket.findFirst({
-      where: {
-        konsultaHciTransNo: {
-          startsWith: transPrefix,
-        },
-      },
-      orderBy: { konsultaHciTransNo: "desc" },
-      select: { konsultaHciTransNo: true },
-    });
-
-    let nextTransSeq = 1;
-    if (lastTrans?.konsultaHciTransNo) {
-      const seqStr = lastTrans.konsultaHciTransNo.slice(-5);
-      const parsed = parseInt(seqStr, 10);
-      if (!isNaN(parsed)) {
-        nextTransSeq = parsed + 1;
-      }
-    }
-
-    konsultaHciCaseNo = `${casePrefix}${String(nextCaseSeq).padStart(5, "0")}`;
-    konsultaHciTransNo = `${transPrefix}${String(nextTransSeq).padStart(5, "0")}`;
+    const uniqueHciNos = await getUniqueKonsultaCaseAndTransNo(
+      hciAccreNo,
+      clinicIdForKonsulta,
+      now
+    );
+    konsultaHciCaseNo = uniqueHciNos.konsultaHciCaseNo;
+    konsultaHciTransNo = uniqueHciNos.konsultaHciTransNo;
   }
 
   const consultationTicket = await prismaClient.$transaction(async (prisma) => {
-    let consultationConfig = await prismaClient.consultationConfig.findFirst({
+    let consultationConfig = await prisma.consultationConfig.findFirst({
       where: {
         Clinic: {
           clinicUid
@@ -106,7 +67,7 @@ export const createConsultationTicketAction = withErrorHandling(async ({ systemI
     })
 
     if (!consultationConfig) {
-      const defaultNoteTemplate = await prismaClient.noteTemplate.findFirst({
+      const defaultNoteTemplate = await prisma.noteTemplate.findFirst({
         where: { isActive: true }
       });
 
@@ -114,7 +75,7 @@ export const createConsultationTicketAction = withErrorHandling(async ({ systemI
         throw new Error("No active Note Templates found in the system. Please contact an administrator.");
       }
 
-      const clinic = await prismaClient.clinic.findUnique({
+      const clinic = await prisma.clinic.findUnique({
         where: { clinicUid }
       });
 
@@ -122,7 +83,7 @@ export const createConsultationTicketAction = withErrorHandling(async ({ systemI
         throw new Error("Clinic not found");
       }
 
-      consultationConfig = await prismaClient.consultationConfig.create({
+      consultationConfig = await prisma.consultationConfig.create({
         data: {
           clinicId: clinic.id,
           noteTemplateId: defaultNoteTemplate.id
@@ -132,7 +93,7 @@ export const createConsultationTicketAction = withErrorHandling(async ({ systemI
 
     let effectiveSystemId = systemId;
     if (!effectiveSystemId && appointmentId) {
-      const appt = await prismaClient.appointment.findUnique({
+      const appt = await prisma.appointment.findUnique({
         where: { id: appointmentId },
         select: { AppointmentAttribute: { select: { systemId: true } } },
       });
@@ -141,7 +102,7 @@ export const createConsultationTicketAction = withErrorHandling(async ({ systemI
       }
     }
 
-    return await prismaClient.consultationTicket.create({
+    return await prisma.consultationTicket.create({
       data: {
         ...(effectiveSystemId ? {
           System: {

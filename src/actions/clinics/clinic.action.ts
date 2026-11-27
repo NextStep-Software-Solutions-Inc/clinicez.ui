@@ -6,6 +6,7 @@ import { cache } from "react";
 import { withErrorHandling } from "@/lib/with-error-handling";
 import { sessionCheck } from "@/lib/auth";
 import { getCachedSession } from "@actions/session.action";
+import { SAFE_CLINIC_SETTING_SELECT } from "@/lib/clinic-setting-credentials";
 
 type CreateClinicPayload = {
   clinicUid: string;
@@ -224,7 +225,9 @@ export const getClinicAction = withErrorHandling(cache(async (key: string | numb
           tenantUid: true
         }
       },
-      ClinicSetting: true,
+      ClinicSetting: {
+        select: SAFE_CLINIC_SETTING_SELECT,
+      },
     }
   });
   return { message: "Clinic fetched successfully", data: clinic };
@@ -281,7 +284,9 @@ export const updateClinicAction = withErrorHandling(async (clinicUid: string, da
       }
     },
     include: {
-      ClinicSetting: true,
+      ClinicSetting: {
+        select: SAFE_CLINIC_SETTING_SELECT,
+      },
     }
   });
   return { message: "Successfully updated clinic.", data: clinic };

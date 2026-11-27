@@ -30,6 +30,7 @@
     "seed:permissions": "tsx prisma/seed-permissions.ts",
     "seed:locations": "tsx prisma/seed-ph-locations.ts",
     "seed:physical-exam": "tsx prisma/seed-physical-exam-library.ts",
+    "seed:immunizations": "tsx prisma/seed-philhealth-immunization-library.ts",
     "seed:philhealth:prod": "dotenv -e .env.production.local -- pnpm run seed:philhealth",
     "seed:procedures:prod": "dotenv -e .env.production.local -- pnpm run seed:procedures",
     "seed:permissions:prod": "dotenv -e .env.production.local -- pnpm run seed:permissions",

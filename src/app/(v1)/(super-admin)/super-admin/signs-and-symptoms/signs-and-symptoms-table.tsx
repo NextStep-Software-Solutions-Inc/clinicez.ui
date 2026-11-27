@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Plus, Edit2, Trash2 } from "lucide-react";
+import { Plus, Edit2, Trash2, Database, Loader2 } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -38,6 +38,7 @@ import {
   getSignsAndSymptomsAction,
   upsertSignAndSymptomAction,
   deleteSignAndSymptomAction,
+  seedPhilHealthSignsAndSymptomsAction,
 } from "@/actions/super-admin/sign-and-symptom.action";
 import { Switch } from "@/components/ui/switch";
 
@@ -112,6 +113,21 @@ export default function SignsAndSymptomsTable({
     },
   });
 
+  const seedMutation = useMutation({
+    mutationFn: seedPhilHealthSignsAndSymptomsAction,
+    onSuccess: (res) => {
+      if (!res.success || res.error) {
+        toast.error(res.error || "Failed to seed PhilHealth library");
+        return;
+      }
+      toast.success(res.message || "PhilHealth signs and symptoms library seeded");
+      queryClient.invalidateQueries({ queryKey: ["signsAndSymptoms"] });
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to seed PhilHealth library");
+    },
+  });
+
   const resetForm = () => {
     setFormData({
       code: "",
@@ -145,15 +161,29 @@ export default function SignsAndSymptomsTable({
           <CardTitle>Signs and Symptoms</CardTitle>
           <CardDescription>Manage the PhilHealth signs and symptoms codes.</CardDescription>
         </div>
-        <Button
-          onClick={() => {
-            resetForm();
-            setIsUpsertOpen(true);
-          }}
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Add Item
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => seedMutation.mutate()}
+            disabled={seedMutation.isPending}
+          >
+            {seedMutation.isPending ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Database className="mr-2 h-4 w-4" />
+            )}
+            Seed PhilHealth Library
+          </Button>
+          <Button
+            onClick={() => {
+              resetForm();
+              setIsUpsertOpen(true);
+            }}
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Add Item
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         <div className="rounded-md border">

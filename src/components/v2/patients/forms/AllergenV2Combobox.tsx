@@ -134,7 +134,7 @@ export function AllergenV2Combobox({
   }
 
   return (
-    <div ref={containerRef} className="relative w-full">
+    <div ref={containerRef} className={cn("relative w-full", open && "z-50")}>
       <button
         type="button"
         role="combobox"

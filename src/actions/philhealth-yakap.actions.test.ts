@@ -80,7 +80,17 @@ jest.mock("@lib/prisma", () => ({
 
 import prisma from "@/lib/prisma";
 import { getCachedSession } from "@/actions/session.action";
-import { generateBatchXmlAction } from "./philhealth-yakap.actions";
+import {
+  normalizeEmptyCredentialTags,
+  YakapApiClient,
+} from "@/lib/philhealth-yakap/api";
+import {
+  extractRegistrationListAction,
+  generateBatchXmlAction,
+  submitBatchReportAction,
+  validateBatchReportAction,
+  verifyAtcAction,
+} from "./philhealth-yakap.actions";
 
 const mockPrisma = prisma as unknown as {
   clinicSetting: {
@@ -182,6 +192,19 @@ describe("philhealth-yakap.actions: generateBatchXmlAction", () => {
       resultType: string;
       resultData?: Record<string, unknown>;
     }>;
+    familyMedicalHistories?: Array<{
+      details?: string | null;
+      Condition: {
+        code?: string | null;
+        name: string;
+      };
+    }>;
+    subject?: string;
+    consultationNotes?: Array<{
+      section: string;
+      content: string;
+      structuredData?: Record<string, unknown> | null;
+    }>;
   };
 
   const createMockBatch = (options: BuildBatchOptions = {}) => {
@@ -274,7 +297,7 @@ describe("philhealth-yakap.actions: generateBatchXmlAction", () => {
                 },
               ],
               MedicalHistories: [],
-              FamilyMedicalHistories: [],
+              FamilyMedicalHistories: options.familyMedicalHistories ?? [],
               SurgicalHistories: [],
               PersonalHistory: null,
               ObGyneHistory: null,
@@ -303,7 +326,7 @@ describe("philhealth-yakap.actions: generateBatchXmlAction", () => {
             ConsultationTickets: [
               {
                 id: 101,
-                subject: "Consultation 101",
+                subject: options.subject ?? "Consultation 101",
                 soapTransNo: "SP1003883120261100001",
                 caseNumber: "CASE-101",
                 createdAt: new Date("2026-11-12T00:00:00Z"),
@@ -313,7 +336,7 @@ describe("philhealth-yakap.actions: generateBatchXmlAction", () => {
                 konsultaCoPay: 0,
                 konsultaRecommendedDiagnosticOptions: null,
                 DiagnosticRequests: [],
-                ConsultationNotes: [],
+                ConsultationNotes: options.consultationNotes ?? [],
                 ConsultationDiagnoses: [{ icd10Code: "J00" }],
                 ConsultationTicketHPs: physician
                   ? [
@@ -821,5 +844,381 @@ describe("philhealth-yakap.actions: generateBatchXmlAction", () => {
       expect(xml).toMatch(/pTemp="37\.4"/);
       expect(xml).not.toContain("37.400000000000006");
     });
+
+    it("Issue #519 (Case 2/3 Tranche 1): allows Tranche 1 XML generation with Diabetes Mellitus family history when only consultation-linked labs exist", async () => {
+      mockPrisma.konsultaDiagnosticResult.findMany.mockResolvedValue([
+        {
+          id: 11,
+          consultationTicketId: 101,
+          hciTransNo: "SP1003883120261100001",
+          resultType: "FBS",
+          resultData: { glucoseMg: "95" },
+        },
+      ]);
+
+      mockPrisma.konsultaBatchReport.findUnique.mockResolvedValue(
+        createMockBatch({
+          tagging: "1",
+          familyMedicalHistories: [
+            {
+              details: null,
+              Condition: {
+                code: "006",
+                name: "Diabetes Mellitus",
+              },
+            },
+          ],
+        })
+      );
+
+      const result = await generateBatchXmlAction("clinic-test-123", "batch-test-1");
+      expect(result.status).toBe(true);
+
+      const xml = getGeneratedXml();
+      expect(xml).toContain('<FAMHIST pMdiseaseCode="006"');
+      expect(xml).toContain('<DIAGNOSTICEXAMRESULT pHciCaseNo=""');
+      expect(xml).not.toContain("SP1003883120261100001");
+    });
+
+    it("Issue #519 (Tranche 2 negative): fails with PhilHealth Validation Error when DM family history is present and diagnostic results are empty", async () => {
+      mockPrisma.konsultaDiagnosticResult.findMany.mockResolvedValue([]);
+
+      mockPrisma.konsultaBatchReport.findUnique.mockResolvedValue(
+        createMockBatch({
+          tagging: "2",
+          familyMedicalHistories: [
+            {
+              details: null,
+              Condition: {
+                code: "006",
+                name: "Diabetes Mellitus",
+              },
+            },
+          ],
+        })
+      );
+
+      const result = await generateBatchXmlAction("clinic-test-123", "batch-test-1");
+      expect(result).toEqual({
+        success: false,
+        error: expect.stringMatching(/PhilHealth Validation Error.*Diabetes Mellitus/),
+      });
+    });
+
+    it("Issue #520 (HPI Fallback): falls back to stripped Markdown subjectiveNote.content before t.subject when sd.illnessHistory is blank", async () => {
+      mockPrisma.konsultaBatchReport.findUnique.mockResolvedValue(
+        createMockBatch({
+          tagging: "2",
+          subject: "Walk-in Follow Up",
+          consultationNotes: [
+            {
+              section: "Subjective History",
+              content: "### History of Present Illness\n- **Fever** and _dry cough_ for 3 days",
+              structuredData: {
+                illnessHistory: "",
+                signsSymptoms: "37;09",
+                painSite: "",
+                otherComplaint: "",
+              },
+            },
+          ],
+        })
+      );
+
+      const result = await generateBatchXmlAction("clinic-test-123", "batch-test-1");
+      expect(result.status).toBe(true);
+
+      const xml = getGeneratedXml();
+      expect(xml).toContain('pIllnessHistory="HISTORY OF PRESENT ILLNESS\nFEVER AND DRY COUGH FOR 3 DAYS"');
+      expect(xml).not.toContain('pIllnessHistory="WALK-IN FOLLOW UP"');
+      expect(xml).toContain('pSignsSymptoms="37;09"');
+    });
+
+    it("Issue #520 (Stale Gating): does NOT re-inject '38' or 'X' when stale painSite/otherComplaint remain in DB after deselection", async () => {
+      mockPrisma.konsultaBatchReport.findUnique.mockResolvedValue(
+        createMockBatch({
+          tagging: "2",
+          consultationNotes: [
+            {
+              section: "subjective",
+              content: "",
+              structuredData: {
+                illnessHistory: "Cough and fever",
+                signsSymptoms: "09;37",
+                painSite: "Abdomen",
+                otherComplaint: "Stale other symptom",
+              },
+            },
+          ],
+        })
+      );
+
+      const result = await generateBatchXmlAction("clinic-test-123", "batch-test-1");
+      expect(result.status).toBe(true);
+
+      const xml = getGeneratedXml();
+      expect(xml).toContain('pIllnessHistory="COUGH AND FEVER"');
+      expect(xml).toContain('pSignsSymptoms="09;37"');
+      expect(xml).toContain('pPainSite=""');
+      expect(xml).toContain('pOtherComplaint=""');
+      expect(xml).not.toContain('ABDOMEN');
+      expect(xml).not.toContain('STALE OTHER SYMPTOM');
+    });
+
+    it("Issue #520 (SSVTF Case 3): exports full Case 3 <SUBJECTIVE> payload in uppercase within Data Dictionary limits", async () => {
+      const longHpi = `History of illness: ${"A".repeat(2050)}`;
+      const longOther = `Other complaint: ${"B".repeat(2050)}`;
+      const longPainSite = `Pain site: ${"C".repeat(550)}`;
+
+      mockPrisma.konsultaBatchReport.findUnique.mockResolvedValue(
+        createMockBatch({
+          tagging: "2",
+          consultationNotes: [
+            {
+              section: "subjective",
+              content: "",
+              structuredData: {
+                illnessHistory: longHpi,
+                signsSymptoms: "37;38;x;37",
+                painSite: longPainSite,
+                otherComplaint: longOther,
+              },
+            },
+          ],
+        })
+      );
+
+      const result = await generateBatchXmlAction("clinic-test-123", "batch-test-1");
+      expect(result.status).toBe(true);
+
+      const xml = getGeneratedXml();
+      const subjMatch = xml.match(/<SUBJECTIVE\s+([^>]+)\/>/);
+      expect(subjMatch).not.toBeNull();
+      const attrs = subjMatch![1];
+
+      const hpiVal = attrs.match(/pIllnessHistory="([^"]*)"/)?.[1] ?? "";
+      const signsVal = attrs.match(/pSignsSymptoms="([^"]*)"/)?.[1] ?? "";
+      const otherVal = attrs.match(/pOtherComplaint="([^"]*)"/)?.[1] ?? "";
+      const painVal = attrs.match(/pPainSite="([^"]*)"/)?.[1] ?? "";
+
+      expect(hpiVal).toHaveLength(2000);
+      expect(hpiVal).toBe(hpiVal.toUpperCase());
+      expect(signsVal).toBe("37;38;X");
+      expect(otherVal).toHaveLength(2000);
+      expect(otherVal).toBe(otherVal.toUpperCase());
+      expect(painVal).toHaveLength(500);
+      expect(painVal).toBe(painVal.toUpperCase());
+    });
+
+    it("Issue #520: selects populated structuredData note over an empty {} shell note across HPs", async () => {
+      mockPrisma.konsultaBatchReport.findUnique.mockResolvedValue(
+        createMockBatch({
+          tagging: "2",
+          consultationNotes: [
+            {
+              section: "subjective",
+              content: "",
+              structuredData: {},
+            },
+            {
+              section: "subjective",
+              content: "fallback content",
+              structuredData: {
+                illnessHistory: "productive cough for 3 days",
+                signsSymptoms: "09;38;X",
+                painSite: "chest",
+                otherComplaint: "night sweats",
+              },
+            },
+          ],
+        })
+      );
+
+      const result = await generateBatchXmlAction("clinic-test-123", "batch-test-1");
+      expect(result.status).toBe(true);
+
+      const xml = getGeneratedXml();
+      const subjMatch = xml.match(/<SUBJECTIVE\s+([^>]+)\/>/);
+      expect(subjMatch).not.toBeNull();
+      const attrs = subjMatch![1];
+
+      expect(attrs).toContain('pIllnessHistory="PRODUCTIVE COUGH FOR 3 DAYS"');
+      expect(attrs).toContain('pSignsSymptoms="09;38;X"');
+      expect(attrs).toContain('pPainSite="CHEST"');
+      expect(attrs).toContain('pOtherComplaint="NIGHT SWEATS"');
+    });
+  });
+});
+
+describe("philhealth-yakap.actions: validateBatchReportAction & submitBatchReportAction with empty/null credentials", () => {
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    process.env = {
+      ...originalEnv,
+      PHILHEALTH_KONSULTA_CERT_ID: "CERT-TEST-12345",
+      PHILHEALTH_KONSULTA_CIPHER_KEY: "CIPHERKEY12345678",
+    };
+    mockGetCachedSession.mockResolvedValue({
+      user: { sub: "usr_doc_1" },
+    });
+    mockPrisma.clinicSetting.findFirst.mockResolvedValue({
+      philhealthAccreditationNumber: "P10038831",
+      philhealthYakapUsername: null,
+      philhealthYakapPassword: null,
+      philhealthYakapPmccNumber: "PMCC01",
+    });
+    mockPrisma.konsultaBatchReport.update.mockResolvedValue({ id: "batch-1" });
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  afterAll(() => {
+    process.env = originalEnv;
+  });
+
+  it("allows validateBatchReportAction when username and password are null", async () => {
+    mockPrisma.konsultaBatchReport.findUnique.mockResolvedValue({
+      id: "batch-1",
+      status: "DRAFT",
+      tagging: "1",
+      xmlPayload: "<PCB />",
+    });
+
+    const getTokenSpy = jest
+      .spyOn(YakapApiClient.prototype, "getToken")
+      .mockResolvedValue({ result: "jwt-token-123" });
+    const validateSpy = jest
+      .spyOn(YakapApiClient.prototype, "validateReport")
+      .mockResolvedValue({ success: true });
+
+    const res = await validateBatchReportAction("clinic-test-123", "batch-1");
+
+    expect(res.status).toBe(true);
+    expect(getTokenSpy).toHaveBeenCalledWith(
+      "",
+      "",
+      "CERT-TEST-12345",
+      "P10038831",
+    );
+    expect(validateSpy).toHaveBeenCalledWith(
+      "<PCB />",
+      "1",
+      "jwt-token-123",
+      "CIPHERKEY12345678",
+    );
+  });
+
+  it("allows submitBatchReportAction when username and password are null", async () => {
+    mockPrisma.konsultaBatchReport.findUnique.mockResolvedValue({
+      id: "batch-1",
+      status: "VALIDATED",
+      tagging: "1",
+      transmittalNo: "TR-0001",
+      xmlPayload: "<PCB />",
+      submittedAt: null,
+    });
+
+    const getTokenSpy = jest
+      .spyOn(YakapApiClient.prototype, "getToken")
+      .mockResolvedValue({ result: "jwt-token-456" });
+    const submitSpy = jest
+      .spyOn(YakapApiClient.prototype, "submitReport")
+      .mockResolvedValue({ success: true });
+
+    const res = await submitBatchReportAction("clinic-test-123", "batch-1");
+
+    expect(res.status).toBe(true);
+    expect(getTokenSpy).toHaveBeenCalledWith(
+      "",
+      "",
+      "CERT-TEST-12345",
+      "P10038831",
+    );
+    expect(submitSpy).toHaveBeenCalledWith(
+      "TR-0001",
+      "<PCB />",
+      "1",
+      "jwt-token-456",
+      "CIPHERKEY12345678",
+    );
+  });
+
+  it("still blocks submitBatchReportAction when philhealthAccreditationNumber is missing", async () => {
+    mockPrisma.konsultaBatchReport.findUnique.mockResolvedValue({
+      id: "batch-1",
+      status: "VALIDATED",
+      tagging: "1",
+      transmittalNo: "TR-0001",
+      xmlPayload: "<PCB />",
+    });
+    mockPrisma.clinicSetting.findFirst.mockResolvedValue({
+      philhealthAccreditationNumber: null,
+      philhealthYakapUsername: null,
+      philhealthYakapPassword: null,
+      philhealthYakapPmccNumber: "PMCC01",
+    });
+
+    const getTokenSpy = jest.spyOn(YakapApiClient.prototype, "getToken");
+
+    const res = await submitBatchReportAction("clinic-test-123", "batch-1");
+
+    expect(res.status).toBe(false);
+    expect(res.message).toMatch(/Accreditation Number/i);
+    expect(getTokenSpy).not.toHaveBeenCalled();
+  });
+
+  it("expands self-closing empty credential tags to explicit empty elements", () => {
+    const soapXml = `<ns1:getToken xmlns:ns1="http://philhealth.gov.ph/"><pUsername/><pUserPassword /><pSoftwareCertificationId>CERT-1</pSoftwareCertificationId><pHospitalCode>P10038831</pHospitalCode></ns1:getToken>`;
+
+    expect(normalizeEmptyCredentialTags(soapXml)).toBe(
+      `<ns1:getToken xmlns:ns1="http://philhealth.gov.ph/"><pUsername></pUsername><pUserPassword></pUserPassword><pSoftwareCertificationId>CERT-1</pSoftwareCertificationId><pHospitalCode>P10038831</pHospitalCode></ns1:getToken>`,
+    );
+  });
+
+  it("treats plain-string PhilHealth error responses as token failure in validateBatchReportAction", async () => {
+    mockPrisma.konsultaBatchReport.findUnique.mockResolvedValue({
+      id: "batch-1",
+      status: "DRAFT",
+      tagging: "1",
+      xmlPayload: "<PCB />",
+    });
+
+    jest
+      .spyOn(YakapApiClient.prototype, "getToken")
+      .mockResolvedValue("GetToken error : Request failed.");
+    const validateSpy = jest.spyOn(YakapApiClient.prototype, "validateReport");
+
+    const res = await validateBatchReportAction("clinic-test-123", "batch-1");
+
+    expect(res.status).toBe(false);
+    expect(res.message).toContain("GetToken error : Request failed.");
+    expect(validateSpy).not.toHaveBeenCalled();
+  });
+
+  it("surfaces PhilHealth token failure messages in verifyAtcAction and extractRegistrationListAction", async () => {
+    jest
+      .spyOn(YakapApiClient.prototype, "getToken")
+      .mockResolvedValue({ success: false, message: "Invalid credentials", result: "" });
+
+    const atcRes = await verifyAtcAction(
+      "clinic-test-123",
+      "123456789012",
+      "ATC123",
+      "2026-11-19",
+    );
+    expect(atcRes.status).toBe(false);
+    expect(atcRes.message).toContain("Invalid credentials");
+
+    const erlRes = await extractRegistrationListAction(
+      "clinic-test-123",
+      "2026-01-01",
+      "2026-11-19",
+    );
+    expect(erlRes.status).toBe(false);
+    expect(erlRes.message).toContain("Invalid credentials");
   });
 });
